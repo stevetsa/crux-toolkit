@@ -1,6 +1,6 @@
 /**
  * \file peptide.h 
- * $Revision: 1.42 $
+ * $Revision: 1.42.2.1 $
  * \brief Object for representing one peptide.
  */
 #ifndef PEPTIDE_H 
@@ -14,6 +14,7 @@
 #include "objects.h"
 #include "carp.h"
 #include "peptide_constraint.h"
+#include "generate_peptides_iterator.h"
 
 /**
  * \returns The mass of the given peptide.
@@ -494,6 +495,9 @@ BOOLEAN_T load_peptide(
   FILE* file ///< The file pointing to the location of the peptide
   );
  
+void print_peptide_count(
+    GENERATE_PEPTIDES_ITERATOR_T* peptide_iterator
+  );
 
 #endif
 

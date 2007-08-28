@@ -1,14 +1,14 @@
 #######################################################################
 # FILE: makefile
 # AUTHOR: William Stafford Noble
-# VERSION: $Revision: 1.71 $   #-Werror \
+# VERSION: $Revision: 1.71.2.1 $   #-Werror \
 #######################################################################
 
 # The GNU C compiler is preferred.
 CC	= gcc
 DEBUG   = -DNDEBUG -DBOUNDS_CHECK 
 DEBUG   = -DDEBUG -g
-OFLAGS  = #-O2 
+OFLAGS  = -O2 
 CFLAGS = $(OFLAGS) $(DEBUG) -Wall -W -Werror \
          -D_LARGEFILE_SOURCE=1 -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE
 CPP_FLAGS =  -lstdc++
@@ -60,6 +60,7 @@ LIBOBJS =\
 	${OBJDIR}/index.o \
 	${OBJDIR}/sorter.o \
 	${OBJDIR}/get_ms2_spectrum.o \
+	${OBJDIR}/count_peptides.o \
 	${OBJDIR}/generate_peptides.o \
 	${OBJDIR}/generate_peptides_iterator.o \
 	${OBJDIR}/create_protein_index.o \
@@ -79,23 +80,24 @@ LIBOBJS =\
 
 # These are the names of the programs.
 PROGS = \
-	${BINDIR}/create_ion_files 
-#	${BINDIR}/get_ms2_spectrum \
-#	${BINDIR}/generate_peptides \
-#	${BINDIR}/create_protein_index \
-#	${BINDIR}/create_index \
-#	${BINDIR}/predict_peptide_ions \
-#	${BINDIR}/score_peptide_spectrum \
-#	${BINDIR}/search_spectrum \
-#	${BINDIR}/search_spectra \
-#	${BINDIR}/match_search \
-#	${BINDIR}/match_analysis 
-#	${BINDIR}/score_peptide_list_spectrum
-#	${BINDIR}/charge-vector \
-#	${BINDIR}/charge-vector-ms2 \
-#	${BINDIR}/precursor
+	${BINDIR}/create_ion_files \
+	${BINDIR}/get_ms2_spectrum \
+	${BINDIR}/count_peptides \
+	${BINDIR}/generate_peptides \
+	${BINDIR}/create_protein_index \
+	${BINDIR}/create_index \
+	${BINDIR}/predict_peptide_ions \
+	${BINDIR}/score_peptide_spectrum \
+	${BINDIR}/search_spectrum \
+	${BINDIR}/search_spectra \
+	${BINDIR}/match_search \
+	${BINDIR}/match_analysis \
+	${BINDIR}/score_peptide_list_spectrum \
+	${BINDIR}/charge-vector \
+	${BINDIR}/charge-vector-ms2 \
+	${BINDIR}/precursor
 
-all: Percolator libs bins TAGS 
+all: Percolator libs bins TAGS
 libs: ${LIBFILE}(${LIBOBJS})
 
 bins: ${PROGS} libs

@@ -1,6 +1,6 @@
 /*****************************************************************************
  * \file peptide.c
- * $Revision: 1.56 $
+ * $Revision: 1.56.2.1 $
  * \brief: Object for representing a single peptide.
  ****************************************************************************/
 #include <math.h>
@@ -237,7 +237,7 @@ void print_peptide(
 
 /**
  * Prints a peptide object to file.
- * prints all peptide_src object it's associated 
+ * prints all peptide_src object it's associated
  * mass \\t protein-id \\t peptide-start \\t peptide-length <\\t peptide-trypticity> <\\t peptide-sequence> \n
  *      \\t protein-id \\t peptide-start \\t peptide-length <\\t peptide-trypticity> <\\t peptide-sequence> \n
  * prints in correct format for generate_peptide
@@ -1269,7 +1269,7 @@ char* generate_shuffled_sequence(
     sequence[switch_idx] = temp_char;
     ++start_idx;
   }
-  
+
   return sequence;
 }
 
@@ -1283,6 +1283,53 @@ BOOLEAN_T load_peptide(
   PEPTIDE_T* peptide, ///< An allocated peptide
   FILE* file ///< The file pointing to the location of the peptide
   );
+
+
+void print_peptide_count(
+    GENERATE_PEPTIDES_ITERATOR_T* peptide_iterator
+  ) {
+    long total_peptides=0,n_peptides=0,c_peptides=0,tryptic_peptides = 0;
+    PEPTIDE_T* peptide = NULL;
+    PROTEIN_T* parent = NULL;
+    PEPTIDE_SRC_T* next_src = NULL;
+
+    //iterate over all peptides
+    while(generate_peptides_iterator_has_next(peptide_iterator)){
+      ++total_peptides;
+      peptide = generate_peptides_iterator_next(peptide_iterator);
+
+      parent = NULL;
+      next_src = (PEPTIDE_SRC_T*) peptide->peptide_src;
+      char* id = NULL;
+      int start_idx = 0;
+      //obtain peptide sequence
+      parent = get_peptide_src_parent_protein(next_src);
+
+      //iterate over all peptide src
+      while(next_src != NULL){
+        parent = get_peptide_src_parent_protein(next_src);
+        id = get_protein_id_pointer(parent);
+        start_idx = get_peptide_src_start_idx(next_src);
+
+        if(get_peptide_src_peptide_type(next_src) == TRYPTIC){
+          ++tryptic_peptides;
+        }
+        else if(get_peptide_src_peptide_type(next_src) == N_TRYPTIC){
+          ++n_peptides;
+        }
+        else if(get_peptide_src_peptide_type(next_src) == C_TRYPTIC){
+          ++c_peptides;
+        }
+        next_src = get_peptide_src_next_association(next_src);
+      }
+
+      //free peptide
+      free_peptide(peptide);
+
+    }
+    printf("%ld\t%ld\t%ld\t%ld\n", total_peptides,n_peptides,c_peptides,tryptic_peptides);
+}
+
 
 /*
  * Local Variables:
