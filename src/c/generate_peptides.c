@@ -34,32 +34,6 @@ void wrong_command(char* arg){
   exit(1);
 }
 
-/**
- * progress indicator, displays a spinning | to standout
- */
-void show_progress(int* num){
-  putc('\b', stderr);
-  if(*num / 150 == 37){
-    putc('|', stderr);
-    fflush(stderr);
-  }
-  else if(*num / 150 == 74){
-    putc('/', stderr);
-    fflush(stderr);
-  }
-  else if(*num / 150 == 111){
-    putc('-', stderr);
-    fflush(stderr);
-  }
-  else if(*num / 150 == 149){
-    putc('\\', stderr);
-    fflush(stderr);
-    *num = 0;
-    return;
-  }
-  ++*num;
-}
-
 int main(int argc, char** argv){
 
   /* Set default values for any options here */
@@ -211,11 +185,11 @@ int main(int argc, char** argv){
     printf("#\tverbosity: %d\n", verbosity);
     printf("#\tredundancy: %s\n", get_string_parameter_pointer("redundancy"));
     printf("#\tuse index: %s\n", get_string_parameter_pointer("use-index"));
-    
-    
+
+
     //create peptide interator
     peptide_iterator = new_generate_peptides_iterator();
-    
+
     //should I output sequence?
     output_sequence = get_boolean_parameter("output-sequence");
 
@@ -224,7 +198,7 @@ int main(int argc, char** argv){
       ++total_peptides;
       peptide = generate_peptides_iterator_next(peptide_iterator);
       print_peptide_in_format(peptide, output_sequence, trypticity_opt, stdout);
-      
+
       //free peptide
       free_peptide(peptide);
 
@@ -234,12 +208,12 @@ int main(int argc, char** argv){
       }
     }
     free_generate_peptides_iterator(peptide_iterator);
-    
+
     //debug purpose
     carp(CARP_INFO, "total peptides: %d", total_peptides);
     free_parameters();
     exit(0);
-  } 
+  }
   else {
     char* usage = parse_arguments_get_usage("generate_peptides");
     result = parse_arguments_get_error(&error_message);

@@ -1,15 +1,17 @@
 #######################################################################
 # FILE: makefile
 # AUTHOR: William Stafford Noble
-# VERSION: $Revision: 1.71.2.1 $   #-Werror \
+# VERSION: $Revision: 1.71.2.2 $   #-Werror \
 #######################################################################
 
 # The GNU C compiler is preferred.
 CC	= gcc
-DEBUG   = -DNDEBUG -DBOUNDS_CHECK 
+DEBUG   = -DNDEBUG -DBOUNDS_CHECK
 DEBUG   = -DDEBUG -g
-OFLAGS  = -O2 
-CFLAGS = $(OFLAGS) $(DEBUG) -Wall -W -Werror \
+OFLAGS  = -O2
+#CFLAGS = $(OFLAGS) $(DEBUG) -Wall -W -Werror \
+#         -D_LARGEFILE_SOURCE=1 -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE
+CFLAGS = $(OFLAGS) $(DEBUG) \
          -D_LARGEFILE_SOURCE=1 -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE
 CPP_FLAGS =  -lstdc++
 OS_FLAGS = -DCYGWIN -fno-strict-aliasing
@@ -76,28 +78,27 @@ LIBOBJS =\
 	${OBJDIR}/hash.o \
 	${OBJDIR}/match_search.o \
 	${OBJDIR}/match_analysis.o
-#	${OBJDIR}/score_peptide_list_spectrum.o
 
 # These are the names of the programs.
 PROGS = \
-	${BINDIR}/create_ion_files \
-	${BINDIR}/get_ms2_spectrum \
 	${BINDIR}/count_peptides \
 	${BINDIR}/generate_peptides \
 	${BINDIR}/create_protein_index \
-	${BINDIR}/create_index \
-	${BINDIR}/predict_peptide_ions \
-	${BINDIR}/score_peptide_spectrum \
-	${BINDIR}/search_spectrum \
-	${BINDIR}/search_spectra \
-	${BINDIR}/match_search \
-	${BINDIR}/match_analysis \
-	${BINDIR}/score_peptide_list_spectrum \
-	${BINDIR}/charge-vector \
-	${BINDIR}/charge-vector-ms2 \
-	${BINDIR}/precursor
+	${BINDIR}/create_index
+#	${BINDIR}/create_ion_files \
+#	${BINDIR}/get_ms2_spectrum \
+#	${BINDIR}/predict_peptide_ions \
+#	${BINDIR}/score_peptide_spectrum \
+#	${BINDIR}/search_spectrum \
+#	${BINDIR}/search_spectra \
+#	${BINDIR}/match_search \
+#	${BINDIR}/match_analysis \
+#	${BINDIR}/charge-vector \
+#	${BINDIR}/charge-vector-ms2 \
+#	${BINDIR}/precursor
 
-all: Percolator libs bins TAGS
+all: Percolator libs bins
+
 libs: ${LIBFILE}(${LIBOBJS})
 
 bins: ${PROGS} libs
@@ -108,28 +109,28 @@ doc:	*.h *.c
 	doxygen Doxyfile
 
 # Remove extraneous files.
-clean: 
+clean:
 	rm -rf ${OBJDIR} ${LIBDIR} ${BINDIR} *.bak ${PROGS} ${LIBFILE} ${RANLIBFILE} core html latex
 
 # Build dependencies.  Note that -p argument is quoted for both
 # make and shell so ${OBJDIR}/ is inserted literally.
-depend: 
+depend:
 	rm -f .depend
 	touch .depend
 	makedepend -Y -p'$${OBJDIR}/' -p '$(PERCOLATOR_DIR)/src/Release/' -f .depend *.c *.h *.cpp
 
 # Build a tags file for emacs.
-TAGS: *.c *.h *.cpp
-	etags *.c *.h
-	ctags *.c *.h
+#TAGS: *.c *.h *.cpp
+#	etags *.c *.h
+#	ctags *.c *.h
 
 # Make Percolator and copy over header and library file to CRUX
 Percolator:
-	# make percolator 
+	# make percolator
 	@cd $(PERCOLATOR_DIR)/src ; make
-	@cp $(PERCOLATOR_DIR)/src/PercolatorCInterface.h  . 
+	@cp $(PERCOLATOR_DIR)/src/PercolatorCInterface.h  .
 	@mkdir -p ${LIBDIR}
-	@cp $(PERCOLATOR_DIR)/src/Release/lib/libpercolator.a ${LIBDIR} 
+	@cp $(PERCOLATOR_DIR)/src/Release/lib/libpercolator.a ${LIBDIR}
 
 ##### Dependencies
 

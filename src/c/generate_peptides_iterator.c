@@ -1,4 +1,4 @@
-  
+
 /*****************************************************************************
  * \file generate_peptides_iterator
  * AUTHOR: Chris Park
@@ -71,6 +71,48 @@ GENERATE_PEPTIDES_ITERATOR_T* new_generate_peptides_iterator_w_fileinput(
   char* in_file     ///< the fasta file to use to generate peptides -in
   )
 {
+  char* redundancy = get_string_parameter_pointer("redundancy");
+  char* use_index = get_string_parameter_pointer("use-index");
+  DATABASE_T* database = NULL;
+  INDEX_T* index = NULL;
+  BOOLEAN_T is_unique = FALSE;
+  BOOLEAN_T use_index_boolean = FALSE;
+
+  //determine redundancy option
+  if(strcmp(redundancy, "redundant")==0){
+    is_unique = FALSE;
+  }
+  else if(strcmp(redundancy, "unique")==0){
+    is_unique = TRUE;
+  }
+  else{
+    carp(CARP_ERROR, "incorrect argument %s, using default value", redundancy);
+  }
+
+  //determine use index command
+  if(strcmp(use_index, "F")==0){
+    use_index_boolean = FALSE;
+  }
+  else if(strcmp(use_index, "T")==0){
+    use_index_boolean = TRUE;
+  }
+  if (use_index_boolean)
+    index = new_search_index(in_file, is_unique);
+
+  return new_generate_peptides_iterator_w_index(min_mass,max_mass,in_file,index);
+}
+
+
+/**
+ *\returns a new generate_peptides_iterator object, with fasta file input
+ */
+GENERATE_PEPTIDES_ITERATOR_T* new_generate_peptides_iterator_w_index(
+  double min_mass,  ///< the min mass of peptides to generate -in
+  double max_mass,  ///< the maximum mas of peptide to generate -in
+  char* in_file,    ///< the fasta file to use to generate peptides -in
+  INDEX_T* index    ///< preconstructed index -in
+  )
+{
   //get parameters
   int min_length = get_int_parameter("min-length");
   int max_length = get_int_parameter("max-length");
@@ -78,7 +120,7 @@ GENERATE_PEPTIDES_ITERATOR_T* new_generate_peptides_iterator_w_fileinput(
   char* isotopic_mass = get_string_parameter_pointer("isotopic-mass");
   char* redundancy = get_string_parameter_pointer("redundancy");
   char* use_index = get_string_parameter_pointer("use-index");
-  char* sort = get_string_parameter_pointer("sort");   // mass, length, lexical, none  
+  char* sort = get_string_parameter_pointer("sort");   // mass, length, lexical, none
 
   BOOLEAN_T use_index_boolean = FALSE;
   MASS_TYPE_T mass_type = AVERAGE;
@@ -91,10 +133,9 @@ GENERATE_PEPTIDES_ITERATOR_T* new_generate_peptides_iterator_w_fileinput(
   DATABASE_PEPTIDE_ITERATOR_T* iterator = NULL;
   DATABASE_SORTED_PEPTIDE_ITERATOR_T* sorted_iterator = NULL;
   DATABASE_T* database = NULL;
-  INDEX_T* index = NULL;
   INDEX_PEPTIDE_ITERATOR_T* index_peptide_iterator = NULL;
   INDEX_FILTERED_PEPTIDE_ITERATOR_T* index_filtered_peptide_iterator = NULL;
-  
+
   //parse all the necessary parameters
   //FIXME may add additional types such as non-trypticc or partially-tryptic
   if(strcmp(cleavages, "all")==0){
@@ -105,17 +146,17 @@ GENERATE_PEPTIDES_ITERATOR_T* new_generate_peptides_iterator_w_fileinput(
   }
   else if(strcmp(cleavages, "partial")==0){
     peptide_type = PARTIALLY_TRYPTIC;
-  }  
+  }
   else{
     carp(CARP_ERROR, "incorrect argument %s, using default value", cleavages);
   }
-  
+
   //check if maximum length is with in range <= 255
   if(max_length > 255){
     carp(CARP_FATAL, "maximum length:%d over limit 255.", max_length);
     exit(1);
   }
-  
+
   //determine isotopic mass option
   if(strcmp(isotopic_mass, "average")==0){
     mass_type = AVERAGE;
@@ -126,10 +167,10 @@ GENERATE_PEPTIDES_ITERATOR_T* new_generate_peptides_iterator_w_fileinput(
   else{
     carp(CARP_ERROR, "incorrect argument %s, using default value", isotopic_mass);
   }
-   
+
   //determine redundancy option
   if(strcmp(redundancy, "redundant")==0){
-    is_unique = FALSE;    
+    is_unique = FALSE;
   }
   else if(strcmp(redundancy, "unique")==0){
     is_unique = TRUE;
@@ -137,7 +178,7 @@ GENERATE_PEPTIDES_ITERATOR_T* new_generate_peptides_iterator_w_fileinput(
   else{
     carp(CARP_ERROR, "incorrect argument %s, using default value", redundancy);
   }
-  
+
   //determine sort type option
   if(strcmp(sort, "mass")==0){
     sort_type = MASS;
@@ -154,7 +195,7 @@ GENERATE_PEPTIDES_ITERATOR_T* new_generate_peptides_iterator_w_fileinput(
   else{
     carp(CARP_ERROR, "incorrect argument %s, using default value", sort);
   }
-    
+
   //determine use index command
   if(strcmp(use_index, "F")==0){
     use_index_boolean = FALSE;
@@ -167,18 +208,18 @@ GENERATE_PEPTIDES_ITERATOR_T* new_generate_peptides_iterator_w_fileinput(
   }
 
   //check if input file exist
-  if(access(in_file, F_OK)){
+/*  if(access(in_file, F_OK)){
     carp(CARP_FATAL, "The file \"%s\" does not exist (or is not readable, or is empty).", in_file);
     exit(1);
-  }
- 
+  } */
+
   //allocate an empty iterator
   GENERATE_PEPTIDES_ITERATOR_T* gen_peptide_iterator = allocate_generate_peptides_iterator();
-  
+
   //peptide constraint
-  PEPTIDE_CONSTRAINT_T* constraint = 
+  PEPTIDE_CONSTRAINT_T* constraint =
     new_peptide_constraint(peptide_type, min_mass, max_mass, min_length, max_length, missed_cleavages, mass_type);
-  
+
   //asign to iterator
   gen_peptide_iterator->constraint = constraint;
 
@@ -199,10 +240,10 @@ GENERATE_PEPTIDES_ITERATOR_T* new_generate_peptides_iterator_w_fileinput(
       carp(CARP_ERROR, "failed to perform search");
       exit(1);
     }
-    
-    //create index and set to generate_peptides_iterator
-    index = new_search_index(in_file, constraint, is_unique);
-    
+
+    // set to generate_peptides_iterator
+    set_index_constraint(index, constraint);
+
     if(index == NULL){
       carp(CARP_FATAL, "failed to create peptides from index");
       free(gen_peptide_iterator);
@@ -223,7 +264,7 @@ GENERATE_PEPTIDES_ITERATOR_T* new_generate_peptides_iterator_w_fileinput(
     //if need to select among peptides by peptide_type and etc.
     else{
       carp(CARP_INFO, "using filtered index peptide generation");
-      
+
       //create index_filtered_peptide_iterator  & set generate_peptides_iterator
       index_filtered_peptide_iterator = new_index_filtered_peptide_iterator(index);
       gen_peptide_iterator->iterator = index_filtered_peptide_iterator;
@@ -231,7 +272,7 @@ GENERATE_PEPTIDES_ITERATOR_T* new_generate_peptides_iterator_w_fileinput(
       gen_peptide_iterator->next = &void_index_filtered_peptide_iterator_next;
       gen_peptide_iterator->free = &void_free_index_filtered_peptide_iterator;
     }
-  
+
   }
   /*********************************************
    *read in from fasta file, don't use index file
@@ -248,22 +289,22 @@ GENERATE_PEPTIDES_ITERATOR_T* new_generate_peptides_iterator_w_fileinput(
     gen_peptide_iterator->database = database;
     
     //no sort, redundant
-    if(!is_unique && sort_type == NONE){ 
-      
+    if(!is_unique && sort_type == NONE){
+
       //create peptide iterator  & set generate_peptides_iterator
       iterator = new_database_peptide_iterator(database, constraint);
       gen_peptide_iterator->iterator = iterator;
       gen_peptide_iterator->has_next = &void_database_peptide_iterator_has_next;
       gen_peptide_iterator->next = &void_database_peptide_iterator_next;
       gen_peptide_iterator->free = &void_free_database_peptide_iterator;
-      
-    }      
+
+    }
     //sort or check for unique
     else{
       //only sort, by default will be sorted by mass
       if(sort_type == NONE){
         //create peptide iterator
-        sorted_iterator = 
+        sorted_iterator =
           new_database_sorted_peptide_iterator(database, constraint, MASS, TRUE);       
       }
       //create peptide iterator
@@ -271,8 +312,8 @@ GENERATE_PEPTIDES_ITERATOR_T* new_generate_peptides_iterator_w_fileinput(
         sorted_iterator = 
           new_database_sorted_peptide_iterator(database, constraint, sort_type, is_unique);
       }
-      
-      // set generate_peptides_iterator 
+
+      // set generate_peptides_iterator
       gen_peptide_iterator->iterator = sorted_iterator;
       gen_peptide_iterator->has_next = &void_database_sorted_peptide_iterator_has_next;
       gen_peptide_iterator->next = &void_database_sorted_peptide_iterator_next;
@@ -281,6 +322,7 @@ GENERATE_PEPTIDES_ITERATOR_T* new_generate_peptides_iterator_w_fileinput(
   }
   return gen_peptide_iterator;
 }
+
 
 /**
  *\returns a new generate_peptide_iterator object with custom min, max mass for SP
@@ -294,13 +336,13 @@ GENERATE_PEPTIDES_ITERATOR_T* new_generate_peptides_iterator_sp(
   double min_mass = neutral_mass - mass_window;
   double max_mass = neutral_mass + mass_window;
 
-  carp(CARP_DEBUG,"searching peptide in %.2f ~ %.2f", min_mass, max_mass); 
+  carp(CARP_DEBUG,"searching peptide in %.2f ~ %.2f", min_mass, max_mass);
 
   return new_generate_peptides_iterator_general(min_mass, max_mass);
 }
 
 /**
- *\returns a new generate_peptides_iterator object from all parameters from parameters.c 
+ *\returns a new generate_peptides_iterator object from all parameters from parameters.c
  */
 GENERATE_PEPTIDES_ITERATOR_T* new_generate_peptides_iterator(){
   //get parameters from parameter.c
@@ -456,7 +498,8 @@ GENERATE_PEPTIDES_ITERATOR_T* new_generate_peptides_iterator_mutable()
     }
     
     //create index and set to generate_peptides_iterator
-    gen_peptide_iterator->index = new_search_index(in_file, constraint, is_unique);
+    gen_peptide_iterator->index = new_search_index(in_file, is_unique);
+    set_index_constraint(gen_peptide_iterator->index, constraint);
     
     //check if index was created
     if(gen_peptide_iterator->index == NULL){
@@ -564,9 +607,6 @@ void free_generate_peptides_iterator(
     
     //free peptide constraint
     free_peptide_constraint(generate_peptides_iterator->constraint);
-  }
-  if(generate_peptides_iterator->index != NULL){
-    free_index(generate_peptides_iterator->index);
   }
   
   free(generate_peptides_iterator);

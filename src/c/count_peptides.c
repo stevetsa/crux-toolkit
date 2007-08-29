@@ -27,6 +27,9 @@
 #include "index.h"
 #include "generate_peptides_iterator.h"
 
+int read_masses(char *fileName,double **masses,int *numRows);
+
+
 /**
  * when wrong command is seen carp, and exit
  */
@@ -38,31 +41,6 @@ void wrong_command(char* arg){
   exit(1);
 }
 
-/**
- * progress indicator, displays a spinning | to standout
- */
-void show_progress(int* num){
-  putc('\b', stderr);
-  if(*num / 150 == 37){
-    putc('|', stderr);
-    fflush(stderr);
-  }
-  else if(*num / 150 == 74){
-    putc('/', stderr);
-    fflush(stderr);
-  }
-  else if(*num / 150 == 111){
-    putc('-', stderr);
-    fflush(stderr);
-  }
-  else if(*num / 150 == 149){
-    putc('\\', stderr);
-    fflush(stderr);
-    *num = 0;
-    return;
-  }
-  ++*num;
-}
 
 int main(int argc, char** argv){
 
@@ -71,9 +49,10 @@ int main(int argc, char** argv){
   int trypticity_opt = FALSE;
   double min_mass = 200;
   double max_mass = 7200;
+  double mass_window = 3;
   int min_length = 6;
   int max_length = 50;
-  char* cleavages = "tryptic"; 
+  char* cleavages = "tryptic";
   char* isotopic_mass = "average" ;
   int  verbosity = CARP_FATAL;
   char* redundancy = "redundant";
@@ -81,77 +60,88 @@ int main(int argc, char** argv){
   char* parameter_file = "crux_parameter";
 
   int missed_cleavages = FALSE;
-  char* sort = "none";      // mass, length, lexical, none  
+  char* sort = "none";      // mass, length, lexical, none
   char * in_file = NULL;
+  char * mass_file = NULL;
   char * error_message;
+  double *masses = NULL;
+  int numMasses;
+  int ix;
   int result = 0;
 
-  /* Define optional command line arguments */ 
-  
+  /* Define optional command line arguments */
+
   parse_arguments_set_opt(
-    "min-mass", 
-    "The minimum neutral mass of the peptides to output.", 
-    (void *) &min_mass, 
+    "min-mass",
+    "The minimum neutral mass of the peptides to output.",
+    (void *) &min_mass,
     DOUBLE_ARG);
 
   parse_arguments_set_opt(
-    "max-mass", 
-    "The maximum neutral mass of the peptides to output.", 
-    (void *) &max_mass, 
+    "max-mass",
+    "The maximum neutral mass of the peptides to output.",
+    (void *) &max_mass,
     DOUBLE_ARG);
 
   parse_arguments_set_opt(
-    "min-length", 
+    "mass-window",
+    "The mass window for searching peptides. The range [mass-massWindow,mass+massWindow] is searched.",
+    (void *) &mass_window,
+    DOUBLE_ARG);
+
+
+  parse_arguments_set_opt(
+    "min-length",
     "The minimum length of the peptides to output.",
-    (void *) &min_length, 
+    (void *) &min_length,
     INT_ARG);
 
   parse_arguments_set_opt(
-    "max-length", 
+    "max-length",
     "The maximum length of the peptides to output. maximum limit = 255.",
-    (void *) &max_length, 
+    (void *) &max_length,
     INT_ARG);
 
   parse_arguments_set_opt(
-    "cleavages", 
-    "Type of cleavages to allow. tryptic|partial|all.", 
-    (void *) &cleavages, 
+    "cleavages",
+    "Type of cleavages to allow. tryptic|partial|all.",
+    (void *) &cleavages,
     STRING_ARG);
 
   parse_arguments_set_opt(
-    "missed-cleavages", 
+    "missed-cleavages",
     "Allow missed cleavage sites with in a peptide. ",
-    (void *) &missed_cleavages, 
+    (void *) &missed_cleavages,
     FLAG_ARG);
-  
+
   parse_arguments_set_opt(
-    "sort", 
-    "Specify the order in which peptides are printed to standard output. none|mass|length|lexical.", 
-    (void *) &sort, 
+    "sort",
+    "Specify the order in which peptides are printed to standard output. none|mass|length|lexical.",
+    (void *) &sort,
     STRING_ARG);
 
   parse_arguments_set_opt(
-    "isotopic-mass", 
+    "isotopic-mass",
     "Specify the type of isotopic masses to use when calculating the peptide mass. average|mono.",
-    (void *) &isotopic_mass, 
+    (void *) &isotopic_mass,
     STRING_ARG);
 
   parse_arguments_set_opt(
-    "verbosity", 
+    "verbosity",
     "Specify the verbosity of the current processes from 0-100.",
-    (void *) &verbosity, 
+    (void *) &verbosity,
     INT_ARG);
 
   parse_arguments_set_opt(
-    "redundancy", 
+    "redundancy",
     "Specify whether peptides that come from different proteins yet with identical sequences should appear on separate lines or on the same line. redundant|unique.",
-    (void *) &redundancy, 
+    (void *) &redundancy,
     STRING_ARG);
-  
+
   parse_arguments_set_opt(
-    "use-index", 
+    "use-index",
     "Specify whether a pre-computed on-disk index should be used for retrieving the peptides. T|F",
-    (void *) &use_index, 
+    (void *) &use_index,
     STRING_ARG);
 
   parse_arguments_set_opt(
@@ -178,6 +168,11 @@ int main(int argc, char** argv){
     "The name of the file (in fasta format) from which to parse proteins.",
     (void *) &in_file, STRING_ARG);
 
+  /* Define required command line arguments */
+  parse_arguments_set_req(
+    "mass-file",
+    "The name of the file from which to read masses. One value per row.",
+    (void *) &mass_file, STRING_ARG);
 
   /* Parse the command line */
   if (parse_arguments(argc, argv, 0)) {
@@ -198,12 +193,30 @@ int main(int argc, char** argv){
     //parameters are now confirmed, can't be changed
     parameters_confirmed();
 
-    //create peptide interator
-    peptide_iterator = new_generate_peptides_iterator();
 
-    print_peptide_count(peptide_iterator);
+    read_masses(mass_file,&masses,&numMasses);
 
-    free_generate_peptides_iterator(peptide_iterator);
+    INDEX_T* index = new_search_index(in_file, FALSE);
+//    PEPTIDE_CONSTRAINT_T* constraint =
+//      new_peptide_constraint(peptide_type, min_mass, max_mass, min_length, max_length, missed_cleavages, mass_type);
+
+
+    for(ix=0;ix<numMasses;++ix) {
+      //create peptide interator
+
+      double max_mass = masses[ix] + mass_window;
+      double min_mass = masses[ix] - mass_window;
+
+      peptide_iterator = new_generate_peptides_iterator_w_index(min_mass,max_mass,in_file,index);
+
+      print_peptide_count(peptide_iterator);
+
+      free_generate_peptides_iterator(peptide_iterator);
+    }
+
+    free(masses);
+    free_index(index);
+
 
     free_parameters();
     exit(0);
@@ -218,6 +231,44 @@ int main(int argc, char** argv){
   }
   exit(0);
 }
+
+int read_masses(char *fileName,double **masses,int *numRows)
+{
+  FILE *in_file;  /* Input file */
+  char line[80];  /* Input line */
+  fpos_t begining;
+
+  in_file = fopen(fileName, "r");
+  if (in_file == NULL) {
+    fprintf(stderr,"Error:Unable to open %s\n", fileName);
+    exit (-1);
+  }
+  fgetpos(in_file,&begining);
+  /*
+   * Count lines
+   */
+  (*numRows) = 0;
+  while (1) {
+    if (fgets(line, sizeof(line),  in_file) == NULL)
+      break;
+    ++(*numRows);
+  }
+
+  *masses = malloc(sizeof(double)*(*numRows));
+  fsetpos(in_file,&begining);
+  int ix = 0;
+  while (1) {
+    if (fgets(line, sizeof(line),  in_file) == NULL)
+      break;
+     /* convert number */
+    sscanf(line, "%lf", &((*masses)[ix]));
+    ++ix;
+  }
+  fclose(in_file);
+  return (0);
+}
+
+
 /*
  * Local Variables:
  * mode: c

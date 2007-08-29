@@ -1,6 +1,6 @@
 /*****************************************************************************
  * \file peptide.c
- * $Revision: 1.56.2.1 $
+ * $Revision: 1.56.2.2 $
  * \brief: Object for representing a single peptide.
  ****************************************************************************/
 #include <math.h>
@@ -17,6 +17,14 @@
 #include "database.h"
 #include "carp.h"
 
+
+
+//aminoScoreDict = { 'W':11.0, 'F':10.5, 'L':9.6, 'I':8.4, 'M':5.8, 'V':5.0, \
+//  'Y':4.0, 'A':0.8, 'T':0.4, 'P':0.2, 'E':0.0, 'D':-0.5, 'C':-0.8, 'S':-0.8, \
+//  'Q':-0.9, 'G':-0.9, 'N':-1.2, 'R':-1.3, 'H':-1.3, 'K':-1.9}
+
+
+
 /**
  * static global variable
  * determines if the peptide src are created by link lists or array
@@ -31,7 +39,7 @@ static BOOLEAN_T PEPTIDE_SRC_USE_LINK_LIST;
 struct peptide {
   unsigned char length; ///< The length of the peptide
   float peptide_mass;   ///< The peptide's mass.
-  PEPTIDE_SRC_T* peptide_src; ///< a linklist of peptide_src   
+  PEPTIDE_SRC_T* peptide_src; ///< a linklist of peptide_src
 };
 
 
@@ -95,7 +103,7 @@ float calc_peptide_mass(
 {
   float peptide_mass = 0;
   RESIDUE_ITERATOR_T * residue_iterator = new_residue_iterator(peptide);
-  
+
   while(residue_iterator_has_next(residue_iterator)){
     peptide_mass += get_mass_amino_acid(residue_iterator_next(residue_iterator), mass_type);
   }
@@ -124,15 +132,15 @@ PEPTIDE_T* new_peptide(
   set_peptide_peptide_mass( peptide, peptide_mass);
   peptide->peptide_src =
     new_peptide_src( peptide_type, parent_protein, start_idx );
-  
+
   //increment the database pointer count
   add_database_pointer_count(get_protein_database(parent_protein));
-  
+
   return peptide;
 }
-  
 
-/** 
+
+/**
  * \returns the neutral mass of the peptide
  */
 float get_peptide_neutral_mass(
@@ -142,7 +150,7 @@ float get_peptide_neutral_mass(
   return get_peptide_peptide_mass(peptide);
 }
 
-/** 
+/**
  * \returns the mass of the peptide if it had charge "charge"
  */
 float get_peptide_charged_mass(
@@ -153,7 +161,7 @@ float get_peptide_charged_mass(
   return get_peptide_mz(peptide, charge) * charge;
 }
 
-/** 
+/**
  * \returns the m/z of the peptide if it had charge "charge"
  */
 float get_peptide_mz(
@@ -180,7 +188,7 @@ void free_peptide(
   //check which implementation peptide_src uses
   if(!PEPTIDE_SRC_USE_LINK_LIST){
     //array implementation
-    free(peptide->peptide_src);    
+    free(peptide->peptide_src);
   }
   else{
     //link list implementation
@@ -204,7 +212,7 @@ void free_peptide_for_array(
 {
   //decrement the pointer count
   free_database(get_peptide_first_src_database(peptide));
-  
+
   //array
   free(peptide->peptide_src);
   free(peptide);
@@ -220,8 +228,8 @@ void print_peptide(
   )
 {
   char* sequence = get_peptide_sequence(peptide);
-  
-  PEPTIDE_SRC_ITERATOR_T* iterator = 
+
+  PEPTIDE_SRC_ITERATOR_T* iterator =
     new_peptide_src_iterator(peptide);
   fprintf(file,"%s\n","Peptide");
   fprintf(file,"%.2f\t",peptide->peptide_mass);
@@ -260,18 +268,18 @@ void print_peptide_in_format(
 
   //obtain peptide sequence
   if(flag_out){
-    parent = get_peptide_src_parent_protein(next_src);        
+    parent = get_peptide_src_parent_protein(next_src);
     sequence = get_peptide_sequence(peptide);
   }
 
   //iterate over all peptide src
   while(next_src != NULL){
-    parent = get_peptide_src_parent_protein(next_src);    
+    parent = get_peptide_src_parent_protein(next_src);
     id = get_protein_id_pointer(parent);
     start_idx = get_peptide_src_start_idx(next_src);
-    
+
     fprintf(file, "\t%s\t%d\t%d", id, start_idx, peptide->length);
-  
+
     //print trypticity of peptide??
     if(trypticity_opt){
       if(get_peptide_src_peptide_type(next_src) == TRYPTIC){
@@ -301,7 +309,7 @@ void print_peptide_in_format(
     else{
       fprintf(file, "\n");
     }
-    next_src = get_peptide_src_next_association(next_src);    
+    next_src = get_peptide_src_next_association(next_src);
   }
 
   //free sequence if allocated
@@ -337,7 +345,7 @@ void print_filtered_peptide_in_format(
   //obtain peptide sequence
   if(flag_out){
     parent = get_peptide_src_parent_protein(next_src);
-    
+
     //covnert to heavy protein
     /*
     FIXME, IF use light heavy put back
@@ -353,13 +361,13 @@ void print_filtered_peptide_in_format(
   while(next_src != NULL){
     if(peptide_type == ANY_TRYPTIC ||
        peptide_type == get_peptide_src_peptide_type(next_src) ||
-       (peptide_type == PARTIALLY_TRYPTIC && 
+       (peptide_type == PARTIALLY_TRYPTIC &&
         (get_peptide_src_peptide_type(next_src) == N_TRYPTIC ||
          get_peptide_src_peptide_type(next_src) == C_TRYPTIC)) ){
-      
+
       //if(!light){
       parent = get_peptide_src_parent_protein(next_src);
-        
+
       //covnert to heavy protein
       /*
       FIXME, IF use light heavy put back
@@ -369,12 +377,12 @@ void print_filtered_peptide_in_format(
       }
       */
         //}
-      
+
       id = get_protein_id_pointer(parent);
       start_idx = get_peptide_src_start_idx(next_src);
-      
+
       fprintf(file, "\t%s\t%d\t%d", id, start_idx, peptide->length);
-      
+
       //print peptide sequence?
       if(flag_out){
         fprintf(file, "\t%s\n", sequence);
@@ -382,9 +390,9 @@ void print_filtered_peptide_in_format(
       else{
         fprintf(file, "\n");
       }
-    
-      /** 
-       * uncomment this code if you want to restore a protein to 
+
+      /**
+       * uncomment this code if you want to restore a protein to
        * light after converted to heavy
       //convert back to light
       if(light){
@@ -413,7 +421,7 @@ void copy_peptide(
   PEPTIDE_T* dest ///< destination peptide -out
   )
 {
- 
+
   PEPTIDE_SRC_T* new_association;
 
   set_peptide_length(dest, get_peptide_length(src));
@@ -1285,18 +1293,51 @@ BOOLEAN_T load_peptide(
   );
 
 
+float krokhin_index['Z'-'A'] = {0.8, 0.0, -0.8, -0.5, 0.0,  10.5, -0.9, -1.3, 8.4, 0.0,
+-1.9,9.6,5.8,-1.2,0.0,0.2,-0.9,-1.3,-0.8,0.4,0.0,5.0,11.0,0.0,4.0};
+
+float hessa_index['Z'-'A'] = {0.11,0.0,-0.13,
+3.49,2.68,-0.32,0.74,2.06,-0.60,0.0,2.71,-0.55,-0.10,2.05,
+0.0,2.23,2.36,2.58,0.84,0.52,0.0,-0.31,0.30,0.0,0.68};
+
+
+void calc_sequence_features(
+  PEPTIDE_T* peptide, ///< the query peptide -in
+  double *krokhin,
+  double *hessa,
+  int *len
+)
+{
+  RESIDUE_ITERATOR_T * residue_iterator = new_residue_iterator(peptide);
+
+  while(residue_iterator_has_next(residue_iterator)){
+    char c = residue_iterator_next(residue_iterator)-'A';
+    (*krokhin) += krokhin_index[c];
+    (*hessa) += hessa_index[c];
+    ++(*len);
+  }
+  free_residue_iterator(residue_iterator);
+
+  return;
+}
+
+
 void print_peptide_count(
     GENERATE_PEPTIDES_ITERATOR_T* peptide_iterator
   ) {
-    long total_peptides=0,n_peptides=0,c_peptides=0,tryptic_peptides = 0;
+    long total_peptides=0,n_peptides=0,c_peptides=0,tryptic_peptides = 0,pep_len =0;
     PEPTIDE_T* peptide = NULL;
     PROTEIN_T* parent = NULL;
     PEPTIDE_SRC_T* next_src = NULL;
+    double krokhin = 0.0;
+    double hessa = 0.0;
+    double avg_pep_len = 0.0;
 
     //iterate over all peptides
     while(generate_peptides_iterator_has_next(peptide_iterator)){
-      ++total_peptides;
       peptide = generate_peptides_iterator_next(peptide_iterator);
+
+      calc_sequence_features(peptide,&krokhin,&hessa,&pep_len);
 
       parent = NULL;
       next_src = (PEPTIDE_SRC_T*) peptide->peptide_src;
@@ -1307,6 +1348,7 @@ void print_peptide_count(
 
       //iterate over all peptide src
       while(next_src != NULL){
+        ++total_peptides;
         parent = get_peptide_src_parent_protein(next_src);
         id = get_protein_id_pointer(parent);
         start_idx = get_peptide_src_start_idx(next_src);
@@ -1327,7 +1369,13 @@ void print_peptide_count(
       free_peptide(peptide);
 
     }
-    printf("%ld\t%ld\t%ld\t%ld\n", total_peptides,n_peptides,c_peptides,tryptic_peptides);
+    if (total_peptides>0) {
+      krokhin = krokhin/(double)total_peptides;
+      hessa = hessa/(double)total_peptides;
+      avg_pep_len = pep_len/(double)total_peptides;
+    }
+    printf("%ld\t%ld\t%ld\t%ld\t%7.4f\t%7.4f\t%7.4f\n",
+      total_peptides,n_peptides,c_peptides,tryptic_peptides,krokhin,hessa,avg_pep_len);
 }
 
 
