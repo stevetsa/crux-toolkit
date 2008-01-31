@@ -125,6 +125,13 @@ AC_ARG_ENABLE(
      fi],
     [OPT_FLAGS="$ac_cc_opt"])
 
+# set percolator location
+AC_ARG_WITH(
+    percolator-dir,
+    [  --with-percolator-dir=DIR  Set path to percolator source. \
+      Default: ${top_srcdir}/percolator],
+    [PERCOLATOR_DIR=$withval],
+    [PERCOLATOR_DIR="\${top_srcdir}/percolator"])
 
 AC_SUBST(MACHID)
 AC_SUBST(DEBUG_FLAGS)
@@ -134,6 +141,7 @@ AC_SUBST(VERSION)
 AC_SUBST(LD)
 AC_SUBST(LAMBIN)
 AC_SUBST(HOSTNAME)
+AC_SUBST(PERCOLATOR_DIR)
 
 AC_CONFIG_FILES([\
     Makefile \
@@ -158,7 +166,8 @@ echo \
   C compiler flags:           ${CFLAGS}
   Linker:                     ${LD}
   Special Libs:               ${LIBS}
-  Python:                       ${PYTHON}
+  Python:                     ${PYTHON}
+  percolator directory:       ${PERCOLATOR_DIR}
 
   Run the following commands to compile, test and install meme:
         make   
