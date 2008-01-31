@@ -29,6 +29,7 @@ libcrux_la_SOURCES = \
   match_collection.c \
   match_collection.h \
   match.h \
+  objects.h \
   parameter.c \
   parameter.h \
   parse_arguments.c \
