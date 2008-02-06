@@ -32,10 +32,12 @@ AC_FUNC_MALLOC
 AC_FUNC_REALLOC
 
 # Checks for required math functions.
-AC_CHECK_LIB([m], 
-             [sqrt, log, exp, fabs, pow], 
-             [], 
-             [AC_MSG_WARN([Math library not found])])
+AC_CHECK_LIB(
+  [m], 
+  [sqrt, log, exp, fabs, pow],
+  [], 
+  [AC_MSG_WARN([Math library not found])]
+)
 
 # Set platform-specific settings
 case $host in
