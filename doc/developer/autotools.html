@@ -10,7 +10,7 @@
 <title>Autotools Quick Guide</title>
 </head>
 <body>
-<h2>Autotools: The Good, The Bad, and The Ugly</h1>
+<h2>Autotools: the good, the bad, and the ugly</h1>
 <p>
 Writing Makefiles is a repetitive business.
 There are a handful of tasks that are always having to be re-implemented:
@@ -21,7 +21,7 @@ installing the binaries in their final location,
 cleaning up the detritus of the build process,
 and creating distribution tarballs.
 Surely there must be tools that handle these tasks at a higher 
-level of abstraction then the low-level make rules and dependencies?
+level of abstraction then the low-level <code>make</code> rules and dependencies?
 </p>
 <p>
 The good news is that a set of build tools 
@@ -122,7 +122,7 @@ re-run after this.</dd>
 </ul>
 <h2>How do the autotools work?</h2>
 <p>
-The actual build is still performed by the make program.
+The actual build is still performed by the <code>make</code> program.
 The function of the autotools is to automate the generation of
 very complex Makefiles from simple templates by transforming
 (relatively) simple templates into large blocks of boilerplate code.
@@ -280,7 +280,7 @@ The destination bin indicates that these should be installed in
 the bin directory for the installation.
 </p>
 <p>
-The specification on how to build crux-get-ms2-spectrum is given by:
+The specification on how to build crux-get-ms2-spectrum is then given by:
 </p>
 <pre>
 crux_get_ms2_spectrum_SOURCES = crux-get-ms2-spectrum.c
@@ -407,7 +407,7 @@ We provide here an annotated version of the <code>configure.ac</code> file for c
 The first section is setup and overhead:
 </p>
 <pre>
-AC_INIT # <code>autoconf</code> startup stuff
+AC_INIT # autoconf startup stuff
 AC_CONFIG_SRCDIR(src/c/ion_series.c) # point autoconf at src directory
                                      # could use any file in the src dir.
 AC_CONFIG_AUX_DIR(config) # location of some supporting files
