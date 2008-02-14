@@ -98,10 +98,6 @@ crux_predict_peptide_ions_SOURCES = predict_peptide_ions.c
 crux_predict_peptide_ions_CFLAGS = $(AM_CFLAGS) -DMAIN 
 crux_predict_peptide_ions_LDADD = libcrux.la 
 
-#create_ion_files_SOURCES = create_ion_files.c
-#create_ion_files_CFLAGS = $(AM_CFLAGS) -DMAIN 
-#create_ion_files_LDADD = libcrux.la 
-
 create_protein_index_SOURCES = create_protein_index.c
 create_protein_index_CFLAGS = $(AM_CFLAGS) -DMAIN 
 create_protein_index_LDADD = libcrux.la 
@@ -116,18 +112,3 @@ create_psm_files_LDADD = libcrux.la
 
 doc:	*.h *.c
 	doxygen Doxyfile
-
-# make links to old executable names
-install-exec-hook:
-	rm -f ${bindir}/create_index
-	ln -s crux-create-index ${bindir}/create_index
-	rm -f ${bindir}/get_ms2_spectrum
-	ln -s crux-get-ms2-spectrum ${bindir}/get_ms2_spectrum
-	rm -f ${bindir}/generate_peptides
-	ln -s crux-generate-peptides ${bindir}/generate_peptides
-	rm -f ${bindir}/match_search
-	ln -s crux-search-for-matches ${bindir}/match_search
-	rm -f ${bindir}/match_analysis
-	ln -s crux-analyze-matches ${bindir}/match_analysis
-	rm -f ${bindir}/predict_peptide_ions
-	ln -s crux-predict-peptide-ions ${bindir}/predict_peptide_ions
