@@ -127,12 +127,10 @@ echo \
   Version:                    ${VERSION}
   C compiler:                 ${CC}
   C compiler flags:           ${CFLAGS}
-  Python:                     ${PYTHON}
   percolator directory:       ${PERCOLATOR_DIR}
 
-  Run the following commands to compile, test and install meme:
+  Run the following commands to compile and install meme:
         make   
-        make test
         make install
 "
 
