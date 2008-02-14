@@ -7,6 +7,7 @@ AM_CONFIG_HEADER([config.h])
 
 # Check for required programs.
 AC_PROG_CC
+AM_PROG_CC_C_O
 AC_PROG_LIBTOOL
 AC_PATH_PROG(SED, sed)
 AC_PATH_PROG(PYTHON, python)
