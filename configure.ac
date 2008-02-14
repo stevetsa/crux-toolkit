@@ -1,5 +1,6 @@
 # automake/autoconf startup stuff
-AC_INIT
+AC_PREREQ(2.57)
+AC_INIT(crux, 1.0, aklammer@u.washington.edu)
 AC_CONFIG_SRCDIR(src/c/ion_series.c)
 AC_CONFIG_AUX_DIR(config)
 AM_INIT_AUTOMAKE(crux, 1.0.0)
@@ -8,29 +9,60 @@ AM_CONFIG_HEADER([config.h])
 # Check for required programs.
 AC_PROG_CC
 AM_PROG_CC_C_O
+AC_PROG_CXX
+AC_PROG_CPP
+AC_PROG_INSTALL
+AC_PROG_LN_S
+AC_PROG_MAKE_SET
+AC_PROG_RANLIB
 AC_PROG_LIBTOOL
 AC_PATH_PROG(SED, sed)
 AC_PATH_PROG(PYTHON, python)
 
 # Checks for required header files.
+AC_HEADER_DIRENT
 AC_HEADER_STDC
 AC_CHECK_HEADERS([ \
-    assert.h \
-    ctype.h \
-    dirent.h \
-    ieeefp.h \
-    limits.h \
-    stdio.h \
-    stdlib.h \
-    string.h \
-    sys/stat.h \
-    time.h \
-    unistd.h \
+  fcntl.h \
+  inttypes.h \
+  limits.h \
+  malloc.h netinet/in.h \
+  stddef.h \
+  stdint.h \
+  stdlib.h \
+  string.h \
+  sys/time.h \
+  unistd.h \
 ])
 
 # Check for required library functions.
+AC_FUNC_CLOSEDIR_VOID
+AC_FUNC_FSEEKO
 AC_FUNC_MALLOC
+AC_FUNC_MKTIME
+AC_FUNC_MMAP
 AC_FUNC_REALLOC
+AC_TYPE_SIGNAL
+AC_FUNC_STAT
+AC_FUNC_STRTOD
+AC_FUNC_VPRINTF
+AC_CHECK_FUNCS([ \
+  getpagesize \
+  gettimeofday \
+  memmove \
+  memset \
+  mkdir \
+  munmap \
+  pow \
+  rmdir \
+  sqrt \
+  strcasecmp \
+  strchr \
+  strdup \
+  strrchr \
+  strstr \
+])
+
 
 # Checks for required math functions.
 AC_CHECK_LIB(
