@@ -1,6 +1,6 @@
 /************************************************************************//**
  * \file index.c
- * $Revision: 1.78.2.3 $
+ * $Revision: 1.78.2.4 $
  * \brief: Object for representing an index of a database
  ****************************************************************************/
 #include <stdio.h>
@@ -432,6 +432,8 @@ BOOLEAN_T set_index_fields_from_disk(
     line_length = getline(&line, &buf_length, map_file);
   }
   fclose(map_file);
+  free(map_filename);
+  myfree(line);
 
   index->on_disk = TRUE;
   // set each field

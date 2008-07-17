@@ -165,7 +165,7 @@ void print_header(){
   //  printf("# PROTEIN DATABASE: %s\n", 
   //         get_string_parameter_pointer("protein input"));
 
-  char* database_name = get_string_parameter_pointer("protein input");
+  char* database_name = get_string_parameter("protein input");
   if( get_boolean_parameter("use-index") == TRUE ){
     char* fasta_name  = get_index_binary_fasta_name(database_name);
     free(database_name);
@@ -200,6 +200,7 @@ void print_header(){
     printf("%s\n", mod_str);
     free(mod_str);
   }
+  free(database_name);
 }
 
 /*
