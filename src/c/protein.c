@@ -1,6 +1,6 @@
 /*************************************************************************//**
  * \file protein.c
- * $Revision: 1.73.2.4 $
+ * $Revision: 1.73.2.5 $
  * \brief: Object for representing a single protein.
  ****************************************************************************/
 #include <stdio.h>
@@ -1046,7 +1046,7 @@ void prepare_protein_peptide_iterator(
   
   // initialize mass matrix and enzyme cleavage positions
   int* cleavage_positions = (int*) mycalloc(protein->length+1, sizeof(int));
-  int* non_cleavage_positions = (int*) mycalloc(protein->length+1, sizeof(int));
+  int* non_cleavage_positions = (int*)mycalloc(protein->length+1, sizeof(int));
   int* all_positions = (int*) mycalloc(protein->length+1, sizeof(int));
 
   // initialize first value in all array except non_cleavage_positions
@@ -1158,6 +1158,7 @@ void prepare_protein_peptide_iterator(
   }
 
   free(cleavage_positions);
+  free(non_cleavage_positions);
   free(all_positions);
 
 }

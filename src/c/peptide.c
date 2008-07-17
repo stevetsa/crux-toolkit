@@ -1,6 +1,6 @@
 /*************************************************************************//**
  * \file peptide.c
- * $Revision: 1.72.2.8 $
+ * $Revision: 1.72.2.9 $
  * \brief: Object for representing a single peptide.
  ****************************************************************************/
 #include "peptide.h"
@@ -136,10 +136,13 @@ PEPTIDE_T* copy_peptide(
 
   if( src->modified_seq == NULL ){
     // get the peptide sequence and convert to MODIFIED_AA_T*
+    /*    
     char* sequence = get_peptide_sequence(src);
     MODIFIED_AA_T* mod_seq = convert_to_mod_aa_seq(sequence);
-    new_peptide->modified_seq = mod_seq;
     free(sequence);
+    new_peptide->modified_seq = mod_seq;
+    */
+    new_peptide->modified_seq = NULL;
   }else{
     new_peptide->modified_seq = copy_mod_aa_seq(src->modified_seq);
   }
@@ -210,6 +213,9 @@ void free_peptide(
     free_peptide_src(peptide->peptide_src);
   }
 
+  if(peptide->modified_seq){
+    free(peptide->modified_seq);;
+  }
   free(peptide);
 }
 

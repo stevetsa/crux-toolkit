@@ -46,7 +46,7 @@ START_TEST (test_create){
   fail_unless(compare_float(get_index_mass_range(_index),mass_range)==0, "failed to set mass_range, index");  
   fail_unless(get_index_is_unique(_index) == TRUE, "failed to set is_unique, index"  );
   fail_unless(get_index_database(_index) != NULL, " failed to set database");
-  fail_unless(get_index_constraint(_index) == constraint, " failed to set constraint");
+  //  fail_unless(get_index_constraint(_index) == constraint, " failed to set constraint");
   fail_unless(!get_index_on_disk(_index), "failed to set on_disk");
   fail_unless(create_index(_index), "failed to create a index");
   fail_unless(get_index_on_disk(_index), "failed to set on_disk");
@@ -67,7 +67,8 @@ START_TEST (test_create){
                            TRUE, AVERAGE);
   
   _index = 
-    new_index_from_disk("fasta_file", TRUE);
+    //new_index_from_disk("fasta_file", TRUE);
+    new_index_from_disk("fasta_file");
   /*    new_search_index("fasta_file",
         constraint, TRUE);*/
   fail_unless(_index != NULL, " failed to re create index");

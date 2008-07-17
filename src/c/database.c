@@ -1,6 +1,6 @@
 /*************************************************************************//**
  * \file database.c
- * $Revision: 1.63.2.2 $
+ * $Revision: 1.63.2.3 $
  * \brief: Object for representing a database of protein sequences.
  ****************************************************************************/
 #include <stdio.h>
@@ -911,7 +911,7 @@ DATABASE_PEPTIDE_ITERATOR_T* new_database_peptide_iterator(
             exit(1);
           }
         }
-        // creat new protein_peptide_iterator
+        // create new protein_peptide_iterator
         database_peptide_iterator->cur_protein_peptide_iterator =
           new_protein_peptide_iterator(next_protein, peptide_constraint);
       }

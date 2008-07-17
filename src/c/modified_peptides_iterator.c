@@ -4,7 +4,7 @@
  * DATE: April 15, 2008
  * DESCRIPTION: An iterator that can be used by
  * generate_peptides_iterator to include modified peptides.
- * $Revision: 1.1.2.8 $
+ * $Revision: 1.1.2.9 $
  */
 #include "modified_peptides_iterator.h"
 
@@ -71,7 +71,9 @@ void queue_next_peptide(
   PEPTIDE_T* unmod_peptide = 
     generate_peptides_iterator_next( iterator->peptide_generator);
 
-  carp(CARP_DETAILED_DEBUG, "Next peptide in pep_gen is %s", get_peptide_sequence(unmod_peptide));
+  char* debugseq = get_peptide_sequence(unmod_peptide);
+  carp(CARP_DETAILED_DEBUG, "Next peptide in pep_gen is %s", debugseq);
+  free(debugseq);
 
   // apply modifications, discarding peptides that can't be modified
 
@@ -81,8 +83,8 @@ void queue_next_peptide(
          ! is_peptide_modifiable(//iterator->next_peptide, 
                                  unmod_peptide, 
                                  iterator->peptide_mod) ){ 
-    carp(CARP_DETAILED_DEBUG, "Skipping peptide %s from the generator",
-         get_peptide_sequence(unmod_peptide));
+    //    carp(CARP_DETAILED_DEBUG, "Skipping peptide %s from the generator",
+    //     get_peptide_sequence(unmod_peptide)); //memleak
     //free_peptide( iterator->next_peptide );
     free_peptide( unmod_peptide );
     //iterator->next_peptide = 
@@ -98,8 +100,10 @@ void queue_next_peptide(
     return;
   }
 
+  char* umodseq = get_peptide_sequence(unmod_peptide);
   carp(CARP_DETAILED_DEBUG, "Iterator is modifying peptide %s",
-       get_peptide_sequence(unmod_peptide));
+       umodseq);
+  free(umodseq);
 
   modify_peptide( //iterator->next_peptide, 
                  unmod_peptide, 
@@ -254,7 +258,8 @@ PEPTIDE_T* modified_peptides_iterator_next(
     return NULL;
   }
 
-  PEPTIDE_T* returnme = copy_peptide(iterator->next_peptide);
+  //  PEPTIDE_T* returnme = copy_peptide(iterator->next_peptide);
+  PEPTIDE_T* returnme = iterator->next_peptide;
   //printf("Will return peptide %s\n", get_peptide_sequence(returnme));
   queue_next_peptide(iterator);
   //printf("Still will return peptide %s\n", get_peptide_sequence(returnme));
@@ -272,7 +277,7 @@ void free_modified_peptides_iterator(
     free_peptide( iterator->next_peptide );
     // maybe don't??
     //free_peptide_mod( iterator->peptide_mod );
-    //free_generate_peptides_iterator( iterator->peptide_generator);
+    free_generate_peptides_iterator( iterator->peptide_generator);
     free( iterator );
   }
 }

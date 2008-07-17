@@ -16,7 +16,7 @@
  * spectrum search.  One PEPTIDE_MOD corresponds to one mass window
  * that must be searched.
  * 
- * $Revision: 1.1.2.11 $
+ * $Revision: 1.1.2.12 $
  */
 
 #include "modifications.h"
@@ -233,6 +233,7 @@ char* modified_aa_string_to_string(MODIFIED_AA_T* aa_string){
     char* cur_mod = modified_aa_to_string( aa_string[mod_str_idx] );
     strcpy( return_str_ptr, cur_mod );
     return_str_ptr += strlen(cur_mod);
+    free(cur_mod);
   }
 
   return return_string;
@@ -446,7 +447,7 @@ char* aa_mod_to_string(AA_MOD_T* mod){
     break;
   }
   int length = sprintf(return_str, format_str, mod->mass_change, 
-		       mod->symbol, mod->max_per_peptide, pos_buffer);
+                       mod->symbol, mod->max_per_peptide, pos_buffer);
 
   char* str_ptr = return_str + length;
   int i = 0;
@@ -456,6 +457,7 @@ char* aa_mod_to_string(AA_MOD_T* mod){
       str_ptr++;
     }
   }
+  free(pos_buffer);
   return return_str;
 }
 

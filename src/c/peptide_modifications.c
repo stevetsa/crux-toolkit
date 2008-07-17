@@ -16,7 +16,7 @@
  * spectrum search.  One PEPTIDE_MOD corresponds to one mass window
  * that must be searched.
  * 
- * $Revision: 1.1.2.14 $
+ * $Revision: 1.1.2.15 $
  */
 
 #include "peptide_modifications.h"
@@ -150,10 +150,8 @@ int generate_peptide_mod_list_TESTER(
     char cur_mod_id = aa_mod_get_symbol(cur_aa_mod);
     carp(CARP_DETAILED_DEBUG, "cur max %d, id %c", cur_mod_max, cur_mod_id);
 
-    // initialize temp list and pointer to end (to speed up adds)
-    //    LINKED_LIST_T* temp_list = NULL;
+    // initialize temp list 
     LINKED_LIST_T* temp_list = new_empty_list();
-    //    LINKED_LIST_T* temp_list_end = NULL;
     int temp_counter = 0;
 
     int copies = 1;
@@ -191,7 +189,7 @@ int generate_peptide_mod_list_TESTER(
     carp(CARP_DETAILED_DEBUG, "adding temp list (%d) to final (%d)",
          temp_counter, final_counter);
     combine_lists(final_list, temp_list);
-    // free(temp_list);
+     free(temp_list);
     final_counter += temp_counter;
   }// last aa_mod
   carp(CARP_INFO, "Created %d peptide mods", final_counter);
@@ -270,6 +268,7 @@ BOOLEAN_T is_peptide_modifiable
   int num_aa_mods = get_all_aa_mod_list(&all_mods);
   assert( num_aa_mods < MAX_AA_MODS );
 
+  BOOLEAN_T success = TRUE;
   int amod_idx = 0;
   for(amod_idx = 0; amod_idx < num_aa_mods; amod_idx++){
 
@@ -288,29 +287,36 @@ BOOLEAN_T is_peptide_modifiable
     switch( aa_mod_get_position(cur_aa_mod) ){
     case C_TERM: 
       if( max_distance < get_peptide_c_distance(peptide)){ 
-	return FALSE; 
+        //return FALSE; 
+        success = FALSE;
       }
       break;
     case N_TERM:
       if( max_distance < get_peptide_n_distance(peptide)){ 
-	return FALSE; 
+        //return FALSE; 
+        success = FALSE;
       }
       break;
       // count leagal locations for this aa mod, compare with counts
     case ANY_POSITION:
       // look for an aa in the seq where this mod can be placed
       while( *cur_seq_aa != '\0' ){
-	if( is_aa_modifiable( char_aa_to_modified(*cur_seq_aa), cur_aa_mod)
-	    == TRUE ){
-	  locations_count++;
-	}// else keep looking
-	cur_seq_aa++;
+        if( is_aa_modifiable( char_aa_to_modified(*cur_seq_aa), cur_aa_mod)
+            == TRUE ){
+          locations_count++;
+        }// else keep looking
+        cur_seq_aa++;
       }// end of sequence
       
       if( locations_count < peptide_mod->aa_mod_counts[amod_idx] ){
-	return FALSE;
+        //return FALSE; 
+        success = FALSE;
       }
       break;
+    }// end of switch
+
+    if( success == FALSE ){
+      break; // done look at any more aa_mods
     }
   }// next in aa_mod list
   /*
@@ -328,7 +334,7 @@ BOOLEAN_T is_peptide_modifiable
     int max_distance = aa_mod_get_max_distance(cur_aa_mod);
     
     carp(CARP_DETAILED_DEBUG, "c mod max distance %d, this distance %d",
-	 max_distance, get_peptide_c_distance( peptide ));
+         max_distance, get_peptide_c_distance( peptide ));
     if( get_peptide_c_distance( peptide ) > max_distance ){
       return FALSE;
     }
@@ -349,14 +355,16 @@ BOOLEAN_T is_peptide_modifiable
     int max_distance = aa_mod_get_max_distance(cur_aa_mod);
     
     carp(CARP_DETAILED_DEBUG, "n mod max distance %d, this distance %d",
-	 max_distance, get_peptide_n_distance( peptide ));
+         max_distance, get_peptide_n_distance( peptide ));
     if( get_peptide_n_distance( peptide ) > max_distance ){
       return FALSE;
     }
   }// next aa mod in list
   */
   // found locations for all aa_mods in the seq
-  return TRUE;
+  free(sequence);
+  //return TRUE;
+  return success;
 }
 
 // move this to peptide.c
@@ -459,7 +467,7 @@ int modify_peptide(
       return total_count;
     }
   } // next aa_mod
-
+  free(sequence);
   /*
   for each seq in mod_pep_seq
     copy peptide and give it the modified seq
@@ -484,6 +492,7 @@ int modify_peptide(
 
     push_back_linked_list(modified_peptides, cur_peptide );
   }
+  free(modified_seqs);
   return total_count;
 }
 
@@ -553,11 +562,12 @@ int apply_mod_to_list(
                                            completed_seqs);
 
       //printf("Now there are %d seqs to return\n", return_seq_count);
-
+      free(cur_seq);
     }// apply to next seq until list is empty
 
     // make the collected results the input to the next application
     combine_lists(apply_mod_to_these, completed_seqs); 
+    free(completed_seqs); // just deletes head, not full list
     completed_seqs = new_empty_list();
 
   }// apply next time

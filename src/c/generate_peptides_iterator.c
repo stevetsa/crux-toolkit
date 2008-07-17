@@ -189,7 +189,8 @@ GENERATE_PEPTIDES_ITERATOR_T* new_generate_peptides_iterator_from_mass_range(
     set_peptide_src_implementation(FALSE);
 
     // create index and set to generate_peptides_iterator
-    set_index_constraint(index, constraint); 
+    //    set_index_constraint(index, constraint); 
+    set_index_search_constraint(index, constraint); 
     gen_peptide_iterator->index = copy_index_ptr(index);
     
     // only resrict peptide by mass and length, default iterator

@@ -96,10 +96,11 @@ int main(int argc, char** argv){
   filename = get_string_parameter("protein input");
   if( use_index == TRUE ){
     index = new_index_from_disk(filename);//, 
-//                                get_boolean_parameter("unique-peptides"));
+//  get_boolean_parameter("unique-peptides"));
   }else{
     database = new_database(filename, FALSE); // not memmapped
   }
+  free(filename);
 
   // get list of mods
   PEPTIDE_MOD_T** peptide_mods = NULL;
@@ -114,7 +115,7 @@ int main(int argc, char** argv){
   int mod_idx = 0;
   for(mod_idx = 0; mod_idx < num_peptide_mods; mod_idx++){
     carp(CARP_DETAILED_DEBUG, "Using peptide mod %d with %d aa mods", 
-	 mod_idx, peptide_mod_get_num_aa_mods(peptide_mods[mod_idx]));
+         mod_idx, peptide_mod_get_num_aa_mods(peptide_mods[mod_idx]));
     // create peptide iterator
     //peptide_iterator = new_generate_peptides_iterator();
     peptide_iterator = new_modified_peptides_iterator(peptide_mods[mod_idx],
