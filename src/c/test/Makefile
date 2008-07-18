@@ -24,6 +24,7 @@ TESTS = \
 	check-linked-list.c \
 	check-generate-peptides-iterator.c \
 	check-modified-peptides-iterator.c \
+	check-serialize.c \
 	crux-unit-tests.c
 
 CRUX_LIBS = \

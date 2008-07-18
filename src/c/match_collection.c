@@ -8,7 +8,7 @@
  *
  * AUTHOR: Chris Park
  * CREATE DATE: 11/27 2006
- * $Revision: 1.79.2.2 $
+ * $Revision: 1.79.2.3 $
  ****************************************************************************/
 #include "match_collection.h"
 
@@ -2297,32 +2297,101 @@ void serialize_headers(FILE** psm_file_array){
   int matches_per_spectrum = get_int_parameter("top-match");
   char* filename = get_string_parameter_pointer("protein input");
   char* protein_file = parse_filename(filename);
-  filename = get_string_parameter_pointer("ms2 file");
+  //filename = get_string_parameter_pointer("ms2 file");
+  filename = get_string_parameter("ms2 file");
   char* ms2_file = parse_filename(filename);
-  //  free(filename);
+  free(filename);
            
-  /*
-    AA_MOD_T* list_of_mods = NULL;
-    int num_mods = get_all_aa_mod_list(&list_of_mods);
-   */
+  AA_MOD_T** list_of_mods = NULL;
+  int num_mods = get_all_aa_mod_list(&list_of_mods);
+
+  // TODO: should this also write the ms2 filename???
 
   //write values to files
   int total_files = 1 + get_int_parameter("number-decoy-set");
+  carp(CARP_DETAILED_DEBUG, "Serializing headers in %i files", total_files);
+  carp(CARP_DETAILED_DEBUG, "%i matches per spec", matches_per_spectrum);
   int i=0;
   for(i=0; i<total_files; i++){
     fwrite(&(num_charged_spectra), sizeof(int), 1, psm_file_array[i]);
     fwrite(&(num_spectrum_features), sizeof(int), 1, psm_file_array[i]);
     fwrite(&(matches_per_spectrum), sizeof(int), 1, psm_file_array[i]);
-    /*
-      fwrite(&num_mods, sizeof(int), 1, psm_file_array[i]);
-      fwrite(&list_of_mods, sizeof(AA_MOD_T)*MAX_AA_MODS, 1, psm_file_array[i]);
-     */
+
+    fwrite(&num_mods, sizeof(int), 1, psm_file_array[i]);
+    // this a list of pointers to mods, so write each one
+    int mod_idx = 0;
+    for(mod_idx = 0; mod_idx<num_mods; mod_idx++){
+      fwrite(list_of_mods[mod_idx], get_aa_mod_sizeof(), 1, psm_file_array[i]);
+    }
   }
   
   free(protein_file);
   free(ms2_file);
 
 }
+
+/**
+ * \brief Read in the header information from a cms file.  Return
+ * FALSE if file appears to be corrupted or if mod information does
+ * not mat parameter.c
+ * \returns TRUE if header was successfully parsed, else FALSE.
+ */
+BOOLEAN_T parse_csm_header
+ (FILE* file,
+  int* total_spectra,
+  int* num_top_match)
+{
+
+  // get number of spectra serialized in the file
+  if(fread(total_spectra, (sizeof(int)), 1, file) != 1){
+    carp(CARP_ERROR,"Serialized file corrupted, incorrect number of spectra");
+    return FALSE;
+  }
+  carp(CARP_DETAILED_DEBUG, "There are %i spectra in the result file", 
+       *total_spectra);
+
+  // FIXME unused feature, just set to 0
+  int num_spectrum_features = 555;
+  // get number of spectra features serialized in the file
+  if(fread(&num_spectrum_features, (sizeof(int)), 1, file) != 1){
+    carp(CARP_ERROR, 
+         "Serialized file corrupted, incorrect number of spectrum features");
+    return FALSE;
+  }
+  
+  carp(CARP_DETAILED_DEBUG, "There are %i spectrum features", 
+       num_spectrum_features);
+
+  // get number top ranked peptides serialized
+  if(fread(num_top_match, (sizeof(int)), 1, file) != 1){
+    carp(CARP_ERROR, 
+         "Serialized file corrupted, incorrect number of top match");  
+    return FALSE;
+  }
+  carp(CARP_DETAILED_DEBUG, "There are %i top matches", *num_top_match);
+
+  // modification specific information
+  int num_mods = -1;
+  fread(&num_mods, sizeof(int), 1, file);
+  carp(CARP_DETAILED_DEBUG, "There are %i aa mods", num_mods);
+
+  AA_MOD_T* file_mod_list[MAX_AA_MODS];
+  int mod_idx = 0;
+  for(mod_idx = 0; mod_idx<num_mods; mod_idx++){
+    AA_MOD_T* cur_mod = new_aa_mod(mod_idx);
+    fread(cur_mod, get_aa_mod_sizeof(), 1, file);
+    file_mod_list[mod_idx] = cur_mod;
+  }
+
+  if(! compare_mods(file_mod_list, num_mods) ){
+    carp(CARP_ERROR, "Modification parameters do not match those in " \
+                     "the csm file.");
+    return  FALSE;
+  }
+
+  return TRUE;
+}
+
 
 /**
  * \brief Writes the contents of a match_collection to file(s)
@@ -2499,7 +2568,7 @@ BOOLEAN_T extend_match_collection(
   int charge = 0;
   MATCH_T* match = NULL;
   int num_top_match = 0;
-  int num_spectrum_features = 0;
+  //  int num_spectrum_features = 0;
   float delta_cn =  0;
   float ln_delta_cn = 0;
   float ln_experiment_size = 0;
@@ -2514,7 +2583,11 @@ BOOLEAN_T extend_match_collection(
   }
   
   // read in file specific info
-  
+  if(!  parse_csm_header(result_file, &total_spectra, &num_top_match)){
+    carp(CARP_ERROR, "Could not parse csm header");
+    return FALSE;
+  }
+  /*
   // get number of spectra serialized in the file
   if(fread(&total_spectra, (sizeof(int)), 1, result_file) != 1){
     carp(CARP_ERROR,"Serialized file corrupted, incorrect number of spectra");
@@ -2542,19 +2615,26 @@ BOOLEAN_T extend_match_collection(
   }
   carp(CARP_DETAILED_DEBUG, "There are %i top matches", num_top_match);
 
-  /* modification specific information
-     int num_mods = -1;
-     fread(&num_mods, sizeof(int), 1, result_file);
-     AA_MOD_T* file_list_of_mods = NULL;
-fread(&file_list_of_mods, sizeof(AA_MOD_T)*MAX_AA_MODS, 1,result_file);
+  // modification specific information
+  int num_mods = -1;
+  fread(&num_mods, sizeof(int), 1, result_file);
+  carp(CARP_DETAILED_DEBUG, "There are %i aa mods found", num_mods);
 
-if(! compare_mods(AA_MOD_T* psm_file_mod_list, int num_mods) ){
-       carp(CARP_FATAL, "Modification parameters do not match those in
-     the csm file.");
-         exit(1);
-     }
+  AA_MOD_T* file_mod_list[MAX_AA_MODS];
+  int mod_idx = 0;
+  for(mod_idx = 0; mod_idx<num_mods; mod_idx++){
+    AA_MOD_T* cur_mod = new_aa_mod(mod_idx);
+    fread(cur_mod, get_aa_mod_sizeof(), 1, result_file);
+    file_mod_list[mod_idx] = cur_mod;
+  }
 
-   */
+  if(! compare_mods(file_mod_list, num_mods) ){
+    carp(CARP_FATAL, "Modification parameters do not match those in " \
+                     "the csm file.");
+    exit(1);
+  }
+  */
+  // end parse_csm_header
 
   // FIXME
   // could parse fasta file and ms2 file

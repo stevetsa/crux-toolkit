@@ -1,6 +1,6 @@
 /************************************************************************//**
  * \file index.c
- * $Revision: 1.78.2.4 $
+ * $Revision: 1.78.2.5 $
  * \brief: Object for representing an index of a database
  ****************************************************************************/
 #include <stdio.h>
@@ -1057,8 +1057,10 @@ FILE* get_bin_file(
 }
 
 /**
- * given the file bin, reparses the peptides, sort them then reprint them in the crux_index file
- *\returns the sorted bin
+ * \brief For one file bin, reparses the peptides, sorts them, and
+ * reprints them to the crux_index file 
+ *
+ * \returns the sorted bin
  */
 FILE* sort_bin(
   FILE* file, ///< the working file handler to the bin -in
@@ -1436,7 +1438,7 @@ BOOLEAN_T create_index(
     // sort each bin
     if((file_array[bin_idx] = sort_bin(file_array[bin_idx], bin_idx, index, 
             peptide_count_array[bin_idx])) == NULL){
-      carp(CARP_WARNING, "Failed to sort each bin");
+      carp(CARP_WARNING, "Failed to sort bin %i", bin_idx);
       fcloseall();
       return FALSE;
     }
@@ -2720,7 +2722,8 @@ void free_bin_peptide_iterator(
  ******************************/
 
 /**
- * Instantiates a new sorted_bin_peptide_iterator from a gvien bin file handler.
+ * Instantiates a new sorted_bin_peptide_iterator from a gvien bin
+ * file handler. 
  * \returns a new heap allocated sorted_bin_peptide_iterator object
  */
 BIN_SORTED_PEPTIDE_ITERATOR_T* new_bin_sorted_peptide_iterator(

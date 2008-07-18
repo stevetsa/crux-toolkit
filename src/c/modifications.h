@@ -16,7 +16,7 @@
  * spectrum search.  One PEPTIDE_MOD corresponds to one mass window
  * that must be searched.
  * 
- * $Revision: 1.1.2.11 $
+ * $Revision: 1.1.2.12 $
  */
 #ifndef MODIFICATION_FILE_H
 #define MODIFICATION_FILE_H
@@ -123,6 +123,11 @@ MODIFIED_AA_T* copy_mod_aa_seq( MODIFIED_AA_T* source );
 void free_mod_aa_seq( MODIFIED_AA_T* seq );
 
 /**
+ * \brief Gives the size of the aa_mod struct.  For serialization
+ */
+int get_aa_mod_sizeof();
+
+/**
  * The new definition of a PEPTIDE_T object.
  * 
  */
@@ -214,7 +219,7 @@ void read_mods_from_file(char* param_file);
  * \returns TRUE if the given mods are the same as those from the
  * parameter file.
  */
-BOOLEAN_T compare_mods(AA_MOD_T* psm_file_mod_list, int num_mods);
+BOOLEAN_T compare_mods(AA_MOD_T** psm_file_mod_list, int num_mods);
 
 /**
  * \brief Compare two mods to see if they are the same, i.e. same mass

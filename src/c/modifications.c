@@ -16,7 +16,7 @@
  * spectrum search.  One PEPTIDE_MOD corresponds to one mass window
  * that must be searched.
  * 
- * $Revision: 1.1.2.12 $
+ * $Revision: 1.1.2.13 $
  */
 
 #include "modifications.h"
@@ -131,6 +131,13 @@ void free_aa_mod(AA_MOD_T* mod){
     if( mod->aa_list ){free(mod->aa_list);}
     free(mod);
   }
+}
+
+/**
+ * \brief Gives the size of the aa_mod struct.  For serialization
+ */
+int get_aa_mod_sizeof(){
+  return sizeof(AA_MOD_T);
 }
 
 /**
@@ -291,6 +298,80 @@ MODIFIED_AA_T* copy_mod_aa_seq( MODIFIED_AA_T* source){
 
   return new_seq;
 }
+
+/**
+ * \brief Frees memory for an array of MODIFIED_AA_Ts.  Assumes is
+ * terminated with the MOD_SEQ_NULL value
+ */
+/*
+void free_mod_aa_seq( MODIFIED_AA_T* seq ){
+
+}
+*/
+
+/**
+ * \brief Check that the list of peptide_modifications from the file of
+ * serialized PSMs matches those in the paramter file.
+ *
+ * If there was no parameter file or if it did not contain any mods,
+ * return FALSE.  If the given mod list does not exactly match the
+ * mods read from the parameter file (including the order in which
+ * they are listed) return FALSE.  If returning false, print a warning
+ * with the lines that should be included in the parameter file.
+ *
+ * \returns TRUE if the given mods are the same as those from the
+ * parameter file.
+ */
+BOOLEAN_T compare_mods(AA_MOD_T** psm_file_mod_list, int file_num_mods){
+  AA_MOD_T** mod_list = NULL;
+  int num_mods = get_all_aa_mod_list(&mod_list);
+
+  if( num_mods != file_num_mods ){
+    return FALSE;
+  }
+  int mod_idx = 0;
+  for(mod_idx=0; mod_idx<num_mods; mod_idx++){
+    if( ! compare_two_mods(mod_list[mod_idx], psm_file_mod_list[mod_idx]) ){
+      return FALSE;
+    }
+  }
+  return TRUE;
+}
+
+/**
+ * \brief Compare two mods to see if they are the same, i.e. same mass
+ * change, unique identifier, position
+ */
+BOOLEAN_T compare_two_mods(AA_MOD_T* mod1, AA_MOD_T* mod2){
+  if(mod1->mass_change != mod2->mass_change ){
+    return FALSE;
+  }
+  if(mod1->max_per_peptide != mod2->max_per_peptide ){
+    return FALSE;
+  }
+  if(mod1->position != mod2->position ){
+    return FALSE;
+  }
+  if(mod1->max_distance != mod2->max_distance ){
+    return FALSE;
+  }
+  if(mod1->symbol != mod2->symbol ){
+    return FALSE;
+  }
+  if(mod1->identifier != mod2->identifier ){
+    return FALSE;
+  }
+  // aa list
+  int i = 0;
+  for(i=0; i<AA_LIST_LENGTH; i++){
+    if(mod1->aa_list[i] != mod2->aa_list[i]){
+      return FALSE;
+    }
+  }
+  // everything matched
+  return TRUE;
+}
+
 
 // FIXME: implement this
 BOOLEAN_T is_aa_modified(MODIFIED_AA_T aa, AA_MOD_T* mod){

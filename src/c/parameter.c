@@ -205,7 +205,7 @@ void initialize_parameters(void){
   /* *** Initialize Arguments *** */
 
   /* generate_peptide arguments */
-  set_string_parameter("protein input", NULL, 
+  set_string_parameter("protein input", "NO PROTEIN INPUT GIVEN", //NULL, 
   "Fasta file of protein sequences or directory containing an index.");
 
   /* create_index arguments */
@@ -215,7 +215,7 @@ void initialize_parameters(void){
                    "Name to give the new directory containing index files.");
 
   /* search-for-matches arguments */
-  set_string_parameter("ms2 file", NULL,
+  set_string_parameter("ms2 file", "NO MS2 GIVEN", // NULL,
                        "File containing spectra to be searched.");
   //and uses 'protein input'
 

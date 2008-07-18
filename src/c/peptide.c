@@ -1,6 +1,6 @@
 /*************************************************************************//**
  * \file peptide.c
- * $Revision: 1.72.2.9 $
+ * $Revision: 1.72.2.10 $
  * \brief: Object for representing a single peptide.
  ****************************************************************************/
 #include "peptide.h"
@@ -1178,11 +1178,12 @@ void print_filtered_peptide_in_format(
  *
  * <PEPTIDE_T: peptide struct><int: number of peptide_src>[<int:
  * protein index><PEPTIDE_TYPE_T: peptide_type><int: peptide start
- * index>]+ 
+ * index>]+<int: modified_seq length>[<MODIFIED_AA_T>]+ 
  * The peptide src information (in square brackets) repeats for the
  * number times indicated by the number between the struct and the
  * first peptide src entry.  The protein index is the index of the
- * parent protein in the database DATABASE_T. 
+ * parent protein in the database DATABASE_T. The number of
+ * MODIFIED_AA_T's is given by the int preceeding it.
  *
  * \returns TRUE if serialization is successful, else FALSE
  */
@@ -1235,6 +1236,17 @@ BOOLEAN_T serialize_peptide(
   
   // return to original poistion
   fseek(file, original_location, SEEK_SET);
+
+  // write the number of MODIFIED_AA_T's to serialize
+  int mod_seq_length = peptide->length;
+  if( peptide->modified_seq == NULL ){
+    mod_seq_length = 0;
+  }
+  fwrite(&mod_seq_length, sizeof(int), 1, file);
+
+  // write modified seq
+  fwrite(peptide->modified_seq, sizeof(MODIFIED_AA_T), mod_seq_length, file);
+
   return TRUE;
 }
 
@@ -1246,7 +1258,7 @@ BOOLEAN_T serialize_peptide(
  */
 PEPTIDE_T* parse_peptide(
   FILE* file, ///< the serialized peptide file -in
-  DATABASE_T* database, ///< the database to which the peptides are created -in
+  DATABASE_T* database, ///< the database containing the peptides -in
   BOOLEAN_T use_array  ///< should I use array peptide_src or link list -in  
   )
 {  
@@ -1271,8 +1283,12 @@ PEPTIDE_T* parse_peptide(
   
   // get total number of peptide_src for this peptide
   // peptide must have at least one peptide src
-  if(fread(&num_peptide_src, sizeof(int), 1, file) != 1 || num_peptide_src < 1){
-    carp(CARP_ERROR, "index file corrupted, peptide must have at least one peptide src");
+  fread(&num_peptide_src, sizeof(int), 1, file);
+  //  if(fread(&num_peptide_src, sizeof(int), 1, file) != 1 ||
+  //  num_peptide_src < 1){
+  if( num_peptide_src < 1){
+    carp(CARP_ERROR, 
+         "Index file corrupted, peptide must have at least one peptide src");
     free(peptide);
     return NULL;
   }
@@ -1304,7 +1320,7 @@ PEPTIDE_T* parse_peptide(
       free(peptide);
       return NULL;
     }
-    //carp(CARP_DETAILED_DEBUG, "protein idx read is %i", protein_idx);
+    carp(CARP_DETAILED_DEBUG, "protein idx read is %i", protein_idx);
     
     // read peptide type of peptide src
     if(fread(&peptide_type, sizeof(PEPTIDE_TYPE_T), 1, file) != 1){
@@ -1322,7 +1338,7 @@ PEPTIDE_T* parse_peptide(
       return NULL;
     }
     
-    /** set all fields in peptide src that has been read **/
+    /** set all fields in peptide src that have been read **/
 
     // get the peptide src parent protein
     parent_protein = 
@@ -1338,8 +1354,19 @@ PEPTIDE_T* parse_peptide(
     set_peptide_src_start_idx(current_peptide_src, start_index);
     
     // set current_peptide_src to the next empty peptide src
-    current_peptide_src = get_peptide_src_next_association(current_peptide_src);    
+    current_peptide_src= get_peptide_src_next_association(current_peptide_src);
   }
+  
+  // read the length of the modified aa sequence
+  int mod_seq_len = -1;
+  fread(&mod_seq_len, sizeof(int), 1, file);
+  if( mod_seq_len < 0 ){
+    carp(CARP_ERROR, "Did not read the correct length of modified sequence");
+    peptide->modified_seq = NULL;
+  }
+
+  // read in modified sequence
+  fread(peptide->modified_seq, sizeof(MODIFIED_AA_T), mod_seq_len, file);
   
   return peptide;
 }

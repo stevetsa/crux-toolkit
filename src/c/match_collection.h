@@ -1,6 +1,6 @@
 /**
  * \file match_collection.h 
- * $Revision: 1.29.2.1 $
+ * $Revision: 1.29.2.2 $
  * \brief A set of peptide spectrum matches for one spectrum.
  *
  * Object for given a database and a spectrum, generate all match objects
@@ -35,6 +35,7 @@
 #include "peptide_src.h"
 #include "protein_index.h"
 #include "PercolatorCInterface.h"
+#include "modifications.h"
 
 
 #define _MAX_NUMBER_PEPTIDES 10000000
@@ -190,6 +191,17 @@ FILE** create_psm_files();
  * uses values from paramter.c rather than taking as arguments
  */
 void serialize_headers(FILE** file_array);
+
+/**
+ * \brief Read in the header information from a cms file.  Return
+ * FALSE if file appears to be corrupted or if mod information does
+ * not mat parameter.c
+ * \returns TRUE if header was successfully parsed, else FALSE.
+ */
+BOOLEAN_T parse_csm_header
+ (FILE* file,
+  int* total_spectra,
+  int* num_top_match);
 
 void print_matches
 (MATCH_COLLECTION_T* match_collection, 
