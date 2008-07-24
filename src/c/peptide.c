@@ -1,6 +1,6 @@
 /*************************************************************************//**
  * \file peptide.c
- * $Revision: 1.72.2.10 $
+ * $Revision: 1.72.2.11 $
  * \brief: Object for representing a single peptide.
  ****************************************************************************/
 #include "peptide.h"
@@ -1199,9 +1199,10 @@ BOOLEAN_T serialize_peptide(
   long num_src_location;
   long original_location;
   int num_src = 0;
+  int dummy_value = -10;
   
-  carp(CARP_DETAILED_DEBUG, "Serializing peptide %s", 
-       get_peptide_sequence(peptide));
+  carp(CARP_DETAILED_DEBUG, "Serializing peptide %s, len %i, mass %.2f", 
+       get_peptide_sequence(peptide), peptide->length, peptide->peptide_mass);
   // write the peptide struct
   fwrite(peptide, sizeof(PEPTIDE_T), 1, file);
   
@@ -1209,7 +1210,8 @@ BOOLEAN_T serialize_peptide(
   num_src_location = ftell(file);
 
   // write dummie peptide src count
-  fwrite(&num_src, sizeof(int), 1, file);
+  //  fwrite(&num_src, sizeof(int), 1, file);
+  fwrite(&dummy_value, sizeof(int), 1, file);
 
   // there must be at least one peptide src
   if(!peptide_src_iterator_has_next(iterator)){
@@ -1232,6 +1234,7 @@ BOOLEAN_T serialize_peptide(
   fseek(file, num_src_location, SEEK_SET);
   
   // over write the dummie peptide_src count with real value
+  carp(CARP_DETAILED_DEBUG, "serializing peptide src count of %i for %s", num_src, get_peptide_sequence(peptide));
   fwrite(&num_src, sizeof(int), 1, file);
   
   // return to original poistion
@@ -1252,9 +1255,15 @@ BOOLEAN_T serialize_peptide(
 
 
 /**
- * Parse the binary serialized peptide use for match_analysis
- * Assumes that the file* is set at the start of the peptide_src count field
- *\returns the Peptide if successful parse the peptide form the serialized file, else NULL
+ * \brief Read in a peptide from a binary file and return it.
+ *
+ * Assumes the peptide has been written to file using
+ * serialize_peptide().  Allocates memory for the peptide and all of
+ * its peptide_src's.  Requires a database so that the protein can be
+ * set for each peptide_src.  Returns NULL if eof or if file format
+ * appears incorrect.
+ *
+ * \returns A newly allocated peptide or NULL
  */
 PEPTIDE_T* parse_peptide(
   FILE* file, ///< the serialized peptide file -in
@@ -1262,25 +1271,34 @@ PEPTIDE_T* parse_peptide(
   BOOLEAN_T use_array  ///< should I use array peptide_src or link list -in  
   )
 {  
-  PROTEIN_T* parent_protein = NULL;
-  PEPTIDE_SRC_T* peptide_src = NULL;
-  PEPTIDE_SRC_T* current_peptide_src = NULL;
-  int num_peptide_src = -1;
-  unsigned int protein_idx = 0;
-  int src_index =  0;
-  PEPTIDE_TYPE_T peptide_type = -1;
-  int start_index = -1;
+  carp(CARP_DETAILED_DEBUG, "Parsing peptide");
+  //PROTEIN_T* parent_protein = NULL;
+  //PEPTIDE_SRC_T* peptide_src = NULL;
+  //PEPTIDE_SRC_T* current_peptide_src = NULL;
+  //int num_peptide_src = -1;
+  //unsigned int protein_idx = 0;
+  //  int src_index =  0;
+  //PEPTIDE_TYPE_T peptide_type = -1;
+  //int start_index = -1;
   
-  // the peptide to parse into
+  // the new peptide to be given values in file
   PEPTIDE_T* peptide = allocate_peptide();
   
   // read peptide struct
   if(fread(peptide, get_peptide_sizeof(), 1, file) != 1){
+    carp(CARP_DETAILED_DEBUG, "Did not read peptide struct from file");
     // there is no peptide
     free(peptide);
     return NULL;
   }
   
+  if(!parse_peptide_src(peptide, file, database, use_array)){
+    carp(CARP_ERROR, "Failed to parse peptide src.");
+    free(peptide);
+    return NULL;
+  };
+
+  /*
   // get total number of peptide_src for this peptide
   // peptide must have at least one peptide src
   fread(&num_peptide_src, sizeof(int), 1, file);
@@ -1292,6 +1310,7 @@ PEPTIDE_T* parse_peptide(
     free(peptide);
     return NULL;
   }
+
   
   // which implemenation of peptide_src to use? Array or linklist?
   if(use_array){
@@ -1312,7 +1331,7 @@ PEPTIDE_T* parse_peptide(
   // parse and fill all peptide src information into peptide
   // TODO this should be moved into a parse peptide_src routine
   for(; src_index < num_peptide_src; ++src_index){
-    // **read peptide src fields**//
+    // read peptide src fields
     
     // get protein index
     if(fread(&protein_idx, (sizeof(int)), 1, file) != 1){
@@ -1338,7 +1357,7 @@ PEPTIDE_T* parse_peptide(
       return NULL;
     }
     
-    /** set all fields in peptide src that have been read **/
+    /// set all fields in peptide src that have been read //
 
     // get the peptide src parent protein
     parent_protein = 
@@ -1356,7 +1375,9 @@ PEPTIDE_T* parse_peptide(
     // set current_peptide_src to the next empty peptide src
     current_peptide_src= get_peptide_src_next_association(current_peptide_src);
   }
-  
+  // end parse_peptide_src
+*/
+  // TODO: write parse_peptide_modification()
   // read the length of the modified aa sequence
   int mod_seq_len = -1;
   fread(&mod_seq_len, sizeof(int), 1, file);
@@ -1369,6 +1390,72 @@ PEPTIDE_T* parse_peptide(
   fread(peptide->modified_seq, sizeof(MODIFIED_AA_T), mod_seq_len, file);
   
   return peptide;
+}
+
+/**
+ * \brief Read in a peptide from a binary file without reading its
+ * peptide_src's.
+ *
+ * This parsing method is for callers that do not want memory
+ * allcoated for every peptide in the file.  Caller allocates memory
+ * once, parses peptide, checks values, and returns or keeps looking.
+ * To get the peptide_src for this peptide, caller uses 
+ * fseek(file, peptide_src_file_location, SEEK_SET);
+ * parse_peptide_src(peptide, file, database, use_array);
+ *
+ * Assumes that the peptide has been written to file using
+ * serialize_peptide().  
+ * \returns TRUE if peptide was successfully parsed or FALSE if it was
+ * not. 
+ */
+BOOLEAN_T parse_peptide_no_src(
+  PEPTIDE_T* peptide, ///< memory already allocated for a peptide 
+  FILE* file,       ///< file pointing to a serialized peptide
+  long int* peptide_src_file_location)  // use to seek back to peptide_src
+{
+  if( peptide == NULL || file == NULL ){
+    carp(CARP_ERROR, "Cannot parse (NULL) peptide from (NULL) file.");
+    return FALSE;
+  }
+
+  // we won't be adding any peptide_src
+  peptide->peptide_src = NULL;
+
+  // read peptide struct
+  //  if(fread(peptide, get_peptide_sizeof(), 1, file) != 1){
+  if(fread(peptide, sizeof(PEPTIDE_T), 1, file) != 1){
+    // there is no peptide
+    return FALSE;
+  }
+  carp(CARP_DETAILED_DEBUG, "read peptide len %i, mass %.2f", peptide->length, peptide->peptide_mass);
+
+  // remember where the peptide_src begins
+  *peptide_src_file_location = ftell(file);
+
+  // read the number of peptide_src's
+  int num_peptide_src = -1;
+  int read = fread(&num_peptide_src, sizeof(int), 1, file);
+  if( num_peptide_src < 1 || read != 1){
+    carp(CARP_DETAILED_DEBUG, "Num peptide src is %i and num read is %i", num_peptide_src, read);
+    carp(CARP_ERROR, "Peptide must have at least one peptide src.");
+    return FALSE;
+  }
+
+  // skip past all of the peptide_src's
+  fseek(file, num_peptide_src * size_of_serialized_peptide_src(), SEEK_CUR);
+
+  // read in any peptide modifications, starting with length
+  int mod_seq_len = -1;
+  fread(&mod_seq_len, sizeof(int), 1, file);
+  if( mod_seq_len < 0 ){
+    carp(CARP_ERROR, "Did not read the correct length of modified sequence");
+    peptide->modified_seq = NULL;
+  }
+
+  // read in modified sequence
+  fread(peptide->modified_seq, sizeof(MODIFIED_AA_T), mod_seq_len, file);
+
+  return TRUE;
 }
 
 /* Public functions--Iterators */

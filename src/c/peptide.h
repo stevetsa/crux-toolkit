@@ -1,6 +1,6 @@
 /**
  * \file peptide.h 
- * $Revision: 1.45.4.5 $
+ * $Revision: 1.45.4.6 $
  * \brief Object for representing one peptide.
  */
 #ifndef PEPTIDE_H 
@@ -454,16 +454,42 @@ BOOLEAN_T serialize_peptide(
   );
  
 /**
- * Parse the binary serialized peptide use for match_analysis
- * Assumes that the file* is set at the start of the peptide_src count field
- *\returns the Peptide if successful parse the peptide form the serialized file, else NULL
+ * \brief Read in a peptide from a binary file and return it.
+ *
+ * Assumes the peptide has been written to file using
+ * serialize_peptide().  Allocates memory for the peptide and all of
+ * its peptide_src's.  Requires a database so that the protein can be
+ * set for each peptide_src.  Returns NULL if eof or if file format
+ * appears incorrect.
+ *
+ * \returns A newly allocated peptide or NULL
  */
 PEPTIDE_T* parse_peptide(
   FILE* file, ///< the serialized peptide file -in
-  DATABASE_T* database, ///< the database to which the peptides are created -in
+  DATABASE_T* database,///< the database containing the peptides -in
   BOOLEAN_T use_array  ///< should I use array peptide_src or link list -in  
   );
 
+/**
+ * \brief Read in a peptide from a binary file without reading its
+ * peptide_src's.
+ *
+ * This parsing method is for callers that do not want memory
+ * allcoated for every peptide in the file.  Caller allocates memory
+ * once, parses peptide, checks values, and returns or keeps looking.
+ * To get the peptide_src for this peptide, caller uses 
+ * fseek(file, peptide_src_file_location, SEEK_SET);
+ * parse_peptide_src(peptide, file, database, use_array);
+ *
+ * Assumes that the peptide has been written to file using
+ * serialize_peptide().  
+ * \returns TRUE if peptide was successfully parsed or FALSE if it was
+ * not. 
+ */
+BOOLEAN_T parse_peptide_no_src(
+  PEPTIDE_T* peptide, ///< memory already allocated for a peptide 
+  FILE* file,       ///< file pointing to a serialized peptide
+  long int* pepitde_src_file_location);  // use to seek back to peptide_src
 
 /*  Iterators */
 

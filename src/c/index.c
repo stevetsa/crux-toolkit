@@ -1,6 +1,6 @@
 /************************************************************************//**
  * \file index.c
- * $Revision: 1.78.2.5 $
+ * $Revision: 1.78.2.6 $
  * \brief: Object for representing an index of a database
  ****************************************************************************/
 #include <stdio.h>
@@ -515,28 +515,39 @@ BOOLEAN_T check_index_constraints(INDEX_T* index){
   BOOLEAN_T unique = index->is_unique;
 
   BOOLEAN_T success = TRUE;
+  char* param;
   if(min_mass > get_double_parameter("min-mass")){
     success = FALSE;
+    param = "min-mass";
   }else if(max_mass < get_double_parameter("max-mass")){
     success = FALSE;
+    param = "max-mass";
   }else if(min_len > get_int_parameter("min-length")){
     success = FALSE;
+    param = "min-length";
   }else if(max_len < get_int_parameter("max-length")){
     success = FALSE;
+    param = "max-length";
   }else if(missed_cleavages < get_boolean_parameter("missed-cleavages")){
     success = FALSE;
+    param = "missed-cleavages";
   }else if(mass_type != get_mass_type_parameter("isotopic-mass")){
     success = FALSE;
-  }else if(unique != get_boolean_parameter("unique-peptides")){
+    param = "isotopic-mass";
+  }else if(unique > get_boolean_parameter("unique-peptides")){
+    // only if index is unique(1) and requesting not-unique (0) is a problem
     success = FALSE;
+    param = "unique-peptides";
   }else if(cleavage_type < get_peptide_type_parameter("cleavages")){
     // tryptic < partial < any  BUG for N- or C-tryptic)
     success = FALSE;
+    param = "cleavages";
   }
 
   // TODO: could print specific failure
   if(success == FALSE){
-    carp(CARP_ERROR, "Index does not support the given search parameters.");
+    carp(CARP_ERROR, "Index does not support the given search parameters, " \
+         "'%s' is not compatable", param);
   }
   return success;
 }
@@ -1063,7 +1074,7 @@ FILE* get_bin_file(
  * \returns the sorted bin
  */
 FILE* sort_bin(
-  FILE* file, ///< the working file handler to the bin -in
+  FILE* file, ///< the working file handle to the bin -in
   long bin_idx, ///< bin index in the file array -in
   INDEX_T* index, ///< working index -in
   unsigned int peptide_count ///< the total peptide count in the bin -in
@@ -1142,13 +1153,15 @@ BOOLEAN_T dump_peptide(
 }
 
 /**
- * serializes all peptides left int he peptide array, should be used at very last
- *\returns TRUE, if successful in serializing all peptides, else FALSE
- *frees both peptide_array and bin_count once all serialized
+ * /brief Serializes all peptides left in the peptide array after
+ * parsing the database.  Used in creatig index after parsing database
+ * and before sorting peptides in each bin.
+ * \returns TRUE, if successful in serializing all peptides, else FALSE
+ * frees both peptide_array and bin_count once all serialized.
  */
 BOOLEAN_T dump_peptide_all(
-  FILE** file_array,   ///< the working file handler array to the bins -out
-  PEPTIDE_T*** peptide_array, ///< the peptide array that stores the peptides before they get serialized -in
+  FILE** file_array,   ///< the working file handle array to the bins -out
+  PEPTIDE_T*** peptide_array, ///< the array of pre-serialized peptides -in
   int* bin_count, ///< the count array of peptides in each bin -in
   int num_bins ///< the total number of bins -in
   )
@@ -1161,16 +1174,19 @@ BOOLEAN_T dump_peptide_all(
   
   // print out all remaining peptides in the file_array
   for(file_idx = 0; file_idx < num_bins; ++file_idx){
+    carp(CARP_DETAILED_DEBUG, "Serializing bin %d", file_idx);
     // no peptides in this bin
     if((file = file_array[file_idx]) == NULL){
       free(peptide_array[file_idx]);
       continue;
     }
     working_array = peptide_array[file_idx];
+    // BF: could we use int bin_count = bin_count[file_idx]
     bin_idx = bin_count[file_idx];
     // print out all peptides in this specific bin
+    // BF: could we do for(pep_idx=0; pep_idx<bin_count_total; pep_idx++)
     while(bin_idx > 0){
-      serialize_peptide(working_array[peptide_idx] , file);
+      serialize_peptide(working_array[peptide_idx], file);
       free_peptide(working_array[peptide_idx]);
       // FIXME this should not be allowed
       --bin_idx;
@@ -1301,8 +1317,6 @@ BOOLEAN_T create_index(
   carp(CARP_DEBUG, "Creating index");
   // check if already created index
   if(index->on_disk){
-    //carp(CARP_WARNING, "Trying to create index that already exists");
-    //return TRUE;//?????BF
     if(get_boolean_parameter("overwrite")){
       replace_index = TRUE;
       carp(CARP_DEBUG, "Will be replacing existing index");
@@ -1353,7 +1367,7 @@ BOOLEAN_T create_index(
   // get number of bins needed
   num_bins = get_num_bins_needed(index, mass_limits);
   
-  // create file handler array
+  // create file handle array
   file_array = (FILE**)mycalloc(num_bins, sizeof(FILE*));
 
   // peptide array to store the peptides before serializing them all together
@@ -1370,8 +1384,9 @@ BOOLEAN_T create_index(
   // total count of peptide in bin is sotred in peptide_count_array
   int* bin_count = (int*)mycalloc(num_bins, sizeof(int));
 
-  // create peptide count array that stores total count of peptides in each bin
-  peptide_count_array = (unsigned int*)mycalloc(num_bins, sizeof(unsigned int));
+  // create array that stores total count of peptides in each bin
+  peptide_count_array = 
+    (unsigned int*)mycalloc(num_bins, sizeof(unsigned int));
 
   // create README file, with parameter informations
   readme = fopen("README", "w");
@@ -1395,7 +1410,6 @@ BOOLEAN_T create_index(
   // iterate through all peptides
   while(database_peptide_iterator_has_next(peptide_iterator)){    
     ++count_peptide;
-    //    if(count_peptide % 1000 == 0){
     if(count_peptide % mod_me == 0){
       if( (count_peptide/10 ) == mod_me ){
         mod_me = mod_me * 10;
@@ -1407,10 +1421,11 @@ BOOLEAN_T create_index(
     working_mass = get_peptide_peptide_mass(working_peptide);
     file_idx = (working_mass - low_mass) / mass_range;
 
-    // check if first time using this bin, if so create new file handler
+    // check if first time using this bin, if so create new file handle
     if(file_array[file_idx] == NULL){
       if(!generate_one_file_handler(file_array, file_idx)){
-        carp(CARP_ERROR, "Check filehandler limit on system");
+        carp(CARP_ERROR, 
+             "Exceeded filehandle limit on system with %d files", file_idx);
         fcloseall();
         return FALSE;
       }
@@ -1432,10 +1447,11 @@ BOOLEAN_T create_index(
   carp(CARP_INFO, "Sorting index");
   long bin_idx;
   for(bin_idx = 0; bin_idx < num_bins; ++bin_idx){
+    carp(CARP_DETAILED_DEBUG, "Sorting bin %d", bin_idx);
     if(file_array[bin_idx] == NULL){
       continue;
     }
-    // sort each bin
+    // sort bin
     if((file_array[bin_idx] = sort_bin(file_array[bin_idx], bin_idx, index, 
             peptide_count_array[bin_idx])) == NULL){
       carp(CARP_WARNING, "Failed to sort bin %i", bin_idx);
@@ -2014,10 +2030,12 @@ BOOLEAN_T parse_crux_index_map(
  * creates a new peptide and then adds it to the iterator to return
  * Should use link list peptide_src implementation when creating index, 
  * to enable to merge identical peptides
- * Should use array peptide_src implementation for generate_peptide to speed up process
- * \returns TRUE if successfully parsed the pepdtide from the crux_index_* file
+ * Should use array peptide_src implementation for generate_peptide to
+ * speed up process 
+ * \returns TRUE if successfully parsed the pepdtide from the
+ * crux_index_* file 
  */
-
+/*
 BOOLEAN_T parse_peptide_index_file(
   void* general_peptide_iterator,  ///< working peptide_iterator -in/out
   PEPTIDE_T* peptide, ///< the peptide to pull out of the file -out
@@ -2152,30 +2170,45 @@ BOOLEAN_T parse_peptide_index_file(
   
   return TRUE;   
 }
+*/
 
 /**
- * fast forward the index file pointer to the beginning of the
- * first peptide that would meet the peptide constraint,
- * parse the peptide, then adds it to the index-peptide-iterator to return
- * \returns TRUE if successfully finds and parses a peptide that meets the constraints
+ * \brief Find the next peptide in the file that meets the peptide
+ * constraint, read it from file, and add set up the iterator to
+ * return it.
+ * \returns TRUE if successfully finds and parses a peptide that meets
+ * the constraint.
  */
 
 BOOLEAN_T fast_forward_index_file(
-  INDEX_PEPTIDE_ITERATOR_T* index_peptide_iterator, ///< working index_peptide_iterator -in/out
+  INDEX_PEPTIDE_ITERATOR_T* index_peptide_iterator, 
+  ///< working index_peptide_iterator -in/out
   FILE* file ///< the file stream to fast foward -in
   )
 {
-  // first peptide to parse
+  // peptide to parse, reuse this memory while we look
   PEPTIDE_T* peptide = allocate_peptide();
+  /*
   float peptide_mass = 0;
   int peptide_length = 0;
   BOOLEAN_T in_peptide = FALSE;
   int num_peptide_src = 0;
+  */
 
   PEPTIDE_CONSTRAINT_T* index_constraint = 
     index_peptide_iterator->index->search_constraint;
 
-  // loop until we get to a peptide
+  // loop until we get to a peptide that fits the constraint, we find
+  // a peptide bigger (mass) than the constraint, or reach eof
+  BOOLEAN_T peptide_fits = FALSE;
+  long int src_loc = 0;
+  while( ! peptide_fits ){
+    // read in next peptide, returns false if eof
+    if( ! parse_peptide_no_src(peptide, file, &src_loc) ){
+      free_peptide(peptide);
+      return FALSE;
+    }
+    /*
   while(!in_peptide){
     // read first peptide
     if(fread(peptide, get_peptide_sizeof(), 1, file) != 1){
@@ -2183,44 +2216,56 @@ BOOLEAN_T fast_forward_index_file(
       free(peptide);
       return FALSE;
     }
-
+    */
     // get mass & length
-    peptide_mass = get_peptide_peptide_mass(peptide);
-    peptide_length = get_peptide_length(peptide);
+    int peptide_mass = get_peptide_peptide_mass(peptide);
+    int peptide_length = get_peptide_length(peptide);
     
-    // check peptide mass larger than peptide constraint, break no more peptides to return
-    //    if(peptide_mass > get_peptide_constraint_max_mass(index_peptide_iterator->index->constraint)){
+    // if peptide mass larger than constraint, no more peptides to return
     if(peptide_mass > get_peptide_constraint_max_mass(index_constraint)){
-      // there is no peptide
-      free(peptide);
+      //free(peptide);
+      free_peptide(peptide);
       return FALSE;
     }
-    // check peptide mass larger than peptide constraint, continue to next peptide
-    // check peptide mass within peptide constraint
+
     /*
-    else if(peptide_mass < get_peptide_constraint_min_mass(index_peptide_iterator->index->constraint) ||
-            peptide_length > get_peptide_constraint_max_length(index_peptide_iterator->index->constraint) ||
-            peptide_length < get_peptide_constraint_min_length(index_peptide_iterator->index->constraint)){
-    */
+    // check peptide mass and length within peptide constraint, if not skip
     else if(peptide_mass < get_peptide_constraint_min_mass(index_constraint)
-        || peptide_length > get_peptide_constraint_max_length(index_constraint)
-        || peptide_length < get_peptide_constraint_min_length(index_constraint)
+       || peptide_length > get_peptide_constraint_max_length(index_constraint)
+       || peptide_length < get_peptide_constraint_min_length(index_constraint)
             ){
       fread(&num_peptide_src, sizeof(int), 1, file);
       // skip the number of peptide src in the file to reach the start
       // of the next peptide
-      // skip #peptide src* ((int) # protein  + (PEPTIDE_TYPE_T) + (int) # start index) 
-      fseek(file, num_peptide_src*(sizeof(int)*2 + sizeof(PEPTIDE_TYPE_T)), SEEK_CUR);
+      // skip #peptide src* ((int) # protein  + (PEPTIDE_TYPE_T) +
+      // (int) # start index) 
+      // TODO: num_peptide_src*size_of_serialized_pepatide_src()
+      fseek(file, num_peptide_src*(sizeof(int)*2 + sizeof(PEPTIDE_TYPE_T)), 
+            SEEK_CUR);
       continue;
     }
-    // ok now we finally got the peptide
+    // ok now we finally have the peptide
     else{
       in_peptide = TRUE;
     }
   }
-  
+    */
+
+    // does this peptide fit the constraint?
+    double min_mass = get_peptide_constraint_min_mass(index_constraint);
+    int min_length = get_peptide_constraint_min_length(index_constraint);
+    int max_length = get_peptide_constraint_max_length(index_constraint);
+    if( peptide_mass >= min_mass 
+        && peptide_length >= min_length
+        && peptide_length <= max_length){
+      peptide_fits = TRUE;
+    }
+  } // read next peptide
+  // now we have the peptide to hand to the iterator, finish parsing it
+
   index_peptide_iterator->index_file = file;
   
+  /*
   // parse the rest of the peptide, its peptid_src, once finished 
   // adds the peptide to the iterator to return
   if(!parse_peptide_index_file(
@@ -2232,6 +2277,23 @@ BOOLEAN_T fast_forward_index_file(
          peptide_mass, peptide_length);
     return FALSE;
   }
+  */
+
+  // get peptide_src for this peptide
+  long int pep_end = ftell(file);
+  fseek(file, src_loc, SEEK_SET);
+  DATABASE_T* database = index_peptide_iterator->index->database;
+  if( ! parse_peptide_src(peptide, file, database, TRUE) ){
+    carp(CARP_ERROR, "Could not parse peptide src");
+    free_peptide(peptide);
+    return FALSE;
+  }
+
+  fseek(file, pep_end, SEEK_SET);
+  index_peptide_iterator->index_file = file;
+  
+  // add peptide to iterator
+  index_peptide_iterator->peptide = peptide;
 
   return TRUE;
 }
@@ -2596,10 +2658,24 @@ BOOLEAN_T initialize_bin_peptide_iterator(
   BIN_PEPTIDE_ITERATOR_T* bin_peptide_iterator ///< working bin_peptide_iterator -in/out
   )
 {
+  // BUG: This no longer distinguishes between eof and error in
+  // parsing.  One fix would be for parse_peptide to return error code
+
   FILE* file = bin_peptide_iterator->index_file;
+  DATABASE_T* database = bin_peptide_iterator->index->database;
+  BOOLEAN_T use_src_array = bin_peptide_iterator->use_array;
+
   // allocate peptide to used to parse
-  PEPTIDE_T* peptide = allocate_peptide();
-  
+  //  PEPTIDE_T* peptide = allocate_peptide();
+  PEPTIDE_T* peptide = parse_peptide(file, database, use_src_array);
+
+  if( peptide == NULL ){
+    bin_peptide_iterator->peptide = NULL;
+    bin_peptide_iterator->has_next = FALSE;
+    //return FALSE;
+    return TRUE;
+  }
+  /*
   // read peptide
   if(fread(peptide, get_peptide_sizeof(), 1, file) != 1){
     // there is no more peptide to parse
@@ -2607,10 +2683,13 @@ BOOLEAN_T initialize_bin_peptide_iterator(
     bin_peptide_iterator->has_next = FALSE;
     return TRUE; // return TRUE, because although no peptide to return all process worked fine
   }
-  
+  */
+
+  //BF: is this necessary?
   // set file pointer
   bin_peptide_iterator->index_file = file;
         
+  /*
   // parse the peptide, adds it to the iterator to return
   if(!parse_peptide_index_file(
         bin_peptide_iterator, 
@@ -2625,6 +2704,10 @@ BOOLEAN_T initialize_bin_peptide_iterator(
     bin_peptide_iterator->has_next = TRUE;
     return TRUE;
   }
+  */
+  bin_peptide_iterator->peptide = peptide;
+  bin_peptide_iterator->has_next = TRUE;
+  return TRUE;
 }
 
 
@@ -2683,7 +2766,8 @@ PEPTIDE_T* bin_peptide_iterator_next(
   
   // setup the interator for the next peptide, if avaliable
   if(!initialize_bin_peptide_iterator(bin_peptide_iterator)){
-    die("failed to setup bin_peptide_iterator for next iteration");
+    //die("failed to setup bin_peptide_iterator for next iteration");
+    carp(CARP_WARNING, "am I fucking things up with the iterator???");
   }
  
   return peptide_to_return;
@@ -2723,7 +2807,7 @@ void free_bin_peptide_iterator(
 
 /**
  * Instantiates a new sorted_bin_peptide_iterator from a gvien bin
- * file handler. 
+ * file handle. 
  * \returns a new heap allocated sorted_bin_peptide_iterator object
  */
 BIN_SORTED_PEPTIDE_ITERATOR_T* new_bin_sorted_peptide_iterator(
