@@ -1,6 +1,6 @@
 /*************************************************************************//**
  * \file peptide.c
- * $Revision: 1.72.2.11 $
+ * $Revision: 1.72.2.12 $
  * \brief: Object for representing a single peptide.
  ****************************************************************************/
 #include "peptide.h"
@@ -1423,7 +1423,10 @@ BOOLEAN_T parse_peptide_no_src(
 
   // read peptide struct
   //  if(fread(peptide, get_peptide_sizeof(), 1, file) != 1){
-  if(fread(peptide, sizeof(PEPTIDE_T), 1, file) != 1){
+  int read = fread(peptide, sizeof(PEPTIDE_T), 1, file);
+  //  if(fread(peptide, sizeof(PEPTIDE_T), 1, file) != 1){
+  if( read != 1 ){
+    carp(CARP_DETAILED_DEBUG, "read did not find a peptide, returned %i", read);
     // there is no peptide
     return FALSE;
   }
@@ -1434,7 +1437,7 @@ BOOLEAN_T parse_peptide_no_src(
 
   // read the number of peptide_src's
   int num_peptide_src = -1;
-  int read = fread(&num_peptide_src, sizeof(int), 1, file);
+  read = fread(&num_peptide_src, sizeof(int), 1, file);
   if( num_peptide_src < 1 || read != 1){
     carp(CARP_DETAILED_DEBUG, "Num peptide src is %i and num read is %i", num_peptide_src, read);
     carp(CARP_ERROR, "Peptide must have at least one peptide src.");

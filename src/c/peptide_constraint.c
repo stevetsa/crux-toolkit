@@ -1,6 +1,6 @@
 /*************************************************************************//**
  * \file peptide_constraint.c
- * $Revision: 1.6 $
+ * $Revision: 1.6.2.1 $
  * \brief: Object for holding the peptide constraint information.
  ****************************************************************************/
 #include <math.h>
@@ -80,6 +80,25 @@ PEPTIDE_CONSTRAINT_T* new_peptide_constraint(
   set_peptide_constraint_mass_type(peptide_constraint, mass_type);
   return peptide_constraint;
 }
+
+/**
+ * \brief Create a new peptide constraint and populate its values
+ * based on those in parameter.c 
+ * \returns A newly allocated peptide constraint.
+ */
+PEPTIDE_CONSTRAINT_T* new_peptide_constraint_from_parameters(){
+  PEPTIDE_CONSTRAINT_T* new_constraint = allocate_peptide_constraint();
+  new_constraint->peptide_type = get_peptide_type_parameter("cleavages");
+  new_constraint->min_mass = get_double_parameter("min-mass");
+  new_constraint->max_mass = get_double_parameter("mas-mass");
+  new_constraint->min_length = get_int_parameter("min-length");
+  new_constraint->max_length = get_int_parameter("max-length");
+  new_constraint->num_mis_cleavage = get_int_parameter("missed-cleavages");
+  new_constraint->mass_type = get_mass_type_parameter("isotopic-mass");
+
+  return new_constraint;
+}
+
 
 /**
  * Copy peptide pointer and increment pointer count

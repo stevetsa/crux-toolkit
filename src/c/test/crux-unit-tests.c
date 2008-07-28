@@ -6,6 +6,7 @@
 #include "check-peptide.h"
 #include "check-protein.h"
 #include "check-index.h"
+#include "check-index2.h"
 #include "check-database.h"
 #include "check-ion.h"
 #include "check-ion_series.h"
@@ -28,7 +29,7 @@ int main(void){
   //Suite* suite_spectrum = spectrum_suite();
   //Suite* suite_protein = protein_suite(); 
   //Suite* suite_database = database_suite();
-  //Suite* suite_index = index_suite(); 
+  Suite* suite_index = index_suite(); 
   //Suite* suite_ion = ion_suite(); 
   //Suite* suite_scorer = scorer_suite();
   //Suite* suite_match = match_suite(); 
@@ -71,6 +72,7 @@ int main(void){
   srunner_add_suite(sr, suite_generate_peptides_iterator);
   srunner_add_suite(sr, suite_modified_peptides_iterator);
   srunner_add_suite(sr, suite_serialize);
+  srunner_add_suite(sr,suite_index);
 
   //run each check suite
   srunner_run_all(sr, CK_NORMAL);

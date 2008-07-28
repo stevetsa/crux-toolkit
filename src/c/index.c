@@ -1,6 +1,6 @@
 /************************************************************************//**
  * \file index.c
- * $Revision: 1.78.2.6 $
+ * $Revision: 1.78.2.7 $
  * \brief: Object for representing an index of a database
  ****************************************************************************/
 #include <stdio.h>
@@ -175,7 +175,7 @@ struct index_peptide_iterator{
   INDEX_FILE_T* index_files[MAX_INDEX_FILES]; 
   ///< the index file array that contain information of each index file 
   int total_index_files; ///< the total count of index_files
-  int current_index_file; ///< the current working index_file
+  int current_index_file; ///< the index file open or one to open next 
   FILE* index_file; ///< The current file stream that we are reading from
   BOOLEAN_T has_next; ///< Is there another peptide?
   PEPTIDE_T* peptide; ///< the next peptide to return
@@ -413,6 +413,7 @@ BOOLEAN_T set_index_fields_from_disk(
   //  index->constraint = allocate_peptide_constraint();
   index->disk_constraint = allocate_peptide_constraint();
   index->search_constraint = NULL;
+  //index->search_constraint = new_peptide_constraint_from_parameters();
 
   // open map file
   char* map_filename = get_full_filename(index->directory, "crux_index_map");
@@ -496,7 +497,7 @@ void set_index_field_from_map(INDEX_T* index, char* line){
  * Requires that the range from min to max length and mass include the
  * range requested in parameter.c.  The index must have at least as
  * many missed cleavages as requested.  The mass type must be the
- * same.  If the index is unique, requires that the run requests
+ * same. Requires index and request be both unique or both not 
  * unique.  The peptide cleavage type of the index must be no more
  * restrictive than requested (where TRYPTIC is most restrictive and
  * ANY_TRYPTIC is least).
@@ -534,7 +535,9 @@ BOOLEAN_T check_index_constraints(INDEX_T* index){
   }else if(mass_type != get_mass_type_parameter("isotopic-mass")){
     success = FALSE;
     param = "isotopic-mass";
-  }else if(unique > get_boolean_parameter("unique-peptides")){
+  }else if(unique != get_boolean_parameter("unique-peptides")){
+    // TODO (BF 07-24-08): would like to change so that non-unique
+    // index could return unique peptides in generate-peptides
     // only if index is unique(1) and requesting not-unique (0) is a problem
     success = FALSE;
     param = "unique-peptides";
@@ -544,7 +547,6 @@ BOOLEAN_T check_index_constraints(INDEX_T* index){
     param = "cleavages";
   }
 
-  // TODO: could print specific failure
   if(success == FALSE){
     carp(CARP_ERROR, "Index does not support the given search parameters, " \
          "'%s' is not compatable", param);
@@ -1282,8 +1284,7 @@ BOOLEAN_T transform_database_to_memmap_database(
  * and unique fields have been set.  If --overwrite is true, the output
  * dir may exist and still contain an index.
  *
-The index directory itself should
- * have  
+ * The index directory itself should have  
  * a standard suffix (e.g. cruxidx), so that a given fasta file will have
  * an obvious index location.
  *
@@ -1623,6 +1624,7 @@ void set_index_search_constraint(
   double search_max = get_peptide_constraint_max_mass(constraint);
   double index_min = get_peptide_constraint_min_mass(index->disk_constraint);
   double index_max = get_peptide_constraint_max_mass(index->disk_constraint);
+  carp(CARP_DETAILED_DEBUG, "Setting index search constraint: %i-%i, %.2f-%.2f",get_peptide_constraint_min_length(constraint), get_peptide_constraint_max_length(constraint), search_min, search_max );
   if( search_min < index_min ){
     // warn
     carp(CARP_WARNING, "Some masses in the search range are below the index minimum.");
@@ -1723,7 +1725,9 @@ INDEX_FILE_T* new_index_file(
 }
 
 /**
- * adds a new index_file object to the index_file
+ * \brief Adds a new index_file object to the index_file.  Checks that
+ * the total number of files does not exceed the limit.  Increases the
+ * total_index_files count.
  * \returns TRUE if successfully added the new index_file
  */
 BOOLEAN_T add_new_index_file(
@@ -1986,7 +1990,7 @@ BOOLEAN_T parse_crux_index_map(
         fclose(file);
         return FALSE;
       }
-      // find the first index file with in mass range
+      // find the first index file within mass range
       //else if(!start_file){
       if(!start_file){
         if(min_mass > start_mass + range - 0.0001){
@@ -2181,11 +2185,12 @@ BOOLEAN_T parse_peptide_index_file(
  */
 
 BOOLEAN_T fast_forward_index_file(
-  INDEX_PEPTIDE_ITERATOR_T* index_peptide_iterator, 
+  INDEX_PEPTIDE_ITERATOR_T* index_peptide_iterator//, 
   ///< working index_peptide_iterator -in/out
-  FILE* file ///< the file stream to fast foward -in
+  //FILE* file ///< the file stream to fast foward -in
   )
 {
+  FILE* file = index_peptide_iterator->index_file;
   // peptide to parse, reuse this memory while we look
   PEPTIDE_T* peptide = allocate_peptide();
   /*
@@ -2263,7 +2268,8 @@ BOOLEAN_T fast_forward_index_file(
   } // read next peptide
   // now we have the peptide to hand to the iterator, finish parsing it
 
-  index_peptide_iterator->index_file = file;
+  // shouldn't need this with new method signature
+  //  index_peptide_iterator->index_file = file;
   
   /*
   // parse the rest of the peptide, its peptid_src, once finished 
@@ -2314,16 +2320,63 @@ void clean_up( int dummy ) {
 
 
 /**
+ * \brief When creating a new index_peptide_iterator, open the first index
+ * file from which peptides will be drawn.  Assumes taht
+ * parse_crux_index_map() has been called and that the list of
+ * filenames has been initialized.  Moves file pointer to
+ * first peptide that matches the constraint.  Set has_next to true if
+ * matching peptide found, or set to FALSE if there are no files in
+ * the list with peptides that fit the constraint.
+ *
  * \returns TRUE if successfully initiallized the index_peptide_iterator
  */
+/*
 BOOLEAN_T initialize_index_peptide_iterator(
-  INDEX_PEPTIDE_ITERATOR_T* index_peptide_iterator ///< the index_peptide_iterator to initialize -in
+                                            //  INDEX_PEPTIDE_ITERATOR_T* index_peptide_iterator 
+  INDEX_PEPTIDE_ITERATOR_T* iterator 
+  ///< the index_peptide_iterator to initialize -in
   )
 {
   FILE* file = NULL;
   char* filename = NULL;
-  index_peptide_iterator->has_next = FALSE;
+  //index_peptide_iterator->has_next = FALSE;
 
+  // initialize fields
+  iterator->current_index_file = 0;
+  iterator->index_file = NULL;
+  iterator->has_next = FALSE;
+  iterator->peptide = NULL;
+
+  int file_idx = 0;
+  int file_count = iterator->total_index_files;
+  for(file_idx = 0; file_idx<file_count; file_idx++){
+    // get next filename
+    filename = iterator->index_files[file_idx]->filename;
+    // open new file, closing any previous
+    if( file != NULL ){
+      fclose(file);
+    }
+    file = fopen(filename, "r");
+    if( file == NULL ){
+      carp(CARP_ERROR, "Cannot open index file %s", filename);
+      iterator->current_index_file = file_idx;
+      return FALSE;
+    }
+
+    // search file for appropriate peptide
+    iterator->index_file = file;
+    BOOLEAN_T found_peptide = fast_forward_index_file(iterator);
+    if( found_peptide ){
+      iterator->has_next = TRUE;
+      iterator->current_index_file = file_idx; // +1?
+      break; // don't check any more files
+    }
+  }// next file
+
+  // we either found a peptide or checked all files and nothing, but
+  return TRUE;
+*/
+  /*
   do{
     // no more index_files to search
     if(index_peptide_iterator->current_index_file >= index_peptide_iterator->total_index_files){
@@ -2356,9 +2409,11 @@ BOOLEAN_T initialize_index_peptide_iterator(
   
   // set interator to TRUE, yes there's a next peptide to return
   index_peptide_iterator->has_next = TRUE;
+  */
+/*
   return TRUE;
 }
-
+*/
 
 /**
  * \returns TRUE if successfully setup the index_peptide_iterator for the next iteration
@@ -2368,15 +2423,19 @@ BOOLEAN_T setup_index_peptide_iterator(
   )
 {
   
-  FILE* file = index_peptide_iterator->index_file;
+  //FILE* file = index_peptide_iterator->index_file;
   char* filename = NULL;
   index_peptide_iterator->has_next = FALSE;
 
   // move file* to the begining of the first peptide that meets the constraint
-  while(!fast_forward_index_file(index_peptide_iterator, file)){
+  //  while(!fast_forward_index_file(index_peptide_iterator, file)){
+  while(!fast_forward_index_file(index_peptide_iterator)){
     
+    FILE* file = index_peptide_iterator->index_file;
+
     // no more index_files to search
-    if(index_peptide_iterator->current_index_file >= index_peptide_iterator->total_index_files){
+    if(index_peptide_iterator->current_index_file >= 
+             index_peptide_iterator->total_index_files){
       fclose(file);
       return TRUE;
     }
@@ -2394,11 +2453,199 @@ BOOLEAN_T setup_index_peptide_iterator(
       carp(CARP_WARNING, "cannot open %s file", filename);
       return FALSE;
     }
+
+    index_peptide_iterator->index_file = file;
   }
 
   // successfully parse peptide
   index_peptide_iterator->has_next = TRUE;
   return TRUE;
+}
+
+/**
+ * \brief Prepare an index peptide iterator to have its index files
+ * searched.  Changes the state of the iterator if its index_file
+ * is NULL and the current file is not the last in the list.  The
+ * routine that searches for peptides in a file closes any files it
+ * has read to the end and sets the pointer to NULL.
+ * \returns TRUE if there is a file ready to be read or FALSE if no
+ * more files remain.
+ */
+BOOLEAN_T find_next_index_file(
+  INDEX_PEPTIDE_ITERATOR_T* iterator
+  ){
+  carp(CARP_DETAILED_DEBUG, "Finding file");
+  // file is ready to read
+  if( iterator->index_file != NULL ){
+    carp(CARP_DETAILED_DEBUG, "Current file ready to read");
+    return TRUE;
+  }
+  // no more files to open
+  if( iterator->current_index_file == iterator->total_index_files ){
+  carp(CARP_DETAILED_DEBUG, "the last file has been opened. no more");
+    return FALSE;
+  }
+  // else, current is NULL and there are more to open
+  char* filename=iterator->index_files[iterator->current_index_file]->filename;
+  carp(CARP_DETAILED_DEBUG, "Opening new file %s", filename);
+  iterator->index_file = fopen(filename, "r");
+
+  if( iterator->index_file == NULL){
+    carp(CARP_ERROR, "Could not open index file %s", filename);
+    return FALSE;
+  }
+
+  return TRUE;
+
+}
+  
+/**
+ * \brief Search for a peptide matching the peptide constraint in the
+ * current index file of the iterator.  If the iterator has no open
+ * index file, returns FALSE.  If the current file reaches the end
+ * without finding a suitable peptide, the file is closed, file handle
+ * set to NULL, and the number of the current file is increemnted.
+ *
+ * \returns TRUE if the iterator is ready to return a new peptide,
+ * FALSE if no peptide meeting the constraint could abe found in the
+ * current file. 
+ */
+BOOLEAN_T find_peptide_in_current_index_file(
+  INDEX_PEPTIDE_ITERATOR_T* iterator)
+{
+  if( iterator == NULL){
+    carp(CARP_ERROR, "Can't find peptide for NULL index iterator.");
+    return FALSE;
+  }
+  carp(CARP_DETAILED_DEBUG, "Looking for peptide in current file");
+
+  FILE* cur_file = iterator->index_file;
+  if( cur_file == NULL ){
+    carp(CARP_DETAILED_DEBUG, "current file is null");
+    return FALSE;
+  }
+
+  // peptide to return, reuse this memory while we look
+  PEPTIDE_T* peptide = allocate_peptide();
+  // constraint to meet
+  PEPTIDE_CONSTRAINT_T* index_constraint = iterator->index->search_constraint;
+
+  // loop until we get to a peptide that fits the constraint, 
+  // a peptide bigger (mass) than the constraint, or reach eof
+  BOOLEAN_T peptide_fits = FALSE;
+  BOOLEAN_T file_finished = FALSE;
+  long int src_loc = 0;  // in case we need to parse the peptide src
+
+  while( !peptide_fits && !file_finished ){// until pep_fits or file done
+    carp(CARP_DETAILED_DEBUG, "Once around the find peptide loop %i, %i", peptide_fits, file_finished);
+    // read in next peptide
+    BOOLEAN_T found_pep = parse_peptide_no_src(peptide, cur_file, &src_loc);
+    // returns false if eof
+    if( ! found_pep ){
+      carp(CARP_DETAILED_DEBUG, "parse peptide returned FALSE");
+      file_finished = TRUE;
+    }
+
+    // check our peptide to see if it fits the constraint
+    int peptide_mass = get_peptide_peptide_mass(peptide);
+    int peptide_length = get_peptide_length(peptide);
+
+    // if peptide mass larger than constraint, no more peptides to return
+    if(peptide_mass > get_peptide_constraint_max_mass(index_constraint)){
+      carp(CARP_DETAILED_DEBUG, "peptide found is bigger than constraint");
+      file_finished = TRUE;
+    }
+
+    // does this peptide fit the constraint?
+
+    double min_mass = get_peptide_constraint_min_mass(index_constraint);
+    int min_length = get_peptide_constraint_min_length(index_constraint);
+    int max_length = get_peptide_constraint_max_length(index_constraint);
+
+/*
+  carp(CARP_DETAILED_DEBUG, "Index search constraints: %i-%i, %.2f-%.2f", get_peptide_constraint_min_length(iterator->index->search_constraint), get_peptide_constraint_max_length(iterator->index->search_constraint), get_peptide_constraint_min_mass(iterator->index->search_constraint), get_peptide_constraint_max_mass(iterator->index->search_constraint));
+  carp(CARP_DETAILED_DEBUG, "Index search constraints var: %i-%i, %.2f-%.2f", min_length, max_length, min_mass, max_mass);
+*/
+    if( peptide_mass >= min_mass
+        && peptide_length >= min_length
+        && peptide_length <= max_length){
+      carp(CARP_DETAILED_DEBUG, "peptide passes constraint.");
+      peptide_fits = TRUE;
+    }
+
+  }// read next peptide
+
+  // we have a peptide to return, get the peptide_src for it
+  long int pep_end = 0;
+  if( peptide_fits ){
+    carp(CARP_DETAILED_DEBUG, "Found a peptide that fits constraint");
+    pep_end = ftell(cur_file);
+    fseek(cur_file, src_loc, SEEK_SET);
+    DATABASE_T* database = iterator->index->database;
+    if( ! parse_peptide_src(peptide, cur_file, database, TRUE) ){
+      carp(CARP_ERROR, "Could not parse peptide src");
+      file_finished = TRUE; // maybe we could read more, but unlikly
+    }
+  }
+
+  // we broke out of the loop because we don't need to read the file anymore
+  if( file_finished  ){
+      carp(CARP_DETAILED_DEBUG, "Done with this index file.");
+      fclose(cur_file);
+      iterator->index_file = NULL;
+      iterator->current_index_file += 1;
+      iterator->has_next = FALSE;
+      iterator->peptide = NULL;
+
+      free_peptide(peptide);
+      return FALSE;
+  }
+
+  // else, everything worked!  finish setting fields
+
+  //return file pointer to end of peptide
+  fseek(cur_file, pep_end, SEEK_SET);
+  iterator->index_file = cur_file;
+
+  // add peptide to iterator
+  iterator->peptide = peptide;
+  iterator->has_next = TRUE;
+
+  return TRUE;
+}
+
+/**
+ * \brief Find the next peptide for the iterator to return.
+ *
+ * Called in the process of initializing a new iterator and by
+ * next().  Looks in the current index_file for peptides matching the
+ * constraint.  If none found, checks remaining index_files.  If no
+ * constraint-satisfying peptides are found in any of the remaining
+ * index files, next_peptide is set to NULL and has_next is set to FALSE.
+ * \returns TRUE if no errors were encountered while reading files
+ * (even if there is no peptide to return).
+ */
+BOOLEAN_T queue_next_peptide_index_peptide_iterator(
+  INDEX_PEPTIDE_ITERATOR_T* iterator
+  ){
+  
+  if(iterator == NULL){
+    carp(CARP_ERROR, "Can't queue peptide for NULL index iterator.");
+    return FALSE;
+  }
+  BOOLEAN_T found = FALSE;
+  while(find_next_index_file(iterator)){
+    found = find_peptide_in_current_index_file(iterator);
+    if(found == TRUE ){
+      carp(CARP_DETAILED_DEBUG, "Found returned TRUE");
+
+      // set peptide, set has_next done in find
+      return TRUE;
+    }
+  }// try the next index file
+
+  // no more index files to try
+  return FALSE;
 }
 
 /***********************************************
@@ -2413,8 +2660,10 @@ INDEX_PEPTIDE_ITERATOR_T* new_index_peptide_iterator(
   INDEX_T* index ///< The index object which we are iterating over -in
   )
 {
+  carp(CARP_DETAILED_DEBUG, "Creating new index iterator");
   // set peptide implementation to array peptide_src
   // this determines which peptide free method to use
+
   set_peptide_src_implementation(FALSE);
 
   // allocate a new index_peptide_iterator object
@@ -2425,6 +2674,7 @@ INDEX_PEPTIDE_ITERATOR_T* new_index_peptide_iterator(
   index_peptide_iterator->index = copy_index_ptr(index);
   
   // parse index_files that are within peptide_constraint from crux_index_map
+  // sets index_files and total_index_files
   int parse_count = 0;
   while(!parse_crux_index_map(index_peptide_iterator)){
     // failed to parse crux_index_map
@@ -2439,14 +2689,22 @@ INDEX_PEPTIDE_ITERATOR_T* new_index_peptide_iterator(
     }
   }
 
-  // if no index files to parse, then there's no peptides to return
+  // set remaining iterator fields
+  index_peptide_iterator->current_index_file = 0;
+  index_peptide_iterator->index_file = NULL;
+  // sets has_next, peptide, index_file
+  carp(CARP_DETAILED_DEBUG, "Queueing first peptide");
+  queue_next_peptide_index_peptide_iterator(index_peptide_iterator);
+
+  /*
+  // if no index files to parse, then there's no peptide to return
   // initialize index_file stream at the first new peptide
   if(index_peptide_iterator->total_index_files == 0 ||
      !initialize_index_peptide_iterator(index_peptide_iterator)){
     // no peptides to return
     index_peptide_iterator->has_next = FALSE;
   }
-
+  */
   return index_peptide_iterator;
 }
 
@@ -2460,17 +2718,22 @@ PEPTIDE_T* index_peptide_iterator_next(
 {
   PEPTIDE_T* peptide_to_return = index_peptide_iterator->peptide;
 
+  // check for error and report or die
+  queue_next_peptide_index_peptide_iterator(index_peptide_iterator);
+
+  /*
   // check if there's actually a peptide to return
   if(!index_peptide_iterator_has_next(index_peptide_iterator) ||
      index_peptide_iterator->peptide == NULL){
     die("index_peptide_iterator, no peptides to return");
   }
   
+
   // setup the interator for the next peptide, if avaliable
   if(!setup_index_peptide_iterator(index_peptide_iterator)){
     die("failed to setup index_peptide_iterator for next iteration");
   }
-
+  */
   return peptide_to_return;
 }
 

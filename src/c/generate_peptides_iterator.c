@@ -244,6 +244,7 @@ GENERATE_PEPTIDES_ITERATOR_T* new_generate_peptides_iterator_from_mass_range(
     }      
     // sort or check for unique
     else{
+      carp(CARP_DETAILED_DEBUG, "Creating sorted database peptide iterator");
       // only sort, by default will be sorted by mass
       DATABASE_SORTED_PEPTIDE_ITERATOR_T* sorted_iterator = NULL;
       if(sort_type == NONE){

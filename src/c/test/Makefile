@@ -2,7 +2,8 @@ BINDIR  =../../../bin/
 SRCDIR  =../
 PERCOLATOR_DIR=../../../../percolator/src
 CC	= gcc	
-CFLAGS  = -g -Wall -I$(PERCOLATOR_DIR) -I/net/maccoss/vol2/home/frewen/local/include -L/net/maccoss/vol2/home/frewen/local/lib
+#CFLAGS  = -g -Wall -I$(PERCOLATOR_DIR) -I/net/maccoss/vol2/home/frewen/local/include -L/net/maccoss/vol2/home/frewen/local/lib
+CFLAGS  = -g -Wall -I$(PERCOLATOR_DIR) -I$(HOME)/local/include -L$(HOME)/local/lib
 DEBUG   = -DNDEBUG -DBOUNDS_CHECK 
 DEBUG   = -DDEBUG -g
 
@@ -12,7 +13,7 @@ TESTS = \
 	check-spectrum_collection.c \
 	check-ion.c \
 	check-ion_series.c \
-	check-index.c \
+	check-index2.c \
 	check-scorer.c \
 	check-peptide.c \
 	check-protein.c \

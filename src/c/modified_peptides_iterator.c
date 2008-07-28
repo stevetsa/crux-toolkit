@@ -4,7 +4,7 @@
  * DATE: April 15, 2008
  * DESCRIPTION: An iterator that can be used by
  * generate_peptides_iterator to include modified peptides.
- * $Revision: 1.1.2.9 $
+ * $Revision: 1.1.2.10 $
  */
 #include "modified_peptides_iterator.h"
 
@@ -170,6 +170,9 @@ MODIFIED_PEPTIDES_ITERATOR_T* new_modified_peptides_iterator(
 
   carp(CARP_DETAILED_DEBUG, "min mass is %.2f, max is %.2f", 
        min_mass, max_mass);
+
+  // TODO: this could be removed since we are searching all masses
+  //       would remove warning
   // get the mass difference for the mod
   double delta_mass = peptide_mod_get_mass_change(pmod);
   min_mass += delta_mass;
