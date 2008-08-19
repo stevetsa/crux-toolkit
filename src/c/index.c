@@ -1,6 +1,6 @@
 /************************************************************************//**
  * \file index.c
- * $Revision: 1.78.2.8 $
+ * $Revision: 1.78.2.9 $
  * \brief: Object for representing an index of a database
  ****************************************************************************/
 #include <stdio.h>
@@ -1831,24 +1831,28 @@ BOOLEAN_T find_peptide_in_current_index_file(
   long int src_loc = 0;  // in case we need to parse the peptide src
 
   while( !peptide_fits && !file_finished ){// until pep_fits or file done
-    carp(CARP_DETAILED_DEBUG, "Once around the find peptide loop %i, %i", peptide_fits, file_finished);
+    carp(CARP_DETAILED_DEBUG, "Once around the find peptide loop %i, %i", 
+         peptide_fits, file_finished);
+
     // read in next peptide
     BOOLEAN_T found_pep = parse_peptide_no_src(peptide, cur_file, &src_loc);
     // returns false if eof
     if( ! found_pep ){
       carp(CARP_DETAILED_DEBUG, "parse peptide returned FALSE");
       file_finished = TRUE;
+      continue;
     }
 
     // check our peptide to see if it fits the constraint
-    int peptide_mass = get_peptide_peptide_mass(peptide);
+    float peptide_mass = get_peptide_peptide_mass(peptide);
     int peptide_length = get_peptide_length(peptide);
 
     // if peptide mass larger than constraint, no more peptides to return
     if(peptide_mass > get_peptide_constraint_max_mass(index_constraint)){
       carp(CARP_DETAILED_DEBUG, "peptide found is bigger than constraint");
       file_finished = TRUE;
-    }
+      continue;
+    }// use else if?
 
     // does this peptide fit the constraint?
 
@@ -1856,15 +1860,35 @@ BOOLEAN_T find_peptide_in_current_index_file(
     int min_length = get_peptide_constraint_min_length(index_constraint);
     int max_length = get_peptide_constraint_max_length(index_constraint);
 
-/*
+
+    /*
   carp(CARP_DETAILED_DEBUG, "Index search constraints: %i-%i, %.2f-%.2f", get_peptide_constraint_min_length(iterator->index->search_constraint), get_peptide_constraint_max_length(iterator->index->search_constraint), get_peptide_constraint_min_mass(iterator->index->search_constraint), get_peptide_constraint_max_mass(iterator->index->search_constraint));
-  carp(CARP_DETAILED_DEBUG, "Index search constraints var: %i-%i, %.2f-%.2f", min_length, max_length, min_mass, max_mass);
-*/
+  carp(CARP_DETAILED_DEBUG, "Index search constraints var: %i-%i, %.2f-2f", min_length, max_length, min_mass); //, max_mass);
+    */
+
+
+    if( peptide_mass >= min_mass ){
+      carp(CARP_DETAILED_DEBUG, "peptide mass bigger than min mass.");
+    }else{
+      carp(CARP_DETAILED_DEBUG, "peptide mass %f smaller than min mass %f.",
+           peptide_mass, min_mass);
+    }
+    if( peptide_length >= min_length ){
+      carp(CARP_DETAILED_DEBUG, "peptide length bigger than min length.");
+    }
+    if( peptide_length <= max_length ){
+      carp(CARP_DETAILED_DEBUG, "peptide length bigger than min length.");
+    }
+
     if( peptide_mass >= min_mass
         && peptide_length >= min_length
         && peptide_length <= max_length){
       carp(CARP_DETAILED_DEBUG, "peptide passes constraint.");
       peptide_fits = TRUE;
+    }else{
+      carp(CARP_DETAILED_DEBUG, "peptide doesn't pass constraint. " \
+           "pep len,mass: %i, %.2f, min: %.2f, len: %i-%i", 
+           peptide_length, peptide_mass, min_mass, min_length, max_length);
     }
 
   }// read next peptide
@@ -1891,7 +1915,9 @@ BOOLEAN_T find_peptide_in_current_index_file(
       iterator->has_next = FALSE;
       iterator->peptide = NULL;
 
+      carp(CARP_DETAILED_DEBUG, "about to free peptide.");
       free_peptide(peptide);
+      carp(CARP_DETAILED_DEBUG, "Done cleaning up.");
       return FALSE;
   }
 
@@ -1955,9 +1981,9 @@ INDEX_PEPTIDE_ITERATOR_T* new_index_peptide_iterator(
   )
 {
   carp(CARP_DETAILED_DEBUG, "Creating new index iterator");
+
   // set peptide implementation to array peptide_src
   // this determines which peptide free method to use
-
   set_peptide_src_implementation(FALSE);
 
   // allocate a new index_peptide_iterator object
@@ -1986,6 +2012,7 @@ INDEX_PEPTIDE_ITERATOR_T* new_index_peptide_iterator(
   // set remaining iterator fields
   index_peptide_iterator->current_index_file = 0;
   index_peptide_iterator->index_file = NULL;
+
   // sets has_next, peptide, index_file
   carp(CARP_DETAILED_DEBUG, "Queueing first peptide");
   queue_next_peptide_index_peptide_iterator(index_peptide_iterator);
@@ -2069,7 +2096,13 @@ BOOLEAN_T setup_index_filtered_peptide_iterator(
     src = get_peptide_peptide_src(peptide);
     // mass, length has been already checked in index_peptide_iterator
     // check if peptide type matches the constraint
+    // find at least one peptide_src for which cleavage is correct
     while(src != NULL){
+      char this_type_str[16];
+      char request_type_str[16];
+      peptide_type_to_string(peptide_type, request_type_str);
+      peptide_type_to_string(get_peptide_src_peptide_type(src), this_type_str);
+      carp(CARP_DETAILED_DEBUG, "request: %s, this: %s", request_type_str, this_type_str);
       if(get_peptide_src_peptide_type(src) == peptide_type ||
          (peptide_type == PARTIALLY_TRYPTIC && 
           (get_peptide_src_peptide_type(src) == N_TRYPTIC ||
@@ -2092,7 +2125,8 @@ BOOLEAN_T setup_index_filtered_peptide_iterator(
       return TRUE;
     }
     free_peptide(peptide);
-  }
+
+  }// next peptide
   // no peptides meet the constraint
   iterator->has_next = FALSE;
   return TRUE;

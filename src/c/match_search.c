@@ -172,7 +172,7 @@ int main(int argc, char** argv){
     if(get_spectrum_precursor_mz(spectrum) <  spectrum_min_mass ||
        get_spectrum_precursor_mz(spectrum) >= spectrum_max_mass){
       continue; //skip this spectrum, search next
-      }
+    }
     
     //for each charge, search spectrum
     int* charge_array = NULL;

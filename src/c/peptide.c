@@ -1,6 +1,6 @@
 /*************************************************************************//**
  * \file peptide.c
- * $Revision: 1.72.2.12 $
+ * $Revision: 1.72.2.13 $
  * \brief: Object for representing a single peptide.
  ****************************************************************************/
 #include "peptide.h"
@@ -83,6 +83,7 @@ struct peptide_src_iterator{
 PEPTIDE_T* allocate_peptide(void){
   PEPTIDE_T* peptide = (PEPTIDE_T*)mycalloc(1, sizeof(PEPTIDE_T));
   peptide->peptide_src = NULL;
+  peptide->modified_seq = NULL;
   return peptide;
 }
 
@@ -203,14 +204,16 @@ void free_peptide(
   if( peptide == NULL ){
     return;
   }
-  // check which implementation peptide_src uses
-  if(!PEPTIDE_SRC_USE_LINK_LIST){
-    // array implementation
-    free(peptide->peptide_src);    
-  }
-  else{
-    // link list implementation
-    free_peptide_src(peptide->peptide_src);
+  if( peptide->peptide_src ){
+    // check which implementation peptide_src uses
+    if(!PEPTIDE_SRC_USE_LINK_LIST){
+      // array implementation
+      free(peptide->peptide_src);    
+    }
+    else{
+      // link list implementation
+      free_peptide_src(peptide->peptide_src);
+    }
   }
 
   if(peptide->modified_seq){
@@ -1418,9 +1421,6 @@ BOOLEAN_T parse_peptide_no_src(
     return FALSE;
   }
 
-  // we won't be adding any peptide_src
-  peptide->peptide_src = NULL;
-
   // read peptide struct
   //  if(fread(peptide, get_peptide_sizeof(), 1, file) != 1){
   int read = fread(peptide, sizeof(PEPTIDE_T), 1, file);
@@ -1457,6 +1457,9 @@ BOOLEAN_T parse_peptide_no_src(
 
   // read in modified sequence
   fread(peptide->modified_seq, sizeof(MODIFIED_AA_T), mod_seq_len, file);
+
+  // we didn't ad any peptide_src, make sure it's still NULL
+  peptide->peptide_src = NULL;
 
   return TRUE;
 }

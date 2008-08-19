@@ -1,6 +1,6 @@
 /*************************************************************************//**
  * \file database.c
- * $Revision: 1.63.2.3 $
+ * $Revision: 1.63.2.4 $
  * \brief: Object for representing a database of protein sequences.
  ****************************************************************************/
 #include <stdio.h>
@@ -809,7 +809,7 @@ PROTEIN_T* database_protein_iterator_next(
 
   // print number of protein generated to STDERR for every 500 protein reached
   if(database_protein_iterator->cur_protein % 500 == 0){
-    carp(CARP_INFO, "Reached protein %d out of %d", 
+    carp(CARP_DETAILED_DEBUG, "Reached protein %d out of %d", 
          database_protein_iterator->cur_protein,
          database_protein_iterator->database->num_proteins);
   }

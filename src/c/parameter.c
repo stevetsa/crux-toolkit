@@ -276,32 +276,32 @@ void initialize_parameters(void){
   set_double_parameter("max-mass", 7200, 1, BILLION, 
       "The maximum mass of peptides to consider. Default 7200.");
   set_mass_type_parameter("isotopic-mass", AVERAGE, 
-      "Which isotopes to use in calcuating peptide mass (average, mono)." \
+      "Which isotopes to use in calcuating peptide mass (average, mono). " \
       "Default average");
   set_peptide_type_parameter("cleavages", TRYPTIC, 
-      "The type of cleavage sites to consider (tryptic, partial, all)" \
+      "The type of cleavage sites to consider (tryptic, partial, all). " \
       "Default tryptic.");
   set_boolean_parameter("missed-cleavages", FALSE, 
-      "Include peptides with missed cleavage sites (T,F). Default FALSE.");
+      "Include peptides with missed cleavage sites (T,F). Default F.");
   set_boolean_parameter("unique-peptides", FALSE,
       "Generate peptides only once, even if they appear in more " \
-      "than one protein (T,F).  Default FALSE.");
+      "than one protein (T,F).  Default F.");
   
   /* more generate_peptide parameters */
   set_boolean_parameter("output-sequence", FALSE, 
-      "Print peptide sequence (T,F). Default FALSE.");
+      "Print peptide sequence (T,F). Default F.");
   set_boolean_parameter("output-trypticity", FALSE, 
-      "Print trypticity of peptide (T,F). Default FALSE.");
+      "Print trypticity of peptide (T,F). Default F.");
   set_boolean_parameter("use-index", FALSE, 
       "Use an index that has already been created (T,F). " \
-      "Default FALSE (use fasta file)");
+      "Default F (use fasta file)");
   set_sort_type_parameter("sort", NONE, 
       "Sort peptides according to which property " \
       "(mass, length, lexical, none).  Default none.");
 
   /* search-for-matches command line options */
   set_scorer_type_parameter("prelim-score-type", SP, 
-      "Initial scoring (sp, xcorr). Default sp");
+      "Initial scoring (sp, xcorr). Default sp.");
   set_scorer_type_parameter("score-type", XCORR, 
       "The scoring method to use (xcorr, sp, dotp, xcorr-logp, sp-logp). "
       "Default xcorr."); 
@@ -309,19 +309,19 @@ void initialize_parameters(void){
   set_double_parameter("spectrum-min-mass", 0.0, 0, BILLION, 
       "Minimum mass of spectra to be searched.  Default 0.");
   set_double_parameter("spectrum-max-mass", BILLION, 1, BILLION, 
-      "Maximum mass of spectra to search.  Default, none.");
+      "Maximum mass of spectra to search.  Default none.");
   set_string_parameter("spectrum-charge", "all", 
       "Spectrum charge states to search (1,2,3,all). Default all.");
   set_string_parameter("match-output-folder", ".", 
-"Folder to which search results will be written.  Default '.' (current dir)");
+"Folder to which search results will be written.  Default '.' (current dir).");
   set_output_type_parameter("output-mode", BINARY_OUTPUT, 
-      "Types of output to produce (binary, sqt, all). Default binary");
+      "Types of output to produce (binary, sqt, all). Default binary.");
   set_string_parameter("sqt-output-file", "target.sqt", 
-      "SQT output file name. Default 'target.sqt'");
+      "SQT output file name. Default 'target.sqt'.");
   set_string_parameter("protein-output-file", "target.prot", 
       "Protein output file name. Default 'target.prot'");
   set_string_parameter("decoy-sqt-output-file", "decoy.sqt", 
-      "SQT output file name for decoys.  Default 'decoy.sqt'");
+      "SQT output file name for decoys.  Default 'decoy.sqt'.");
   set_int_parameter("number-decoy-set", 2, 0, 10, 
       "The number of decoy databases to search.  Default 2.");
 
@@ -339,19 +339,20 @@ void initialize_parameters(void){
   set_string_parameter("seed", "time", "HIDE ME FROM USER");
   set_double_parameter("mass-window", 3.0, 0, 100, 
       "Search peptides within +/- 'mass-window' of the " \
-      "spectrum mass.  Default 3.0");
+      "spectrum mass.  Default 3.0.");
   set_mass_type_parameter("fragment-mass", MONO, 
       "Which isotopes to use in calcuating fragment ion mass " \
-      "(average, mono). Default average");
+      "(average, mono). Default average.");
   set_double_parameter("ion-tolerance", 0.5, 0, BILLION,
       "Tolerance used for matching observed peaks to predicted " \
       "fragment ions.  Default 0.5");
   set_string_parameter("mod", "NO MODS", 
       "Specify a variable modification to apply to peptides.  " \
-      "<mass change>:<aa list>:<max per peptide>");
+      "<mass change>:<aa list>:<max per peptide>. Default no mods.");
   set_string_parameter("cmod", "NO MODS", 
       "Specify a variable modification to apply to C-terminus of peptides. " \
-      "<mass change>:<max distance from protein c-term (-1 for no max)>");
+      "<mass change>:<max distance from protein c-term (-1 for no max)>. " \
+      "Default no mods.");
   set_string_parameter("nmod", "NO MODS", 
       "Specify a variable modification to apply to N-terminus of peptides.  " \
       "<mass change>:<max distance from protein n-term (-1 for no max)>");
@@ -374,9 +375,9 @@ void initialize_parameters(void){
   /* analyze-matches options */
   set_algorithm_type_parameter("algorithm", PERCOLATOR_ALGORITHM, 
   "The analysis algorithm to use (percolator, retention-czar, qvalue, none)." \
-  "  Default percolator");
+  "  Default percolator.");
   set_string_parameter("feature-file", NULL,//"match_analysis.features"
-     "Optional file into which psm features are printed.");
+     "Optional file into which psm features are printed. Default none.");
 
   /* analyze-matches parameter options */
   set_double_parameter("pi0", 0.9, 0, 1, "usage");
@@ -384,13 +385,15 @@ void initialize_parameters(void){
 
   /* predict-peptide-ions */
   set_ion_type_parameter("primary-ions", BY_ION,
-      "The ion series to predict (b,y,by). Default 'by' (both b and y ions)");
+      "The ion series to predict (b,y,by). Default 'by' (both b and y ions).");
   set_boolean_parameter("precursor-ions", FALSE,
-      "Predict the precursor ions, and all associated ions (neutral-losses, multiple charge states) consistent with the other specified options. (T,F) Default F");
+      "Predict the precursor ions, and all associated ions (neutral-losses, " \
+      "multiple charge states) consistent with the other specified options. " \
+      "(T,F) Default F.");
   set_string_parameter("neutral-losses", "all", 
-      "Predict neutral loss ions (none, h20, nh3, all). Default 'all'");
+      "Predict neutral loss ions (none, h20, nh3, all). Default 'all'.");
   set_int_parameter("isotope", 0, 0, 2,
-      "Predict the given number of isotope peaks.0|1|2");
+      "Predict the given number of isotope peaks. (0|1|2)");
   set_boolean_parameter("flanking", FALSE, 
       "Predict flanking peaks for b and y ions (T,F). Default F.");
   set_string_parameter("max-ion-charge", "peptide",
@@ -431,7 +434,7 @@ void initialize_parameters(void){
 
   /* get-ms2-spectrum options */
   set_boolean_parameter("stats", FALSE, 
-      "Print to stdout additional information about the spectrum");
+      "Print to stdout additional information about the spectrum.");
 
   // now we have initialized the parameters
   parameter_initialized = TRUE;

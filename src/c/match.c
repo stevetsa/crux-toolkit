@@ -5,7 +5,7 @@
  * DESCRIPTION: Object for matching a peptide and a spectrum, generate
  * a preliminary score(e.g., Sp) 
  *
- * REVISION: $Revision: 1.55.2.1 $
+ * REVISION: $Revision: 1.55.2.2 $
  ****************************************************************************/
 #include <math.h>
 #include <stdlib.h>
@@ -483,7 +483,7 @@ void print_match_sqt(
   PEPTIDE_SRC_T* peptide_src = NULL;
   char* protein_id = NULL;
   PROTEIN_T* protein = NULL;
-  char* description = NULL;
+  //char* description = NULL;
   
   while(peptide_src_iterator_has_next(peptide_src_iterator)){
     peptide_src = peptide_src_iterator_next(peptide_src_iterator);
@@ -491,15 +491,15 @@ void print_match_sqt(
     protein_id = get_protein_id(protein);
     sequence = get_peptide_sequence_from_peptide_src_sqt(peptide, 
                                                          peptide_src);
-    description = get_protein_annotation(protein);
+    //description = get_protein_annotation(protein);
     
     // print match info (locus line)
     // TODO (BF 06-Feb-08): add protein description
-    //    fprintf(file, "L\t%s\n", protein_id);      
-    fprintf(file, "L\t%s\t%s\n", protein_id, description);      
+    fprintf(file, "L\t%s\n", protein_id);      
+    //fprintf(file, "L\t%s\t%s\n", protein_id, description);      
     free(protein_id);
     free(sequence);
-    free(description);
+    //free(description);
   }
   
   free_peptide_src_iterator(peptide_src_iterator);
