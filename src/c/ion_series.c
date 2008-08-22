@@ -3,7 +3,7 @@
  * AUTHOR: Chris Park
  * CREATE DATE: 21 Sep 2006
  * DESCRIPTION: code to support working with a series of ions
- * REVISION: $Revision: 1.45 $
+ * REVISION: $Revision: 1.45.2.1 $
  ****************************************************************************/
 #include <math.h>
 #include <stdio.h>
@@ -1193,6 +1193,49 @@ ION_CONSTRAINT_T* new_ion_constraint(
   constraint->pointer_count = 1;
 
   return constraint;
+}
+
+/**
+ * \brief Create a new ion constraint based on the score type and the
+ * charge of the peptide to be modeled.  Uses other
+ * new_ion_constraint_ methods for some types.
+ *
+ * \returns A newly allocated ion constraint.
+ */
+ION_CONSTRAINT_T* new_ion_constraint_smart(
+  SCORER_TYPE_T score_type,
+  int charge
+){
+  ION_CONSTRAINT_T* new_constraint = NULL;
+
+  switch(score_type){
+  case SP:
+    new_constraint = new_ion_constraint_sequest_sp(charge);
+    break;
+  case XCORR:
+    new_constraint = new_ion_constraint_sequest_xcorr(charge);
+    break;
+  case DOTP:
+  case LOGP_EXP_SP:
+  case LOGP_BONF_EXP_SP:
+  case LOGP_EVD_XCORR:
+  case LOGP_BONF_EVD_XCORR:
+  case LOGP_WEIBULL_SP:
+  case LOGP_BONF_WEIBULL_SP:
+  case LOGP_WEIBULL_XCORR:
+  case LOGP_BONF_WEIBULL_XCORR:
+  case Q_VALUE:
+  case PERCOLATOR_SCORE:
+  case LOGP_QVALUE_WEIBULL_XCORR:
+    // use default type for others
+    new_constraint = 
+      new_ion_constraint(get_mass_type_parameter("fragment-mass"),
+                         charge,
+                         get_ion_type_parameter("primary-ions"),
+                         get_boolean_parameter("precursor_ions")); 
+    break;
+  }
+  return new_constraint;
 }
 
 /**

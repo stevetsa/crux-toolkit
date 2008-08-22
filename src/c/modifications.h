@@ -16,7 +16,7 @@
  * spectrum search.  One PEPTIDE_MOD corresponds to one mass window
  * that must be searched.
  * 
- * $Revision: 1.1.2.12 $
+ * $Revision: 1.1.2.13 $
  */
 #ifndef MODIFICATION_FILE_H
 #define MODIFICATION_FILE_H
@@ -324,6 +324,14 @@ int aa_mod_get_identifier(AA_MOD_T* mod);
  * pointer to that newly allocated string.
  */
 char* aa_mod_to_string(AA_MOD_T* mod);
+
+/**
+ * \brief Create a string containing all of the amino acids that can
+ * be modified by this aa_mod.  E.g. if S, T, and Y can be modified,
+ * returns "STY".
+ * \returns A newly allocated string.
+ */
+char* aa_mod_get_aa_list_string(AA_MOD_T* mod);
 
 #endif //MODIFICATION_FILE_H
 

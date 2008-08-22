@@ -2,7 +2,7 @@
  * \file ion_series.h 
  * AUTHOR: Chris Park
  * CREATE DATE: 28 June 2006
- * $Revision: 1.22 $
+ * $Revision: 1.22.2.1 $
  * \brief Object for a series of ions.
  *****************************************************************************/
 #ifndef ION_SERIES_H
@@ -226,6 +226,17 @@ ION_CONSTRAINT_T* new_ion_constraint(
   BOOLEAN_T precursor_ion  ///< should include precursor ion?
   );
 
+/**
+ * \brief Create a new ion constraint based on the score type and the
+ * charge of the peptide to be modeled.  Uses other
+ * new_ion_constraint_ methods for some types.
+ *
+ * \returns A newly allocated ion constraint.
+ */
+ION_CONSTRAINT_T* new_ion_constraint_smart(
+  SCORER_TYPE_T score_type,
+  int charge
+);
 /**
  * modification, sets all fields for sequest settings
  *\returns a new heap allocated ion_constraint

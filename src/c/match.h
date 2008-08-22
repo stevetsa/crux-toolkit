@@ -1,6 +1,6 @@
 /**
  * \file match.h
- * $Revision: 1.18 $ 
+ * $Revision: 1.18.2.1 $ 
  * \brief Object for given a peptide and a spectrum, generate a preliminary score(ex, Sp)
  ****************************************************************************/
 #ifndef MATCH_H
@@ -12,6 +12,7 @@
 #include <string.h>
 #include <assert.h>
 #include <ctype.h>
+#include <float.h>
 #include <unistd.h>
 #include "carp.h"
 #include "parse_arguments.h"
@@ -23,6 +24,9 @@
 #include "objects.h"
 #include "parameter.h"
 #include "scorer.h"
+
+/* Global variables */
+#define NOT_SCORED FLT_MIN
 
 /**
  * \returns a new memory allocated match

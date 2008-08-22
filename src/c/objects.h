@@ -1,6 +1,6 @@
 /**
  * \file objects.h 
- * $Revision: 1.51.2.6 $
+ * $Revision: 1.51.2.7 $
  * \brief The defined objects
  *****************************************************************************/
 #ifndef OBJECTS_H 
@@ -59,6 +59,12 @@ typedef struct spectrum_collection SPECTRUM_COLLECTION_T;
  * \brief An object to iterate over the spectra in a spectrum_collection
  */
 typedef struct spectrum_iterator SPECTRUM_ITERATOR_T;
+
+/**
+ * \typedef FILTERED_SPECTRUM_CHARGE_ITERATOR_T 
+ * \brief An object to iterate over the spectra in a spectrum_collection
+ */
+typedef struct filtered_spectrum_charge_iterator FILTERED_SPECTRUM_CHARGE_ITERATOR_T;
 
 /**
  * \typedef PEPTIDE_T

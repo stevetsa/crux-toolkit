@@ -5,7 +5,7 @@
  * DESCRIPTION: Object for matching a peptide and a spectrum, generate
  * a preliminary score(e.g., Sp) 
  *
- * REVISION: $Revision: 1.55.2.2 $
+ * REVISION: $Revision: 1.55.2.3 $
  ****************************************************************************/
 #include <math.h>
 #include <stdlib.h>
@@ -87,9 +87,10 @@ MATCH_T* new_match(void){
   
   // initialize score, rank !!!!DEBUG
   int index = 0;
-  for(; index < _SCORE_TYPE_NUM; ++index){
+  for(index = 0; index < _SCORE_TYPE_NUM; ++index){
     match->match_rank[index] = 0;
-    match->match_scores[index] = 0;
+    //match->match_rank[index] = 0;
+    match->match_scores[index] = NOT_SCORED;
   }
   
   ++match->pointer_count;
@@ -422,6 +423,7 @@ void print_match_sqt(
   ){
 
   PEPTIDE_T* peptide = get_match_peptide(match);
+  // this should get the sequence from the match, not the peptide
   char* sequence = get_peptide_sequence_sqt(peptide);
   BOOLEAN_T adjust_delta_cn = FALSE;
 
@@ -777,7 +779,7 @@ char* get_match_sequence(
   MATCH_T* match ///< the match to work -in
   )
 {
-  // if it is a post_process_match and has a null peptide you can't get sequence
+  // if post_process_match and has a null peptide you can't get sequence
   if(match->post_process_match && match->null_peptide){
     carp(CARP_ERROR, 
         "cannot retrieve null peptide sequence for post_process_match");
@@ -798,8 +800,8 @@ char* get_match_sequence(
     // generate the shuffled peptide sequence
     match->peptide_sequence = 
       generate_shuffled_sequence(match->peptide, match->overall_type);    
-    // carp(CARP_DETAILED_DEBUG, "Shuffling tranforms: %s -> %s", 
-    //   get_peptide_sequence(match->peptide), match->peptide_sequence);
+    carp(CARP_DETAILED_DEBUG, "Shuffling transforms: %s -> %s", 
+      get_peptide_sequence(match->peptide), match->peptide_sequence);
   }
   else{
     // just go parse it out from protein, no need to shuffle

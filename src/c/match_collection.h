@@ -1,6 +1,6 @@
 /**
  * \file match_collection.h 
- * $Revision: 1.29.2.2 $
+ * $Revision: 1.29.2.3 $
  * \brief A set of peptide spectrum matches for one spectrum.
  *
  * Object for given a database and a spectrum, generate all match objects
@@ -36,6 +36,8 @@
 #include "protein_index.h"
 #include "PercolatorCInterface.h"
 #include "modifications.h"
+#include "modified_peptides_iterator.h"
+
 
 
 #define _MAX_NUMBER_PEPTIDES 10000000
@@ -76,11 +78,50 @@ MATCH_COLLECTION_T* new_match_collection_from_spectrum(
  );
 
 /**
+ * \brief Creates a new match collection with no matches in it.  Sets
+ * member variables from parameter.c.  The charge and null_collection
+ * variables are set with the method add_matches().  Search is
+ * conducted in add_matches().
+ *
+ * \returns A newly allocated match collection with member variables set.
+ */
+MATCH_COLLECTION_T* new_empty_match_collection(BOOLEAN_T is_decoy);
+
+/**
  * free the memory allocated match collection
  */
 void free_match_collection(
   MATCH_COLLECTION_T* match_collection ///< the match collection to free -out
   );
+
+/**
+ * \brief The main search function.  All peptides in the peptide
+ * iterator are compared to the spectrum and the resulting score(s)
+ * are stored in a match.  All matches are stored in the
+ * match_collection.  Can be called on an empty match_collection or
+ * one already containing matches.  No checks to confirm that the same
+ * spectrum is being searched in subsiquent calls.
+ *
+ * First, the prelimiary score (as in parameter.c) is used to compare
+ * peptides and spectrum.  These results are then sorted and the final
+ * score (as in parameter.c) is calculated on the top-match
+ * (parameter.c) top matches as ranked by the preliminary score.  No
+ * matches are deleted after ranking.
+ *
+ * When called on a match collection already containing matches, the
+ * preliminary score is calculated for all new peptides.  All matches
+ * (from this peptide iterator and previous) are sorted by prelim
+ * score and only the top-match matches are scored for the final
+ * score.  Previously scored matches are not scored twice.
+ *
+ * \returns The number of matches added.
+ */
+int add_matches(
+  MATCH_COLLECTION_T* match_collection,///< add matches to this
+  SPECTRUM_T* spectrum,  ///< compare peptides to this spectrum
+  int charge,            ///< use this charge state for spectrum
+  MODIFIED_PEPTIDES_ITERATOR_T* peptide_iterator///< use these peptides
+);
 
 /**
  * sort the match collection by score_type(SP, XCORR, ... )
