@@ -256,8 +256,11 @@ int main(int argc, char** argv){
       }// last mod
 
       // print matches
+      // only print first decoy to sqt
+      FILE* tmp_decoy_sqt_file = decoy_sqt_file;
+      if( decoy_idx > 0 ){ tmp_decoy_sqt_file = NULL; }
       print_matches(match_collection, spectrum, TRUE,// is decoy
-                    psm_file_array[1+decoy_idx], sqt_file, decoy_sqt_file);
+                    psm_file_array[1+decoy_idx], sqt_file, tmp_decoy_sqt_file);
 
     }// last decoy
 
@@ -267,23 +270,12 @@ int main(int argc, char** argv){
     free_match_collection(match_collection);
   }// next spectrum
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   carp(CARP_INFO, "Finished crux-search-for-matches");
   exit(0);
 }// end main
+
+
+
 
 /* Private function definitions */
 

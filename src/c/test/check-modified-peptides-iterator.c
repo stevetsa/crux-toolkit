@@ -82,7 +82,7 @@ START_TEST(test_has_next_one_mod){
   aas['Q' - 'A'] = TRUE;
   //aamod1 should have max 1 +10 on Q
   peptide_mod_add_aa_mod(pmod1, 0, 1); // aamod is index 0, 1 copy
-  iter3 = new_modified_peptides_iterator_from_mass(1268-10, pmod1,NULL, dbase);
+  iter3 = new_modified_peptides_iterator_from_mass(1268+10, pmod1,NULL, dbase);
 
   // test if the iterator has two modified peptides
   fail_unless( modified_peptides_iterator_has_next(iter3) == TRUE,

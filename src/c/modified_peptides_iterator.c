@@ -4,7 +4,7 @@
  * DATE: April 15, 2008
  * DESCRIPTION: An iterator that can be used by
  * generate_peptides_iterator to include modified peptides.
- * $Revision: 1.1.2.10 $
+ * $Revision: 1.1.2.11 $
  */
 #include "modified_peptides_iterator.h"
 
@@ -225,7 +225,8 @@ MODIFIED_PEPTIDES_ITERATOR_T* new_modified_peptides_iterator_from_mass(
   //       mass, delta_mass, mass + delta_mass);
   // create peptide_generator
   new_iterator->peptide_generator = 
-    new_generate_peptides_iterator_from_mass(mass + delta_mass, index, dbase);
+    //    new_generate_peptides_iterator_from_mass(mass + delta_mass, index, dbase);
+    new_generate_peptides_iterator_from_mass(mass - delta_mass, index, dbase);
 
   // queue first peptide
   //printf("Queuing first peptide\n");

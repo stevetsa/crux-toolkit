@@ -38,7 +38,7 @@ struct parameter_hash  type_hash_table;
 struct parameter_hash* types = & type_hash_table;
 
 AA_MOD_T* list_of_mods[MAX_AA_MODS]; // list containing all aa mods
-                                    // in param file, position mods at end
+                                    // in param file, c-,n-term mods at end
 AA_MOD_T** list_of_c_mods = NULL; // pointer to first c_term mod in list
 AA_MOD_T** list_of_n_mods = NULL; //pointer to first n_term mod in list
 int num_mods = 0;

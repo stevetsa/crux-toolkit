@@ -1,6 +1,6 @@
 /*************************************************************************//**
  * \file peptide.c
- * $Revision: 1.72.2.13 $
+ * $Revision: 1.72.2.14 $
  * \brief: Object for representing a single peptide.
  ****************************************************************************/
 #include "peptide.h"
@@ -470,23 +470,30 @@ char* get_peptide_sequence_pointer(
 }
 
 /**
- * \returns the sequence of peptide with each flanking AA
- *  template "*.peptide_sequence.*", where "*" are flanking amino acids
- * "*", left empty if no flanking sequence
- * goes to the first peptide_src to gain sequence, thus must have at least one peptide src
- * returns a char* to a heap allocated copy of the sequence
- * user must free the memory
+ * \returns The sequence of peptide as used in sqt files, namely with
+ * each flanking AA and any modifications 
+ * 
+ * Format is <AA|->.<peptide_sequence>.<AA|-> where AA is a flanking
+ * amino acid and - indicates this is the end of the protein sequence
+ * Gets flanking AAs from the first peptide_src, thus must have at
+ * least one peptide src 
+ *
+ * \returns A newly allocated char* with formated peptide sequence
  */
 char* get_peptide_sequence_sqt(
  PEPTIDE_T* peptide ///< peptide to query sequence -in
  )
 {
-  if(peptide->peptide_src == NULL){
-    die("ERROR: no peptide_src to retrieve peptide sequence\n");
+  if(peptide == NULL || peptide->peptide_src == NULL){
+    carp(CARP_ERROR, "Cannot get sequence from NULL peptide or peptide src.");
+    return NULL;
+    //    die("ERROR: no peptide_src to retrieve peptide sequence\n");
   }
   
-  // yeah return!!
-  return get_peptide_sequence_from_peptide_src_sqt(peptide, peptide->peptide_src);
+  char* seq = get_peptide_sequence_from_peptide_src_sqt(peptide, 
+                                                        peptide->peptide_src);
+
+  return seq;
 }
 
 /**
@@ -495,7 +502,8 @@ char* get_peptide_sequence_sqt(
  *
  * Is called by get_peptide_sequence_sqt()
  * Format is "X.peptide_sequence.X", where "X" is a flanking amino acid.
- * "X", is printed as "-" if there is no flanking sequence.
+ * "X", is printed as "-" if there is no flanking sequence.  Includes
+ * any modifications.
  * Goes to the first peptide_src to gain sequence, thus must have at
  * least one peptide src 
  *
@@ -512,22 +520,31 @@ char* get_peptide_sequence_from_peptide_src_sqt(
   int start_idx = get_peptide_src_start_idx(peptide_src);
   // parent protein length
   int protein_length = get_protein_length(protein);
-  // parent protein length
+
   char* parent_sequence = 
     get_protein_sequence_pointer(protein);
 
-  // allocate peptide memory
-  copy_sequence = (char*)mycalloc(peptide->length+5, sizeof(char));
+  // get modified petpide sequence
+  char* mod_pep_seq = get_peptide_modified_sequence(peptide);
+  int mod_pep_len = strlen(mod_pep_seq);
 
-  // Default template is "*.peptide.*", where "*" are flanking amino acids
+  // allocate peptide memory
+  //  copy_sequence = (char*)mycalloc(peptide->length+5, sizeof(char));
+  copy_sequence = (char*)mycalloc(mod_pep_len+5, sizeof(char));
+
+  // Default template is "X.peptide.X", where "X" are flanking amino acids
   copy_sequence[0] = '-';
   copy_sequence[1] = '.';
-  copy_sequence[peptide->length+2] = '.';
-  copy_sequence[peptide->length+3] = '-';
-  copy_sequence[peptide->length+4] = '\0';
+  //copy_sequence[peptide->length+2] = '.';
+  copy_sequence[mod_pep_len+2] = '.';
+  //copy_sequence[peptide->length+3] = '-';
+  copy_sequence[mod_pep_len+3] = '-';
+  //copy_sequence[peptide->length+4] = '\0';
+  copy_sequence[mod_pep_len+4] = '\0';
 
   // copy over the peptide sequences
-  strncpy(&copy_sequence[2], &parent_sequence[start_idx-1], peptide->length);
+  //strncpy(&copy_sequence[2], &parent_sequence[start_idx-1], peptide->length);
+  strncpy(&copy_sequence[2], mod_pep_seq, mod_pep_len);
   
   // is there an AA before?
   if(start_idx != 1){
@@ -538,6 +555,7 @@ char* get_peptide_sequence_from_peptide_src_sqt(
     copy_sequence[peptide->length+3] = parent_sequence[start_idx+peptide->length-1];
   }
   
+  free(mod_pep_seq);
   // yeah return!!
   return copy_sequence; 
 }

@@ -19,6 +19,8 @@
 #include "check-generate-peptides-iterator.h"
 #include "check-modified-peptides-iterator.h"
 #include "check-serialize.h"
+#include "check-mass.h"
+//#include "check-<<class>>.h"
 
 //must set bash export CK_FORK=no
 int main(void){
@@ -46,6 +48,8 @@ int main(void){
   Suite* suite_generate_peptides_iterator = generate_peptides_iterator_suite();
   Suite* suite_modified_peptides_iterator = modified_peptides_iterator_suite();
   Suite* suite_serialize = serialize_suite();
+  Suite* suite_mass = mass_suite();
+  //Suite* suite_<<class>> = <<class>>_suite();
 
   //add each suite to Runner
   SRunner *sr = srunner_create(NULL);
@@ -72,7 +76,9 @@ int main(void){
   srunner_add_suite(sr, suite_generate_peptides_iterator);
   srunner_add_suite(sr, suite_modified_peptides_iterator);
   srunner_add_suite(sr, suite_serialize);
-  srunner_add_suite(sr,suite_index);
+  srunner_add_suite(sr, suite_index);
+  srunner_add_suite(sr, suite_mass);
+  //srunner_add_suite(sr,suite_<<class>>);
 
   //run each check suite
   srunner_run_all(sr, CK_NORMAL);

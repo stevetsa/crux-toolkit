@@ -21,8 +21,8 @@ void mod_setup(){
   amod_list[2] = amod3;
 
   mod_aa_D = 3; // D
-  id_3   = 0x2000;  // bitmask for 3rd
-  id_max = 0x0020;  // bitmask for 11th mod
+  id_3   = 0x0080;  // bitmask for 3rd
+  id_max = 0x8000;  // bitmask for 11th mod
 }
 
 
@@ -55,23 +55,23 @@ START_TEST(test_create){
                "amod1 should have had symbol * but had %c",
                aa_mod_get_symbol(amod1));
 
-  fail_unless( aa_mod_get_identifier(amod1) == 0x8000, 
-               "amod1 should have had identifier 0x8000 but had %d",
+  fail_unless( aa_mod_get_identifier(amod1) == 0x0020, 
+               "amod1 should have had identifier 0x0020 but had %d",
                aa_mod_get_identifier(amod1));
 
   fail_unless( aa_mod_get_symbol(amod2) == '@', 
                "amod2 should have had symbol @ but had %c",
                aa_mod_get_symbol(amod2));
 
-  fail_unless( aa_mod_get_identifier(amod2) == 0x4000, 
-               "amod2 should have had identifier 0x4000 but had 0x%x",
+  fail_unless( aa_mod_get_identifier(amod2) == 0x0040, 
+               "amod2 should have had identifier 0x0040 but had 0x%x",
                aa_mod_get_identifier(amod2));
   fail_unless( aa_mod_get_symbol(amod3) == '#', 
                "amod3 should have had symbol # but had %c",
                aa_mod_get_symbol(amod3));
 
-  fail_unless( aa_mod_get_identifier(amod3) == 0x2000, 
-               "amod3 should have had identifier 0x2000 but had 0x%x",
+  fail_unless( aa_mod_get_identifier(amod3) == 0x0080, 
+               "amod3 should have had identifier 0x0080 but had 0x%x",
                aa_mod_get_identifier(amod3));
 }
 END_TEST
@@ -181,14 +181,14 @@ START_TEST(test_mod_to_string){
   free(mod_as_text);
 
   // modify with one
-  mod_aa_D = mod_aa_D | 0x4000; // second aa mod in param list
+  mod_aa_D = mod_aa_D | 0x0040; // second aa mod in param list
   mod_as_text = modified_aa_to_string( mod_aa_D );
   fail_unless( strcmp(mod_as_text, "D@") == 0,
                "mod as string should be 'D@' but is '%s'", mod_as_text);
   free(mod_as_text);
 
-  mod_aa_D = mod_aa_D | 0x8000; // first aa mod in param list
-  mod_aa_D = mod_aa_D | 0x2000; // third aa mod in param list
+  mod_aa_D = mod_aa_D | 0x0020; // first aa mod in param list
+  mod_aa_D = mod_aa_D | 0x0080; // third aa mod in param list
   mod_as_text = modified_aa_to_string( mod_aa_D );
   fail_unless( strcmp(mod_as_text, "D*@#") == 0,
                "mod as string should be 'D*@#' but is '%s'", mod_as_text);

@@ -16,7 +16,7 @@
  * spectrum search.  One PEPTIDE_MOD corresponds to one mass window
  * that must be searched.
  * 
- * $Revision: 1.1.2.14 $
+ * $Revision: 1.1.2.15 $
  */
 
 #include "modifications.h"
@@ -57,17 +57,19 @@ char mod_sqt_symbols[MAX_AA_MODS] = {'*', '@', '#', '^', '~', '%',
                                      '$', '&', '!', '?', '+'};
 
 unsigned short mod_id_masks[MAX_AA_MODS] = 
-  {0x8000,   // 1000 0000 0000 0000
-   0x4000,   // 0100 0000 0000 0000
-   0x2000,   // 0010 0000 0000 0000
-   0x1000,   // 0001 0000 0000 0000
-   0x0800,   // 0000 1000 0000 0000
-   0x0400,   // 0000 0100 0000 0000
-   0x0200,   // 0000 0010 0000 0000
-   0x0100,   // 0000 0001 0000 0000
-   0x0080,   // 0000 0000 1000 0000
+  {
+   0x0020,   // 0000 0000 0010 0000
    0x0040,   // 0000 0000 0100 0000
-   0x0020 }; // 0000 0000 0010 0000
+   0x0080,   // 0000 0000 1000 0000
+   0x0100,   // 0000 0001 0000 0000
+   0x0200,   // 0000 0010 0000 0000
+   0x0400,   // 0000 0100 0000 0000
+   0x0800,   // 0000 1000 0000 0000
+   0x1000,   // 0001 0000 0000 0000
+   0x2000,   // 0010 0000 0000 0000
+   0x4000,   // 0100 0000 0000 0000
+   0x8000    // 1000 0000 0000 0000
+}; 
 
 /* Private data types, typedefed in objects.h */
 
@@ -156,7 +158,9 @@ char modified_aa_to_char(MODIFIED_AA_T aa){
  */
 MODIFIED_AA_T char_aa_to_modified(char aa){
   assert( aa >= 'A' && aa <= 'Z' );
-  return (MODIFIED_AA_T)(aa - 'A');
+  //  return (MODIFIED_AA_T)(aa - 'A');
+  MODIFIED_AA_T mod_aa = (MODIFIED_AA_T)aa - (MODIFIED_AA_T)'A';
+  return mod_aa;
 }
 
 /**

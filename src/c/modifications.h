@@ -16,7 +16,7 @@
  * spectrum search.  One PEPTIDE_MOD corresponds to one mass window
  * that must be searched.
  * 
- * $Revision: 1.1.2.13 $
+ * $Revision: 1.1.2.14 $
  */
 #ifndef MODIFICATION_FILE_H
 #define MODIFICATION_FILE_H
@@ -31,6 +31,9 @@
 enum {MAX_AA_MODS = 11};
 enum {MAX_PROTEIN_SEQ_LENGTH = 40000};
 enum {AA_LIST_LENGTH = 26}; // A-Z
+#define GET_AA_MASK  0x001F   // 0000 0000 0001 1111
+#define GET_MOD_MASK 0xFFE0   // 1111 1111 1110 0000
+
 
 // this was moved to object.h b/c methods in peptide.h weren't compiling
 //typedef unsigned short MODIFIED_AA_T; ///< letters in the expanded peptide
