@@ -135,7 +135,7 @@ START_TEST(test_avg_1mod){
   aa2 = char_aa_to_modified(achar2);
   aa3 = char_aa_to_modified(achar3);
 
-  // mod with second aa mod
+  // mod with third aa mod
   modify_aa(&aa1, amod3);
   modify_aa(&aa2, amod3);
   modify_aa(&aa3, amod3);

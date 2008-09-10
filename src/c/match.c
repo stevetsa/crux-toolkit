@@ -5,7 +5,7 @@
  * DESCRIPTION: Object for matching a peptide and a spectrum, generate
  * a preliminary score(e.g., Sp) 
  *
- * REVISION: $Revision: 1.55.2.3 $
+ * REVISION: $Revision: 1.55.2.4 $
  ****************************************************************************/
 #include <math.h>
 #include <stdlib.h>
@@ -61,22 +61,29 @@
 struct match{
   SPECTRUM_T* spectrum; ///< the spectrum we are scoring with
   PEPTIDE_T* peptide;  ///< the peptide we are scoring
-  float match_scores[_SCORE_TYPE_NUM]; ///< the scoring result array (use enum_type SCORER_TYPE_T to index)
-  int match_rank[_SCORE_TYPE_NUM];  ///< the rank of scoring result (use enum_type SCORER_TYPE_T to index)
-  int pointer_count; ///< the number of pointers to this match object (when reach 0, free memory)
-  float b_y_ion_fraction_matched; ///< the fraction of the b, y ion matched while scoring for SP
-  int b_y_ion_matched; ///< the number of the b, y ion matched while scoring for SP
-  int b_y_ion_possible; ///< the number of possible b, y ion while scoring for SP
-  BOOLEAN_T null_peptide; ///< Is the match a null peptide match?
-  char* peptide_sequence; ///< cached peptide sequence, if not called before set as NULL
-  PEPTIDE_TYPE_T overall_type; ///< the overall peptide trypticity, this is set in set_match_peptide routine, go to README top
+  float match_scores[_SCORE_TYPE_NUM]; 
+    ///< array of scores, one for each type (index with SCORER_TYPE_T) 
+  int match_rank[_SCORE_TYPE_NUM];  
+    ///< rank of this match for each type scored (index with SCORER_TYPE_T)
+  int pointer_count; 
+    ///< number of pointers to this match object (when reach 0, free memory)
+  float b_y_ion_fraction_matched; 
+    ///< the fraction of the b, y ion matched while scoring for SP
+  int b_y_ion_matched; ///< number of b, y ion matched while scoring SP
+  int b_y_ion_possible; ///< number of possible b, y ion while scoring SP
+  BOOLEAN_T null_peptide; ///< Is the match a null (decoy) peptide match?
+  char* peptide_sequence; ///< peptide sequence is that of peptide or shuffled
+  MODIFIED_AA_T* mod_sequence; ///< seq of peptide or shuffled if null peptide
+  PEPTIDE_TYPE_T overall_type; 
+    ///< overall peptide trypticity, set in set_match_peptide, see README above
   int charge; ///< the charge state of the match collection created
   // post_process match object features
   // only valid when post_process_match is TRUE
   BOOLEAN_T post_process_match; ///< Is this a post process match object?
   float delta_cn; ///< the difference in top and second Xcorr scores
   float ln_delta_cn; ///< the natural log of delta_cn
-  float ln_experiment_size; ///< the natural log of total number of candidate peptides evaluated
+  float ln_experiment_size; 
+     ///< natural log of total number of candidate peptides evaluated
 };
 
 /**
@@ -89,7 +96,6 @@ MATCH_T* new_match(void){
   int index = 0;
   for(index = 0; index < _SCORE_TYPE_NUM; ++index){
     match->match_rank[index] = 0;
-    //match->match_rank[index] = 0;
     match->match_scores[index] = NOT_SCORED;
   }
   
@@ -126,6 +132,9 @@ void free_match(
     }
     if (match->peptide_sequence != NULL){
       free(match->peptide_sequence);
+    }
+    if (match->mod_sequence != NULL){
+      free(match->mod_sequence);
     }
 
     free(match);  
@@ -575,7 +584,7 @@ void serialize_match(
  *\returns the feature float array
  */
 double* get_match_percolator_features(
-  MATCH_T* match, ///< the match to work -in                                          
+  MATCH_T* match, ///< the match to work -in 
   MATCH_COLLECTION_T* match_collection ///< the match collection to iterate -in
   )
 {
@@ -782,7 +791,7 @@ char* get_match_sequence(
   // if post_process_match and has a null peptide you can't get sequence
   if(match->post_process_match && match->null_peptide){
     carp(CARP_ERROR, 
-        "cannot retrieve null peptide sequence for post_process_match");
+        "Cannot retrieve null peptide sequence for post_process_match");
     return NULL;
   }
   
@@ -812,6 +821,52 @@ char* get_match_sequence(
   // return match->peptide_sequence;
 }
 
+/**
+ * \brief Returns a newly allocated modified_aa sequence of the PSM.
+ * Sequence is the same as the peptide, if target match or is a
+ * shuffled sequence if a null (decoy) match.  If match field
+ * 'mod_sequence' is non NULL, returns a copy of that value, otherwise
+ * fills that field and returns a copy of the value.
+ *
+ * \returns the match peptide sequence, returns NULL if no sequence avaliable
+ */
+MODIFIED_AA_T* get_match_mod_sequence(
+  MATCH_T* match ///< the match from which to get the sequence -in
+  )
+{
+  // if post_process_match and has a null peptide you can't get sequence
+  if(match->post_process_match && match->null_peptide){
+    carp(CARP_ERROR,
+        "Cannot retrieve null peptide sequence for post_process_match");
+    return NULL;
+  }
+
+  // if peptide sequence is cached
+  // return copy of cached peptide sequence
+  if(match->mod_sequence != NULL){
+    return copy_mod_aa_seq(match->mod_sequence);
+  }
+
+  // if not cached generate the sequence
+
+  // Is this a null peptide? Then shuffle the sequence
+  if(match->null_peptide){
+    // generate the shuffled peptide sequence
+    match->mod_sequence =
+      generate_shuffled_mod_sequence(match->peptide, match->overall_type);
+    carp(CARP_DETAILED_DEBUG, "Shuffling transforms: %s -> %s",
+         get_peptide_sequence(match->peptide),
+         modified_aa_string_to_string(match->mod_sequence));
+  }
+  else{
+    // just go parse it out from protein, no need to shuffle
+    char* seq = get_peptide_sequence(match->peptide);
+    match->mod_sequence = convert_to_mod_aa_seq(seq);
+    free(seq);
+  }
+
+  return copy_mod_aa_seq(match->mod_sequence);
+}
 
 /**
  * Must ask for score that has been computed

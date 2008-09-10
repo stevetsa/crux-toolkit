@@ -1,6 +1,6 @@
 /*************************************************************************//**
  * \file peptide.c
- * $Revision: 1.72.2.14 $
+ * $Revision: 1.72.2.15 $
  * \brief: Object for representing a single peptide.
  ****************************************************************************/
 #include "peptide.h"
@@ -822,14 +822,16 @@ char* get_peptide_hash_value(
 }
 
 /**
+ * \brief Return a randomly shuffled version of the given peptide's 
+ * sequence.  Based on the peptide type, will leave the end(s)
+ * unchanged to preserve the tryptic property.
  * 
- *\returns a randomly shuffled sequence but preserves the tryptic property
+ * \returns A newly-allcoated char array with the shuffled sequence.
  */
 char* generate_shuffled_sequence(
-  PEPTIDE_T* peptide, 
-  ///< The peptide sequence to shuffle -in                                
+  PEPTIDE_T* peptide, ///< The peptide to shuffle -in 
   PEPTIDE_TYPE_T peptide_type 
-  ///< The peptide type to enfore on the shuffled sequence
+    ///< tryptic status to enforce on the shuffled sequence
   )
 {
   char* sequence = get_peptide_sequence(peptide);
@@ -868,6 +870,59 @@ char* generate_shuffled_sequence(
 
   return sequence;
 }
+
+/**
+ * \brief Return a randomly shuffled version of the given peptide's 
+ * sequence as an array of MODIIFIED_AA_T.  Based on the peptide type,
+ * will leave the end(s) unchanged to preserve the tryptic property.
+ * 
+ *\returns A newly-allcoated MODIFIED_AA_T array of the shuffled sequence.
+ */
+MODIFIED_AA_T* generate_shuffled_mod_sequence(
+  PEPTIDE_T* peptide,  ///< The peptide sequence to shuffle -in
+  PEPTIDE_TYPE_T peptide_type
+  ///< tryptic status to enforce on the shuffled sequence
+  // not currently used
+  )
+{
+  MODIFIED_AA_T* sequence = get_peptide_modified_aa_sequence(peptide);
+  int length = peptide->length;
+  int start_idx = 0;
+  int end_idx = length - 1;
+  int switch_idx = 0;
+  MODIFIED_AA_T temp_aa = 0;
+
+  // TODO (BF 9-Sep-08): Shouldn't the c-term be shuffled regardless?
+  // TODO consider changing bounds depending on trypticity
+  // But for now, leave the extreme N- and C-term AAs the same
+  if (peptide_type == peptide_type){
+    ++start_idx;
+    --end_idx;
+  }
+  /* if(peptide_type == TRYPTIC){
+    ++start_idx;
+    --end_idx;
+  }
+  else if(peptide_type == N_TRYPTIC){
+    ++start_idx;
+  }
+  else if(peptide_type == C_TRYPTIC){
+    --end_idx;
+  }*/
+
+  // shuffle from left to right, using the Knuth algorithm for shuffling.
+  while(start_idx < end_idx){
+    switch_idx = get_random_number_interval(start_idx, end_idx);
+    temp_aa = sequence[start_idx];
+    sequence[start_idx] = sequence[switch_idx];
+    sequence[switch_idx] = temp_aa;
+    ++start_idx;
+  }
+
+  return sequence;
+}
+
+
 /* Comparisons for sorting */
 
 /**

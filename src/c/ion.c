@@ -1,6 +1,6 @@
 /*************************************************************************//**
  * \file ion.c
- * $Revision: 1.28.2.1 $
+ * $Revision: 1.28.2.2 $
  * \brief: Object for representing a single ion.
  ****************************************************************************/
 #include <math.h>
@@ -928,6 +928,9 @@ float get_ion_mass_z(
   ION_T* working_ion///< return the location of this ion -in 
   )
 {
+  if( working_ion == NULL ){
+    return 0;
+  }
   return working_ion->ion_mass_z;
 }
 

@@ -49,6 +49,8 @@ int main(void){
   Suite* suite_modified_peptides_iterator = modified_peptides_iterator_suite();
   Suite* suite_serialize = serialize_suite();
   Suite* suite_mass = mass_suite();
+  Suite* suite_match = match_suite(); 
+  Suite* suite_ion_series_2 = ion_series_suite_2(); 
   //Suite* suite_<<class>> = <<class>>_suite();
 
   //add each suite to Runner
@@ -78,6 +80,8 @@ int main(void){
   srunner_add_suite(sr, suite_serialize);
   srunner_add_suite(sr, suite_index);
   srunner_add_suite(sr, suite_mass);
+  srunner_add_suite(sr,suite_match);
+  srunner_add_suite(sr,suite_ion_series_2);
   //srunner_add_suite(sr,suite_<<class>>);
 
   //run each check suite

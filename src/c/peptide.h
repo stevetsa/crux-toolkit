@@ -1,6 +1,6 @@
 /**
  * \file peptide.h 
- * $Revision: 1.45.4.6 $
+ * $Revision: 1.45.4.7 $
  * \brief Object for representing one peptide.
  */
 #ifndef PEPTIDE_H 
@@ -347,12 +347,30 @@ char* get_peptide_hash_value(
   );
 
 /**
+ * \brief Return a randomly shuffled version of the given peptide's 
+ * sequence as an array of char (A-Z).  Based on the peptide type,
+ * will leave the end(s) unchanged to preserve the tryptic property. 
  * 
- *\returns a randomly shuffled sequence but preserves the tryptic property
+ *\returns A newly-allcoated char array of the shuffled sequence.
  */
 char* generate_shuffled_sequence(
-  PEPTIDE_T* peptide, ///< The peptide sequence to shuffle -in                                
-  PEPTIDE_TYPE_T peptide_type ///< The peptide type to enfore on the shuffled sequence
+  PEPTIDE_T* peptide, ///< The peptide to shuffle -in 
+  PEPTIDE_TYPE_T peptide_type 
+    ///< tryptic status to enforce on the shuffled sequence
+  );
+
+/**
+ * \brief Return a randomly shuffled version of the given peptide's 
+ * sequence as an array of MODIIFIED_AA_T.  Based on the peptide type,
+ * will leave the end(s) unchanged to preserve the tryptic property.
+ * 
+ *\returns A newly-allcoated MODIFIED_AA_T array of the shuffled sequence.
+ */
+MODIFIED_AA_T* generate_shuffled_mod_sequence(
+  PEPTIDE_T* peptide,  ///< The peptide to shuffle -in
+  PEPTIDE_TYPE_T peptide_type 
+  ///< tryptic status to enforce on the shuffled sequence
+  // not currently used
   );
 
 /*  Comparisons for sorting  */

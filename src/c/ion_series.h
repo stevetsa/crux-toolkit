@@ -2,7 +2,7 @@
  * \file ion_series.h 
  * AUTHOR: Chris Park
  * CREATE DATE: 28 June 2006
- * $Revision: 1.22.2.1 $
+ * $Revision: 1.22.2.2 $
  * \brief Object for a series of ions.
  *****************************************************************************/
 #ifndef ION_SERIES_H
@@ -54,7 +54,8 @@ ION_SERIES_T* new_ion_series_generic(
  */
 void update_ion_series(
   ION_SERIES_T* ion_series, ///< the working ion_series -in
-  char* peptide ///< The peptide sequence for this ion series. -in
+  char* peptide, ///< The peptide sequence for this ion series. -in
+  MODIFIED_AA_T* mod_seq ///< modified version of seq -in
   );
 
 /**

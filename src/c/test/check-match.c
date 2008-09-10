@@ -1,20 +1,105 @@
-#include <math.h>
 #include <stdlib.h>
-#include <string.h>
-#include "check-peak.h"
 #include "check-match.h"
-#include "../spectrum.h"
-#include "../spectrum_collection.h"
-#include "../peak.h"
-#include "../crux-utils.h"
-#include "../scorer.h"
-#include "../objects.h"
-#include "../parameter.h"
-#include "../ion_series.h"
-#include "../generate_peptides_iterator.h"
 #include "../match.h"
-#include "../match_collection.h"
 
+// declare things to set up
+MATCH_T *m1, *mdecoy;
+PROTEIN_T *prot;
+PEPTIDE_T *pep;
+SPECTRUM_T *spec;
+char* protseq = "MRVLKFGGTSVANAERFLRVADILESNARQGQVATVLSAPAKITNHLVAMIEKTISGQDALPNISDAERIFAELLTGLAAAQPGFPLAQLKTFVDQEFAQIKHVLHGISLLGQCPDSINAALICRGEKMSIAIMAGVLEARGHNVTVIDPVEKLLAVGHYLESTVDIAESTRRIAASRIPADHMVLMAGFTAGNEKGELVVLGRNGSDYSAAVLAACLRADCCEIWTDVDGVYTCDPRQVPDARLLKSMSYQEAMELSYFGAKVLHPRTITPIAQFQIPCLIKNTGNPQAPGTLIGASRDEDELPVKGISNLNNMAMFSVSGPGMKGMVGMAARVFAAMSRARISVVLITQSSSEYSISFCVPQSDCVRAERAMQEEFYLELKEGLLEPLAVTERLAIISVVGDGMRTLRGISAKFFAALARANINIVAIAQGSSERSISVVVNNDDATTGVRVTHQMLFNTDQVIEVFVIGVGGVGGALLEQLKRQQSW";
+
+void match_setup(){
+  // create inputs
+  prot = new_protein( "Protein1", protseq, strlen(protseq), 
+                          NULL, 0, 0, NULL);//description, offset, idx, dbase
+  pep = new_peptide( 10, 1087.20, prot, 20, TRYPTIC);//VADILESNAR
+
+  // create match
+  m1 = new_match();
+  set_match_peptide(m1, pep);
+  set_match_spectrum(m1, NULL);
+  set_match_charge(m1, 2);
+  set_match_null_peptide(m1, FALSE);
+
+  // create match to null (decoy) peptide
+  mdecoy = new_match();
+  set_match_peptide(mdecoy, pep);
+  set_match_spectrum(mdecoy, NULL);
+  set_match_charge(mdecoy, 2);
+  set_match_null_peptide(mdecoy, TRUE);
+}
+
+void match_teardown(){
+  free_match(m1);
+  free_match(mdecoy);
+  free_protein(prot);
+  free_peptide(pep);
+
+}
+
+START_TEST(test_create){
+  fail_unless( m1 != NULL, "Failed to allocate a match.");
+
+  // test getters
+  char* seq = get_match_sequence(m1);
+  fail_unless( strcmp(seq, "VADILESNAR") == 0,
+               "Match returns %s as seq instead of %s", seq, "VADILESNAR");
+  MODIFIED_AA_T* mod_seq = get_match_mod_sequence(m1);
+  char* mod_str = modified_aa_string_to_string(mod_seq);
+  fail_unless( strcmp(mod_str, seq) == 0,
+               "MOD_AA string should be %s but is %s", seq, mod_str);
+
+  // test getting seqs for null (decoy) peptide
+  free(seq);
+  seq = get_match_sequence(mdecoy);
+  fail_unless( strcmp(seq, "VASDLINEAR") == 0,
+               "Match decoy seq should be %s but is %s", "VASDLINEAR", seq );
+  free(mod_seq);
+  mod_seq = get_match_mod_sequence(mdecoy);
+  free(mod_str);
+  mod_str = modified_aa_string_to_string(mod_seq);
+  fail_unless( strcmp(mod_str, seq) != 0,
+               "For peptide with seq %s, shuffled MOD_AA string should " \
+               "be different but is %s", seq, mod_str);
+}
+END_TEST
+
+/*
+START_TEST(test_set){
+}
+END_TEST
+
+START_TEST(test_create){
+}
+END_TEST
+
+START_TEST(test_create){
+}
+END_TEST
+*/
+
+Suite* match_suite(){
+  Suite* s = suite_create("Match");
+  TCase *tc_core = tcase_create("Core");
+  tcase_add_test(tc_core, test_create);
+  //  tcase_add_test(tc_core, ????);
+
+  tcase_add_checked_fixture(tc_core, match_setup, match_teardown);
+  suite_add_tcase(s, tc_core);
+
+  // Test boundry conditions
+  /*
+  TCase *tc_limits = tcase_create("Limits");
+  tcase_add_test(tc_limits, ????);
+  tcase_add_checked_fixture(tc_limits, mod_setup, mod_teardown);
+  suite_ad_tcase(s, tc_limits);
+   */
+
+  return s;
+}
+
+/*
 #define scan_num 16
 #define ms2_file "test.ms2"
 #define parameter_file "test_parameter_file"
@@ -27,7 +112,7 @@ START_TEST (test_create){
   MATCH_ITERATOR_T* match_iterator = NULL;
   MATCH_T* match = NULL;
     
-  /********** comment this parameter section out, when using CK_FORK=no, valgrind ******/
+  // comment this parameter section out, when using CK_FORK=no, valgrind
   // Parameters have been already confirmed in check_scorer.
   
   //set verbbosity level
@@ -43,7 +128,7 @@ START_TEST (test_create){
   
   //parameters has been confirmed
   //parameters_confirmed();
-  /***************************************************/
+  // ****************************************** end comment out
 
   //read ms2 file
   collection = new_spectrum_collection(ms2_file);
@@ -98,3 +183,4 @@ Suite *match_suite(void){
   tcase_add_test(tc_core, test_create);
   return s;
 }
+*/

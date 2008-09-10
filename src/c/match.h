@@ -1,6 +1,6 @@
 /**
  * \file match.h
- * $Revision: 1.18.2.1 $ 
+ * $Revision: 1.18.2.2 $ 
  * \brief Object for given a peptide and a spectrum, generate a preliminary score(ex, Sp)
  ****************************************************************************/
 #ifndef MATCH_H
@@ -201,11 +201,22 @@ MATCH_T* parse_match(
  ***************************/
 
 /**
- * Returns a heap allocaated peptide sequence of the PSM
+ * Returns a heap allocated peptide sequence of the PSM
+ * Sequence may not be the same as for the peptide if this is for a
+ * decoy database.
  * User must free the sequence.
  *\returns the match peptide sequence
  */
 char* get_match_sequence(
+  MATCH_T* match ///< the match to work -in
+  );
+
+/**
+ * \brief Returns a newly allocated modified_aa sequence of the PSM
+ * User must free the sequence.
+ *\returns the match peptide sequence
+ */
+MODIFIED_AA_T* get_match_mod_sequence(
   MATCH_T* match ///< the match to work -in
   );
 

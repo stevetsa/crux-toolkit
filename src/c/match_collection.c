@@ -8,7 +8,7 @@
  *
  * AUTHOR: Chris Park
  * CREATE DATE: 11/27 2006
- * $Revision: 1.79.2.4 $
+ * $Revision: 1.79.2.5 $
  ****************************************************************************/
 #include "match_collection.h"
 
@@ -1157,6 +1157,7 @@ BOOLEAN_T score_match_collection_sp(
   SCORER_T* scorer = new_scorer(SP);  
 
   char* peptide_sequence = NULL;
+  MODIFIED_AA_T* modified_sequence = NULL;
   MATCH_T* match = NULL;
   float score = 0;
   PEPTIDE_T* peptide = NULL;  
@@ -1182,9 +1183,10 @@ BOOLEAN_T score_match_collection_sp(
     
     // get peptide sequence    
     peptide_sequence = get_match_sequence(match);
+    modified_sequence = get_match_mod_sequence(match);
     
     // update ion_series for the peptide instance    
-    update_ion_series(ion_series, peptide_sequence);
+    update_ion_series(ion_series, peptide_sequence, modified_sequence);
 
     // now predict ions for this peptide
     predict_ions(ion_series);
@@ -1287,6 +1289,7 @@ BOOLEAN_T score_peptides(
 
   // variables to re-use in the loop
   char* sequence = NULL;
+  MODIFIED_AA_T* modified_sequence = NULL;
   MATCH_T* match = NULL;
   float score = 0;
   PEPTIDE_T* peptide = NULL;
@@ -1312,7 +1315,8 @@ BOOLEAN_T score_peptides(
 
     // update ion series for peptide sequene
     sequence = get_match_sequence(match);
-    update_ion_series(ion_series, sequence);
+    modified_sequence = get_match_mod_sequence(match);
+    update_ion_series(ion_series, sequence, modified_sequence);
     predict_ions(ion_series);
 
     // calculate the score
@@ -1421,6 +1425,7 @@ BOOLEAN_T score_matches_one_spectrum(
   int match_idx;
   MATCH_T* match = NULL;
   char* sequence = NULL;
+  MODIFIED_AA_T* modified_sequence = NULL;
   for(match_idx = 0; match_idx < max_rank; match_idx++){
     match = match_collection->match[match_idx];
 
@@ -1432,9 +1437,10 @@ BOOLEAN_T score_matches_one_spectrum(
     assert( spectrum == get_match_spectrum(match));
     assert( charge == get_match_charge(match));
     sequence = get_match_sequence(match);
+    modified_sequence = get_match_mod_sequence(match);
 
     // create ion series for this peptide
-    update_ion_series(ion_series, sequence);
+    update_ion_series(ion_series, sequence, modified_sequence);
     predict_ions(ion_series);
 
     // get the score
@@ -1806,6 +1812,7 @@ BOOLEAN_T score_match_collection_xcorr(
 {
   MATCH_T* match = NULL;
   char* peptide_sequence = NULL;  
+  MODIFIED_AA_T* modified_sequence = NULL;
   float score = 0;
   
   /*
@@ -1834,9 +1841,10 @@ BOOLEAN_T score_match_collection_xcorr(
   for(match_idx=0; match_idx < match_collection->match_total; ++match_idx){
     match = match_collection->match[match_idx];
     peptide_sequence = get_match_sequence(match);
+    modified_sequence = get_match_mod_sequence(match);
     
     // update ion_series for the peptide instance    
-    update_ion_series(ion_series, peptide_sequence);
+    update_ion_series(ion_series, peptide_sequence, modified_sequence);
     
     // now predict ions
     predict_ions(ion_series);
