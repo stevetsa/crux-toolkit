@@ -204,13 +204,16 @@ END_TEST
 START_TEST(test_header){
   // write header
   // set params to think there is one output file
-  int fake_argc = 3;
-  char* fake_argv[3];
+  // include modes
+  int fake_argc = 5;
+  char* fake_argv[5];
   fake_argv[0] = "testing";
   fake_argv[1] = "--number-decoy-set";
   fake_argv[2] = "0";
-  char* op = "number-decoy-set";
-  select_cmd_line_options(&op, 1 );
+  fake_argv[3] = "--parameter-file";
+  fake_argv[4] = "params/1mod";
+  char* op[2] = {"number-decoy-set", "parameter-file"};
+  select_cmd_line_options(op, 2 );
   parse_cmd_line_into_params_hash(fake_argc, fake_argv, "testing");
 
   //  set_verbosity_level(CARP_DETAILED_DEBUG);

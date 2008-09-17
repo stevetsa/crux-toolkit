@@ -5,7 +5,7 @@
  * DESCRIPTION: Object for matching a peptide and a spectrum, generate
  * a preliminary score(e.g., Sp) 
  *
- * REVISION: $Revision: 1.55.2.4 $
+ * REVISION: $Revision: 1.55.2.5 $
  ****************************************************************************/
 #include <math.h>
 #include <stdlib.h>
@@ -76,7 +76,7 @@ struct match{
   MODIFIED_AA_T* mod_sequence; ///< seq of peptide or shuffled if null peptide
   PEPTIDE_TYPE_T overall_type; 
     ///< overall peptide trypticity, set in set_match_peptide, see README above
-  int charge; ///< the charge state of the match collection created
+  int charge; ///< the charge state of the match 
   // post_process match object features
   // only valid when post_process_match is TRUE
   BOOLEAN_T post_process_match; ///< Is this a post process match object?
@@ -124,9 +124,10 @@ void free_match(
   // only free match when pointer count reaches
   if(match->pointer_count == 0){
 
+    /* but aren't there multiple matches pointing to the same peptide?
     if (match->peptide != NULL){
       free_peptide(match->peptide);
-    }
+      }*/
     if(match->post_process_match && match->spectrum !=NULL){
       free_spectrum(match->spectrum);
     }
@@ -431,10 +432,16 @@ void print_match_sqt(
   SCORER_TYPE_T other_score  ///< the other score to report -in
   ){
 
+  if( match == NULL || file == NULL ){
+    carp(CARP_ERROR, "Cannot print match to sqt file from null in puts");
+    return;
+  }
   PEPTIDE_T* peptide = get_match_peptide(match);
   // this should get the sequence from the match, not the peptide
-  char* sequence = get_peptide_sequence_sqt(peptide);
+  //char* sequence = get_peptide_sequence_sqt(peptide);
+  char* sequence = get_match_sequence_sqt(match);
   BOOLEAN_T adjust_delta_cn = FALSE;
+
 
   // NOTE (BF 12-Feb-08) This is an ugly fix to give post-percolator
   // sqt files the rank of the xcorr and sp.
@@ -468,6 +475,9 @@ void print_match_sqt(
 
   float delta_cn = get_match_delta_cn(match);
   if( adjust_delta_cn == TRUE ){
+    delta_cn = 0.0;
+  }
+  if( delta_cn == 0 ){// I hate -0, this prevents it
     delta_cn = 0.0;
   }
   // print match info
@@ -534,9 +544,7 @@ void qsort_match(
 // additional features
 
 /**
- * serializes the match in binary
- *
- *
+ * \brief Writes the match to file in binary.
  *
  * <PEPTIDE_T: serialize peptide>
  * <float: score><int: ranking>* <--serialize for all score types
@@ -572,6 +580,7 @@ void serialize_match(
   
   // serialize match is it null_peptide?
   fwrite(&(match->null_peptide), sizeof(BOOLEAN_T), 1, file);
+
 }
 
 /*******************************************
@@ -725,7 +734,7 @@ MATCH_T* parse_match(
     // maybe this should be fixed at the serialize match level however.
     return NULL;
   }
-  
+  carp(CARP_DETAILED_DEBUG, "Finished parsing match peptide.");
   // parse each score and rank of match
   for(score_type_idx=0; score_type_idx < _SCORE_TYPE_NUM; ++score_type_idx){
     fread(&(match->match_scores[score_type_idx]), 
@@ -822,6 +831,52 @@ char* get_match_sequence(
 }
 
 /**
+ * Returns a heap allocated peptide sequence of the PSM formatted with
+ * the flanking amino acids and modifiation symbols.
+ *
+ * Sequence is in the form of X.SEQ.X where X is the flanking amino
+ * acid or - if peptide is at the end of the protein.
+ * Sequence may not be the same as for the peptide if this is for a
+ * decoy database.
+ *\returns The sqt-formatted peptide sequence for this match.
+ */
+char* get_match_sequence_sqt(
+  MATCH_T* match ///< the match to work -in
+  ){
+  if( match == NULL ){
+    carp(CARP_ERROR, "Cannot return sequence from NULL match");
+    return NULL;
+  }
+  // get_match_mod_sequence (use method in case match->mod_seq == NULL) 
+  MODIFIED_AA_T* mod_seq = get_match_mod_sequence(match);
+  int length = get_peptide_length(get_match_peptide(match));
+
+  // turn it into string
+  //  char* seq = modified_aa_string_to_string(mod_seq);
+  char* seq = modified_aa_string_to_string(mod_seq, length);
+
+  // get peptide flanking residues 
+  char c_term = get_peptide_c_term_flanking_aa(match->peptide);
+  char n_term = get_peptide_n_term_flanking_aa(match->peptide);
+
+  // allocate seq + 4 length array
+  char* final_string = (char*)mycalloc((strlen(seq)+4), sizeof(char));
+
+  // copy pieces in
+  final_string[0] = c_term;
+  final_string[1] = '.';
+  strcpy(&final_string[2], seq);
+  final_string[strlen(seq) + 2] = '.';
+  final_string[strlen(seq) + 3] = n_term;
+  final_string[strlen(seq) + 4] = '\0';
+
+  //  fprintf(stderr, "start string %s, final %s\n", seq, final_string);
+
+  // delete mod seq and string version
+  return final_string;
+}
+
+/**
  * \brief Returns a newly allocated modified_aa sequence of the PSM.
  * Sequence is the same as the peptide, if target match or is a
  * shuffled sequence if a null (decoy) match.  If match field
@@ -841,10 +896,13 @@ MODIFIED_AA_T* get_match_mod_sequence(
     return NULL;
   }
 
+  int length = get_peptide_length(get_match_peptide(match));
+  
   // if peptide sequence is cached
   // return copy of cached peptide sequence
   if(match->mod_sequence != NULL){
-    return copy_mod_aa_seq(match->mod_sequence);
+    //return copy_mod_aa_seq(match->mod_sequence);
+    return copy_mod_aa_seq(match->mod_sequence, length);
   }
 
   // if not cached generate the sequence
@@ -856,16 +914,19 @@ MODIFIED_AA_T* get_match_mod_sequence(
       generate_shuffled_mod_sequence(match->peptide, match->overall_type);
     carp(CARP_DETAILED_DEBUG, "Shuffling transforms: %s -> %s",
          get_peptide_sequence(match->peptide),
-         modified_aa_string_to_string(match->mod_sequence));
+         //modified_aa_string_to_string(match->mod_sequence));
+         modified_aa_string_to_string(match->mod_sequence, length));
   }
   else{
-    // just go parse it out from protein, no need to shuffle
-    char* seq = get_peptide_sequence(match->peptide);
-    match->mod_sequence = convert_to_mod_aa_seq(seq);
-    free(seq);
+    // just get it from the peptide, no need to shuffle
+    //    char* seq = get_peptide_sequence(match->peptide);
+    //match->mod_sequence = convert_to_mod_aa_seq(seq);
+    match->mod_sequence = get_peptide_modified_aa_sequence(match->peptide);
+
+    //free(seq);
   }
 
-  return copy_mod_aa_seq(match->mod_sequence);
+  return copy_mod_aa_seq(match->mod_sequence, length);
 }
 
 /**

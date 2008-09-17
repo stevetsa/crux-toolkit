@@ -3,7 +3,7 @@
  * AUTHOR: Chris Park
  * CREATE DATE: 21 Sep 2006
  * DESCRIPTION: code to support working with a series of ions
- * REVISION: $Revision: 1.45.2.2 $
+ * REVISION: $Revision: 1.45.2.3 $
  ****************************************************************************/
 #include <math.h>
 #include <stdio.h>
@@ -237,7 +237,9 @@ void update_ion_series(
   // copy the peptide sequence
   ion_series->peptide = my_copy_string(peptide);
   ion_series->peptide_length = strlen(peptide);
-  ion_series->modified_aa_seq = copy_mod_aa_seq(mod_seq);
+  //  ion_series->modified_aa_seq = copy_mod_aa_seq(mod_seq);
+  ion_series->modified_aa_seq = copy_mod_aa_seq(mod_seq, 
+                                                ion_series->peptide_length);
   
   // Initialize the loss limit array for the new peptide
   for(ion_idx =0; ion_idx < ion_series->peptide_length; ++ion_idx){
@@ -469,6 +471,22 @@ float* create_ion_mass_matrix(
       get_mass_mod_amino_acid(modified_seq[ion_idx-1], mass_type);
       //get_mass_amino_acid(peptide[ion_idx-1], mass_type);
   }
+  // DEBUGGING
+  /*
+  fprintf(stderr, "seq:");
+  for(ion_idx = 0; ion_idx < peptide_length; ++ion_idx){
+    fprintf(stderr, "\t%s", modified_aa_to_string(modified_seq[ion_idx]));
+  }
+  fprintf(stderr, "\nmas:");
+  for(ion_idx = 0; ion_idx < peptide_length; ++ion_idx){
+    fprintf(stderr, "\t%.2f", get_mass_mod_amino_acid(modified_seq[ion_idx], MONO));
+  }
+  fprintf(stderr, "\nsum:");
+  for(ion_idx = 0; ion_idx < peptide_length; ++ion_idx){
+    fprintf(stderr, "\t%.2f", mass_matrix[ion_idx+1]);
+  }
+  fprintf(stderr, "\n");
+  */
   return mass_matrix;
 }
 

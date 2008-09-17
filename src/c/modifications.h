@@ -16,7 +16,7 @@
  * spectrum search.  One PEPTIDE_MOD corresponds to one mass window
  * that must be searched.
  * 
- * $Revision: 1.1.2.14 $
+ * $Revision: 1.1.2.15 $
  */
 #ifndef MODIFICATION_FILE_H
 #define MODIFICATION_FILE_H
@@ -101,7 +101,7 @@ char* modified_aa_to_string(MODIFIED_AA_T aa);
  * \returns A newly allocated array of characters, a text
  * representation of the modified sequence.
  */
-char* modified_aa_string_to_string(MODIFIED_AA_T* aa_string);
+char* modified_aa_string_to_string(MODIFIED_AA_T* aa_string, int length);
 
 /**
  * \brief Allocates an array of MODIFIED_AA_T's the same length as
@@ -117,13 +117,13 @@ MODIFIED_AA_T* convert_to_mod_aa_seq(char* sequence);
 /**
  * \brief Allocate a new MODIFIED_AA_T array and copy values into it.
  */
-MODIFIED_AA_T* copy_mod_aa_seq( MODIFIED_AA_T* source );
+MODIFIED_AA_T* copy_mod_aa_seq(MODIFIED_AA_T* source, int length);
 
 /**
  * \brief Frees memory for an array of MODIFIED_AA_Ts.  Assumes is
  * terminated with the MOD_SEQ_NULL value
  */
-void free_mod_aa_seq( MODIFIED_AA_T* seq );
+void free_mod_aa_seq(MODIFIED_AA_T* seq);
 
 /**
  * \brief Gives the size of the aa_mod struct.  For serialization
@@ -201,6 +201,29 @@ int get_aa_mods(MODIFIED_AA_T aa,
  * \returns void
  */
 void read_mods_from_file(char* param_file);
+
+/**
+ * \brief Write the given aa mod to file in binary format.  Used for
+ * serializing csm file headers.
+ *
+ * \return TRUE if written to file without error, else false.
+ */
+BOOLEAN_T serialize_aa_mod(AA_MOD_T* a_mod,
+                           FILE* file
+);
+
+/**
+ * \brief Read an aa mod from file in binary format as written by
+ * serialize_aa_mod().  Overwrites any data in the passed aa_mod.
+ * Used for reading in csm files. If FALSE is returned, the passed
+ * a_mod will contain unpredictable values.
+ *
+ * \returns TRUE if aa_mod successfully read, else FALSE.  
+ */
+BOOLEAN_T parse_aa_mod(AA_MOD_T* a_mod,
+                       FILE* file
+);
+
 
 /**
  * \brief Get the pointer to the list of AA_MODs requested by the

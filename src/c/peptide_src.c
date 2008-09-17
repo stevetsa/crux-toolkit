@@ -1,6 +1,6 @@
 /*************************************************************************//**
  * \file peptide_src.c
- * $Revision: 1.17.2.2 $
+ * $Revision: 1.17.2.3 $
  * \brief: Object for mapping a peptide to it's parent protein.
  ****************************************************************************/
 
@@ -452,6 +452,7 @@ BOOLEAN_T parse_peptide_src(
     peptide_src = get_peptide_src_next_association(peptide_src);
   }// next peptide_src in file
 
+  carp(CARP_DETAILED_DEBUG, "Finished parsing peptide src.");
   return TRUE;
 }
 

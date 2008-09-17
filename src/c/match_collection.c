@@ -8,7 +8,7 @@
  *
  * AUTHOR: Chris Park
  * CREATE DATE: 11/27 2006
- * $Revision: 1.79.2.5 $
+ * $Revision: 1.79.2.6 $
  ****************************************************************************/
 #include "match_collection.h"
 
@@ -219,6 +219,9 @@ void update_protein_counters(
   PEPTIDE_T* peptide  
   );
 
+BOOLEAN_T calculate_delta_cn(
+  MATCH_COLLECTION_T* match_collection);
+
 /********* end of function declarations *******************/
 
 
@@ -350,7 +353,7 @@ MATCH_COLLECTION_T* new_match_collection_from_spectrum(
       return NULL;
     }
     if (match_collection->match_total == 0){
-      carp(CARP_WARNING, "No matches found for spectrum %i charge %i",
+      carp(CARP_WARNING, "No matches found for spectrum %i charge %i(new match from spectrum)",
           get_spectrum_first_scan(spectrum), charge);
       free_match_collection(match_collection);
       return NULL;
@@ -1268,11 +1271,11 @@ BOOLEAN_T score_match_collection_sp(
  * \return TRUE if successful.
  */
 BOOLEAN_T score_peptides(
-  SCORER_TYPE_T score_type, 
-  MATCH_COLLECTION_T* match_collection, 
-  SPECTRUM_T* spectrum, 
-  int charge, 
-  MODIFIED_PEPTIDES_ITERATOR_T* peptide_iterator){
+  SCORER_TYPE_T score_type, ///< use this score to compare spec/peptide
+  MATCH_COLLECTION_T* match_collection, ///< put results here
+  SPECTRUM_T* spectrum,     ///< spectrum to compare
+  int charge,               ///< charge of spectrum
+  MODIFIED_PEPTIDES_ITERATOR_T* peptide_iterator){///< source of peptides
 
   if( match_collection == NULL || spectrum == NULL 
       || peptide_iterator == NULL ){
@@ -1448,6 +1451,10 @@ BOOLEAN_T score_matches_one_spectrum(
 
     // set score in match
     set_match_score(match, score_type, score);
+    carp(CARP_DETAILED_DEBUG, "Scored match scan %d, z %d, null %d",
+         get_spectrum_first_scan(get_match_spectrum(match)),
+         get_match_charge(match),
+         get_match_null_peptide(match));
 
     free(sequence);
   }// next match
@@ -2244,6 +2251,12 @@ BOOLEAN_T serialize_psm_features(
   
   float delta_cn =  get_match_collection_delta_cn(match_collection);
   float ln_delta_cn = logf(delta_cn);
+  // FIXME (BF 16-Sep-08): log(delta_cn) isn't even a feature in percolator
+  if( delta_cn == 0 ){
+    // this value makes it the same as what is in the smoke test
+    //ln_delta_cn = -13.8155;
+    ln_delta_cn = 0;
+  }
   float ln_experiment_size = logf(match_collection->experiment_size);
 
   // spectrum specific features
@@ -2273,6 +2286,11 @@ BOOLEAN_T serialize_psm_features(
     prelim_score = prelim_score;
     
     // serialize matches
+    carp(CARP_DETAILED_DEBUG, "About to serialize match %d, z %d, null %d",
+         get_spectrum_first_scan(get_match_spectrum(match)),
+         get_match_charge(match),
+         get_match_null_peptide(match));
+
     serialize_match(match, output); // FIXME main, preliminary type
     
     // print only up to max_rank_result of the matches
@@ -2437,13 +2455,16 @@ BOOLEAN_T print_match_collection_sqt(
   )
 {
 
-  if( output == NULL ){
+  if( output == NULL || match_collection == NULL || spectrum == NULL ){
     return FALSE;
   }
   time_t hold_time;
   hold_time = time(0);
   int charge = match_collection->charge; 
   int num_matches = match_collection->experiment_size;
+
+  // calculate delta_cn and populate fields in the matches
+  calculate_delta_cn(match_collection);
 
   // First, print spectrum info
   print_spectrum_sqt(spectrum, output, num_matches, charge);
@@ -2665,10 +2686,11 @@ void serialize_headers(FILE** psm_file_array){
     fwrite(&(matches_per_spectrum), sizeof(int), 1, psm_file_array[i]);
 
     fwrite(&num_mods, sizeof(int), 1, psm_file_array[i]);
-    // this a list of pointers to mods, so write each one
+    // this a list of pointers to mods, write each one
     int mod_idx = 0;
     for(mod_idx = 0; mod_idx<num_mods; mod_idx++){
-      fwrite(list_of_mods[mod_idx], get_aa_mod_sizeof(), 1, psm_file_array[i]);
+    //fwrite(list_of_mods[mod_idx], get_aa_mod_sizeof(), 1, psm_file_array[i]);
+      serialize_aa_mod(list_of_mods[mod_idx], psm_file_array[i]);
     }
   }
   
@@ -2726,7 +2748,9 @@ BOOLEAN_T parse_csm_header
   int mod_idx = 0;
   for(mod_idx = 0; mod_idx<num_mods; mod_idx++){
     AA_MOD_T* cur_mod = new_aa_mod(mod_idx);
-    fread(cur_mod, get_aa_mod_sizeof(), 1, file);
+    //fread(cur_mod, get_aa_mod_sizeof(), 1, file);
+    parse_aa_mod(cur_mod, file);
+    //print_a_mod(cur_mod);
     file_mod_list[mod_idx] = cur_mod;
   }
 
@@ -2768,6 +2792,12 @@ void print_matches(
   // write binary files
   if( output_type != SQT_OUTPUT ){ //i.e. binary or all
     carp(CARP_DETAILED_DEBUG, "Serializing psms");
+    carp(CARP_DETAILED_DEBUG, 
+         "About to serialize psm features for collection starting with match scan %d, z %d, null %d",
+         get_spectrum_first_scan(get_match_spectrum(match_collection->match[0])),
+         get_match_charge(match_collection->match[0]),
+         get_match_null_peptide(match_collection->match[0]));
+
     serialize_psm_features(match_collection, psm_file, max_psm_matches,
                            prelim_score, main_score);
   }
@@ -3259,6 +3289,48 @@ BOOLEAN_T fill_result_to_match_collection(
 void process_run_specific_features(
   MATCH_COLLECTION_T* match_collection ///< the match collection to free -out
   );
+
+/**
+ * \brief Calculate the delta_cn of each match and populate the field.
+ * 
+ * Delta_cn is the xcorr difference between match[i] and match[i+1]
+ * divided by the xcorr of match[0].  This could be generalized to
+ * which ever score is the main one.  Sorts by xcorr, if necessary.
+ * 
+ */
+BOOLEAN_T calculate_delta_cn( MATCH_COLLECTION_T* match_collection){
+
+  if( match_collection == NULL ){
+    carp(CARP_ERROR, "Cannot calculate deltaCn for NULL match collection");
+    return FALSE;
+  }
+
+  if( match_collection->scored_type[XCORR] == FALSE ){
+    carp(CARP_WARNING, 
+      "Delta_cn not calculated because match collection not scored for xcorr");
+    return FALSE;
+  }
+
+  // sort, if not already
+  MATCH_T** matches = match_collection->match;
+  int num_matches = match_collection->match_total;
+  if( match_collection->last_sorted != XCORR ){
+    qsort_match(matches, num_matches, (void*)compare_match_xcorr);
+    match_collection->last_sorted = XCORR;
+  }
+
+  // get xcorr of first match
+  float max_xcorr = get_match_score(matches[0], XCORR);
+
+  // for each match, calculate deltacn
+  int match_idx=0;
+  for(match_idx=0; match_idx < num_matches; match_idx++){
+    float diff = max_xcorr - get_match_score(matches[match_idx], XCORR);
+    set_match_delta_cn(matches[match_idx], (diff / max_xcorr) );
+  }
+
+  return TRUE;
+}
 
 
 /**********************************

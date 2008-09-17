@@ -16,7 +16,7 @@
  * spectrum search.  One PEPTIDE_MOD corresponds to one mass window
  * that must be searched.
  * 
- * $Revision: 1.1.2.15 $
+ * $Revision: 1.1.2.16 $
  */
 
 #include "modifications.h"
@@ -84,7 +84,8 @@ unsigned short mod_id_masks[MAX_AA_MODS] =
  */
 struct _aa_mod{ 
   double mass_change;  ///< the amount by which the mass of the residue changes
-  BOOLEAN_T* aa_list;  ///< an array indexed by AA, true if can be modified
+  BOOLEAN_T aa_list[AA_LIST_LENGTH];
+                       ///< an array indexed by AA, true if can be modified
   int max_per_peptide; ///< the maximum number of mods per peptide
   MOD_POSITION_T position; ///< where the mod can occur in the pep/prot
   int max_distance;        ///< the max distance from the protein terminus
@@ -114,9 +115,10 @@ AA_MOD_T* new_aa_mod(int mod_idx){
   mod->identifier = mod_id_masks[mod_idx];
   
   // allocate the aa lists for mods 
+  /*
   mod->aa_list =                        // all 0's?
     (BOOLEAN_T*)mycalloc(AA_LIST_LENGTH, sizeof(BOOLEAN_T)); 
-  
+  */
   // initialize to FALSE
   int aa_idx = 0;
   for(aa_idx=0; aa_idx < AA_LIST_LENGTH; aa_idx++){
@@ -130,7 +132,7 @@ AA_MOD_T* new_aa_mod(int mod_idx){
  */
 void free_aa_mod(AA_MOD_T* mod){
   if( mod ){
-    if( mod->aa_list ){free(mod->aa_list);}
+    //if( mod->aa_list ){free(mod->aa_list);}
     free(mod);
   }
 }
@@ -206,22 +208,21 @@ char* modified_aa_to_string(MODIFIED_AA_T aa){
  * \returns A newly allocated array of characters, a text
  * representation of the modified sequence.
  */
-char* modified_aa_string_to_string(MODIFIED_AA_T* aa_string){
-
+char* modified_aa_string_to_string(MODIFIED_AA_T* aa_string, int length){
   if( aa_string == NULL ){
     carp(CARP_ERROR, "Cannot print a NULL modified sequence");
     return NULL;
   }
 
   AA_MOD_T** global_mod_list = NULL;
-  //int mod_list_length = get_aa_mod_list(&global_mod_list);
   int mod_list_length = get_all_aa_mod_list(&global_mod_list);
   int global_idx = 0;
 
   // count up amino acids and modifications
   int count = 0;
   int mod_str_idx = 0;
-  while( aa_string[mod_str_idx] != MOD_SEQ_NULL ){
+  //  while( aa_string[mod_str_idx] != MOD_SEQ_NULL ){
+  for(mod_str_idx=0; mod_str_idx< length; mod_str_idx++){
     count++;      // count the aas
     for(global_idx = 0; global_idx < mod_list_length; global_idx++){
       if( is_aa_modified(aa_string[mod_str_idx], 
@@ -229,17 +230,19 @@ char* modified_aa_string_to_string(MODIFIED_AA_T* aa_string){
         count++;  // count all mods
       }
     }
-    mod_str_idx++;
+    //    mod_str_idx++;
   }
-  carp(CARP_DETAILED_DEBUG, "found %d modified aas", count - mod_str_idx);
-  int mod_str_len = mod_str_idx;  // keep track of aa_string length
+  carp(CARP_DETAILED_DEBUG, "Found %d modified aas out of",
+       count - mod_str_idx, count);
+  //int mod_str_len = mod_str_idx;  // keep track of aa_string length
 
   // create a buffer to hold all aas and mod symbols
   char* return_string = (char*)mymalloc((count+1)*sizeof(char));
   char* return_str_ptr = return_string;
 
   // for each mod_aa, get the string representation, copy to return str
-  for(mod_str_idx = 0; mod_str_idx<mod_str_len; mod_str_idx++){
+  //  for(mod_str_idx = 0; mod_str_idx<mod_str_len; mod_str_idx++){
+  for(mod_str_idx = 0; mod_str_idx<length; mod_str_idx++){
 
     char* cur_mod = modified_aa_to_string( aa_string[mod_str_idx] );
     strcpy( return_str_ptr, cur_mod );
@@ -284,23 +287,85 @@ MODIFIED_AA_T* convert_to_mod_aa_seq(char* sequence){
 /**
  * \brief Allocate a new MODIFIED_AA_T array and copy values into it.
  */
-MODIFIED_AA_T* copy_mod_aa_seq( MODIFIED_AA_T* source){
+MODIFIED_AA_T* copy_mod_aa_seq(MODIFIED_AA_T* source, int length){
   if( source == NULL ){
     carp(CARP_ERROR, "Cannot copy NULL sequence of modified_aa's.");
     return NULL;
   }
 
   // get the length of the source seq
+  /*
   int i=0;
   while( source[i] != MOD_SEQ_NULL ){
+    carp(CARP_DETAILED_DEBUG, "seq len is %d", i);
     i++;
   }
-  i++;
+  i++; // for null termination
+  */
 
-  MODIFIED_AA_T* new_seq = mycalloc( i, sizeof(MODIFIED_AA_T) );
-  memcpy( new_seq, source, i * sizeof(MODIFIED_AA_T));
+  //MODIFIED_AA_T* new_seq = mycalloc( i, sizeof(MODIFIED_AA_T) );
+  MODIFIED_AA_T* new_seq = mycalloc( length + 1, sizeof(MODIFIED_AA_T) );
+  //memcpy( new_seq, source, i * sizeof(MODIFIED_AA_T));
+  memcpy( new_seq, source, length * sizeof(MODIFIED_AA_T));
+  new_seq[length] = MOD_SEQ_NULL;
 
   return new_seq;
+}
+
+/**
+ * \brief Write the given aa mod to file in binary format.  Used for
+ * serializing csm file headers.
+ *
+ * \return TRUE if written to file without error, else false.
+ */
+BOOLEAN_T serialize_aa_mod(AA_MOD_T* a_mod,
+                           FILE* file
+){
+  if( a_mod == NULL || file == NULL ){
+    carp(CARP_ERROR, "Cannot serialize aa_mod to file with NULL inputs");
+    return FALSE;
+  }
+
+  // write all member variables
+  fwrite(a_mod, sizeof(AA_MOD_T), 1, file);
+
+  // then write each aa TRUE/FALSE
+  /*
+  int aa_idx;
+  for(aa_idx = 0; aa_idx < AA_LIST_LENGTH; aa_idx++){
+    fwrite((a_mod->aa_list)+aa_idx, sizeof(BOOLEAN_T), 1, file);
+  }
+  */
+  return TRUE;
+}
+
+/**
+ * \brief Read an aa mod from file in binary format as written by
+ * serialize_aa_mod().  Overwrites any data in the passed aa_mod.
+ * Used for reading in csm files. If FALSE is returned, the passed
+ * a_mod will contain unpredictable values.
+ *
+ * \returns TRUE if aa_mod successfully read, else FALSE.  
+ */
+BOOLEAN_T parse_aa_mod(AA_MOD_T* a_mod,
+                       FILE* file
+){
+  if( a_mod == NULL || file == NULL ){
+    carp(CARP_ERROR, "Cannot parse aa_mod from file with NULL inputs");
+    return FALSE;
+  }
+
+  // read in struct
+  fread(a_mod, sizeof(AA_MOD_T), 1, file);
+
+  // then read in each modifiable aa (TRUE/FALSE)
+  /*
+  int aa_idx;
+  for(aa_idx = 0; aa_idx < AA_LIST_LENGTH; aa_idx++){
+    fread((a_mod->aa_list)+aa_idx, sizeof(BOOLEAN_T), 1, file);
+  }
+  */
+  return TRUE;
 }
 
 /**
@@ -336,6 +401,10 @@ BOOLEAN_T compare_mods(AA_MOD_T** psm_file_mod_list, int file_num_mods){
   int mod_idx = 0;
   for(mod_idx=0; mod_idx<num_mods; mod_idx++){
     if( ! compare_two_mods(mod_list[mod_idx], psm_file_mod_list[mod_idx]) ){
+      printf("param mod %d is: ", mod_idx);
+      print_a_mod(mod_list[mod_idx]);
+      printf("file mod %d is: ", mod_idx);
+      print_a_mod(psm_file_mod_list[mod_idx]);
       return FALSE;
     }
   }

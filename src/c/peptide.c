@@ -1,6 +1,6 @@
 /*************************************************************************//**
  * \file peptide.c
- * $Revision: 1.72.2.15 $
+ * $Revision: 1.72.2.16 $
  * \brief: Object for representing a single peptide.
  ****************************************************************************/
 #include "peptide.h"
@@ -145,7 +145,8 @@ PEPTIDE_T* copy_peptide(
     */
     new_peptide->modified_seq = NULL;
   }else{
-    new_peptide->modified_seq = copy_mod_aa_seq(src->modified_seq);
+    //    new_peptide->modified_seq = copy_mod_aa_seq(src->modified_seq);
+    new_peptide->modified_seq = copy_mod_aa_seq(src->modified_seq,src->length);
   }
   //PEPTIDE_SRC_T* new_association;
 
@@ -535,11 +536,8 @@ char* get_peptide_sequence_from_peptide_src_sqt(
   // Default template is "X.peptide.X", where "X" are flanking amino acids
   copy_sequence[0] = '-';
   copy_sequence[1] = '.';
-  //copy_sequence[peptide->length+2] = '.';
   copy_sequence[mod_pep_len+2] = '.';
-  //copy_sequence[peptide->length+3] = '-';
   copy_sequence[mod_pep_len+3] = '-';
-  //copy_sequence[peptide->length+4] = '\0';
   copy_sequence[mod_pep_len+4] = '\0';
 
   // copy over the peptide sequences
@@ -558,6 +556,68 @@ char* get_peptide_sequence_from_peptide_src_sqt(
   free(mod_pep_seq);
   // yeah return!!
   return copy_sequence; 
+}
+
+/**
+ * \brief Return a char for the amino acid c-terminal to the peptide
+ * in the peptide src at the given index.
+ *
+ * \returns A char (A-Z) or - if peptide is the first in the protein.
+ */
+char get_peptide_c_term_flanking_aa(
+ PEPTIDE_T* peptide   ///< peptide of interest
+ ){
+  if( peptide == NULL ){
+    carp(CARP_ERROR, "Cannot get flanking amino acid from null peptide");
+    return '\0';
+  }
+
+  // get protein seq
+  PROTEIN_T* protein = get_peptide_src_parent_protein(peptide->peptide_src);
+  char* protein_seq = get_protein_sequence_pointer(protein);
+
+  // get peptide start idx, protein index starts at 1
+  int start_index = get_peptide_src_start_idx(peptide->peptide_src);
+
+  char aa = '-';
+  // if not at beginning, return char
+  if( start_index > 1 ){
+    aa = protein_seq[start_index - 2]; // -1 for 1-based shift
+                                       // -1 for aa before start
+  } 
+  return aa;
+}
+
+/**
+ * \brief Return a char for the amino acid n-terminal to the peptide
+ * in the peptide src at the given index.
+ *
+ * \returns A char (A-Z) or - if peptide is the last in the protein.
+ */
+char get_peptide_n_term_flanking_aa(
+ PEPTIDE_T* peptide   ///< peptide of interest
+ )
+{
+  if( peptide == NULL ){
+    carp(CARP_ERROR, "Cannot get flanking amino acid from null peptide");
+    return '\0';
+  }
+
+  // get protein seq and length
+  PROTEIN_T* protein = get_peptide_src_parent_protein(peptide->peptide_src);
+  char* protein_seq = get_protein_sequence_pointer(protein);
+  int protein_length = get_protein_length(protein);
+
+  // get peptide end idx, protein index starts at 1
+  int start_index = get_peptide_src_start_idx(peptide->peptide_src);
+  int end_index = start_index + peptide->length - 1;
+
+  char aa = '-';
+  // if not at end, return char
+  if( end_index < protein_length ){
+    aa = protein_seq[end_index]; // -1 for 1-based shift, +1 for aa after end
+  } 
+  return aa;
 }
 
 /**
@@ -601,12 +661,17 @@ MODIFIED_AA_T* get_peptide_modified_aa_sequence(PEPTIDE_T* peptide){
   
   // comment me to fix files
   if( peptide->modified_seq != NULL ){
-    seq_copy = copy_mod_aa_seq(peptide->modified_seq);
+      carp(CARP_DETAILED_DEBUG, "mod seq cached of len %d", peptide->length);
+      //    seq_copy = copy_mod_aa_seq(peptide->modified_seq);
+    seq_copy = copy_mod_aa_seq(peptide->modified_seq,
+                               peptide->length);
   }else{// create one from char seq
+      carp(CARP_DETAILED_DEBUG, "mod seq NOT cached");
     char* seq = get_peptide_sequence(peptide);
     seq_copy = convert_to_mod_aa_seq(seq);
     free(seq);
   }
+      carp(CARP_DETAILED_DEBUG, "got to here");
   
   return seq_copy;
 }
@@ -626,7 +691,9 @@ char* get_peptide_modified_sequence(
   if( peptide->modified_seq == NULL ){
     seq_string = get_peptide_sequence(peptide);
   }else{
-    seq_string = modified_aa_string_to_string(peptide->modified_seq);
+    //    seq_string = modified_aa_string_to_string(peptide->modified_seq);
+    seq_string = modified_aa_string_to_string(peptide->modified_seq,
+                                              peptide->length);
   }
   
   return seq_string;
@@ -1098,7 +1165,9 @@ void print_peptide_in_format(
     if( peptide->modified_seq== NULL ){
       sequence = get_peptide_sequence(peptide);
     }else{
-      sequence = modified_aa_string_to_string(peptide->modified_seq);
+      //      sequence = modified_aa_string_to_string(peptide->modified_seq);
+      sequence = modified_aa_string_to_string(peptide->modified_seq, 
+                                              peptide->length);
     }
   }
 
@@ -1317,7 +1386,7 @@ BOOLEAN_T serialize_peptide(
   fseek(file, original_location, SEEK_SET);
 
   // write the number of MODIFIED_AA_T's to serialize
-  int mod_seq_length = peptide->length;
+  int mod_seq_length = peptide->length + 1;
   if( peptide->modified_seq == NULL ){
     mod_seq_length = 0;
   }
@@ -1462,8 +1531,18 @@ PEPTIDE_T* parse_peptide(
     peptide->modified_seq = NULL;
   }
 
-  // read in modified sequence
-  fread(peptide->modified_seq, sizeof(MODIFIED_AA_T), mod_seq_len, file);
+  carp(CARP_DETAILED_DEBUG, "Length of modified sequence is %d", mod_seq_len);
+  // allocate memory for and read in modified sequence
+  if( mod_seq_len == 0 ){
+    peptide->modified_seq = NULL;
+  }else{
+    assert( mod_seq_len - 1 == peptide->length );
+    peptide->modified_seq = 
+      (MODIFIED_AA_T*)mycalloc(mod_seq_len, sizeof(MODIFIED_AA_T));
+    fread(peptide->modified_seq, sizeof(MODIFIED_AA_T), mod_seq_len, file); 
+  }
+  
+  carp(CARP_DETAILED_DEBUG, "Finished parsing peptide.");
   
   return peptide;
 }

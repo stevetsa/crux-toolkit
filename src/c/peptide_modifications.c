@@ -16,7 +16,7 @@
  * spectrum search.  One PEPTIDE_MOD corresponds to one mass window
  * that must be searched.
  * 
- * $Revision: 1.1.2.15 $
+ * $Revision: 1.1.2.16 $
  */
 
 #include "peptide_modifications.h"
@@ -484,9 +484,9 @@ int modify_peptide(
     MODIFIED_AA_T* cur_mod_seq = 
       (MODIFIED_AA_T*)pop_front_linked_list(modified_seqs);
 
-    char* seq = modified_aa_string_to_string(cur_mod_seq);
+    //char* seq = modified_aa_string_to_string(cur_mod_seq);
     //printf("  %s\n", seq);
-    free(seq);
+    //free(seq);
 
     set_peptide_mod(cur_peptide, cur_mod_seq, peptide_mod);
 
@@ -579,9 +579,9 @@ int apply_mod_to_list(
 }
 
 /**
- * \brief Beginning with a peptide sequence and an aa_mod, return via
- * 'return_list' parameter a list of modified versions of the peptide
- * sequence.
+ * \brief Beginning with a peptide sequence (of modified aas) and an
+ * aa_mod, return via the 'return_list' parameter a list of modified
+ * versions of the peptide sequence.
  *
  * The initial seq is left untouched.  If the seq cannot be modified
  * by the aa_mod, return_list is unchanged and 0 is returned.  If the
@@ -589,8 +589,10 @@ int apply_mod_to_list(
  * the seq.
  *
  * \returns The number of ways in which the sequence could be
- * modified, i.e. the number of items in return_list.
+ * modified, i.e. the number of items added to return_list.
  */
+// TODO (BF 17-Sep-08): could add seq length to make consistent with
+// other functions with MODIFIED_AA_T array parameters
 int apply_mod_to_seq(
   MODIFIED_AA_T* seq,          ///< the seq to modify
   AA_MOD_T* mod,               ///< the mod to apply
@@ -606,40 +608,52 @@ int apply_mod_to_seq(
     return 0;
   }
 
+  // find seq length (see TODO above)
+  int seq_len = 0;
+  while( seq[seq_len] != MOD_SEQ_NULL ){
+    seq_len++;
+  }
+
   // no modification to add, return seq as is
   if( mod == NULL ){
-    push_back_linked_list( return_list, copy_mod_aa_seq(seq) );
+    push_back_linked_list( return_list, copy_mod_aa_seq(seq, seq_len) );
     return 1;
   }
 
   // special case: positional mods
   if( C_TERM == aa_mod_get_position(mod) ){
-    MODIFIED_AA_T* seq_copy = copy_mod_aa_seq(seq);
+    //MODIFIED_AA_T* seq_copy = copy_mod_aa_seq(seq);
+    MODIFIED_AA_T* seq_copy = copy_mod_aa_seq(seq, seq_len);
     modify_aa( &seq_copy[0], mod );
     push_back_linked_list(return_list, seq_copy);
     return 1;  // one added to list
   }
   if( N_TERM == aa_mod_get_position(mod)){
-    MODIFIED_AA_T* seq_copy = copy_mod_aa_seq(seq);
+    //MODIFIED_AA_T* seq_copy = copy_mod_aa_seq(seq);
+    MODIFIED_AA_T* seq_copy = copy_mod_aa_seq(seq, seq_len);
+    /*
     // find last index
     int seq_idx = 0;
     while( seq[seq_idx] != MOD_SEQ_NULL ){
       seq_idx++;
     }
-    modify_aa( &seq_copy[seq_idx-1], mod );
+    */
+    //modify_aa( &seq_copy[seq_idx-1], mod );
+    modify_aa( &seq_copy[seq_len-1], mod );
     push_back_linked_list(return_list, seq_copy);
     return 1;  // one added to list
   }
 
-  // first loop, skip over n modified aas
+  // first loop, skip over n modified aas in the seq
   int seq_idx = 0;
   while( seq[seq_idx] != MOD_SEQ_NULL  && skip_n != 0){
     if( is_aa_modified( seq[seq_idx], mod ) ){
       skip_n--;
     }
     seq_idx++;
-  }
-  // second loop, end after reached end check for modifiability, copy and add
+  }// nex mod_aa; stop at end of seq or having skipped n
+
+  // second loop, for each aa: check for modifiability, copy and add
 
   // check each aa
   // copy seq when modifiable and add to list
@@ -647,7 +661,8 @@ int apply_mod_to_seq(
   while( seq[seq_idx] != MOD_SEQ_NULL ){
 
     if( is_aa_modifiable( seq[seq_idx], mod )){
-      MODIFIED_AA_T* seq_copy = copy_mod_aa_seq(seq);
+      //      MODIFIED_AA_T* seq_copy = copy_mod_aa_seq(seq);
+      MODIFIED_AA_T* seq_copy = copy_mod_aa_seq(seq, seq_len);
       modify_aa( &seq_copy[seq_idx], mod );
 
       push_back_linked_list(return_list, seq_copy);

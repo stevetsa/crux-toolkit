@@ -164,7 +164,7 @@ int main(int argc, char** argv){
     int charge = 0;
     SPECTRUM_T* spectrum = 
       filtered_spectrum_charge_iterator_next(spectrum_iterator, &charge);
-    double mass = get_spectrum_mass(spectrum, charge);
+    double mass = get_spectrum_neutral_mass(spectrum, charge);
 
     carp(CARP_DETAILED_INFO, 
          "Searching spectrum number %i, charge %i, search number %i",
@@ -175,7 +175,6 @@ int main(int argc, char** argv){
     // create an empty match collection 
     MATCH_COLLECTION_T* match_collection = 
       new_empty_match_collection( FALSE ); // is decoy
-
 
     // assess scores after all pmods with x amods have been searched
     int cur_aa_mods = 0;
@@ -200,7 +199,6 @@ int main(int argc, char** argv){
                                                  peptide_mod,
                                                  index,
                                                  database);
-
       // score peptides
       int added = add_matches(match_collection, spectrum, 
                               charge, peptide_iterator);
@@ -217,7 +215,7 @@ int main(int argc, char** argv){
       carp(CARP_WARNING, "No matches found for spectrum %i, charge %i",
            get_spectrum_first_scan(spectrum), charge);
       free_match_collection(match_collection);
-      break; // next spectrum
+      continue; // next spectrum
     }
     
     // print matches
@@ -232,10 +230,17 @@ int main(int argc, char** argv){
     int decoy_idx = 0;
     for(decoy_idx = 0; decoy_idx < num_decoys; decoy_idx++ ){
       carp(CARP_DETAILED_DEBUG, "Searching decoy %i", decoy_idx+1);
+
+      // create an empty match collection 
+      MATCH_COLLECTION_T* match_collection = 
+        new_empty_match_collection( TRUE ); // is decoy
+
       for(mod_idx = 0; mod_idx < max_mods; mod_idx++){
+        /*
         // create an empty match collection 
-        MATCH_COLLECTION_T* match_collection = 
+          MATCH_COLLECTION_T* match_collection = 
           new_empty_match_collection( TRUE ); // is decoy
+        */
 
         // get peptide mod
         PEPTIDE_MOD_T* peptide_mod = peptide_mods[mod_idx];
@@ -269,6 +274,14 @@ int main(int argc, char** argv){
     // clean up
     free_match_collection(match_collection);
   }// next spectrum
+
+  // fix headers in csm files
+  int file_idx;
+  for(file_idx=0; file_idx < num_decoys + 1; file_idx++){
+    serialize_total_number_of_spectra(spectrum_searches_counter,
+                                      psm_file_array[file_idx]);
+  }
+  // clean up memory
 
   carp(CARP_INFO, "Finished crux-search-for-matches");
   exit(0);

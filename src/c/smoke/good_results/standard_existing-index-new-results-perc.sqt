@@ -2,9 +2,9 @@ H	SQTGenerator Crux
 H	SQTGeneratorVersion 1.0
 H	Comment Crux was written by...
 H	Comment ref...
-H	StartTime	Wed Sep 17 11:04:21 2008
+H	StartTime	Wed Sep 17 11:34:59 2008
 H	EndTime                               
-H	Database	test.fasta
+H	Database	existing_crux_index/existing-binary-fasta
 H	DBSeqLength	?
 H	DBLocusCount	4
 H	PrecursorMasses	average

@@ -1,6 +1,6 @@
 /**
  * \file peptide.h 
- * $Revision: 1.45.4.7 $
+ * $Revision: 1.45.4.8 $
  * \brief Object for representing one peptide.
  */
 #ifndef PEPTIDE_H 
@@ -247,6 +247,26 @@ char* get_peptide_sequence_sqt(
 char* get_peptide_sequence_from_peptide_src_sqt(
  PEPTIDE_T* peptide, ///< peptide to query sequence -in
  PEPTIDE_SRC_T* peptide_src ///< peptide_src -in 
+ );
+
+/**
+ * \brief Return a char for the amino acid c-terminal to the peptide
+ * in the peptide src at the given index.
+ *
+ * \returns A char (A-Z) or - if peptide is the first in the protein.
+ */
+char get_peptide_c_term_flanking_aa(
+ PEPTIDE_T* peptide   ///< peptide of interest
+ );
+
+/**
+ * \brief Return a char for the amino acid n-terminal to the peptide
+ * in the peptide src at the given index.
+ *
+ * \returns A char (A-Z) or - if peptide is the last in the protein.
+ */
+char get_peptide_n_term_flanking_aa(
+ PEPTIDE_T* peptide   ///< peptide of interest
  );
 
 /**

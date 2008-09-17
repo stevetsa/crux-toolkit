@@ -202,9 +202,10 @@ START_TEST(test_mod_str_to_string){
   force_set_aa_mod_list(amod_list, 3);
 
   char* seq = "GBBKATRM"; 
+  int len = strlen(seq);
   MODIFIED_AA_T* modaa_seq = convert_to_mod_aa_seq(seq);
 
-  char* modchar_seq = modified_aa_string_to_string( modaa_seq );
+  char* modchar_seq = modified_aa_string_to_string(modaa_seq, len);
   fail_unless( strcmp(modchar_seq, seq) == 0,
                "Seq %s should equal %s", seq, modchar_seq);
 
@@ -226,7 +227,7 @@ START_TEST(test_mod_str_to_string){
   modify_aa( &modaa_seq[4], amod3 );
   modify_aa( &modaa_seq[7], amod2 );
   modify_aa( &modaa_seq[7], amod3 );
-  modchar_seq = modified_aa_string_to_string( modaa_seq );
+  modchar_seq = modified_aa_string_to_string(modaa_seq, len);
 
   fail_unless( strcmp(modchar_seq, "GB@BKA*#TRM@#") == 0,
                "Seq %s should equal %s", seq, modchar_seq);
@@ -237,9 +238,10 @@ END_TEST
 
 START_TEST(test_copy_mod_seq){
   char* seq = "GBBKATRM"; 
+  int len = strlen(seq);
   MODIFIED_AA_T* mod_seq = convert_to_mod_aa_seq(seq);
 
-  MODIFIED_AA_T* copied_seq = copy_mod_aa_seq( mod_seq );
+  MODIFIED_AA_T* copied_seq = copy_mod_aa_seq( mod_seq, len );
   int i = 0;
   for(i = 0; i<strlen(seq); i++){
     fail_unless( copied_seq[i] == mod_seq[i],
@@ -277,6 +279,31 @@ START_TEST(test_modify){
 }
 END_TEST
 
+START_TEST(test_serialize){
+  initialize_parameters();
+  // create a mod with non-zero values for all fields
+  aa_mod_set_mass_change(amod1, 87.9);
+  aa_mod_set_max_per_peptide(amod1, 3);
+  BOOLEAN_T* aa_list = aa_mod_get_aa_list(amod1);
+  aa_list['S' - 'A'] = TRUE;
+  aa_list['T' - 'A'] = TRUE;
+  aa_list['Y' - 'A'] = TRUE;
+
+  // write a mod to file
+  FILE* file = fopen("amod.bin", "w");
+  fail_unless( serialize_aa_mod(amod1, file),
+               "Error in serializing amod1 to file.");
+  // close the file and read it back in
+  fclose(file);
+  file = NULL;
+  file = fopen("amod.bin", "r");
+  fail_unless( parse_aa_mod(amod2, file),
+               "Error in parsing amod1 from file.");
+  // test that compare() calls them the same
+
+}
+END_TEST
+
 /* Boundry conditions test suite */
 START_TEST(test_too_many_mods){
   /* This fails as it should, but doesn't get caught nicely
@@ -306,6 +333,7 @@ Suite* modifications_suite(){
   tcase_add_test(tc_core, test_copy_mod_seq);
   tcase_add_test(tc_core, test_is_modifiable);
   tcase_add_test(tc_core, test_modify);
+  tcase_add_test(tc_core, test_serialize);
 
   tcase_add_checked_fixture(tc_core, mod_setup, mod_teardown);
   suite_add_tcase(s, tc_core);

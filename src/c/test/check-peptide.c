@@ -119,7 +119,8 @@ START_TEST(test_mod_on_unmodified){
   fail_unless( mod_seq != NULL,
                "An unmodified peptide should not return NULL mod seq");
   char* seq = get_peptide_sequence(peptide1);
-  char* converted = modified_aa_string_to_string(mod_seq);
+  int len = get_peptide_length(peptide1);
+  char* converted = modified_aa_string_to_string(mod_seq, len);
   fail_unless( strcmp(seq, converted) == 0,
                "The modified seq returned should be the same as seq.");
 
@@ -141,6 +142,7 @@ START_TEST(test_with_mod){
 
   // set up the mod seq
   char* pep_seq = get_peptide_sequence(peptide3);
+  int len = strlen(pep_seq);
   MODIFIED_AA_T* mod_seq = convert_to_mod_aa_seq(pep_seq);
   modify_aa(&mod_seq[2], amod);
   fail_unless( mod_seq[2] > pep_seq[2] - 'A',
@@ -149,14 +151,14 @@ START_TEST(test_with_mod){
   a = modified_aa_to_string(mod_seq[2]);
   fail_unless( strcmp(a, "S*") == 0,  "aa should be S* but is %s", a);
 
-  char* mod_seq_str = modified_aa_string_to_string(mod_seq);
+  char* mod_seq_str = modified_aa_string_to_string(mod_seq, len);
 
   // set the modification
   set_peptide_mod(peptide3, mod_seq, pep_mod);
   // check is_modified
   // get modified seq
   MODIFIED_AA_T* returned_seq = get_peptide_modified_aa_sequence(peptide3);
-  char* returned_str = modified_aa_string_to_string(returned_seq);
+  char* returned_str = modified_aa_string_to_string(returned_seq, len);
   fail_unless( strcmp(returned_str, mod_seq_str) == 0,
    "Peptide3 should have returned modified seq %s, but instead returned %s",
                mod_seq_str, returned_str);
@@ -168,11 +170,12 @@ END_TEST
 
 START_TEST(test_shuffled_mod_seq){
   MODIFIED_AA_T* aa_seq = get_peptide_modified_aa_sequence(peptide1);
-  char* seq = modified_aa_string_to_string( aa_seq );
+  int len = get_peptide_length(peptide1);
+  char* seq = modified_aa_string_to_string( aa_seq, len );
   fail_unless( strcmp(seq, "VADILESNAR") == 0,
                "Unshuffled seq is %s but should be %s", seq, "VADILESNAR"); 
   MODIFIED_AA_T* shuf_aa_seq= generate_shuffled_mod_sequence(peptide1,TRYPTIC);
-  char* shuf_seq = modified_aa_string_to_string( shuf_aa_seq );
+  char* shuf_seq = modified_aa_string_to_string( shuf_aa_seq, len );
   fail_unless( strcmp(shuf_seq, seq) != 0,
                "Sequence was %s, shuffled is %s, should be different",
                seq, shuf_seq);

@@ -259,7 +259,7 @@ END_TEST
 
 // one aa_mod returning only 1 modified version
 START_TEST(test_modify_1){
-  //printf("modify 1\n");
+
   // create a pmod that creates one modified version
   aa_mod_set_max_per_peptide(amod1, 1);
   BOOLEAN_T* mod_us = aa_mod_get_aa_list(amod1);
@@ -272,8 +272,9 @@ START_TEST(test_modify_1){
                "Modify should return one version of FGGTSV*ANAER" );
   // test that it is modified correctly
   PEPTIDE_T* pep = (PEPTIDE_T*)pop_front_linked_list(returned_list);
+  int len = get_peptide_length(pep); 
   MODIFIED_AA_T* mods = get_peptide_modified_aa_sequence(pep);
-  char* mod_str =  modified_aa_string_to_string(mods);
+  char* mod_str =  modified_aa_string_to_string(mods, len);
   fail_unless( strcmp(mod_str, "FGGTSV*ANAER") == 0,
 	       "Modified seq is %s but should be FGGTSV*ANAER", mod_str);
   free(pep);
@@ -292,7 +293,7 @@ START_TEST(test_modify_1){
   // test that it was modified correctly
   pep = (PEPTIDE_T*)pop_front_linked_list(returned_list);
   mods = get_peptide_modified_aa_sequence(pep);
-  mod_str =  modified_aa_string_to_string(mods);
+  mod_str =  modified_aa_string_to_string(mods, len);
   fail_unless( strcmp(mod_str, "F#GGTSVANAER") == 0,
 	       "Modified seq is %s but should be F#GGTSVANAER", mod_str);
   free(pep);
@@ -306,7 +307,7 @@ START_TEST(test_modify_1){
   // test that it was modified correctly
   pep = (PEPTIDE_T*)pop_front_linked_list(returned_list);
   mods = get_peptide_modified_aa_sequence(pep);
-  mod_str =  modified_aa_string_to_string(mods);
+  mod_str =  modified_aa_string_to_string(mods, len);
   fail_unless( strcmp(mod_str, "FGGTSVANAER#") == 0,
 	       "Modified seq is %s but should be FGGTSVANAER#", mod_str);
   free(pep);
@@ -320,7 +321,7 @@ START_TEST(test_modify_1){
   // test that it was modified correctly
   pep = (PEPTIDE_T*)pop_front_linked_list(returned_list);
   mods = get_peptide_modified_aa_sequence(pep);
-  mod_str =  modified_aa_string_to_string(mods);
+  mod_str =  modified_aa_string_to_string(mods, len);
   fail_unless( strcmp(mod_str, "F*GGTSVANAER") == 0,
 	       "Modified seq is %s but should be F*GGTSVANAER", mod_str);
   free(pep);
