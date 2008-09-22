@@ -39,6 +39,8 @@ int prepare_protein_input(char* input_file,
 void open_output_files(FILE*** binary_filehandle_array, 
                        FILE** sqt_filehandle,
                        FILE** decoy_sqt_filehandle);
+BOOLEAN_T is_search_complete(MATCH_COLLECTION_T* matches, 
+                             int mods_per_peptide);
 
 int main(int argc, char** argv){
 
@@ -165,6 +167,7 @@ int main(int argc, char** argv){
     SPECTRUM_T* spectrum = 
       filtered_spectrum_charge_iterator_next(spectrum_iterator, &charge);
     double mass = get_spectrum_neutral_mass(spectrum, charge);
+    //double mass = get_spectrum_singly_charged_mass(spectrum, charge);
 
     carp(CARP_DETAILED_INFO, 
          "Searching spectrum number %i, charge %i, search number %i",
@@ -187,10 +190,12 @@ int main(int argc, char** argv){
       int this_aa_mods = peptide_mod_get_num_aa_mods(peptide_mod);
       if( this_aa_mods > cur_aa_mods ){
         carp(CARP_DEBUG, "Finished searching %i mods", cur_aa_mods);
-        //BOOLEAN_T passes = assess_matches(match_collection);
-        //if( passes ){
-        //  break;
-        //}// else, search with more mods
+        BOOLEAN_T passes = is_search_complete(match_collection, cur_aa_mods);
+        if( passes ){
+          carp(CARP_DETAILED_DEBUG, 
+               "Ending search with %i modifications per peptide", cur_aa_mods);
+          break;
+        }// else, search with more mods
         cur_aa_mods = this_aa_mods;
       }
       // get peptide iterator
@@ -378,3 +383,26 @@ void open_output_files(
   carp(CARP_DEBUG, "Finished opening output files");
 }
 
+/**
+ * \brief Look at matches and search parameters to determine if a
+ * sufficient number PSMs have been found.  Returns TRUE if the
+ * maximum number of modifications per peptide have been considered.
+ * In the future, implement and option and test for a minimum score.
+ * \returns TRUE if no more PSMs need be searched.
+ */
+BOOLEAN_T is_search_complete(MATCH_COLLECTION_T* matches, 
+                             int mods_per_peptide){
+
+  if( matches == NULL ){
+    return FALSE;
+  }
+
+  if( mods_per_peptide == get_int_parameter("max-mods") ){
+    return TRUE;
+  }
+
+  // test for minimun score found
+
+  return FALSE;
+  
+}

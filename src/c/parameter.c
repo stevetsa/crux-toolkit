@@ -356,6 +356,9 @@ void initialize_parameters(void){
   set_string_parameter("nmod", "NO MODS", 
       "Specify a variable modification to apply to N-terminus of peptides.  " \
       "<mass change>:<max distance from protein n-term (-1 for no max)>");
+  set_int_parameter("max-mods", MAX_PEPTIDE_LENGTH, 0, MAX_PEPTIDE_LENGTH,
+      "The maximum number of modifications that can be applied to a single " \
+      "peptide.  Default no limit.");
 
     // Sp scoring params
   set_double_parameter("beta", 0.075, 0, 1, "usage");
