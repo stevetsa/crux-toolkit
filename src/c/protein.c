@@ -1,6 +1,6 @@
 /*************************************************************************//**
  * \file protein.c
- * $Revision: 1.73.2.5 $
+ * $Revision: 1.73.2.6 $
  * \brief: Object for representing a single protein.
  ****************************************************************************/
 #include <stdio.h>
@@ -935,7 +935,7 @@ void iterator_add_cleavages(
     int  cterm_num_cleavages, 
     BOOLEAN_T skip_cleavage_locations){
 
-  carp(CARP_DETAILED_DEBUG, "Call to iterator_add_cleavages");
+  //carp(CARP_DETAILED_DEBUG, "Call to iterator_add_cleavages");
 
   // to avoid checking a lot of C-term before our current N-term cleavage
   int previous_cterm_cleavage_start= 0; 
@@ -1086,7 +1086,7 @@ void prepare_protein_peptide_iterator(
   int num_non_cleavage_positions = non_cleavage_position_idx;
   iterator->mass_array = mass_array;
 
-  carp(CARP_DETAILED_DEBUG, "num_cleavage_positions = %i", num_cleavage_positions);
+  //carp(CARP_DETAILED_DEBUG, "num_cleavage_positions = %i", num_cleavage_positions);
 
   // now determine the cleavage positions that actually match our constraints
   BOOLEAN_T missed_cleavages = get_boolean_parameter("missed-cleavages");

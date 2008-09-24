@@ -1,6 +1,6 @@
 /*************************************************************************//**
  * \file peptide.c
- * $Revision: 1.72.2.16 $
+ * $Revision: 1.72.2.17 $
  * \brief: Object for representing a single peptide.
  ****************************************************************************/
 #include "peptide.h"
@@ -671,7 +671,6 @@ MODIFIED_AA_T* get_peptide_modified_aa_sequence(PEPTIDE_T* peptide){
     seq_copy = convert_to_mod_aa_seq(seq);
     free(seq);
   }
-      carp(CARP_DETAILED_DEBUG, "got to here");
   
   return seq_copy;
 }

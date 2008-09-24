@@ -8,7 +8,7 @@
  *
  * AUTHOR: Chris Park
  * CREATE DATE: 11/27 2006
- * $Revision: 1.79.2.6 $
+ * $Revision: 1.79.2.7 $
  ****************************************************************************/
 #include "match_collection.h"
 
@@ -543,7 +543,11 @@ int add_matches(
   // rank by prelim score
   populate_match_rank_match_collection(match_collection, prelim_score);
 
-  // score exitsting matches above threshold w/second function
+  // trim matches to only the top n as ranked by prelim score
+  int max_rank = get_int_parameter("max-rank-preliminary");
+  truncate_match_collection( match_collection, max_rank, prelim_score);
+
+  // score exitsting matches w/second function
   SCORER_TYPE_T final_score = get_scorer_type_parameter("score-type");
   score_matches_one_spectrum(final_score, match_collection, spectrum, charge);
 
@@ -682,11 +686,15 @@ BOOLEAN_T spectrum_sort_match_collection(
 
 
 /**
- * keeps the top max_rank number of matches and frees the rest
- * sorts by score_type(SP, XCORR, ...)
+ * \brief Reduces the number of matches in the match_collection so the
+ * highest scoring (by score_type) remain.  Matches ranking up to
+ * max_rank are retained and those ranking higher are freed.  The
+ * value of match_collection->total_matches is adjusted to reflect the
+ * remaining number of matches.  Sorts match collection by score_type, if
+ * necessary.  
  */
 void truncate_match_collection(
-  MATCH_COLLECTION_T* match_collection, ///< the match collection to truncate -out
+  MATCH_COLLECTION_T* match_collection, ///< match collection to truncate -out
   int max_rank,     ///< max number of top rank matches to keep from SP -in
   SCORER_TYPE_T score_type ///< the score type (SP, XCORR) -in
   )
@@ -704,7 +712,7 @@ void truncate_match_collection(
     }
   }
 
-  // are there any matches to free?
+  // Free high ranking matches
   while(match_collection->match_total > max_rank){
     free_match(match_collection->match[match_collection->match_total - 1]);
     --match_collection->match_total;
@@ -720,16 +728,17 @@ void truncate_match_collection(
  * \returns TRUE, if populates the match rank in the match collection
  */
 BOOLEAN_T populate_match_rank_match_collection(
- MATCH_COLLECTION_T* match_collection, ///< the match collection to populate match rank -out
- SCORER_TYPE_T score_type ///< the score type (SP, XCORR) -in
+ MATCH_COLLECTION_T* match_collection, ///< match collection to rank -out
+ SCORER_TYPE_T score_type ///< score type (SP, XCORR) by which to rank -in
  )
 {
   carp(CARP_DETAILED_DEBUG, "Ranking matches.");
   // check if the match collection is in the correct sorted order
   if(match_collection->last_sorted != score_type){
     // sort match collection by score type
+    carp(CARP_DETAILED_DEBUG, "Sorting by score_type %i", score_type);
     if(!sort_match_collection(match_collection, score_type)){
-      carp(CARP_ERROR, "failed to sort match collection");
+      carp(CARP_ERROR, "Failed to sort match collection");
       return FALSE;
     }
   }
@@ -738,16 +747,21 @@ BOOLEAN_T populate_match_rank_match_collection(
   // this type
   int match_index;
   for(match_index=0; match_index<match_collection->match_total; ++match_index){
+    MATCH_T* cur_match = match_collection->match[match_index];
 
-    // stope when we reach the first not scored match
-    if( NOT_SCORED == get_match_score(match_collection->match[match_index],
-                                      score_type) ){
-      break;
+    //carp(CARP_DETAILED_DEBUG, "Match rank %i, score %f", match_index+1, get_match_score(cur_match, score_type));
+    
+    if( NOT_SCORED == get_match_score(cur_match, score_type) ){
+      carp(CARP_WARNING, 
+           "PSM spectrum %i charge %i sequence %s was NOT scored for type %i",
+           get_spectrum_first_scan(get_match_spectrum(cur_match)),
+           get_match_charge(cur_match),
+           score_type);
     }
-    set_match_rank(
-        match_collection->match[match_index], score_type, match_index+1);
+    set_match_rank( cur_match, score_type, match_index+1);
   }
   
+  //carp(CARP_DETAILED_DEBUG, "Max rank %i", match_index);
   return TRUE;
 }
 
@@ -1324,7 +1338,10 @@ BOOLEAN_T score_peptides(
 
     // calculate the score
     score = score_spectrum_v_ion_series(scorer, spectrum, ion_series);
-    carp(CARP_DETAILED_DEBUG, "Score %f for %s (null:%i)", score, sequence, is_decoy);
+    // debugging
+    char* mod_seq = modified_aa_string_to_string(modified_sequence, strlen(sequence));
+    carp(CARP_DETAILED_DEBUG, "Score %f for %s (null:%i)", score, mod_seq, is_decoy);
+    free(mod_seq);
 
     // set match fields
     set_match_score(match, score_type, score);
@@ -1420,16 +1437,20 @@ BOOLEAN_T score_matches_one_spectrum(
   // create a generic ion_series that will be reused for each peptide sequence
   ION_SERIES_T* ion_series = new_ion_series_generic(ion_constraint, charge);  
   
+  /*
   // score each match between 0 and max
   int max_rank = get_int_parameter("max-rank-preliminary");
   if( max_rank > match_collection->match_total ){
     max_rank = match_collection->match_total;
   }
+  */
+  // score all matches
   int match_idx;
   MATCH_T* match = NULL;
   char* sequence = NULL;
   MODIFIED_AA_T* modified_sequence = NULL;
-  for(match_idx = 0; match_idx < max_rank; match_idx++){
+  //for(match_idx = 0; match_idx < max_rank; match_idx++){
+  for(match_idx = 0; match_idx < match_collection->match_total; match_idx++){
     match = match_collection->match[match_idx];
 
     // skip it if it's already been scored
@@ -1451,11 +1472,11 @@ BOOLEAN_T score_matches_one_spectrum(
 
     // set score in match
     set_match_score(match, score_type, score);
-    carp(CARP_DETAILED_DEBUG, "Scored match scan %d, z %d, null %d",
-         get_spectrum_first_scan(get_match_spectrum(match)),
-         get_match_charge(match),
-         get_match_null_peptide(match));
 
+    char* mod_seq = modified_aa_string_to_string(modified_sequence, strlen(sequence));
+    carp(CARP_DETAILED_DEBUG, "Second score %f for %s (null:%i)",
+         score, mod_seq,get_match_null_peptide(match));
+    free(mod_seq);
     free(sequence);
   }// next match
 

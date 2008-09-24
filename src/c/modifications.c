@@ -16,7 +16,7 @@
  * spectrum search.  One PEPTIDE_MOD corresponds to one mass window
  * that must be searched.
  * 
- * $Revision: 1.1.2.16 $
+ * $Revision: 1.1.2.17 $
  */
 
 #include "modifications.h"
@@ -53,7 +53,8 @@
    followed by all of the symbols corresponding to all of the
    modifications that have been applied to the amino acid.
  */
-char mod_sqt_symbols[MAX_AA_MODS] = {'*', '@', '#', '^', '~', '%', 
+char mod_sqt_symbols[MAX_AA_MODS] = //{'*', '@', '#', '^', '~', '%', 
+  {'*', '#', '@', '^', '~', '%', // like sequest
                                      '$', '&', '!', '?', '+'};
 
 unsigned short mod_id_masks[MAX_AA_MODS] = 
@@ -232,7 +233,7 @@ char* modified_aa_string_to_string(MODIFIED_AA_T* aa_string, int length){
     }
     //    mod_str_idx++;
   }
-  carp(CARP_DETAILED_DEBUG, "Found %d modified aas out of",
+  carp(CARP_DETAILED_DEBUG, "Found %d modified aas out of %i",
        count - mod_str_idx, count);
   //int mod_str_len = mod_str_idx;  // keep track of aa_string length
 
@@ -247,7 +248,7 @@ char* modified_aa_string_to_string(MODIFIED_AA_T* aa_string, int length){
     char* cur_mod = modified_aa_to_string( aa_string[mod_str_idx] );
     strcpy( return_str_ptr, cur_mod );
     return_str_ptr += strlen(cur_mod);
-    free(cur_mod);
+    //free(cur_mod);
   }
 
   return return_string;

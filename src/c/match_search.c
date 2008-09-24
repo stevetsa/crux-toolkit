@@ -393,11 +393,17 @@ void open_output_files(
 BOOLEAN_T is_search_complete(MATCH_COLLECTION_T* matches, 
                              int mods_per_peptide){
 
+
   if( matches == NULL ){
     return FALSE;
   }
 
-  if( mods_per_peptide == get_int_parameter("max-mods") ){
+  // keep searching if no limits on how many mods per peptide
+  if( get_int_parameter("max-mods") == MAX_PEPTIDE_LENGTH ){
+    return FALSE;
+  }
+  // stop searching if at max mods per peptide
+  if( mods_per_peptide == get_int_parameter("max-mods") ){ 
     return TRUE;
   }
 

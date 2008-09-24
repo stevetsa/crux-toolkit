@@ -5,7 +5,7 @@
  * DESCRIPTION: Object for matching a peptide and a spectrum, generate
  * a preliminary score(e.g., Sp) 
  *
- * REVISION: $Revision: 1.55.2.5 $
+ * REVISION: $Revision: 1.55.2.6 $
  ****************************************************************************/
 #include <math.h>
 #include <stdlib.h>
@@ -497,7 +497,6 @@ void print_match_sqt(
           b_y_total,
           sequence
           );
-  free(sequence);
   
   PEPTIDE_SRC_ITERATOR_T* peptide_src_iterator = 
     new_peptide_src_iterator(peptide);
@@ -870,7 +869,7 @@ char* get_match_sequence_sqt(
   final_string[strlen(seq) + 3] = n_term;
   final_string[strlen(seq) + 4] = '\0';
 
-  //  fprintf(stderr, "start string %s, final %s\n", seq, final_string);
+  carp(CARP_DETAILED_DEBUG, "start string %s, final %s", seq, final_string);
 
   // delete mod seq and string version
   return final_string;
