@@ -1,6 +1,6 @@
 /*************************************************************************//**
  * \file protein.c
- * $Revision: 1.73.2.6 $
+ * $Revision: 1.73.2.7 $
  * \brief: Object for representing a single protein.
  ****************************************************************************/
 #include <stdio.h>
@@ -1211,12 +1211,12 @@ void free_protein_peptide_iterator(
     ///< the iterator to free -in
   )
 {
+  free_peptide_constraint(protein_peptide_iterator->peptide_constraint);
   free(protein_peptide_iterator->mass_array); 
   free(protein_peptide_iterator->nterm_cleavage_positions); 
   free(protein_peptide_iterator->peptide_lengths); 
   free(protein_peptide_iterator->peptide_masses); 
   free(protein_peptide_iterator->cumulative_cleavages); 
-  free_peptide_constraint(protein_peptide_iterator->peptide_constraint);
   //free_protein(protein_peptide_iterator->protein);
   free(protein_peptide_iterator);
 }

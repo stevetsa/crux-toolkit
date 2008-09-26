@@ -294,8 +294,8 @@ START_TEST(test_modify_1){
   pep = (PEPTIDE_T*)pop_front_linked_list(returned_list);
   mods = get_peptide_modified_aa_sequence(pep);
   mod_str =  modified_aa_string_to_string(mods, len);
-  fail_unless( strcmp(mod_str, "F#GGTSVANAER") == 0,
-	       "Modified seq is %s but should be F#GGTSVANAER", mod_str);
+  fail_unless( strcmp(mod_str, "F@GGTSVANAER") == 0,
+	       "Modified seq is %s but should be F@GGTSVANAER", mod_str);
   free(pep);
   free(mods);
   free(mod_str);
@@ -308,8 +308,8 @@ START_TEST(test_modify_1){
   pep = (PEPTIDE_T*)pop_front_linked_list(returned_list);
   mods = get_peptide_modified_aa_sequence(pep);
   mod_str =  modified_aa_string_to_string(mods, len);
-  fail_unless( strcmp(mod_str, "FGGTSVANAER#") == 0,
-	       "Modified seq is %s but should be FGGTSVANAER#", mod_str);
+  fail_unless( strcmp(mod_str, "FGGTSVANAER@") == 0,
+	       "Modified seq is %s but should be FGGTSVANAER@", mod_str);
   free(pep);
   free(mods);
   free(mod_str);

@@ -3,7 +3,7 @@
  * AUTHOR: Chris Park
  * CREATE DATE: 28 June 2006
  * DESCRIPTION: code to support working with collection of multiple spectra
- * REVISION: $Revision: 1.40.2.1 $
+ * REVISION: $Revision: 1.40.2.2 $
  ****************************************************************************/
 #include <math.h>
 #include <stdio.h>
@@ -996,6 +996,10 @@ void queue_next_spectrum(FILTERED_SPECTRUM_CHARGE_ITERATOR_T* iterator){
                                  iterator->spectrum_collection)-1 ){
     iterator->spectrum_index++;
     spec = iterator->spectrum_collection->spectra[iterator->spectrum_index];
+    // first free any existing charges in the iterator
+    if( iterator->charges ){
+      free(iterator->charges);
+    }
     iterator->num_charges = get_charges_to_search(spec, &(iterator->charges));
     iterator->charge_index = 0;
   }else{ // none left

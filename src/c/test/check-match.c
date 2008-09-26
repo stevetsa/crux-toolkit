@@ -31,7 +31,7 @@ void match_setup(){
 
   // create match to null (decoy) peptide
   mdecoy = new_match();
-  set_match_peptide(mdecoy, pep);
+  set_match_peptide(mdecoy, copy_peptide(pep));
   set_match_spectrum(mdecoy, NULL);
   set_match_charge(mdecoy, 2);
   set_match_null_peptide(mdecoy, TRUE);
@@ -63,7 +63,7 @@ void match_setup(){
 
   // create match to decoy modified peptide
   mdecoymod = new_match();
-  set_match_peptide(mdecoymod, pepmod); 
+  set_match_peptide(mdecoymod, copy_peptide(pepmod)); 
   set_match_spectrum(mdecoymod, NULL);
   set_match_charge(mdecoymod, 2);
   set_match_null_peptide(mdecoymod, TRUE);

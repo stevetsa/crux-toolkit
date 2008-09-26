@@ -16,7 +16,7 @@
  * spectrum search.  One PEPTIDE_MOD corresponds to one mass window
  * that must be searched.
  * 
- * $Revision: 1.1.2.16 $
+ * $Revision: 1.1.2.17 $
  */
 
 #include "peptide_modifications.h"
@@ -414,15 +414,11 @@ int modify_peptide(
     carp(CARP_ERROR, "Cannot return modified peptides to NULL list.");
     return 0;
   }
-
-  /*
-  if( peptide_mod == NULL ){
-    carp(CARP_DETAILED_DEBUG, "Modify peptide given a NULL peptide mod");
-  }
-  */
+  // in case of no modifications
   if( peptide_mod == NULL || 
       peptide_mod_get_num_aa_mods(peptide_mod) == 0 ){
-    carp(CARP_DETAILED_DEBUG, "Modifying peptide with no aa_mods, return peptide copy");
+    carp(CARP_DETAILED_DEBUG, 
+         "Modifying peptide with no aa_mods, return peptide copy");
     PEPTIDE_T* peptide_copy = copy_peptide(peptide); 
     push_back_linked_list(modified_peptides, peptide_copy);
     return 1;
@@ -439,6 +435,7 @@ int modify_peptide(
   AA_MOD_T** aa_mod_list = NULL;
   int num_aa_mods = get_all_aa_mod_list(&aa_mod_list);
 
+  // initialize a list of modified seqs with the unmod seq
   LINKED_LIST_T* modified_seqs = new_list(pre_modified_seq);
   int aa_mod_idx = 0;
   int total_count = 0;
@@ -448,15 +445,12 @@ int modify_peptide(
 
     //printf("aaidx is %d and mod count is %d\n", aa_mod_idx, aa_mod_counts[aa_mod_idx]);
     int mod_count = aa_mod_counts[aa_mod_idx];
-    if( mod_count == 0 ){ // do not apply this aa mod
-      continue;
-    }
+    if( mod_count == 0 ){ continue; } // do not apply this aa mod
 
     //printf("applying to list, total count is %d\n", total_count);
     total_count = apply_mod_to_list(modified_seqs, 
                                     aa_mod_list[aa_mod_idx],
                                     mod_count);
-
 
     //printf("after applying count is %d\n", total_count);
     // the count should be > 0, but check for error case
@@ -464,20 +458,13 @@ int modify_peptide(
       carp(CARP_ERROR, 
            "Peptide modification could not be applied to sequence %s",
            sequence);
-      return total_count;
+      return total_count;  // free things...
     }
   } // next aa_mod
+
   free(sequence);
-  /*
-  for each seq in mod_pep_seq
-    copy peptide and give it the modified seq
-    add to the return array
-  last seq
 
-  return count
-   */
-
-  //printf("Returning these modified seqs:\n");
+  // create a peptide for each sequence and add it to the list   
   while( ! is_empty_linked_list( modified_seqs ) ){
     PEPTIDE_T* cur_peptide = copy_peptide(peptide);
 

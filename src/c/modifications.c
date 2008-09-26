@@ -16,7 +16,7 @@
  * spectrum search.  One PEPTIDE_MOD corresponds to one mass window
  * that must be searched.
  * 
- * $Revision: 1.1.2.17 $
+ * $Revision: 1.1.2.18 $
  */
 
 #include "modifications.h"
@@ -248,7 +248,7 @@ char* modified_aa_string_to_string(MODIFIED_AA_T* aa_string, int length){
     char* cur_mod = modified_aa_to_string( aa_string[mod_str_idx] );
     strcpy( return_str_ptr, cur_mod );
     return_str_ptr += strlen(cur_mod);
-    //free(cur_mod);
+    free(cur_mod);
   }
 
   return return_string;
@@ -294,19 +294,7 @@ MODIFIED_AA_T* copy_mod_aa_seq(MODIFIED_AA_T* source, int length){
     return NULL;
   }
 
-  // get the length of the source seq
-  /*
-  int i=0;
-  while( source[i] != MOD_SEQ_NULL ){
-    carp(CARP_DETAILED_DEBUG, "seq len is %d", i);
-    i++;
-  }
-  i++; // for null termination
-  */
-
-  //MODIFIED_AA_T* new_seq = mycalloc( i, sizeof(MODIFIED_AA_T) );
   MODIFIED_AA_T* new_seq = mycalloc( length + 1, sizeof(MODIFIED_AA_T) );
-  //memcpy( new_seq, source, i * sizeof(MODIFIED_AA_T));
   memcpy( new_seq, source, length * sizeof(MODIFIED_AA_T));
   new_seq[length] = MOD_SEQ_NULL;
 

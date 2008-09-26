@@ -159,8 +159,8 @@ START_TEST(test_serialize_mod){
   set_peptide_mod(pep3, mod_seq, pmod2);
   // check mod seq
   char* pep3_mod_str = get_peptide_modified_sequence(pep3);
-  fail_unless( strcmp(pep3_mod_str, "Q*Q@SW") == 0,
-               "Modified sequence of pep3 should be Q*Q@SW but is %s",
+  fail_unless( strcmp(pep3_mod_str, "Q*Q#SW") == 0,
+               "Modified sequence of pep3 should be Q*Q#SW but is %s",
                pep3_mod_str);
 
   // serialize all three peptides

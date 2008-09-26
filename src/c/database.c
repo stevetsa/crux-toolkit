@@ -1,6 +1,6 @@
 /*************************************************************************//**
  * \file database.c
- * $Revision: 1.63.2.4 $
+ * $Revision: 1.63.2.5 $
  * \brief: Object for representing a database of protein sequences.
  ****************************************************************************/
 #include <stdio.h>
@@ -842,7 +842,7 @@ DATABASE_PEPTIDE_ITERATOR_T* new_database_peptide_iterator(
   DATABASE_PEPTIDE_ITERATOR_T* database_peptide_iterator =
     (DATABASE_PEPTIDE_ITERATOR_T*)
     mycalloc(1, sizeof(DATABASE_PEPTIDE_ITERATOR_T));
-  
+
   // set a new protein iterator
   database_peptide_iterator->database_protein_iterator =
     new_database_protein_iterator(database);

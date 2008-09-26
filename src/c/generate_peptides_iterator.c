@@ -343,7 +343,7 @@ PEPTIDE_T* generate_peptides_iterator_next(
  * Frees an allocated generate_peptides_iterator object
  */
 void free_generate_peptides_iterator(
-  GENERATE_PEPTIDES_ITERATOR_T* generate_peptides_iterator ///< iterator to free
+  GENERATE_PEPTIDES_ITERATOR_T* generate_peptides_iterator ///<iterator to free
   )
 {
   // free the nested iterator

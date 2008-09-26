@@ -59,15 +59,15 @@ START_TEST(test_create){
                "amod1 should have had identifier 0x0020 but had %d",
                aa_mod_get_identifier(amod1));
 
-  fail_unless( aa_mod_get_symbol(amod2) == '@', 
-               "amod2 should have had symbol @ but had %c",
+  fail_unless( aa_mod_get_symbol(amod2) == '#', 
+               "amod2 should have had symbol # but had %c",
                aa_mod_get_symbol(amod2));
 
   fail_unless( aa_mod_get_identifier(amod2) == 0x0040, 
                "amod2 should have had identifier 0x0040 but had 0x%x",
                aa_mod_get_identifier(amod2));
-  fail_unless( aa_mod_get_symbol(amod3) == '#', 
-               "amod3 should have had symbol # but had %c",
+  fail_unless( aa_mod_get_symbol(amod3) == '@', 
+               "amod3 should have had symbol @ but had %c",
                aa_mod_get_symbol(amod3));
 
   fail_unless( aa_mod_get_identifier(amod3) == 0x0080, 
@@ -183,15 +183,15 @@ START_TEST(test_mod_to_string){
   // modify with one
   mod_aa_D = mod_aa_D | 0x0040; // second aa mod in param list
   mod_as_text = modified_aa_to_string( mod_aa_D );
-  fail_unless( strcmp(mod_as_text, "D@") == 0,
-               "mod as string should be 'D@' but is '%s'", mod_as_text);
+  fail_unless( strcmp(mod_as_text, "D#") == 0,
+               "mod as string should be 'D#' but is '%s'", mod_as_text);
   free(mod_as_text);
 
   mod_aa_D = mod_aa_D | 0x0020; // first aa mod in param list
   mod_aa_D = mod_aa_D | 0x0080; // third aa mod in param list
   mod_as_text = modified_aa_to_string( mod_aa_D );
-  fail_unless( strcmp(mod_as_text, "D*@#") == 0,
-               "mod as string should be 'D*@#' but is '%s'", mod_as_text);
+  fail_unless( strcmp(mod_as_text, "D*#@") == 0,
+               "mod as string should be 'D*#@' but is '%s'", mod_as_text);
   free(mod_as_text);
 }
 END_TEST
@@ -213,12 +213,12 @@ START_TEST(test_mod_str_to_string){
                "amod1 should have had symbol * but had %c",
                aa_mod_get_symbol(amod1));
 
-  fail_unless( aa_mod_get_symbol(amod2) == '@', 
-               "amod1 should have had symbol @ but had %c",
+  fail_unless( aa_mod_get_symbol(amod2) == '#', 
+               "amod1 should have had symbol # but had %c",
                aa_mod_get_symbol(amod2));
 
-  fail_unless( aa_mod_get_symbol(amod3) == '#', 
-               "amod1 should have had symbol # but had %c",
+  fail_unless( aa_mod_get_symbol(amod3) == '@', 
+               "amod1 should have had symbol @ but had %c",
                aa_mod_get_symbol(amod3));
 
   // now modify a couple of aas
@@ -227,9 +227,10 @@ START_TEST(test_mod_str_to_string){
   modify_aa( &modaa_seq[4], amod3 );
   modify_aa( &modaa_seq[7], amod2 );
   modify_aa( &modaa_seq[7], amod3 );
+  free(modchar_seq);
   modchar_seq = modified_aa_string_to_string(modaa_seq, len);
 
-  fail_unless( strcmp(modchar_seq, "GB@BKA*#TRM@#") == 0,
+  fail_unless( strcmp(modchar_seq, "GB#BKA*@TRM#@") == 0,
                "Seq %s should equal %s", seq, modchar_seq);
 
   free(modchar_seq);

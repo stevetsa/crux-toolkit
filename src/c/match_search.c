@@ -228,6 +228,9 @@ int main(int argc, char** argv){
     print_matches(match_collection, spectrum, FALSE,// is decoy
                   psm_file_array[0], sqt_file, decoy_sqt_file);
 
+    // ?? does this free all the matches, all the spectra and all the peptides?
+    free_match_collection(match_collection);
+
     // now score same number of mods for decoys
     int max_mods = mod_idx;
 
@@ -272,12 +275,14 @@ int main(int argc, char** argv){
       print_matches(match_collection, spectrum, TRUE,// is decoy
                     psm_file_array[1+decoy_idx], sqt_file, tmp_decoy_sqt_file);
 
+      free_match_collection(match_collection);
+
     }// last decoy
 
     spectrum_searches_counter++;
 
     // clean up
-    free_match_collection(match_collection);
+    //    free_match_collection(match_collection);
   }// next spectrum
 
   // fix headers in csm files

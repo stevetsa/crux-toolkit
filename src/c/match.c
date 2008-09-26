@@ -5,7 +5,7 @@
  * DESCRIPTION: Object for matching a peptide and a spectrum, generate
  * a preliminary score(e.g., Sp) 
  *
- * REVISION: $Revision: 1.55.2.6 $
+ * REVISION: $Revision: 1.55.2.7 $
  ****************************************************************************/
 #include <math.h>
 #include <stdlib.h>
@@ -124,10 +124,11 @@ void free_match(
   // only free match when pointer count reaches
   if(match->pointer_count == 0){
 
-    /* but aren't there multiple matches pointing to the same peptide?
+    // but aren't there multiple matches pointing to the same peptide?
+    // if so, create a new free_shallow_match which doesn't touch the members
     if (match->peptide != NULL){
       free_peptide(match->peptide);
-      }*/
+    }
     if(match->post_process_match && match->spectrum !=NULL){
       free_spectrum(match->spectrum);
     }
@@ -438,10 +439,8 @@ void print_match_sqt(
   }
   PEPTIDE_T* peptide = get_match_peptide(match);
   // this should get the sequence from the match, not the peptide
-  //char* sequence = get_peptide_sequence_sqt(peptide);
   char* sequence = get_match_sequence_sqt(match);
   BOOLEAN_T adjust_delta_cn = FALSE;
-
 
   // NOTE (BF 12-Feb-08) This is an ugly fix to give post-percolator
   // sqt files the rank of the xcorr and sp.
@@ -497,6 +496,7 @@ void print_match_sqt(
           b_y_total,
           sequence
           );
+  free(sequence);
   
   PEPTIDE_SRC_ITERATOR_T* peptide_src_iterator = 
     new_peptide_src_iterator(peptide);
@@ -509,22 +509,15 @@ void print_match_sqt(
     peptide_src = peptide_src_iterator_next(peptide_src_iterator);
     protein = get_peptide_src_parent_protein(peptide_src);
     protein_id = get_protein_id(protein);
-    sequence = get_peptide_sequence_from_peptide_src_sqt(peptide, 
-                                                         peptide_src);
-    //description = get_protein_annotation(protein);
     
     // print match info (locus line)
-    // TODO (BF 06-Feb-08): add protein description
     fprintf(file, "L\t%s\n", protein_id);      
-    //fprintf(file, "L\t%s\t%s\n", protein_id, description);      
     free(protein_id);
-    free(sequence);
-    //free(description);
   }
   
   free_peptide_src_iterator(peptide_src_iterator);
-  // end print_match_sqt()
   
+  return;
 }
 
 /**
@@ -851,7 +844,6 @@ char* get_match_sequence_sqt(
   int length = get_peptide_length(get_match_peptide(match));
 
   // turn it into string
-  //  char* seq = modified_aa_string_to_string(mod_seq);
   char* seq = modified_aa_string_to_string(mod_seq, length);
 
   // get peptide flanking residues 
@@ -859,7 +851,7 @@ char* get_match_sequence_sqt(
   char n_term = get_peptide_n_term_flanking_aa(match->peptide);
 
   // allocate seq + 4 length array
-  char* final_string = (char*)mycalloc((strlen(seq)+4), sizeof(char));
+  char* final_string = (char*)mycalloc((strlen(seq)+5), sizeof(char));
 
   // copy pieces in
   final_string[0] = c_term;
@@ -872,6 +864,8 @@ char* get_match_sequence_sqt(
   carp(CARP_DETAILED_DEBUG, "start string %s, final %s", seq, final_string);
 
   // delete mod seq and string version
+  free(seq);
+  free(mod_seq);
   return final_string;
 }
 
@@ -900,7 +894,6 @@ MODIFIED_AA_T* get_match_mod_sequence(
   // if peptide sequence is cached
   // return copy of cached peptide sequence
   if(match->mod_sequence != NULL){
-    //return copy_mod_aa_seq(match->mod_sequence);
     return copy_mod_aa_seq(match->mod_sequence, length);
   }
 
@@ -918,11 +911,7 @@ MODIFIED_AA_T* get_match_mod_sequence(
   }
   else{
     // just get it from the peptide, no need to shuffle
-    //    char* seq = get_peptide_sequence(match->peptide);
-    //match->mod_sequence = convert_to_mod_aa_seq(seq);
     match->mod_sequence = get_peptide_modified_aa_sequence(match->peptide);
-
-    //free(seq);
   }
 
   return copy_mod_aa_seq(match->mod_sequence, length);

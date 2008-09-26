@@ -8,7 +8,7 @@
  *
  * AUTHOR: Chris Park
  * CREATE DATE: 11/27 2006
- * $Revision: 1.79.2.7 $
+ * $Revision: 1.79.2.8 $
  ****************************************************************************/
 #include "match_collection.h"
 
@@ -250,6 +250,8 @@ MATCH_COLLECTION_T* allocate_match_collection()
 
 /**
  * /brief Free the memory allocated for a match collection
+ * Deep free; each match is freed which, in turn, frees each spectrum
+ * and peptide. 
  */
 void free_match_collection(
   MATCH_COLLECTION_T* match_collection ///< the match collection to free -out
@@ -356,6 +358,7 @@ MATCH_COLLECTION_T* new_match_collection_from_spectrum(
       carp(CARP_WARNING, "No matches found for spectrum %i charge %i(new match from spectrum)",
           get_spectrum_first_scan(spectrum), charge);
       free_match_collection(match_collection);
+      free_generate_peptides_iterator(peptide_iterator);
       return NULL;
     }
   }
@@ -1356,6 +1359,7 @@ BOOLEAN_T score_peptides(
       free_ion_series(ion_series);
       free_scorer(scorer);
       free_ion_constraint(ion_constraint);
+      free(modified_sequence);
 
       return FALSE;
     }
@@ -1364,6 +1368,7 @@ BOOLEAN_T score_peptides(
     match_collection->match_total++;
     match_collection->sp_scores_sum += score;
 
+    free(modified_sequence);
     free(sequence);
 
   }// next peptide
@@ -1430,26 +1435,18 @@ BOOLEAN_T score_matches_one_spectrum(
   // create ion constraint
   ION_CONSTRAINT_T* ion_constraint = new_ion_constraint_smart(score_type, 
                                                               charge);
-
   // create scorer
   SCORER_T* scorer = new_scorer(score_type);
 
   // create a generic ion_series that will be reused for each peptide sequence
   ION_SERIES_T* ion_series = new_ion_series_generic(ion_constraint, charge);  
   
-  /*
-  // score each match between 0 and max
-  int max_rank = get_int_parameter("max-rank-preliminary");
-  if( max_rank > match_collection->match_total ){
-    max_rank = match_collection->match_total;
-  }
-  */
   // score all matches
   int match_idx;
   MATCH_T* match = NULL;
   char* sequence = NULL;
   MODIFIED_AA_T* modified_sequence = NULL;
-  //for(match_idx = 0; match_idx < max_rank; match_idx++){
+
   for(match_idx = 0; match_idx < match_collection->match_total; match_idx++){
     match = match_collection->match[match_idx];
 
@@ -1478,9 +1475,15 @@ BOOLEAN_T score_matches_one_spectrum(
          score, mod_seq,get_match_null_peptide(match));
     free(mod_seq);
     free(sequence);
+    free(modified_sequence);
   }// next match
 
   match_collection->scored_type[score_type] = TRUE;
+
+  // clean up
+  free_ion_constraint(ion_constraint);
+  free_ion_series(ion_series);
+  free_scorer(scorer);
   return TRUE;
 }
 
@@ -2227,12 +2230,22 @@ FILE** create_psm_files(){
     //chmod(psm_filename, 0664);
     chmod(filename_template, 0664);
 
-    //get next decoy name
+    // clean up
     free(psm_filename);
+    
+    //get next decoy name
     //sprintf(suffix, "crux_match_decoy_%d_", file_idx+1);
     //psm_filename = generate_name(filename_template, "_XXXXXX",
     //                             ".ms2", suffix);
   }
+
+  free(filename_path_array[0]);
+  if( *filename_path_array[1] != '.' ){
+    free(filename_path_array[1]);
+  }
+  free(filename_path_array);
+  free(filename_template);
+  
   return file_handle_array;
 
 }
@@ -2346,7 +2359,6 @@ void print_sqt_header(FILE* output, char* type, int num_proteins){
   fprintf(output, "H\tEndTime                               \n");
 
   char* database = get_string_parameter("protein input");
-  //  fprintf(output, "H\tDatabase\t%s\n", database);
 
   if( get_boolean_parameter("use-index") == TRUE ){
     char* fasta_name  = get_index_binary_fasta_name(database);
@@ -2354,6 +2366,7 @@ void print_sqt_header(FILE* output, char* type, int num_proteins){
     database = fasta_name;
   }
   fprintf(output, "H\tDatabase\t%s\n", database);
+  free(database);
 
   if(decoy){
   fprintf(output, "H\tComment\tDatabase shuffled; these are decoy matches\n");

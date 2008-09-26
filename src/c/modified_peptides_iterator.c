@@ -4,7 +4,7 @@
  * DATE: April 15, 2008
  * DESCRIPTION: An iterator that can be used by
  * generate_peptides_iterator to include modified peptides.
- * $Revision: 1.1.2.11 $
+ * $Revision: 1.1.2.12 $
  */
 #include "modified_peptides_iterator.h"
 
@@ -48,9 +48,7 @@ MODIFIED_PEPTIDES_ITERATOR_T* allocate_modified_peptides_iterator(){
 void queue_next_peptide(
  MODIFIED_PEPTIDES_ITERATOR_T* iterator ///< working iterator
  ){
-  if( iterator == NULL ){
-    return;
-  }
+  if( iterator == NULL ){ return; }
 
   // first, try getting next from the temp list
   if( ! is_empty_linked_list( iterator->temp_peptide_list) ){
@@ -67,7 +65,6 @@ void queue_next_peptide(
   }
 
   // else, get the unmodified peptide
-  //iterator->next_peptide = 
   PEPTIDE_T* unmod_peptide = 
     generate_peptides_iterator_next( iterator->peptide_generator);
 
@@ -80,19 +77,15 @@ void queue_next_peptide(
   // keep looking until a peptide can be modified or we run out of peptides
   carp(CARP_DETAILED_DEBUG, "Queue is looking for modifyable peptide");
   while( unmod_peptide != NULL &&
-         ! is_peptide_modifiable(//iterator->next_peptide, 
-                                 unmod_peptide, 
+         ! is_peptide_modifiable(unmod_peptide, 
                                  iterator->peptide_mod) ){ 
-    //    carp(CARP_DETAILED_DEBUG, "Skipping peptide %s from the generator",
-    //     get_peptide_sequence(unmod_peptide)); //memleak
-    //free_peptide( iterator->next_peptide );
+    // carp(CARP_DETAILED_DEBUG, "Skipping peptide %s from the generator",
+    //   get_peptide_sequence(unmod_peptide)); //memleak
     free_peptide( unmod_peptide );
-    //iterator->next_peptide = 
     unmod_peptide = 
-      generate_peptides_iterator_next( iterator->peptide_generator);
+      generate_peptides_iterator_next( iterator->peptide_generator );
   }
 
-  //if( iterator->next_peptide == NULL ){ 
   if( unmod_peptide == NULL ){ 
     // none of the remaining peptides were modifiable
     carp(CARP_DETAILED_DEBUG, "Skipped all remaining peptides in generator");
@@ -105,18 +98,20 @@ void queue_next_peptide(
        umodseq);
   free(umodseq);
 
-  modify_peptide( //iterator->next_peptide, 
-                 unmod_peptide, 
+  modify_peptide(unmod_peptide, 
                  iterator->peptide_mod, 
                  iterator->temp_peptide_list );
+  // this put a copy in the list, get rid of the original
+  free_peptide(unmod_peptide);
 
   // error case b/c already tested for modifyability
   if( is_empty_linked_list(iterator->temp_peptide_list) ){
     carp(CARP_ERROR, "Modifier didn't return any peptides");
+    iterator->next_peptide = NULL;
+    return;
   }
 
   // now set next_peptide to the first in the list and move list forward
-  free_peptide(unmod_peptide);
   iterator->next_peptide = pop_front_linked_list(iterator->temp_peptide_list);
   if( iterator->next_peptide == NULL ){
     printf("Iterator's next peptide was lost\n");
@@ -225,11 +220,9 @@ MODIFIED_PEPTIDES_ITERATOR_T* new_modified_peptides_iterator_from_mass(
   //       mass, delta_mass, mass + delta_mass);
   // create peptide_generator
   new_iterator->peptide_generator = 
-    //    new_generate_peptides_iterator_from_mass(mass + delta_mass, index, dbase);
     new_generate_peptides_iterator_from_mass(mass - delta_mass, index, dbase);
 
   // queue first peptide
-  //printf("Queuing first peptide\n");
   queue_next_peptide( new_iterator );
 
   return new_iterator;
