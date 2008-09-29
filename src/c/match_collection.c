@@ -8,7 +8,7 @@
  *
  * AUTHOR: Chris Park
  * CREATE DATE: 11/27 2006
- * $Revision: 1.79.2.8 $
+ * $Revision: 1.79.2.9 $
  ****************************************************************************/
 #include "match_collection.h"
 
@@ -689,20 +689,23 @@ BOOLEAN_T spectrum_sort_match_collection(
 
 
 /**
- * \brief Reduces the number of matches in the match_collection so the
- * highest scoring (by score_type) remain.  Matches ranking up to
- * max_rank are retained and those ranking higher are freed.  The
- * value of match_collection->total_matches is adjusted to reflect the
- * remaining number of matches.  Sorts match collection by score_type, if
- * necessary.  
+ * \brief Reduces the number of matches in the match_collection so
+ * that only the <max_rank> highest scoring (by score_type) remain.
+ *
+ * Matches ranking up to max_rank are retained and those ranking
+ * higher are freed.  The value of match_collection->total_matches is
+ * adjusted to reflect the remaining number of matches.  The max rank
+ * and total_matches may not be the same value if there are multiple
+ * matches with the same rank.  Sorts match collection by score_type,
+ * if necessary.
  */
 void truncate_match_collection(
   MATCH_COLLECTION_T* match_collection, ///< match collection to truncate -out
-  int max_rank,     ///< max number of top rank matches to keep from SP -in
+  int max_rank,     ///< max rank of matches to keep from SP -in
   SCORER_TYPE_T score_type ///< the score type (SP, XCORR) -in
   )
 {
-  if (match_collection->match_total == 0){
+  if (match_collection == NULL || match_collection->match_total == 0){
     carp(CARP_DETAILED_INFO, "No matches in collection, so not truncating");
     return;
   }
@@ -716,17 +719,30 @@ void truncate_match_collection(
   }
 
   // Free high ranking matches
+  /*
   while(match_collection->match_total > max_rank){
     free_match(match_collection->match[match_collection->match_total - 1]);
     --match_collection->match_total;
   }
+  */
+  int highest_index = match_collection->match_total -1;
+  int cur_last_rank = get_match_rank(match_collection->match[highest_index],
+                                     score_type);
+  while( cur_last_rank > max_rank ){
+    free_match(match_collection->match[highest_index]);
+    highest_index--;
+    cur_last_rank = get_match_rank(match_collection->match[highest_index],
+                                   score_type);
+  }
+  match_collection->match_total = highest_index+1;
 }
 
 /**
  * Assigns a rank for the given score type to each match.  First sorts
  * by the score type (if not already sorted).  Overwrites any existing
  * rank values, so it can be performed on a collection with matches
- * newly added to previously ranked matches.  Rank 1 is highest score.
+ * newly added to previously ranked matches.  Rank 1 is highest
+ * score.  Matches with the same score will be given the same rank.
  *
  * \returns TRUE, if populates the match rank in the match collection
  */
@@ -749,10 +765,11 @@ BOOLEAN_T populate_match_rank_match_collection(
   // set match rank for all match objects that have been scored for
   // this type
   int match_index;
+  int cur_rank = 0;
+  float cur_score = NOT_SCORED;
   for(match_index=0; match_index<match_collection->match_total; ++match_index){
     MATCH_T* cur_match = match_collection->match[match_index];
-
-    //carp(CARP_DETAILED_DEBUG, "Match rank %i, score %f", match_index+1, get_match_score(cur_match, score_type));
+    float this_score = get_match_score(cur_match, score_type);
     
     if( NOT_SCORED == get_match_score(cur_match, score_type) ){
       carp(CARP_WARNING, 
@@ -761,7 +778,17 @@ BOOLEAN_T populate_match_rank_match_collection(
            get_match_charge(cur_match),
            score_type);
     }
-    set_match_rank( cur_match, score_type, match_index+1);
+
+    // does this match have a higher score?
+    if( this_score != cur_score ){
+      cur_score = this_score;
+      cur_rank++;
+    }
+
+    //    set_match_rank( cur_match, score_type, match_index+1);
+    set_match_rank( cur_match, score_type, cur_rank);
+
+    carp(CARP_DETAILED_DEBUG, "Match rank %i, score %f", cur_rank, cur_score);
   }
   
   //carp(CARP_DETAILED_DEBUG, "Max rank %i", match_index);
@@ -2511,17 +2538,23 @@ BOOLEAN_T print_match_collection_sqt(
     new_match_iterator(match_collection, main_score, TRUE);
   
   // Second, iterate over matches, prints M and L lines
-  int match_count = 0;
+  //int match_count = 0;
   while(match_iterator_has_next(match_iterator)){
-    ++match_count;
+    //++match_count;
     match = match_iterator_next(match_iterator);    
+
+    if( get_match_rank(match, main_score) > top_match ){
+      break;
+    }// else
 
     print_match_sqt(match, output, main_score, prelim_score);
 
     // print only up to max_rank_result of the matches
+    /*
     if(match_count >= top_match){
       break;
     }
+    */
   }// next match
   
   free_match_iterator(match_iterator);
