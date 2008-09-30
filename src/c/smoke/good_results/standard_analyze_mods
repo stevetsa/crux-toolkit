@@ -2,7 +2,7 @@ H	SQTGenerator Crux
 H	SQTGeneratorVersion 1.0
 H	Comment Crux was written by...
 H	Comment ref...
-H	StartTime	Wed Sep 17 11:23:06 2008
+H	StartTime	Mon Sep 29 17:37:22 2008
 H	EndTime                               
 H	Database	test_crux_index/test-binary-fasta
 H	DBSeqLength	?
@@ -16,23 +16,23 @@ H	Comment	preliminary algorithm sp
 H	Comment	final algorithm xcorr
 H	StaticMod	C=160.139
 H	DiffMod	STY*=+79.90
-H	DiffMod	ABCDEFGHIJKLMNOPQRSTUVWXYZ@=+33.30
-H	Comment	Mod @ is a C-terminal modification
+H	DiffMod	ABCDEFGHIJKLMNOPQRSTUVWXYZ#=+33.30
+H	Comment	Mod # is a C-terminal modification
 H	Alg-DisplayTop	5
 H	EnzymeSpec	tryptic
 H	Comment	matches analyzed by percolator
-S	2	2	3	0.00	server	576.54	0.00	0.00	2
+S	2	2	3	0.00	server	1726.60	0.00	0.00	2
 M	1	2	1726.67	0.00	0.95	0.00	9	60	R.SISVVVNNDDAT*TGVR.V	U
 L	gi|16127996|ref|NP_414543.1|
-S	14	14	2	0.00	server	500.41	0.00	0.00	1
+S	14	14	2	0.00	server	998.80	0.00	0.00	1
 M	1	1	1001.15	0.00	-0.84	0.68	6	14	K.FHLELSQK.D	U
 L	gi|6381999|ref|NP_009311.2|
-S	14	14	3	0.00	server	500.41	0.00	0.00	1
+S	14	14	3	0.00	server	1498.21	0.00	0.00	1
 M	1	1	1495.81	0.00	-0.88	0.90	8	44	R.VMFTTFYMITNK.Y	U
 L	gi|6382000|ref|NP_009314.2|
-S	15	15	2	0.00	server	488.82	0.00	0.00	1
+S	15	15	2	0.00	server	975.62	0.00	0.00	1
 M	1	1	973.09	0.00	-0.95	0.90	0	16	K.SGATAYIYK.A	U
 L	gi|6381999|ref|NP_009311.2|
-S	15	15	3	0.00	server	488.82	0.00	0.00	1
+S	15	15	3	0.00	server	1463.44	0.00	0.00	1
 M	1	1	1464.81	0.00	-0.84	0.68	5	44	K.QYLLLNIAYLLK.L	U
 L	gi|6381999|ref|NP_009311.2|
