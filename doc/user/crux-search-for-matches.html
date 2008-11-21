@@ -1,38 +1,32 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
-<HTML>
-<HEAD>
-	<META HTTP-EQUIV="CONTENT-TYPE" CONTENT="text/html; charset=iso-8859-1">
-	<TITLE>crux-search-for-matches</TITLE>
-	<META NAME="GENERATOR" CONTENT="OpenOffice.org 1.1.2  (Linux)">
-	<META NAME="CREATED" CONTENT="20050830;17560800">
-	<META NAME="CHANGED" CONTENT="20050902;15510500">
-<!-- FILE: match-search.html
-AUTHOR: Chris Park
-CREATE DATE: 2007-06-19
-PROJECT: match-search
-REVISION: $Revision: 1.4 $
--->
-</HEAD>
-<BODY LANG="en-US" BGCOLOR="#ffffff" DIR="LTR">
-<H1 ALIGN=CENTER>crux-search-for-matches</H1>
-<B>Description:</B>
-<br>
-<br>
-Given as input an ms2 file, a sequence database, and an optional parameter
-file, search each spectrum against the peptides in the sequence database,
-and return the resulting PSMs with some additional features in serialized
-binary output files or SQT files.
-<br>
-<br>
-<B>Usage:</B>
-<br>
-<br>
-<code>crux-search-for-matches
-  &nbsp;[options]
-  &nbsp;&lt;ms2&nbsp;input&nbsp;filename&gt; 
-  &nbsp;&lt;protein&nbsp;input&gt; 
+<html>
+<head>
+<title>crux search-for-matches</title>
+<link href="./crux.css" rel="styleSheet" type="text/css">
+</head>
+<body>
+<blockquote>
 
+<H1 ALIGN=CENTER>crux search-for-matches</H1>
+<B>Description:</B>
+
+<blockquote>
+This command searches a protein database with a set of spectra.  For
+each spectrum, candidate peptides are identified whose inferred m/z
+lies within a specified range of the observed precursor m/z.  These
+candidate peptides are first ranked with the SEQUEST Sp score.  The
+top 500 matches are then re-scored using XCorr.  The top 5 peptides
+for each spectrum are output by the program.  The input protein
+database may either be in FASTA format or it may be a binary index
+created by <code>cvs create-index</code>.
+</blockquote>
+
+<B>Usage:</B>
+
+<blockquote>
+<code>crux search-for-matches [options]
+&lt;ms2&nbsp;input&nbsp;filename&gt; &lt;protein&nbsp;input&gt;
 </code>
+</blockquote>
 
 <p>
 <B>Input:</B>
@@ -46,15 +40,9 @@ binary output files or SQT files.
 </UL>
 <B>Output:</B>
 
-<UL>
-  <br>
-
-  The program writes to a user-specified folder a binary file
-  that contains the PSMs and additional features.
-  <br>
-  Optionally, the result can be output in a human readable
-  SQT format file instead of or in addition to the binary file.
-  <br>
+<blockquote>
+By default, the program produces a binary .csm file containing one 
+</blockquote>
 
 </UL>
 <B>Options:</B>
@@ -92,16 +80,11 @@ messages:</B>
     <li>--output-mode = binary and --sqt-output-file
   </ul>
 </UL>
-<!--
-<B>Bugs:</B> 
 
-<UL>
-	<LI>match-search does not have bugs, it has features.
-	
-</UL>
--->
-<HR>
-<P><A HREF="crux.html">Crux</A> 
+<hr></hr>
+<P><A HREF="crux.html">Crux home</A> 
 </P>
+
+</blockquote>
 </BODY>
 </HTML>
