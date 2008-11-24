@@ -31,7 +31,7 @@ href="search-tutorial.html">search example</a>, run this command.
 </p>
 
 <div class=code><code>
-$ crux-create-index small-yeast.fasta yeast-index</code>
+crux-create-index small-yeast.fasta yeast-index</code>
 </div>
 
 <p>The output should look like this</p>
@@ -77,7 +77,7 @@ like this.</p>
 #       missed_cleavage: false
 #       mass_type: average
 #       unique peptides: redundant
-#       CRUX index directory: yeast-index 
+#       CRUX index directory: yeast-index
 #       target mass range for index file: 6.84
 </pre>
 
@@ -85,8 +85,8 @@ like this.</p>
 
 <p>The index you have created can be used when searching for
 peptide-spectrum matches and in the subsequent analysis of matches.
-Try the search again with <span class="file">demo.ms2</span> and with
-the indexed protein database.  Run these 
+Try a search with <span class="file">demo.ms2</span> (also found in
+the test data) with the indexed protein database.  Run these
 commands.</p> 
 
 <div class="code"><code>
