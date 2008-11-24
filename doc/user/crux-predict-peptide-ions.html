@@ -1,14 +1,10 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
 <HTML>
 <HEAD>
-	<META HTTP-EQUIV="CONTENT-TYPE" CONTENT="text/html; charset=iso-8859-1">
-	<TITLE>crux-predict-peptide-ions</TITLE>
-	<META NAME="GENERATOR" CONTENT="OpenOffice.org 1.1.2  (Linux)">
-	<META NAME="CREATED" CONTENT="20050830;17560800">
-	<META NAME="CHANGED" CONTENT="20050902;15510500">
+<TITLE>crux-predict-peptide-ions</TITLE>
 </HEAD>
 <BODY LANG="en-US" BGCOLOR="#ffffff" DIR="LTR">
-<H1 ALIGN=CENTER>crux-predict-peptide-ions</H1>
+<blockquote>
+<H1 ALIGN=CENTER>crux predict-peptide-ions</H1>
 <B>Description:</B>
 <br>
 <br>
@@ -21,12 +17,13 @@ ion prediction code, and it's main functionality will ultimately be wrapped in
 <br>
 <br>
 <B>Usage:</B>
-<br>
-<br>
-<code>crux-predict-peptide-ions [options]
-  &nbsp;&lt;peptide&nbsp;sequence&gt; 
-  &nbsp;&lt;charge&nbsp;state&gt; 
+
+<blockquote>
+<code>crux predict-peptide-ions [options]
+  &lt;peptide&nbsp;sequence&gt; 
+  &lt;charge&nbsp;state&gt; 
 </code>
+</blockquote>
 
 <p>
 <B>Input:</B>
@@ -40,10 +37,10 @@ predict the ions.
 <B>Output:</B>
 
 <UL>
-  <br>
 
+  <p>
   The program prints to standard output a series of header lines,
-  describing how the ions were predicted.
+  describing how the ions were predicted.</p>
 
   <pre>
   # PEPTIDE: &lt;peptide sequence&gt;
@@ -51,7 +48,7 @@ predict the ions.
   And then the predicted ions, in the following format:
   <pre>
   &lt;m/z&gt; &lt;mass&gt; &lt;charge&gt; &lt;ion-series&gt; &lt;bond-index&gt; &lt;NH3&gt; &lt;H2O&gt; &lt;ISOTOPE&gt; &lt;FLANK&gt;</pre>
-  Where
+  where
   <pre>
   &lt;m/z&gt; is the ion's mass-to-charge
   &lt;mass&gt; is the ion's (charged) mass
@@ -137,16 +134,10 @@ messages:</B>
   <LI><I>FATAL: The sequence "peptide" is not a valid peptide sequence.</I>
   <LI><I>FATAL: The value "charge" is not a valid charge state.</I>
 </UL>
-<!--
-<B>Bugs:</B> 
 
-<UL>
-	<LI>predict-peptide-ions does not have bugs, it has features.
-	
-</UL>
--->
-<HR>
+<HR></hr>
 <P><A HREF="crux.html">Crux</A> 
 </P>
+</blockquote>
 </BODY>
 </HTML>
