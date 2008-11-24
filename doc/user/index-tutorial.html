@@ -1,14 +1,6 @@
-<!--
-FILE: 
-AUTHOR: Barbara Frewen
-DATE: Octobeer 15, 2007
-PROJECT: crux
-REVISION: $1.0 $
--->
-
 <html>
 <head>
-<title>Crux: Index</title>
+<title>Creating a peptide index</title>
 
 <link rel="stylesheet" href="crux.css" type="text/css">
 
@@ -16,12 +8,10 @@ REVISION: $1.0 $
 
 <body>
 <blockquote>
-<div id="top">
-<h>crux: peptide spectrum analysis tools</h>
-</div>
 
 <div id="main">
-<h3>Creating an Index</h3>
+<h1>Creating a peptide index</h1>
+
 <p> The search for peptide-spectrum matches requires looking through
 all possible peptides in the protein database (fasta file).  A text
 file in fasta format is not well-suited for this task, so <span
@@ -81,7 +71,7 @@ like this.</p>
 #       target mass range for index file: 6.84
 </pre>
 
-<h4>Using an index</h4>
+<h2>Using an index</h2>
 
 <p>The index you have created can be used when searching for
 peptide-spectrum matches and in the subsequent analysis of matches.
@@ -101,8 +91,6 @@ class=file>target.sqt</span> already exists.  You can delete the file
 and run the command again, or you can use the option <span class=code>
 --overwrite</span>.  The next section will discuss that and other <span
 class=prog>crux</span> options and how to set them.</p>
-
-<a href="customize-tutorial.html"><h4>Next: Customizing Searches</h4></a>
 
 </div><!--end main-->
 

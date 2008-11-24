@@ -8,7 +8,7 @@ REVISION: $1.0 $
 
 <html>
 <head>
-<title>Crux: Installation</title>
+<title>Crux installation instructions</title>
 
 <link rel="stylesheet" href="crux.css" type="text/css">
 
@@ -16,13 +16,11 @@ REVISION: $1.0 $
 
 <body>
 <blockquote>
-<div id="top">
-<h>crux: peptide spectrum analysis tools</h>
-</div>
 
 <div id="main">
 
-<h3>Crux Installation Instructions</h3>
+<h1>Crux Installation Instructions</h1>
+
 <p>This page will walk you through the steps of installing <span
 class=prog>crux</span> on your computer.  It assumes you are working
 in a command-line shell (readily available for Linux and Mac systems,
@@ -44,7 +42,7 @@ $HOME</code>
 
 
 <a name=install></a>
-<h4>Installation</h4>
+<h2>Installation</h2>
 
 <ol>
 <li><b>Download the files</b>  <span class=prog>Crux</span> is freely
@@ -156,13 +154,16 @@ $ make install
 </code>
 </div>
 
+</ol>
+
 You should now see a number of executable files in <span
 class=file>install-dir/bin</span> beginning with <span
 class=prog>crux-</span>.  You will also find documentation and example
 files in <span class=file>install-dir/doc</span>.  
 
 <a name="path"></a>
-<h4>Changing $PATH</h4>
+
+<h2>Changing $PATH</h2>
 <p>You can always run any of the programs by specifying its full
 path.  For example,</p>
 
@@ -214,9 +215,6 @@ make the change every time you log on, add the line <span
 class=code>export PATH=$PATH:install-dir</span> to the file <span
 class=out>.bashrc</span> located in your home directory.  You will
 have to log on again for the change to take effect.
-
-
-<a href="start-tutorial.html"><h4>Next: Getting Started</h4></a>
 
 </div><!--end main-->
 
