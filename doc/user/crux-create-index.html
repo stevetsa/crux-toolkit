@@ -9,23 +9,23 @@
 </HEAD>
 <BODY LANG="en-US" BGCOLOR="#ffffff" DIR="LTR">
 <H1 ALIGN=CENTER>crux-create-index</H1>
-<B>Description:</B>
-<br>
-<br>
-Given a protein fasta sequence database as input, generate an index of 
-all of its peptides and save it to disk.  This index can be used with
-crux-search-for-matches instead of the fasta file to speed up the
-search.
-<br>
-<br>
+
 <B>Usage:</B>
 
 <blockquote>
 <code>crux-create-index [options] 
-  &nbsp;&lt;protein&nbsp;input&nbsp;file&gt; 
-  &nbsp;&lt;index&nbsp;name&gt; 
+  &lt;protein&nbsp;input&nbsp;file&gt; 
+  &lt;index&nbsp;name&gt; 
 </code>
 </blockquote>
+
+<B>Description:</B>
+
+<p>
+Given a protein fasta sequence database as input, generate an index of 
+all of its peptides and save it to disk.  This index can be used with
+crux-search-for-matches instead of the fasta file to speed up the
+search.</p>
 
 <p>
 <B>Input:</B>
@@ -144,19 +144,9 @@ messages:</B>
 
 <UL>
 	<LI>All &lt;float&gt;s are supported up to 2 decimal digits
-<!-- <LI>User must ensure that file handler limit is sufficient enough for create-index. Use "ulimit -n [#file handlers]" on command line to increase number of allowed filehandlers. A typical default is 1024, should reset to ~20,000. -->
-	
 </UL>
-<!--
-<B>Bugs:</B> 
-
-<UL>
-	<LI>create-index does not have bugs, it has features.
-	
-</UL>
--->
-<HR>
-<P><A HREF="crux.html">Crux</A> 
+<hr></hr>
+<P><A HREF="crux.html">Crux home</A> 
 </P>
 </BODY>
 </HTML>
