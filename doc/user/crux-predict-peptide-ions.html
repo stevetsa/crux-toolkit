@@ -67,32 +67,32 @@ predict the ions.
 
 <UL>
 <LI>
-[--primary-ions &lt;b | y | by&gt;] &ndash; 
+<code>--primary-ions &lt;b | y | by&gt;</code> &ndash; 
 Predict the specified primary ion series. 'b' indicates b-ions only, 'y' indicates y-ions only, 'by' indicates both. Default by.
 
 <LI>
-[--precursor-ion &lt;T | F&gt;] &ndash; 
+<code>--precursor-ion &lt;T | F&gt;</code> &ndash; 
 Predict the precursor ions, and all associated ions (neutral-losses,
 multiple charge states) consistent with the other specified
 options.  Default F.  
 
 <LI>
-[--neutral-losses &lt;none | h2o | nh3 | all&gt;] &ndash; 
+<code>--neutral-losses &lt;none | h2o | nh3 | all&gt;</code> &ndash; 
 Predict the the specified neutral loss peaks. 'none' indicates no
 neutral losses, 'h2o' indicates water loss only, 'nh3' indicates
 ammonia losses only, 'all' indicates all three kinds of
 losses. Default all. 
 
 <LI>
-[--isotope &lt;0 | 1 | 2&gt;] &ndash;
+<code>--isotope &lt;0 | 1 | 2&gt;</code> &ndash;
 Predict the given number of isotope peaks. Default 0.
 
 <LI>
-[--flanking &lt;T | F&gt;] &ndash; 
+<code>--flanking &lt;T | F&gt;</code> &ndash; 
 Predict flanking peaks for b- and y-ions. Default F.
 
 <LI>
-[--max-ion-charge &lt;1 | 2 | 3 | peptide&gt;] &ndash; 
+<code>--max-ion-charge &lt;1 | 2 | 3 | peptide&gt;</code> &ndash; 
 Predict ions up to this charge-state. The integer options ('1', '2' and
 '3') specify a fixed maximum charge-state. The 'peptide' option
 indicates that the ions should range up to the maximum charge-state of
@@ -100,19 +100,19 @@ the peptide itself (thus, a +2 charge state peptide would have ions of
 +1 and +2). Default peptide.
 
 <LI>
-[--nh3 &lt;int&gt;] &ndash; 
+<code>--nh3 &lt;int&gt;</code> &ndash; 
 Predict peaks with the following max nh3 modification.  Default 1.
 
 <LI>
-[--h2o &lt;int&gt;] &ndash; 
+<code>--h2o &lt;int&gt;</code> &ndash; 
 Predict peaks with the following max h2o modification.  Default 0.
 
 <LI>
-[--fragment-mass &lt;average | mono&gt;]
+<code>--fragment-mass &lt;average | mono&gt;</code>
 Which isotopes to use in calculating the fragment ion masses.  Default mono.
 
 <LI>
-[--verbosity &lt;0-100&gt;] &ndash; Specify the verbosity of the
+<code>--verbosity &lt;0-100&gt;</code> &ndash; Specify the verbosity of the
 current processes. Each level prints the following messages, including
 all those at lower verbosity levels: 0-fatal errors, 10-non-fatal
 errors, 20-warnings, 30-information on the progress of execution,
@@ -120,7 +120,7 @@ errors, 20-warnings, 30-information on the progress of execution,
 Default = 30.
 
 <li>
-[--version T] &ndash;
+<code>--version T</code> &ndash;
 Print the version number and quit.  Please note that you must include
 the 'T' after --version.
 
