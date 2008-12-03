@@ -56,6 +56,8 @@ NON_PERCOLATOR_LIB_FILES= \
   protein.h \
   protein_index.c \
   protein_index.h \
+  q-ranker.c \
+  q-ranker.h \
   q-value.c \
   q-value.h \
   scorer.c \
