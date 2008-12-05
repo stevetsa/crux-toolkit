@@ -1,6 +1,6 @@
 /************************************************************************//**
  * \file index.c
- * $Revision: 1.78.2.9 $
+ * $Revision: 1.78.2.10 $
  * \brief: Object for representing an index of a database
  ****************************************************************************/
 #include <stdio.h>
@@ -495,7 +495,7 @@ void set_index_fields(
   set_index_directory(index, output_dir);
   index->disk_constraint = constraint;
   index->search_constraint = NULL;
-  index->on_disk = FALSE; // not yet
+  //index->on_disk = FALSE; // this breaks overwrite of create index
   index->mass_range = mass_range;  
   index->is_unique = is_unique;
 

@@ -3,7 +3,7 @@
  * AUTHOR: Chris Park
  * CREATE DATE: 21 Sep 2006
  * DESCRIPTION: code to support working with a series of ions
- * REVISION: $Revision: 1.45.2.3 $
+ * REVISION: $Revision: 1.45.2.4 $
  ****************************************************************************/
 #include <math.h>
 #include <stdio.h>
@@ -1298,7 +1298,7 @@ ION_CONSTRAINT_T* new_ion_constraint_smart(
       new_ion_constraint(get_mass_type_parameter("fragment-mass"),
                          charge,
                          get_ion_type_parameter("primary-ions"),
-                         get_boolean_parameter("precursor_ions")); 
+                         get_boolean_parameter("precursor-ions")); 
     break;
   }
   return new_constraint;
