@@ -8,7 +8,7 @@
  *
  * AUTHOR: Chris Park
  * CREATE DATE: 11/27 2006
- * $Revision: 1.79.2.10 $
+ * $Revision: 1.79.2.11 $
  ****************************************************************************/
 #include "match_collection.h"
 
@@ -549,8 +549,8 @@ int add_matches(
   populate_match_rank_match_collection(match_collection, prelim_score);
 
   // trim matches to only the top n as ranked by prelim score
-  int max_rank = get_int_parameter("max-rank-preliminary");
-  truncate_match_collection( match_collection, max_rank, prelim_score);
+  //int max_rank = get_int_parameter("max-rank-preliminary");
+  //truncate_match_collection( match_collection, max_rank, prelim_score);
 
   // score exitsting matches w/second function
   SCORER_TYPE_T final_score = get_scorer_type_parameter("score-type");
