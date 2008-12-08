@@ -1,6 +1,6 @@
 /**
  * \file match_collection.h 
- * $Revision: 1.29.2.3 $
+ * $Revision: 1.29.2.4 $
  * \brief A set of peptide spectrum matches for one spectrum.
  *
  * Object for given a database and a spectrum, generate all match objects
@@ -459,6 +459,19 @@ int get_match_collection_iterator_number_collections(
  */
 char* get_match_collection_iterator_directory_name(
   MATCH_COLLECTION_ITERATOR_T* iterator);
+
+
+// move within file
+BOOLEAN_T estimate_weibull_parameters(
+  MATCH_COLLECTION_T* match_collection, 
+  SCORER_TYPE_T score_type,
+  int sample_count, 
+  SPECTRUM_T* spectrum,
+  int charge
+  );
+
+BOOLEAN_T compute_p_values(MATCH_COLLECTION_T* match_collection);
+
 
 /*
  * Local Variables:

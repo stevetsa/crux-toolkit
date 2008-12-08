@@ -5,7 +5,7 @@
  * DESCRIPTION: Object for matching a peptide and a spectrum, generate
  * a preliminary score(e.g., Sp) 
  *
- * REVISION: $Revision: 1.55.2.7 $
+ * REVISION: $Revision: 1.55.2.8 $
  ****************************************************************************/
 #include <math.h>
 #include <stdlib.h>
@@ -434,7 +434,7 @@ void print_match_sqt(
   ){
 
   if( match == NULL || file == NULL ){
-    carp(CARP_ERROR, "Cannot print match to sqt file from null in puts");
+    carp(CARP_ERROR, "Cannot print match to sqt file from null inputs");
     return;
   }
   PEPTIDE_T* peptide = get_match_peptide(match);
@@ -452,6 +452,20 @@ void print_match_sqt(
     other_rank_type = SP;    
     adjust_delta_cn = TRUE;
   }
+  // for p-values, also give rank of xcorr and sp?
+  else if( main_score == LOGP_BONF_WEIBULL_XCORR ){
+    //other_rank_type = XCORR;
+    other_score = XCORR;
+  }else if( main_score == LOGP_BONF_WEIBULL_SP ){
+    //other_rank_type = SP;
+    other_score = SP;
+  }
+  // for post-analysis of p-values, both ranks from xcorr
+  else if( main_score == LOGP_QVALUE_WEIBULL_XCORR ){
+    main_rank_type = XCORR;
+  }
+  // secondary rank could always be preliminary score
+
 
   // NOTE (BF 12-Feb-08) Here is another ugly fix for post-analysis.
   // Only the fraction matched is serialized.  The number possible can
@@ -481,17 +495,12 @@ void print_match_sqt(
   }
   // print match info
   fprintf(file, "M\t%d\t%d\t%.2f\t%.2f\t%.2f\t%.2f\t%d\t%d\t%s\tU\n",
-          //get_match_rank(match, main_score),
-          //get_match_rank(match, other_score),
           get_match_rank(match, main_rank_type),
           get_match_rank(match, other_rank_type),
           get_peptide_peptide_mass(peptide),
-          //get_match_delta_cn(match),
           delta_cn,
           get_match_score(match, main_score),
           get_match_score(match, other_score),
-          //get_match_b_y_ion_matched(match),
-          //get_match_b_y_ion_possible(match),
           b_y_matched,
           b_y_total,
           sequence

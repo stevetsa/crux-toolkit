@@ -13,7 +13,7 @@
  * concatinated together and presumed to be non-overlaping parts of
  * the same ms2 file. 
  * 
- * $Revision: 1.43.2.1 $
+ * $Revision: 1.43.2.2 $
  ****************************************************************************/
 #include <stdlib.h>
 #include <stdio.h>
@@ -139,7 +139,8 @@ int main(int argc, char** argv){
   case QVALUE_ALGORITHM:
     carp(CARP_INFO, "Running qvalue");
     match_collection = run_qvalue(psm_file, fasta_file);
-    scorer_type = Q_VALUE;
+    //    scorer_type = Q_VALUE;
+     scorer_type =  LOGP_QVALUE_WEIBULL_XCORR;
     second_scorer_type = XCORR; // could it be other?
     break;
     

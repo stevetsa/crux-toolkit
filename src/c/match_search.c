@@ -29,7 +29,7 @@
 #include "spectrum_collection.h"
 #include "match_collection.h"
 
-#define NUM_SEARCH_OPTIONS 14
+#define NUM_SEARCH_OPTIONS 15
 #define NUM_SEARCH_ARGS 2
 
 /* Private functions */
@@ -56,6 +56,7 @@ int main(int argc, char** argv){
     "use-index",
     "prelim-score-type",
     "score-type",
+    "compute-p-values",
     "spectrum-min-mass",
     "spectrum-max-mass",
     "spectrum-charge",
@@ -140,7 +141,6 @@ int main(int argc, char** argv){
   /* Perform search: loop over spectra*/
 
   // create spectrum iterator
-  //SPECTRUM_ITERATOR_T* spectrum_iterator = new_spectrum_iterator(spectra);
   FILTERED_SPECTRUM_CHARGE_ITERATOR_T* spectrum_iterator = 
     new_filtered_spectrum_charge_iterator(spectra);
 
@@ -150,6 +150,7 @@ int main(int argc, char** argv){
   SCORER_TYPE_T prelim_score = get_scorer_type_parameter("prelim-score-type");
   SCORER_TYPE_T main_score = get_scorer_type_parameter("score-type");
   */
+  BOOLEAN_T compute_pvalues = get_boolean_parameter("compute-p-values");
 
   // flags and counters for loop
   int spectrum_searches_counter = 0; //for psm file header, spec*charges
@@ -212,6 +213,7 @@ int main(int argc, char** argv){
       free_modified_peptides_iterator(peptide_iterator);
 
     }//next peptide mod
+
     // in case we searched all mods, do we need to assess again?
 
     // are there any matches?
@@ -223,6 +225,21 @@ int main(int argc, char** argv){
       continue; // next spectrum
     }
     
+    // calculate p-values
+    if( compute_pvalues == TRUE ){
+      carp(CARP_DEBUG, "Estimating Weibull parameters.");
+      int estimate_sample_size = 500;  // get this from ??
+      estimate_weibull_parameters(match_collection, 
+                                  XCORR, 
+                                  estimate_sample_size, 
+                                  spectrum, 
+                                  charge);
+
+      carp(CARP_DEBUG, "Calculating p-values.");
+      // for each psm, use parameters to calculate p-values
+      compute_p_values(match_collection);
+    }
+
     // print matches
     carp(CARP_DEBUG, "About to print matches");
     print_matches(match_collection, spectrum, FALSE,// is decoy

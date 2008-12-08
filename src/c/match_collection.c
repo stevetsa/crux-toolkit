@@ -8,7 +8,7 @@
  *
  * AUTHOR: Chris Park
  * CREATE DATE: 11/27 2006
- * $Revision: 1.79.2.9 $
+ * $Revision: 1.79.2.10 $
  ****************************************************************************/
 #include "match_collection.h"
 
@@ -189,6 +189,7 @@ BOOLEAN_T estimate_exp_sp_parameters(
   int top_count 
   );
 
+/*
 BOOLEAN_T estimate_weibull_parameters(
   MATCH_COLLECTION_T* match_collection, 
   SCORER_TYPE_T score_type,
@@ -196,6 +197,7 @@ BOOLEAN_T estimate_weibull_parameters(
   SPECTRUM_T* spectrum,
   int charge
   );
+*/
 
 void truncate_match_collection(
   MATCH_COLLECTION_T* match_collection, 
@@ -705,6 +707,7 @@ void truncate_match_collection(
   SCORER_TYPE_T score_type ///< the score type (SP, XCORR) -in
   )
 {
+  carp(CARP_DETAILED_DEBUG, "Truncating match collection.");
   if (match_collection == NULL || match_collection->match_total == 0){
     carp(CARP_DETAILED_INFO, "No matches in collection, so not truncating");
     return;
@@ -1795,6 +1798,62 @@ BOOLEAN_T score_match_collection_logp_bonf_weibull_xcorr(
   return TRUE;
 }
 
+/**
+ * \brief  Uses the Weibull parameters estimated by
+ * estimate_weibull_parameters() to compute a p-value for each psm in
+ * the collection.
+ *
+ * Computes the p-value for score-type set in parameter.c (which should
+ * have been used for estimating the parameters).  Stores scores at
+ * match->match_scores[LOGP_BONF_WEIBULL_XCORR].  This function
+ * previous performed in score_collection_logp_bonf_weibull_[xcorr,sp]. 
+ * 
+ * \returns TRUE if p-values successfully computed for all matches,
+ * else FALSE.
+ */
+// FIXME (BF 8-Dec-2008): create new score-type P_VALUE to replace LOG...XCORR
+BOOLEAN_T compute_p_values(MATCH_COLLECTION_T* match_collection){
+  if(match_collection == NULL){
+    carp(CARP_ERROR, "Cannot compute p-values for NULL match collection.");
+    return FALSE;
+  }
+
+  SCORER_TYPE_T main_score = get_scorer_type_parameter("score-type");
+
+  // check that the matches have been scored
+  if(!match_collection->scored_type[main_score]){
+    char type_str[64];
+    scorer_type_to_string(main_score, type_str);
+    carp(CARP_FATAL, 
+         "Match collection was not scored by %s prior to computing p-values.",
+         type_str);
+  }
+
+  // iterate over all matches 
+  int match_idx =0;
+  double score = 0;
+  for(match_idx=0; match_idx < match_collection->match_total; match_idx++){
+    MATCH_T* cur_match = match_collection->match[match_idx];
+
+    // scale the score
+    score = score_logp_bonf_weibull(get_match_score(cur_match,main_score),
+                                    match_collection->eta, 
+                                    match_collection->beta,
+                                    match_collection->shift,
+                                    match_collection->experiment_size);
+    // set score in match
+    set_match_score(cur_match, LOGP_BONF_WEIBULL_XCORR, score);
+
+  }// next match
+
+  carp(CARP_DETAILED_DEBUG, "Computed p-values for %d psms.", match_idx);
+  // match_collection is not ranked by p-value b/c it is identical to
+  // score_type ranks
+
+  // mark p-values as having been scored
+  match_collection->scored_type[LOGP_BONF_WEIBULL_XCORR] = TRUE;
+  return TRUE;
+}
 
 
 /**

@@ -305,6 +305,8 @@ void initialize_parameters(void){
   set_scorer_type_parameter("score-type", XCORR, 
       "The scoring method to use (xcorr, sp, dotp, xcorr-logp, sp-logp). "
       "Default xcorr."); 
+  set_boolean_parameter("compute-p-values", FALSE,
+      "Compute p-values for the main score type.  Default FALSE.");
 
   set_double_parameter("spectrum-min-mass", 0.0, 0, BILLION, 
       "Minimum mass of spectra to be searched.  Default 0.");
