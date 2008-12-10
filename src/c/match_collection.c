@@ -8,7 +8,7 @@
  *
  * AUTHOR: Chris Park
  * CREATE DATE: 11/27 2006
- * $Revision: 1.79.2.12 $
+ * $Revision: 1.79.2.13 $
  ****************************************************************************/
 #include "match_collection.h"
 
@@ -2663,6 +2663,9 @@ MATCH_ITERATOR_T* new_match_iterator(
   
   // has the score type been populated in match collection?
   if(!match_collection->scored_type[score_type]){
+    char score_str[64];
+    scorer_type_to_string(score_type, score_str);
+    carp(CARP_ERROR, "New match iterator for score type %s.", score_str);
     carp(CARP_FATAL, 
          "The match collection has not been scored for request score type.");
     exit(1);
@@ -2939,6 +2942,11 @@ void print_matches(
          get_match_charge(match_collection->match[0]),
          get_match_null_peptide(match_collection->match[0]));
 
+    // BF: this is an ugly fix so that we don't have to estimate pvalues
+    // for decoy psms but can still serialize the matches
+    if( is_decoy ){
+      match_collection->scored_type[LOGP_BONF_WEIBULL_XCORR] = TRUE;
+    }
     serialize_psm_features(match_collection, psm_file, max_psm_matches,
                            prelim_score, main_score);
   }
