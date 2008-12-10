@@ -8,7 +8,7 @@
  *
  * AUTHOR: Chris Park
  * CREATE DATE: 11/27 2006
- * $Revision: 1.79.2.11 $
+ * $Revision: 1.79.2.12 $
  ****************************************************************************/
 #include "match_collection.h"
 
@@ -524,13 +524,19 @@ int add_matches(
   MATCH_COLLECTION_T* match_collection,///< add matches to this
   SPECTRUM_T* spectrum,  ///< compare peptides to this spectrum
   int charge,            ///< use this charge state for spectrum
-  MODIFIED_PEPTIDES_ITERATOR_T* peptide_iterator///< use these peptides
+  MODIFIED_PEPTIDES_ITERATOR_T* peptide_iterator, ///< use these peptides
+  MATCH_COLLECTION_T* sampled_matches, ///< matches for param estimation
+  int sample_size        ///< num matches to add to sampled_matches
 ){
   if( match_collection == NULL || peptide_iterator == NULL
       || spectrum == NULL ){
     carp(CARP_FATAL, "Cannot add matches to a collection when match " \
          "collection, spectrum and/or peptide iterator are NULL.");
     exit(1);
+  }
+
+  if( sampled_matches == NULL && sample_size != 0 ){
+    carp(CARP_ERROR, "Cannot add sampled matches to NULL collection.");
   }
 
   assert(match_collection->charge==0 || match_collection->charge==charge);
@@ -544,6 +550,10 @@ int add_matches(
   SCORER_TYPE_T prelim_score = get_scorer_type_parameter("prelim-score-type");
   score_peptides(prelim_score, match_collection, 
                  spectrum, charge, peptide_iterator);
+
+  // randomly select matches from those added
+  num_matches_added = match_collection->match_total - start_index;
+  // add sample_size matches beginning with start_index to sampled_matches
 
   // rank by prelim score
   populate_match_rank_match_collection(match_collection, prelim_score);
@@ -559,7 +569,7 @@ int add_matches(
   // rank by final score
   populate_match_rank_match_collection(match_collection, final_score);
 
-  num_matches_added = match_collection->match_total - start_index;
+  //  num_matches_added = match_collection->match_total - start_index;
   return num_matches_added;
 }
 
@@ -2911,9 +2921,14 @@ void print_matches(
                                                             "output-mode");
   int max_sqt_matches = get_int_parameter("max-sqt-result");
   int max_psm_matches = get_int_parameter("top-match");
+  BOOLEAN_T pvalues = get_boolean_parameter("compute-p-values");
   SCORER_TYPE_T main_score = get_scorer_type_parameter("score-type");
   SCORER_TYPE_T prelim_score = get_scorer_type_parameter("prelim-score-type");
 
+  if( pvalues ){
+    prelim_score = main_score;
+    main_score = LOGP_BONF_WEIBULL_XCORR;
+  }
 
   // write binary files
   if( output_type != SQT_OUTPUT ){ //i.e. binary or all
