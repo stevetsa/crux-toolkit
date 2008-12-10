@@ -5,7 +5,7 @@
  * DESCRIPTION: Object for matching a peptide and a spectrum, generate
  * a preliminary score(e.g., Sp) 
  *
- * REVISION: $Revision: 1.55.2.8 $
+ * REVISION: $Revision: 1.55.2.9 $
  ****************************************************************************/
 #include <math.h>
 #include <stdlib.h>
@@ -454,7 +454,7 @@ void print_match_sqt(
   }
   // for p-values, also give rank of xcorr and sp?
   else if( main_score == LOGP_BONF_WEIBULL_XCORR ){
-    //other_rank_type = XCORR;
+    main_rank_type = XCORR;
     other_score = XCORR;
   }else if( main_score == LOGP_BONF_WEIBULL_SP ){
     //other_rank_type = SP;
