@@ -315,6 +315,8 @@ int main(int argc, char** argv){
   // fix headers in csm files
   int file_idx;
   for(file_idx=0; file_idx < num_decoys + 1; file_idx++){
+    carp(CARP_DEBUG, "Changing csm header to have %i spectrum searches",
+         spectrum_searches_counter);
     serialize_total_number_of_spectra(spectrum_searches_counter,
                                       psm_file_array[file_idx]);
   }
