@@ -8,7 +8,7 @@
  *
  * AUTHOR: Chris Park
  * CREATE DATE: 11/27 2006
- * $Revision: 1.79.2.14 $
+ * $Revision: 1.79.2.15 $
  ****************************************************************************/
 #include "match_collection.h"
 
@@ -2844,11 +2844,16 @@ BOOLEAN_T parse_csm_header
 
   // get number of spectra serialized in the file
   if(fread(total_spectra, (sizeof(int)), 1, file) != 1){
-    carp(CARP_ERROR,"Serialized file corrupted, incorrect number of spectra");
+    carp(CARP_ERROR, "Could not read spectrum count from csm file header.");
     return FALSE;
   }
   carp(CARP_DETAILED_DEBUG, "There are %i spectra in the result file", 
        *total_spectra);
+  if( *total_spectra < 0 ){ // value initialized to -1
+    carp(CARP_ERROR, "Header of csm file incomplete, spectrum count missing. "
+         "Did the search run without error?");
+    return FALSE;
+  }
 
   // FIXME unused feature, just set to 0
   int num_spectrum_features = 555;
@@ -3102,8 +3107,8 @@ BOOLEAN_T extend_match_collection(
   
   // read in file specific info
   if(!  parse_csm_header(result_file, &total_spectra, &num_top_match)){
-    carp(CARP_ERROR, "Could not parse csm header");
-    return FALSE;
+    carp(CARP_FATAL, "Error reading csm header.");
+    exit(1);
   }
   /*
   // get number of spectra serialized in the file

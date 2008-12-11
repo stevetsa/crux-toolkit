@@ -252,7 +252,6 @@ int main(int argc, char** argv){
     print_matches(match_collection, spectrum, FALSE,// is decoy
                   psm_file_array[0], sqt_file, decoy_sqt_file);
 
-    fprintf(stderr, "about to free match collections");
     // ?? does this free all the matches, all the spectra and all the peptides?
     free_match_collection(match_collection);
 
