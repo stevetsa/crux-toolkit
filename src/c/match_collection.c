@@ -8,7 +8,7 @@
  *
  * AUTHOR: Chris Park
  * CREATE DATE: 11/27 2006
- * $Revision: 1.79.2.13 $
+ * $Revision: 1.79.2.14 $
  ****************************************************************************/
 #include "match_collection.h"
 
@@ -525,7 +525,6 @@ int add_matches(
   SPECTRUM_T* spectrum,  ///< compare peptides to this spectrum
   int charge,            ///< use this charge state for spectrum
   MODIFIED_PEPTIDES_ITERATOR_T* peptide_iterator, ///< use these peptides
-  MATCH_COLLECTION_T* sampled_matches, ///< matches for param estimation
   int sample_size        ///< num matches to add to sampled_matches
 ){
   if( match_collection == NULL || peptide_iterator == NULL
@@ -533,10 +532,6 @@ int add_matches(
     carp(CARP_FATAL, "Cannot add matches to a collection when match " \
          "collection, spectrum and/or peptide iterator are NULL.");
     exit(1);
-  }
-
-  if( sampled_matches == NULL && sample_size != 0 ){
-    carp(CARP_ERROR, "Cannot add sampled matches to NULL collection.");
   }
 
   assert(match_collection->charge==0 || match_collection->charge==charge);
@@ -553,7 +548,11 @@ int add_matches(
 
   // randomly select matches from those added
   num_matches_added = match_collection->match_total - start_index;
-  // add sample_size matches beginning with start_index to sampled_matches
+
+  // add sample matches for param estimation
+  if( sample_size > 0 ){
+    carp(CARP_DETAILED_DEBUG, "Sampling %i psms from collection", sample_size);
+  }
 
   // rank by prelim score
   populate_match_rank_match_collection(match_collection, prelim_score);
@@ -1857,8 +1856,8 @@ BOOLEAN_T compute_p_values(MATCH_COLLECTION_T* match_collection){
   }// next match
 
   carp(CARP_DETAILED_DEBUG, "Computed p-values for %d psms.", match_idx);
-  // match_collection is not ranked by p-value b/c it is identical to
-  // score_type ranks
+  populate_match_rank_match_collection(match_collection, 
+                                       LOGP_BONF_WEIBULL_XCORR);
 
   // mark p-values as having been scored
   match_collection->scored_type[LOGP_BONF_WEIBULL_XCORR] = TRUE;
@@ -2607,23 +2606,16 @@ BOOLEAN_T print_match_collection_sqt(
     new_match_iterator(match_collection, main_score, TRUE);
   
   // Second, iterate over matches, prints M and L lines
-  //int match_count = 0;
   while(match_iterator_has_next(match_iterator)){
-    //++match_count;
     match = match_iterator_next(match_iterator);    
 
+    // print only up to max_rank_result of the matches
     if( get_match_rank(match, main_score) > top_match ){
       break;
     }// else
 
     print_match_sqt(match, output, main_score, prelim_score);
 
-    // print only up to max_rank_result of the matches
-    /*
-    if(match_count >= top_match){
-      break;
-    }
-    */
   }// next match
   
   free_match_iterator(match_iterator);
@@ -2800,7 +2792,7 @@ void serialize_headers(FILE** psm_file_array){
   int num_spectrum_features = 0; //obsolete?
 
   // get values from parameter.c
-  int num_charged_spectra = 0;  //this is set later
+  int num_charged_spectra = -1;  //this is set later
   int matches_per_spectrum = get_int_parameter("top-match");
   char* filename = get_string_parameter_pointer("protein input");
   char* protein_file = parse_filename(filename);

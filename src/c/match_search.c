@@ -153,8 +153,6 @@ int main(int argc, char** argv){
   */
   BOOLEAN_T compute_pvalues = get_boolean_parameter("compute-p-values");
   int sample_count = (compute_pvalues) ? PARAM_ESTIMATION_SAMPLE_COUNT : 0;
-  MATCH_COLLECTION_T* matches_for_pval_estimation = 
-    new_empty_match_collection( FALSE ); // is decoy
 
   // flags and counters for loop
   int spectrum_searches_counter = 0; //for psm file header, spec*charges
@@ -217,7 +215,6 @@ int main(int argc, char** argv){
       // score peptides
       int added = add_matches(match_collection, spectrum, 
                               charge, peptide_iterator,
-                              matches_for_pval_estimation, 
                               sample_per_pep_mod );
       carp(CARP_DEBUG, "Added %i matches", added);
 
@@ -247,15 +244,15 @@ int main(int argc, char** argv){
                                   charge);
 
       carp(CARP_DEBUG, "Calculating p-values.");
-      // for each psm, use parameters to calculate p-values
       compute_p_values(match_collection);
     }
 
     // print matches
-    carp(CARP_DEBUG, "About to print matches");
+    carp(CARP_DEBUG, "About to print target matches");
     print_matches(match_collection, spectrum, FALSE,// is decoy
                   psm_file_array[0], sqt_file, decoy_sqt_file);
 
+    fprintf(stderr, "about to free match collections");
     // ?? does this free all the matches, all the spectra and all the peptides?
     free_match_collection(match_collection);
 
@@ -290,7 +287,7 @@ int main(int argc, char** argv){
         // score peptides
         int added = add_matches(match_collection, spectrum, 
                                 charge, peptide_iterator,
-                                NULL, 0);// no sampling for param estimation
+                                0);// no sampling for param estimation
         carp(CARP_DEBUG, "Added %i matches", added);
         
         free_modified_peptides_iterator(peptide_iterator);
@@ -301,6 +298,7 @@ int main(int argc, char** argv){
       // only print first decoy to sqt
       FILE* tmp_decoy_sqt_file = decoy_sqt_file;
       if( decoy_idx > 0 ){ tmp_decoy_sqt_file = NULL; }
+      carp(CARP_DEBUG, "About to print decoy matches");
       print_matches(match_collection, spectrum, TRUE,// is decoy
                     psm_file_array[1+decoy_idx], sqt_file, tmp_decoy_sqt_file);
 

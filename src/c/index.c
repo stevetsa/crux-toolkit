@@ -1,6 +1,6 @@
 /************************************************************************//**
  * \file index.c
- * $Revision: 1.78.2.10 $
+ * $Revision: 1.78.2.11 $
  * \brief: Object for representing an index of a database
  ****************************************************************************/
 #include <stdio.h>
@@ -1615,7 +1615,7 @@ BOOLEAN_T parse_crux_index_map(
   }
   
   while((line_length =  getline(&new_line, &buf_length, file)) != -1){
-    carp(CARP_DEBUG, "Index map file line reads %s", new_line);
+    carp(CARP_DETAILED_DEBUG, "Index map file line reads %s", new_line);
 
     if(new_line[0] == 'c' && new_line[1] == 'r'){
       carp(CARP_DETAILED_DEBUG, "Looking for index file ");

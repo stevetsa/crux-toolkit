@@ -1,6 +1,6 @@
 /*************************************************************************//**
  * \file peptide_constraint.c
- * $Revision: 1.6.2.1 $
+ * $Revision: 1.6.2.2 $
  * \brief: Object for holding the peptide constraint information.
  ****************************************************************************/
 #include <math.h>
@@ -141,7 +141,7 @@ void free_peptide_constraint(
 {
   peptide_constraint->num_pointers--;
   if (peptide_constraint->num_pointers == 0){
-    carp(CARP_DEBUG, "Final free of peptide constraint");
+    carp(CARP_DETAILED_DEBUG, "Final free of peptide constraint");
     free(peptide_constraint);
   }
 }
