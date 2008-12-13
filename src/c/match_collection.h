@@ -1,6 +1,6 @@
 /**
  * \file match_collection.h 
- * $Revision: 1.29.2.6 $
+ * $Revision: 1.29.2.7 $
  * \brief A set of peptide spectrum matches for one spectrum.
  *
  * Object for given a database and a spectrum, generate all match objects
@@ -39,7 +39,7 @@
 #include "modified_peptides_iterator.h"
 
 
-
+#define _PSM_SAMPLE_SIZE 500
 #define _MAX_NUMBER_PEPTIDES 10000000
 ///< max number of peptides a single match collection can hold
 

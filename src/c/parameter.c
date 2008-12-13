@@ -361,6 +361,10 @@ void initialize_parameters(void){
   set_int_parameter("max-mods", MAX_PEPTIDE_LENGTH, 0, MAX_PEPTIDE_LENGTH,
       "The maximum number of modifications that can be applied to a single " \
       "peptide.  Default no limit.");
+  set_int_parameter("max-aas-modified", MAX_PEPTIDE_LENGTH, 0, 
+      MAX_PEPTIDE_LENGTH,
+      "The maximum number of modified amino acids that can appear in one "
+      "peptide.  Each aa can be modified multiple times.  Default no limit.");
 
     // Sp scoring params
   set_double_parameter("beta", 0.075, 0, 1, "usage");

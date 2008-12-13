@@ -4,7 +4,7 @@
  * DATE: April 15, 2008
  * DESCRIPTION: An iterator that can be used by
  * generate_peptides_iterator to include modified peptides.
- * $Revision: 1.1.2.12 $
+ * $Revision: 1.1.2.13 $
  */
 #include "modified_peptides_iterator.h"
 
@@ -54,6 +54,14 @@ void queue_next_peptide(
   if( ! is_empty_linked_list( iterator->temp_peptide_list) ){
     carp(CARP_DETAILED_DEBUG,"Queue is getting next peptide from temp list");
     iterator->next_peptide =pop_front_linked_list(iterator->temp_peptide_list);
+
+    // now check that it does not exceed the max number of modified aas
+    int max_aas_moded = get_int_parameter("max-aas-modified");
+    if( count_modified_aas(iterator->next_peptide) > max_aas_moded ){
+      free_peptide(iterator->next_peptide);
+      queue_next_peptide(iterator);
+    }
+
     return;
   }
 
@@ -120,6 +128,14 @@ void queue_next_peptide(
   char* seq = get_peptide_modified_sequence(iterator->next_peptide);
   carp(CARP_DETAILED_DEBUG, "Queue set next peptide as %s", seq);
   free(seq);
+
+  // now check that it does not exceed the max number of modified aas
+  int max_aas_moded = get_int_parameter("max-aas-modified");
+  if( count_modified_aas(iterator->next_peptide) > max_aas_moded ){
+    free_peptide(iterator->next_peptide);
+    queue_next_peptide(iterator);
+  }
+
 }
 
 /* Public functions */
@@ -247,6 +263,7 @@ BOOLEAN_T modified_peptides_iterator_has_next(
 
 /**
  * \brief Return the next peptide or NULL if no peptides remain.
+ * Filters out peptides that have too many aas modified.
  * \returns A modified peptide.
  */
 PEPTIDE_T* modified_peptides_iterator_next(
@@ -255,11 +272,8 @@ PEPTIDE_T* modified_peptides_iterator_next(
     return NULL;
   }
 
-  //  PEPTIDE_T* returnme = copy_peptide(iterator->next_peptide);
   PEPTIDE_T* returnme = iterator->next_peptide;
-  //printf("Will return peptide %s\n", get_peptide_sequence(returnme));
   queue_next_peptide(iterator);
-  //printf("Still will return peptide %s\n", get_peptide_sequence(returnme));
 
   return returnme;
 }

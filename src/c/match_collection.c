@@ -8,7 +8,7 @@
  *
  * AUTHOR: Chris Park
  * CREATE DATE: 11/27 2006
- * $Revision: 1.79.2.15 $
+ * $Revision: 1.79.2.16 $
  ****************************************************************************/
 #include "match_collection.h"
 
@@ -30,7 +30,7 @@ struct match_collection{
   int experiment_size;  ///< total matches before any truncation
   // TODO this should be removed, stored in match
   int charge;           ///< charge of the associated spectrum
-  BOOLEAN_T null_peptide_collection; ///< are the searched peptides shuffled
+  BOOLEAN_T null_peptide_collection; ///< are the peptides shuffled
   BOOLEAN_T scored_type[_SCORE_TYPE_NUM]; 
                         ///< TRUE if matches have been scored by the type
   SCORER_TYPE_T last_sorted; 
@@ -43,17 +43,20 @@ struct match_collection{
   float delta_cn; ///< the difference in top and second Xcorr scores
   float sp_scores_sum; ///< for getting mean, backward compatible
   float sp_scores_mean;  ///< the mean value of the scored peptides sp score
-  float mu; 
+  float mu;// obsolete 
   ///< EVD parameter Xcorr(characteristic value of extreme value distribution)
-  float l_value; 
+  float l_value; // obsolete
   ///< EVD parameter Xcorr(decay constant of extreme value distribution)
-  int top_fit_sp; 
+  int top_fit_sp; // obsolete
   ///< The top ranked sp scored peptides to use as EXP_SP parameter estimation
-  float base_score_sp; 
+  float base_score_sp; // obsolete
  ///< The lowest sp score within top_fit_sp, used as the base to rescale sp
-  float eta;  ///< The eta parameter for the Weibull distribution.i
+  // Values for fitting the Weibull distribution
+  float eta;  ///< The eta parameter for the Weibull distribution.
   float beta; ///< The beta parameter for the Weibull distribution.
   float shift; ///< The location parameter for the Weibull distribution.
+  MATCH_T* sample_matches[_PSM_SAMPLE_SIZE];
+  int num_samples;  // the size of the above array
 
   // The following features (post_*) are only valid when
   // post_process_collection boolean is TRUE 
@@ -188,6 +191,10 @@ BOOLEAN_T estimate_exp_sp_parameters(
   MATCH_COLLECTION_T* match_collection, 
   int top_count 
   );
+
+BOOLEAN_T sample_psms_for_param_estimation(
+  MATCH_COLLECTION_T* match_collection, 
+  int tail_to_sample_from);
 
 /*
 BOOLEAN_T estimate_weibull_parameters(
@@ -494,6 +501,7 @@ MATCH_COLLECTION_T* new_empty_match_collection(BOOLEAN_T is_decoy){
   }
   match_collection->last_sorted = -1;
   match_collection->iterator_lock = FALSE;
+  match_collection->num_samples = 0;
 
   return match_collection;
 }
@@ -552,6 +560,8 @@ int add_matches(
   // add sample matches for param estimation
   if( sample_size > 0 ){
     carp(CARP_DETAILED_DEBUG, "Sampling %i psms from collection", sample_size);
+    sample_psms_for_param_estimation(match_collection,
+                                     start_index);
   }
 
   // rank by prelim score
@@ -572,7 +582,48 @@ int add_matches(
   return num_matches_added;
 }
 
+/**
+ * \brief After psms have been added to a match collection but before
+ * the collection has been truncated, select a random sample of psms
+ * to use for parameter estimation for calculating pvalues.
+ *
+ * Sampling happens after each peptide mod is searched.  The
+ * match_collection will contain psms that have already been sampled
+ * and sorted and new psms (only scored for prelim score, not
+ * sorted).  Only sample from the new psms.  They are at the end of
+ * the array beginning at index tail_to_sample_from.  
+ * The maximum size of the sample is _PSM_SAMPLE_SIZE. Replace a
+ * number of psms proportional to this sample size.  E.g. There have been
+ * 1000 psms seen so far.  There are 200 new psms.  They represent
+ * 200/1000 = 0.2 of the population.  Replace 0.2 of the samples with
+ * new psms.
+ */
+BOOLEAN_T sample_psms_for_param_estimation(
+  MATCH_COLLECTION_T* match_collection, 
+  int tail_to_sample_from){
 
+  if( match_collection == NULL ){
+    carp(CARP_ERROR, "Cannot sample from null match collection.");
+    return FALSE;
+  }
+
+  int num_new_psms = match_collection->match_total - tail_to_sample_from;
+  float population_fraction = (float)num_new_psms / 
+                              (float)match_collection->experiment_size;
+  int unfilled_slots = _PSM_SAMPLE_SIZE - match_collection->num_samples;
+  int num_to_sample = population_fraction * _PSM_SAMPLE_SIZE;
+
+  carp(CARP_DETAILED_DEBUG, 
+       "Before sampling there are %i samples and %i unfilled sample slots.",
+       match_collection->num_samples, unfilled_slots);
+
+  carp(CARP_DETAILED_DEBUG, "There are %i new samples out of %i", 
+       num_new_psms, match_collection->experiment_size);
+  carp(CARP_DETAILED_DEBUG, "Sample %i which is %.2f of _PSM_SAMPLESIZE",
+       num_to_sample, population_fraction);
+
+    return TRUE;
+}
 
 /**
  * sort the match collection by score_type(SP, XCORR, ... )
@@ -1363,6 +1414,7 @@ BOOLEAN_T score_peptides(
     // get peptide, sequence, and ions
     peptide = modified_peptides_iterator_next(peptide_iterator);
 
+  carp(CARP_DETAILED_INFO, "peptide %s has %i modified aas", get_peptide_modified_sequence(peptide), count_modified_aas(peptide));
     // create a match
     match = new_match();
 

@@ -1,6 +1,6 @@
 /*************************************************************************//**
  * \file peptide.c
- * $Revision: 1.72.2.18 $
+ * $Revision: 1.72.2.19 $
  * \brief: Object for representing a single peptide.
  ****************************************************************************/
 #include "peptide.h"
@@ -700,6 +700,35 @@ char* get_peptide_modified_sequence(
 
 
 /* getters requiring calculation */
+
+/**
+ * \brief Count the number of modified amino acids in the
+ * peptide. This number is distnct from the number of aamods in the
+ * peptide mod since one amino acid can have more than one
+ * modification on it.
+ * \returns The number of amino acids in the peptide that have at
+ * least one modification.
+ */
+int count_modified_aas(PEPTIDE_T* peptide){
+  if( peptide == NULL ){
+    return 0;
+  }
+
+  if( peptide->modified_seq == NULL ){
+    return 0;
+  }
+
+  int count = 0;
+  int aa_idx = 0;
+  for(aa_idx=0; aa_idx < peptide->length; aa_idx++){
+    //    carp(CARP_DETAILED_INFO, "modified aa %s and mask is %hu", modified_aa_to_string( peptide->modified_seq[aa_idx]), (GET_MOD_MASK & modified_aa_to_string( peptide->modified_seq[aa_idx])));
+    if( GET_MOD_MASK & peptide->modified_seq[aa_idx] ){
+      count++;
+    }
+  }
+
+  return count;
+}
 
 /**
  * \returns The mass of the given peptide as determined by the aa sequence.
