@@ -1,6 +1,6 @@
 /*************************************************************************//**
  * \file database.c
- * $Revision: 1.63.2.5 $
+ * $Revision: 1.63.2.6 $
  * \brief: Object for representing a database of protein sequences.
  ****************************************************************************/
 #include <stdio.h>
@@ -247,7 +247,7 @@ BOOLEAN_T parse_database_text_fasta(
   
   // check if succesfully opened file
   if(file == NULL){
-    carp(CARP_FATAL, "failed to open file to parse database");
+    carp(CARP_ERROR, "Failed to open fasta file %s", database->filename);
     return FALSE;
   }
   
@@ -509,17 +509,23 @@ BOOLEAN_T parse_database(
 {
   // should we parse the database using memory mapped binary fasta file?
   if(database->is_memmap){
+    /*
     if(!parse_database_memmap_binary(database)){
       carp(CARP_ERROR,
            "Failed to parse database for memory mapped binary fasta file");
       return FALSE;
-    }    
+    } 
+    */   
+    return parse_database_memmap_binary(database);
   }
   else{ // parse database from normal text fasta file, no memory mapping!
+    /*
     if(!parse_database_text_fasta(database)){
       carp(CARP_ERROR, "Failed to parse database for text fasta file");
       return FALSE;
     }
+    */
+    return parse_database_text_fasta(database);
   }
   
   // succeeded in parsing database

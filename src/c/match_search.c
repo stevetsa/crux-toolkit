@@ -125,6 +125,10 @@ int main(int argc, char** argv){
   int num_proteins = prepare_protein_input(input_file, &index, &database); 
 
   carp(CARP_DEBUG, "Found %i proteins", num_proteins);
+  if( num_proteins == 0 ){
+    carp(CARP_FATAL, "No proteins were found in the protein source.");
+    exit(1);
+  }
   
   /* Prepare output files */
 
@@ -329,7 +333,11 @@ int main(int argc, char** argv){
 
 
 /* Private function definitions */
-
+/**
+ * \brief Open either the index or fasta file and prepare it for
+ * searching.  Die if the input file cannot be found or read.
+ * \returns the number of proteins in the file/index
+ */
 int prepare_protein_input(char* input_file, 
                           INDEX_T** index, 
                           DATABASE_T** database){
@@ -351,11 +359,14 @@ int prepare_protein_input(char* input_file,
     carp(CARP_INFO, "Preparing protein fasta file %s", input_file);
     *database = new_database(input_file, FALSE);         
     if( database == NULL ){
-      carp(CARP_FATAL, "Could not read fasta file %s", input_file);
+      carp(CARP_FATAL, "Could not create protein database");
       exit(1);
     } 
 
-    parse_database(*database);
+    if(!parse_database(*database)){
+      carp(CARP_FATAL, "Error with protein input");
+      exit(1);
+    } 
     num_proteins = get_database_num_proteins(*database);
   }
   return num_proteins;
