@@ -8,7 +8,7 @@
  *
  * AUTHOR: Chris Park
  * CREATE DATE: 11/27 2006
- * $Revision: 1.79.2.16 $
+ * $Revision: 1.79.2.17 $
  ****************************************************************************/
 #include "match_collection.h"
 
@@ -1414,7 +1414,10 @@ BOOLEAN_T score_peptides(
     // get peptide, sequence, and ions
     peptide = modified_peptides_iterator_next(peptide_iterator);
 
-  carp(CARP_DETAILED_INFO, "peptide %s has %i modified aas", get_peptide_modified_sequence(peptide), count_modified_aas(peptide));
+    char* seq = get_peptide_modified_sequence(peptide);
+    carp(CARP_DETAILED_DEBUG, "peptide %s has %i modified aas", seq, count_modified_aas(peptide)); 
+    free(seq);
+
     // create a match
     match = new_match();
 
