@@ -378,7 +378,9 @@ void initialize_parameters(void){
 
   //in estimate_weibull_parameters
   set_int_parameter("number-top-scores-to-fit", -1, -10, BILLION, "usage");
-  set_double_parameter("fraction-top-scores-to-fit", -1.0, -10, 10, "usage");
+  set_double_parameter("fraction-top-scores-to-fit", 0.55, 0, 1, 
+     "In estimating weibull parameters, use only the psms in this fraction "
+     "of the tail of the sample. Default 0.55.  HIDE FROM USER");
   set_boolean_parameter("skip-first-score", FALSE,  "usage");
 
   /* analyze-matches options */

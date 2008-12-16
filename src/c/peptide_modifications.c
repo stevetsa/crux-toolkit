@@ -16,7 +16,7 @@
  * spectrum search.  One PEPTIDE_MOD corresponds to one mass window
  * that must be searched.
  * 
- * $Revision: 1.1.2.17 $
+ * $Revision: 1.1.2.18 $
  */
 
 #include "peptide_modifications.h"
@@ -111,7 +111,9 @@ int generate_peptide_mod_list_TESTER(
  * This only needs to be called once for a search.  The list of
  * PEPTIDE_MODs can be reused for each spectrum.  Allows at most one
  * n-term and one c-term mod and at most mod->max_per_peptide
- * modifications of one type per peptide.
+ * modifications of one type per peptide.  Sorts the list by number of
+ * aa mods and returns only the number of peptide mods that have
+ * between 0 and max-mods aa mods.
  *
  * The actual work is done in generate_peptide_mod_list_TESTER() so
  * that it can be tested without going through parameter.c.
@@ -192,7 +194,6 @@ int generate_peptide_mod_list_TESTER(
      free(temp_list);
     final_counter += temp_counter;
   }// last aa_mod
-  carp(CARP_INFO, "Created %d peptide mods", final_counter);
 
   // allocate an array of PEPTIDE_MOD_T* to return
   PEPTIDE_MOD_T** final_array = (PEPTIDE_MOD_T**)mycalloc(final_counter, 
@@ -214,9 +215,24 @@ int generate_peptide_mod_list_TESTER(
   qsort(final_array, final_counter, sizeof(PEPTIDE_MOD_T*),
         (void*)compare_peptide_mod_num_aa_mods);
 
+  // find the index of the first peptide mod with too many aa mods
+  int max = get_int_parameter("max-mods");
+  // should use binary search...
+  int mod_idx = 0;
+  for(mod_idx=0; mod_idx < final_counter; mod_idx++){
+    if(final_array[mod_idx]->num_mods > max){
+      break;
+    }
+  }
+
+  carp(CARP_INFO, 
+       "Created %d peptide mods, keeping %d with %d or fewer aa mods", 
+       final_counter, mod_idx, max);
   // set return value
   *peptide_mod_list = final_array;
-  return final_counter;
+  //  return final_counter;
+  return mod_idx;
+
   /*
     get the number of items in final list
 

@@ -166,10 +166,11 @@ int main(int argc, char** argv){
   // get list of mods
   PEPTIDE_MOD_T** peptide_mods = NULL;
   int num_peptide_mods = generate_peptide_mod_list( &peptide_mods );
-  carp(CARP_DEBUG, "Got %d peptide mods", num_peptide_mods);
   // for estimating params for p-values, randomly select a total of 
   //    sample_count matches, a constant fraction from each peptide mod
-  int sample_per_pep_mod = (int) sample_count / num_peptide_mods;
+  int sample_per_pep_mod =  sample_count / num_peptide_mods;
+  carp(CARP_DEBUG, "Got %d peptide mods, sample %i per", 
+       num_peptide_mods, sample_per_pep_mod);
 
   // for each spectrum
   while(filtered_spectrum_charge_iterator_has_next(spectrum_iterator)){
@@ -220,6 +221,7 @@ int main(int argc, char** argv){
       int added = add_matches(match_collection, spectrum, 
                               charge, peptide_iterator,
                               sample_per_pep_mod );
+
       carp(CARP_DEBUG, "Added %i matches", added);
 
       free_modified_peptides_iterator(peptide_iterator);
@@ -240,6 +242,7 @@ int main(int argc, char** argv){
     // calculate p-values
     if( compute_pvalues == TRUE ){
       carp(CARP_DEBUG, "Estimating Weibull parameters.");
+      /*
       int estimate_sample_size = 500;  // get this from ??
       estimate_weibull_parameters(match_collection, 
                                   XCORR, // should be parameter "score-type"
@@ -249,6 +252,16 @@ int main(int argc, char** argv){
 
       carp(CARP_DEBUG, "Calculating p-values.");
       compute_p_values(match_collection);
+      */
+      if( estimate_weibull_parameters_from_sample_matches(match_collection,
+                                                          spectrum,
+                                                          charge) ){
+
+        carp(CARP_DEBUG, "Calculating p-values.");
+        compute_p_values(match_collection);
+      }else{
+        set_p_values_as_unscored(match_collection);
+      }
     }
 
     // print matches

@@ -5,7 +5,7 @@
  * DESCRIPTION: Object for matching a peptide and a spectrum, generate
  * a preliminary score(e.g., Sp) 
  *
- * REVISION: $Revision: 1.55.2.9 $
+ * REVISION: $Revision: 1.55.2.10 $
  ****************************************************************************/
 #include <math.h>
 #include <stdlib.h>
@@ -493,13 +493,21 @@ void print_match_sqt(
   if( delta_cn == 0 ){// I hate -0, this prevents it
     delta_cn = 0.0;
   }
+
+  // If a p-value couldn't be calculated, print as NaN
+  float score_main = get_match_score(match, main_score);
+  if( main_score == LOGP_BONF_WEIBULL_XCORR&& score_main == P_VALUE_NA ){
+    score_main = sqrt(-1); // evaluates to nan
+  } 
+
   // print match info
   fprintf(file, "M\t%d\t%d\t%.2f\t%.2f\t%.2f\t%.2f\t%d\t%d\t%s\tU\n",
           get_match_rank(match, main_rank_type),
           get_match_rank(match, other_rank_type),
           get_peptide_peptide_mass(peptide),
           delta_cn,
-          get_match_score(match, main_score),
+          //get_match_score(match, main_score),
+          score_main,
           get_match_score(match, other_score),
           b_y_matched,
           b_y_total,
@@ -528,6 +536,35 @@ void print_match_sqt(
   
   return;
 }
+
+/**
+ * shuffle the matches in the array between index start and end-1
+ */
+void shuffle_matches(
+  MATCH_T** match_array, ///< the match array to shuffle  
+  int start_index,       ///< index of first element to shuffle
+  int end_index          ///< index AFTER the last element to shuffle
+  ){
+  if( match_array == NULL ){
+    carp(CARP_ERROR, "Cannot shuffle null match array.");
+    return;
+  }
+  //  srand(time(NULL));
+
+  int match_idx = 0;
+  for(match_idx = start_index; match_idx < end_index-1; match_idx++){
+    MATCH_T* cur_match = match_array[match_idx];
+
+    // pick a random index between match_index and end_index-1
+    int rand_idx = get_random_number_interval(match_idx+1, end_index-1);
+
+    //    fprintf(stderr, "%i values between %i and %i, rand %.4f, index %i\n",
+    //            range, match_idx, end_index, rand_scaler, rand_idx);
+    match_array[match_idx] = match_array[rand_idx];    
+    match_array[rand_idx] = cur_match;
+  }
+}
+
 
 /**
  * sort the match array with the corresponding compare method

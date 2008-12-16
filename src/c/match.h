@@ -1,6 +1,6 @@
 /**
  * \file match.h
- * $Revision: 1.18.2.3 $ 
+ * $Revision: 1.18.2.4 $ 
  * \brief Object for given a peptide and a spectrum, generate a preliminary score(ex, Sp)
  ****************************************************************************/
 #ifndef MATCH_H
@@ -27,6 +27,7 @@
 
 /* Global variables */
 #define NOT_SCORED FLT_MIN
+#define P_VALUE_NA -1.0
 
 /**
  * \returns a new memory allocated match
@@ -38,6 +39,15 @@ MATCH_T* new_match(void);
  */
 void free_match(
   MATCH_T* match ///< the match to free -in
+  );
+
+/**
+ * shuffle the matches in the array between index start and end-1
+ */
+void shuffle_matches(
+  MATCH_T** match_array, ///< the match array to shuffle  
+  int start_idx,         ///< index of first element to shuffle
+  int end_index          ///< index AFTER the last element to shuffle
   );
 
 /**

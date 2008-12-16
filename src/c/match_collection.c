@@ -8,7 +8,7 @@
  *
  * AUTHOR: Chris Park
  * CREATE DATE: 11/27 2006
- * $Revision: 1.79.2.17 $
+ * $Revision: 1.79.2.18 $
  ****************************************************************************/
 #include "match_collection.h"
 
@@ -56,7 +56,7 @@ struct match_collection{
   float beta; ///< The beta parameter for the Weibull distribution.
   float shift; ///< The location parameter for the Weibull distribution.
   MATCH_T* sample_matches[_PSM_SAMPLE_SIZE];
-  int num_samples;  // the size of the above array
+  int num_samples;  // the number of items in the above array
 
   // The following features (post_*) are only valid when
   // post_process_collection boolean is TRUE 
@@ -116,7 +116,9 @@ BOOLEAN_T score_peptides(
 
 BOOLEAN_T score_matches_one_spectrum(
   SCORER_TYPE_T score_type, 
-  MATCH_COLLECTION_T* match_collection,
+  //MATCH_COLLECTION_T* match_collection,
+  MATCH_T** matches,
+  int num_matches,
   SPECTRUM_T* spectrum,
   int charge
   );
@@ -194,6 +196,7 @@ BOOLEAN_T estimate_exp_sp_parameters(
 
 BOOLEAN_T sample_psms_for_param_estimation(
   MATCH_COLLECTION_T* match_collection, 
+  int sample_size,
   int tail_to_sample_from);
 
 /*
@@ -272,6 +275,13 @@ void free_match_collection(
     free_match(match_collection->match[match_collection->match_total]);
     match_collection->match[match_collection->match_total] = NULL;
   }
+
+  // and free the sample matches
+  while(match_collection->num_samples > 0){
+    --match_collection->num_samples;
+   free_match(match_collection->sample_matches[match_collection->num_samples]);
+    match_collection->sample_matches[match_collection->num_samples] = NULL;
+  }
   
   // free post_process_collection specific memory
   if(match_collection->post_process_collection){
@@ -284,6 +294,7 @@ void free_match_collection(
     // free hash table
     free_hash(match_collection->post_hash);
   }
+
 
   free(match_collection);
 }
@@ -554,13 +565,14 @@ int add_matches(
   score_peptides(prelim_score, match_collection, 
                  spectrum, charge, peptide_iterator);
 
-  // randomly select matches from those added
   num_matches_added = match_collection->match_total - start_index;
 
+  // randomly select matches from those added
   // add sample matches for param estimation
   if( sample_size > 0 ){
     carp(CARP_DETAILED_DEBUG, "Sampling %i psms from collection", sample_size);
     sample_psms_for_param_estimation(match_collection,
+                                     sample_size,
                                      start_index);
   }
 
@@ -568,12 +580,16 @@ int add_matches(
   populate_match_rank_match_collection(match_collection, prelim_score);
 
   // trim matches to only the top n as ranked by prelim score
-  //int max_rank = get_int_parameter("max-rank-preliminary");
-  //truncate_match_collection( match_collection, max_rank, prelim_score);
+  int max_rank = get_int_parameter("max-rank-preliminary");
+  truncate_match_collection( match_collection, max_rank, prelim_score);
 
   // score exitsting matches w/second function
   SCORER_TYPE_T final_score = get_scorer_type_parameter("score-type");
-  score_matches_one_spectrum(final_score, match_collection, spectrum, charge);
+ //score_matches_one_spectrum(final_score, match_collection, spectrum, charge);
+  score_matches_one_spectrum(final_score, match_collection->match,
+                             match_collection->match_total, spectrum, charge);
+
+  match_collection->scored_type[final_score] = TRUE;
 
   // rank by final score
   populate_match_rank_match_collection(match_collection, final_score);
@@ -592,14 +608,10 @@ int add_matches(
  * and sorted and new psms (only scored for prelim score, not
  * sorted).  Only sample from the new psms.  They are at the end of
  * the array beginning at index tail_to_sample_from.  
- * The maximum size of the sample is _PSM_SAMPLE_SIZE. Replace a
- * number of psms proportional to this sample size.  E.g. There have been
- * 1000 psms seen so far.  There are 200 new psms.  They represent
- * 200/1000 = 0.2 of the population.  Replace 0.2 of the samples with
- * new psms.
  */
 BOOLEAN_T sample_psms_for_param_estimation(
   MATCH_COLLECTION_T* match_collection, 
+  int sample_size,
   int tail_to_sample_from){
 
   if( match_collection == NULL ){
@@ -608,6 +620,36 @@ BOOLEAN_T sample_psms_for_param_estimation(
   }
 
   int num_new_psms = match_collection->match_total - tail_to_sample_from;
+  if( sample_size > num_new_psms ){
+    sample_size = num_new_psms;
+  }
+  // shuffle the matches in the tail of the collection
+  shuffle_matches(match_collection->match, tail_to_sample_from, 
+                  match_collection->match_total);
+
+  int source_idx = tail_to_sample_from;
+  int sample_start_index = match_collection->num_samples;
+  int sample_end_index = sample_start_index + sample_size;
+  if( sample_end_index > _PSM_SAMPLE_SIZE ){ 
+    sample_end_index = _PSM_SAMPLE_SIZE; 
+  }
+  //  fprintf(stderr, "Sample start %i end %i, source start %i end %i\n",
+  //sample_start_index, sample_end_index, source_idx, match_collection->match_total);
+  int sample_idx = 0;
+  for(sample_idx = sample_start_index; sample_idx < sample_end_index;
+      sample_idx ++){
+  //fprintf(stderr, "sample idx %i, source idx %i\n", sample_idx, source_idx);
+
+    // increase the pointer count to the match and add it to the sample array
+    MATCH_T* cur_match = match_collection->match[source_idx];
+    increment_match_pointer_count(cur_match);
+    match_collection->sample_matches[sample_idx] = cur_match;
+    source_idx++;
+  }
+
+  match_collection->num_samples += sample_size;
+
+  /* Notes for fancy sampling scheme
   float population_fraction = (float)num_new_psms / 
                               (float)match_collection->experiment_size;
   int unfilled_slots = _PSM_SAMPLE_SIZE - match_collection->num_samples;
@@ -621,7 +663,7 @@ BOOLEAN_T sample_psms_for_param_estimation(
        num_new_psms, match_collection->experiment_size);
   carp(CARP_DETAILED_DEBUG, "Sample %i which is %.2f of _PSM_SAMPLESIZE",
        num_to_sample, population_fraction);
-
+  */
     return TRUE;
 }
 
@@ -1067,6 +1109,7 @@ BOOLEAN_T estimate_evd_parameters(
  * For the #top_count ranked peptides, calculate the Weibull parameters
  *\returns TRUE, if successfully calculates the Weibull parameters
  */
+#define MIN_WEIBULL_MATCHES 40
 #define MIN_XCORR_SHIFT -5.0
 #define MAX_XCORR_SHIFT  5.0
 #define XCORR_SHIFT 0.05
@@ -1164,6 +1207,79 @@ BOOLEAN_T estimate_weibull_parameters(
   free(data);
   return TRUE;
 }
+
+/**
+ * \brief Use the matches in match_collection->sample_matches to
+ * estimate the weibull parameters to be used for computing p-values.
+ *
+ * Requires that main score be XCORR, but with relativly few changes
+ * other scores could be accomodated.
+ * Implementation of Weibull distribution parameter estimation from 
+ * http:// www.chinarel.com/onlincebook/LifeDataWeb/rank_regression_on_y.htm
+ */
+BOOLEAN_T estimate_weibull_parameters_from_sample_matches(
+  MATCH_COLLECTION_T* match_collection, 
+  SPECTRUM_T* spectrum,
+  int charge
+  ){
+
+  if( match_collection == NULL || spectrum == NULL ){
+    carp(CARP_ERROR, "Cannot estimate parameters from null inputs.");
+    return FALSE;
+  }
+
+  // check that we have the minimum number of matches
+  int num_samples = match_collection->num_samples;
+  if( num_samples < MIN_WEIBULL_MATCHES ){
+    carp(CARP_DETAILED_INFO, "Too few sample psms (%i) to estimate "
+         "p-value parameters for spectrum %i, charge %i",
+         num_samples, get_spectrum_first_scan(spectrum), charge);
+    // set eta, beta, and shift to something???
+    return FALSE;
+  }
+
+  // score matches for main score (XCORR)
+  SCORER_TYPE_T score = get_scorer_type_parameter("score-type");
+  MATCH_T** sample_matches = match_collection->sample_matches;
+  score_matches_one_spectrum(score, sample_matches, 
+                             num_samples, spectrum, charge);
+
+  // sort by main score
+  assert(score == XCORR);
+  qsort_match(sample_matches, num_samples, (void *)compare_match_xcorr);
+
+  // use only a fraction of the samples, the high-scoring tail
+  // this parameter is hidden from the user
+  double fraction_to_fit = get_double_parameter("fraction-top-scores-to-fit");
+  assert( fraction_to_fit >= 0 && fraction_to_fit <= 1 );
+  int num_tail_samples = (int)(num_samples * fraction_to_fit);
+  carp(CARP_DEBUG, "Estimating Weibull params with %d psms (%.2f of %i)", 
+       num_tail_samples, fraction_to_fit, num_samples);
+
+  // create an array of scores
+  int data_idx;
+  float* data = mycalloc(sizeof(float), num_samples);
+  for(data_idx=0; data_idx < num_samples; data_idx++){
+    data[data_idx] = get_match_score(sample_matches[data_idx], score);
+  }
+
+  // do the estimation
+  float correlation = 0.0;
+  fit_three_parameter_weibull(data, num_tail_samples, num_samples,
+      MIN_XCORR_SHIFT, MAX_XCORR_SHIFT, XCORR_SHIFT, 
+      &(match_collection->eta), &(match_collection->beta),
+      &(match_collection->shift), &correlation);
+
+  carp(CARP_DETAILED_DEBUG, 
+      "Correlation: %.6f\nEta: %.6f\nBeta: %.6f\nShift: %.6f\n", 
+      correlation, match_collection->eta, match_collection->beta,
+      match_collection->shift);
+  
+  free(data);
+
+  return TRUE;
+}
+
 
 
 /**
@@ -1512,7 +1628,9 @@ BOOLEAN_T score_peptides(
  */
 BOOLEAN_T score_matches_one_spectrum(
   SCORER_TYPE_T score_type, 
-  MATCH_COLLECTION_T* match_collection,
+  //MATCH_COLLECTION_T* match_collection,
+  MATCH_T** matches,
+  int num_matches,
   SPECTRUM_T* spectrum,
   int charge
   ){
@@ -1521,7 +1639,8 @@ BOOLEAN_T score_matches_one_spectrum(
   scorer_type_to_string(score_type, type_str);
   carp(CARP_DETAILED_DEBUG, "Scoring matches for %s", type_str);
 
-  if( match_collection == NULL ){
+  //if( match_collection == NULL ){
+  if( matches == NULL ){
     carp(CARP_ERROR, "Cannot score matches in a NULL match collection");
     return FALSE;
   }
@@ -1541,8 +1660,10 @@ BOOLEAN_T score_matches_one_spectrum(
   char* sequence = NULL;
   MODIFIED_AA_T* modified_sequence = NULL;
 
-  for(match_idx = 0; match_idx < match_collection->match_total; match_idx++){
-    match = match_collection->match[match_idx];
+  //for(match_idx = 0; match_idx < match_collection->match_total; match_idx++){
+  for(match_idx = 0; match_idx < num_matches; match_idx++){
+    //match = match_collection->match[match_idx];
+    match = matches[match_idx];
 
     // skip it if it's already been scored
     if( NOT_SCORED != get_match_score(match, score_type)){
@@ -1572,7 +1693,7 @@ BOOLEAN_T score_matches_one_spectrum(
     free(modified_sequence);
   }// next match
 
-  match_collection->scored_type[score_type] = TRUE;
+  //  match_collection->scored_type[score_type] = TRUE;
 
   // clean up
   free_ion_constraint(ion_constraint);
@@ -1917,6 +2038,36 @@ BOOLEAN_T compute_p_values(MATCH_COLLECTION_T* match_collection){
   // mark p-values as having been scored
   match_collection->scored_type[LOGP_BONF_WEIBULL_XCORR] = TRUE;
   return TRUE;
+}
+
+/**
+ * \brief Indicate that p-values cannot be calculated for this match
+ * collection.  
+ *
+ * Usually true when there were too few psms for
+ * parameter estimation.  Since a p-value is between 0 and 1, but
+ * these are really -log(pvalue) which are non-negative real numbers,
+ * set an unscored p-value as P_VALUE_NA (-1).
+ */
+BOOLEAN_T set_p_values_as_unscored(MATCH_COLLECTION_T* match_collection){
+  if(match_collection == NULL){
+    carp(CARP_ERROR, "Cannot set p-values for NULL match collection.");
+    return FALSE;
+  }
+
+  float score = P_VALUE_NA;
+  //float score = -1;
+
+  int match_idx = 0;
+  for(match_idx=0; match_idx < match_collection->match_total; match_idx++){
+    set_match_score(match_collection->match[match_idx],
+                    LOGP_BONF_WEIBULL_XCORR, score);  
+  }
+
+  // mark p-values as having been scored
+  match_collection->scored_type[LOGP_BONF_WEIBULL_XCORR] = TRUE;
+  return TRUE;
+
 }
 
 
@@ -2647,6 +2798,17 @@ BOOLEAN_T print_match_collection_sqt(
   int charge = match_collection->charge; 
   int num_matches = match_collection->experiment_size;
 
+  // If we calculated p-values, change which scores get printed
+  // since this is really only valid for xcorr...
+  assert( main_score == XCORR );
+  BOOLEAN_T pvalues = get_boolean_parameter("compute-p-values");
+  SCORER_TYPE_T score_to_print_first = main_score;
+  SCORER_TYPE_T score_to_print_second = prelim_score;
+  if( pvalues ){
+    score_to_print_second = score_to_print_first;
+    score_to_print_first = LOGP_BONF_WEIBULL_XCORR; // soon to be P_VALUES
+  }
+
   // calculate delta_cn and populate fields in the matches
   calculate_delta_cn(match_collection);
 
@@ -2669,7 +2831,9 @@ BOOLEAN_T print_match_collection_sqt(
       break;
     }// else
 
-    print_match_sqt(match, output, main_score, prelim_score);
+    //    print_match_sqt(match, output, main_score, prelim_score);
+    print_match_sqt(match, output, 
+                    score_to_print_first, score_to_print_second);
 
   }// next match
   
@@ -2976,29 +3140,33 @@ void print_matches(
                                                             "output-mode");
   int max_sqt_matches = get_int_parameter("max-sqt-result");
   int max_psm_matches = get_int_parameter("top-match");
-  BOOLEAN_T pvalues = get_boolean_parameter("compute-p-values");
+  //BOOLEAN_T pvalues = get_boolean_parameter("compute-p-values");
   SCORER_TYPE_T main_score = get_scorer_type_parameter("score-type");
   SCORER_TYPE_T prelim_score = get_scorer_type_parameter("prelim-score-type");
 
+  /*
   if( pvalues ){
     prelim_score = main_score;
     main_score = LOGP_BONF_WEIBULL_XCORR;
   }
-
+  */
   // write binary files
   if( output_type != SQT_OUTPUT ){ //i.e. binary or all
     carp(CARP_DETAILED_DEBUG, "Serializing psms");
     carp(CARP_DETAILED_DEBUG, 
-         "About to serialize psm features for collection starting with match scan %d, z %d, null %d",
-         get_spectrum_first_scan(get_match_spectrum(match_collection->match[0])),
+         "About to serialize psm features for collection starting with "
+         "match scan %d, z %d, null %d",
+       get_spectrum_first_scan(get_match_spectrum(match_collection->match[0])),
          get_match_charge(match_collection->match[0]),
          get_match_null_peptide(match_collection->match[0]));
 
     // BF: this is an ugly fix so that we don't have to estimate pvalues
     // for decoy psms but can still serialize the matches
+    /*
     if( is_decoy ){
       match_collection->scored_type[LOGP_BONF_WEIBULL_XCORR] = TRUE;
     }
+    */
     serialize_psm_features(match_collection, psm_file, max_psm_matches,
                            prelim_score, main_score);
   }
@@ -3165,58 +3333,8 @@ BOOLEAN_T extend_match_collection(
     carp(CARP_FATAL, "Error reading csm header.");
     exit(1);
   }
-  /*
-  // get number of spectra serialized in the file
-  if(fread(&total_spectra, (sizeof(int)), 1, result_file) != 1){
-    carp(CARP_ERROR,"Serialized file corrupted, incorrect number of spectra");
-    return FALSE;
-  }
-  carp(CARP_DETAILED_DEBUG, "There are %i spectra in the result file", 
-       total_spectra);
 
-  // FIXME unused feature, just set to 0
-  // get number of spectra features serialized in the file
-  if(fread(&num_spectrum_features, (sizeof(int)), 1, result_file) != 1){
-    carp(CARP_ERROR, 
-         "Serialized file corrupted, incorrect number of spectrum features");
-    return FALSE;
-  }
-  
-  carp(CARP_DETAILED_DEBUG, "There are %i spectrum features", 
-       num_spectrum_features);
-
-  // get number top ranked peptides serialized
-  if(fread(&num_top_match, (sizeof(int)), 1, result_file) != 1){
-    carp(CARP_ERROR, 
-         "Serialized file corrupted, incorrect number of top match");  
-    return FALSE;
-  }
-  carp(CARP_DETAILED_DEBUG, "There are %i top matches", num_top_match);
-
-  // modification specific information
-  int num_mods = -1;
-  fread(&num_mods, sizeof(int), 1, result_file);
-  carp(CARP_DETAILED_DEBUG, "There are %i aa mods found", num_mods);
-
-  AA_MOD_T* file_mod_list[MAX_AA_MODS];
-  int mod_idx = 0;
-  for(mod_idx = 0; mod_idx<num_mods; mod_idx++){
-    AA_MOD_T* cur_mod = new_aa_mod(mod_idx);
-    fread(cur_mod, get_aa_mod_sizeof(), 1, result_file);
-    file_mod_list[mod_idx] = cur_mod;
-  }
-
-  if(! compare_mods(file_mod_list, num_mods) ){
-    carp(CARP_FATAL, "Modification parameters do not match those in " \
-                     "the csm file.");
-    exit(1);
-  }
-  */
-  // end parse_csm_header
-
-  // FIXME
   // could parse fasta file and ms2 file
-  
   
   // now iterate over all spectra serialized
   for(spectrum_idx = 0; spectrum_idx < total_spectra; ++spectrum_idx){
@@ -3276,12 +3394,14 @@ BOOLEAN_T extend_match_collection(
         match_collection->scored_type[score_type_idx] = type_scored;
       }
       else{
-        // if boolean values already set compare if no
-        // conflicting scored types 
+        // if boolean values already set, look for conflicting scored types 
+        // this is overzealous since some pvalues could not be scored
+        /*
         if(match_collection->scored_type[score_type_idx] != type_scored){
           carp(CARP_ERROR, "Serialized match objects has not been scored "
                "as other match objects");
         }
+        */
       }
       
       // now once we are done with setting scored type
