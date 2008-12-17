@@ -8,7 +8,7 @@
  *
  * AUTHOR: Chris Park
  * CREATE DATE: 11/27 2006
- * $Revision: 1.79.2.18 $
+ * $Revision: 1.79.2.19 $
  ****************************************************************************/
 #include "match_collection.h"
 
@@ -2500,45 +2500,29 @@ FILE** create_psm_files(){
                                               filename_path_array[0]);
 
   //create target file
-  //  int temp_file_descriptor = -1;
-  //  char suffix[25];
   BOOLEAN_T overwrite = get_boolean_parameter("overwrite");
-  //first file is target, remaining are decoys
-  //  char* psm_filename = generate_name(filename_template, "_XXXXXX", 
-  //                                     ".ms2", "crux_match_target_");
 
   for(file_idx=0; file_idx<total_files; file_idx++){
 
     char* psm_filename = generate_psm_filename(filename_path_array[0], 
                                                file_idx);
 
-    //get file descriptor for uniq version of name //TODO remove this
-    //    temp_file_descriptor = mkstemp(psm_filename);
-    //open the file from the descriptor
-    //    file_handle_array[file_idx] = fdopen(temp_file_descriptor, "w");
     file_handle_array[file_idx] = create_file_in_path(psm_filename,
                                                       output_directory,
                                                       overwrite); 
     //check for error
     if( file_handle_array[file_idx] == NULL ){//||
-      //temp_file_descriptor == -1 ){
-
       carp(CARP_FATAL, "Could not create psm file %s", psm_filename);
       exit(1);
     }
     //rename this, just for a quick fix
     filename_template = get_full_filename(output_directory, psm_filename);
-    //chmod(psm_filename, 0664);
     chmod(filename_template, 0664);
 
     // clean up
     free(psm_filename);
     
-    //get next decoy name
-    //sprintf(suffix, "crux_match_decoy_%d_", file_idx+1);
-    //psm_filename = generate_name(filename_template, "_XXXXXX",
-    //                             ".ms2", suffix);
-  }
+  }// next file
 
   free(filename_path_array[0]);
   if( *filename_path_array[1] != '.' ){

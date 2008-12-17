@@ -1,6 +1,6 @@
 /*************************************************************************//**
  * \file peptide.c
- * $Revision: 1.72.2.19 $
+ * $Revision: 1.72.2.20 $
  * \brief: Object for representing a single peptide.
  ****************************************************************************/
 #include "peptide.h"
@@ -1377,7 +1377,6 @@ BOOLEAN_T serialize_peptide(
   char* seq = get_peptide_sequence(peptide);
   carp(CARP_DETAILED_DEBUG, "Serializing peptide %s, len %i, mass %.2f", 
        seq, peptide->length, peptide->peptide_mass);
-  free(seq);
   // write the peptide struct
   fwrite(peptide, sizeof(PEPTIDE_T), 1, file);
   
@@ -1409,7 +1408,8 @@ BOOLEAN_T serialize_peptide(
   fseek(file, num_src_location, SEEK_SET);
   
   // over write the dummie peptide_src count with real value
-  carp(CARP_DETAILED_DEBUG, "serializing peptide src count of %i for %s", num_src, get_peptide_sequence(peptide));
+  carp(CARP_DETAILED_DEBUG, "serializing peptide src count of %i for %s", 
+       num_src, seq);
   fwrite(&num_src, sizeof(int), 1, file);
   
   // return to original poistion
@@ -1424,6 +1424,8 @@ BOOLEAN_T serialize_peptide(
 
   // write modified seq
   fwrite(peptide->modified_seq, sizeof(MODIFIED_AA_T), mod_seq_length, file);
+
+  free(seq);
 
   return TRUE;
 }
