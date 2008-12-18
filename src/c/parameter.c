@@ -1205,6 +1205,7 @@ void parse_parameter_file(
 
       /* find the '=' in the line.  Exit with error if the line 
          has no equals sign. */
+      idx = 0;
       while(idx < (int)strlen(line) && line[idx] != '='){
         idx++;
       }
