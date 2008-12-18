@@ -1,6 +1,6 @@
 /**
  * \file parameter.h
- * $Revision: 1.28.2.2 $
+ * $Revision: 1.28.2.3 $
  * \brief General parameter handling utilities. All values stored here.
 
  * \detail MUST declare ALL optional command line parameters and
@@ -24,13 +24,10 @@
 #include "utils.h"
 #include "crux-utils.h"
 #include "carp.h"
+#include "version.h"
 #include "hash.h"
 #include "objects.h"
 #include "peptide.h"
-#include "spectrum.h"
-#include "peak.h"
-#include "mass.h"
-#include "scorer.h"
 #include "parse_arguments.h"
 #include "modifications.h"
 
@@ -203,7 +200,6 @@ PEPTIDE_TYPE_T get_peptide_type_parameter(
   char* name
   );
 
-
 /**
  * Prints the parameters.  If lead_string is not null, preprends it to
  * each line.
@@ -214,6 +210,7 @@ void print_parameters(
   char* lead_string,  ///< the lead string to be printed before each line -in
   FILE* outstream  ///< the output stream -out
   );
+
 
 /**
  * \brief Get the pointer to the list of AA_MODs requested by the
