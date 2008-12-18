@@ -8,7 +8,7 @@
  *
  * AUTHOR: Chris Park
  * CREATE DATE: 11/27 2006
- * $Revision: 1.79.2.19 $
+ * $Revision: 1.79.2.20 $
  ****************************************************************************/
 #include "match_collection.h"
 
@@ -2516,6 +2516,7 @@ FILE** create_psm_files(){
       exit(1);
     }
     //rename this, just for a quick fix
+    free(filename_template);
     filename_template = get_full_filename(output_directory, psm_filename);
     chmod(filename_template, 0664);
 

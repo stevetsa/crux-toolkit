@@ -5,7 +5,7 @@
  * DESCRIPTION: Object for matching a peptide and a spectrum, generate
  * a preliminary score(e.g., Sp) 
  *
- * REVISION: $Revision: 1.55.2.10 $
+ * REVISION: $Revision: 1.55.2.11 $
  ****************************************************************************/
 #include <math.h>
 #include <stdlib.h>
@@ -856,8 +856,10 @@ char* get_match_sequence(
     // generate the shuffled peptide sequence
     match->peptide_sequence = 
       generate_shuffled_sequence(match->peptide, match->overall_type);    
+    char* seq = get_peptide_sequence(match->peptide);
     carp(CARP_DETAILED_DEBUG, "Shuffling transforms: %s -> %s", 
-      get_peptide_sequence(match->peptide), match->peptide_sequence);
+      seq, match->peptide_sequence);
+    free(seq);
   }
   else{
     // just go parse it out from protein, no need to shuffle
@@ -950,10 +952,12 @@ MODIFIED_AA_T* get_match_mod_sequence(
     // generate the shuffled peptide sequence
     match->mod_sequence =
       generate_shuffled_mod_sequence(match->peptide, match->overall_type);
+    char* seq = get_peptide_sequence(match->peptide);
+    char* modseq = modified_aa_string_to_string(match->mod_sequence, length);
     carp(CARP_DETAILED_DEBUG, "Shuffling transforms: %s -> %s",
-         get_peptide_sequence(match->peptide),
-         //modified_aa_string_to_string(match->mod_sequence));
-         modified_aa_string_to_string(match->mod_sequence, length));
+         seq, modseq );
+    free(modseq);
+    free(seq);
   }
   else{
     // just get it from the peptide, no need to shuffle

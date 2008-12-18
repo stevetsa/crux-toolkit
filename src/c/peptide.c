@@ -1,6 +1,6 @@
 /*************************************************************************//**
  * \file peptide.c
- * $Revision: 1.72.2.20 $
+ * $Revision: 1.72.2.21 $
  * \brief: Object for representing a single peptide.
  ****************************************************************************/
 #include "peptide.h"
@@ -1369,29 +1369,47 @@ BOOLEAN_T serialize_peptide(
   PEPTIDE_SRC_ITERATOR_T* iterator = 
     new_peptide_src_iterator(peptide);
   PEPTIDE_SRC_T* peptide_src = NULL;
-  long num_src_location;
-  long original_location;
+  //  long num_src_location;
+  //  long original_location;
   int num_src = 0;
-  int dummy_value = -10;
+  //int dummy_value = -10;
   
   char* seq = get_peptide_sequence(peptide);
   carp(CARP_DETAILED_DEBUG, "Serializing peptide %s, len %i, mass %.2f", 
        seq, peptide->length, peptide->peptide_mass);
-  // write the peptide struct
-  fwrite(peptide, sizeof(PEPTIDE_T), 1, file);
-  
-  // store number of src location in file
-  num_src_location = ftell(file);
-
-  // write dummie peptide src count
-  //  fwrite(&num_src, sizeof(int), 1, file);
-  fwrite(&dummy_value, sizeof(int), 1, file);
 
   // there must be at least one peptide src
   if(!peptide_src_iterator_has_next(iterator)){
     carp(CARP_WARNING, "no peptide src");
     return FALSE;
   }
+
+  // count the number of sources
+  while(peptide_src_iterator_has_next(iterator)){
+    peptide_src = peptide_src_iterator_next(iterator);
+
+    ++num_src;
+  }
+  free_peptide_src_iterator(iterator);
+  iterator = new_peptide_src_iterator(peptide);
+
+  // write the peptide struct
+  fwrite(peptide, sizeof(PEPTIDE_T), 1, file);
+  
+  // store number of src location in file
+  //  num_src_location = ftell(file);
+
+  // write dummie peptide src count
+  fwrite(&num_src, sizeof(int), 1, file);
+  //fwrite(&dummy_value, sizeof(int), 1, file);
+
+  /*
+  // there must be at least one peptide src
+  if(!peptide_src_iterator_has_next(iterator)){
+    carp(CARP_WARNING, "no peptide src");
+    return FALSE;
+  }
+  */
 
   // for each peptide src, serialize
   while(peptide_src_iterator_has_next(iterator)){
@@ -1404,16 +1422,20 @@ BOOLEAN_T serialize_peptide(
   }
   free_peptide_src_iterator(iterator);
   
+  /*
   original_location = ftell(file);
   fseek(file, num_src_location, SEEK_SET);
-  
+  */
+
   // over write the dummie peptide_src count with real value
+  /*
   carp(CARP_DETAILED_DEBUG, "serializing peptide src count of %i for %s", 
        num_src, seq);
   fwrite(&num_src, sizeof(int), 1, file);
   
   // return to original poistion
   fseek(file, original_location, SEEK_SET);
+  */
 
   // write the number of MODIFIED_AA_T's to serialize
   int mod_seq_length = peptide->length + 1;
