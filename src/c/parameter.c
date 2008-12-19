@@ -466,7 +466,8 @@ void initialize_parameters(void){
   set_double_parameter("mass-window", 3.0, 0, 100, 
       "Search peptides within +/- 'mass-window' of the "
       "spectrum mass.  Default 3.0.",
-      "Available from the parameter file only for crux-search-for-matches.",
+      "Available from the parameter file only for crux-search-for-matches, "
+      "crux-create-index, and crux-generate-peptides.",
       "true");
   set_mass_type_parameter("fragment-mass", MONO, 
       "Which isotopes to use in calcuating fragment ion mass "
@@ -502,7 +503,7 @@ void initialize_parameters(void){
       MAX_PEPTIDE_LENGTH,
       "The maximum number of modified amino acids that can appear in one "
       "peptide.  Each aa can be modified multiple times.  Default no limit.",
-      "", "true");
+      "Available from parameter file for search-for-matches.", "true");
 
     // Sp scoring params
   set_double_parameter("beta", 0.075, 0, 1, "Not for general users.",
@@ -2167,6 +2168,11 @@ int read_mods(FILE* param_file, ///< file from which to read mod info
     // prepare for reading line
     carp(CARP_DEBUG, "mod line: %s", line);
     char* token = line + strlen(line_tag);
+
+    // check for default value "NO MODS" written to default.parameter
+    if( strncmp(token, "NO MODS", strlen("NO MODS")) == 0 ){
+      return cur_index;
+    }
 
     // get the float and check for ok-ness
     token = read_mass_change(cur_mod, token, ':');

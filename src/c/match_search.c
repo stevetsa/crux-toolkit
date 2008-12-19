@@ -29,7 +29,7 @@
 #include "spectrum_collection.h"
 #include "match_collection.h"
 
-#define NUM_SEARCH_OPTIONS 15
+#define NUM_SEARCH_OPTIONS 16
 #define NUM_SEARCH_ARGS 2
 #define PARAM_ESTIMATION_SAMPLE_COUNT 500
 
@@ -53,6 +53,7 @@ int main(int argc, char** argv){
   char* option_list[NUM_SEARCH_OPTIONS] = {
     "verbosity",
     "parameter-file",
+    "write-parameter-file",
     "overwrite",
     "use-index",
     "prelim-score-type",

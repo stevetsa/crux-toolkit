@@ -26,7 +26,7 @@
 #include "protein_index.h"
 #include "parameter.h"
 
-#define NUM_INDEX_OPTIONS 11
+#define NUM_INDEX_OPTIONS 12
 #define NUM_INDEX_ARGS 2
 //#define NUM_INDEX_ARGS 1
 
@@ -55,6 +55,7 @@ int main(int argc, char** argv){
   char* option_list[NUM_INDEX_OPTIONS] = { 
     "verbosity",
     "parameter-file", 
+    "write-parameter-file", 
     "overwrite",
     "min-length", 
     "max-length", 
