@@ -532,10 +532,10 @@ void initialize_parameters(void){
       "score distribution for calculating p-values. 0 to use all. "
       "Not compatible with 'fraction-top-scores-to-fit'. Default 0 (all).",
       "false");
-  set_double_parameter("fraction-top-scores-to-fit", -1, -1, 1, 
+  set_double_parameter("fraction-top-scores-to-fit", 0.55, 0, 1, 
       "The fraction of psms per spectrum to use for estimating the "
-      "score distribution for calculating p-values.  0 to use all. "
-      "Not compatible with 'number-top-scores-to-fig'. Default 0 (all).",
+      "score distribution for calculating p-values. "
+      "Not compatible with 'number-top-scores-to-fig'. Default 0.55.",
       "For developers/research only.", "false");
 
   /* analyze-matches options */
