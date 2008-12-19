@@ -388,7 +388,7 @@ void initialize_parameters(void){
       "Available for crux-search-for-matches.  The score applied to all "
       "possible psms for a given spectrum.  Typically used to filter out "
       "the most plausible for further scoring. See max-rank-preliminary and "
-      "score-type.", "true");
+      "score-type.", "false");
   set_scorer_type_parameter("score-type", XCORR, 
       "The primary scoring method to use (xcorr, sp, xcorr-pvalue, sp-pvalue)."
       " Default xcorr.", 
@@ -396,7 +396,7 @@ void initialize_parameters(void){
       "typically done on a subset (see max-rank-preliminary) of all "
       "possible psms for each spectrum. Default is the SEQUEST-style xcorr."
       " Crux also offers a p-value calculation for each psm based on xcorr "
-      "or sp (xcorr-pvalue, sp-pvalue).", "true"); 
+      "or sp (xcorr-pvalue, sp-pvalue).", "false"); 
   set_boolean_parameter("compute-p-values", FALSE, 
       "Compute p-values for the main score type. Default FALSE.",
       "Currently only implemented for XCORR.", "true");

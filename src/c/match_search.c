@@ -29,7 +29,7 @@
 #include "spectrum_collection.h"
 #include "match_collection.h"
 
-#define NUM_SEARCH_OPTIONS 16
+#define NUM_SEARCH_OPTIONS 14
 #define NUM_SEARCH_ARGS 2
 #define PARAM_ESTIMATION_SAMPLE_COUNT 500
 
@@ -56,8 +56,10 @@ int main(int argc, char** argv){
     "write-parameter-file",
     "overwrite",
     "use-index",
+    /*
     "prelim-score-type",
     "score-type",
+    */
     "compute-p-values",
     "spectrum-min-mass",
     "spectrum-max-mass",
