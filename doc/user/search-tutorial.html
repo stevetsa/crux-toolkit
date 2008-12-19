@@ -1,60 +1,32 @@
-<!--
-FILE: search-tutorial.html 
-AUTHOR: Barbara Frewen
-DATE: Octobeer 15, 2007
-PROJECT: crux
-REVISION: $1.0 $
--->
-
 <html>
 <head>
 <title>Crux: Search</title>
 
-<link rel="stylesheet" href="stylesheet.css" type="text/css">
+<link rel="stylesheet" href="crux.css" type="text/css">
 
 </head>
 
 <body>
-<div id="top">
-<h>crux: peptide spectrum analysis tools</h>
-</div>
+<blockquote>
 
 <div id="main">
-<div id="side">
-<h3>Table of Contents</h3>
 
-<dl>
-   <dt><a href="home-tutorial.html">Home</a>
-   <dt><a href="install-tutorial.html">Installation</a>
-   <dt><a href="start-tutorial.html">Getting Started</a>
-   <dt>Searching a Protein Database</a>
-   <dt><a href="index-tutorial.html">Creating an Index</a>
-   <dt><a href="customize-tutorial.html">Customizing a Search</a>
-<!--
-   <dt><a href="utilities-tutorial.html">Crux utilities</a>
-   <dt><a href="examples-tutorial.html">Examples</a>
--->
-   <dt><a href="crux.html">Man pages</a>
-<!--   <dt><a href="sitemap-tutorial.html">Index</a> -->
-</dl>
-<!--
-<hr>
-<h3>On this Page</h3>
-<dl>
-   <dt><a href="#first">The first heading</a>
-   <dt><a href="#second">The second heading</a>
-</dl>
--->
-</div><!--end side-->
+<h1>Running a Simple Search</h1>
 
-<h3>Running a Simple Search</h3>
 <p> Now that you have your environment <a
 href="start-tutorial.html">set up</a> and the two input files 
-in your working directory, you can conduct the search with this command.
-</p>
+in your working directory, you can conduct the search. The search
+process compares each spectrum in <span class=file>demo.ms2</span> to
+peptides (subsequences of the proteins) in <span
+class=file>small-yeast.fasta</span>.  For each peptide a theoretical
+spectrum is created based on the predicted fragmentation of the
+peptide.  The theoretical spectra are each compared to the
+experimental spectrum (in the ms2 file) and scored based on their
+similarity.  These scores are reported in the output.  To conduct the
+search, use this command. </p>
 
 <div class=code>
-<code>$ crux-search-for-matches demo.ms2 small-yeast.fasta</code>
+<code>$ crux search-for-matches demo.ms2 small-yeast.fasta</code>
 </div>
 
 <p>While the search is running, you will see output like this
@@ -78,21 +50,14 @@ class=file>demo.csm, demo-decoy-1.csm, demo-decoy-2.csm</span>
 These files are in a binary format that can only be read by <span
 class=prog>crux-analyze-matches</span>.</p> 
 
-<!--
-<p><b>NOTE: This is actually a problem because analyze-matches doesn't
-currently work without an index.  There are several solutions:
-1. create an index for the first search, 2. create an sqt file for the
-first search so the user can see some results, then create an index
-and redo the results, 3. change analyze-matches to work without an
-index.</b></p>
--->
-
 <div class=note><em>Note: Search results may also be returned in a
 text format.  See the <a
 href="customize-tutorial.html">customization</a> page for details.</em>
 </div>
 
-<p>The final step is to analyze our search results.  We expect that
+<p>The final step is to analyze our search results.  Each spectrum has
+been compared to many peptides and we would like to return only the
+best match(es) for each spectrum.  We also expect that
 some fraction of the spectra will not be identifiable as peptides (due
 to chemical noise, multiple peptides co-eluting, poor fragmentation,
 etc.).  The analysis step filters out those spectra and returns only the
@@ -100,7 +65,7 @@ high-quality peptide-spectrum matches.  Run this command.
 </p>
 
 <div class=code><code>
-$ crux-analyze-matches . small-yeast.fasta </code>
+$ crux percolator . small-yeast.fasta </code>
 </div>
 
 <p>While the analysis is running, you will see output like this
@@ -114,16 +79,9 @@ INFO: Getting PSMs from ./demo-decoy-2.csm
 INFO: Outputting matches.
 </pre>
 
-<p>...unless you are getting the version that has not implemented
-crux-analyze-matches for use without an index.  In that case you will
-get an error and the program will terminate.  In that case, go on to
-the first step on the next page to create an index.  Then repeat the
-above.
-
-
 <p>When the analysis is complete it will print </p>
 <pre>
-INFO: crux-analyze-matches finished.
+INFO: crux percolator finished.
 </pre>
 
 <p>There is new file called <span class=file>target.sqt</span>
@@ -207,9 +165,12 @@ about options.
 <!-- at the end of the M lines.  L lines should have descriptions -->
 </p>
 
-<a href="index-tutorial.html"><h4>Next: Creating an Index</h4></a>
-
 </div><!--end main-->
 
+<hr></hr>
+
+<a href="crux.html">Crux home</a>
+
+</blockquote>
 </body>
 </html>
