@@ -76,17 +76,27 @@ NON_PERCOLATOR_LIB_FILES= \
   spectrum.h \
   utils.c \
   utils.h \
-  version.h
+  version.h \
+  ./cuda/crux_cuda.h \
+  ./cuda/crux_cuda.c
 
 PERCOLATOR_LIB_FILES = 
+
+if USE_CUDA
+  CUDA_CFLAGS=-DCRUX_USE_CUDA
+else
+  CUDA_CFLAGS=""
+endif
 
 if PERCOLATOR
   LIBFILES=$(PERCOLATOR_LIB_FILES) $(NON_PERCOLATOR_LIB_FILES)
   libcrux_la_CFLAGS = $(AM_CFLAGS) -I$(PERCOLATOR_DIR)/src
 else
+
   LIBFILES=$(NON_PERCOLATOR_LIB_FILES)
-  libcrux_la_CFLAGS = $(AM_CFLAGS)
+  libcrux_la_CFLAGS = $(AM_CFLAGS) -I$(CUDA_DIR)/include -I./cuda 
 endif
+
 
 libcrux_la_SOURCES = $(LIBFILES)
 libcrux_la_LIBADD = -lm
@@ -150,9 +160,9 @@ crux_LDADD = \
 else
 crux_SOURCES = crux-main.c  crux-main.h percolator.c percolator.h
 
-crux_CFLAGS = $(AM_CFLAGS) -DMAIN
+crux_CFLAGS = $(AM_CFLAGS) -DMAIN -DCRUX_USE_CUDA
 crux_LDADD = \
-   -lcrux 
+     -lcrux -L$(CUDA_DIR)/lib -lcublasemu -lcuda
 endif
 
 paramdir = $(prefix)/doc

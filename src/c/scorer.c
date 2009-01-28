@@ -4,7 +4,7 @@
  * CREATE DATE: 9 Oct 2006
  * DESCRIPTION: object to score spectrum vs. spectrum or spectrum
  * vs. ion_series 
- * REVISION: $Revision: 1.67 $
+ * REVISION: $Revision: 1.67.4.1 $
  ****************************************************************************/
 
 #include <math.h>
@@ -22,6 +22,10 @@
 #include "scorer.h"
 #include "parameter.h"
 #include "unistd.h"
+
+#ifdef CRUX_USE_CUDA
+#include "crux_cuda.h"
+#endif
 
 
 // the bin width(Sp)
@@ -1094,6 +1098,30 @@ BOOLEAN_T create_intensity_array_xcorr(
   return TRUE;
 }
 
+
+/**
+ * Uses an iterative cross correlation
+ *
+ *\return the final cross correlation score between the observed and the
+ *theoretical spectra
+ */
+float cross_correlation_regular(
+  float* observed,  ///< the scorer object that contains observed spectrum -in
+  float* theoretical, ///< the theoretical spectrum to score against the observed spectrum -in
+  int size
+  )
+{
+  double score_at_zero = 0;
+  // compare each location in theoretical spectrum
+  int idx;
+  for(idx = 0; idx < size; ++idx){
+    score_at_zero += observed[idx] * theoretical[idx];
+  }
+  return score_at_zero / 10000.0;
+}
+
+
+
 /**
  * Uses an iterative cross correlation
  *
@@ -1106,16 +1134,13 @@ float cross_correlation(
   )
 {
   int size = (int)scorer->sp_max_mz;
-  float score_at_zero = 0;
   float* observed = scorer->observed;
-  
-  // compare each location in theoretical spectrum
-  int idx;
-  for(idx = 0; idx < size; ++idx){
-    score_at_zero += observed[idx] * theoretical[idx];
-  }
-
-  return score_at_zero / 10000.0;
+  #ifdef CRUX_USE_CUDA
+  //carp(CARP_FATAL,"USing cuda calculation");
+  return cross_correlation_cuda(observed, theoretical, size);
+  #else
+  return cross_correlation_regular(observed, theoretical, size);
+  #endif
 }
 
 /**
@@ -1155,8 +1180,8 @@ float gen_score_xcorr(
   
   // do cross correlation between observed spectrum(in scorer) and theoretical spectrum.
   // use the two intensity arrays that were created
-  final_score = cross_correlation(scorer, theoretical);
 
+  final_score = cross_correlation(scorer, theoretical);
   // free theoretical spectrum
   free(theoretical);
 

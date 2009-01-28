@@ -100,10 +100,33 @@ AC_ARG_WITH(
     [PERCOLATOR_DIR=$withval],
     [PERCOLATOR_DIR="\${top_srcdir}/../percolator"])
 
+
+# enable cuda?
+
+AC_ARG_ENABLE(
+    cuda, 
+    [  --enable-cuda enable cuda. Default: FALSE], 
+    [USE_CUDA=1], 
+    [USE_CUDA=0])
+
+# set cuda location
+AC_ARG_WITH(
+    cuda-dir,
+    [  --with-cuda-dir=DIR  Set path to cuda libraries. \
+      Default: "/usr/local/cuda"],
+    [CUDA_DIR=$withval],
+    [CUDA_DIR="/usr/local/cuda"])
+
+
+
+
 # These variables will be available in the Makefiles.
 AC_SUBST(MACHID)
 AC_SUBST(VERSION)
 AC_SUBST(PERCOLATOR_DIR)
+AC_SUBST(USE_CUDA)
+AC_SUBST(CUDA_DIR)
+
 
 # List all the Makefiles for the project.
 AC_CONFIG_FILES([\
@@ -129,6 +152,9 @@ AM_CONDITIONAL(PERCOLATOR, \
   test [ -z "$PERCOLATOR_HEADER_STATUS" -a -z "$PERCOLATOR_LIB_STATUS" ] \
 )
 
+AM_CONDITIONAL(USE_CUDA, \
+  [test x$USE_CUDA = x1])
+
 AC_OUTPUT
 
 echo \
@@ -136,13 +162,13 @@ echo \
         ========================
         Configuration parameters
         ========================
-
   Install path:               ${prefix}
   Version:                    ${VERSION}
   C compiler:                 ${CC}
   C compiler flags:           ${CFLAGS}
   percolator directory:       ${PERCOLATOR_DIR} ${PERCOLATOR}
-
+  cuda directory:             ${CUDA_DIR} ${USE_CUDA} 
+	
   Run the following commands to compile and install crux:
 
         make   
