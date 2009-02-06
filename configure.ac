@@ -101,7 +101,7 @@ AC_ARG_WITH(
     [PERCOLATOR_DIR="\${top_srcdir}/../percolator"])
 
 
-# enable cuda?
+# enable cuda?  Maybe we should set this until everything is worked out.
 
 AC_ARG_ENABLE(
     cuda, 
