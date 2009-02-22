@@ -45,147 +45,24 @@ void open_output_files(FILE*** binary_filehandle_array,
 BOOLEAN_T is_search_complete(MATCH_COLLECTION_T* matches, 
                              int mods_per_peptide);
 
-//int main(int argc, char** argv){
-int search_main(int argc, char** argv){
 
-  /* Verbosity level for set-up/command line reading */
-  set_verbosity_level(CARP_ERROR);
+int search_loop(FILTERED_SPECTRUM_CHARGE_ITERATOR_T* spectrum_iterator,
+		BOOLEAN_T combine_target_decoy,
+		int num_peptide_mods,
+		PEPTIDE_MOD_T** peptide_mods,
+		DATABASE_T* database,
+		INDEX_T* index,
+		int sample_per_pep_mod,
+		BOOLEAN_T compute_pvalues,
+		FILE** psm_file_array,
+		FILE* sqt_file,
+		FILE* decoy_sqt_file,
+		FILE* tab_file,
+		FILE* decoy_tab_file,
+		int num_decoys) {
 
-  /* Define optional command line arguments */
-  int num_options = NUM_SEARCH_OPTIONS;
-  char* option_list[NUM_SEARCH_OPTIONS] = {
-    "verbosity",
-    "version",
-    "parameter-file",
-    "write-parameter-file",
-    "overwrite",
-    "use-index",
-    /*
-    "prelim-score-type",
-    "score-type",
-    */
-    "compute-p-values",
-    "spectrum-min-mass",
-    "spectrum-max-mass",
-    "spectrum-charge",
-    "match-output-folder",
-    "output-mode",
-    "sqt-output-file",
-    "tab-output-file",
-    "decoy-sqt-output-file",
-    "number-decoy-set"
-  };
-
-  /* Define required command line arguments */
-  int num_arguments = NUM_SEARCH_ARGS;
-  char* argument_list[NUM_SEARCH_ARGS] = {"ms2 file", "protein input"};
-
-  /* Initialize parameter.c and set default values*/
-  initialize_parameters();
-
-  /* Define optional and required arguments */
-  select_cmd_line_options(option_list, num_options);
-  select_cmd_line_arguments(argument_list, num_arguments);
-
-  /* Parse the command line, including optional params file
-     Includes syntax, type, and bounds checking, dies on error */
-  parse_cmd_line_into_params_hash(argc, argv, "crux search-for-matches");
-
-  /* Set verbosity */
-  //verbosity = get_int_parameter("verbosity");
-  //set_verbosity_level(verbosity);
-
-  /* Set seed for random number generation */
-  if(strcmp(get_string_parameter_pointer("seed"), "time")== 0){
-    time_t seconds; // use current time to seed
-    time(&seconds); // Get value from sys clock and set seconds variable.
-    srand((unsigned int) seconds); // Convert seconds to a unsigned int
-  }
-  else{
-    srand((unsigned int)atoi(get_string_parameter_pointer("seed")));
-  }
-  
-  carp(CARP_INFO, "Beginning crux search-for-matches");
-
-  /* Get input: ms2 file */
-  char* ms2_file = get_string_parameter_pointer("ms2 file");
-
-  // open ms2 file
-  SPECTRUM_COLLECTION_T* spectra = new_spectrum_collection(ms2_file);
-
-  // parse the ms2 file for spectra
-  carp(CARP_INFO, "Reading in ms2 file %s", ms2_file);
-  if(!parse_spectrum_collection(spectra)){
-    carp(CARP_FATAL, "Failed to parse ms2 file: %s", ms2_file);
-    free_spectrum_collection(spectra);
-    exit(1);
-  }
-  
-  carp(CARP_DEBUG, "There were %i spectra found in the ms2 file",
-       get_spectrum_collection_num_spectra(spectra));
-
-  /* Get input: protein file */
-  //char* input_file = get_string_parameter_pointer("protein input");
-  char* input_file = get_string_parameter("protein input");
-
-  /* Prepare input, fasta or index */
-  INDEX_T* index = NULL;
-  DATABASE_T* database = NULL;
-  int num_proteins = prepare_protein_input(input_file, &index, &database); 
-  free(input_file);
-
-  carp(CARP_DEBUG, "Found %i proteins", num_proteins);
-  if( num_proteins == 0 ){
-    carp(CARP_FATAL, "No proteins were found in the protein source.");
-    exit(1);
-  }
-  
-  /* Prepare output files */
-
-  FILE** psm_file_array = NULL; //file handle array
-  FILE* sqt_file = NULL;
-  FILE* decoy_sqt_file  = NULL;
-  FILE* tab_file = NULL;
-  FILE* decoy_tab_file  = NULL;
-
-  open_output_files(
-    &psm_file_array, 
-    &sqt_file, 
-    &decoy_sqt_file, 
-    &tab_file,
-    &decoy_tab_file
-  );
-
-  //print headers
-  serialize_headers(psm_file_array);
-  print_sqt_header(sqt_file, "target", num_proteins, FALSE);// !analyze-matches
-  print_sqt_header(decoy_sqt_file, "decoy", num_proteins, FALSE);
-  print_tab_header(tab_file);
-  print_tab_header(decoy_tab_file);
-  /* Perform search: loop over spectra*/
-
-  // create spectrum iterator
-  FILTERED_SPECTRUM_CHARGE_ITERATOR_T* spectrum_iterator = 
-    new_filtered_spectrum_charge_iterator(spectra);
-
-  // get search parameters for match_collection
-  BOOLEAN_T compute_pvalues = get_boolean_parameter("compute-p-values");
-  int sample_count = (compute_pvalues) ? PARAM_ESTIMATION_SAMPLE_COUNT : 0;
-  BOOLEAN_T combine_target_decoy = get_boolean_parameter("tdc");
-
-  // flags and counters for loop
-  int spectrum_searches_counter = 0; //for psm file header, spec*charges
   int mod_idx = 0;
-  int num_decoys = get_int_parameter("number-decoy-set");
-
-  // get list of mods
-  PEPTIDE_MOD_T** peptide_mods = NULL;
-  int num_peptide_mods = generate_peptide_mod_list( &peptide_mods );
-  // for estimating params for p-values, randomly select a total of 
-  //    sample_count matches, a constant fraction from each peptide mod
-  int sample_per_pep_mod =  sample_count / num_peptide_mods;
-  carp(CARP_DEBUG, "Got %d peptide mods, sample %i per", 
-       num_peptide_mods, sample_per_pep_mod);
+  int spectrum_searches_counter = 0; //for psm file header, spec*charges
 
   // for each spectrum
   while(filtered_spectrum_charge_iterator_has_next(spectrum_iterator)){
@@ -378,6 +255,164 @@ int search_main(int argc, char** argv){
     // clean up
     //    free_match_collection(match_collection);
   }// next spectrum
+
+  return spectrum_searches_counter;
+}
+
+//int main(int argc, char** argv){
+int search_main(int argc, char** argv){
+
+  /* Verbosity level for set-up/command line reading */
+  set_verbosity_level(CARP_ERROR);
+
+  /* Define optional command line arguments */
+  int num_options = NUM_SEARCH_OPTIONS;
+  char* option_list[NUM_SEARCH_OPTIONS] = {
+    "verbosity",
+    "version",
+    "parameter-file",
+    "write-parameter-file",
+    "overwrite",
+    "use-index",
+    /*
+    "prelim-score-type",
+    "score-type",
+    */
+    "compute-p-values",
+    "spectrum-min-mass",
+    "spectrum-max-mass",
+    "spectrum-charge",
+    "match-output-folder",
+    "output-mode",
+    "sqt-output-file",
+    "tab-output-file",
+    "decoy-sqt-output-file",
+    "number-decoy-set"
+  };
+
+  /* Define required command line arguments */
+  int num_arguments = NUM_SEARCH_ARGS;
+  char* argument_list[NUM_SEARCH_ARGS] = {"ms2 file", "protein input"};
+
+  /* Initialize parameter.c and set default values*/
+  initialize_parameters();
+
+  /* Define optional and required arguments */
+  select_cmd_line_options(option_list, num_options);
+  select_cmd_line_arguments(argument_list, num_arguments);
+
+  /* Parse the command line, including optional params file
+     Includes syntax, type, and bounds checking, dies on error */
+  parse_cmd_line_into_params_hash(argc, argv, "crux search-for-matches");
+
+  /* Set verbosity */
+  //verbosity = get_int_parameter("verbosity");
+  //set_verbosity_level(verbosity);
+
+  /* Set seed for random number generation */
+  if(strcmp(get_string_parameter_pointer("seed"), "time")== 0){
+    time_t seconds; // use current time to seed
+    time(&seconds); // Get value from sys clock and set seconds variable.
+    srand((unsigned int) seconds); // Convert seconds to a unsigned int
+  }
+  else{
+    srand((unsigned int)atoi(get_string_parameter_pointer("seed")));
+  }
+  
+  carp(CARP_INFO, "Beginning crux search-for-matches");
+
+  /* Get input: ms2 file */
+  char* ms2_file = get_string_parameter_pointer("ms2 file");
+
+  // open ms2 file
+  SPECTRUM_COLLECTION_T* spectra = new_spectrum_collection(ms2_file);
+
+  // parse the ms2 file for spectra
+  carp(CARP_INFO, "Reading in ms2 file %s", ms2_file);
+  if(!parse_spectrum_collection(spectra)){
+    carp(CARP_FATAL, "Failed to parse ms2 file: %s", ms2_file);
+    free_spectrum_collection(spectra);
+    exit(1);
+  }
+  
+  carp(CARP_DEBUG, "There were %i spectra found in the ms2 file",
+       get_spectrum_collection_num_spectra(spectra));
+
+  /* Get input: protein file */
+  //char* input_file = get_string_parameter_pointer("protein input");
+  char* input_file = get_string_parameter("protein input");
+
+  /* Prepare input, fasta or index */
+  INDEX_T* index = NULL;
+  DATABASE_T* database = NULL;
+  int num_proteins = prepare_protein_input(input_file, &index, &database); 
+  free(input_file);
+
+  carp(CARP_DEBUG, "Found %i proteins", num_proteins);
+  if( num_proteins == 0 ){
+    carp(CARP_FATAL, "No proteins were found in the protein source.");
+    exit(1);
+  }
+  
+  /* Prepare output files */
+
+  FILE** psm_file_array = NULL; //file handle array
+  FILE* sqt_file = NULL;
+  FILE* decoy_sqt_file  = NULL;
+  FILE* tab_file = NULL;
+  FILE* decoy_tab_file  = NULL;
+
+  open_output_files(
+    &psm_file_array, 
+    &sqt_file, 
+    &decoy_sqt_file, 
+    &tab_file,
+    &decoy_tab_file
+  );
+
+  //print headers
+  serialize_headers(psm_file_array);
+  print_sqt_header(sqt_file, "target", num_proteins, FALSE);// !analyze-matches
+  print_sqt_header(decoy_sqt_file, "decoy", num_proteins, FALSE);
+  print_tab_header(tab_file);
+  print_tab_header(decoy_tab_file);
+  /* Perform search: loop over spectra*/
+
+  // create spectrum iterator
+  FILTERED_SPECTRUM_CHARGE_ITERATOR_T* spectrum_iterator = 
+    new_filtered_spectrum_charge_iterator(spectra);
+
+  // get search parameters for match_collection
+  BOOLEAN_T compute_pvalues = get_boolean_parameter("compute-p-values");
+  int sample_count = (compute_pvalues) ? PARAM_ESTIMATION_SAMPLE_COUNT : 0;
+  BOOLEAN_T combine_target_decoy = get_boolean_parameter("tdc");
+
+  // flags and counters for loop
+  int num_decoys = get_int_parameter("number-decoy-set");
+
+  // get list of mods
+  PEPTIDE_MOD_T** peptide_mods = NULL;
+  int num_peptide_mods = generate_peptide_mod_list( &peptide_mods );
+  // for estimating params for p-values, randomly select a total of 
+  //    sample_count matches, a constant fraction from each peptide mod
+  int sample_per_pep_mod =  sample_count / num_peptide_mods;
+  carp(CARP_DEBUG, "Got %d peptide mods, sample %i per", 
+       num_peptide_mods, sample_per_pep_mod);
+
+  int spectrum_searches_counter = search_loop(spectrum_iterator,
+					      combine_target_decoy,
+					      num_peptide_mods,
+					      peptide_mods,
+					      database,
+					      index,
+					      sample_per_pep_mod,
+					      compute_pvalues,
+					      psm_file_array,
+					      sqt_file,
+					      decoy_sqt_file,
+					      tab_file,
+					      decoy_tab_file,
+					      num_decoys);
 
   // fix headers in csm files
   int file_idx;
