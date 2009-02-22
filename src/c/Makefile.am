@@ -40,6 +40,7 @@ NON_PERCOLATOR_LIB_FILES= \
   match_collection.c \
   match_collection.h \
   match_search.c \
+  search_loop.c \
   modifications.c \
   modifications.h \
   modified_peptides_iterator.c \
