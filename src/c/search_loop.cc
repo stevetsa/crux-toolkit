@@ -1,28 +1,27 @@
 // search_loop moved out of match_search.c
 
+extern "C" {
 #include "carp.h"
-#include "parameter.h"
 #include "spectrum_collection.h"
 #include "match_collection.h"
 #include "search_loop.h"
+}
+#include "output_files.h"
 
 BOOLEAN_T is_search_complete(MATCH_COLLECTION_T* matches, 
                              int mods_per_peptide);
 
-int search_loop(FILTERED_SPECTRUM_CHARGE_ITERATOR_T* spectrum_iterator,
-		BOOLEAN_T combine_target_decoy,
-		int num_peptide_mods,
-		PEPTIDE_MOD_T** peptide_mods,
-		DATABASE_T* database,
-		INDEX_T* index,
-		int sample_per_pep_mod,
-		BOOLEAN_T compute_pvalues,
-		FILE** psm_file_array,
-		FILE* sqt_file,
-		FILE* decoy_sqt_file,
-		FILE* tab_file,
-		FILE* decoy_tab_file,
-		int num_decoys) {
+extern "C" int search_loop(FILTERED_SPECTRUM_CHARGE_ITERATOR_T* spectrum_iterator,
+			   BOOLEAN_T combine_target_decoy,
+			   int num_peptide_mods,
+			   PEPTIDE_MOD_T** peptide_mods,
+			   DATABASE_T* database,
+			   INDEX_T* index,
+			   int sample_per_pep_mod,
+			   BOOLEAN_T compute_pvalues,
+			   void* output_files_param,
+			   int num_decoys) {
+  OutputFiles* output_files = (OutputFiles*) output_files_param;
 
   int mod_idx = 0;
   int spectrum_searches_counter = 0; //for psm file header, spec*charges
@@ -40,7 +39,7 @@ int search_loop(FILTERED_SPECTRUM_CHARGE_ITERATOR_T* spectrum_iterator,
          spectrum_searches_counter+1 );
 
     // with just the target database decide how many peptide mods to use
-    // create an empty match collection 
+    // create an empty match collection
     MATCH_COLLECTION_T* match_collection = 
       new_empty_match_collection( FALSE ); // is decoy = false
 
@@ -113,17 +112,7 @@ int search_loop(FILTERED_SPECTRUM_CHARGE_ITERATOR_T* spectrum_iterator,
     if( combine_target_decoy == FALSE ){
       // print matches
       carp(CARP_DEBUG, "About to print target matches");
-      print_matches(
-                    match_collection, 
-                    spectrum, 
-                    FALSE,// is decoy
-                    psm_file_array[0], 
-                    sqt_file, 
-                    decoy_sqt_file, 
-                    tab_file,
-                    decoy_tab_file
-                    );
-      
+      output_files->PrintMatches(match_collection, spectrum);
       //does this free all the matches, all the spectra and all the peptides?
       free_match_collection(match_collection);
       match_collection = NULL;
@@ -173,43 +162,21 @@ int search_loop(FILTERED_SPECTRUM_CHARGE_ITERATOR_T* spectrum_iterator,
       }// last mod
 
       // print matches
-      // only print first decoy to sqt
-      FILE* tmp_decoy_sqt_file = decoy_sqt_file;
-      FILE* tmp_decoy_tab_file = decoy_tab_file;
-      if( decoy_idx > 0 ){ 
-        tmp_decoy_sqt_file = NULL; 
-        tmp_decoy_tab_file = NULL; 
-      }
-      
       if( combine_target_decoy == FALSE ){ // print to decoy file
         carp(CARP_DEBUG, "About to print decoy matches");
-        print_matches(
-                      match_collection, 
-                      spectrum, 
-                      TRUE,// is decoy
-                      psm_file_array[1+decoy_idx], 
-                      sqt_file, 
-                      tmp_decoy_sqt_file,
-                      tab_file, 
-                      tmp_decoy_tab_file
-                      );
+        output_files->PrintMatches(match_collection, 
+				   spectrum, 
+				   true, // is decoy
+				   1+decoy_idx,
+				   decoy_idx == 0 // send_to_sqt_tab?
+				   // (we only print first decoy to sqt)
+				   );
         
         free_match_collection(match_collection);
       }else{ // print all to target file
-      carp(CARP_DEBUG, "About to print target and decoy matches");
-      print_matches(
-                    match_collection, 
-                    spectrum, 
-                    FALSE,// is decoy
-                    psm_file_array[0], 
-                    sqt_file, 
-                    decoy_sqt_file, 
-                    tab_file,
-                    decoy_tab_file
-                    );
+	carp(CARP_DEBUG, "About to print target and decoy matches");
+	output_files->PrintMatches(match_collection, spectrum);
       }
-
-
 
     }// last decoy
 

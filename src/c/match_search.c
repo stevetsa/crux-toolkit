@@ -38,12 +38,10 @@
 int prepare_protein_input(char* input_file, 
                           INDEX_T** index, 
                           DATABASE_T** database);
-void open_output_files(FILE*** binary_filehandle_array, 
-                       FILE** sqt_filehandle,
-                       FILE** decoy_sqt_filehandle,
-                       FILE** tab_file,
-                       FILE** decoy_tab_file);
 
+// C interface to OutputFiles
+void* construct_output_files(int num_decoys, int num_proteins);
+void close_output_files(void* output_files_param, int num_spectra);
 
 //int main(int argc, char** argv){
 int search_main(int argc, char** argv){
@@ -142,26 +140,11 @@ int search_main(int argc, char** argv){
   
   /* Prepare output files */
 
-  FILE** psm_file_array = NULL; //file handle array
-  FILE* sqt_file = NULL;
-  FILE* decoy_sqt_file  = NULL;
-  FILE* tab_file = NULL;
-  FILE* decoy_tab_file  = NULL;
+  // flags and counters for loop
+  int num_decoys = get_int_parameter("number-decoy-set");
+  void* output_files = construct_output_files(num_decoys, num_proteins);
+  // eventually change to: OutputFiles output_files(num_decoys);
 
-  open_output_files(
-    &psm_file_array, 
-    &sqt_file, 
-    &decoy_sqt_file, 
-    &tab_file,
-    &decoy_tab_file
-  );
-
-  //print headers
-  serialize_headers(psm_file_array);
-  print_sqt_header(sqt_file, "target", num_proteins, FALSE);// !analyze-matches
-  print_sqt_header(decoy_sqt_file, "decoy", num_proteins, FALSE);
-  print_tab_header(tab_file);
-  print_tab_header(decoy_tab_file);
   /* Perform search: loop over spectra*/
 
   // create spectrum iterator
@@ -173,9 +156,6 @@ int search_main(int argc, char** argv){
   int sample_count = (compute_pvalues) ? PARAM_ESTIMATION_SAMPLE_COUNT : 0;
   BOOLEAN_T combine_target_decoy = get_boolean_parameter("tdc");
 
-  // flags and counters for loop
-  int num_decoys = get_int_parameter("number-decoy-set");
-
   // get list of mods
   PEPTIDE_MOD_T** peptide_mods = NULL;
   int num_peptide_mods = generate_peptide_mod_list( &peptide_mods );
@@ -185,29 +165,20 @@ int search_main(int argc, char** argv){
   carp(CARP_DEBUG, "Got %d peptide mods, sample %i per", 
        num_peptide_mods, sample_per_pep_mod);
 
-  int spectrum_searches_counter = search_loop(spectrum_iterator,
-					      combine_target_decoy,
-					      num_peptide_mods,
-					      peptide_mods,
-					      database,
-					      index,
-					      sample_per_pep_mod,
-					      compute_pvalues,
-					      psm_file_array,
-					      sqt_file,
-					      decoy_sqt_file,
-					      tab_file,
-					      decoy_tab_file,
-					      num_decoys);
+  int num_spectra = search_loop(spectrum_iterator,
+				combine_target_decoy,
+				num_peptide_mods,
+				peptide_mods,
+				database,
+				index,
+				sample_per_pep_mod,
+				compute_pvalues,
+				output_files,
+				num_decoys);
 
-  // fix headers in csm files
-  int file_idx;
-  for(file_idx=0; file_idx < num_decoys + 1; file_idx++){
-    carp(CARP_DEBUG, "Changing csm header to have %i spectrum searches",
-         spectrum_searches_counter);
-    serialize_total_number_of_spectra(spectrum_searches_counter,
-                                      psm_file_array[file_idx]);
-  }
+  close_output_files(output_files, num_spectra);
+  // Eventually: output_files.Close(num_spectra);
+
   // clean up memory
 
   carp(CARP_INFO, "Finished crux-search-for-matches");
@@ -257,82 +228,5 @@ int prepare_protein_input(char* input_file,
   return num_proteins;
 }
 
-/**
- * \brief A private function for crux-search-for-matches to prepare
- * binary psm and text sqt files.
- *
- * Reads the --overwrite and --output-mode values from
- * parameter.c. Opens psm file(s) if requested, setting a given
- * pointer to the array of filehandles.  Opens sqt file(s) if
- * requested, setting the given pointers to each file handle.  If
- * binary files not requested, creates an array of NULL pointers.  If
- * sqt files not requested, sets given pointers to NULL. 
- *
- * \returns void.  Sets given arguments to newly created filehandles.
- */
-void open_output_files(
-  FILE*** psm_file_array, ///< put binary psm filehandles here -out
-  FILE** sqt_file,        ///< put text sqt filehandle here -out
-  FILE** decoy_sqt_file,  ///< put decoy sqt filehandle here -out
-  FILE** tab_file,        ///< put text sqt filehandle here -out
-  FILE** decoy_tab_file)  ///< put decoy sqt filehandle here -out
-{
-  char* match_output_folder = get_string_parameter("match-output-folder");
-  MATCH_SEARCH_OUTPUT_MODE_T output_type = get_output_type_parameter(
-                                                    "output-mode");
-  BOOLEAN_T overwrite = get_boolean_parameter("overwrite");
-  carp(CARP_DEBUG, "The output type is %d (binary, sqt, tab, all)" \
-       " and overwrite is '%d'", (int)output_type, (int)overwrite);
-
-
-  // create binary psm files (allocate memory, even if not used)
-  *psm_file_array = create_psm_files();
-
-  if(output_type == SQT_OUTPUT || output_type == ALL_OUTPUT){
-
-    //create sqt file handles
-    carp(CARP_DEBUG, "Opening sqt files");
-    char* sqt_filename = get_string_parameter_pointer("sqt-output-file");
-    *sqt_file = create_file_in_path(sqt_filename, 
-                                    match_output_folder, 
-                                    overwrite);
-    char* decoy_sqt_filename = get_string_parameter_pointer(
-                                                    "decoy-sqt-output-file");
-    if( get_int_parameter("number-decoy-set") > 0 ){
-      *decoy_sqt_file = create_file_in_path(decoy_sqt_filename,
-                                            match_output_folder,
-                                            overwrite);
-    }
-
-    if(sqt_file == NULL || decoy_sqt_file == NULL){
-      carp(CARP_DEBUG, "sqt file or decoy is null");
-    }
-  }
-
-  if(output_type == TAB_OUTPUT || output_type == ALL_OUTPUT){
-
-    //create sqt file handles
-    carp(CARP_DEBUG, "Opening tab delimited files");
-    char* tab_filename = get_string_parameter_pointer("tab-output-file");
-    *tab_file = create_file_in_path(tab_filename, 
-                                    match_output_folder, 
-                                    overwrite);
-    char* decoy_tab_filename = get_string_parameter_pointer(
-                                                    "decoy-tab-output-file");
-    if( get_int_parameter("number-decoy-set") > 0 ){
-      *decoy_tab_file = create_file_in_path(decoy_tab_filename,
-                                            match_output_folder,
-                                            overwrite);
-    }
-
-    if(tab_file == NULL || decoy_tab_file == NULL){
-      carp(CARP_DEBUG, "tab file or decoy tab file is null");
-    }
-
-  }
-
-  free(match_output_folder);
-  carp(CARP_DEBUG, "Finished opening output files");
-}
 
 

@@ -40,13 +40,14 @@ NON_PERCOLATOR_LIB_FILES= \
   match_collection.c \
   match_collection.h \
   match_search.c \
-  search_loop.c \
+  search_loop.cc \
   modifications.c \
   modifications.h \
   modified_peptides_iterator.c \
   modified_peptides_iterator.h \
   search.h \
   objects.h \
+  output_files.cc \
   parameter.c \
   parameter.h \
   parse_arguments.c \
@@ -153,7 +154,7 @@ crux_SOURCES = crux-main.c  crux-main.h percolator.c percolator.h
 
 crux_CFLAGS = $(AM_CFLAGS) -DMAIN
 crux_LDADD = \
-  libcrux.la
+  libcrux.la -lstdc++
 endif
 
 paramdir = $(prefix)/doc
