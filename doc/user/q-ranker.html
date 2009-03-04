@@ -11,7 +11,10 @@
 <b>Usage:</b></p>
 
 <blockquote>
-<code>crux q-ranker [options] &lt;psm folder&gt; &lt;protein&nbsp;input&gt;
+<code>crux q-ranker [options] &lt;target&nbsp;PSMs&gt;
+  &lt;decoy&nbsp;PSMs&gt;
+  &lt;protein&nbsp;input&gt;
+  &lt;output&nbsp;directory&gt;
 </code>
 </blockquote>
 
@@ -33,67 +36,198 @@ identification from shotgun proteomics data sets."  <i>Submitted</i>.
 FIXME: Insert description of algorithm here.</p>
 
 <p>
+Q-ranker uses the following features:</p>
+
+<ol>
+
+<li>
+<b>XCorr</b>: Cross correlation between calculated and observed
+spectra</li>
+
+<li>
+<b>Delta C<sub>n</sub></b>: Fractional difference between current and second
+best XCorr</li>
+
+<li>
+<b>Delta C<sup>L</sup><sub>n</sub></b>: Fractional difference between
+current and fifth best XCorr</li>
+
+<li>
+<b>Sp</b>: Preliminary score for peptide versus predicted fragment ion
+values</li>
+
+<li>
+<b>ln(rSp)</b>: The natural logarithm of the rank of the match based
+on the Sp score</li>
+
+<li>
+<b>Mass</b>: The observed mass [M+H]<sup>+</sup></li>
+
+<li>
+<b>Delta M</b>: The difference in calculated and observed mass</li>
+
+<li>
+<b>abs(Delta M)</b>: The absolute value of the difference in
+calculated and observed mass</li>
+
+<li>
+<b>ionFrac</b>: The fraction of matched b and y ions</li>
+
+<li>
+<b>ln(NumSp)</b>: The natural logarithm of the number of database
+ peptides within the specified m/z range</li>
+
+<li>
+<b>enzN</b>: Boolean: Is the peptide preceded by an enzymatic (tryptic)
+site?</li>
+
+<li>
+<b>enzC</b>: Boolean: Does the peptide have an enzymatic (tryptic)
+C-terminus?</li>
+
+<li>
+<b>enzInt</b>: Number of missed internal enzymatic (tryptic) sites</li>
+
+<li>
+<b>pepLen</b>: The length of the matched peptide, in residues</li>
+
+<li>
+<b>charge1</b>: (Boolean) Is the charge state +1?</li>
+
+<li>
+<b>charge2</b>: (Boolean) Is the charge state +2?</li>
+
+<li>
+<b>charge3</b>: (Boolean) Is the charge state +3?</li>
+
+<li>
+<b>A</b>: Count of amino acid A</li>
+
+<li>
+<b>C</b>: Count of amino acid C</li>
+
+<p>
+...</p>
+
+</ol>
+
+<ol start="37">
+
+<li>
+<b>Y</b>: Count of amino acid Y</li>
+
+</ol>
+
+<p>
 <b>Input:</b></p>
 
 <ul>
 
 <li>
-&lt;psm folder&gt; &ndash; The name of the folder in which all the PSM
-result files are located.  The program looks for files ending in
-<code>.csm</code>, which are produced by
-<code>crux&nbsp;search-for-matches</code>.  All such files in the
-given directory are analyzed jointly.</li>
+&lt;target&nbsp;PSMs&gt; &ndash; The name of file in .csm or .sqt
+format containing target peptide-spectrum matches, as generated for
+example by <code>crux search-for-matches</code>.</li>
+
+<li>
+&lt;decoy&nbsp;PSMs&gt; &ndash; The name of file in .csm or .sqt
+format containing decoy peptide-spectrum matches, as generated for
+example by <code>crux search-for-matches</code>.</li>
 
 <LI>
 &lt;protein input &gt; &ndash; The name of the file in fasta format or
 the directory containing the protein index from which to retrieve
 proteins and peptides.</li>
 
+<li>
+&lt;output&nbsp;directory&gt; &ndash; The name of the directory in
+which to place the output files.</li>
+
 </ul>
+
+<B>Output:</B>
+
+<UL>
+<p>
+The program writes to the user-specified folder the following files:</p>
+<ul>
+
+<li>
+<b>target.sqt</b>: an SQT file containing the target PSMs.  <i>FIXME:
+Say what the score fields are.</i>
+
+<li>
+<b>target.txt</b>: a tab-delimited text file containing the target
+PSMs.  Each line contains the following 14 columns: (1) first scan,
+(2) last scan, (3) spectrum neutral mass, (4) charge, (5) protein id,
+(6) main rank, (7) other rank, (8) peptide mass, (9) delta cn, (10)
+main score, (11) other score, (12) b/y matched, (13) b/y total, (14)
+peptide sequence.  <i>FIXME: Clarify "main rank/score" and "other
+rank/score," etc.</i>
+</li>
+
+<li>
+<b>params.txt</b>: a parameter file containing the name and value of
+all parameters for the current search.</li>
+
+<li>
+<b>log.txt</b>: a log file containing a copy of all messages that were
+printed to stderr.
+
+</ul>
+
+<p>
+Optionally, you may prepend each of the above filenames with a
+specified string, using the <code>--fileroot</code> option.
+
+</p>
+</UL>
 
 <b>Options:</b>
 
 <ul>
 
-<LI>
-<code>--use-index &lt;T|F&gt;</code> Use an index that has already been
-created if true (T) or use a fasta file if false (F). When using
-an index the 'protein input' argument will be the name of the
-directory containing the index files (the same as the 'index name'
-argument for crux-create-index).  Default = F.
-
 <li>
-<code>--overwrite &lt;T|F&gt;</code> Replace existing files if true (T) or
-fail when trying to overwrite a file if false (F). Default =  F.
-
-<LI>
-<code>--parameter-file &lt;filename&gt;</code> &ndash;
-A file containing command-line or additional parameters.  See the <a
-href=parameter-file.html>parameter documentation</a> page for details.</li>
-
-<LI>
-<code>--write-parameter-file &lt;filename&gt;</code> &ndash; Create a file
-with the name and value of all parameters/options for the current
-search.  Not all parameters in the file may have been used in the
-search.  The resulting file can be used with the --parameter-file
-option for other crux programs.
+<code>--target-q &lt;value&gt;</code> &ndash; Specify the
+target <i>q</i>&nbsp;value to be optimizes.  By default, q-ranker
+optimizes without respect to a particular <i>q</i>&nbsp;value.</li>
 
 <LI> 
-<code>--feature-file &lt;string&gt;</code> &ndash;
-Optional file in which to write the features. Default = none.</li>
-
-<LI>
-<code>--verbosity &lt;0-100&gt;</code> &ndash; Specify the verbosity of the
-current processes. Each level prints the following messages, including
-all those at lower verbosity levels: 0-fatal errors, 10-non-fatal
-errors, 20-warnings, 30-information on the progress of execution,
-40-more progress information, 50-debug info, 60-detailed debug info.
-Default = 30.
+<code>--feature-file &lt;string&gt;</code> &ndash; Optional file in
+which to write the PSM features.  Default = none.</li>
 
 <li>
-<code>--version T</code> &ndash;
-Print the version number and quit.  Please note that you must include
-the 'T' after --version.
+<code>--fileroot &lt;string&gt;</code> &ndash; Prepend each file in
+the output directory with the specified string.</li>
+
+<li>
+<code>--use-index &lt;T|F&gt;</code> Use an index that has already
+been created if true (T) or use a fasta file if false (F). When using
+an index the 'protein input' argument will be the name of the
+directory containing the index files (the same as the 'index name'
+argument for crux-create-index).  Default = F.</li>
+
+<li>
+<code>--overwrite &lt;T|F&gt;</code> Replace existing files if true
+(T) or fail when trying to overwrite a file if false (F). Default =
+F.</li>
+
+<LI>
+<code>--parameter-file &lt;filename&gt;</code> &ndash; A file
+containing command-line or additional parameters.  See
+the <a href=parameter-file.html>parameter documentation</a> page for
+details.</li>
+
+<LI>
+<code>--verbosity &lt;0-100&gt;</code> &ndash; Specify the verbosity
+of the current processes. Each level prints the following messages,
+including all those at lower verbosity levels: 0-fatal errors,
+10-non-fatal errors, 20-warnings, 30-information on the progress of
+execution, 40-more progress information, 50-debug info, 60-detailed
+debug info.  Default = 30.</li>
+
+<li>
+<code>--version T</code> &ndash; Print the version number and quit.
+Please note that you must include the 'T' after --version.</li>
 
 </ul>
 
