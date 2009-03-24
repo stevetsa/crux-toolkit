@@ -5,8 +5,8 @@
  * DESCRIPTION: Object for matching a peptide and a spectrum, generate
  * a preliminary score(e.g., Sp) 
  *
- * REVISION: $Revision: 1.59 $
- * REVISION: $Revision: 1.59 $
+ * REVISION: $Revision: 1.59.4.1 $
+ * REVISION: $Revision: 1.59.4.1 $
  ****************************************************************************/
 #include <math.h>
 #include <stdlib.h>
@@ -75,7 +75,8 @@ struct match{
   BOOLEAN_T null_peptide; ///< Is the match a null (decoy) peptide match?
   char* peptide_sequence; ///< peptide sequence is that of peptide or shuffled
   MODIFIED_AA_T* mod_sequence; ///< seq of peptide or shuffled if null peptide
-  PEPTIDE_TYPE_T overall_type; 
+  DIGEST_T digest;
+  //  PEPTIDE_TYPE_T overall_type; 
     ///< overall peptide trypticity, set in set_match_peptide, see README above
   int charge; ///< the charge state of the match 
   // post_process match object features
@@ -107,7 +108,7 @@ MATCH_T* new_match(void){
 
   // set default as not tryptic
   // a full evaluation is done when set peptide
-  match->overall_type = NOT_TRYPTIC;
+  //  match->overall_type = NOT_TRYPTIC;
 
   return match;
 }
@@ -503,8 +504,16 @@ void print_match_sqt(
     score_main = sqrt(-1); // evaluates to nan
   } 
 
+  // write format string with variable precision
+  int precision = get_int_parameter("precision");
+  char format[64];
+  sprintf(format,
+          "M\t%%d\t%%d\t%%.%if\t%%.%if\t%%.%if\t%%.%if\t%%d\t%%d\t%%s\tU\n",
+          precision, precision, precision, precision);
+
   // print match info
-  fprintf(file, "M\t%d\t%d\t%.2f\t%.2f\t%.2f\t%.2f\t%d\t%d\t%s\tU\n",
+  //  fprintf(file, "M\t%d\t%d\t%.2f\t%.2f\t%.2f\t%.2f\t%d\t%d\t%s\tU\n",
+  fprintf(file, format,
           get_match_rank(match, main_rank_type),
           get_match_rank(match, other_rank_type),
           get_peptide_peptide_mass(peptide),
@@ -523,18 +532,199 @@ void print_match_sqt(
   PEPTIDE_SRC_T* peptide_src = NULL;
   char* protein_id = NULL;
   PROTEIN_T* protein = NULL;
-  //char* description = NULL;
+  char* rand = "";
+  if( match->null_peptide ){
+    rand = "rand_";
+  }
   
   while(peptide_src_iterator_has_next(peptide_src_iterator)){
     peptide_src = peptide_src_iterator_next(peptide_src_iterator);
     protein = get_peptide_src_parent_protein(peptide_src);
     protein_id = get_protein_id(protein);
     
-    // print match info (locus line)
-    fprintf(file, "L\t%s\n", protein_id);      
+    // print match info (locus line), add rand_ to locus name for decoys
+    fprintf(file, "L\t%s%s\n", rand, protein_id);      
     free(protein_id);
   }
   
+  free_peptide_src_iterator(peptide_src_iterator);
+  
+  return;
+}
+
+/**
+ * \brief Print the match information in tab delimited format to the given file
+ *
+ */
+void print_match_tab(
+  MATCH_T* match,             ///< the match to print -in  
+  FILE* file,                 ///< output stream -out
+  int scan_num,             ///< starting scan number -in
+  float spectrum_precursor_mz, ///< m/z of spectrum precursor -in
+  float spectrum_mass,       ///< spectrum neutral mass -in
+  int num_matches,            ///< num matches in spectrum -in
+  int charge,                 ///< charge -in
+  SCORER_TYPE_T main_score   ///< the main score to report -in
+  ){
+
+  if( match == NULL || file == NULL ){
+    carp(CARP_ERROR, "Cannot print match to tab delimited file from null inputs");
+    return;
+  }
+  PEPTIDE_T* peptide = get_match_peptide(match);
+  double peptide_mass = get_peptide_peptide_mass(peptide);
+  // this should get the sequence from the match, not the peptide
+  char* sequence = get_match_sequence_sqt(match);
+  int seq_length = strlen(sequence);
+  BOOLEAN_T adjust_delta_cn = FALSE;
+
+  // NOTE (BF 12-Feb-08) Here is another ugly fix for post-analysis.
+  // Only the fraction matched is serialized.  The number possible can
+  // be calculated from the length of the sequence and the charge, but
+  // the charge of the match is not serialized and I'm not sure when
+  // it is set.  But I know it exists by here, so recalculate it.
+  int b_y_total = get_match_b_y_ion_possible(match);
+  int b_y_matched = get_match_b_y_ion_matched(match);
+  
+  if( b_y_total == 0 ){
+    int factor = get_match_charge(match);
+    if( factor == 3 ){
+      factor = 2;  //there are +1 and +2 b/y ions for charge==3
+    }else{
+      factor = 1;
+    }
+    b_y_total = (get_peptide_length(peptide)-1) * 2 * factor;
+    b_y_matched = (get_match_b_y_ion_fraction_matched(match)) * b_y_total;
+  }
+
+  float delta_cn = get_match_delta_cn(match);
+  if( adjust_delta_cn == TRUE ){
+    delta_cn = 0.0;
+  }
+  if( delta_cn == 0 ){// I hate -0, this prevents it
+    delta_cn = 0.0;
+  }
+
+  PEPTIDE_SRC_ITERATOR_T* peptide_src_iterator = 
+    new_peptide_src_iterator(peptide);
+  PEPTIDE_SRC_T* peptide_src = NULL;
+  char* protein_id = NULL;
+  PROTEIN_T* protein = NULL;
+  
+  int sp_scored = get_int_parameter("max-rank-preliminary");
+  double sp_score = get_match_score(match, SP);
+  int  sp_rank = get_match_rank(match, SP);
+  double xcorr_score = get_match_score(match, XCORR);
+  int xcorr_rank = get_match_rank(match, XCORR);
+  double log_pvalue = get_match_score(match, LOGP_BONF_WEIBULL_XCORR);
+  double weibull_qvalue = get_match_score(match, LOGP_QVALUE_WEIBULL_XCORR);
+  double percolator_score = get_match_score(match, PERCOLATOR_SCORE);
+  double percolator_rank = get_match_rank(match, Q_VALUE);
+  double percolator_qvalue = get_match_score(match, Q_VALUE);
+  ENZYME_T enzyme = get_enzyme_type_parameter("enzyme");
+  DIGEST_T digestion = get_digest_type_parameter("digestion");
+  char* enz_str = enzyme_type_to_string(enzyme);
+  char* dig_str = digest_type_to_string(digestion);
+
+  int precision = get_int_parameter("precision");
+  char float_format[16];
+  sprintf(float_format, "%%.%if\t", precision);
+
+  // Print tab delimited fields
+  fprintf(file, "%d\t", scan_num);
+  fprintf(file, "%d\t", charge);
+  fprintf(file, float_format, spectrum_precursor_mz);
+  fprintf(file, float_format, spectrum_mass);
+  fprintf(file, float_format, peptide_mass);
+  fprintf(file, float_format, delta_cn);
+  if (sp_scored == 0 ){
+    fprintf(file, "\t\t"); //score and rank
+  }else{
+    fprintf(file, float_format, sp_score);
+    fprintf(file, "%d\t", sp_rank);
+  }
+  fprintf(file, float_format, xcorr_score);
+  fprintf(file, "%d\t", xcorr_rank);
+  if (LOGP_BONF_WEIBULL_XCORR == main_score) {
+    // print p-value
+    if (P_VALUE_NA == log_pvalue) {
+      fprintf(file, "NaN\t");
+    }
+    else {
+      fprintf(file, float_format, log_pvalue);
+    }
+  }
+  else {
+    // no p-value
+    fprintf(file, "\t");
+  }
+  if (LOGP_QVALUE_WEIBULL_XCORR == main_score) {
+    // print q-value (Weibull est.)
+    fprintf(file, float_format, weibull_qvalue);
+  }
+  else {
+    fprintf(file, "\t");
+  }
+  if (PERCOLATOR_SCORE == main_score)  {
+    // print percolator score
+    fprintf(file, float_format, percolator_score);
+    // print percolator rank
+    fprintf(file, float_format, percolator_rank);
+    // print q-value
+    fprintf(file, float_format, percolator_qvalue);
+  }
+  else {
+    // no percolator score, score, or p-value
+    fprintf(file, "\t\t\t");
+  }
+  // Output of q-ranker score and q-value will be handled here where available.
+  // For now always print an empty column. 
+  fprintf(file, "\t\t");
+  if (sp_scored == 0 ){
+    fprintf(file, "\t");
+  }else{
+    fprintf(file, "%d\t", b_y_matched);
+  }
+  fprintf(file, "%d\t", b_y_total);
+  fprintf(file, "%d\t", num_matches); // Matches per spectrum
+  fprintf(file, "%c\t", sequence[0]);
+  fprintf(file, "%.*s\t", seq_length - 4, sequence+2);
+  fprintf(file, "%c\t", sequence[seq_length - 1]);
+  fprintf(file, "%s-%s\t", enz_str, dig_str);
+
+  // Last field is a comma delimited list of parent proteins
+  BOOLEAN_T is_first = TRUE;
+  while(peptide_src_iterator_has_next(peptide_src_iterator)){
+    peptide_src = peptide_src_iterator_next(peptide_src_iterator);
+    protein = get_peptide_src_parent_protein(peptide_src);
+    protein_id = get_protein_id(protein);
+    
+    if (is_first == TRUE) {
+      // First protein doesn't have leading ','
+      fputs(protein_id, file);
+      is_first = FALSE;
+    }
+    else {
+      // Following proteins have leading ','
+      fprintf(file, ",%s", protein_id);
+    }
+    free(protein_id);
+  }
+
+  // if the peptide is a decoy, print the unshuffled version of the peptide
+  if(match->null_peptide == TRUE){
+    char* seq = get_peptide_sequence_sqt(match->peptide);
+    fprintf(file, "\t%.*s\t", seq_length - 4, seq+2);
+    free(seq);
+  }else{
+    fprintf(file, "\t");
+  }
+  // End record
+  fputc('\n', file);
+  
+  free(sequence);
+  free(enz_str);
+  free(dig_str);
   free_peptide_src_iterator(peptide_src_iterator);
   
   return;
@@ -617,7 +807,8 @@ void serialize_match(
   fwrite(&(match->b_y_ion_fraction_matched), sizeof(float), 1, file);
 
   // serialize match peptide overall trypticity
-  fwrite(&(match->overall_type), sizeof(PEPTIDE_TYPE_T), 1, file);
+  //fwrite(&(match->overall_type), sizeof(PEPTIDE_TYPE_T), 1, file);
+  fwrite(&(match->digest), sizeof(DIGEST_T), 1, file);
   
   // serialize match is it null_peptide?
   fwrite(&(match->null_peptide), sizeof(BOOLEAN_T), 1, file);
@@ -671,6 +862,7 @@ double* get_match_percolator_features(
   // peptide cleavage info.
   // START figure out the right way to set these features for on the fly
   // peptide generation
+/*
   if(match->overall_type == TRYPTIC){
     feature_array[10] = TRUE;
     feature_array[11] = TRUE;
@@ -681,7 +873,9 @@ double* get_match_percolator_features(
   else if(match->overall_type == C_TRYPTIC){
     feature_array[11] = TRUE;
   }
-  
+  */
+feature_array[10] = TRUE; // TODO(if perc support continues, figure out what these should be
+feature_array[11] = TRUE;
   // get the missed cleave sites
   feature_array[12] = get_peptide_missed_cleavage_sites(match->peptide);
   
@@ -767,7 +961,7 @@ MATCH_T* parse_match(
   match->post_process_match = TRUE;
   int score_type_idx = 0;
   
-  // parse score, ranks of the match    
+  // parse peptide
   if((peptide = parse_peptide(result_file, database, TRUE))== NULL){
     carp(CARP_ERROR, "Failed to parse peptide");
     // FIXME should this exit or return null. I think sometimes we can get
@@ -805,7 +999,8 @@ MATCH_T* parse_match(
   scan, matched_ions, total_ions, match->b_y_ion_fraction_matched);*/
 
   // parse match peptide overall trypticity
-  fread(&(match->overall_type), sizeof(PEPTIDE_TYPE_T), 1, result_file);
+  //fread(&(match->overall_type), sizeof(PEPTIDE_TYPE_T), 1, result_file);
+  fread(&(match->digest), sizeof(DIGEST_T), 1, result_file);
   
   // parse if match is it null_peptide?
   fread(&(match->null_peptide), sizeof(BOOLEAN_T), 1, result_file);
@@ -858,7 +1053,7 @@ char* get_match_sequence(
   if(match->null_peptide){
     // generate the shuffled peptide sequence
     match->peptide_sequence = 
-      generate_shuffled_sequence(match->peptide, match->overall_type);    
+      generate_shuffled_sequence(match->peptide);//, match->overall_type);    
     char* seq = get_peptide_sequence(match->peptide);
     carp(CARP_DETAILED_DEBUG, "Shuffling transforms: %s -> %s", 
       seq, match->peptide_sequence);
@@ -933,6 +1128,10 @@ MODIFIED_AA_T* get_match_mod_sequence(
   MATCH_T* match ///< the match from which to get the sequence -in
   )
 {
+  if( match == NULL ){
+    carp(CARP_ERROR, "Cannot get mod sequence from null match.");
+    exit(1);
+  }
   // if post_process_match and has a null peptide you can't get sequence
   if(match->post_process_match && match->null_peptide){
     carp(CARP_ERROR,
@@ -954,7 +1153,7 @@ MODIFIED_AA_T* get_match_mod_sequence(
   if(match->null_peptide){
     // generate the shuffled peptide sequence
     match->mod_sequence =
-      generate_shuffled_mod_sequence(match->peptide, match->overall_type);
+      generate_shuffled_mod_sequence(match->peptide);//, match->overall_type);
     char* seq = get_peptide_sequence(match->peptide);
     char* modseq = modified_aa_string_to_string(match->mod_sequence, length);
     carp(CARP_DETAILED_DEBUG, "Shuffling transforms: %s -> %s",
@@ -971,6 +1170,50 @@ MODIFIED_AA_T* get_match_mod_sequence(
 }
 
 /**
+ * \brief Returns a newly allocated string of sequence including any
+ * modification characters. 
+ * \returns The peptide sequence of the match including modification
+ * characters. 
+ */
+char* get_match_mod_sequence_str( MATCH_T* match ){
+
+  // if post_process_match and has a null peptide you can't get sequence
+  if(match->post_process_match && match->null_peptide){
+    carp(CARP_ERROR,
+        "Cannot retrieve null peptide sequence for post_process_match");
+    return NULL;
+  }
+
+  int length = get_peptide_length(get_match_peptide(match));
+  
+  // if sequence is cached return copy of cached peptide sequence
+  if(match->mod_sequence != NULL){
+    return modified_aa_string_to_string(match->mod_sequence, length);
+  }
+
+  // if not cached generate the sequence
+
+  // Is this a null peptide? Then shuffle the sequence
+  if(match->null_peptide){
+    // generate the shuffled peptide sequence
+    match->mod_sequence =
+      generate_shuffled_mod_sequence(match->peptide);//, match->overall_type);
+    char* seq = get_peptide_sequence(match->peptide);
+    char* modseq = modified_aa_string_to_string(match->mod_sequence, length);
+    carp(CARP_DETAILED_DEBUG, "Shuffling transforms: %s -> %s",
+         seq, modseq );
+    free(modseq);
+    free(seq);
+  }
+  else{
+    // just get it from the peptide, no need to shuffle
+    match->mod_sequence = get_peptide_modified_aa_sequence(match->peptide);
+  }
+
+  return modified_aa_string_to_string(match->mod_sequence, length);
+}
+
+/**
  * Must ask for score that has been computed
  *\returns the match_mode score in the match object
  */
@@ -979,6 +1222,7 @@ float get_match_score(
   SCORER_TYPE_T match_mode ///< the working mode (SP, XCORR) -in
   )
 {
+  assert(match != NULL );
   return match->match_scores[match_mode];
 }
 
@@ -1061,7 +1305,11 @@ void set_match_peptide(
 {
   // first set peptide
   match->peptide = peptide;
-  
+
+// overall trypticity already set in peptide
+//match->digest = get_peptide_digest(peptide);
+  match->digest = NON_SPECIFIC_DIGEST;  // FIXME
+/*
   // now set peptide overall trypticity
   PEPTIDE_SRC_ITERATOR_T* src_iterator = 
     new_peptide_src_iterator(peptide);
@@ -1107,7 +1355,7 @@ void set_match_peptide(
   }
   
   free_peptide_src_iterator(src_iterator);
-  
+  */
 }
 
 /**

@@ -4,7 +4,7 @@
  * DATE: April 15, 2008
  * DESCRIPTION: An iterator that can be used by
  * generate_peptides_iterator to include modified peptides.
- * $Revision: 1.2 $
+ * $Revision: 1.2.4.1 $
  */
 #include "modified_peptides_iterator.h"
 

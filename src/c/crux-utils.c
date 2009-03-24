@@ -55,9 +55,70 @@ BOOLEAN_T mass_type_to_string(MASS_TYPE_T type, char* type_str){
   return success;
 }
 
+// replace peptide type
+/**
+ * The string versions of digest types
+ */
+static char* digest_type_strings[NUMBER_DIGEST_TYPES] =
+  {"invalid", "full-digest", "partial-digest", "non-specific-digest"};
+
+DIGEST_T string_to_digest_type(char* name){
+  int clev_int = convert_enum_type_str(name, -10, 
+                                       digest_type_strings, 
+                                       NUMBER_DIGEST_TYPES);
+  if( clev_int < 0 ){
+    clev_int = 0;
+  }
+
+  return (DIGEST_T)clev_int;
+}
+
+char* digest_type_to_string(DIGEST_T type){
+  if( (int)type > NUMBER_DIGEST_TYPES){
+    return NULL;
+  }
+
+  char* type_str = my_copy_string(digest_type_strings[type]);
+
+  return type_str;
+}
+
+/**
+ * The string version of enzyme types
+ */
+static char* enzyme_type_strings[NUMBER_ENZYME_TYPES] = 
+  {"invalid", "no-enzyme", "trypsin", "chymotrypsin", "elastase",
+   "clostripain", "cyanogen-bromide", "iodosobenzoate", 
+   "proline-endopeptidase", "staph-protease", "aspn", 
+   "modified-chymotrypsin", "elastase-trypsin-chymotrypsin",
+   "custom-enzyme"};
+
+ENZYME_T string_to_enzyme_type(char* name){
+  int enz_int = convert_enum_type_str(name, -10, 
+                                      enzyme_type_strings, 
+                                      NUMBER_ENZYME_TYPES);
+  if( enz_int < 0 ){
+    enz_int = 0;
+  }
+
+  return (ENZYME_T)enz_int;
+}
+
+char* enzyme_type_to_string(ENZYME_T type){
+  if( (int)type > NUMBER_ENZYME_TYPES){
+    return NULL;
+  }
+
+  char* type_str = my_copy_string(enzyme_type_strings[type]);
+
+  return type_str;
+}
+
+
 /**
  * The string version of peptide cleavage type
  */
+/*
 static char* peptide_type_strings[NUMBER_PEPTIDE_TYPES] = 
 {"tryptic", "partial", "N_TRYPTIC", "C_TRYPTIC", "NOT_TRYPTIC", "all"};
 
@@ -87,7 +148,7 @@ BOOLEAN_T peptide_type_to_string(PEPTIDE_TYPE_T type, char* type_str){
 
   return success;
 }
-
+*/
 /**
  * The string version of peptide sort types
  */
@@ -221,7 +282,7 @@ BOOLEAN_T scorer_type_to_string(SCORER_TYPE_T type, char* type_str){
  * the string version of MATCH_SEARCH_OUPUT_MODE_T 
  */
 static char* output_type_strings[NUMBER_OUTPUT_MODES] = 
-  { "binary", "sqt", "all" };
+  { "binary", "sqt", "tab", "all" };
 
 BOOLEAN_T string_to_output_type(char* name, 
                                 MATCH_SEARCH_OUTPUT_MODE_T* result){
@@ -466,6 +527,7 @@ char* signed_int_to_char(int i){
 /**
  *prints the peptide type given it's enum value
  */
+/*
 void print_peptide_type(PEPTIDE_TYPE_T peptide_type, FILE* file){
   if(peptide_type == TRYPTIC){
     fprintf(file, "%s", "TRYPTIC");
@@ -486,7 +548,7 @@ void print_peptide_type(PEPTIDE_TYPE_T peptide_type, FILE* file){
     fprintf(file, "%s", "ANY_TRYPTIC");
   }
 }
-
+*/
 /**
  * given two strings return a concatenated third string
  * \returns a heap allocated string that concatenates the two inputs
@@ -946,6 +1008,45 @@ void quick_sort(float a[], int left, int right) {
 void quicksort(float a[], int array_size){
   quick_sort(a, 0, array_size-1);
 }
+
+/**
+ * \brief Shuffle an array of floats.  Uses the Knuth algorithm.  Uses
+ * get_random_number_interval() to generate random numbers. 
+ */
+void shuffle_floats(float* array, int size){
+  if( array == NULL ){
+    carp(CARP_ERROR, "Cannot shuffle NULL array.");
+    return;
+  }
+
+  int idx, switch_idx;
+  int last_element_idx = size - 1;
+  float temp_value;
+  for(idx=0; idx < size; idx++){
+    switch_idx = get_random_number_interval(idx, last_element_idx);
+    temp_value = array[idx];
+    array[idx] = array[switch_idx];
+    array[switch_idx] = temp_value;
+  }
+}
+
+/**
+ * \brief Comparison function for reverse sorting floats.
+ * \returns -1,0,1 if a is <,=,> b
+ */
+int compare_floats_descending(const void* a, const void* b){
+
+  float diff = ( *(float*)b - *(float*)a);
+  if( diff < 0 ){
+    return -1;
+  }else if( diff > 0 ){
+    return 1;
+  }else{
+    return 0;
+  }
+  
+}
+
 
 /**
  * Fits a three-parameter Weibull distribution to the input data. 

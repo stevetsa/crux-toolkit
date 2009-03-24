@@ -140,7 +140,8 @@ GENERATE_PEPTIDES_ITERATOR_T* new_generate_peptides_iterator_from_mass_range(
   int min_length = get_int_parameter("min-length");
   int max_length = get_int_parameter("max-length");
   BOOLEAN_T use_index_boolean = get_boolean_parameter("use-index");
-  PEPTIDE_TYPE_T peptide_type = get_peptide_type_parameter("cleavages");
+  ENZYME_T enzyme = get_enzyme_type_parameter("enzyme");
+  DIGEST_T digestion = get_digest_type_parameter("digestion");
   MASS_TYPE_T mass_type = get_mass_type_parameter("isotopic-mass");
   BOOLEAN_T missed_cleavages = get_boolean_parameter("missed-cleavages");
   SORT_TYPE_T sort_type = get_sort_type_parameter("sort");
@@ -153,7 +154,8 @@ GENERATE_PEPTIDES_ITERATOR_T* new_generate_peptides_iterator_from_mass_range(
   
   // peptide constraint
   PEPTIDE_CONSTRAINT_T* constraint 
-    = new_peptide_constraint(peptide_type, min_mass, max_mass, 
+    //= new_peptide_constraint(peptide_type, min_mass, max_mass, 
+    = new_peptide_constraint(enzyme, digestion, min_mass, max_mass, 
         min_length, max_length, missed_cleavages, mass_type);
   
   // assign to iterator
@@ -194,7 +196,8 @@ GENERATE_PEPTIDES_ITERATOR_T* new_generate_peptides_iterator_from_mass_range(
     gen_peptide_iterator->index = copy_index_ptr(index);
     
     // only resrict peptide by mass and length, default iterator
-    if(peptide_type == ANY_TRYPTIC){ //BF: == ALL? 
+    //if(peptide_type == ANY_TRYPTIC){ //BF: == ALL? 
+    if(digestion == NON_SPECIFIC_DIGEST){
       // create index peptide interator & set generate_peptides_iterator
       INDEX_PEPTIDE_ITERATOR_T* index_peptide_iterator
         = new_index_peptide_iterator(index);        
@@ -204,6 +207,7 @@ GENERATE_PEPTIDES_ITERATOR_T* new_generate_peptides_iterator_from_mass_range(
       gen_peptide_iterator->free = &void_free_index_peptide_iterator;
     }
     // if need to select among peptides by peptide_type and etc.
+    // if need to select among peptides by enzyme
     else{
 
       INDEX_FILTERED_PEPTIDE_ITERATOR_T* index_filtered_peptide_iterator 
@@ -230,8 +234,9 @@ GENERATE_PEPTIDES_ITERATOR_T* new_generate_peptides_iterator_from_mass_range(
     // create a new database & set generate_peptides_iterator
     gen_peptide_iterator->database = copy_database_ptr(database);
     
-    // no sort, redundant
-    if(!is_unique && sort_type == NONE){ 
+    // no sort
+    //if(!is_unique && sort_type == NONE){ 
+    if( sort_type == NONE ){ 
       carp(CARP_DETAILED_DEBUG, "Creating database peptide iterator");
       // create peptide iterator  & set generate_peptides_iterator
       DATABASE_PEPTIDE_ITERATOR_T* iterator 
@@ -243,7 +248,7 @@ GENERATE_PEPTIDES_ITERATOR_T* new_generate_peptides_iterator_from_mass_range(
       
     }      
     // sort or check for unique
-    else{
+    else{   // should only be used for generate-peptides
       carp(CARP_DETAILED_DEBUG, "Creating sorted database peptide iterator");
       // only sort, by default will be sorted by mass
       DATABASE_SORTED_PEPTIDE_ITERATOR_T* sorted_iterator = NULL;
@@ -286,6 +291,7 @@ GENERATE_PEPTIDES_ITERATOR_T* new_generate_peptides_iterator_from_mass_range(
  *
  * \returns A newly allocated peptide iterator.
  */
+/*
 GENERATE_PEPTIDES_ITERATOR_T* new_generate_peptides_iterator_mods(
   double mass,                ///< target mass of peptides
   PEPTIDE_MOD_T* pmod,        ///< the peptide mod to apply
@@ -308,7 +314,7 @@ GENERATE_PEPTIDES_ITERATOR_T* new_generate_peptides_iterator_mods(
 
   return new_iterator;
 }
-
+*/
 
 /****************************************************************************/
 

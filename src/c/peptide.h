@@ -1,6 +1,6 @@
 /**
  * \file peptide.h 
- * $Revision: 1.46 $
+ * $Revision: 1.46.4.1 $
  * \brief Object for representing one peptide.
  */
 #ifndef PEPTIDE_H 
@@ -46,8 +46,8 @@ PEPTIDE_T* new_peptide(
   unsigned char length,     ///< The length of the peptide -in
   float peptide_mass,       ///< The neutral mass of the peptide -in
   PROTEIN_T* parent_protein, ///< The parent_protein of this peptide -in
-  int start_idx, ///< Start index of peptide in the protein sequence -in
-  PEPTIDE_TYPE_T peptide_type ///<  The type of cleavage(TRYPTIC, etc)
+  int start_idx ///< Start index of peptide in the protein sequence -in
+  //PEPTIDE_TYPE_T peptide_type ///<  The type of cleavage(TRYPTIC, etc)
   );
 
 /**
@@ -71,6 +71,15 @@ BOOLEAN_T merge_peptides(
   PEPTIDE_T* peptide_bye
   );
                            
+/**
+ * Merges two identical peptides by adding the peptide_src of the
+ * second to the first.  The second peptide remains unchanged.
+ * Does not comfirm identity of peptides.
+ * \returns TRUE if merge is successfull.
+ */
+BOOLEAN_T merge_peptides_copy_src(PEPTIDE_T* peptide_dest,
+                                  PEPTIDE_T* peptide_giver);
+
 /**
  * Frees an allocated peptide object.
  * Depending on peptide_src implementation determines how to free srcs
@@ -375,8 +384,8 @@ char* get_peptide_hash_value(
  *\returns A newly-allcoated char array of the shuffled sequence.
  */
 char* generate_shuffled_sequence(
-  PEPTIDE_T* peptide, ///< The peptide to shuffle -in 
-  PEPTIDE_TYPE_T peptide_type 
+  PEPTIDE_T* peptide ///< The peptide to shuffle -in 
+  //PEPTIDE_TYPE_T peptide_type 
     ///< tryptic status to enforce on the shuffled sequence
   );
 
@@ -388,8 +397,8 @@ char* generate_shuffled_sequence(
  *\returns A newly-allcoated MODIFIED_AA_T array of the shuffled sequence.
  */
 MODIFIED_AA_T* generate_shuffled_mod_sequence(
-  PEPTIDE_T* peptide,  ///< The peptide to shuffle -in
-  PEPTIDE_TYPE_T peptide_type 
+  PEPTIDE_T* peptide  ///< The peptide to shuffle -in
+  //PEPTIDE_TYPE_T peptide_type 
   ///< tryptic status to enforce on the shuffled sequence
   // not currently used
   );
@@ -458,7 +467,7 @@ int compare_peptide_mass(
 void print_peptide_in_format(
   PEPTIDE_T* peptide,  ///< the query peptide -in
   BOOLEAN_T flag_out, ///< print peptide sequence? -in
-  BOOLEAN_T trypticity_opt, ///< print trypticity of peptide? -in
+  //BOOLEAN_T trypticity_opt, ///< print trypticity of peptide? -in
   FILE* file  ///< the out put stream -out
   );
 
@@ -472,8 +481,8 @@ void print_peptide_in_format(
 void print_filtered_peptide_in_format(
   PEPTIDE_T* peptide,  ///< the query peptide -in
   BOOLEAN_T flag_out, ///< print peptide sequence? -in
-  FILE* file,  ///< the out put stream -out
-  PEPTIDE_TYPE_T peptide_type ///< the peptide_type of src to print -in
+  FILE* file  ///< the out put stream -out
+  //PEPTIDE_TYPE_T peptide_type ///< the peptide_type of src to print -in
   );
 
 /**

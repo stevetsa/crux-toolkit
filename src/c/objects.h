@@ -1,6 +1,6 @@
 /**
  * \file objects.h 
- * $Revision: 1.54 $
+ * $Revision: 1.54.4.1 $
  * \brief The defined objects
  *****************************************************************************/
 #ifndef OBJECTS_H 
@@ -91,18 +91,66 @@ typedef struct residue_iterator RESIDUE_ITERATOR_T;
  */
 typedef struct peptide_src_iterator PEPTIDE_SRC_ITERATOR_T;
 
+// REPLACE PEPTIDE_TYPE_T with DIGEST_T and ENZYME_T
+/**
+ * \enum _digest_type
+ * The rule governing how a peptide was cleaved from its source
+ * protein sequence. 
+ */
+enum _digest_type {
+  INVALID_DIGEST,      ///< required invalid value for the enum
+  FULL_DIGEST,         ///< c- AND n-term specific to ENZYME_T
+  PARTIAL_DIGEST,      ///< c- OR n-term specific to ENZYME_T
+  NON_SPECIFIC_DIGEST, ///< not specific to any enzyme cleavage rules
+};
+#define NUMBER_DIGEST_TYPES 4
+/**
+ * \typedef DIGEST_T
+ * \brief The rule governing how a peptide was digested.  Used in
+ * conjunction with ENZYME_T to define how peptides are generated.
+ */
+typedef enum _digest_type DIGEST_T;
+
+/**
+ * \enum _enzyme_type
+ */
+enum _enzyme_type {
+  INVALID_ENZYME,        ///< required invalid value for the enum
+  NO_ENZYME,             ///< cleave anywhere
+  TRYPSIN,               ///< cleave after K or R, not before P
+  CHYMOTRYPSIN,          ///< cleave after FWY, not before P
+  ELASTASE,              ///< cleave after ALIV, not before P
+  CLOSTRIPAIN,           ///< cleave after R
+  CYANOGEN_BROMIDE,      ///< cleave after M
+  IODOSOBENZOATE,        ///< cleave after W
+  PROLINE_ENDOPEPTIDASE, ///< cleave after P
+  STAPH_PROTEASE,        ///< cleave after E
+  ASPN,                  ///< cleave before D
+  MODIFIED_CHYMOTRYPSIN, ///< cleave after FWYL, not before P
+  ELASTASE_TRYPSIN_CHYMOTRYPSIN, ///< cleave after ALIVKRWFY, not before P
+  CUSTOM_ENZYME    ///< cleave after/before user-defined residues
+};
+#define NUMBER_ENZYME_TYPES 14
+/**
+ * \typedef ENZYME_T
+ * \brief The enzyme with which a peptide was digested.  Used in
+ * conjunction with DIGEST_T to define how peptides are generated.
+ */
+typedef enum _enzyme_type ENZYME_T;
+
 /**
  * Being PARTIALLY_TRYPTIC is N or C terminus tryptic
  * \brief The enum for peptide type, with regard to trypticity.
  */
+/*
 #define NUMBER_PEPTIDE_TYPES 6
 enum _peptide_type { TRYPTIC, PARTIALLY_TRYPTIC, N_TRYPTIC, C_TRYPTIC, NOT_TRYPTIC, ANY_TRYPTIC}; 
-
+*/
 /**
  * \typedef PEPTIDE_TYPE_T 
  * \brief The typedef for peptide type, with regard to trypticity.
  */
-typedef enum _peptide_type PEPTIDE_TYPE_T;
+//typedef enum _peptide_type PEPTIDE_TYPE_T;
 
 /**
  * The enum for isotopic mass type (average, mono)
@@ -384,9 +432,9 @@ typedef struct match_iterator MATCH_ITERATOR_T;
 /**
  * The enum for match_search_ouput_mode (binary, sqt, all)
  */
-enum _match_search_ouput_mode {BINARY_OUTPUT, SQT_OUTPUT, ALL_OUTPUT};
-#define NUMBER_SEARCH_OUTPUT_MODES 3
-#define NUMBER_OUTPUT_MODES 3
+enum _match_search_ouput_mode {BINARY_OUTPUT, SQT_OUTPUT, TAB_OUTPUT, ALL_OUTPUT};
+#define NUMBER_SEARCH_OUTPUT_MODES 4
+#define NUMBER_OUTPUT_MODES 4
 
 /**
  * \typedef MATCH_SEARCH_OUPUT_MODE_T

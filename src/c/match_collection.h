@@ -1,6 +1,6 @@
 /**
  * \file match_collection.h 
- * $Revision: 1.33 $
+ * $Revision: 1.33.4.1 $
  * \brief A set of peptide spectrum matches for one spectrum.
  *
  * Object for given a database and a spectrum, generate all match objects
@@ -119,7 +119,8 @@ int add_matches(
   SPECTRUM_T* spectrum,  ///< compare peptides to this spectrum
   int charge,            ///< use this charge state for spectrum
   MODIFIED_PEPTIDES_ITERATOR_T* peptide_iterator, ///< use these peptides
-  int sample_size        ///< num matches to add to sampled_matches
+  //  int sample_size,        ///< num matches to add to sampled_matches
+  BOOLEAN_T is_decoy     ///< do we shuffle the peptides
 );
 
 /**
@@ -260,7 +261,9 @@ void print_matches
  BOOLEAN_T is_decoy,
  FILE* psm_file,
  FILE* sqt_file, 
- FILE* decoy_file);
+ FILE* decoy_file,
+ FILE* tab_file, 
+ FILE* decoy_tab_file);
 /**
  * Serialize the psm features to ouput file upto 'top_match' number of 
  * top peptides among the match_collection
@@ -297,12 +300,31 @@ void print_sqt_header(FILE* outfile,
                       int proteins, 
                       BOOLEAN_T is_for_match_analysis);
 
+/*
+ * Print the tab delimited file header 
+ */
+void print_tab_header(FILE* outfile);
+
 /**
  * Print the psm features to output file upto 'top_match' number of 
  * top peptides among the match_collection in sqt file format
  *\returns TRUE, if sucessfully print sqt format of the PSMs, else FALSE 
  */
 BOOLEAN_T print_match_collection_sqt(
+  FILE* output, ///< the output file -out
+  int top_match, ///< the top matches to output -in
+  MATCH_COLLECTION_T* match_collection, ///< the match_collection to print sqt -in
+  SPECTRUM_T* spectrum, ///< the spectrum to print sqt -in
+  SCORER_TYPE_T prelim_score, ///< the preliminary score to report -in
+  SCORER_TYPE_T main_score  ///< the main score to report -in
+  );
+
+/**
+ * Print the psm features to output file upto 'top_match' number of 
+ * top peptides among the match_collection in tab delimited file format
+ *\returns TRUE, if sucessfully print sqt format of the PSMs, else FALSE 
+ */
+BOOLEAN_T print_match_collection_tab_delimited(
   FILE* output, ///< the output file -out
   int top_match, ///< the top matches to output -in
   MATCH_COLLECTION_T* match_collection, ///< the match_collection to print sqt -in
@@ -487,6 +509,21 @@ BOOLEAN_T estimate_weibull_parameters(
  * estimate the weibull parameters to be used for computing p-values.
  */
 BOOLEAN_T estimate_weibull_parameters_from_sample_matches(
+  MATCH_COLLECTION_T* match_collection, 
+  SPECTRUM_T* spectrum,
+  int charge
+  );
+
+/**
+ * \brief Use the xcorrs saved in the match_collection to estimate the
+ * weibull parameters to be used for computing p-values. 
+ *
+ * Requires that main score be XCORR, but with relativly few changes
+ * other scores could be accomodated.
+ * Implementation of Weibull distribution parameter estimation from 
+ * http:// www.chinarel.com/onlincebook/LifeDataWeb/rank_regression_on_y.htm
+ */
+BOOLEAN_T estimate_weibull_parameters_from_xcorrs(
   MATCH_COLLECTION_T* match_collection, 
   SPECTRUM_T* spectrum,
   int charge

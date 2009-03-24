@@ -16,7 +16,8 @@
  */
 
 static char* parameter_type_strings[NUMBER_PARAMETER_TYPES] = { 
-  "INT_ARG", "DOUBLE_ARG", "STRING_ARG", "MASS_TYPE_T", "PEPTIDE_TYPE_T", 
+  "INT_ARG", "DOUBLE_ARG", "STRING_ARG", "MASS_TYPE_T", "DIGEST_T", 
+  "ENZYME_T", //"PEPTIDE_TYPE_T", 
   "BOOLEAN_T", "SORT_TYPE_T", "SCORER_TYPE_T", "OUTPUT_TYPE_T", "ION_TYPE_T",
   "ALGORITHM_TYPE_T"};
 
@@ -65,6 +66,7 @@ void parse_parameter_file(
 BOOLEAN_T check_option_type_and_bounds(char* name);
 
 void check_parameter_consistency();
+void parse_custom_enzyme(char* rule_str);
 
 void print_parameter_file(char* input_param_filename);
 
@@ -117,9 +119,42 @@ BOOLEAN_T set_mass_type_parameter(
  char* foruser
   );
 
+/*
 BOOLEAN_T set_peptide_type_parameter(
  char*     name,  ///< the name of the parameter looking for -in
  PEPTIDE_TYPE_T set_value,  ///< the value to be set -in
+ char* usage,      ///< string to print in usage statement
+ char* filenotes,   ///< additional info for param file
+ char* foruser
+  );
+*/
+BOOLEAN_T set_digest_type_parameter(
+ char*     name,  ///< the name of the parameter looking for -in
+ DIGEST_T set_value,  ///< the value to be set -in
+ char* usage,      ///< string to print in usage statement
+ char* filenotes,   ///< additional info for param file
+ char* foruser
+  );
+
+BOOLEAN_T set_enzyme_type_parameter(
+ char*     name,  ///< the name of the parameter looking for -in
+ ENZYME_T set_value,  ///< the value to be set -in
+ char* usage,      ///< string to print in usage statement
+ char* filenotes,   ///< additional info for param file
+ char* foruser
+  );
+
+BOOLEAN_T set_digest_type_parameter(
+ char*     name,  ///< the name of the parameter looking for -in
+ DIGEST_T set_value,  ///< the value to be set -in
+ char* usage,      ///< string to print in usage statement
+ char* filenotes,   ///< additional info for param file
+ char* foruser
+  );
+
+BOOLEAN_T set_enzyme_type_parameter(
+ char*     name,  ///< the name of the parameter looking for -in
+ ENZYME_T set_value,  ///< the value to be set -in
  char* usage,      ///< string to print in usage statement
  char* filenotes,   ///< additional info for param file
  char* foruser
@@ -209,6 +244,24 @@ void initialize_parameters(void){
     list_of_mods[mod_idx] = new_aa_mod(mod_idx);              
   }                                                           
 
+  /* initialize custom enzyme variables */
+  pre_list_size = 0;
+  post_list_size = 0;
+  pre_cleavage_list = NULL;
+  post_cleavage_list = NULL;
+  pre_for_inclusion = TRUE;
+  post_for_inclusion = FALSE;
+
+  // debug, before option implemented
+  /*
+  pre_list_size = 2;
+  post_list_size = 1;
+  pre_cleavage_list = mycalloc( pre_list_size, sizeof(char));
+  pre_cleavage_list[0] = 'R';
+  pre_cleavage_list[1] = 'K' ;
+  post_cleavage_list = mycalloc( post_list_size, sizeof(char));
+  post_cleavage_list[0] = 'P';
+  */
   /* *** Initialize Arguments *** */
 
   // set with name, default value, [max, min], usage, notes, for param file
@@ -335,6 +388,50 @@ void initialize_parameters(void){
       "Used from command line or parameter file by crux-create-index and "
       "crux-generate-peptides.  Parameter file only for "
       "crux-search-for-matches.", "true");
+  set_digest_type_parameter("digestion", FULL_DIGEST,
+      "Degree of digestion used to generate peptides (full-digest, "
+      "partial-digest). Either both ends or one end of a peptide "
+      "must conform to enzyme specificity rules. Default full-digest.",
+      "Used in conjunction with enzyme option when enzyme is not set to "
+      "to 'no-enzyme'.  Available from command line or parameter file for "
+      "crux-generate-peptides and crux create-index.  Available from parameter"
+      " file for crux search-for-matches.  Digestion rules are as "
+      "follows: enzyme name [cuts after one of these residues][but not before "
+      "one of these residues].  trypsin [RK][P], elastase [ALIV][P], "
+      "chymotrypsin [FWY][P].",
+      "true");
+  set_enzyme_type_parameter("enzyme", TRYPSIN,
+      "Enzyme to use for in silico digestion of protein sequences "
+      "(trypsin, chymotrypsin, elastase, clostripain, cyanogen-bromide, "
+      "iodosobenzoate, proline-endopeptidase, staph-protease, aspn, "
+      "modified-chymotrypsin, no-enzyme).  Default trypsin.", 
+      "Used in conjunction with the options digestion and missed-cleavages. "
+      "Use 'no-enzyme' for non-specific digestion.  Available "
+      "from command line or parameter file for crux-generate-peptides "
+      "and crux create-index.  Available from parameter file for crux "
+      "search-for-matches.   Digestion rules: enzyme name [cuts after one "
+      "of these residues]|{but not before one of these residues}.  "
+      "trypsin [RK]|{P}, elastase [ALIV]|{P}, chymotrypsin [FWY]|{P}, "
+      "clostripain [R]|[], cyanogen-bromide [M]|[], "
+      "iodosobenzoate [W]|[], proline-endopeptidase [P]|[], staph-protease "
+      "[E]|[], modified-chymotrypsin [FWYL]|{P}, elastase-trypsin-chymotrypsin "
+      "[ALIVKRWFY]|{P},aspn []|[D] (cuts before D).",
+      "true");
+  set_string_parameter("custom-enzyme", NULL, 
+      "Specify rules for in silico digestion of protein sequences. See html "
+      "docs for syntax. Default to use pre-defined enzyme trypsin.",
+      "Overrides the enzyme option.  Two lists of residues are given enclosed "
+      "in square brackets or curly braces and separated by a |. The first list "
+      "contains residues required/prohibited before the cleavage site and the "
+      "second list is residues after the cleavage site.  If the residues are "
+      "required for digestion, they are in square brackets, '[' and ']'.  "
+      "If the residues prevent digestion, then they are enclosed in curly "
+      "braces, '{' and '}'.  Use X to indicate all residues.  For example, "
+      "trypsin cuts after R or K but not before P which is represented as "
+      "[RK]|{P}.  AspN cuts after any residue but only before D which is "
+      "represented as [X]|[D].",
+                       "true");
+  /*
   set_peptide_type_parameter("cleavages", TRYPTIC, 
       "The type of cleavage sites to consider (tryptic, partial, all). "
       "Default tryptic.",
@@ -346,30 +443,35 @@ void initialize_parameters(void){
       "site at at least one terminus, and 'all' produces peptides with no "
       "dependence on adjacent amino acids or internal cleavage sites.",
       "true");
+  */
   set_boolean_parameter("missed-cleavages", FALSE, 
       "Include peptides with missed cleavage sites (T,F). Default FALSE.",
       "Available from command line or parameter file for crux-create-index "
       "and crux-generate-peptides.  Parameter file only for crux-search-"
-      "for-matches.  When used with cleavages=<tryptic|partial> includes "
-      "peptides containing one or more potential cleavage sites.", "true");
-  set_boolean_parameter("unique-peptides", FALSE,
+      "for-matches.  When used with enzyme=<trypsin|elastase|chymotrpysin> "
+      " includes peptides containing one or more potential cleavage sites.",
+      "true");
+  //  set_boolean_parameter("unique-peptides", FALSE,
+  set_boolean_parameter("unique-peptides", TRUE,
       "Generate peptides only once, even if they appear in more "
       "than one protein (T,F).  Default FALSE.",
-      "Available from command line or parameter file for crux-create-index "
-      "and crux-genereate-peptides. Parameter file only for crux-search-for-"
-      "matches.  For crux-generate-peptides, returns one line per peptide "
-      "when true or one line per peptide per protein occurence when false.  "
-      "For index and search, stores and reports only one protein in which "
-      "the peptide occurs.", "true");
+      "Available from command line or parameter file for "
+      "crux-genereate-peptides. Returns one line per peptide "
+      "when true or one line per peptide per protein occurence when false.  ",
+     //"For index and search, stores and reports only one protein in which "
+     //"the peptide occurs.", 
+      "true");
   
   /* more generate_peptide parameters */
   set_boolean_parameter("output-sequence", FALSE, 
       "Print peptide sequence (T,F). Default FALSE.",
       "Available only for crux-generate-peptides.", "true");
+  /*
   set_boolean_parameter("output-trypticity", FALSE, 
       "Print trypticity of peptide (T,F). Default FALSE.",
       "Available only for crux-generate-peptides. When cleavages=partial "
       "all peptides are labeled PARTIAL even if fully tryptic.", "true");
+  */
   set_boolean_parameter("use-index", FALSE, 
       "Use an index that has already been created (T,F). "
       "Default FALSE (use fasta file).",
@@ -420,9 +522,9 @@ void initialize_parameters(void){
       "Used by crux-search-for-matches.  All result files (binary .csm "
       "and/or sqt) put in this directory.", "true");
   set_output_type_parameter("output-mode", BINARY_OUTPUT, 
-      "Types of output to produce (binary, sqt, all). Default binary.",
-      "Available for crux-search-for-matches.  Produce binary and/or text "
-      "(sqt) output files.  Binary files named automatically.  See "
+      "Types of output to produce (binary, sqt, tab, all). Default binary.",
+      "Available for crux search-for-matches.  Produce binary, sqt "
+      "and/or tab delimited output files.  Binary files named automatically.  See "
       "sqt-output-file for naming text file.  See match-output-folder for "
       "file location.", "true");
   set_string_parameter("sqt-output-file", "target.sqt", 
@@ -435,29 +537,87 @@ void initialize_parameters(void){
       "Used by crux-search-for-matches with output-mode=<all|sqt> and "
       "number-decoy-sets > 0.  File is put in the directory set by "
       "--match-output-folder (defaults to working directory).", "true");
+  set_string_parameter("tab-output-file", "target.txt", 
+      "Tab delimited output file name. Default 'target.txt'",
+      "Only available for crux search-for-matches with output-mode="
+      "<all|tab>.  The location of this file is controlled by "
+      "match-output-folder.", "true");
+  set_string_parameter("decoy-tab-output-file", "decoy.txt", 
+      "Tab delimited output file name for decoys.  Default 'decoy.txt'.",
+      "Used by crux search-for-matches with output-mode=<all|tab> and "
+      "number-decoy-set > 0.  File is put in the directory set by "
+      "--match-output-folder (defaults to working directory).", "true");
+  // user options regarding decoys
+  /*
+  set_int_parameter("num-decoys-per-target", 2, 0, 10,
+      "Number of decoy peptides to search for every target peptide searched."
+      "  Default 2.",
+      "Use --decoy-location to control where they are returned (which "
+      "file(s)).  Available only from the command line for search-for-matches.",
+      "true");
+  set_string_parameter("decoy-location", "separate-decoy-files",
+      "Where the decoy search results are returned.  (target-file|"
+      "one-decoy-file|separate-decoy-files'. Default separate-decoy-files.",
+      "Applies when num-decoys-per-target > 0.  Use 'target-file' to mix "
+      "target and decoy search results in one file. 'one-decoy-file' will "
+      "return target results in one file and all decoys in another. "
+      "'separate-decoy-files' will create as many decoy files as "
+      "num-decoys-per-target.",
+      "true");
+  // coder options regarding decoys
   set_int_parameter("number-decoy-set", 2, 0, 10, 
-      "The number of decoy databases to search.  Default 2.",
-      "Used by crux-search-for-matches.  Decoy search results can be used "
-      "by crux-analzye-matches with the percolator algorithm", "true");
+      "Now hidden from user controls how many decoy match_collections/files",
+                    "", "false");
+  set_boolean_parameter("tdc", FALSE,
+      "Target-decoy competition. puts decoy psms in target file. ",
+                        "Now hidden from the user", "false");
+  set_int_parameter("num-decoys-per-target", 1, 1, BILLION,
+      "set if multiple decoy searches are put in one match collection", 
+      "Now hidded from the user.", "false");
+  */
+  set_int_parameter("number-decoy-set", 2, 0, 10, 
+      "The number of decoy databases to search, generating one output file "
+      "per set.  Default 2.", 
+      "Each decoy set of psms will be printed to a separate file and not " 
+      "included with the target psms. To return decoys in the same file as "
+      "targets, use tdc=T in the parameter file and control the number of "
+      "decoys with num-decoys-per-target. At least one decoy set (in its own "
+      "file) is required to run the algorithm 'percolator' in a subsiquent "
+      "crux run. Used by crux-search-for-matches.  Decoy search results can "
+      "be used by crux percolator.", "true");
 
   /* search-for-matches parameter file options */
-  set_int_parameter("max-rank-preliminary", 500, 1, BILLION, 
-      "Number of psms per spectrum to score after "
-      "preliminary scoring.  Default 500.",
-      "Used by crux-search-for-matches.  For each spectrum, keep the (500) "
-      "top ranking psms for scoring with the main score.", "true");
-  set_int_parameter("max-sqt-result", 5, 1, BILLION, 
-      "Number of search results per spectrum to report in the sqt file. "
-      "Default 5.",
-      "Available from parameter file for crux-search-for-matches with "
-      "output-mode=<all|sqt>.  Does not affect output to binary files.", 
-      "true");
-  set_int_parameter("top-match", 1, 1, BILLION, 
-      "The number of psms per spectrum writen to the binary output file." 
+  set_boolean_parameter("tdc", FALSE,
+      "Target-decoy competition.  Combine target and decoy searches in "
+      "one file.  Default FALSE, separate files.",
+      "After searching target and decoy peptides, all psms for one spectrum "
+      "are sorted together and the mix list is returned in the target.sqt "
+      "file. Set number of decoys with num-decoys-per-target.   The number "
+      "of psms retained after preliminary searching (max-rank-preliminary) "
+      "is increased to reflect the number of decoys searched so that "
+      "(1+num-decoys)*max-rank-preliminary are kept.", "true");
+  set_int_parameter("num-decoys-per-target", 1, 1, BILLION,
+      "Number of decoy peptides to search for every target peptide searched. "
       "Default 1.",
-      "Available from parameter file for crux-search-for-matches.  If more "
-      "than one psm is written to file, the matches for each spectrum will "
-      "be re-ranked in crux-match-analysis.", "true");
+      "Multiple decoys are put in the same collection, sorted together, and "
+      "written to the same file.  Does not affect --number-decoy-sets or tdc.",
+      "true");
+
+  set_int_parameter("max-rank-preliminary", 500, 0, BILLION, 
+      "Number of psms per spectrum to score with xcorr after preliminary "
+      "scoring with Sp. "
+      "Set to 0 to score all psms with xcorr. Default 500.",
+      "Used by crux-search-for-matches.  For positive values, the Sp "
+      "(preliminary) score acts as a filter; only high scoring psms go "
+      "on to be scored with xcorr.  This saves some time.  If set to 0, "
+      "all psms are scored with both scores. ", "true");
+  set_int_parameter("top-match", 5, 1, BILLION, 
+      "The number of psms per spectrum writen to the output file(s)." 
+      "Default 5.",
+      "Available from parameter file for crux-search-for-matches.",
+      "true");
+  set_int_parameter("psms-per-spectrum-reported", 0, 0, BILLION,
+                   "place holder", "this may be replaced by top-match","false");
   set_double_parameter("mass-offset", 0.0, 0, 0, "obsolete",
       "Was used in search.", "false");
   set_string_parameter("seed", "time", "HIDE ME FROM USER",
@@ -507,6 +667,16 @@ void initialize_parameters(void){
       "The maximum number of modified amino acids that can appear in one "
       "peptide.  Each aa can be modified multiple times.  Default no limit.",
       "Available from parameter file for search-for-matches.", "true");
+  set_int_parameter("precision", 6, 1, 100, //max is arbitrary
+      "Set the precision for masses and scores written to sqt and text files. "
+      "Default 6.",
+      "Available from parameter file for crux search-for-matches, percolator, "
+      "and compute-q-values.", "true");
+  set_int_parameter("print-search-progress", 10, 0, BILLION,
+      "Show search progress by printing every n spectra searched.  Default "
+      "10.", "Set to 0 to show no search progress.  Available for crux "
+      "search-for-matches from parameter file.",
+      "true");
 
     // Sp scoring params
   set_double_parameter("beta", 0.075, 0, 1, "Not for general users.",
@@ -552,7 +722,7 @@ void initialize_parameters(void){
       "using the p-values calculated with score-type=<xcorr-pvalue|"
       "sq-pvalue>.  Incorrect combinations of score-type and algorithm cause"
       " undefined behavior. Using 'none' will turn the binary .csm files "
-      "into text.", "true");
+      "into text.", "false");
   set_string_parameter("feature-file", NULL,//"match_analysis.features"
      "Optional file into which psm features are printed.",
      "Available only for crux-analyze-matches.  File will contain features "
@@ -592,11 +762,11 @@ void initialize_parameters(void){
       "of the peptide (peptide).  Default 'peptide'.",
       "Available only for predict-peptide-ions.  Set to 'peptide' for search.",
       "true");
-  set_int_parameter("nh3",0, 0, BILLION, 
+  set_int_parameter("nh3",0, -100, BILLION, 
       "Predict peaks with the given maximum number of nh3 neutral loss "
       "modifications. Default 0.",
       "Only available for crux-predict-peptide-ions.", "true");
-  set_int_parameter("h2o",0, 0, BILLION,
+  set_int_parameter("h2o",0, -100, BILLION,
       "Predict peaks with the given maximum number of h2o neutral loss "
       "modifications. Default 0.",
       "Only available for crux-predict-peptide-ions.", "true");
@@ -752,7 +922,7 @@ BOOLEAN_T select_cmd_line(  //remove options from name
     void* value_ptr = get_hash_value(parameters, option_names[i]);
     void* usage_ptr = get_hash_value(usages, option_names[i]);
     void* type_ptr =  get_hash_value(types, option_names[i]);
-    if( strcmp(type_ptr, "PEPTIDE_TYPE_T") == 0 ||
+    if( //strcmp(type_ptr, "PEPTIDE_TYPE_T") == 0 ||
         strcmp(type_ptr, "MASS_TYPE_T") == 0 ||
         strcmp(type_ptr, "BOOLEAN_T") == 0 ||
         strcmp(type_ptr, "SORT_TYPE_T") == 0 ||
@@ -895,14 +1065,226 @@ BOOLEAN_T parse_cmd_line_into_params_hash(int argc,
   check_parameter_consistency();
 
   // do global parameter-specific tasks: set static aa modifications
-  //   set verbosity, print param file (if requested)
+  //   set verbosity, make adjustments for tdc, print param file (if
+  //   requested), set custom enzyme rules, set max psms per spec to file
+
   update_aa_masses();
+
+  /*
+  // translate user decoy options into the old set of options
+  // get user values
+  int num_decoy_per_target = get_int_parameter("num-decoys-per-target");
+  char* location = get_string_parameter("decoy-location");
+  int max_rank_preliminary = get_int_parameter("max-rank-preliminary");
+  // store new values here
+  BOOLEAN_T tdc = FALSE;
+  int new_num_decoy_per_target = 0;
+  int new_num_decoy_set = 0;
+  int new_max_rank_preliminary = 0;
+
+  if( num_decoy_per_target == 0 ){
+    free(location);
+    location = "target-file";
+  }
+
+  // set new values
+  if( strcmp(location, "target-file") ){
+    tdc = TRUE;
+    new_num_decoy_set = 0;
+    new_num_decoy_per_target = num_decoy_per_target;
+    if( max_rank_preliminary > 0 ){
+      new_max_rank_preliminary = max_rank_preliminary * 
+                                (1 + new_num_decoy_per_target);
+    }
+  }else if( strcmp(location, "one-decoy-file") ){
+    tdc = FALSE;
+    new_num_decoy_set = 1;
+    new_num_decoy_per_target = num_decoy_per_target;
+  }else if( strcmp(location, "separate-decoy-files") ){
+    tdc = FALSE;
+    new_num_decoy_set = num_decoy_per_target;
+    new_num_decoy_per_target = 1;
+  }
+
+  // now update all values
+  char buffer[PARAMETER_LENGTH];
+  sprintf(buffer, "%i", new_num_decoy_set);
+  update_hash_value(parameters, "num-decoy-decoy-set", buffer);
+
+  sprintf(buffer, "%i", new_num_decoy_per_target);
+  update_hash_value(parameters, "num-decoy-per-target", buffer);
+
+  sprintf(buffer, "%i", new_max_rank_preliminary);
+  update_hash_value(parameters, "max-rank-preliminary", buffer);
+
+  if( tdc == TRUE ){
+    update_hash_value(parameters, "tdc", "TRUE");
+  }else{
+    update_hash_value(parameters, "tdc", "FALSE");
+  }
+  */
+
+  if( get_boolean_parameter("tdc") == TRUE ){
+    // change num-decoys so that no decoy.sqt file written
+    update_hash_value(parameters, "number-decoy-set", "0");
+
+    // keep more psms to score with xcorr
+    // e.g. top_match=500, num_decoys_per=2, keep 500 + 1000 for xcorr
+    int top_match = get_int_parameter("max-rank-preliminary");
+    int num_decoys_per = get_int_parameter("num-decoys-per-target");
+    top_match *= (1 + num_decoys_per);
+    // stringify value
+    char buffer[PARAMETER_LENGTH];
+    snprintf(buffer, PARAMETER_LENGTH, "%i", top_match);
+    update_hash_value(parameters, "max-rank-preliminary", buffer);
+  }
+
+
+  // for compute-q-values, set algorithm to q-value (perc by default)
+  if( strcmp(argv[0], "compute-q-values") == 0 ){
+    char value_str[SMALL_BUFFER];
+    algorithm_type_to_string(QVALUE_ALGORITHM, value_str);
+    update_hash_value(parameters, "algorithm", value_str);
+  }
+
+  // if custom-enzyme used, set values
+  char* enzyme_rule_str = get_string_parameter("custom-enzyme");
+  if( enzyme_rule_str != NULL ){
+    parse_custom_enzyme(enzyme_rule_str);
+    free(enzyme_rule_str);
+
+    char* value_str = enzyme_type_to_string(CUSTOM_ENZYME);
+    update_hash_value(parameters, "enzyme", value_str);
+    free(value_str);
+  }
+
   set_verbosity_level(get_int_parameter("verbosity"));
   print_parameter_file(param_filename);
+
+  // what is the max psms per spec to keep for printing
+  int max = get_int_parameter("top-match");
+  char value_str[SMALL_BUFFER];
+  sprintf(value_str, "%i", max);
+  update_hash_value(parameters, "psms-per-spectrum-reported", value_str);
 
   parameter_plasticity = FALSE;
 
   return success;
+}
+
+/**
+ * Read the value given for custom-enzyme and enter values into global
+ * params.   Correct syntax is <brace>A-Z<brace>|<brace>A-Z<brace> 
+ * where <brace> can be [] or {}.  An X indicates that any residue is
+ * legal. Sets pre/post_list size and allocates memory for
+ * pre/post_cleavage_list.  Sets pre/post_for_inclusion as true if []
+ * encloses list or false if {} encloses list. 
+ * For special case of [X], set p_cleavage_list as empty and inclusion
+ * as false.
+ */
+// NOTE (BF mar-11-09): for testing would be nice if this returned
+// error code instead of dying
+void parse_custom_enzyme(char* rule_str){
+
+  BOOLEAN_T success = TRUE;
+  int len = strlen(rule_str);
+  int idx = 0;
+  int pipe_idx = 0;
+
+  // 1. find the |
+  for(idx = 0; idx < len; idx++){
+    if( rule_str[idx] == '|' ){
+      pipe_idx = idx;
+      break;
+    }
+  }
+  // check that there isn't a second
+  for(idx = idx+1; idx < len; idx++){
+    if( rule_str[idx] == '|' ){
+      success = FALSE;      
+      break;
+    }
+  }
+
+
+  // 2. set beginning and end of strings relative to pipe, start, end
+  //    0 1    p-1 p p+1 p+2     len-1 len
+  //    [ X    ]   | [   X       ]     '0'
+  int pre_first_idx = 1;
+  int pre_end_idx = pipe_idx - 1;
+  int post_first_idx = pipe_idx + 2;
+  int post_end_idx = len -1;
+
+  // 3. check that braces match and set inclusion
+  // pre-list
+  if(pipe_idx < 1){
+    success = FALSE;
+  }else if(rule_str[pre_first_idx-1] == '[' && 
+           rule_str[pre_end_idx] == ']'){
+    pre_for_inclusion = TRUE;
+  }else if(rule_str[pre_first_idx-1] == '{' && 
+           rule_str[pre_end_idx] == '}'){
+    pre_for_inclusion = FALSE;
+  }else{
+    success = FALSE;
+  }
+
+  // post list
+  if(pipe_idx + 2 >= len ){
+    success = FALSE;
+  }else if(rule_str[post_first_idx-1] == '[' && 
+           rule_str[post_end_idx] == ']'){
+    post_for_inclusion = TRUE;
+  }else if(rule_str[post_first_idx-1] == '{' && 
+           rule_str[post_end_idx] == '}'){
+    post_for_inclusion = FALSE;
+  }else{
+    success = FALSE;
+  }
+
+  // check that braces aren't empty 
+  if(pre_first_idx >= pre_end_idx || post_first_idx >= post_end_idx ){
+    success = FALSE;
+  }
+
+  if( success == FALSE ){
+    carp(CARP_FATAL, "Custom enzyme syntax '%s' is incorrect.  "
+         "Must be of the form [AZ]|[AZ] or with [] replaced by {}. "
+         "AZ is a list of residues (letters A-Z) required [] or prohibited {}. "
+         "Use [X] to indicate any reside is legal.",
+         rule_str);
+    exit(1);
+  }
+
+  // 4. allocate lists and fill
+  pre_list_size = pre_end_idx - pre_first_idx;
+  pre_cleavage_list = mycalloc(pre_list_size, sizeof(char));
+  for(idx = 0; idx < pre_list_size; idx++){
+    pre_cleavage_list[idx] = rule_str[pre_first_idx+idx];
+  }
+
+  post_list_size = post_end_idx - post_first_idx;
+  post_cleavage_list = mycalloc(post_list_size, sizeof(char));
+  for(idx = 0; idx < post_list_size; idx++){
+    post_cleavage_list[idx] = rule_str[post_first_idx+idx];
+  }
+
+
+  // 5. check special case of [X]
+  if(strncmp( rule_str, "[X]", pre_list_size+2) == 0){
+    free(pre_cleavage_list);
+    pre_cleavage_list = NULL;
+    pre_list_size = 0;
+    pre_for_inclusion = FALSE;
+  }
+
+  if(strncmp( rule_str+post_first_idx-1, "[X]", post_list_size+2) == 0){
+    free(post_cleavage_list);
+    post_cleavage_list = NULL;
+    post_list_size = 0;
+    post_for_inclusion = FALSE;
+  }
+
 }
 
 void check_parameter_consistency(){
@@ -934,6 +1316,15 @@ void check_parameter_consistency(){
          " must be less than max (%.2f).", min_spec_mass, max_spec_mass);
     exit(1);
   }
+
+  /* If no-enzyme, set digestion to non-specific and missed to true */
+  if( get_enzyme_type_parameter("enzyme") == NO_ENZYME ){
+    char* val_str = digest_type_to_string(NON_SPECIFIC_DIGEST);
+    //fprintf(stderr, "val str is %s\n", val_str);
+    update_hash_value(parameters, "digestion", val_str);
+    free(val_str);
+    update_hash_value(parameters, "missed-cleavages", "TRUE");
+  }
 }
 
 
@@ -953,7 +1344,7 @@ BOOLEAN_T check_option_type_and_bounds(char* name){
   char* max_str = get_hash_value(max_values, name);
 
   MASS_TYPE_T mass_type;
-  PEPTIDE_TYPE_T pep_type;
+  //PEPTIDE_TYPE_T pep_type;
   SORT_TYPE_T sort_type;
   SCORER_TYPE_T scorer_type;
   ALGORITHM_TYPE_T algorithm_type;
@@ -990,6 +1381,25 @@ BOOLEAN_T check_option_type_and_bounds(char* name){
       sprintf(die_str, "Illegal mass-type.  Must be 'mono' or 'average'");
     }
     break;
+  case DIGEST_TYPE_P:
+      carp(CARP_DETAILED_DEBUG, "found digest_type param, value '%s'\n", 
+           value_str);
+    if( string_to_digest_type(value_str) == INVALID_DIGEST){
+      success = FALSE;
+      sprintf(die_str, "Illegal digest value. "
+              "Must be full-digest or partial-digest.");
+    }
+    break;
+  case ENZYME_TYPE_P:
+      carp(CARP_DETAILED_DEBUG, "found enzyme_type param, value '%s'\n", 
+           value_str);
+    if( string_to_enzyme_type(value_str) == INVALID_ENZYME){
+      success = FALSE;
+      sprintf(die_str, "Illegal enzyme. Must be trypsin, chymotrypsin, "
+              ", elastase, or no-enzyme.");
+    }
+    break;
+    /*
   case PEPTIDE_TYPE_P:
       carp(CARP_DETAILED_DEBUG, "found peptide_type param, value '%s'\n", 
            value_str);
@@ -998,6 +1408,7 @@ BOOLEAN_T check_option_type_and_bounds(char* name){
       sprintf(die_str, "Illegal peptide cleavages.  Must be...something");
     }
     break;
+    */
   case BOOLEAN_P:
     carp(CARP_DETAILED_DEBUG, "found boolean_type param, value '%s'", 
          value_str);
@@ -1051,7 +1462,7 @@ BOOLEAN_T check_option_type_and_bounds(char* name){
     if(! string_to_output_type(value_str, &output_type)){
       success = FALSE;
       sprintf(die_str, "Illegal output type '%s' for options '%s'.  "
-              "Must be binary, sqt, or all.", value_str, name);
+              "Must be binary, sqt, tab, or all.", value_str, name);
     }
     break;
   case ION_TYPE_P:
@@ -1486,6 +1897,34 @@ char* get_string_parameter_pointer(
 
 }
 
+DIGEST_T get_digest_type_parameter( char* name ){
+
+  char* param = get_hash_value(parameters, name);
+
+  carp(CARP_DETAILED_DEBUG, "getting digest param '%s' with val '%s'", name, param);
+  DIGEST_T digest_type = string_to_digest_type(param);
+  if( digest_type == INVALID_DIGEST ){
+    carp(CARP_FATAL, "Digest_type parameter %s has the value %s " 
+         "which is not of the correct type\n", name, param);
+    exit(1);
+  }
+  return digest_type;
+}
+
+ENZYME_T get_enzyme_type_parameter( char* name ){
+
+  char* param = get_hash_value(parameters, name);
+
+  ENZYME_T enzyme_type = string_to_enzyme_type(param);
+  if( enzyme_type == INVALID_ENZYME ){
+    carp(CARP_FATAL, "Enzyme_type parameter %s has the value %s " 
+         "which is not of the correct type\n", name, param);
+    exit(1);
+  }
+  return enzyme_type;
+}
+
+/*
 PEPTIDE_TYPE_T get_peptide_type_parameter(
   char* name
     ){
@@ -1502,7 +1941,7 @@ PEPTIDE_TYPE_T get_peptide_type_parameter(
   }
   return peptide_type;
 }
-
+*/
 MASS_TYPE_T get_mass_type_parameter(
    char* name
    ){
@@ -1754,7 +2193,7 @@ BOOLEAN_T set_mass_type_parameter(
   return result;
 
 }
-
+/*
 BOOLEAN_T set_peptide_type_parameter(
  char*     name,  ///< the name of the parameter looking for -in
  PEPTIDE_TYPE_T set_value,  ///< the value to be set -in
@@ -1772,7 +2211,7 @@ BOOLEAN_T set_peptide_type_parameter(
     return FALSE;
   }
   
-  /* stringify the value */
+  // stringify the value 
   peptide_type_to_string(set_value, value_str);
 
   result = add_or_update_hash_copy(parameters, name, value_str);
@@ -1780,6 +2219,65 @@ BOOLEAN_T set_peptide_type_parameter(
   result = add_or_update_hash_copy(file_notes, name, filenotes);
   result = add_or_update_hash_copy(for_users, name, foruser);
   result = add_or_update_hash_copy(types, name, "PEPTIDE_TYPE_T");
+  return result;
+
+}
+*/
+BOOLEAN_T set_digest_type_parameter(
+ char*     name,  ///< the name of the parameter looking for -in
+ DIGEST_T set_value,  ///< the value to be set -in
+ char* usage,      ///< string to print in usage statement
+ char* filenotes,   ///< additional info for param file
+ char* foruser
+  )
+{
+  BOOLEAN_T result = TRUE;
+  
+  // check if parameters can be changed
+  if(!parameter_plasticity){
+    carp(CARP_ERROR, "can't change parameters once they are confirmed");
+    return FALSE;
+  }
+  
+  /* stringify the value */
+  char* value_str = digest_type_to_string(set_value);
+  carp(CARP_DETAILED_DEBUG, "Setting digest param '%s' to value '%s'.", name, value_str);
+
+  result = add_or_update_hash_copy(parameters, name, value_str);
+  result = add_or_update_hash_copy(usages, name, usage);
+  result = add_or_update_hash_copy(file_notes, name, filenotes);
+  result = add_or_update_hash_copy(for_users, name, foruser);
+  result = add_or_update_hash_copy(types, name, "DIGEST_T");
+  free(value_str);
+  return result;
+
+}
+
+BOOLEAN_T set_enzyme_type_parameter(
+ char*     name,  ///< the name of the parameter looking for -in
+ ENZYME_T set_value,  ///< the value to be set -in
+ char* usage,      ///< string to print in usage statement
+ char* filenotes,   ///< additional info for param file
+ char* foruser
+  )
+{
+  BOOLEAN_T result = TRUE;
+  
+  // check if parameters can be changed
+  if(!parameter_plasticity){
+    carp(CARP_ERROR, "can't change parameters once they are confirmed");
+    return FALSE;
+  }
+  
+  /* stringify the value */
+  char* value_str = enzyme_type_to_string(set_value);
+
+  result = add_or_update_hash_copy(parameters, name, value_str);
+  result = add_or_update_hash_copy(usages, name, usage);
+  result = add_or_update_hash_copy(file_notes, name, filenotes);
+  result = add_or_update_hash_copy(for_users, name, foruser);
+  result = add_or_update_hash_copy(types, name, "ENZYME_T");
+  free(value_str);
   return result;
 
 }

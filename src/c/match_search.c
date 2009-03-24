@@ -29,7 +29,7 @@
 #include "spectrum_collection.h"
 #include "match_collection.h"
 
-#define NUM_SEARCH_OPTIONS 15
+#define NUM_SEARCH_OPTIONS 16
 #define NUM_SEARCH_ARGS 2
 #define PARAM_ESTIMATION_SAMPLE_COUNT 500
 
@@ -39,11 +39,12 @@ int prepare_protein_input(char* input_file,
                           DATABASE_T** database);
 void open_output_files(FILE*** binary_filehandle_array, 
                        FILE** sqt_filehandle,
-                       FILE** decoy_sqt_filehandle);
+                       FILE** decoy_sqt_filehandle,
+                       FILE** tab_file,
+                       FILE** decoy_tab_file);
 BOOLEAN_T is_search_complete(MATCH_COLLECTION_T* matches, 
                              int mods_per_peptide);
 
-//int main(int argc, char** argv){
 int search_main(int argc, char** argv){
 
   /* Verbosity level for set-up/command line reading */
@@ -58,10 +59,6 @@ int search_main(int argc, char** argv){
     "write-parameter-file",
     "overwrite",
     "use-index",
-    /*
-    "prelim-score-type",
-    "score-type",
-    */
     "compute-p-values",
     "spectrum-min-mass",
     "spectrum-max-mass",
@@ -69,6 +66,7 @@ int search_main(int argc, char** argv){
     "match-output-folder",
     "output-mode",
     "sqt-output-file",
+    "tab-output-file",
     "decoy-sqt-output-file",
     "number-decoy-set"
   };
@@ -87,10 +85,6 @@ int search_main(int argc, char** argv){
   /* Parse the command line, including optional params file
      Includes syntax, type, and bounds checking, dies on error */
   parse_cmd_line_into_params_hash(argc, argv, "crux search-for-matches");
-
-  /* Set verbosity */
-  //verbosity = get_int_parameter("verbosity");
-  //set_verbosity_level(verbosity);
 
   /* Set seed for random number generation */
   if(strcmp(get_string_parameter_pointer("seed"), "time")== 0){
@@ -122,7 +116,6 @@ int search_main(int argc, char** argv){
        get_spectrum_collection_num_spectra(spectra));
 
   /* Get input: protein file */
-  //char* input_file = get_string_parameter_pointer("protein input");
   char* input_file = get_string_parameter("protein input");
 
   /* Prepare input, fasta or index */
@@ -142,42 +135,53 @@ int search_main(int argc, char** argv){
   FILE** psm_file_array = NULL; //file handle array
   FILE* sqt_file = NULL;
   FILE* decoy_sqt_file  = NULL;
+  FILE* tab_file = NULL;
+  FILE* decoy_tab_file  = NULL;
 
-  open_output_files(&psm_file_array, &sqt_file, &decoy_sqt_file);
+  open_output_files(
+    &psm_file_array, 
+    &sqt_file, 
+    &decoy_sqt_file, 
+    &tab_file,
+    &decoy_tab_file
+  );
 
   //print headers
   serialize_headers(psm_file_array);
   print_sqt_header(sqt_file, "target", num_proteins, FALSE);// !analyze-matches
   print_sqt_header(decoy_sqt_file, "decoy", num_proteins, FALSE);
-
+  print_tab_header(tab_file);
+  print_tab_header(decoy_tab_file);
   /* Perform search: loop over spectra*/
 
   // create spectrum iterator
   FILTERED_SPECTRUM_CHARGE_ITERATOR_T* spectrum_iterator = 
     new_filtered_spectrum_charge_iterator(spectra);
 
-  /*
   // get search parameters for match_collection
-  int max_rank_preliminary = get_int_parameter("max-rank-preliminary");
-  SCORER_TYPE_T prelim_score = get_scorer_type_parameter("prelim-score-type");
-  SCORER_TYPE_T main_score = get_scorer_type_parameter("score-type");
-  */
   BOOLEAN_T compute_pvalues = get_boolean_parameter("compute-p-values");
-  int sample_count = (compute_pvalues) ? PARAM_ESTIMATION_SAMPLE_COUNT : 0;
+  //  int sample_count = (compute_pvalues) ? PARAM_ESTIMATION_SAMPLE_COUNT : 0;
+  BOOLEAN_T combine_target_decoy = get_boolean_parameter("tdc");
 
   // flags and counters for loop
-  int spectrum_searches_counter = 0; //for psm file header, spec*charges
+  int spectrum_searches_counter = 0; //for psm file header, sum(spec*charges)
   int mod_idx = 0;
   int num_decoys = get_int_parameter("number-decoy-set");
+  int progress_increment = get_int_parameter("print-search-progress");
+  if( progress_increment == 0 ){
+    progress_increment = BILLION;
+  }
 
   // get list of mods
   PEPTIDE_MOD_T** peptide_mods = NULL;
   int num_peptide_mods = generate_peptide_mod_list( &peptide_mods );
+
+  // DELETE ME
   // for estimating params for p-values, randomly select a total of 
   //    sample_count matches, a constant fraction from each peptide mod
-  int sample_per_pep_mod =  sample_count / num_peptide_mods;
-  carp(CARP_DEBUG, "Got %d peptide mods, sample %i per", 
-       num_peptide_mods, sample_per_pep_mod);
+  //int sample_per_pep_mod =  sample_count / num_peptide_mods;
+  //carp(CARP_DEBUG, "Got %d peptide mods, sample %i per", 
+  //     num_peptide_mods, sample_per_pep_mod);
 
   // for each spectrum
   while(filtered_spectrum_charge_iterator_has_next(spectrum_iterator)){
@@ -185,17 +189,18 @@ int search_main(int argc, char** argv){
     SPECTRUM_T* spectrum = 
       filtered_spectrum_charge_iterator_next(spectrum_iterator, &charge);
     double mass = get_spectrum_neutral_mass(spectrum, charge);
-    //double mass = get_spectrum_singly_charged_mass(spectrum, charge);
 
-    carp(CARP_DETAILED_INFO, 
-         "Searching spectrum number %i, charge %i, search number %i",
-         get_spectrum_first_scan(spectrum), charge,
-         spectrum_searches_counter+1 );
+    if( ((spectrum_searches_counter+1) % progress_increment) == 0 ){
+      carp(CARP_INFO, 
+           "Searching spectrum number %i, charge %i, search number %i",
+           get_spectrum_first_scan(spectrum), charge,
+           spectrum_searches_counter+1 );
+    }
 
     // with just the target database decide how many peptide mods to use
     // create an empty match collection 
     MATCH_COLLECTION_T* match_collection = 
-      new_empty_match_collection( FALSE ); // is decoy
+      new_empty_match_collection( FALSE ); // is decoy = false
 
     // assess scores after all pmods with x amods have been searched
     int cur_aa_mods = 0;
@@ -225,9 +230,12 @@ int search_main(int argc, char** argv){
                                                  index,
                                                  database);
       // score peptides
-      int added = add_matches(match_collection, spectrum, 
-                              charge, peptide_iterator,
-                              sample_per_pep_mod );
+      int added = add_matches(match_collection, 
+                              spectrum, 
+                              charge, 
+                              peptide_iterator,
+                              FALSE // is decoy
+                              );
 
       carp(CARP_DEBUG, "Added %i matches", added);
 
@@ -249,21 +257,10 @@ int search_main(int argc, char** argv){
     // calculate p-values
     if( compute_pvalues == TRUE ){
       carp(CARP_DEBUG, "Estimating Weibull parameters.");
-      /*
-      int estimate_sample_size = 500;  // get this from ??
-      estimate_weibull_parameters(match_collection, 
-                                  XCORR, // should be parameter "score-type"
-                                  estimate_sample_size, 
-                                  spectrum, 
-                                  charge);
-
-      carp(CARP_DEBUG, "Calculating p-values.");
-      compute_p_values(match_collection);
-      */
-      if( estimate_weibull_parameters_from_sample_matches(match_collection,
+      //if( estimate_weibull_parameters_from_sample_matches(match_collection,
+      if( estimate_weibull_parameters_from_xcorrs(match_collection,
                                                           spectrum,
                                                           charge) ){
-
         carp(CARP_DEBUG, "Calculating p-values.");
         compute_p_values(match_collection);
       }else{
@@ -271,61 +268,106 @@ int search_main(int argc, char** argv){
       }
     }
 
-    // print matches
-    carp(CARP_DEBUG, "About to print target matches");
-    print_matches(match_collection, spectrum, FALSE,// is decoy
-                  psm_file_array[0], sqt_file, decoy_sqt_file);
-
-    // ?? does this free all the matches, all the spectra and all the peptides?
-    free_match_collection(match_collection);
-
+    if( combine_target_decoy == FALSE ){
+      // print matches
+      carp(CARP_DEBUG, "About to print target matches");
+      print_matches(
+                    match_collection, 
+                    spectrum, 
+                    FALSE,// is decoy
+                    psm_file_array[0], 
+                    sqt_file, 
+                    decoy_sqt_file, 
+                    tab_file,
+                    decoy_tab_file
+                    );
+      
+      //does this free all the matches, all the spectra and all the peptides?
+      free_match_collection(match_collection);
+      match_collection = NULL;
+    }
     // now score same number of mods for decoys
     int max_mods = mod_idx;
 
-    // for num_decoys
+    // for num_decoys  and num_decoy_repeats
     int decoy_idx = 0;
+    int repeat_idx = 0;
+    int num_decoy_repeats = get_int_parameter("num-decoys-per-target");
+    // decoy files is 0 but we want to do at least one decoy searc for tdc
+    num_decoys = (combine_target_decoy) ? 1 : num_decoys;
+
     for(decoy_idx = 0; decoy_idx < num_decoys; decoy_idx++ ){
       carp(CARP_DETAILED_DEBUG, "Searching decoy %i", decoy_idx+1);
 
-      // create an empty match collection 
-      MATCH_COLLECTION_T* match_collection = 
-        new_empty_match_collection( TRUE ); // is decoy
+      if( combine_target_decoy == FALSE ){// create an empty match collection 
+        match_collection = new_empty_match_collection( TRUE ); // is decoy
+      }// else add to match_collection from above
 
       for(mod_idx = 0; mod_idx < max_mods; mod_idx++){
-        /*
-        // create an empty match collection 
-          MATCH_COLLECTION_T* match_collection = 
-          new_empty_match_collection( TRUE ); // is decoy
-        */
-
+          
         // get peptide mod
         PEPTIDE_MOD_T* peptide_mod = peptide_mods[mod_idx];
-
-        // get peptide iterator
-        MODIFIED_PEPTIDES_ITERATOR_T* peptide_iterator = 
-          new_modified_peptides_iterator_from_mass(mass,
-                                                   peptide_mod,
-                                                   index,
-                                                   database);
-        // score peptides
-        int added = add_matches(match_collection, spectrum, 
-                                charge, peptide_iterator,
-                                0);// no sampling for param estimation
-        carp(CARP_DEBUG, "Added %i matches", added);
         
-        free_modified_peptides_iterator(peptide_iterator);
+        // for multiple decoy searches written to one file, repeat here
+        for(repeat_idx=0; repeat_idx < num_decoy_repeats; repeat_idx++){
+          // get peptide iterator
+          MODIFIED_PEPTIDES_ITERATOR_T* peptide_iterator = 
+            new_modified_peptides_iterator_from_mass(mass,
+                                                     peptide_mod,
+                                                     index,
+                                                     database);
+          // score peptides
+          int added = add_matches(match_collection, 
+                                  spectrum, 
+                                  charge, 
+                                  peptide_iterator,
+                                  //0, // no sampling for param estimation
+                                  TRUE);// is decoy
+          carp(CARP_DEBUG, "Added %i matches", added);
+          
+          free_modified_peptides_iterator(peptide_iterator);
+        }// next repeat
         
       }// last mod
 
       // print matches
       // only print first decoy to sqt
       FILE* tmp_decoy_sqt_file = decoy_sqt_file;
-      if( decoy_idx > 0 ){ tmp_decoy_sqt_file = NULL; }
-      carp(CARP_DEBUG, "About to print decoy matches");
-      print_matches(match_collection, spectrum, TRUE,// is decoy
-                    psm_file_array[1+decoy_idx], sqt_file, tmp_decoy_sqt_file);
+      FILE* tmp_decoy_tab_file = decoy_tab_file;
+      if( decoy_idx > 0 ){ 
+        tmp_decoy_sqt_file = NULL; 
+        tmp_decoy_tab_file = NULL; 
+      }
+      
+      if( combine_target_decoy == FALSE ){ // print to decoy file
+        carp(CARP_DEBUG, "About to print decoy matches");
+        print_matches(
+                      match_collection, 
+                      spectrum, 
+                      TRUE,// is decoy
+                      psm_file_array[1+decoy_idx], 
+                      sqt_file, 
+                      tmp_decoy_sqt_file,
+                      tab_file, 
+                      tmp_decoy_tab_file
+                      );
+        
+        free_match_collection(match_collection);
+      }else{ // print all to target file
+      carp(CARP_DEBUG, "About to print target and decoy matches");
+      print_matches(
+                    match_collection, 
+                    spectrum, 
+                    FALSE,// is decoy
+                    psm_file_array[0], 
+                    sqt_file, 
+                    decoy_sqt_file, 
+                    tab_file,
+                    decoy_tab_file
+                    );
+      }
 
-      free_match_collection(match_collection);
+
 
     }// last decoy
 
@@ -408,20 +450,22 @@ int prepare_protein_input(char* input_file,
 void open_output_files(
   FILE*** psm_file_array, ///< put binary psm filehandles here -out
   FILE** sqt_file,        ///< put text sqt filehandle here -out
-  FILE** decoy_sqt_file)  ///< put decoy sqt filehandle here -out
+  FILE** decoy_sqt_file,  ///< put decoy sqt filehandle here -out
+  FILE** tab_file,        ///< put text sqt filehandle here -out
+  FILE** decoy_tab_file)  ///< put decoy sqt filehandle here -out
 {
   char* match_output_folder = get_string_parameter("match-output-folder");
   MATCH_SEARCH_OUTPUT_MODE_T output_type = get_output_type_parameter(
                                                     "output-mode");
   BOOLEAN_T overwrite = get_boolean_parameter("overwrite");
-  carp(CARP_DEBUG, "The output type is %d (binary, sqt, all)" \
+  carp(CARP_DEBUG, "The output type is %d (binary, sqt, tab, all)" \
        " and overwrite is '%d'", (int)output_type, (int)overwrite);
 
 
   // create binary psm files (allocate memory, even if not used)
   *psm_file_array = create_psm_files();
 
-  if( output_type != BINARY_OUTPUT ){ //ie sqt or all
+  if(output_type == SQT_OUTPUT || output_type == ALL_OUTPUT){
 
     //create sqt file handles
     carp(CARP_DEBUG, "Opening sqt files");
@@ -439,6 +483,27 @@ void open_output_files(
 
     if(sqt_file == NULL || decoy_sqt_file == NULL){
       carp(CARP_DEBUG, "sqt file or decoy is null");
+    }
+  }
+
+  if(output_type == TAB_OUTPUT || output_type == ALL_OUTPUT){
+
+    //create sqt file handles
+    carp(CARP_DEBUG, "Opening tab delimited files");
+    char* tab_filename = get_string_parameter_pointer("tab-output-file");
+    *tab_file = create_file_in_path(tab_filename, 
+                                    match_output_folder, 
+                                    overwrite);
+    char* decoy_tab_filename = get_string_parameter_pointer(
+                                                    "decoy-tab-output-file");
+    if( get_int_parameter("number-decoy-set") > 0 ){
+      *decoy_tab_file = create_file_in_path(decoy_tab_filename,
+                                            match_output_folder,
+                                            overwrite);
+    }
+
+    if(tab_file == NULL || decoy_tab_file == NULL){
+      carp(CARP_DEBUG, "tab file or decoy tab file is null");
     }
 
   }

@@ -16,7 +16,7 @@
  * spectrum search.  One PEPTIDE_MOD corresponds to one mass window
  * that must be searched.
  * 
- * $Revision: 1.2 $
+ * $Revision: 1.2.4.1 $
  */
 
 #include "peptide_modifications.h"

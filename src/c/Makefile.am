@@ -82,11 +82,11 @@ NON_PERCOLATOR_LIB_FILES= \
 
 PERCOLATOR_LIB_FILES = 
 
-if USE_CUDA
+#if USE_CUDA
   CUDA_CFLAGS=-DCRUX_USE_CUDA
-else
-  CUDA_CFLAGS=""
-endif
+#else
+#  CUDA_CFLAGS=""
+#endif
 
 if PERCOLATOR
   LIBFILES=$(PERCOLATOR_LIB_FILES) $(NON_PERCOLATOR_LIB_FILES)
@@ -160,10 +160,12 @@ crux_LDADD = \
 else
 crux_SOURCES = crux-main.c  crux-main.h percolator.c percolator.h
 
-crux_CFLAGS = $(AM_CFLAGS) -DMAIN -DCRUX_USE_CUDA
+crux_CFLAGS = $(AM_CFLAGS) -DMAIN -DCRUX_USE_CUDA -I./cuda
 crux_LDADD = \
-     -lcrux -L$(CUDA_DIR)/lib -lcublasemu -lcuda
+     -lcrux -L$(CUDA_DIR)/lib -lcublas -lcudart
 endif
+
+AM_CFLAGS += -DCRUX_USE_CUDA
 
 paramdir = $(prefix)/doc
 param_DATA = default.params

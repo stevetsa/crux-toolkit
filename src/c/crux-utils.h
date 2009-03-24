@@ -1,7 +1,7 @@
 /**
  * \file crux-utils.h
- * $Revision: 1.32 $
- * $Author: frewen $
+ * $Revision: 1.32.14.1 $
+ * $Author: mcilwain $
  * \brief Utilities for the crux project
  */
 #ifndef CRUX_UTILS_H
@@ -93,7 +93,7 @@ char* signed_int_to_char(int i);
 /**
  *prints the peptide type given it's enum value
  */
-void print_peptide_type(PEPTIDE_TYPE_T peptide_type, FILE* file);
+//void print_peptide_type(PEPTIDE_TYPE_T peptide_type, FILE* file);
 
 /**
  * given two strings return a concatenated third string
@@ -214,6 +214,18 @@ BOOLEAN_T valid_peptide_sequence( char* sequence);
 void quicksort(float numbers[], int array_size);
 
 /**
+ * \brief Shuffle an array of floats.  Uses the Knuth algorithm.  Uses
+ * get_random_number_interval() to generate random numbers. 
+ */
+void shuffle_floats(float* array, int size);
+
+/**
+ * \brief Comparison function for reverse sorting floats.
+ * \returns -1,0,1 if a is <,=,> b
+ */
+int compare_floats_descending(const void* a, const void* b);
+
+/**
  *\returns a heap allocated feature name array for the algorithm type
  */
 char** generate_feature_name_array(
@@ -274,8 +286,8 @@ void fit_two_parameter_weibull(
 
 BOOLEAN_T string_to_mass_type(char*, MASS_TYPE_T*);
 BOOLEAN_T mass_type_to_string(MASS_TYPE_T, char*);
-BOOLEAN_T string_to_peptide_type(char*, PEPTIDE_TYPE_T*);
-BOOLEAN_T peptide_type_to_string(PEPTIDE_TYPE_T type, char* type_str);
+//BOOLEAN_T string_to_peptide_type(char*, PEPTIDE_TYPE_T*);
+//BOOLEAN_T peptide_type_to_string(PEPTIDE_TYPE_T type, char* type_str);
 BOOLEAN_T string_to_sort_type(char*, SORT_TYPE_T*);
 BOOLEAN_T sort_type_to_string(SORT_TYPE_T, char*);
 BOOLEAN_T string_to_algorithm_type(char*, ALGORITHM_TYPE_T*);
@@ -286,5 +298,12 @@ BOOLEAN_T string_to_output_type(char*, MATCH_SEARCH_OUTPUT_MODE_T*);
 BOOLEAN_T output_type_to_string(MATCH_SEARCH_OUTPUT_MODE_T, char*);
 BOOLEAN_T string_to_ion_type(char* , ION_TYPE_T*);
 BOOLEAN_T ion_type_to_string(ION_TYPE_T, char*);
+
+// new style of type_to_string and string_to_type functions
+// requires an invalid value for each enum
+DIGEST_T string_to_digest_type(char*);
+char* digest_type_to_string(DIGEST_T);
+ENZYME_T string_to_enzyme_type(char*);
+char* enzyme_type_to_string(ENZYME_T);
 
 #endif

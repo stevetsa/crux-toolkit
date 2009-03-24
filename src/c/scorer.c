@@ -4,7 +4,7 @@
  * CREATE DATE: 9 Oct 2006
  * DESCRIPTION: object to score spectrum vs. spectrum or spectrum
  * vs. ion_series 
- * REVISION: $Revision: 1.67.4.1 $
+ * REVISION: $Revision: 1.67.4.2 $
  ****************************************************************************/
 
 #include <math.h>
@@ -1136,11 +1136,13 @@ float cross_correlation(
   int size = (int)scorer->sp_max_mz;
   float* observed = scorer->observed;
   #ifdef CRUX_USE_CUDA
-  //carp(CARP_FATAL,"USing cuda calculation");
-  return cross_correlation_cuda(observed, theoretical, size);
-  #else
-  return cross_correlation_regular(observed, theoretical, size);
+  //make sure that cuda is initialized, otherwise, just do the normal calculation.
+  if (is_cudablas_initialized()) {
+    return cross_correlation_cuda(observed, theoretical, size);
+  }
+  else
   #endif
+  return cross_correlation_regular(observed, theoretical, size);
 }
 
 /**
@@ -1180,8 +1182,8 @@ float gen_score_xcorr(
   
   // do cross correlation between observed spectrum(in scorer) and theoretical spectrum.
   // use the two intensity arrays that were created
-
   final_score = cross_correlation(scorer, theoretical);
+
   // free theoretical spectrum
   free(theoretical);
 

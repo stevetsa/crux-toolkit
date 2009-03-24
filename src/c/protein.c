@@ -1,6 +1,6 @@
 /*************************************************************************//**
  * \file protein.c
- * $Revision: 1.77 $
+ * $Revision: 1.77.4.1 $
  * \brief: Object for representing a single protein.
  ****************************************************************************/
 #include <stdio.h>
@@ -902,20 +902,177 @@ float calculate_subsequence_mass (
   return peptide_mass;
 }
 
-/*
- * Returns true if this is a valid cleavage position. 
- * TODO Eventually change to actually allow different locations than 
- * K or R.
+/**
+ * \brief Decide if a residue is in an inclusion list or is not in an
+ * exclusion list. 
+ *
+ * For use with the user-specified enzyme digestion.  Takes an amino
+ * acid, a list of amino acids, and a flag for if it is an inclusion
+ * list or an exclusion list.  A cleavage can happen before/after the
+ * given residue if it is either in the inclusion list or is not in
+ * the exculsion list.
+ * \returns TRUE if the residue is in the inclusion list or not in the
+ * exclusion list.
+ */
+BOOLEAN_T is_residue_legal(char aa, 
+                           char* aa_list, 
+                           int list_size, 
+                           BOOLEAN_T for_inclusion){
+
+  // The logic for returning for_inclusion:
+  // For an inclusion list (TRUE), once we find the aa it passes (TRUE)
+  // For an exclusion list (FALSE), once we find the aa, it fails (FALSE)
+  int idx=0;
+  for(idx=0; idx < list_size; idx++){
+    if( aa == aa_list[idx] ){ return for_inclusion; }
+  }
+  // or if we got to the end of the list and didn't find a match
+  // for inclusion, it fails (!TRUE)
+  // for exclusion, it passes (!FALSE)
+  return ! for_inclusion;
+}
+
+/**
+ * Compares the first and second amino acids in the given sequence to
+ * see if they conform to the cleavage rules of the given enzyme.  For
+ * NO_ENZYME, always returns TRUE.
+ *
+ * \returns TRUE if this is a valid cleavage position for the given enzyme.
  */
 BOOLEAN_T valid_cleavage_position(
-    char* sequence
-    ){
+   char* sequence,
+   //   PEPTIDE_TYPE_T cleavage
+   ENZYME_T enzyme
+){
 
-  if ((sequence[0] == 'K' || sequence[0] == 'R') && (sequence[1] != 'P')){
+  switch(enzyme){
+
+  case TRYPSIN:
+    if ((sequence[0] == 'K' || sequence[0] == 'R') && (sequence[1] != 'P')){
+      return TRUE;
+    } else {
+      return FALSE;
+    }
+    break;
+    
+  case CHYMOTRYPSIN:
+    if ((sequence[0] == 'F' || sequence[0] == 'W' || sequence[0] == 'Y') 
+        && (sequence[1] != 'P')){
+      return TRUE;
+    } else {
+      return FALSE;
+    }
+    break;
+    break;
+
+  case ELASTASE:
+    if ((sequence[0] == 'A' || sequence[0] == 'L' ||
+         sequence[0] == 'I' || sequence[0] == 'V') 
+        && (sequence[1] != 'P')){
+      return TRUE;
+    } else {
+      return FALSE;
+    }
+    break;
+
+  case CLOSTRIPAIN:
+    if (sequence[0] == 'R'){
+      return TRUE;
+    } else {
+      return FALSE;
+    }
+    break;
+
+  case CYANOGEN_BROMIDE:
+    if (sequence[0] == 'M'){
+      return TRUE;
+    } else {
+      return FALSE;
+    }
+    break;
+
+  case IODOSOBENZOATE:
+    if (sequence[0] == 'W'){
+      return TRUE;
+    } else {
+      return FALSE;
+    }
+    break;
+
+  case PROLINE_ENDOPEPTIDASE:
+    if (sequence[0] == 'P'){
+      return TRUE;
+    } else {
+      return FALSE;
+    }
+    break;
+
+  case STAPH_PROTEASE:
+    if (sequence[0] == 'E'){
+      return TRUE;
+    } else {
+      return FALSE;
+    }
+    break;
+
+  case ASPN:
+    if (sequence[1] == 'D'){
+      return TRUE;
+    } else {
+      return FALSE;
+    }
+    break;
+
+  case MODIFIED_CHYMOTRYPSIN:
+    if ((sequence[0] == 'F' || sequence[0] == 'L' ||
+         sequence[0] == 'W' || sequence[0] == 'Y') 
+        && (sequence[1] != 'P')){
+      return TRUE;
+    } else {
+      return FALSE;
+    }
+    break;
+
+  case ELASTASE_TRYPSIN_CHYMOTRYPSIN:
+    if ((sequence[0] == 'A' || sequence[0] == 'L' ||
+         sequence[0] == 'I' || sequence[0] == 'V' ||
+         sequence[0] == 'K' || sequence[0] == 'R' ||
+         sequence[0] == 'W' || sequence[0] == 'F' ||
+         sequence[0] == 'Y' ) 
+        && (sequence[1] != 'P')){
+      return TRUE;
+    } else {
+      return FALSE;
+    }
+    break;
+
+  case CUSTOM_ENZYME:
+    //carp(CARP_FATAL, "The custom enzyme is not yet implmented.");
+    //exit(1);
+
+    return ( is_residue_legal(sequence[0], 
+                              pre_cleavage_list,
+                              pre_list_size, 
+                              pre_for_inclusion)
+             && 
+             is_residue_legal(sequence[1], 
+                              post_cleavage_list,
+                              post_list_size, 
+                              post_for_inclusion) );
+    break;
+
+  case NO_ENZYME:
     return TRUE;
-  } else {
-    return FALSE;
-  }
+    break;
+
+  case INVALID_ENZYME:
+    carp(CARP_FATAL, "Cannot generate peptides with invalid enzyme.");
+    exit(1);
+    break;
+
+  }// end switch
+
+  return FALSE;
 }
 
 /*
@@ -1047,6 +1204,8 @@ void prepare_protein_peptide_iterator(
       iterator->peptide_constraint);
   double* mass_array = (double*)mycalloc(protein->length+1, sizeof(double));
 
+  //  PEPTIDE_TYPE_T pep_type = get_peptide_type_parameter("cleavages");
+  ENZYME_T enzyme = get_peptide_constraint_enzyme(iterator->peptide_constraint);
   float mass_h2o = MASS_H2O_AVERAGE;
 
   // set correct H2O mass
@@ -1076,7 +1235,8 @@ void prepare_protein_peptide_iterator(
     // is a cleavage site because cleavages come *after* the current amino acid
     iterator->cumulative_cleavages[sequence_idx] = cleavage_position_idx;
 
-    if (valid_cleavage_position(protein->sequence + sequence_idx)){ 
+    //if (valid_cleavage_position(protein->sequence + sequence_idx)){ 
+    if (valid_cleavage_position(protein->sequence + sequence_idx, enzyme)){ 
       cleavage_positions[cleavage_position_idx++] = sequence_idx + 1;
     } else {
       non_cleavage_positions[non_cleavage_position_idx++] = sequence_idx + 1;
@@ -1096,16 +1256,21 @@ void prepare_protein_peptide_iterator(
   int num_non_cleavage_positions = non_cleavage_position_idx;
   iterator->mass_array = mass_array;
 
-  //carp(CARP_DETAILED_DEBUG, "num_cleavage_positions = %i", num_cleavage_positions);
+  carp(CARP_DETAILED_DEBUG, "num_cleavage_positions = %i", num_cleavage_positions);
 
   // now determine the cleavage positions that actually match our constraints
   BOOLEAN_T missed_cleavages = get_boolean_parameter("missed-cleavages");
-  PEPTIDE_TYPE_T peptide_type = get_peptide_constraint_peptide_type(
-      iterator->peptide_constraint);
 
-  switch (peptide_type){
+  //  PEPTIDE_TYPE_T peptide_type = get_peptide_constraint_peptide_type(
+  //    iterator->peptide_constraint);
+  DIGEST_T digestion = 
+    get_peptide_constraint_digest(iterator->peptide_constraint);
 
-    case TRYPTIC:
+  switch (digestion){
+  //  switch (peptide_type){
+
+  case FULL_DIGEST:
+    //case TRYPTIC:
       iterator_add_cleavages(iterator,
         cleavage_positions, num_cleavage_positions-1,
         cleavage_positions+1, num_cleavage_positions-1, 
@@ -1113,7 +1278,8 @@ void prepare_protein_peptide_iterator(
 
       break;
 
-    case PARTIALLY_TRYPTIC:
+  case PARTIAL_DIGEST:
+    //case PARTIALLY_TRYPTIC:
       // add the C-term tryptic cleavage positions.
       iterator_add_cleavages(iterator,
         all_positions, protein->length,
@@ -1129,7 +1295,7 @@ void prepare_protein_peptide_iterator(
         missed_cleavages);
 
       break;
-
+      /*
     case N_TRYPTIC:
       iterator_add_cleavages(iterator,
         cleavage_positions, num_cleavage_positions-1,
@@ -1143,8 +1309,10 @@ void prepare_protein_peptide_iterator(
         cleavage_positions+1, num_cleavage_positions-1, 
         missed_cleavages);
       break;
+      */
 
-    case ANY_TRYPTIC:
+  case NON_SPECIFIC_DIGEST:
+      //case ANY_TRYPTIC:
       iterator_add_cleavages(iterator,
         all_positions, protein->length,
         all_positions+1, protein->length, // len-1?
@@ -1152,17 +1320,26 @@ void prepare_protein_peptide_iterator(
         TRUE); // for unspecific ends, allow internal cleavage sites
       break;
 
-    case NOT_TRYPTIC:
+  case INVALID_DIGEST:
+    carp(CARP_FATAL, "Invalid digestion type in protein peptide iterator.");
+    exit(1);
+      /*  
+  case NOT_TRYPTIC:
     default: 
       die("I'm not sure what this peptide type is: %i", peptide_type);
-
+      */
   }
 
+/*
   int idx;
   for (idx=0; idx < iterator->num_cleavages; idx++){
-    carp(CARP_DETAILED_DEBUG, "%i->%i", iterator->nterm_cleavage_positions[idx], iterator->peptide_lengths[idx], iterator->peptide_lengths[idx], iterator->protein->sequence[iterator->nterm_cleavage_positions[idx]-1]);
+    carp(CARP_DETAILED_DEBUG, "%i->%i", 
+         iterator->nterm_cleavage_positions[idx], 
+         //iterator->peptide_lengths[idx], 
+         //iterator->peptide_lengths[idx], 
+       iterator->protein->sequence[iterator->nterm_cleavage_positions[idx]-1]);
   }
-
+*/
   if (iterator->num_cleavages > 0){
     iterator->has_next = TRUE;
   } else { 
@@ -1265,9 +1442,9 @@ PEPTIDE_T* protein_peptide_iterator_next(
     return NULL;
   }
 
-  // set peptide type
-  PEPTIDE_TYPE_T peptide_type = get_peptide_constraint_peptide_type(
-      iterator->peptide_constraint);
+  // get peptide type
+  //PEPTIDE_TYPE_T peptide_type = get_peptide_constraint_peptide_type(
+  //iterator->peptide_constraint);
 
   int cleavage_idx = iterator->current_cleavage_idx;
   int current_start = iterator->nterm_cleavage_positions[cleavage_idx];
@@ -1276,7 +1453,7 @@ PEPTIDE_T* protein_peptide_iterator_next(
 
   // create new peptide
   PEPTIDE_T* peptide = new_peptide(current_length, peptide_mass, 
-      iterator->protein, current_start, peptide_type);
+                                   iterator->protein, current_start);//, peptide_type);
   
   // update position of iterator
   ++iterator->current_cleavage_idx;

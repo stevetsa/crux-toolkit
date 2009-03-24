@@ -16,7 +16,7 @@
  * spectrum search.  One PEPTIDE_MOD corresponds to one mass window
  * that must be searched.
  * 
- * $Revision: 1.2 $
+ * $Revision: 1.2.4.1 $
  */
 
 #include "modifications.h"
@@ -59,17 +59,17 @@ char mod_sqt_symbols[MAX_AA_MODS] = //{'*', '@', '#', '^', '~', '%',
 
 unsigned short mod_id_masks[MAX_AA_MODS] = 
   {
-   0x0020,   // 0000 0000 0010 0000
-   0x0040,   // 0000 0000 0100 0000
-   0x0080,   // 0000 0000 1000 0000
-   0x0100,   // 0000 0001 0000 0000
-   0x0200,   // 0000 0010 0000 0000
-   0x0400,   // 0000 0100 0000 0000
-   0x0800,   // 0000 1000 0000 0000
-   0x1000,   // 0001 0000 0000 0000
-   0x2000,   // 0010 0000 0000 0000
-   0x4000,   // 0100 0000 0000 0000
-   0x8000    // 1000 0000 0000 0000
+   0x0020,   // 0000 0000 0010 0000 *
+   0x0040,   // 0000 0000 0100 0000 #
+   0x0080,   // 0000 0000 1000 0000 @
+   0x0100,   // 0000 0001 0000 0000 ^
+   0x0200,   // 0000 0010 0000 0000 ~
+   0x0400,   // 0000 0100 0000 0000 %
+   0x0800,   // 0000 1000 0000 0000 $
+   0x1000,   // 0001 0000 0000 0000 &
+   0x2000,   // 0010 0000 0000 0000 !
+   0x4000,   // 0100 0000 0000 0000 ?
+   0x8000    // 1000 0000 0000 0000 +
 }; 
 
 /* Private data types, typedefed in objects.h */
@@ -233,8 +233,8 @@ char* modified_aa_string_to_string(MODIFIED_AA_T* aa_string, int length){
     }
     //    mod_str_idx++;
   }
-  carp(CARP_DETAILED_DEBUG, "Found %d modified aas out of %i",
-       count - mod_str_idx, count);
+  //  carp(CARP_DETAILED_DEBUG, "Found %d modified aas out of %i",
+  //     count - mod_str_idx, count);
   //int mod_str_len = mod_str_idx;  // keep track of aa_string length
 
   // create a buffer to hold all aas and mod symbols
