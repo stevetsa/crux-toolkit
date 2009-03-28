@@ -4,7 +4,7 @@
  * CREATE DATE: 9 Oct 2006
  * DESCRIPTION: object to score spectrum vs. spectrum or spectrum
  * vs. ion_series 
- * REVISION: $Revision: 1.67.4.2 $
+ * REVISION: $Revision: 1.67.4.3 $
  ****************************************************************************/
 
 #include <math.h>
@@ -23,7 +23,7 @@
 #include "parameter.h"
 #include "unistd.h"
 
-#ifdef CRUX_USE_CUDA
+#ifdef CRUX_USE_CUDA1
 #include "crux_cuda.h"
 #endif
 
@@ -1135,7 +1135,7 @@ float cross_correlation(
 {
   int size = (int)scorer->sp_max_mz;
   float* observed = scorer->observed;
-  #ifdef CRUX_USE_CUDA
+  #ifdef CRUX_USE_CUDA1
   //make sure that cuda is initialized, otherwise, just do the normal calculation.
   if (is_cudablas_initialized()) {
     return cross_correlation_cuda(observed, theoretical, size);
@@ -1862,6 +1862,13 @@ int get_scorer_sp_b_y_ion_possible(
 {
   return scorer->sp_b_y_ion_possible;
 }
+
+#ifdef CRUX_USE_CUDA2
+float* get_scorer_observed_array(SCORER_T* scorer) {
+  return scorer -> observed;
+}
+#endif
+
 
 /**
  *\returns the array_resolution value of the scorer

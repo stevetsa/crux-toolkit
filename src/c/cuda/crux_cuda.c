@@ -6,10 +6,12 @@
 
 BOOLEAN_T cudablas_initialized = FALSE;
 
-float *d_pThe = NULL;
-float *d_pObs = NULL;
-int current_size = -1;
-float *h_pObs_current = NULL;
+#ifdef CRUX_USE_CUDA2
+int spectrum_size = -1;
+float* d_pThe_Matrix = NULL;
+float* d_pObs = NULL;
+float* d_pXCorrs = NULL;
+#endif
 
 
 BOOLEAN_T initialize_cudablas() {
@@ -38,8 +40,7 @@ BOOLEAN_T initialize_cudablas() {
 
 BOOLEAN_T shutdown_cudablas() {
   cublasStatus status;
-
-  //check to see if vectors are allocated.
+#ifdef CRUX_USE_CUDA1
   if (d_pThe != NULL) {
       //free memory on device
       cublasFree(d_pThe);
@@ -50,7 +51,15 @@ BOOLEAN_T shutdown_cudablas() {
     cublasFree(d_pObs);
     d_pObs = NULL;
   }
-
+#endif
+#ifdef CRUX_USE_CUDA2
+  if (d_pThe_Matrix != NULL)
+    cublasFree(d_pThe_Matrix);
+  if (d_pObs != NULL)
+    cublasFree(d_pObs);
+  if (d_pXCorrs != NULL)
+    cublasFree(d_pXCorrs);
+#endif
   if (!cudablas_initialized)
     return TRUE;
   else {
@@ -64,8 +73,6 @@ BOOLEAN_T shutdown_cudablas() {
       cudablas_initialized = FALSE;
       return TRUE;
     }
-      
-      
   }
 }
 
@@ -73,6 +80,11 @@ BOOLEAN_T is_cudablas_initialized() {
   return cudablas_initialized; 
 }
 
+#ifdef CRUX_USE_CUDA1
+float *d_pThe = NULL;
+float *d_pObs = NULL;
+int current_size = -1;
+float *h_pObs_current = NULL;
 
 BOOLEAN_T checkSpace(int size) {
   cublasStatus status;
@@ -107,7 +119,6 @@ BOOLEAN_T checkSpace(int size) {
     current_size = size;
     return TRUE;
   }
-
 }
 
 
@@ -159,3 +170,105 @@ float cross_correlation_cuda(
 
   return score_at_zero / 10000.0;
 }
+#endif /*CRUX_USE_CUDA*/
+
+
+#ifdef CRUX_USE_CUDA2
+void cuda_set_spectrum_size(int size) {
+  cublasStatus status;
+
+  if (size != spectrum_size) {
+    carp(CARP_FATAL, "cuda_set_spectrum_size():%d",size);
+    spectrum_size = size;
+    int n = spectrum_size;
+    int n2 = spectrum_size * cuda_get_max_theoretical();
+    //allocate space for the theoretical matrix, the observed vector, and the result vector.
+    if (d_pThe_Matrix != NULL) cublasFree(d_pThe_Matrix);
+    status = cublasAlloc(n2, sizeof(float), (void**)&d_pThe_Matrix);
+
+    if (d_pObs != NULL) cublasFree(d_pObs);
+    status = cublasAlloc(n, sizeof(float), (void**)&d_pObs);
+
+    if (d_pXCorrs != NULL) cublasFree(d_pXCorrs);
+    status = cublasAlloc(n, sizeof(float), (void**)&d_pXCorrs);
+  }
+
+}
+
+int cuda_get_max_theoretical() {
+  //TODO: calculate based upon card memory.
+  return 50;
+}
+
+
+void cuda_set_theoretical(float* h_pThe, int index) {
+  cublasStatus status;
+  int i;
+
+  for (i=0;i<spectrum_size;i++)
+    carp(CARP_FATAL, "Cuda_set_theoretical[%i]=%f",i,h_pThe[i]);
+
+  carp(CARP_FATAL, "cuda_set_theoretical:index:%d",index);
+  status = cublasSetVector(spectrum_size, sizeof(float), h_pThe, 1, d_pThe_Matrix, index);
+}
+
+void cuda_set_observed(float* h_pObs) {
+  cublasStatus status;
+  int i;
+  for (i=0;i<spectrum_size;i++)
+    carp(CARP_FATAL, "cuda_set_observed[%i]=%f",i,h_pObs[i]);
+  
+
+  status = cublasSetVector(spectrum_size, sizeof(float), h_pObs, 1, d_pObs, 1);
+}
+
+void cuda_calculate_xcorrs(float* xcorrs) {
+  cuda_calculate_xcorrsN(xcorrs, cuda_get_max_theoretical());
+}
+
+void cuda_calculate_xcorrsN(float* xcorrs, int nthe) {
+  cublasStatus status;
+
+  carp(CARP_FATAL, "cuda_calculate_xcorrsN:%d",nthe);
+  /*
+    trans specifies op(A). If trans == 'N' or 'n', .
+    If trans == 'T', 't', 'C', or 'c', .
+    m specifies the number of rows of matrix A; m must be at least zero.
+    n specifies the number of columns of matrix A; n must be at least zero.
+    alpha single-precision scalar multiplier applied to op(A).
+    A single-precision array of dimensions (lda, n) if trans == 'N' or
+    'n', of dimensions (lda, m) otherwise; lda must be at least
+    max(1, m) if trans == 'N' or 'n' and at least max(1, n) otherwise.
+    lda leading dimension of two-dimensional array used to store matrix A.
+    x single-precision array of length at least if
+    trans == 'N' or 'n', else at least .
+    incx specifies the storage spacing for elements of x; incx must not be zero.
+    beta single-precision scalar multiplier applied to vector y. If beta is zero, y
+    is not read.
+  */
+  char trans = 'T'; //transpose to get dot products.
+  int m = spectrum_size; //rows is the spectrum_size.
+  int n = nthe; //columns are the number of theoretical spectra.
+  float alpha = 1.0 / 10000.0; //for the wierd division part of the cross-correlation calculation.
+  float* A = d_pThe_Matrix;
+  int lda = 1;
+  float* x = d_pObs;
+  int incx = 1;
+  float beta = 0;
+  float* y = d_pXCorrs;
+  int incy = 1;
+
+  carp(CARP_FATAL, "CRUX_USE_CUDA2:Multiplying");
+  //do the calculation.
+  cublasSgemv (trans, m, n, alpha, A, lda, x,
+	       incx, beta, y, incy);
+  //check the error.
+
+  carp(CARP_FATAL, "CRUX_USE_CUDA2:recovering result");
+  /* Read the result back */
+  status = cublasGetVector(n, sizeof(float), d_pXCorrs, 1, xcorrs, 1);
+  carp(CARP_FATAL, "CRUX_USE_CUDA2:cuda_calculateN:done.");
+  
+}
+
+#endif /*CRUX_USE_CUDA2*/

@@ -8,9 +8,14 @@
  *
  * AUTHOR: Chris Park
  * CREATE DATE: 11/27 2006
- * $Revision: 1.89.4.1 $
+ * $Revision: 1.89.4.2 $
  ****************************************************************************/
 #include "match_collection.h"
+
+#ifdef CRUX_USE_CUDA
+#include "crux_cuda.h"
+#endif
+
 
 #define PARAM_ESTIMATION_SAMPLE_COUNT 500
 //static BOOLEAN_T is_first_spectrum = TRUE;
@@ -136,6 +141,24 @@ BOOLEAN_T score_matches_one_spectrum(
   SPECTRUM_T* spectrum,
   int charge
   );
+
+BOOLEAN_T score_matches_one_spectrum_orig(
+  SCORER_TYPE_T score_type, 
+  MATCH_T** matches,
+  int num_matches,
+  SPECTRUM_T* spectrum,
+  int charge
+  );
+  
+#ifdef CRUX_USE_CUDA2
+BOOLEAN_T score_matches_one_spectrum_cuda(
+  SCORER_TYPE_T score_type, 
+  MATCH_T** matches,
+  int num_matches,
+  SPECTRUM_T* spectrum,
+  int charge
+  );
+#endif
 
 BOOLEAN_T populate_match_rank_match_collection(
  MATCH_COLLECTION_T* match_collection, 
@@ -1156,6 +1179,24 @@ BOOLEAN_T score_matches_one_spectrum(
   int charge
   ){
 
+#ifdef CRUX_USE_CUDA2
+  if (score_type == XCORR && is_cudablas_initialized()) {
+    carp(CARP_FATAL, "CRUX_USE_CUDA2-doing it");
+    return score_matches_one_spectrum_cuda(score_type, matches, num_matches, spectrum, charge);
+  }
+  else
+#endif
+    return score_matches_one_spectrum_orig(score_type, matches, num_matches, spectrum, charge);
+}
+
+BOOLEAN_T score_matches_one_spectrum_orig(
+  SCORER_TYPE_T score_type, 
+  //MATCH_COLLECTION_T* match_collection,
+  MATCH_T** matches,
+  int num_matches,
+  SPECTRUM_T* spectrum,
+  int charge
+  ){
   char type_str[64];
   scorer_type_to_string(score_type, type_str);
   carp(CARP_DETAILED_DEBUG, "Scoring matches for %s", type_str);
@@ -1225,7 +1266,118 @@ BOOLEAN_T score_matches_one_spectrum(
   return TRUE;
 }
 
+#ifdef CRUX_USE_CUDA2
+BOOLEAN_T score_matches_one_spectrum_cuda(
+  SCORER_TYPE_T score_type, 
+  //MATCH_COLLECTION_T* match_collection,
+  MATCH_T** matches,
+  int num_matches,
+  SPECTRUM_T* spectrum,
+  int charge
+  ){
+  char type_str[64];
+  scorer_type_to_string(score_type, type_str);
+  carp(CARP_DETAILED_DEBUG, "Scoring matches for %s", type_str);
 
+  //if( match_collection == NULL ){
+  if( matches == NULL || spectrum == NULL ){
+    carp(CARP_ERROR, "Cannot score matches in a NULL match collection.");
+    return FALSE;
+  }
+  
+ 
+
+  // create ion constraint
+  ION_CONSTRAINT_T* ion_constraint = new_ion_constraint_smart(score_type, 
+                                                              charge);
+  // create scorer
+  SCORER_T* scorer = new_scorer(score_type);
+
+  // create a generic ion_series that will be reused for each peptide sequence
+  ION_SERIES_T* ion_series = new_ion_series_generic(ion_constraint, charge);  
+  
+  // score all matches
+  int match_idx;
+  int i;
+  MATCH_T* match = NULL;
+  char* sequence = NULL;
+  MODIFIED_AA_T* modified_sequence = NULL;
+
+
+  //create the observed array.
+  create_intensity_array_xcorr(spectrum, scorer, get_ion_series_charge(ion_series));
+  //put it on the device.
+  cuda_set_spectrum_size(get_scorer_sp_max_mz(scorer));
+  cuda_set_observed(get_scorer_observed_array(scorer));
+
+  //initialize cuda arrays 
+  int cuda_matrix_index = 0;
+
+  float* theoretical = (float*)mycalloc(get_scorer_sp_max_mz(scorer), sizeof(float));
+  float* xcorrs = (float*)mycalloc(cuda_get_max_theoretical(), sizeof(float));
+
+  //for(match_idx = 0; match_idx < match_collection->match_total; match_idx++){
+  for(match_idx = 0; match_idx < num_matches; match_idx++){
+
+    //match = match_collection->match[match_idx];
+    match = matches[match_idx];
+    assert( match != NULL );
+    /*
+    // skip it if it's already been scored
+    if( NOT_SCORED != get_match_score(match, score_type)){
+      continue;
+    }
+    */
+
+    // make sure it's the same spec and charge
+    assert( spectrum == get_match_spectrum(match));
+    assert( charge == get_match_charge(match));
+    sequence = get_match_sequence(match);
+    modified_sequence = get_match_mod_sequence(match);
+
+    // create ion series for this peptide
+    update_ion_series(ion_series, sequence, modified_sequence);
+    predict_ions(ion_series);
+
+    //generate a theoretical spectrum
+    create_intensity_array_theoretical(scorer, ion_series, theoretical);
+    //load the theoretical onto the device.
+    cuda_set_theoretical(theoretical, cuda_matrix_index);
+    cuda_matrix_index++;
+    if (cuda_matrix_index == cuda_get_max_theoretical()) {
+      //we are full, go calculate what we have and retrieve the results.
+      cuda_calculate_xcorrs(xcorrs);
+      for (i=0;i<cuda_matrix_index;i++) {
+	carp(CARP_FATAL, "CRUX_USE_CUDA2[%i]=%f",i,xcorrs[i]);
+	carp(CARP_FATAL, "CRUX_USE_CUDA2: match_idx:%d",match_idx);
+	carp(CARP_FATAL, "CRUX_USE_CUDA2: temp_idx:%d",(match_idx-(cuda_matrix_index-i-1)));
+	set_match_score(matches[match_idx-(cuda_matrix_index-i-1)], score_type, xcorrs[i]);
+      }
+      cuda_matrix_index = 1;
+    }
+
+    free(sequence);
+    free(modified_sequence);
+  }// next match
+
+  //collect the rest of the results.
+  if (cuda_matrix_index != 0) {
+    cuda_calculate_xcorrsN(xcorrs, cuda_matrix_index);
+    for (i=0;i<cuda_matrix_index;i++)
+      set_match_score(matches[num_matches-(cuda_matrix_index-i)], score_type, xcorrs[i]);
+  }
+  //  match_collection->scored_type[score_type] = TRUE;
+
+  // clean up
+  free_ion_constraint(ion_constraint);
+  free_ion_series(ion_series);
+  free_scorer(scorer);
+  free(theoretical);
+  free(xcorrs);
+  return TRUE;
+}
+
+#endif /*CRUX_USE_CUDA2*/
 
 /**
  * \brief  Uses the Weibull parameters estimated by

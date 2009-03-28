@@ -6,7 +6,7 @@
 /*
  * AUTHOR: Chris Park
  * CREATE DATE: 9 Oct 2006
- * $Revision: 1.21 $
+ * $Revision: 1.21.16.1 $
  *****************************************************************************/
 #ifndef SCORER_H 
 #define SCORER_H
@@ -315,6 +315,27 @@ int get_scorer_sp_b_y_ion_matched(
 int get_scorer_sp_b_y_ion_possible(
   SCORER_T* scorer ///< the scorer object -in
   );
+
+
+#ifdef CRUX_USE_CUDA2
+
+float* get_scorer_observed_array(
+  SCORER_T* scorer
+  );
+
+BOOLEAN_T create_intensity_array_xcorr(
+  SPECTRUM_T* spectrum,    ///< the spectrum to score(observed) -in
+  SCORER_T* scorer,        ///< the scorer object -in/out
+  int charge               ///< the peptide charge -in 
+  );
+
+BOOLEAN_T create_intensity_array_theoretical(
+  SCORER_T* scorer,        ///< the scorer object -in/out
+  ION_SERIES_T* ion_series, ///< the ion series to score against the spectrum(theoretical) -in
+  float* theoretical       ///< the empty theoretical spectrum -out
+  );
+
+#endif
 
 
 
