@@ -163,7 +163,7 @@ crux_SOURCES = crux-main.c  crux-main.h percolator.c percolator.h
 
 crux_CFLAGS = $(AM_CFLAGS) -DMAIN -I./cuda
 crux_LDADD = \
-     -lcrux -L$(CUDA_DIR)/lib -lcublas -lcudart
+     -lcrux -L$(CUDA_DIR)/lib -lcublasemu -lcudart
 endif
 
 

@@ -8,7 +8,7 @@
  *
  * AUTHOR: Chris Park
  * CREATE DATE: 11/27 2006
- * $Revision: 1.89.4.2 $
+ * $Revision: 1.89.4.3 $
  ****************************************************************************/
 #include "match_collection.h"
 
@@ -1181,7 +1181,7 @@ BOOLEAN_T score_matches_one_spectrum(
 
 #ifdef CRUX_USE_CUDA2
   if (score_type == XCORR && is_cudablas_initialized()) {
-    carp(CARP_FATAL, "CRUX_USE_CUDA2-doing it");
+    //carp(CARP_FATAL, "CRUX_USE_CUDA2-doing it");
     return score_matches_one_spectrum_cuda(score_type, matches, num_matches, spectrum, charge);
   }
   else
@@ -1285,8 +1285,6 @@ BOOLEAN_T score_matches_one_spectrum_cuda(
     return FALSE;
   }
   
- 
-
   // create ion constraint
   ION_CONSTRAINT_T* ion_constraint = new_ion_constraint_smart(score_type, 
                                                               charge);
@@ -1298,6 +1296,7 @@ BOOLEAN_T score_matches_one_spectrum_cuda(
   
   // score all matches
   int match_idx;
+  int new_idx;
   int i;
   MATCH_T* match = NULL;
   char* sequence = NULL;
@@ -1316,18 +1315,16 @@ BOOLEAN_T score_matches_one_spectrum_cuda(
   float* theoretical = (float*)mycalloc(get_scorer_sp_max_mz(scorer), sizeof(float));
   float* xcorrs = (float*)mycalloc(cuda_get_max_theoretical(), sizeof(float));
 
-  //for(match_idx = 0; match_idx < match_collection->match_total; match_idx++){
   for(match_idx = 0; match_idx < num_matches; match_idx++){
 
-    //match = match_collection->match[match_idx];
     match = matches[match_idx];
     assert( match != NULL );
-    /*
+    
     // skip it if it's already been scored
     if( NOT_SCORED != get_match_score(match, score_type)){
-      continue;
+      carp(CARP_FATAL,"Already scored?");
     }
-    */
+    
 
     // make sure it's the same spec and charge
     assert( spectrum == get_match_spectrum(match));
@@ -1340,20 +1337,31 @@ BOOLEAN_T score_matches_one_spectrum_cuda(
     predict_ions(ion_series);
 
     //generate a theoretical spectrum
+    memset(theoretical,0,sizeof(float)*get_scorer_sp_max_mz(scorer));
     create_intensity_array_theoretical(scorer, ion_series, theoretical);
+
     //load the theoretical onto the device.
     cuda_set_theoretical(theoretical, cuda_matrix_index);
     cuda_matrix_index++;
-    if (cuda_matrix_index == cuda_get_max_theoretical()) {
+    if (cuda_matrix_index >= cuda_get_max_theoretical()) {
       //we are full, go calculate what we have and retrieve the results.
       cuda_calculate_xcorrs(xcorrs);
       for (i=0;i<cuda_matrix_index;i++) {
-	carp(CARP_FATAL, "CRUX_USE_CUDA2[%i]=%f",i,xcorrs[i]);
-	carp(CARP_FATAL, "CRUX_USE_CUDA2: match_idx:%d",match_idx);
-	carp(CARP_FATAL, "CRUX_USE_CUDA2: temp_idx:%d",(match_idx-(cuda_matrix_index-i-1)));
-	set_match_score(matches[match_idx-(cuda_matrix_index-i-1)], score_type, xcorrs[i]);
+	//carp(CARP_FATAL, "CRUX_USE_CUDA2[%i]=%f",i,xcorrs[i]);
+	//carp(CARP_FATAL, "CRUX_USE_CUDA2: match_idx:%d",match_idx);
+	//carp(CARP_FATAL, "CRUX_USE_CUDA2: temp_idx:%d",(match_idx-(cuda_matrix_index-i-1)));
+	new_idx = match_idx - cuda_matrix_index + i + 1;
+	//carp(CARP_FATAL,"match_idx:%i new_idx:%i xcorr:%f",match_idx,new_idx,xcorrs[i]);
+	match = matches[new_idx];
+	set_match_score(match, score_type, xcorrs[i]);
+	//carp(CARP_FATAL,"match[%i]=%f",new_idx,get_match_score(match, score_type));
+
+	
+	//char* mod_seq = modified_aa_string_to_string(modified_sequence, strlen(sequence));
+	//carp(CARP_FATAL, "Second score %f for %s (null:%i)",
+	//     xcorrs[i], mod_seq,get_match_null_peptide(match));
       }
-      cuda_matrix_index = 1;
+      cuda_matrix_index = 0;
     }
 
     free(sequence);
@@ -1363,10 +1371,13 @@ BOOLEAN_T score_matches_one_spectrum_cuda(
   //collect the rest of the results.
   if (cuda_matrix_index != 0) {
     cuda_calculate_xcorrsN(xcorrs, cuda_matrix_index);
-    for (i=0;i<cuda_matrix_index;i++)
-      set_match_score(matches[num_matches-(cuda_matrix_index-i)], score_type, xcorrs[i]);
+  
+    for (i=0;i<cuda_matrix_index;i++) {
+      match_idx = num_matches-cuda_matrix_index+i;
+      match = matches[match_idx];
+      set_match_score(match, score_type, xcorrs[i]);
+    }
   }
-  //  match_collection->scored_type[score_type] = TRUE;
 
   // clean up
   free_ion_constraint(ion_constraint);
@@ -1959,11 +1970,10 @@ void print_tab_header(FILE* output){
     "b/y ions matched\t"
     "b/y ions total\t"
     "matches/spectrum\t"
-    "N-flanking aa\t"
     "sequence\t"
-    "C-flanking aa\t"
     "cleavage type\t"
     "protein id\t"
+    "flanking aa\t"
     "unshuffled sequence\n"
   );
 }

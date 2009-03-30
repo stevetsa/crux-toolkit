@@ -172,13 +172,14 @@ float cross_correlation_cuda(
 }
 #endif /*CRUX_USE_CUDA*/
 
-
+//float *h_temp = NULL;
+//float *h_temp2 = NULL;
 #ifdef CRUX_USE_CUDA2
 void cuda_set_spectrum_size(int size) {
   cublasStatus status;
 
   if (size != spectrum_size) {
-    carp(CARP_FATAL, "cuda_set_spectrum_size():%d",size);
+    //carp(CARP_FATAL, "cuda_set_spectrum_size():%d",size);
     spectrum_size = size;
     int n = spectrum_size;
     int n2 = spectrum_size * cuda_get_max_theoretical();
@@ -188,36 +189,48 @@ void cuda_set_spectrum_size(int size) {
 
     if (d_pObs != NULL) cublasFree(d_pObs);
     status = cublasAlloc(n, sizeof(float), (void**)&d_pObs);
+    /*
+    if (h_temp != NULL) free(h_temp);
+    h_temp = malloc(sizeof(float)*n);
+    
+    if (h_temp2 != NULL) free(h_temp2);
+    h_temp2 = malloc(sizeof(float)*n);
+    */
 
     if (d_pXCorrs != NULL) cublasFree(d_pXCorrs);
-    status = cublasAlloc(n, sizeof(float), (void**)&d_pXCorrs);
+    status = cublasAlloc(cuda_get_max_theoretical(), sizeof(float), (void**)&d_pXCorrs);
+    if (status != CUBLAS_STATUS_SUCCESS) {
+      carp(CARP_FATAL,"!!!! Error allocating d_pXCorrs. %i",status);
+    }
+
   }
 
 }
 
 int cuda_get_max_theoretical() {
   //TODO: calculate based upon card memory.
-  return 50;
+  return 10;
 }
 
 
 void cuda_set_theoretical(float* h_pThe, int index) {
   cublasStatus status;
+  /*
   int i;
-
   for (i=0;i<spectrum_size;i++)
     carp(CARP_FATAL, "Cuda_set_theoretical[%i]=%f",i,h_pThe[i]);
-
-  carp(CARP_FATAL, "cuda_set_theoretical:index:%d",index);
-  status = cublasSetVector(spectrum_size, sizeof(float), h_pThe, 1, d_pThe_Matrix, index);
+  */
+  //carp(CARP_FATAL, "cuda_set_theoretical:index:%d",(index+1));
+  status = cublasSetVector(spectrum_size, sizeof(float), h_pThe, 1, d_pThe_Matrix, index+1);
 }
 
 void cuda_set_observed(float* h_pObs) {
   cublasStatus status;
+  /*
   int i;
   for (i=0;i<spectrum_size;i++)
     carp(CARP_FATAL, "cuda_set_observed[%i]=%f",i,h_pObs[i]);
-  
+  */
 
   status = cublasSetVector(spectrum_size, sizeof(float), h_pObs, 1, d_pObs, 1);
 }
@@ -228,8 +241,8 @@ void cuda_calculate_xcorrs(float* xcorrs) {
 
 void cuda_calculate_xcorrsN(float* xcorrs, int nthe) {
   cublasStatus status;
+  //carp(CARP_FATAL, "cuda_calculate_xcorrsN:%d",nthe);
 
-  carp(CARP_FATAL, "cuda_calculate_xcorrsN:%d",nthe);
   /*
     trans specifies op(A). If trans == 'N' or 'n', .
     If trans == 'T', 't', 'C', or 'c', .
@@ -251,24 +264,26 @@ void cuda_calculate_xcorrsN(float* xcorrs, int nthe) {
   int n = nthe; //columns are the number of theoretical spectra.
   float alpha = 1.0 / 10000.0; //for the wierd division part of the cross-correlation calculation.
   float* A = d_pThe_Matrix;
-  int lda = 1;
+  int lda = m; //this has to equal the number of rows???
   float* x = d_pObs;
   int incx = 1;
   float beta = 0;
   float* y = d_pXCorrs;
   int incy = 1;
 
-  carp(CARP_FATAL, "CRUX_USE_CUDA2:Multiplying");
+  //carp(CARP_FATAL, "CRUX_USE_CUDA2:Multiplying");
   //do the calculation.
   cublasSgemv (trans, m, n, alpha, A, lda, x,
 	       incx, beta, y, incy);
   //check the error.
-
-  carp(CARP_FATAL, "CRUX_USE_CUDA2:recovering result");
+   status = cublasGetError();
+   if (status != CUBLAS_STATUS_SUCCESS) {
+     carp(CARP_FATAL,"!!!! kernel execution error. %i",status);
+    }
+    
+   //carp(CARP_FATAL, "CRUX_USE_CUDA2:recovering result");
   /* Read the result back */
-  status = cublasGetVector(n, sizeof(float), d_pXCorrs, 1, xcorrs, 1);
-  carp(CARP_FATAL, "CRUX_USE_CUDA2:cuda_calculateN:done.");
-  
+  status = cublasGetVector(nthe, sizeof(float), d_pXCorrs, 1, xcorrs, 1); 
 }
 
 #endif /*CRUX_USE_CUDA2*/
