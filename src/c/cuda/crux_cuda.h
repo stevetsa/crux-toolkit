@@ -1,5 +1,9 @@
 #include "scorer.h"
 #include "utils.h"
+#ifdef CRUX_USE_CUDA3
+#include "modified_peptides_iterator.h"
+#endif
+
 
 BOOLEAN_T initialize_cudablas();
 
@@ -34,4 +38,11 @@ void cuda_calculate_xcorrs(float* xcorrs);
 void cuda_calculate_xcorrsN(float* xcorrs, int nthe);
 #endif
 
-
+#ifdef CRUX_USE_CUDA3
+void crux_cuda_init();
+void generateMatrices(MODIFIED_PEPTIDES_ITERATOR_T* peptide_iterator,int charge);
+int getSIndex(int ssize);
+void printStats();
+void writeStats();
+void updateStatCount(float mass, int charge);
+#endif

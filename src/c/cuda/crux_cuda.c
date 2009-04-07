@@ -42,10 +42,10 @@ BOOLEAN_T shutdown_cudablas() {
   cublasStatus status;
 #ifdef CRUX_USE_CUDA1
   if (d_pThe != NULL) {
-      //free memory on device
-      cublasFree(d_pThe);
-      d_pThe = NULL;
-    }
+    //free memory on device
+    cublasFree(d_pThe);
+    d_pThe = NULL;
+  }
   if (d_pObs != NULL) {
     //free memory on device
     cublasFree(d_pObs);
@@ -75,6 +75,7 @@ BOOLEAN_T shutdown_cudablas() {
     }
   }
 }
+
 
 BOOLEAN_T is_cudablas_initialized() {
   return cudablas_initialized; 
@@ -172,67 +173,52 @@ float cross_correlation_cuda(
 }
 #endif /*CRUX_USE_CUDA*/
 
-//float *h_temp = NULL;
-//float *h_temp2 = NULL;
 #ifdef CRUX_USE_CUDA2
 void cuda_set_spectrum_size(int size) {
   cublasStatus status;
-
   if (size != spectrum_size) {
-    //carp(CARP_FATAL, "cuda_set_spectrum_size():%d",size);
-    spectrum_size = size;
-    int n = spectrum_size;
-    int n2 = spectrum_size * cuda_get_max_theoretical();
+    int n = size;
+    int n2 = size * cuda_get_max_theoretical();
+
     //allocate space for the theoretical matrix, the observed vector, and the result vector.
     if (d_pThe_Matrix != NULL) cublasFree(d_pThe_Matrix);
     status = cublasAlloc(n2, sizeof(float), (void**)&d_pThe_Matrix);
 
     if (d_pObs != NULL) cublasFree(d_pObs);
     status = cublasAlloc(n, sizeof(float), (void**)&d_pObs);
-    /*
-    if (h_temp != NULL) free(h_temp);
-    h_temp = malloc(sizeof(float)*n);
-    
-    if (h_temp2 != NULL) free(h_temp2);
-    h_temp2 = malloc(sizeof(float)*n);
-    */
 
+    spectrum_size = size;
+      
     if (d_pXCorrs != NULL) cublasFree(d_pXCorrs);
     status = cublasAlloc(cuda_get_max_theoretical(), sizeof(float), (void**)&d_pXCorrs);
     if (status != CUBLAS_STATUS_SUCCESS) {
       carp(CARP_FATAL,"!!!! Error allocating d_pXCorrs. %i",status);
     }
-
   }
 
 }
 
 int cuda_get_max_theoretical() {
   //TODO: calculate based upon card memory.
-  return 10;
+  return 32;
 }
 
 
 void cuda_set_theoretical(float* h_pThe, int index) {
   cublasStatus status;
-  /*
-  int i;
-  for (i=0;i<spectrum_size;i++)
-    carp(CARP_FATAL, "Cuda_set_theoretical[%i]=%f",i,h_pThe[i]);
-  */
-  //carp(CARP_FATAL, "cuda_set_theoretical:index:%d",(index+1));
-  status = cublasSetVector(spectrum_size, sizeof(float), h_pThe, 1, d_pThe_Matrix, index+1);
+  float* d_ptr = d_pThe_Matrix+ (spectrum_size * index);
+  status = cublasSetVector(spectrum_size, sizeof(float), h_pThe, 1, d_ptr, 1);
+  if (status != CUBLAS_STATUS_SUCCESS) {
+    carp(CARP_FATAL,"!!!! Error setting theoretical. code:%i index:%i",status, index);
+    }
 }
 
 void cuda_set_observed(float* h_pObs) {
   cublasStatus status;
-  /*
-  int i;
-  for (i=0;i<spectrum_size;i++)
-    carp(CARP_FATAL, "cuda_set_observed[%i]=%f",i,h_pObs[i]);
-  */
-
   status = cublasSetVector(spectrum_size, sizeof(float), h_pObs, 1, d_pObs, 1);
+  if (status != CUBLAS_STATUS_SUCCESS) {
+    carp(CARP_FATAL,"!!!! Error setting obsered. code:%i",status);
+  }
 }
 
 void cuda_calculate_xcorrs(float* xcorrs) {
@@ -241,8 +227,6 @@ void cuda_calculate_xcorrs(float* xcorrs) {
 
 void cuda_calculate_xcorrsN(float* xcorrs, int nthe) {
   cublasStatus status;
-  //carp(CARP_FATAL, "cuda_calculate_xcorrsN:%d",nthe);
-
   /*
     trans specifies op(A). If trans == 'N' or 'n', .
     If trans == 'T', 't', 'C', or 'c', .
@@ -284,6 +268,230 @@ void cuda_calculate_xcorrsN(float* xcorrs, int nthe) {
    //carp(CARP_FATAL, "CRUX_USE_CUDA2:recovering result");
   /* Read the result back */
   status = cublasGetVector(nthe, sizeof(float), d_pXCorrs, 1, xcorrs, 1); 
+
 }
 
 #endif /*CRUX_USE_CUDA2*/
+
+#ifdef CRUX_USE_CUDA3
+
+typedef struct theoretical_spectra_t {
+   int charge;
+   int spectrum_size;
+   float min_mass;
+   float max_mass;
+   int max_size;
+   int current_size;
+   float* mass;
+  int* count;
+   float* d_matrix;
+}THEORETICAL_SPECTRA_T;
+
+
+
+
+int calculateSpectrumSizeMass(float m1) {
+  float experimental_mass_cut_off = m1 + 50 + 3 /*for +/-mass search*/;
+  int ans = 512;
+  // set max_mz and malloc space for the observed intensity array
+  if(experimental_mass_cut_off > 512){
+    int x = (int)experimental_mass_cut_off / 1024;
+    float y = experimental_mass_cut_off - (1024 * x);
+    ans = x * 1024;
+
+    if(y > 0){
+      ans += 1024;
+    }
+  }  
+  return ans;
+}
+
+int calculateSpectrumSizeMZ(float mz1, int charge) {
+  return calculateSpectrumSizeMass(mz1 * (float)charge);
+}
+
+
+#define max_ssize 8
+THEORETICAL_SPECTRA_T theoretical_data[3][max_ssize]; /*charge,spectrum_size*/
+
+int spectrum_sizes[] = {512, 1024, 2048, 3072, 4096, 5120, 6144, 7168};
+
+
+
+
+void crux_cuda_init() {
+  int s_index;
+  int c_index;
+  for (s_index = 0;s_index < max_ssize;s_index++)
+    for (c_index = 0;c_index < 3;c_index++) {
+      theoretical_data[c_index][s_index].charge = c_index + 1;
+      theoretical_data[c_index][s_index].spectrum_size = spectrum_sizes[s_index];
+      theoretical_data[c_index][s_index].min_mass = 10000;
+      theoretical_data[c_index][s_index].max_mass = -1;
+      theoretical_data[c_index][s_index].max_size = 80000;
+      theoretical_data[c_index][s_index].current_size = 0;
+      theoretical_data[c_index][s_index].mass = malloc(sizeof(float)*
+						      theoretical_data[c_index][s_index].max_size);
+      theoretical_data[c_index][s_index].count = malloc(sizeof(int)*
+							theoretical_data[c_index][s_index].max_size);
+
+      //TODO Allocate space on the device.
+      //theoretical_data[s_index][c_index].d_matrix
+    }
+  printStats();
+}
+
+float min(float a, float b) {
+  return a < b ? a : b;
+}
+float max(float a, float b) {
+  return a > b ? a : b;
+}
+
+void generateMatrices(MODIFIED_PEPTIDES_ITERATOR_T* peptide_iterator,int charge) {
+ 
+  THEORETICAL_SPECTRA_T *data;
+
+  while( modified_peptides_iterator_has_next(peptide_iterator)){
+    // get peptide
+    PEPTIDE_T* peptide = modified_peptides_iterator_next(peptide_iterator);
+    
+    //assume the peptides are sorted by mass.
+    
+    //first we need to spectrum_size and the spectrum_index.
+    //retrieve the mass.
+    float mass = get_peptide_peptide_mass(peptide);
+    int ssize = calculateSpectrumSizeMass(mass);
+    int sindex = getSIndex(ssize);
+
+
+
+    //if we are handling this spectrum size and there is still space
+    //on the device, create a theoretical
+    if (sindex != -1) {
+      
+      data = &theoretical_data[charge-1][sindex];
+      //okay, we are going to create a theoretical spectrum for this peptide.
+
+      //carp(CARP_FATAL,"updating");
+      
+      float mz = mass / (float)charge;
+      if (mz >= 400 && mz <=1400) {
+	data -> mass[data -> current_size] = mass;
+	data -> count[data -> current_size] = 0;
+	data -> max_mass = max(data -> max_mass, mass);
+	data -> min_mass = min(data -> min_mass, mass);
+	data -> current_size++;
+	/*
+	  carp(CARP_FATAL, "c:%i s:%i mz1:%f max:%f min:%f size:%i",
+	  charge,
+	  sindex,
+	  mass,
+	  data -> max_mass,
+	  data -> min_mass,
+	  data -> current_size);
+	*/
+      }
+    }
+    else {
+      carp(CARP_FATAL,"spectrum size not handled:%i",ssize);
+    }
+  }
+
+  
+
+  carp(CARP_FATAL,"done!");
+}
+
+
+void printStats() {
+  int sindex;
+  int cindex;
+  int mindex;
+  THEORETICAL_SPECTRA_T *ptr;
+  for (cindex=0;cindex<3;cindex++) {
+    for (sindex=0;sindex<max_ssize;sindex++) {
+      ptr = &theoretical_data[cindex][sindex];
+      carp(CARP_FATAL,"threoretical[%i][%i]",cindex,sindex);
+      carp(CARP_FATAL,"charge:%i",ptr -> charge);
+      carp(CARP_FATAL,"spectrum_size:%i",ptr -> spectrum_size);
+      carp(CARP_FATAL,"min_mass:%f", ptr -> min_mass);
+      carp(CARP_FATAL,"max_mass:%f", ptr -> max_mass);
+      carp(CARP_FATAL,"max_size:%i", ptr -> max_size);
+      carp(CARP_FATAL,"current:%i",ptr -> current_size);
+      for(mindex=0;mindex<ptr -> current_size;mindex++) {
+	if (ptr -> count[mindex] != 0)
+	  carp(CARP_FATAL,"mass:%f count:%i",
+	       ptr -> mass[mindex],
+	       ptr -> count[mindex]);
+      }
+      carp(CARP_FATAL,"===================");
+    }
+  }
+}
+
+
+void writeStats() {
+  int sindex;
+  int cindex;
+  int mindex;
+
+  FILE*fp;
+  char buf[50];
+
+  THEORETICAL_SPECTRA_T *ptr;
+  for (cindex=0;cindex<3;cindex++) {
+    for (sindex=0;sindex<max_ssize;sindex++) {
+      ptr = &theoretical_data[cindex][sindex];
+      if (ptr -> current_size != 0) {
+	sprintf(buf,"theo_%i_%i",ptr -> charge, ptr -> spectrum_size);
+	fp = fopen(buf, "w");
+	for(mindex=0;mindex<ptr -> current_size;mindex++) {
+	  fprintf(fp,"%f\t%i\n",ptr -> mass[mindex],ptr -> count[mindex]);
+	}
+	fclose(fp);
+      }
+    }
+  }
+}
+
+
+void updateStatCount(float mass, int charge) {
+  int ssize = calculateSpectrumSizeMass(mass);
+  int sindex = getSIndex(ssize);
+  int cindex = charge-1;
+  int i;
+  THEORETICAL_SPECTRA_T* ptr = &theoretical_data[cindex][sindex];
+  
+  double min_mass = mass - 3.0;
+  double max_mass = mass + 3.0;
+
+  if (min_mass < ptr -> mass[0])
+    carp(CARP_FATAL,"min:%f min:%f",min_mass,ptr -> mass[0]);
+
+  for (i=0;i<ptr -> current_size;i++) {
+    if (ptr -> mass[i] < min_mass) continue;
+    else if (ptr -> mass[i] > max_mass) break;
+    else {
+      ptr -> count[i]++;
+    }
+  }
+
+
+}
+
+
+
+int getSIndex(int ssize) {
+  int ans = -1;
+  int i;
+  for (i=0;i<max_ssize;i++) {
+    if (spectrum_sizes[i] == ssize) {
+      ans = i;
+      break;
+    }
+  }
+  return ans;
+}
+
+#endif /*CRUX_USE_CUDA3*/

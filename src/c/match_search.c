@@ -29,6 +29,10 @@
 #include "spectrum_collection.h"
 #include "match_collection.h"
 
+#ifdef CRUX_USE_CUDA
+#include "crux_cuda.h"
+#endif
+
 #define NUM_SEARCH_OPTIONS 16
 #define NUM_SEARCH_ARGS 2
 #define PARAM_ESTIMATION_SAMPLE_COUNT 500
@@ -176,6 +180,29 @@ int search_main(int argc, char** argv){
   PEPTIDE_MOD_T** peptide_mods = NULL;
   int num_peptide_mods = generate_peptide_mod_list( &peptide_mods );
 
+
+
+#ifdef CRUX_USE_CUDA3
+  crux_cuda_init();
+  int icharge;
+  for (icharge=1;icharge<=3;icharge++) {
+    // for each peptide mod
+    for(mod_idx=0; mod_idx<num_peptide_mods; mod_idx++){
+      // get peptide mod
+      PEPTIDE_MOD_T* peptide_mod = peptide_mods[mod_idx];
+
+      MODIFIED_PEPTIDES_ITERATOR_T* all_peptides =
+	new_modified_peptides_iterator(peptide_mod, index, database);
+      generateMatrices(all_peptides, icharge);
+      carp(CARP_FATAL,"Freeing iterator");
+      free_modified_peptides_iterator(all_peptides);
+    }
+  }
+  printStats();
+ 
+#endif
+
+
   // DELETE ME
   // for estimating params for p-values, randomly select a total of 
   //    sample_count matches, a constant fraction from each peptide mod
@@ -189,6 +216,8 @@ int search_main(int argc, char** argv){
     SPECTRUM_T* spectrum = 
       filtered_spectrum_charge_iterator_next(spectrum_iterator, &charge);
     double mass = get_spectrum_neutral_mass(spectrum, charge);
+    
+    updateStatCount(mass, charge);
 
     if( ((spectrum_searches_counter+1) % progress_increment) == 0 ){
       carp(CARP_INFO, 
@@ -223,6 +252,8 @@ int search_main(int argc, char** argv){
         cur_aa_mods = this_aa_mods;
       }
 
+
+      //carp(CARP_FATAL,"mass:%f",mass);
       // get peptide iterator
       MODIFIED_PEPTIDES_ITERATOR_T* peptide_iterator = 
         new_modified_peptides_iterator_from_mass(mass,
@@ -386,6 +417,8 @@ int search_main(int argc, char** argv){
                                       psm_file_array[file_idx]);
   }
   // clean up memory
+
+  writeStats();
 
   carp(CARP_INFO, "Finished crux-search-for-matches");
   exit(0);

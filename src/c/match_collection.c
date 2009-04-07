@@ -8,7 +8,7 @@
  *
  * AUTHOR: Chris Park
  * CREATE DATE: 11/27 2006
- * $Revision: 1.89.4.3 $
+ * $Revision: 1.89.4.4 $
  ****************************************************************************/
 #include "match_collection.h"
 
@@ -314,6 +314,8 @@ MATCH_COLLECTION_T* new_empty_match_collection(BOOLEAN_T is_decoy){
  *
  * \returns The number of matches added.
  */
+
+int total_the = 0;
 int add_matches(
   MATCH_COLLECTION_T* match_collection,///< add matches to this
   SPECTRUM_T* spectrum,  ///< compare peptides to this spectrum
@@ -354,8 +356,15 @@ int add_matches(
 
   // score exitsting matches w/second function
   SCORER_TYPE_T final_score = get_scorer_type_parameter("score-type");
+
+  //carp(CARP_FATAL,"nthe:%i",match_collection->match_total);
+  total_the += match_collection -> match_total;
+  //carp(CARP_FATAL,"nthetotal:%i",total_the);
+
   score_matches_one_spectrum(final_score, match_collection->match,
                              match_collection->match_total, spectrum, charge);
+  
+
 
   match_collection->scored_type[final_score] = TRUE;
 
@@ -1376,6 +1385,7 @@ BOOLEAN_T score_matches_one_spectrum_cuda(
       match_idx = num_matches-cuda_matrix_index+i;
       match = matches[match_idx];
       set_match_score(match, score_type, xcorrs[i]);
+      //carp(CARP_FATAL,"2)matches[%i]=%f",match_idx, xcorrs[i]);
     }
   }
 
