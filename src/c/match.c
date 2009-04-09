@@ -5,8 +5,8 @@
  * DESCRIPTION: Object for matching a peptide and a spectrum, generate
  * a preliminary score(e.g., Sp) 
  *
- * REVISION: $Revision: 1.59.4.3 $
- * REVISION: $Revision: 1.59.4.3 $
+ * REVISION: $Revision: 1.59.4.4 $
+ * REVISION: $Revision: 1.59.4.4 $
  ****************************************************************************/
 #include <math.h>
 #include <stdlib.h>
@@ -1029,12 +1029,18 @@ char* get_match_sequence(
   // Then must use the shuffled sequence
   if(match->null_peptide){
     // generate the shuffled peptide sequence
-    match->peptide_sequence = 
-      generate_shuffled_sequence(match->peptide);//, match->overall_type);    
-    char* seq = get_peptide_sequence(match->peptide);
-    carp(CARP_DETAILED_DEBUG, "Shuffling transforms: %s -> %s", 
-      seq, match->peptide_sequence);
-    free(seq);
+    if( get_boolean_parameter("reverse-sequence") == TRUE ){
+      match->peptide_sequence = generate_reversed_sequence(match->peptide);
+    }else{
+      match->peptide_sequence = 
+        generate_shuffled_sequence(match->peptide);
+    }
+    IF_CARP_DETAILED_DEBUG(
+      char* seq = get_peptide_sequence(match->peptide);
+      carp(CARP_DETAILED_DEBUG, "Shuffling transforms: %s -> %s", 
+	   seq, match->peptide_sequence);
+      free(seq);
+    )
   }
   else{
     // just go parse it out from protein, no need to shuffle
@@ -1129,14 +1135,20 @@ MODIFIED_AA_T* get_match_mod_sequence(
   // Is this a null peptide? Then shuffle the sequence
   if(match->null_peptide){
     // generate the shuffled peptide sequence
-    match->mod_sequence =
-      generate_shuffled_mod_sequence(match->peptide);//, match->overall_type);
-    char* seq = get_peptide_sequence(match->peptide);
-    char* modseq = modified_aa_string_to_string(match->mod_sequence, length);
-    carp(CARP_DETAILED_DEBUG, "Shuffling transforms: %s -> %s",
-         seq, modseq );
-    free(modseq);
-    free(seq);
+    if( get_boolean_parameter("reverse-sequence") == TRUE){
+      match->mod_sequence = generate_reversed_mod_sequence(match->peptide);
+    }else{
+      match->mod_sequence =
+        generate_shuffled_mod_sequence(match->peptide);
+    }
+    IF_CARP_DETAILED_DEBUG(
+      char* seq = get_peptide_sequence(match->peptide);
+      char* modseq = modified_aa_string_to_string(match->mod_sequence, length);
+      carp(CARP_DETAILED_DEBUG, "Shuffling transforms: %s -> %s",
+	   seq, modseq );
+      free(modseq);
+      free(seq);
+    )
   }
   else{
     // just get it from the peptide, no need to shuffle
@@ -1175,12 +1187,14 @@ char* get_match_mod_sequence_str( MATCH_T* match ){
     // generate the shuffled peptide sequence
     match->mod_sequence =
       generate_shuffled_mod_sequence(match->peptide);//, match->overall_type);
-    char* seq = get_peptide_sequence(match->peptide);
-    char* modseq = modified_aa_string_to_string(match->mod_sequence, length);
-    carp(CARP_DETAILED_DEBUG, "Shuffling transforms: %s -> %s",
-         seq, modseq );
-    free(modseq);
-    free(seq);
+    IF_CARP_DETAILED_DEBUG(
+      char* seq = get_peptide_sequence(match->peptide);
+      char* modseq = modified_aa_string_to_string(match->mod_sequence, length);
+      carp(CARP_DETAILED_DEBUG, "Shuffling transforms: %s -> %s",
+	   seq, modseq );
+      free(modseq);
+      free(seq);
+    )
   }
   else{
     // just get it from the peptide, no need to shuffle

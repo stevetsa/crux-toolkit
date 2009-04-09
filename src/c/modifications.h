@@ -16,7 +16,7 @@
  * spectrum search.  One PEPTIDE_MOD corresponds to one mass window
  * that must be searched.
  * 
- * $Revision: 1.2 $
+ * $Revision: 1.2.4.1 $
  */
 #ifndef MODIFICATION_FILE_H
 #define MODIFICATION_FILE_H
@@ -97,11 +97,19 @@ char* modified_aa_to_string(MODIFIED_AA_T aa);
  * char's that includes the letter of each aa and the symbol for all
  * applied modifications.
  *
- * Assumes that the array is terminated with MOD_SEQ_NULL.
  * \returns A newly allocated array of characters, a text
  * representation of the modified sequence.
  */
 char* modified_aa_string_to_string(MODIFIED_AA_T* aa_string, int length);
+
+/**
+ * \brief Takes an array of MODIFIED_AA_T's and returns an array of
+ * char's, one for each amino acid in the sequence.  It DOES NOT
+ * include any modification symbols.  Use with caution.
+ * \returns A newly allocated char* with ONLY amino acids, all
+ * modifications are removed.
+ */
+char* modified_aa_to_unmodified_string(MODIFIED_AA_T* aa_string, int length);
 
 /**
  * \brief Allocates an array of MODIFIED_AA_T's the same length as
@@ -118,6 +126,16 @@ MODIFIED_AA_T* convert_to_mod_aa_seq(char* sequence);
  * \brief Allocate a new MODIFIED_AA_T array and copy values into it.
  */
 MODIFIED_AA_T* copy_mod_aa_seq(MODIFIED_AA_T* source, int length);
+
+/**
+ * \brief Determine if an array of MODIFIED_AA_T is a palindrome.  
+ * Used by reverse_sequence to avoid returning a reversed sequence
+ * that is the same as the target.  Ignores the first and last
+ * residues. 
+ * \returns TRUE if the reversed sequence would be the same as the
+ * forward, otherwise FALSE.
+ */
+BOOLEAN_T modified_aa_seq_is_palindrome(MODIFIED_AA_T* seq, int length);
 
 /**
  * \brief Frees memory for an array of MODIFIED_AA_Ts.  Assumes is

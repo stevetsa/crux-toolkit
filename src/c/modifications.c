@@ -16,7 +16,7 @@
  * spectrum search.  One PEPTIDE_MOD corresponds to one mass window
  * that must be searched.
  * 
- * $Revision: 1.2.4.1 $
+ * $Revision: 1.2.4.2 $
  */
 
 #include "modifications.h"
@@ -255,6 +255,30 @@ char* modified_aa_string_to_string(MODIFIED_AA_T* aa_string, int length){
 }
 
 /**
+ * \brief Takes an array of MODIFIED_AA_T's and returns an array of
+ * char's, one for each amino acid in the sequence.  It DOES NOT
+ * include any modification symbols.  Use with caution.
+ * \returns A newly allocated char* with ONLY amino acids, all
+ * modifications are removed.
+ */
+char* modified_aa_to_unmodified_string(MODIFIED_AA_T* aa_string, int length){
+
+  if( aa_string == NULL ){
+    carp(CARP_ERROR, "Cannot print a NULL modified sequence");
+    return NULL;
+  }
+
+  char* new_string = mycalloc(length+1, sizeof(char));
+  int aa_idx = 0;
+  for(aa_idx = 0; aa_idx < length; aa_idx++){
+    new_string[aa_idx] = modified_aa_to_char(aa_string[aa_idx]);
+  }
+  new_string[length] = '\0';
+
+  return new_string;
+}
+
+/**
  * \brief Allocates an array of MODIFIED_AA_T's the same length as
  * sequence and populates it with the MODIFIED_AA_T value that
  * corresponds to each sequence char value.  No modifications are
@@ -300,6 +324,35 @@ MODIFIED_AA_T* copy_mod_aa_seq(MODIFIED_AA_T* source, int length){
 
   return new_seq;
 }
+
+/**
+ * \brief Determine if an array of MODIFIED_AA_T is a palindrome.  
+ * Used by reverse_sequence to avoid returning a reversed sequence
+ * that is the same as the target.  Ignores the first and last
+ * residues. 
+ * \returns TRUE if the reversed sequence would be the same as the
+ * forward, otherwise FALSE.
+ */
+BOOLEAN_T modified_aa_seq_is_palindrome(MODIFIED_AA_T* seq, int length){
+  if( seq == NULL ){
+    return FALSE;
+  }
+
+  int left_idx = 1;    // skip first and last residues
+  int right_idx = length - 2;
+
+  while( left_idx < right_idx ){
+    if( seq[left_idx] != seq[right_idx] ){
+      return FALSE;
+    }// else, keep checking
+    left_idx++;
+    right_idx--;
+  }
+
+  // if we got to here, they all matched
+  return TRUE;
+}
+
 
 /**
  * \brief Write the given aa mod to file in binary format.  Used for

@@ -4,7 +4,7 @@
  * CREATE DATE: 9 Oct 2006
  * DESCRIPTION: object to score spectrum vs. spectrum or spectrum
  * vs. ion_series 
- * REVISION: $Revision: 1.67.4.4 $
+ * REVISION: $Revision: 1.67.4.5 $
  ****************************************************************************/
 
 #include <math.h>
@@ -934,12 +934,6 @@ BOOLEAN_T create_intensity_array_observed(
 
   free(scorer->observed);
   scorer->observed = new_observed;
-  /*
-  int i = 0;
-  for(; i < scorer->sp_max_mz; i++){
-    carp(CARP_FATAL, "Intensity array[%d]: %.2f", i, scorer->observed[i]);
-  }
-  */
 
   // free heap
   free(max_intensity_per_region);
@@ -1064,7 +1058,7 @@ BOOLEAN_T create_intensity_array_theoretical(
   int i = 0;
   for(; i < scorer->sp_max_mz; i++){
     if(theoretical[i] != 0){
-      carp(CARP_FATAL, "Theoretical array[%d]: %.2f", i, theoretical[i]);
+      carp(CARP_INFO, "Theoretical array[%d]: %.2f", i, theoretical[i]);
     }
   }
   */

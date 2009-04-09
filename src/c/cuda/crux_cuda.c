@@ -4,10 +4,13 @@
 
 #include "cublas.h"
 
+#include <math.h>
+
 BOOLEAN_T cudablas_initialized = FALSE;
 
 #ifdef CRUX_USE_CUDA2
 int spectrum_size = -1;
+int max_spectrum_size = -1;
 float* d_pThe_Matrix = NULL;
 float* d_pObs = NULL;
 float* d_pXCorrs = NULL;
@@ -174,39 +177,67 @@ float cross_correlation_cuda(
 #endif /*CRUX_USE_CUDA*/
 
 #ifdef CRUX_USE_CUDA2
-void cuda_set_spectrum_size(int size) {
-  cublasStatus status;
-  if (size != spectrum_size) {
-    int n = size;
-    int n2 = size * cuda_get_max_theoretical();
 
-    //allocate space for the theoretical matrix, the observed vector, and the result vector.
-    if (d_pThe_Matrix != NULL) cublasFree(d_pThe_Matrix);
-    status = cublasAlloc(n2, sizeof(float), (void**)&d_pThe_Matrix);
 
-    if (d_pObs != NULL) cublasFree(d_pObs);
-    status = cublasAlloc(n, sizeof(float), (void**)&d_pObs);
-
-    spectrum_size = size;
-      
-    if (d_pXCorrs != NULL) cublasFree(d_pXCorrs);
-    status = cublasAlloc(cuda_get_max_theoretical(), sizeof(float), (void**)&d_pXCorrs);
-    if (status != CUBLAS_STATUS_SUCCESS) {
-      carp(CARP_FATAL,"!!!! Error allocating d_pXCorrs. %i",status);
-    }
-  }
-
+void cuda_realloc_float(int n,  float** ptr) {
+  if (*ptr !=NULL)
+    CUBLASEXEC(cublasFree(*ptr));
+  CUBLASEXEC(cublasAlloc(n, sizeof(float), (void**)ptr));
 }
 
-int cuda_get_max_theoretical() {
+void cuda_set_spectrum_size(int size) {
+  //carp(CARP_FATAL,"cuda_set_spectrum_size: start %d",size);
+  if (size != spectrum_size) {
+    carp(CARP_FATAL,"Updating size %d to %d",spectrum_size, size);
+    if (max_spectrum_size < size) {
+      int n = size;
+      int m = cuda_get_max_theoreticalN(n);
+      int n2 = n * m;
+      
+      carp(CARP_FATAL,"Allocating space n:%i n2:%d",n, n2);
+      //allocate space for the theoretical matrix, the observed vector, and the result vector.
+      cuda_realloc_float(n2, &d_pThe_Matrix);
+      cuda_realloc_float(n, &d_pObs);
+      cuda_realloc_float(m, &d_pXCorrs);
+      max_spectrum_size = size;
+      } 
+    spectrum_size = size;
+   }
+  //carp(CARP_FATAL,"cuda_set_spectrum_size: done");
+}
+
+int cuda_get_max_theoretical(void) {
+  return cuda_get_max_theoreticalN(spectrum_size);
+}
+int cuda_get_max_theoreticalN(int ssize) {
+  //carp(CARP_FATAL,"ssize:%d",ssize);
+  if (ssize < 1) return 0;
+
   //TODO: calculate based upon card memory.
-  return 32;
+  int size = 1 * 1024 * 1024; //1 MB of memory.
+  int fsize = size / sizeof(float); //number of floats.
+
+  //m*n + n + m = S
+  //m - number of theoretical.
+  //n - spectrum size.
+  //m*n - matrix of theoreticals.
+  //n - storage space for observed spectrum.
+  //m - storage space for calculated xcorrs.
+
+  //carp(CARP_FATAL,"fsize:%d ssize:%d sizeof(float):%d",fsize,ssize,sizeof(float));
+  
+
+  int ans = (fsize - ssize) / (ssize + 1);
+  
+  //carp(CARP_FATAL,"number of theoretical:%d",ans);
+
+  return ans;
 }
 
 
 void cuda_set_theoretical(float* h_pThe, int index) {
   cublasStatus status;
-  float* d_ptr = d_pThe_Matrix+ (spectrum_size * index);
+  float* d_ptr = d_pThe_Matrix+(spectrum_size * index);
   status = cublasSetVector(spectrum_size, sizeof(float), h_pThe, 1, d_ptr, 1);
   if (status != CUBLAS_STATUS_SUCCESS) {
     carp(CARP_FATAL,"!!!! Error setting theoretical. code:%i index:%i",status, index);

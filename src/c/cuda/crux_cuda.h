@@ -4,6 +4,8 @@
 #include "modified_peptides_iterator.h"
 #endif
 
+//char* error_string[] = {"SUCCESS","NOT_INITIALIZED","ALLOC_FAILED","INVALID_VALUE","ARCH_MISMATCH","MAPPING_ERROR","EXECUTION_FAILED","INTERNAL_ERROR"};
+
 
 BOOLEAN_T initialize_cudablas();
 
@@ -25,8 +27,8 @@ void cuda_set_spectrum_size(int size);
 
 //returns the maximum number of theoretical spectra that can be calculated
 //by the card for a set spectrum_size.
-int cuda_get_max_theoretical();
-
+int cuda_get_max_theoretical(void);
+int cuda_get_max_theoreticalN(int ssize);
 //sets the intensity array for a theoretical spectrum.
 void cuda_set_theoretical(float* h_pThe, int index);
 
@@ -46,3 +48,6 @@ void printStats();
 void writeStats();
 void updateStatCount(float mass, int charge);
 #endif
+
+
+#define CUBLASEXEC(x) {cublasStatus _status; _status = x; if (_status != CUBLAS_STATUS_SUCCESS) {carp(CARP_FATAL,"cublas error: %i", _status);}}

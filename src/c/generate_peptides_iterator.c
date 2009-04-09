@@ -66,10 +66,11 @@ GENERATE_PEPTIDES_ITERATOR_T* new_generate_peptides_iterator(void){
   // get parameters from parameter.c
   double min_mass = get_double_parameter("min-mass");
   double max_mass = get_double_parameter("max-mass");
-  BOOLEAN_T use_index = get_boolean_parameter("use-index");
+  //  BOOLEAN_T use_index = get_boolean_parameter("use-index");
 
   //  BOOLEAN_T is_unique = get_boolean_parameter("unique-peptides");
   char*  protein_input_name = get_string_parameter_pointer("protein input");
+  BOOLEAN_T use_index = is_directory(protein_input_name);
 
   INDEX_T* index = NULL;
   DATABASE_T* database = NULL;
@@ -139,7 +140,6 @@ GENERATE_PEPTIDES_ITERATOR_T* new_generate_peptides_iterator_from_mass_range(
   // get parameters
   int min_length = get_int_parameter("min-length");
   int max_length = get_int_parameter("max-length");
-  BOOLEAN_T use_index_boolean = get_boolean_parameter("use-index");
   ENZYME_T enzyme = get_enzyme_type_parameter("enzyme");
   DIGEST_T digestion = get_digest_type_parameter("digestion");
   MASS_TYPE_T mass_type = get_mass_type_parameter("isotopic-mass");
@@ -162,18 +162,15 @@ GENERATE_PEPTIDES_ITERATOR_T* new_generate_peptides_iterator_from_mass_range(
   gen_peptide_iterator->constraint = copy_peptide_constraint_ptr(constraint); 
 
   // Check that index OR database exists
-  if(use_index_boolean && index == NULL ){
-    carp(CARP_FATAL, "Cannot genrate peptides from NULL index");
+  if (database == NULL && index == NULL ){
+    carp(CARP_FATAL, "Cannot genrate peptides when index and database are both NULL.");
     exit(1);
-  }else if( !use_index_boolean && database==NULL){
-    carp(CARP_FATAL, "Cannot genrate peptides from NULL database (fasta)");
-    exit(1);
-
   }
+
   /***********************
    * use index file
    **********************/
-  if(use_index_boolean){
+  if(index != NULL){
     
     if((sort_type != MASS && sort_type != NONE)){
       carp(CARP_FATAL, "Cannot sort other than by mass when using index.");
