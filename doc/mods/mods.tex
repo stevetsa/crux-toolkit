@@ -54,21 +54,22 @@
 \end{algorithm}
 
 \begin{algorithm}
-\caption{ Inputs: the target mass (m), a peptide modification (Mx),
-  and a set Q of possible sequence.  Output: a set of modified
-  peptides in the specified mass range.
+\caption{ Inputs: (1) the target mass (m), (2) a peptide modification (M)
+  containing a mass shift (mass) and a list of amino acid
+  modifications to be applied (aas), and (3) a set Q of possible sequence.
+  Output: a set of modified peptides in the specified mass range.
   \label{algorithm:select}}
 
 \begin{algorithmic}[1]
-\Procedure{selectPeptidesInMassRange}{m, Mx, Q}
-  \State Qu $\gets$ selectUnmodifiedPeptides(m - Mx.mass, Q)
+\Procedure{selectPeptidesInMassRange}{m, M, Q}
+  \State Qu $\gets$ selectUnmodifiedPeptides(m - M.mass, Q)
    
   \State Qm $\gets$ []
   \Comment Initialize set of modified peptides.
 
   \For{i $\gets$ 1 ... $|$Qu$|$}
-    \If{isModifiable(Qu[i], Mx)}
-      \State Qm += generateAllModifiedForms(Qu[i], Mx)
+    \If{isModifiable(Qu[i], M.aas)}
+      \State Qm += generateAllModifiedForms(Qu[i], M.aas)
       \Comment Algorithm~\ref{algorithm:generate}
     \EndIf
   \EndFor
@@ -80,17 +81,14 @@
 
 \begin{algorithm}
 \caption{{\bf Modifying a Peptide Sequence} Inputs: (1) a sequence q
-  containing an ordered list of amino acids, (2) a list M of peptide
-  modifications.  The modification list consists of tuples, each with
-  three parts: a unique mass shift (M[i].delta), a count of how many
-  of those shifts will be applied to the sequence (M[i].count), and a
-  set of amino acids to which this mass shift can be applied
-  (M[i].aas).  For example, a peptide mod with M[0].count = 2 will
-  apply a mass shift of M[0].delta to two different amino acids in the
-  sequence, those amino acids belonging to the set M[i].aas.  Output:
-  a set containing many copies of the given peptide, corresponding to
-  all the ways that the given modification can be applied to the
-  peptide.
+  containing an ordered list of amino acids, (2) a list M of amino acid
+  modifications.  Each modification M[i] consists three parts: a
+  unique mass shift (M[i].delta), the maximum number of times that
+  shift will be applied to the sequence (M[i].count), and a set of
+  amino acids to which this mass shift can be applied (M[i].aas).
+  Output: a set containing many copies of the given peptide,
+  corresponding to all the ways that the given modification can be
+  applied to the peptide.
   \label{algorithm:generate}}
 
 \begin{algorithmic}[1]
@@ -104,10 +102,9 @@
     \For{i $\gets$ 1 ... M[i].count}
     \Comment Apply modification specified number of times 
       \State n $\gets |$Q$|$
-      \For{j $\gets$ 1 ... n}
+      \For{j $\gets$ 0 ... n - 1}
       \Comment Apply to each sequence
-        \State Q += applyModToSequence(M[i].delta, M[i].aas, Q[j],
-        j-1)
+        \State Q += applyModToSequence(M[i].delta, M[i].aas, Q[j], j)
         \Comment Algorithm~\ref{algorithm:apply}
       \EndFor
     \EndFor
@@ -122,10 +119,11 @@
 \begin{algorithm}
 \caption{{\bf Modifying one Residue of a Peptide Sequence} Inputs: (1)
   the mass shift m to apply, (2) the set A of amino acids to which the
-  shift can be applied, (3) a peptide sequence q, which is an ordered
-  list of amino acids, (4) the number n of residues in the sequence to
-  which this modification has already been applied.  Outputs: a set
-  of sequences in which one residue has been modified.
+  shift can be applied, (3) a peptide sequence q and (4) the number n
+  of residues in the sequence to which this modification has already
+  been applied.  Output: a set contraining copies of the given
+  peptide, corresponding to all ways that the given modification can
+  be applied to a single residue of the peptide.
   \label{algorithm:apply}} 
 \begin{algorithmic}[1]
 \Procedure{applyModToSequence}{m, A, q, n}
@@ -140,6 +138,7 @@
     \EndIf
     \If{ n == 0 }
       \State startIdx $\gets$ i
+      \State break
     \EndIf
   \EndFor
 

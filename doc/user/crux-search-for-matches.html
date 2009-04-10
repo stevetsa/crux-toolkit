@@ -21,15 +21,22 @@
 <blockquote>
 <p>
 This command searches a protein database with a set of spectra.  For
-each spectrum, candidate peptides are identified whose inferred m/z
-lies within a specified range of the observed precursor m/z.  These
+each spectrum, the precursor mass is computed from the measured
+precursor m/z and an assumed charge.  Candidate peptides whose mass
+lies within a specified range of the precursor mass are identified.  These
 candidate peptides are first ranked with the SEQUEST Sp score.  The
 top 500 matches are then re-scored using XCorr.  The input protein
 database may either be in FASTA format or it may be a binary index
 created by <code>crux create-index</code>.</p>
 
 <p>
-<b>Modifications:</b> Crux handles modifications as follows.  
+<b>Modifications:</b> Crux handles two types of modifications: static
+and variable.  Static modifications are a change of mass applied to
+a given amino acid in every peptide in which it occurs.  By default, a
+static modification of +57 da to cystine (C) is applied.
+Variable modifications allow peptides to be generated with and without
+a mass change to a given amino acid.  Crux handles variable 
+modifications as follows.   
 The user specifies an allowed set of amino acid modifications, using
 the options <code>mod</code>, <code>cmod</code> and <code>nmod</code>,
 which are described below.  Before any search is performed, Crux
@@ -37,7 +44,7 @@ generates an exhaustive list of all possible combinations of amino
 acid modifications that could be applied to a peptide.  For example,
 if the user specifies a modification of +79 which can be present twice
 on any peptide and a modification of +30 which can be present only
-once , then the list will contain modifications corresponding to +79
+once, then the list will contain modifications corresponding to +79
 on one residue, +79 on two different residues, +30 on one residue, +79
 on one and +30 on one, +79 on two and +30 on one.  Subsequently, for
 each spectrum, Crux performs one search for each possible combination of
@@ -60,97 +67,76 @@ the composite list.</p>
 
 <LI>
 &lt;ms2 &gt; &ndash; The name of the file (in MS2 format) from which
-  to parse the spectra. 
+  to parse the spectra. </li>
 
 <LI>
 &lt;protein input&gt; &ndash; 
   The name of the file in fasta format or the directory containing a
-  protein index from which to retrieve proteins and peptides.
+  protein index from which to retrieve proteins and peptides.</li>
 
 </UL>
+
 <B>Output:</B>
 
-<UL>
 <p>
-The program writes to a user-specified folder a binary file
-that contains the PSMs and additional features.
-Optionally, the result can be output in a human readable
-SQT format file instead of or in addition to the binary file.
-</p>
-</UL>
+The program writes files to the folder <code>crux-output</code> by default.
+The name of the output folder can be set by the user using the <code>--fileroot</code> option.
+The following files will be created:</p>
+<ul>
+
+<li>
+<b>target.csm</b>: a binary file that contains the PSMs and additional
+features.  This file can be used as input
+to <code>crux&nbsp;compute-q-values</code>
+or <code>crux&nbsp;percolator</code>.
+
+<li>
+<b>search.target.sqt</b>: an <a href="sqt-format.html">SQT</a> file containing the PSMs
+
+<li>
+<b>search.target.txt</b>: a tab-delimited text file containing the PSMs.
+See <a href="txt-format.html">txt file format</a> for a list of the fields.
+</li>
+
+
+<li>
+<b>log.txt</b>: a log file containing a copy of all messages that were
+printed to stderr.
+
+</ul>
+
+<p>
+If decoys are enabled using <code>--number-decoy-set</code>, then
+three files called binary.csm, binary.sqt and binary.txt are also
+produced.</p>
+
 
 <B>Options:</B>
 <UL>
 
 <li>
-<code>--use-index &lt;T|F&gt;</code> Use an index that has already been 
-    created if true (T) or use a fasta file if false (F). When using
-    an index the 'protein input' argument will be the name of the
-    directory containing the index files (the same as the 'index name'
-    argument for crux-create-index).  Default = F.
-
-<LI>
-<code>--output-mode &lt;sqt|binary|all&gt; </code> &ndash; The output
-format. In 'binary' mode the output file is named after the input MS2
-file with extension .csm and the file(s) with search results from
-decoy sequences end in -decoy.csm.  The binary output files become the
-input for crux-analyze-matches.  In 'sqt' mode only a text file is
-produced.  It's name is controlled with the --sqt-output-file and 
---decoy-sqt-out-ut-file options.  With 'all' both binary and text 
-files are produced. Default = binary.
-
-<LI>
-<code>--match-output-folder &lt;string&gt;</code> &ndash; The directory in
-which to store the binary output files and/or text sqt files. Default
-= current directory.  
+<code>--fileroot &lt;string&gt;</code> &ndash; Sets the name of the
+the output directory to the specified string.</li>
 
 <li>
 <code>--overwrite &lt;T|F&gt;</code> Replace existing files if true (T) or 
-fail when trying to overwrite a file if false (F). Default =  F.
-
-<LI>
-<code>--sqt-output-file &lt;string&gt;</code> &ndash; Name of the output text
-file.  Only works with --output-mode&lt;sqt|all&gt; Default = target.sqt.
-
-<LI>
-<code>--decoy-sqt-output-file &lt;string&gt;</code> &ndash; Name of the output
-sqt file for matches to decoy (shuffled) sequences.  Only
-relevant with --number-decoy-sets &lt;1|2&gt;.  With two decoy
-sets, only one is printed to an sqt file. Default = decoy.sqt.
+fail when trying to overwrite a file if false (F). Default =  F.</li>
 
 <LI>
 <code>--number-decoy-set &lt;0|1|2&gt;</code> &ndash; Specify the number
-of decoy sets to generate for match_analysis. At least one decoy set
-is required to run the algorithm 'percolator' in a subsiquent
-crux-analyze-matches run.  Default = 2. 
-
-<!--
-<LI>
-<code>--prelim-score-type &lt;sp|none&gt;</code> &ndash; 
-The type of preliminary 
-scoring function to use.  In the preliminary scoring step, all
-possible psms for a spectrum are scored and sorted by score.  Only the
-top ranking psms are retained for the second scoring step. The
-parameter file option 'max-rank-preliminary' controls how many
-top-ranking psms are retained.  Default = sp.
-
-<LI>
-<code>--score-type &lt;xcorr|sp|xcorr-pvalue|sp-pvalue&gt;</code>&ndash; 
-The type of scoring function to use in the second scoring step.  Xcorr
-is the SEQEUST-style score, sp is the SEQUEST-style preliminary
-scoring function.  A p-value for each psm can be calculated from
-either the xcorr score or the sp score with 'xcorr-pvalue' and
-'sp-pvalue', respectively. Either one may be used with the
-crux-analyze-matches 'curve-fit' algorithm.  Using xcorr or sp
-followed by the crux-analyze-matches algorithm curve-fit results in
-unspecified behavior.  Default = xcorr.
--->
+of decoy sets to generate.  Each decoy set of psms will be printed to
+a separate file and not included with the target psms.  To return
+decoys in the same file as targets, use <code>tdc=T</code> in the
+parameter file and control the number of decoys
+with <code>num-decoys-per-target</code>. At least one decoy set (in
+its own file) is required to run the algorithm 'percolator' in a subsiquent
+crux run.  Default = 2. </li>
 
 <li>
 <code>--compute-p-values &lt;T | F&gt; &ndash</code>
 Estimate the paramters of the score distribution for each spectrum and
 compute a p-value for each PSM.  This option must be used in order to
-run <code>crux compute-q-values</code> on the results.
+run <code>crux compute-q-values</code> on the results.</li>
 
 <LI>
 <code>--spectrum-min-mass &lt;float&gt;</code> &ndash; The lowest spectrum 
@@ -173,11 +159,12 @@ href="parameter-file.html">parameter documentation</a> page for
 details.
 
 <LI>
-<code>--write-parameter-file &lt;filename&gt;</code> &ndash; Create a file
-with the name and value of all parameters/options for the current
-search.  Not all parameters in the file may have been used in the
-search.  The resulting file can be used with the --parameter-file
-option for other crux programs. 
+<code>--write-parameter-file &lt;T|F&gt;</code> &ndash; Create a file in the
+output directory named <code>params.txt</code>.  This file contains
+the name and value of all parameters/options for the current
+operation.  Not all parameters in the file may have been used in the
+operation.  The resulting file can be used with the <code>--parameter-file</code>
+option for other crux programs. Default = <code>F</code>.
 
 <LI>
 <code>--verbosity &lt;0-100&gt;</code> &ndash; Specify the verbosity of the
@@ -200,6 +187,11 @@ the 'T' after --version.
 in calcuating fragment ion mass (average, mono). Default = mono.
 
 <li>
+<code>mass-window</code> &ndash;
+Tolerance used for matching peptides to spectra.  Peptides must be
+within +/- 'mass-window' of the spectrum mass.  Default = 3.0.
+
+<li>
 <code>ion-tolerance&lt;float&gt;</code> &ndash; Tolerance used for matching
 observed peaks to predicted fragment ions.  Default = 0.5.
 
@@ -209,17 +201,26 @@ spectrum to score after preliminary scoring.  Default = 500.
 
 <li>
 <code>top-match &lt;int&gt;</code> &ndash; The number of psms per
-spectrum writen 
-to the binary output file. Only relevant when
-output-mode=&lt;all|binary&gt;. Does not affect output to text files.
-If more than one psm is written to file, the matches for each spectrum
-will be re-ranked in crux-match-analysis. Default = 1.
+spectrum writen to the output files.
+Default = 1.
 
 <li>
-<code>max-sqt-result &lt;int&gt;</code> &ndash; Number of search results per
-spectrum to report in the sqt file. Only relevant when
-output-mode=&lt;all|sqt&gt;.  Does not affect output to binary
-files. Default = 5. 
+<code>tdc &lt;T|F&gt;</code> &ndash;
+Target-decoy competition.  Combine target and decoy searches in one
+file.  Default FALSE, separate files. After searching target and decoy
+peptides, all psms for one spectrum are sorted together and the mixed
+list is returned in the search.target.[sqt|txt|csm] file. Set number of decoys with
+num-decoys-per-target.  The number of psms retained after preliminary
+searching (max-rank-preliminary) is increased to reflect the number of
+decoys searched so that (1+num-decoys)*max-rank-preliminary are kept.
+Default = F.
+
+<Li>
+<code>num-decoys-per-target &lt;int&gt;</code> &ndash;
+Number of decoy peptides to search for every target peptide
+searched. Multiple decoys are put in the same collection,
+sorted together, and written to the same file.  Does not affect
+--number-decoy-sets or tdc.  Default 1. 
 
 <li>
 <code>mod &lt;mass change&gt;:&lt;aa list&gt;:&lt;max per peptide&gt;
@@ -265,6 +266,26 @@ peptide. Default = no limit.
 The maximum number of modified amino acids that can appear in one
 peptide.  Each aa can be modified multiple times. Default = no limit.
 
+<li>
+<code>precision &lt;n&gt; &ndash; </code>
+Set the precision for masses and scores written to sqt and text
+files. Default 6. Available from parameter file for crux
+search-for-matches, percolator, and compute-q-values. 
+
+<li>
+<code>print-search-progress &lt;n&gt; &ndash; </code>
+Show search progress by printing every n spectra searched. Set to
+0 to show no search progress.  Available for crux search-for-matches
+from parameter file. Default = 10.
+
+<li>
+<code>reverse-sequence &lt;T|F&gt; &ndash;</code>
+Generate decoy sequences by reversing the peptide rather than by
+shuffling.  The first and last residues of the sequence are not
+changed.  If the target sequence is a palindrome (the same when
+reversed), then the decoy will be generated by shuffling and a note to
+that effect will be printed at verbosity level 40 (DETAILED INFO).
+
 <p>
 <i>NOTE: the following parameters are also used when creating an index
 and must be compatible with any index used.</i></p>
@@ -273,7 +294,7 @@ and must be compatible with any index used.</i></p>
 <code>min-mass &lt;float&gt;</code> &ndash; 
 The minimum neutral mass of the peptides to place in the
 index. Default = 200.
-	
+
 <LI>
 <code>max-mass &lt;float&gt;</code> &ndash; 
 The maximum neutral mass of the peptides to place in
@@ -288,20 +309,46 @@ The minimum length of the peptides to place in the index. Default = 6.
 The maximum length of the peptides to place in the index. Default = 50.
 
 <LI>
-<code>cleavages &lt;tryptic|partial|all&gt; </code> &ndash; 
-Type of cleavages to allow.
-The <code>tryptic</code> option outputs peptides that result from a
-complete <i>in silico</i> digestion of proteins after residues K or R except
-when followed by P.  The value <code>partial</code> produces peptides
-with at least one end generated by a tryptic digestion.  This includes
-all tryptic peptides.  The value <code>all</code> outputs all possible
-peptides and sets <code>missed-cleavages</code> (see below) to
-<code>TRUE</code>.  Default = tryptic. 
+<code>enzyme &lt;trypsin|chymotrypsin|elastase|clostripain|cyanogen-bromide|idosobenzoate|proline-endopeptidase|staph-protease|modified-chymotrypsin|elastase-trypsin-chymotrypsin|no-enzyme&gt; 
+</code> &ndash; 
+Enzyme to use for <i>in silico</i> digestion of protein sequences. Used
+in conjunction with the options digestion and missed-cleavages. Use
+'no-enzyme' for non-specific digestion.  Digestion rules are as
+follows: enzyme name [cuts after one of these residues]|{but not before
+one of these residues}.  trypsin [RK]|{P}, elastase [ALIV]|{P},
+chymotrypsin [FWY]|{P}, clostripain [R]|[], cyanogen-bromide [M]|[],
+iodosobenzoate [W]|[], proline-endopeptidase [P]|[], staph-protease
+[E]|[], modified-chymotrypsin [FWYL]|{P},
+elastase-trypsin-chymotrypsin [ALIVKRWFY]|{P},aspn []|[D] (cuts before
+D). Default = trypsin.
+
+<li>
+<code>custom-enzyme &lt;residues before cleavage | residues after cleavage
+&gt;</code> &ndash
+Specify rules for <i>in silico</i> digestion of protein sequences.
+Overrides the <code>enzyme</code> option.  Two lists of residues are
+given enclosed in square brackets or curly braces and separated by a
+|. The first list contains residues required/prohibited before the
+cleavage site and the second list is residues after the cleavage site.  
+If the residues are required for digestion, they are in square
+brackets, '[' and ']'.  If the residues prevent digestion, then they
+are enclosed in curly braces, '{' and '}'.  Use X to indicate all
+residues.  For example, trypsin cuts after R or K but not before P
+which is represented as <code>[RK]|{P}</code>.  AspN cuts after any
+residue but only before D which is represented as <code>[X]|[D]</code>.
+
+<LI>
+<code>digestion &lt;full-digest|partial-digest&gt;</code> &ndash;
+Degree of digestion used to generate peptides (full-digest,
+partial-digest). Either both ends or one end of a peptide must
+conform to enzyme specificity rules. Default full-digest., Used in
+conjunction with enzyme option when enzyme is not set to to
+'no-enzyme'.  
 
 <LI>
 <code>missed-cleavages &lt;T|F&gt;</code> &ndash; 
 Allow missed cleavage sites within a peptide.  When used with
-cleavages=&lt;tryptic|partial&gt; includes peptides containing one or more
+enzyme is specified; includes peptides containing one or more
 potential cleavage sites. Default = F. 
 
 <li>
@@ -314,6 +361,12 @@ one of those proteins.  Default = F.
 Specify the type of isotopic masses to use when calculating the
 peptide mass. Default = average.
    
+<li>
+<code>&lt;A-Z&gt &lt;float&gt;</code> &ndash;
+Specify static modifications.  This is a mass change applied to the
+given amino acid (in single-letter-code A thru Z) for every peptide in
+which it occurs.  Use the <code>mod</code> option for generating
+peptides both with and without the mass change.  Default C=57.
 </ul>
 
 <HR></hr>

@@ -1,6 +1,6 @@
 
-schematic.eps: schematic.fig
-	fig2dev -L eps schematic.fig schematic.eps
+#schematic.eps: schematic.fig
+#	fig2dev -L eps schematic.fig schematic.eps
 
 schematic.png: schematic.eps
 	convert -density 144 -resize 40%x40% schematic.eps schematic.png
@@ -40,7 +40,8 @@ dist_html_DATA  =  \
 	data/demo.ms2 \
 	data/small-yeast.fasta
 
-EXTRA_DIST = schematic.fig
+#EXTRA_DIST = schematic.fig
+EXTRA_DIST = schematic.eps
 
 WEBDIR=/noble/www/htdocs/proj/crux
 webpage:

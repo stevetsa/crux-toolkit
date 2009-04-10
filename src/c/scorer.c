@@ -4,7 +4,7 @@
  * CREATE DATE: 9 Oct 2006
  * DESCRIPTION: object to score spectrum vs. spectrum or spectrum
  * vs. ion_series 
- * REVISION: $Revision: 1.67.4.5 $
+ * REVISION: $Revision: 1.67.4.6 $
  ****************************************************************************/
 
 #include <math.h>
@@ -23,8 +23,8 @@
 #include "parameter.h"
 #include "unistd.h"
 
-#ifdef CRUX_USE_CUDA1
-#include "crux_cuda.h"
+#ifdef CRUX_USE_CUDA
+#include "crux_cuda.cu.h"
 #endif
 
 
@@ -919,6 +919,11 @@ BOOLEAN_T create_intensity_array_observed(
 
   // TODO maybe replace with a faster implementation that uses cum distribution
   float* new_observed = (float*)mycalloc((int)scorer->sp_max_mz, sizeof(float));
+
+#ifdef CRUX_USE_CUDA
+  cross_correlation_obs(scorer -> observed, new_observed, scorer -> sp_max_mz);
+#else
+
   int idx;
   for (idx=0; idx < scorer->sp_max_mz; idx++){
     new_observed[idx] = scorer->observed[idx];
@@ -931,6 +936,7 @@ BOOLEAN_T create_intensity_array_observed(
       new_observed[idx] -= (scorer->observed[sub_idx] / (MAX_XCORR_OFFSET * 2.0) );
     }
   }
+#endif
 
   free(scorer->observed);
   scorer->observed = new_observed;
