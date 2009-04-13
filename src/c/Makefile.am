@@ -112,8 +112,6 @@ PROGRAM_FILES = \
 #  transform_ms2_spectra \
 #  create_psm_files
 
-
-
 bin_PROGRAMS = $(PROGRAM_FILES)
 
 crux_get_ms2_spectrum_SOURCES = get_ms2_spectrum.c

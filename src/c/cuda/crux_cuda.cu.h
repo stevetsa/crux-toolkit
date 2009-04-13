@@ -13,7 +13,12 @@
 #ifdef CUDA_NVCC
 extern "C" {
 #endif
-void cross_correlation_obs(float* h_values, float*h_ans, int n);
+  
+  void cuda_normalize_each_region(float* h_values, float* max_per_region, int n, int num_regions, int region_selector);
+  void cross_correlation_obs(float* h_values, float*h_ans, int n, int max_offset);
+  
+
+
 #ifdef CUDA_NVCC
 }
 #endif
