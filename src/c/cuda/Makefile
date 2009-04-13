@@ -1,7 +1,8 @@
 CUDA_CC = nvcc
 CC=gcc
-CUDA_COPTS = --host-compilation 'c' -DCUDA_NVCC
-CUDA_DIR=/net/gs/vol3/software/modules-sw/cuda/2.1/Linux/RHEL5/i686/
+CUDA_COPTS = --host-compilation 'c' -DCUDA_NVCC --device-emulation
+CUDA_DIR=/usr/local/cuda
+#CUDA_DIR=/net/gs/vol3/software/modules-sw/cuda/2.1/Linux/RHEL5/i686/
 
 
 all: crux_cuda_test

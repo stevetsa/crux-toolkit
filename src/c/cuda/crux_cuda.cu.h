@@ -14,8 +14,16 @@
 extern "C" {
 #endif
   
-  void cuda_normalize_each_region(float* h_values, float* max_per_region, int n, int num_regions, int region_selector);
-  void cross_correlation_obs(float* h_values, float*h_ans, int n, int max_offset);
+  void cuda_normalize_and_cc(float*h_values, float* max_per_region,
+			     int n, int num_regions,
+			     int region_selector, int max_offset);
+
+  void cuda_normalize_each_region(float* h_values, float* max_per_region, 
+				  int n, int num_regions, 
+				  int region_selector);
+
+  void cross_correlation_obs(float* h_values, float*h_ans, 
+			     int n, int max_offset);
   
 
 

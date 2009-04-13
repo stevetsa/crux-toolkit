@@ -52,8 +52,48 @@ __global__ static void d_cross_correlation_obs(float* invalues, float* ans, int 
 }
 
 
+void cuda_normalize_and_cc(float*h_values, float* max_per_region,
+			   int n, int num_regions,
+			   int region_selector, int max_offset) {
+  float* d_values;
+  float* d_max_per_region;
+  float* d_ans;
 
-void cuda_normalize_each_region(float* h_values, float* max_per_region, int n, int num_regions, int region_selector) {
+  cudaError error = cudaMalloc((void**)&d_values, sizeof(float)*n);
+  if (error != cudaSuccess)
+    {
+      printf("Error allocating d_values:%i",error);
+    }
+  
+  error = cudaMalloc((void**)&d_max_per_region, sizeof(float)* num_regions);
+  error = cudaMalloc((void**)&d_ans, sizeof(float)*n);
+
+  
+  error = cudaMemcpy(d_values, h_values, sizeof(float)*n, cudaMemcpyHostToDevice);
+  error = cudaMemcpy(d_max_per_region, max_per_region, sizeof(float)*n, cudaMemcpyHostToDevice);
+
+  int num_blocks = n / NUM_THREADS_PER_BLOCK;
+
+  d_normalize_each_region<<<num_blocks, NUM_THREADS_PER_BLOCK>>>(d_values, d_max_per_region, 
+								 n, num_regions, region_selector);
+  error = cudaGetLastError();
+
+  d_cross_correlation_obs<<<num_blocks, NUM_THREADS_PER_BLOCK>>>(d_values, d_ans, n, max_offset);
+  error = cudaGetLastError();
+
+  error = cudaMemcpy(h_values, d_ans, sizeof(float)*n, cudaMemcpyDeviceToHost);
+  
+
+  //Free memory, (maybe some of these don't need to be freed everytime (TODO)).
+  error = cudaFree(d_values);
+  error = cudaFree(d_max_per_region);
+  error = cudaFree(d_ans);
+}
+
+
+
+void cuda_normalize_each_region(float* h_values, float* max_per_region, 
+				int n, int num_regions, int region_selector) {
   float *d_values;
   float *d_max_per_region;
 

@@ -4,7 +4,7 @@
  * CREATE DATE: 9 Oct 2006
  * DESCRIPTION: object to score spectrum vs. spectrum or spectrum
  * vs. ion_series 
- * REVISION: $Revision: 1.67.4.7 $
+ * REVISION: $Revision: 1.67.4.8 $
  ****************************************************************************/
 
 #include <math.h>
@@ -907,11 +907,15 @@ BOOLEAN_T create_intensity_array_observed(
   }
   */
 #ifdef CRUX_USE_CUDA
-  cuda_normalize_each_region(scorer -> observed, max_intensity_per_region, scorer -> sp_max_mz, 10, region_selector);
+  cuda_normalize_and_cc(scorer -> observed,
+			max_intensity_per_region,
+			scorer -> sp_max_mz,
+			10,
+			region_selector,
+			MAX_XCORR_OFFSET);
 #else
   // normalize each 10 regions to max intensity of 50
   normalize_each_region(scorer, max_intensity_per_region, region_selector);
-#endif
   // DEBUG
   /*
   i = 0;
@@ -921,10 +925,6 @@ BOOLEAN_T create_intensity_array_observed(
 
   // TODO maybe replace with a faster implementation that uses cum distribution
   float* new_observed = (float*)mycalloc((int)scorer->sp_max_mz, sizeof(float));
-
-  #ifdef CRUX_USE_CUDA
-  cross_correlation_obs(scorer -> observed, new_observed, scorer -> sp_max_mz, MAX_XCORR_OFFSET);
-  #else
 
   int idx;
   for (idx=0; idx < scorer->sp_max_mz; idx++){
@@ -938,10 +938,12 @@ BOOLEAN_T create_intensity_array_observed(
       new_observed[idx] -= (scorer->observed[sub_idx] / (MAX_XCORR_OFFSET * 2.0) );
     }
   }
-  #endif
+
+
 
   free(scorer->observed);
   scorer->observed = new_observed;
+#endif
 
   // free heap
   free(max_intensity_per_region);
