@@ -3,8 +3,9 @@
 #include <stdio.h>
 
 #define MAX_XCORR_OFFSET 75
-#define NUM 2048
+#define NUM 15
 
+/*
 int h_min(int a, int b) {
    return (a<b) ? a : b;
 }
@@ -12,7 +13,7 @@ int h_min(int a, int b) {
 int h_max(int a, int b) {
    return (a>b) ? a : b;
 }
-
+*/
 
 void do_cross_correlation_obs(float* in, float* ans, int n, int max_offset) {
 
@@ -32,17 +33,30 @@ void do_cross_correlation_obs(float* in, float* ans, int n, int max_offset) {
 }
 
 
+float h_max(float *a,int n) {
+  int i;
+  int best_index = -1;
+  float best;
+  for (i=0;i<n;i++) {
+    if (best_index == -1 || a[best_index] < a[i]) {
+      best_index = i;
+    }
+  }
+  return a[best_index];
+}
+
+
 int main(int argc, char **argv) {
   float h_values[NUM];
   float h_ans[NUM];
   int i;
   for (i=0;i< NUM;i++) {
-    h_values[i] = i;
+    h_values[i] = (float)rand()/(float)32768;
   }
   
   cross_correlation_obs(h_values, h_ans, NUM, MAX_XCORR_OFFSET);
-
-
+  
+  
 
   float h_ans2[NUM];
   do_cross_correlation_obs(h_values, h_ans2, NUM, MAX_XCORR_OFFSET);
@@ -55,4 +69,14 @@ int main(int argc, char **argv) {
   }
 
   printf("rms_error:%f\n",rms_error);
+
+  
+  float max = h_max(h_values+5,NUM-5);
+  printf("h_max:%f\n",max);
+
+  max = calcMax2(h_values, 5, NUM);
+  printf("d_max:%f\n",max);
+
+  
+
 }

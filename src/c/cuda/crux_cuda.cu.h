@@ -30,6 +30,7 @@ extern "C" {
   void cross_correlation_obs(float* h_values, float*h_ans, 
 			     int n, int max_offset);
   
+  float d_max(float* h_values, int n);
 
 
 #ifdef CUDA_NVCC

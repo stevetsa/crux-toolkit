@@ -19,10 +19,26 @@ __global__ static void reduction(float*a, int stride, int N) {
   int n = stride * 2;
   if (i * n < N) {
     int index = i * n;
-    a[index] = max(a[index], a[index] + stride);
+    a[index] = max(a[index], a[index + stride]);
   }
 
 }
+
+__global__ static void reduction_odd(float* a, int stride, int N) {
+  int i = blockIdx.x * blockDim.x + threadIdx.x;
+  int n = stride*2;
+  int index = i*n;
+  if (index < N) {
+    if (index+stride != N) {
+      int index = i * n;
+      //leave the last element alone, it is the max in the first stride.
+      a[index] = max(a[index], a[index+stride]);
+    }
+  }
+  
+}
+
+
 
 
 __global__ static void d_sqrt(float* invalues) {
@@ -57,11 +73,57 @@ __global__ static void d_cross_correlation_obs(float* invalues, float* ans, int 
     ans[idx] -= (invalues[cur_idx] / (max_offset * 2.0));
   }
 }
+void calcMax(float* d_values, int n, float*d_ans);
+float d_max(float* h_values, int n) {
+
+  float ans;
+  cudaError error;
+  float* d_values;
+  float* d_ans;
+  int size_n = sizeof(float) * n;
+
+
+  error = cudaMalloc((void**)&d_values, size_n);
+  error = cudaMalloc((void**)&d_ans, sizeof(float));
+  
+  error = cudaMemcpy(d_values, h_values, size_n,cudaMemcpyHostToDevice);
+  
+  calcMax(d_values, n, d_ans);
+
+  error = cudaMemcpy(&ans, d_ans, sizeof(float), cudaMemcpyDeviceToHost);
+
+  cudaFree(d_values);
+  cudaFree(d_ans);
+  
+  return ans;
+
+}
+
+int isPowerOfTwo(int n)
+{
+    return (n) && !(n & (n - 1)); //this checks if the integer n is a power of two or not
+}
+
+void calcMaxP2(float* d_values, int n, float* d_ans);
+void calcMaxNP2(float* d_values, int n, float* d_ans);
 
 void calcMax(float* d_values, int n, float*d_ans) {
+  
+
+
+  if (isPowerOfTwo(n)) {
+    calcMaxP2(d_values,n,d_ans);
+  }
+  else {
+    calcMaxNP2(d_values,n,d_ans);
+  }
+}
+
+void calcMaxP2(float* d_values, int n,float* d_ans) {
   int stride;
   cudaError error;
-  
+  int i;
+  int size_n = n * sizeof(float);
   int num_threads;
   int num_blocks;
   if (n < NUM_THREADS_PER_BLOCK) {
@@ -78,11 +140,34 @@ void calcMax(float* d_values, int n, float*d_ans) {
 
   for(stride=1;stride<=n/2;stride*=2) {
     reduction<<<num_blocks, num_threads>>>(d_values, stride, n);
+    cudaThreadSynchronize();
     error = cudaGetLastError();
     if (error != cudaSuccess)
       printf("reduction error %s stride:%i n:%i\n",cudaGetErrorString(error),stride, n);
+    
+
   }
-  cudaMemcpy(d_ans, d_values, sizeof(float), cudaMemcpyDeviceToDevice);
+  cudaMemcpy(d_ans, 
+	     d_values, 
+	     sizeof(float), 
+	     cudaMemcpyDeviceToDevice);
+}
+
+
+void calcMaxNP2(float* d_values, int n, float* d_ans){
+  printf("Inside calcMaxNP2\n");
+  int n2 = (int)pow(2,ceil(log2((float)n)));
+  float* d_temp;
+  cudaError error;
+  
+  printf("n:%i n2:%i\n",n, n2);
+
+  cudaMalloc((void**)&d_temp, n2*sizeof(float));
+  cudaMemcpy(d_temp,d_values,n*sizeof(float),cudaMemcpyDeviceToDevice);
+  cudaMemset(d_temp+n,0,n2-n);
+  calcMaxP2(d_temp, n2, d_ans);
+  cudaFree(d_temp);
+
 }
 
 void calcMax2(float* d_values, int start, int end, float* d_ans) {
@@ -274,16 +359,16 @@ void cross_correlation_obs(float* h_values, float* h_ans, int n, int max_offset)
 
   cudaError error = cudaMalloc((void**)&d_values, sizeof(float)*n);
   if (error != cudaSuccess) 
-    printf("Error allocating d_values:%i",error);
+    printf("Error allocating d_values:%s",cudaGetErrorString(error));
 
   error = cudaMalloc((void**)&d_ans, sizeof(float)*n);
   if (error != cudaSuccess) 
-    printf("Error allocating d_ans:%i",error);
+    printf("Error allocating d_ans:%s",cudaGetErrorString(error));
 
   
   error = cudaMemcpy(d_values, h_values, sizeof(float)*n, cudaMemcpyHostToDevice);
   if (error != cudaSuccess)
-    printf("Error copying values:%i",error);
+    printf("Error copying values:%s",cudaGetErrorString(error));
 
   int num_blocks = n / NUM_THREADS_PER_BLOCK;
 
@@ -293,7 +378,7 @@ void cross_correlation_obs(float* h_values, float* h_ans, int n, int max_offset)
   error = cudaGetLastError();
 
   if (error != cudaSuccess)
-    printf ("Kernel error:%i\n",error);
+    printf ("Kernel error:%s\n",cudaGetErrorString(error));
   
   //copy answer back.
   cudaMemcpy(h_ans, d_ans, sizeof(float)*n, cudaMemcpyDeviceToHost);
