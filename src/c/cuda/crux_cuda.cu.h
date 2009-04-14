@@ -13,6 +13,11 @@
 #ifdef CUDA_NVCC
 extern "C" {
 #endif
+
+  
+
+  void cuda_sqrt_max_normalize_and_cc(float* h_values, int n, int num_regions, int region_selector, int max_offset);
+ 
   
   void cuda_normalize_and_cc(float*h_values, float* max_per_region,
 			     int n, int num_regions,

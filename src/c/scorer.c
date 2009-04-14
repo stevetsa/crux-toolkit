@@ -4,7 +4,7 @@
  * CREATE DATE: 9 Oct 2006
  * DESCRIPTION: object to score spectrum vs. spectrum or spectrum
  * vs. ion_series 
- * REVISION: $Revision: 1.67.4.8 $
+ * REVISION: $Revision: 1.67.4.9 $
  ****************************************************************************/
 
 #include <math.h>
@@ -844,7 +844,7 @@ BOOLEAN_T create_intensity_array_observed(
   }
 
   // DEBUG
-  // carp(CARP_INFO, "experimental_mass_cut_off: %.2f sp_max_mz: %.3f", experimental_mass_cut_off, scorer->sp_max_mz);
+  carp(CARP_FATAL, "experimental_mass_cut_off: %.2f sp_max_mz: %.3f", experimental_mass_cut_off, scorer->sp_max_mz);
   scorer->observed = (float*)mycalloc((int)scorer->sp_max_mz, sizeof(float));
   
   // store the max intensity in each 10 regions to later normalize
@@ -852,7 +852,7 @@ BOOLEAN_T create_intensity_array_observed(
   int region_selector = (int)(get_spectrum_max_peak_mz(spectrum) / 10);
 
   // DEBUG
-  // carp(CARP_INFO, "max_peak_mz: %.2f, region size: %d",get_spectrum_max_peak_mz(spectrum), region_selector);
+  carp(CARP_FATAL, "max_peak_mz: %.2f, region size: %d",get_spectrum_max_peak_mz(spectrum), region_selector);
   
   int region = 0;
   // create a peak iterator
@@ -882,7 +882,16 @@ BOOLEAN_T create_intensity_array_observed(
       continue;
       // region = 9;
     }
+#ifdef CRUX_USE_CUDA
+    //set intensity in array with correct mz, only if max peak in the bin
+    intensity = get_peak_intensity(peak);
+    if(scorer->observed[mz] < intensity){ 
+      scorer->observed[mz] = intensity; 
+      if (max_intensity_per_region[region] < sqrt(intensity))
+	max_intensity_per_region[region] = sqrt(intensity);
+    }
 
+#else
     // get intensity
     // sqrt the original intensity
     intensity = sqrt(get_peak_intensity(peak));
@@ -890,12 +899,13 @@ BOOLEAN_T create_intensity_array_observed(
     // set intensity in array with correct mz, only if max peak in the bin
     if(scorer->observed[mz] < intensity){
       scorer->observed[mz] = intensity;
-            
+      
       // check if this peak is max intensity in the region(one out of 10)
       if(max_intensity_per_region[region] < intensity){
         max_intensity_per_region[region] = intensity;
       }
-    }    
+    }  
+#endif 
   }
 
   
@@ -903,16 +913,23 @@ BOOLEAN_T create_intensity_array_observed(
   /*
   int i = 0;
   for(; i < 10; i++){
-    carp(CARP_INFO, "High intensity bin %d: %.2f", i, max_intensity_per_region[i]);
+    printf("High intensity bin %d: %.2f\n", i, max_intensity_per_region[i]);
   }
   */
+  /*
+  for (i=0;i<scorer -> sp_max_mz;i++)
+    if (scorer -> observed[i] > 0.0)
+      printf("value %i: %f\n",i,sqrt(scorer -> observed[i]));
+  */
+
 #ifdef CRUX_USE_CUDA
-  cuda_normalize_and_cc(scorer -> observed,
-			max_intensity_per_region,
-			scorer -> sp_max_mz,
-			10,
-			region_selector,
-			MAX_XCORR_OFFSET);
+  //printf("Calling code.\n");
+  //process the data, sqrt, find max per region, normalize per region, and do cross correlation function.
+  cuda_sqrt_max_normalize_and_cc(scorer -> observed, 
+				 scorer -> sp_max_mz, 
+				 10, 
+				 region_selector, 
+				 MAX_XCORR_OFFSET);
 #else
   // normalize each 10 regions to max intensity of 50
   normalize_each_region(scorer, max_intensity_per_region, region_selector);
@@ -944,11 +961,11 @@ BOOLEAN_T create_intensity_array_observed(
   free(scorer->observed);
   scorer->observed = new_observed;
 #endif
-
+  carp(CARP_FATAL,"Cleaning up");
   // free heap
   free(max_intensity_per_region);
   free_peak_iterator(peak_iterator);
-
+  carp(CARP_FATAL,"Done.");
   return TRUE;
 }
 
