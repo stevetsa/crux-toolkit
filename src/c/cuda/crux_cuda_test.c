@@ -74,7 +74,6 @@ int main(int argc, char **argv) {
   float max = h_max(h_values+5,NUM-5);
   printf("h_max:%f\n",max);
 
-  max = calcMax2(h_values, 5, NUM);
   printf("d_max:%f\n",max);
 
   

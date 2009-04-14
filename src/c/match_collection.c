@@ -8,7 +8,7 @@
  *
  * AUTHOR: Chris Park
  * CREATE DATE: 11/27 2006
- * $Revision: 1.89.4.5 $
+ * $Revision: 1.89.4.6 $
  ****************************************************************************/
 #include "match_collection.h"
 
@@ -1597,7 +1597,7 @@ float get_match_collection_delta_cn(
 /**
  * \brief Names and opens the correct number of binary psm files.
  *
- * Takes the values of fileroot parameter, ms2 filename (soon to be
+ * Takes the values of output-dir parameter, ms2 filename (soon to be
  * named output file), overwrite, and number-decoy-set from parameter.c.
  * Exits with error if can't create new requested directory or if
  * can't create any of the psm files.
@@ -1615,7 +1615,7 @@ FILE** create_psm_files(){
 
   carp(CARP_DEBUG, "Opening %d new psm files", total_files);
 
-  char* output_directory =get_string_parameter_pointer("fileroot");
+  char* output_directory =get_string_parameter_pointer("output-dir");
 
   // create the output folder if it doesn't exist
   if(access(output_directory, F_OK)){
@@ -1649,8 +1649,7 @@ FILE** create_psm_files(){
 
   for(file_idx=0; file_idx<total_files; file_idx++){
 
-    char* psm_filename = generate_psm_filename(filename_path_array[0], 
-                                               file_idx);
+    char* psm_filename = generate_psm_filename(file_idx);
 
     file_handle_array[file_idx] = create_file_in_path(psm_filename,
                                                       output_directory,
@@ -2554,7 +2553,7 @@ MATCH_COLLECTION_T* new_match_collection_psm_output(
   else{
     //    sprintf(suffix, "crux_match_decoy_%d", (int)set_type);
     //sprintf(prefix, "crux_match_decoy_%d", (int)set_type);
-    sprintf(suffix, "-decoy-%d.csm", (int)set_type);
+    sprintf(suffix, ".decoy-%d.csm", (int)set_type);
     match_collection->null_peptide_collection = TRUE;
   }
   

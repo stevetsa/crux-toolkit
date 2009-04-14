@@ -4,7 +4,7 @@
  * CREATE DATE: 9 Oct 2006
  * DESCRIPTION: object to score spectrum vs. spectrum or spectrum
  * vs. ion_series 
- * REVISION: $Revision: 1.67.4.9 $
+ * REVISION: $Revision: 1.67.4.10 $
  ****************************************************************************/
 
 #include <math.h>
@@ -844,7 +844,7 @@ BOOLEAN_T create_intensity_array_observed(
   }
 
   // DEBUG
-  carp(CARP_FATAL, "experimental_mass_cut_off: %.2f sp_max_mz: %.3f", experimental_mass_cut_off, scorer->sp_max_mz);
+  // carp(CARP_INFO, "experimental_mass_cut_off: %.2f sp_max_mz: %.3f", experimental_mass_cut_off, scorer->sp_max_mz);
   scorer->observed = (float*)mycalloc((int)scorer->sp_max_mz, sizeof(float));
   
   // store the max intensity in each 10 regions to later normalize
@@ -852,7 +852,7 @@ BOOLEAN_T create_intensity_array_observed(
   int region_selector = (int)(get_spectrum_max_peak_mz(spectrum) / 10);
 
   // DEBUG
-  carp(CARP_FATAL, "max_peak_mz: %.2f, region size: %d",get_spectrum_max_peak_mz(spectrum), region_selector);
+  // carp(CARP_INFO, "max_peak_mz: %.2f, region size: %d",get_spectrum_max_peak_mz(spectrum), region_selector);
   
   int region = 0;
   // create a peak iterator
@@ -961,11 +961,10 @@ BOOLEAN_T create_intensity_array_observed(
   free(scorer->observed);
   scorer->observed = new_observed;
 #endif
-  carp(CARP_FATAL,"Cleaning up");
   // free heap
   free(max_intensity_per_region);
   free_peak_iterator(peak_iterator);
-  carp(CARP_FATAL,"Done.");
+
   return TRUE;
 }
 

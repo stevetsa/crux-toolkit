@@ -70,6 +70,7 @@ int search_main(int argc, char** argv){
     "spectrum-min-mass",
     "spectrum-max-mass",
     "spectrum-charge",
+    "output-dir",
     "fileroot",
     "number-decoy-set"
   };
@@ -134,7 +135,7 @@ int search_main(int argc, char** argv){
   }
   
   /* Create output directory */ 
-  char* output_folder = get_string_parameter("fileroot");
+  char* output_folder = get_string_parameter("output-dir");
   BOOLEAN_T overwrite = get_boolean_parameter("overwrite");
   int result = create_output_directory(
     output_folder, 
@@ -522,30 +523,36 @@ void open_output_files(
 
   //create sqt file handles
   carp(CARP_DEBUG, "Opening sqt files");
-  char* sqt_filename = get_string_parameter_pointer("search-sqt-output-file");
+  char* sqt_filename = get_string_parameter("search-sqt-output-file");
+  prefix_fileroot_to_name(&sqt_filename);
   *sqt_file = create_file_in_path(sqt_filename, 
                                   output_directory, 
                                   overwrite);
-  char* decoy_sqt_filename = get_string_parameter_pointer(
-                                                  "decoy-sqt-output-file");
+  free(sqt_filename);
   if( get_int_parameter("number-decoy-set") > 0 ){
+    char* decoy_sqt_filename = get_string_parameter("decoy-sqt-output-file");
+    prefix_fileroot_to_name(&decoy_sqt_filename);
     *decoy_sqt_file = create_file_in_path(decoy_sqt_filename,
                                           output_directory,
                                           overwrite);
+    free(decoy_sqt_filename);
   }
 
   //create tab-delimited file handles
   carp(CARP_DEBUG, "Opening tab delimited files");
-  char* tab_filename = get_string_parameter_pointer("search-tab-output-file");
+  char* tab_filename = get_string_parameter("search-tab-output-file");
+  prefix_fileroot_to_name(&tab_filename);
   *tab_file = create_file_in_path(tab_filename, 
                                   output_directory, 
                                   overwrite);
-  char* decoy_tab_filename = get_string_parameter_pointer(
-                                                  "decoy-tab-output-file");
+  free(tab_filename);
+  char* decoy_tab_filename = get_string_parameter("decoy-tab-output-file");
+  prefix_fileroot_to_name(&decoy_tab_filename);
   if( get_int_parameter("number-decoy-set") > 0 ){
     *decoy_tab_file = create_file_in_path(decoy_tab_filename,
                                           output_directory,
                                           overwrite);
+    free(decoy_tab_filename);
   }
 
   carp(CARP_DEBUG, "Finished opening output files");

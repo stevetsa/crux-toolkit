@@ -8,6 +8,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include "crux-utils.h"
+#include "parameter.h"
 
 /**
  * PRECISION, determines the precision of the compare float, users
@@ -535,6 +536,25 @@ char* cat_string(char* string_one, char* string_two){
 }
 
 /**
+ * Adds the fileroot parameter to a string as a prefix.
+ * Given a pointer to pointer to a string, if the fileroot parameter is set
+ * the memory for the string is reallocated, and the fileroot string
+ * is added as a prefix.
+ */
+void prefix_fileroot_to_name(char** name) {
+  char* fileroot = get_string_parameter("fileroot");
+  if (fileroot != NULL) {
+    int len_name = strlen(*name);
+    int len_root = strlen(fileroot);
+    *name = myrealloc(*name, len_root + len_name + 2);
+    memmove(*name + len_root + 1, *name, len_name + 1);
+    strcpy(*name, fileroot);
+    (*name)[len_root] = '.';
+    free(fileroot);
+  };
+}
+
+/**
  * \brief Check if the string has the correct prefix
  * \returns TRUE if the string starts with the given prefix, else FALSE
  */
@@ -624,7 +644,7 @@ BOOLEAN_T name_is_decoy(char* name){
     return FALSE;
   }
   if( (name_end - last_d) == decoy_len 
-      && *(last_d-1) == '-'
+      && *(last_d-1) == '.'
       && strncmp(last_d, "decoy-", 6)==0 ){
     carp(CARP_DEBUG, "Name is a decoy file");
     return TRUE;
@@ -649,7 +669,7 @@ long get_filesize(char *FileName){
 /**
  * \brief A function for creating a directory to hold output files from crux.
  * 
- * Tries to create a directory named by the fileroot parameter.
+ * Tries to create a the named directory for use as the output directory for crux.
  * If the overwrite option is true, an existing directory wtih that
  * name will not cause an error. 
  * 
@@ -676,8 +696,8 @@ int create_output_directory(
     }
     else {
       // stat failed for some other reason
-      fprintf(
-        stderr,
+      carp(
+        CARP_ERROR,
         "Unable to check for status of output directory '%s': %s.\n",
         output_folder,
         strerror(errno)
@@ -704,7 +724,7 @@ int create_output_directory(
       if (!overwrite) {
         fprintf(
           stderr,
-          "The output directory '%s' already exists.\nIts contents will not"
+          "The output directory '%s' already exists.\nExisting files will not"
           " be overwritten.\n",
           output_folder
         );
@@ -713,7 +733,7 @@ int create_output_directory(
       else {
         if (warn) fprintf(
           stderr,
-          "The output directory '%s' already exists.\nIts contents will"
+          "The output directory '%s' already exists.\nExisting files will"
           " be overwritten.\n",
           output_folder
         );
@@ -913,32 +933,26 @@ char* generate_name(
 }
 
 /**
- * \brief Create the correct filename for a binary psm file, ending in
- * .csm for target search and -decoy-#.csm for decoy searches.
+ * \brief Create the correct filename for a binary psm file, 
+ * search.target.csm for target search and search.decoy-#.csm for 
+ * decoy searches.
  *
- * Strips any .csm from the end of the filename, adds the appropriate
+ * Adds the appropriate
  * extension depending on the file index (0=target, 1=first decoy,
  * 2=second decoy, etc).
  * \returns A heap allocated char* with the new filename.
  */
-char* generate_psm_filename(char* basename, ///< beginning filename -in
-                            int file_index){///< target/decoy index -in
-  carp(CARP_DEBUG, "Given basename '%s' and index %d", basename, file_index);
+char* generate_psm_filename(int file_index) {///< target/decoy index -in
+  carp(CARP_DEBUG, "Given index %d", file_index);
 
-  // remove the .csm from basename, if it exists
-  char* last_dot = strrchr(basename, '.');
-  if( last_dot != NULL && strcmp(last_dot, ".csm")==0){
-    *last_dot = '\0';
-  }
-
-  char suffix[16];
+  char* fullname = mymalloc(sizeof(char) * 30);
   if( file_index == 0 ){
-    sprintf(suffix, ".csm");
+    sprintf(fullname, "search.target.csm");
   }else{
-    sprintf(suffix, "-decoy-%i.csm", file_index);
+    sprintf(fullname, "search.decoy-%i.csm", file_index);
   }
+  prefix_fileroot_to_name(&fullname);
 
-  char* fullname = cat_string(basename, suffix);
   return fullname;
 
 }
