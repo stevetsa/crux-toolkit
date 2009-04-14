@@ -108,9 +108,6 @@ void calcMaxP2(float* d_values, int n, float* d_ans);
 void calcMaxNP2(float* d_values, int n, float* d_ans);
 
 void calcMax(float* d_values, int n, float*d_ans) {
-  
-
-
   if (isPowerOfTwo(n)) {
     calcMaxP2(d_values,n,d_ans);
   }
@@ -136,7 +133,7 @@ void calcMaxP2(float* d_values, int n,float* d_ans) {
     if (n % num_threads !=0) num_blocks++;
   }
 
-  printf("n:%d num_threads:%d num_blocks:%d\n",n,num_threads, num_blocks);
+  //printf("n:%d num_threads:%d num_blocks:%d\n",n,num_threads, num_blocks);
 
   for(stride=1;stride<=n/2;stride*=2) {
     reduction<<<num_blocks, num_threads>>>(d_values, stride, n);
@@ -155,12 +152,12 @@ void calcMaxP2(float* d_values, int n,float* d_ans) {
 
 
 void calcMaxNP2(float* d_values, int n, float* d_ans){
-  printf("Inside calcMaxNP2\n");
+  //printf("Inside calcMaxNP2\n");
   int n2 = (int)pow(2,ceil(log2((float)n)));
   float* d_temp;
   cudaError error;
   
-  printf("n:%i n2:%i\n",n, n2);
+  //printf("n:%i n2:%i\n",n, n2);
 
   cudaMalloc((void**)&d_temp, n2*sizeof(float));
   cudaMemcpy(d_temp,d_values,n*sizeof(float),cudaMemcpyDeviceToDevice);
@@ -229,18 +226,18 @@ void cuda_sqrt_max_normalize_and_cc(float* h_values, int n, int num_regions, int
   for(region=0;region<num_regions;region++) {
     int start = region_selector * region;
     int end = min(n, start + region_selector);
-    printf("calculating max for region %i %i %i\n",region, start, end);
+    //printf("calculating max for region %i %i %i\n",region, start, end);
     calcMax2(d_ans, start, end, d_max_per_region+region);
   }
 
 
   //printf("Copying max_regions\n");
-
+  /*
   cudaMemcpy(h_max_per_region,d_max_per_region, size_reg, cudaMemcpyDeviceToHost);
-
+  
   for (i=0;i<num_regions;i++)
     printf("cuda max[%i]:%f\n",i,h_max_per_region[i]);
-
+  */
   //printf("Normalizing regions\n");
 
   d_normalize_each_region<<<num_blocks, NUM_THREADS_PER_BLOCK>>>(d_values, d_max_per_region,  
