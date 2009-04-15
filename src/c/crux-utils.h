@@ -1,6 +1,6 @@
 /**
  * \file crux-utils.h
- * $Revision: 1.32.14.2 $
+ * $Revision: 1.32.14.3 $
  * $Author: mcilwain $
  * \brief Utilities for the crux project
  */
@@ -102,6 +102,14 @@ char* signed_int_to_char(int i);
 char* cat_string(char* string_one, char* string_two);
 
 /**
+ * Adds the fileroot parameter to a string as a prefix.
+ * Given a pointr to pointer to a string, if fileroot parameter is set
+ * the memory for the string is reallocated, and the fileroot string
+ * is added as a suffix.
+ */
+void prefix_fileroot_to_name(char** name);
+
+/**
  * given the path and the filename return a file with path
  * "path/filename"
  * \returns a heap allocated string, "path/filename"
@@ -121,7 +129,7 @@ long get_filesize(char *FileName);
 /**
  * \brief A function for creating a directory to hold output files from crux.
  * 
- * Tries to create a directory named by the fileroot parameter.
+ * Tries to create a the named directory for use as the output directory for crux.
  * If the overwrite option is true, an existing directory wtih that
  * name will not cause an error. 
  * 
@@ -176,15 +184,16 @@ char* generate_name_path(
   );
 
 /**
- * \brief Create the correct filename for a binary psm file, ending in
- * .csm for target search and -decoy-#.csm for decoy searches.
+ * \brief Create the correct filename for a binary psm file, 
+ * search.target.csm for target search and search.decoy-#.csm for 
+ * decoy searches.
  *
- * Strips any .csm from the end of the filename, adds the appropriate
+ * Adds the appropriate
  * extension depending on the file index (0=target, 1=first decoy,
  * 2=second decoy, etc).
  * \returns A heap allocated char* with the new filename.
  */
-char* generate_psm_filename(char* basename, int file_index);
+char* generate_psm_filename(int file_index);
 
 /**
  * \brief Open and create a file of the given name in the given

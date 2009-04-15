@@ -34,7 +34,7 @@
 #include "crux_cuda.h"
 #endif
 
-#define NUM_SEARCH_OPTIONS 11
+#define NUM_SEARCH_OPTIONS 12
 #define NUM_SEARCH_ARGS 2
 #define PARAM_ESTIMATION_SAMPLE_COUNT 500
 

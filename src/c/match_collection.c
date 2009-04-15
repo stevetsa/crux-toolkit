@@ -8,7 +8,7 @@
  *
  * AUTHOR: Chris Park
  * CREATE DATE: 11/27 2006
- * $Revision: 1.89.4.6 $
+ * $Revision: 1.89.4.7 $
  ****************************************************************************/
 #include "match_collection.h"
 
@@ -512,6 +512,9 @@ void collapse_redundant_matches(MATCH_COLLECTION_T* match_collection){
  * compare each match to the remaining matches.
  */
 void consolidate_matches(MATCH_T** matches, int start_idx, int end_idx){
+
+
+  return;
 
   carp(CARP_DETAILED_DEBUG, "Consolidating index %i to %i.", start_idx, end_idx);
   int cur_match_idx = 0;

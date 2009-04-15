@@ -4,7 +4,7 @@
  * CREATE DATE: 9 Oct 2006
  * DESCRIPTION: object to score spectrum vs. spectrum or spectrum
  * vs. ion_series 
- * REVISION: $Revision: 1.67.4.10 $
+ * REVISION: $Revision: 1.67.4.11 $
  ****************************************************************************/
 
 #include <math.h>
@@ -913,13 +913,8 @@ BOOLEAN_T create_intensity_array_observed(
   /*
   int i = 0;
   for(; i < 10; i++){
-    printf("High intensity bin %d: %.2f\n", i, max_intensity_per_region[i]);
+    carp(CARP_INFO, "High intensity bin %d: %.2f", i, max_intensity_per_region[i]);
   }
-  */
-  /*
-  for (i=0;i<scorer -> sp_max_mz;i++)
-    if (scorer -> observed[i] > 0.0)
-      printf("value %i: %f\n",i,sqrt(scorer -> observed[i]));
   */
 
 #ifdef CRUX_USE_CUDA
