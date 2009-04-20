@@ -258,6 +258,7 @@ int search_main(int argc, char** argv){
 
       // is it time to assess matches?
       int this_aa_mods = peptide_mod_get_num_aa_mods(peptide_mod);
+
       if( this_aa_mods > cur_aa_mods ){
         carp(CARP_DEBUG, "Finished searching %i mods", cur_aa_mods);
         BOOLEAN_T passes = is_search_complete(match_collection, cur_aa_mods);

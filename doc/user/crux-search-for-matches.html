@@ -80,12 +80,12 @@ the composite list.</p>
 
 <p>
 The program writes files to the folder <code>crux-output</code> by default.
-The name of the output folder can be set by the user using the <code>--fileroot</code> option.
+The name of the output folder can be set by the user using the <code>--output-dir</code> option.
 The following files will be created:</p>
 <ul>
 
 <li>
-<b>target.csm</b>: a binary file that contains the PSMs and additional
+<b>search.target.csm</b>: a binary file that contains the PSMs and additional
 features.  This file can be used as input
 to <code>crux&nbsp;compute-q-values</code>
 or <code>crux&nbsp;percolator</code>.
@@ -114,9 +114,15 @@ produced.</p>
 <B>Options:</B>
 <UL>
 
+<code>--fileroot &lt;string&gt;</code> &ndash; 
+The <code>fileroot</code> string will be added as a prefix to all
+output file names. Default = none.</li>
+
 <li>
-<code>--fileroot &lt;string&gt;</code> &ndash; Sets the name of the
-the output directory to the specified string.</li>
+<code>--output-dir &lt;filename&gt;</code> &ndash; 
+The name of the directory where output files will be created.
+Default = crux-out.</li>
+
 
 <li>
 <code>--overwrite &lt;T|F&gt;</code> Replace existing files if true (T) or 
@@ -202,7 +208,10 @@ spectrum to score after preliminary scoring.  Default = 500.
 <li>
 <code>top-match &lt;int&gt;</code> &ndash; The number of psms per
 spectrum writen to the output files.
-Default = 1.
+Default = 5.
+<p>
+<i>NOTE: <code>crux percolator</code> requires that <code>search-for-matches</code>
+be run with <code>top-match=1</code>.</i></p>
 
 <li>
 <code>tdc &lt;T|F&gt;</code> &ndash;

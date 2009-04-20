@@ -8,7 +8,7 @@
  *
  * AUTHOR: Chris Park
  * CREATE DATE: 11/27 2006
- * $Revision: 1.89.4.7 $
+ * $Revision: 1.89.4.8 $
  ****************************************************************************/
 #include "match_collection.h"
 
@@ -374,7 +374,7 @@ int add_matches(
   if( sp_max_rank > 0 ){ 
     // rank by sp first 
     populate_match_rank_match_collection(match_collection, prelim_score);
-    collapse_redundant_matches(match_collection);
+    //collapse_redundant_matches(match_collection);
     truncate_match_collection( match_collection, sp_max_rank, prelim_score);
   }
 
@@ -382,7 +382,7 @@ int add_matches(
   populate_match_rank_match_collection(match_collection, final_score);
 
   if( sp_max_rank == 0 ){ // truncate here if not before
-    collapse_redundant_matches(match_collection);
+    //collapse_redundant_matches(match_collection);
     int xcorr_max_rank = get_int_parameter("psms-per-spectrum-reported");
     truncate_match_collection( match_collection, xcorr_max_rank, final_score);
   }
@@ -512,9 +512,6 @@ void collapse_redundant_matches(MATCH_COLLECTION_T* match_collection){
  * compare each match to the remaining matches.
  */
 void consolidate_matches(MATCH_T** matches, int start_idx, int end_idx){
-
-
-  return;
 
   carp(CARP_DETAILED_DEBUG, "Consolidating index %i to %i.", start_idx, end_idx);
   int cur_match_idx = 0;
@@ -1089,7 +1086,7 @@ BOOLEAN_T score_peptides(
     //all debugging information in order to make a more optimized crux.
     IF_CARP_DETAILED_DEBUG(
       char* seq = get_peptide_modified_sequence(peptide);
-      carp(CARP_DETAILED_DEBUG, "peptide %s has %i modified aas", seq, count_modified_aas(peptide)); 
+      carp(CARP_DETAILED_DEBUG, "peptide %s has %i modified aas", seq, count_peptide_modified_aas(peptide)); 
       free(seq);
     )
     // create a match
@@ -1155,10 +1152,6 @@ BOOLEAN_T score_peptides(
   match_collection->scored_type[score_type] = TRUE;
 
   // Let caller do sorting 
-  // sort by this score
-  //sort_match_collection(match_collection, score_type);
-  // populate ranks
-  //populate_match_rank_match_collection(match_collection, score_type);
 
   // clean up
   free_ion_series(ion_series);
