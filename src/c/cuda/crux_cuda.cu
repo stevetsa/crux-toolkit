@@ -88,7 +88,21 @@ int isPowerOfTwo(int n)
 
 void calcMaxP2(float* d_values, int n, float* d_ans);
 void calcMaxNP2(float* d_values, int n, float* d_ans);
-
+/****************************************************
+ *calcMax: so the reduction code works for arrays with
+ *elements in powers of 2.
+ *So my current solution is to copy the array into
+ *an array with a power of two size and run the algorithm
+ *I am assuming zero is the smallest value that the intensity
+ *array can take (which should be true since we are sqrt
+ *the intensties).  Later I should take a look at 
+ *improving the efficiency, but there is an example of
+ *a sum reduction on the web that is much more efficient
+ *than what I current have.  I will have to study that
+ *and incorporate it into the code, since this reduction
+ *is the rate limiting step.  I wish I knew more about 
+ *parallelism and calculating cost and such.
+ *****************************************************/
 void calcMax(float* d_values, int n, float*d_ans) {
   if (isPowerOfTwo(n)) {
     calcMaxP2(d_values,n,d_ans);
@@ -98,6 +112,11 @@ void calcMax(float* d_values, int n, float*d_ans) {
   }
 }
 
+
+/******************************************************
+ *calcMaxP2: calculates the max in an array that has
+ *a power of 2 elements
+ ******************************************************/
 void calcMaxP2(float* d_values, int n,float* d_ans) {
   int stride;
   cudaError error;
@@ -128,10 +147,14 @@ void calcMaxP2(float* d_values, int n,float* d_ans) {
 		      d_values, 
 		      sizeof(float), 
 		      cudaMemcpyDeviceToDevice),
-	   "d_values -> d_ans");
+	   "calcMaxP2:d_values -> d_ans");
 }
 
-
+/*********************************************************
+ *calcMaxNP2: calculates the max in an array that does not
+ *have power of 2 elements. It achieves this by copying to
+ *a temporary array that is a power of 2.
+ *********************************************************/
 void calcMaxNP2(float* d_values, int n, float* d_ans){
   //printf("Inside calcMaxNP2\n");
   int n2 = (int)pow(2,ceil(log2((float)n)));
@@ -140,17 +163,26 @@ void calcMaxNP2(float* d_values, int n, float* d_ans){
   //printf("n:%i n2:%i\n",n, n2);
 
   CUDAEXEC(cudaMalloc((void**)&d_temp, n2*sizeof(float)),"alloc d_temp");
-  CUDAEXEC(cudaMemcpy(d_temp,d_values,n*sizeof(float),cudaMemcpyDeviceToDevice),"d_values -> d_temp");
-  CUDAEXEC(cudaMemset(d_temp+n,0,n2-n),"memset(d_temp,0)");
+  CUDAEXEC(cudaMemset(d_temp,0,n2*sizeof(float)),"memset(d_temp,0)");
+  cudaError _error = cudaMemcpy(d_temp,d_values,n*sizeof(float),cudaMemcpyDeviceToDevice);
+  if (_error != cudaSuccess) {
+    printf("calcMaxNP2 memcpy d_values -> d_temp error:%s\n",cudaGetErrorString(_error));
+    printf("n:%i n2:%i\n",n, n2);
+  }
   calcMaxP2(d_temp, n2, d_ans);
   CUDAEXEC(cudaFree(d_temp),"cudaFree");
 
 }
 
 void calcMax2(float* d_values, int start, int end, float* d_ans) {
-  calcMax(d_values+start,end-start,d_ans);
+  if (end-start < 1) {
+    cudaMemset(d_ans, 0, sizeof(float));
+    //printf("calcMax2: end:%i start:%i\n",end, start);
+  }
+  else {
+    calcMax(d_values+start,end-start,d_ans);
+  }
 }
-
 
 void cuda_sqrt_max_normalize_and_cc(float* h_values, int n, int num_regions, int region_selector, int max_offset) {
   float *d_values;
@@ -186,6 +218,8 @@ void cuda_sqrt_max_normalize_and_cc(float* h_values, int n, int num_regions, int
   for(region=0;region<num_regions;region++) {
     int start = region_selector * region;
     int end = min(n, start + region_selector);
+    
+
     calcMax2(d_ans, start, end, d_max_per_region+region);
   }
 
@@ -195,7 +229,7 @@ void cuda_sqrt_max_normalize_and_cc(float* h_values, int n, int num_regions, int
   
   if (error != cudaSuccess) {
     printf("d_normalize_each_region: error %s\n",cudaGetErrorString(error));
-    printf("n: %i nr: %i s: %i nb: %i ntb: %i",n,num_regions,region_selector, num_blocks, NUM_THREADS_PER_BLOCK);
+    printf("n: %i nr: %i s: %i nb: %i ntb: %i\n",n,num_regions,region_selector, num_blocks, NUM_THREADS_PER_BLOCK);
   }
   d_cross_correlation_obs<<<num_blocks, NUM_THREADS_PER_BLOCK>>>(d_values, d_ans, n, max_offset); 
   error = cudaGetLastError(); 
@@ -206,9 +240,9 @@ void cuda_sqrt_max_normalize_and_cc(float* h_values, int n, int num_regions, int
   CUDAEXEC(cudaMemcpy(h_values, d_ans, size_n, cudaMemcpyDeviceToHost),"d_ans -> h_values"); 
   
   //printf("cuda do cleanup\n");
-  cudaFree(d_values);
-  cudaFree(d_max_per_region);
-  cudaFree(d_ans);
+  CUDAEXEC(cudaFree(d_values), "free(d_values)");
+  CUDAEXEC(cudaFree(d_max_per_region), "free(d_max_per_region)");
+  CUDAEXEC(cudaFree(d_ans), "free(d_ans)");
   //free(d_values);
   //free(d_max_per_region);
   //free(d_ans);
