@@ -2,6 +2,10 @@
  *CUDA KERNEL Functions
  */
 
+
+
+
+
 //CUDA's nvcc compiler compiles code as c++
 //which mangles the names.  Wrapping the code
 //in extern "C" {} prevents this, however, C
@@ -9,7 +13,6 @@
 //is to use a define which is passed in whenever
 //NVCC is compiling the code that references this
 //header, otherwise, the code will not be wrapped.
-
 #ifdef CUDA_NVCC
 extern "C" {
 #endif
@@ -36,4 +39,9 @@ extern "C" {
 #ifdef CUDA_NVCC
 }
 #endif
+
+#define CUDAEXEC(x,s) {cudaError _status; \
+                      _status = x; \
+                      if (_status != cudaSuccess) \
+                      {printf("cuda error: %s: %s\n", cudaGetErrorString(_status),s);}}
 

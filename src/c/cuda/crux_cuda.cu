@@ -24,22 +24,6 @@ __global__ static void reduction(float*a, int stride, int N) {
 
 }
 
-__global__ static void reduction_odd(float* a, int stride, int N) {
-  int i = blockIdx.x * blockDim.x + threadIdx.x;
-  int n = stride*2;
-  int index = i*n;
-  if (index < N) {
-    if (index+stride != N) {
-      int index = i * n;
-      //leave the last element alone, it is the max in the first stride.
-      a[index] = max(a[index], a[index+stride]);
-    }
-  }
-  
-}
-
-
-
 
 __global__ static void d_sqrt(float* invalues) {
   const int idx = threadIdx.x + blockIdx.x*NUM_THREADS_PER_BLOCK;
@@ -73,27 +57,25 @@ __global__ static void d_cross_correlation_obs(float* invalues, float* ans, int 
     ans[idx] -= (invalues[cur_idx] / (max_offset * 2.0));
   }
 }
+
 void calcMax(float* d_values, int n, float*d_ans);
 float d_max(float* h_values, int n) {
 
   float ans;
-  cudaError error;
   float* d_values;
   float* d_ans;
   int size_n = sizeof(float) * n;
 
 
-  error = cudaMalloc((void**)&d_values, size_n);
-  error = cudaMalloc((void**)&d_ans, sizeof(float));
-  
-  error = cudaMemcpy(d_values, h_values, size_n,cudaMemcpyHostToDevice);
-  
+  CUDAEXEC(cudaMalloc((void**)&d_values, size_n),"alloc d_values");
+  CUDAEXEC(cudaMalloc((void**)&d_ans, sizeof(float)),"alloc d_ans");
+  CUDAEXEC(cudaMemcpy(d_values, h_values, size_n,cudaMemcpyHostToDevice),"d_val -> h_val");
   calcMax(d_values, n, d_ans);
 
-  error = cudaMemcpy(&ans, d_ans, sizeof(float), cudaMemcpyDeviceToHost);
+  CUDAEXEC(cudaMemcpy(&ans, d_ans, sizeof(float), cudaMemcpyDeviceToHost),"d_ans -> ans");
 
-  cudaFree(d_values);
-  cudaFree(d_ans);
+  CUDAEXEC(cudaFree(d_values),"Free d_values");
+  CUDAEXEC(cudaFree(d_ans),"Free d_ans");
   
   return ans;
 
@@ -119,8 +101,6 @@ void calcMax(float* d_values, int n, float*d_ans) {
 void calcMaxP2(float* d_values, int n,float* d_ans) {
   int stride;
   cudaError error;
-  int i;
-  int size_n = n * sizeof(float);
   int num_threads;
   int num_blocks;
   if (n < NUM_THREADS_PER_BLOCK) {
@@ -137,17 +117,18 @@ void calcMaxP2(float* d_values, int n,float* d_ans) {
 
   for(stride=1;stride<=n/2;stride*=2) {
     reduction<<<num_blocks, num_threads>>>(d_values, stride, n);
-    cudaThreadSynchronize();
     error = cudaGetLastError();
     if (error != cudaSuccess)
       printf("reduction error %s stride:%i n:%i\n",cudaGetErrorString(error),stride, n);
+    cudaThreadSynchronize();
     
 
   }
-  cudaMemcpy(d_ans, 
-	     d_values, 
-	     sizeof(float), 
-	     cudaMemcpyDeviceToDevice);
+  CUDAEXEC(cudaMemcpy(d_ans, 
+		      d_values, 
+		      sizeof(float), 
+		      cudaMemcpyDeviceToDevice),
+	   "d_values -> d_ans");
 }
 
 
@@ -155,15 +136,14 @@ void calcMaxNP2(float* d_values, int n, float* d_ans){
   //printf("Inside calcMaxNP2\n");
   int n2 = (int)pow(2,ceil(log2((float)n)));
   float* d_temp;
-  cudaError error;
   
   //printf("n:%i n2:%i\n",n, n2);
 
-  cudaMalloc((void**)&d_temp, n2*sizeof(float));
-  cudaMemcpy(d_temp,d_values,n*sizeof(float),cudaMemcpyDeviceToDevice);
-  cudaMemset(d_temp+n,0,n2-n);
+  CUDAEXEC(cudaMalloc((void**)&d_temp, n2*sizeof(float)),"alloc d_temp");
+  CUDAEXEC(cudaMemcpy(d_temp,d_values,n*sizeof(float),cudaMemcpyDeviceToDevice),"d_values -> d_temp");
+  CUDAEXEC(cudaMemset(d_temp+n,0,n2-n),"memset(d_temp,0)");
   calcMaxP2(d_temp, n2, d_ans);
-  cudaFree(d_temp);
+  CUDAEXEC(cudaFree(d_temp),"cudaFree");
 
 }
 
@@ -176,7 +156,6 @@ void cuda_sqrt_max_normalize_and_cc(float* h_values, int n, int num_regions, int
   float *d_values;
   float *d_max_per_region;
   float *d_ans;
-  float *h_max_per_region;
   int i;
   int region;
 
@@ -185,78 +164,48 @@ void cuda_sqrt_max_normalize_and_cc(float* h_values, int n, int num_regions, int
   int size_n = n * sizeof(float);
   int size_reg = num_regions * sizeof(float);
 
-  h_max_per_region = new float[num_regions];
-  if (h_max_per_region == NULL) {
-    printf("Error allocating h_max_per_region\n");
-    exit(-1);
-  }
-  memset(h_max_per_region, 0, size_reg);
-
   //printf("allocating memory %i %i\n",size_n, size_reg);
 
-  error = cudaMalloc((void**)&d_values, size_n);
-  if (error != cudaSuccess)
-    printf("allocating d_values memory error:%i\n",error);
-  error = cudaMalloc((void**)&d_max_per_region, size_reg);
-  if (error != cudaSuccess)
-    printf("allocating d_max_per_region error:%i\n",error);
-  error = cudaMalloc((void**)&d_ans, size_n); 
-  if (error != cudaSuccess)
-    printf("allocating d_ans memory error:%i\n",error);
-
-  //printf("Copying data\n");
-  error = cudaMemcpy(d_values, h_values, size_n, cudaMemcpyHostToDevice);
-  if (error != cudaSuccess)
-    printf("error copying h_values => d_Values:%i\n",error);
-
-  //error = cudaMemcpy(d_max_per_region, h_max_per_region, size_reg, cudaMemcpyHostToDevice); 
+  CUDAEXEC(cudaMalloc((void**)&d_values, size_n),"alloc d_values");
+  CUDAEXEC(cudaMalloc((void**)&d_max_per_region, size_reg), "alloc d_max_per_region");
+  CUDAEXEC(cudaMalloc((void**)&d_ans, size_n),"alloc d_ans"); 
+  CUDAEXEC(cudaMemcpy(d_values, h_values, 
+		      size_n, cudaMemcpyHostToDevice),
+	   "h_values -> d_values");
  
   int num_blocks = n / NUM_THREADS_PER_BLOCK; 
 
   //printf("Executing d_sqrt_and_max_region\n");
-  d_sqrt<<<num_blocks, NUM_THREADS_PER_BLOCK>>>(d_values);
- 
+  d_sqrt<<<num_blocks, NUM_THREADS_PER_BLOCK>>>(d_values); 
   error = cudaGetLastError(); 
- 
   if (error != cudaSuccess) 
-    printf("d_sqrt: error %i\n",error); 
+    printf("d_sqrt: error %s\n",cudaGetErrorString(error)); 
  
-  error = cudaMemcpy(d_ans, d_values, size_n, cudaMemcpyDeviceToDevice);
+  CUDAEXEC(cudaMemcpy(d_ans, d_values, size_n, cudaMemcpyDeviceToDevice),"d_values -> d_ans");
 
   for(region=0;region<num_regions;region++) {
     int start = region_selector * region;
     int end = min(n, start + region_selector);
-    //printf("calculating max for region %i %i %i\n",region, start, end);
     calcMax2(d_ans, start, end, d_max_per_region+region);
   }
-
-
-  //printf("Copying max_regions\n");
-  /*
-  cudaMemcpy(h_max_per_region,d_max_per_region, size_reg, cudaMemcpyDeviceToHost);
-  
-  for (i=0;i<num_regions;i++)
-    printf("cuda max[%i]:%f\n",i,h_max_per_region[i]);
-  */
-  //printf("Normalizing regions\n");
 
   d_normalize_each_region<<<num_blocks, NUM_THREADS_PER_BLOCK>>>(d_values, d_max_per_region,  
                                                                  n, num_regions, region_selector); 
   error = cudaGetLastError(); 
   
-  if (error != cudaSuccess)
-    printf("d_normalize_each_region: error %i\n",error);
-
+  if (error != cudaSuccess) {
+    printf("d_normalize_each_region: error %s\n",cudaGetErrorString(error));
+    printf("n: %i nr: %i s: %i nb: %i ntb: %i",n,num_regions,region_selector, num_blocks, NUM_THREADS_PER_BLOCK);
+  }
   d_cross_correlation_obs<<<num_blocks, NUM_THREADS_PER_BLOCK>>>(d_values, d_ans, n, max_offset); 
   error = cudaGetLastError(); 
 
   if (error != cudaSuccess)
-    printf("d_cross_correlation_obs: error %i\n", error);
+    printf("d_cross_correlation_obs: error %s\n", cudaGetErrorString(error));
  
-  error = cudaMemcpy(h_values, d_ans, size_n, cudaMemcpyDeviceToHost); 
+  CUDAEXEC(cudaMemcpy(h_values, d_ans, size_n, cudaMemcpyDeviceToHost),"d_ans -> h_values"); 
   
   //printf("cuda do cleanup\n");
-  free(h_max_per_region);
   cudaFree(d_values);
   cudaFree(d_max_per_region);
   cudaFree(d_ans);

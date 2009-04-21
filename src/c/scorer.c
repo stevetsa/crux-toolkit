@@ -4,7 +4,7 @@
  * CREATE DATE: 9 Oct 2006
  * DESCRIPTION: object to score spectrum vs. spectrum or spectrum
  * vs. ion_series 
- * REVISION: $Revision: 1.67.4.12 $
+ * REVISION: $Revision: 1.67.4.13 $
  ****************************************************************************/
 
 #include <math.h>
@@ -928,6 +928,7 @@ BOOLEAN_T create_intensity_array_observed(
 #else
   // normalize each 10 regions to max intensity of 50
   normalize_each_region(scorer, max_intensity_per_region, region_selector);
+  
   // DEBUG
   /*
   i = 0;

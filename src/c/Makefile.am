@@ -167,7 +167,7 @@ crux_LDADD = ./cuda/crux_cuda.cu.o \
 endif
 
 ./cuda/crux_cuda.cu.o:./cuda/crux_cuda.cu
-	nvcc -c -DCUDA_NVCC ./cuda/crux_cuda.cu -o ./cuda/crux_cuda.cu.o
+	nvcc -c -DCUDA_NVCC -pg ./cuda/crux_cuda.cu -o ./cuda/crux_cuda.cu.o
 
 
 paramdir = $(prefix)/doc
