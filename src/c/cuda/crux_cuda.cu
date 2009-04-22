@@ -93,6 +93,7 @@ void cuda_float_malloc(float** a, int* current_size, int size) {
 }
 
 void crux_cuda_initialize() {
+  printf("crux_cuda_initialize(): start\n");
   cuda_float_malloc(&d_values, &d_values_size, 1024);
   cuda_float_malloc(&d_temp, &d_temp_size, 1024);
   cuda_float_malloc(&d_ans, &d_ans_size, 1);
@@ -129,6 +130,7 @@ int isPowerOfTwo(int n)
  *parallelism and calculating cost and such.
  *****************************************************/
 void calcMax(float* d_in, int n, float*d_ans) {
+
   if (isPowerOfTwo(n)) {
     calcMaxP2(d_in, n, d_ans);
   }
@@ -138,10 +140,12 @@ void calcMax(float* d_in, int n, float*d_ans) {
 }
 
 void doReductionMax(float* d_in, int n, float* d_ans) {
+  int i;
   int stride;
   int num_threads;
   int num_blocks;
   cudaError error;
+
   if (n < NUM_THREADS_PER_BLOCK) {
     num_threads = n;
     num_blocks = 1;
@@ -159,9 +163,9 @@ void doReductionMax(float* d_in, int n, float* d_ans) {
       printf("reduction error %s stride:%i n:%i\n",cudaGetErrorString(error),stride, n);
     cudaThreadSynchronize();
   }
-  
+
   CUDAEXEC(cudaMemcpy(d_ans, 
-		      d_temp, 
+		      d_in, 
 		      sizeof(float), 
 		      cudaMemcpyDeviceToDevice),
 	   "d_values -> d_ans");  
@@ -189,16 +193,15 @@ void calcMaxP2(float*d_in, int n, float* d_ans) {
  *********************************************************/
 void calcMaxNP2(float* d_in, int n, float* d_ans){
   int n2 = (int)pow(2,ceil(log2((float)n)));
-  //float* d_temp;
+
   cuda_float_malloc(&d_temp, &d_temp_size, n2);
+  CUDAEXEC(cudaMemset(d_temp,0,n2*sizeof(float)),"memset(d_temp,0)");
   CUDAEXEC(cudaMemcpy(d_temp,
 		      d_in,
 		      n*sizeof(float),
 		      cudaMemcpyDeviceToDevice),
 	   "calcMaxNP2: d_temp <- d_values");
-
-  CUDAEXEC(cudaMemset(d_temp+n,0,(n2-n)*sizeof(float)),"memset(d_temp,0)");
-  doReductionMax(d_temp, n, d_ans);
+  doReductionMax(d_temp, n2, d_ans);
 }
 
 void calcMax2(float* d_in, int start, int end, float* d_ans) {
@@ -229,13 +232,12 @@ void cuda_sqrt_max_normalize_and_cc(float* h_values, int n, int num_regions,
 
 }
 
-void d_cuda_sqrt_max_normalize_and_cc(float* d_in, int n, int num_regions, 
-				      int region_selector, int max_offset) {
+
+void d_cuda_sqrt_max_normalize_and_cc2(float* d_in, float* d_out, int n, int num_regions,
+				       int region_selector, int max_offset) {
   cudaError error;
   int region;
   cuda_float_malloc(&d_max_per_region, &d_max_per_region_size, num_regions);
-  cuda_float_malloc(&d_corr, &d_corr_size, n);
-
  
   int num_blocks = n / NUM_THREADS_PER_BLOCK; 
 
@@ -257,14 +259,24 @@ void d_cuda_sqrt_max_normalize_and_cc(float* d_in, int n, int num_regions,
   
   if (error != cudaSuccess) {
     printf("d_normalize_each_region: error %s\n",cudaGetErrorString(error));
-    printf("n: %i nr: %i s: %i nb: %i ntb: %i\n",n,num_regions,region_selector, num_blocks, NUM_THREADS_PER_BLOCK);
+    printf("n: %i nr: %i s: %i nb: %i ntb: %i\n",n,num_regions,region_selector, 
+	   num_blocks, NUM_THREADS_PER_BLOCK);
   }
-  d_cross_correlation_obs<<<num_blocks, NUM_THREADS_PER_BLOCK>>>(d_in, d_corr, n, max_offset); 
+  d_cross_correlation_obs<<<num_blocks, NUM_THREADS_PER_BLOCK>>>(d_in, d_out, n, max_offset); 
   error = cudaGetLastError(); 
 
   if (error != cudaSuccess)
     printf("d_cross_correlation_obs: error %s\n", cudaGetErrorString(error));
+
 }
+
+void d_cuda_sqrt_max_normalize_and_cc(float* d_in, int n, int num_regions, 
+				      int region_selector, int max_offset) {
+  cuda_float_malloc(&d_corr, &d_corr_size, n);
+  d_cuda_sqrt_max_normalize_and_cc2(d_in, d_corr, n, num_regions, region_selector, max_offset);
+}
+
+
 
 
 #endif

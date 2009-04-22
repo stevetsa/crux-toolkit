@@ -1,5 +1,10 @@
 #include "scorer.h"
 #include "utils.h"
+
+#ifdef CRUX_USE_CUDA1
+#include "crux_cuda.cu.h"
+#endif
+
 #ifdef CRUX_USE_CUDA3
 #include "modified_peptides_iterator.h"
 #endif
@@ -12,12 +17,14 @@ BOOLEAN_T initialize_cudablas();
 BOOLEAN_T shutdown_cudablas();
 BOOLEAN_T is_cudablas_initialized();
 
-#ifdef CRUX_USE_CUDA
+#ifdef CRUX_USE_CUDA1
 float cross_correlation_cuda(
-  float* theoretical, ///< the theoretical spectrum to score against the observed spectrum -in
-  float* observed,
+  float* h_theoretical, ///< the theoretical spectrum to score against the observed spectrum -in
   int size
   );
+void cuda_set_observed(float* raw_values, int n, int num_regions, int region_selector, int max_offset);
+
+
 #endif
 
 
@@ -50,7 +57,7 @@ void updateStatCount(float mass, int charge);
 #endif
 
 
-#define CUBLASEXEC(x) {cublasStatus _status; _status = x; if (_status != CUBLAS_STATUS_SUCCESS) {carp(CARP_FATAL,"cublas error: %i", _status);}}
+#define CUBLASEXEC(x,s) {cublasStatus _status; _status = x; if (_status != CUBLAS_STATUS_SUCCESS) {printf("cublas error: %i %s", _status,s);}}
 
 
 

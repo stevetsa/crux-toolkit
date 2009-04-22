@@ -20,9 +20,15 @@ extern "C" {
   void d_cuda_sqrt_max_normalize_and_cc(float* d_in, int n, int num_regions, 
 					int region_selector, int max_offset);
 
+  void d_cuda_sqrt_max_normalize_and_cc2(float* d_in, float* d_out, int n, int num_regions,
+					 int region_selector, int max_offset);
+
   void cuda_sqrt_max_normalize_and_cc(float* h_values, int n, int num_regions, 
 				      int region_selector, int max_offset);
  
+  
+
+
   void cuda_float_malloc(float** a, int current_size, int size);
   
   void crux_cuda_initialize();
@@ -31,10 +37,10 @@ extern "C" {
 #ifdef CUDA_NVCC
 }
 #endif
-
+/*
 #define CUDAEXEC(x,s) {cudaError _status; \
                       _status = x; \
                       if (_status != cudaSuccess) \
                       {printf("cuda error: %s: %s\n", cudaGetErrorString(_status),s);}}
-
-
+*/
+#define CUDAEXEC(x, s) x;

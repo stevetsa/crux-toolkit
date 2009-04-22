@@ -8,6 +8,13 @@
 
 BOOLEAN_T cudablas_initialized = FALSE;
 
+#ifdef CRUX_USE_CUDA1
+int current_size = -1;
+float* d_cutemp = NULL;
+float* d_observed = NULL;
+float* d_theoretical = NULL;
+#endif
+
 #ifdef CRUX_USE_CUDA2
 int spectrum_size = -1;
 int max_spectrum_size = -1;
@@ -44,16 +51,9 @@ BOOLEAN_T initialize_cudablas() {
 BOOLEAN_T shutdown_cudablas() {
   cublasStatus status;
 #ifdef CRUX_USE_CUDA1
-  if (d_pThe != NULL) {
-    //free memory on device
-    cublasFree(d_pThe);
-    d_pThe = NULL;
-  }
-  if (d_pObs != NULL) {
-    //free memory on device
-    cublasFree(d_pObs);
-    d_pObs = NULL;
-  }
+  if (d_cutemp != NULL) cublasFree(d_cutemp);
+  if (d_observed != NULL) cublasFree(d_observed);
+  if (d_theoretical != NULL) cublasFree(d_theoretical);
 #endif
 #ifdef CRUX_USE_CUDA2
   if (d_pThe_Matrix != NULL)
@@ -85,13 +85,9 @@ BOOLEAN_T is_cudablas_initialized() {
 }
 
 #ifdef CRUX_USE_CUDA1
-float *d_pThe = NULL;
-float *d_pObs = NULL;
-int current_size = -1;
-float *h_pObs_current = NULL;
+
 
 BOOLEAN_T checkSpace(int size) {
-  cublasStatus status;
 
   //so if the current allocated space is enough for the vector,
   //then we have enough.
@@ -100,29 +96,29 @@ BOOLEAN_T checkSpace(int size) {
   else {
     //carp(CARP_FATAL," allocating %d space",size);
     //free the previous vectors
-    if (d_pThe != NULL)
-      cublasFree(d_pThe);
-    if (d_pObs != NULL)
-      cublasFree(d_pObs);
-    
-    //allocate space for both vectors.
-    status = cublasAlloc(size, sizeof(float), (void**)&d_pThe);
-    if (status != CUBLAS_STATUS_SUCCESS) 
-      {
-	carp(CARP_FATAL, "!!!! CUBLAS alloc theoretical error\n");
-	return FALSE;
-      }
-    
-    status = cublasAlloc(size, sizeof(float), (void**)&d_pObs);
-    if (status != CUBLAS_STATUS_SUCCESS) 
-      {
-	carp(CARP_FATAL, "!!!! CUBLAS alloc observed error\n");
-	return FALSE;
-      }
-    //update the size.
+    if (d_theoretical != NULL) cublasFree(d_theoretical);
+    CUBLASEXEC(cublasAlloc(size, sizeof(float), (void**)&d_theoretical),"alloc(theo)");
+
+    if (d_observed != NULL) cublasFree(d_observed);
+    CUBLASEXEC(cublasAlloc(size, sizeof(float), (void**)&d_observed),"alloc(obs)");
+
+    if (d_cutemp != NULL) cublasFree(d_cutemp);
+    CUBLASEXEC(cublasAlloc(size, sizeof(float), (void**)&d_cutemp),"alloc(temp)");
+
     current_size = size;
     return TRUE;
   }
+}
+
+
+void cuda_set_observed(float* raw_values, int n, int num_regions, 
+		       int region_selector, int max_offset) {
+  //check space.
+  checkSpace(n);
+  //push raw data into vector.
+  cublasSetVector(n, sizeof(float), raw_values, 1, d_cutemp, 1);
+  //run the kernel.
+  d_cuda_sqrt_max_normalize_and_cc2(d_cutemp, d_observed, n, num_regions, region_selector, max_offset);
 }
 
 
@@ -133,48 +129,24 @@ BOOLEAN_T checkSpace(int size) {
  *theoretical spectra
  */
 float cross_correlation_cuda(
-  float* theoretical, ///< the theoretical spectrum to score against the observed spectrum -in
-  float* observed,
+  float* h_theoretical, ///< the theoretical spectrum to score against the observed spectrum -in
   int size
   ) {
   float score_at_zero = 0;
-  
-  cublasStatus status;
-  
-  BOOLEAN_T size_changed = size != current_size;
-
-  //check to see if there is enough allocated space on the device.
-  checkSpace(size);
 
   //copy theoretical to the device.
-  status = cublasSetVector(size, sizeof(float), theoretical, 1, d_pThe, 1);
-  if (status != CUBLAS_STATUS_SUCCESS) 
-    {
-      carp(CARP_FATAL, "!!!! CUBLAS set theoretical error\n");
-      return 0.0;
-    }
 
-  //assume that the observed won't change for a great number of
-  //theoretical spectra, i.e. only copy the observed to the 
-  //device if the observed changes.
-  if (h_pObs_current != observed || size_changed) {
-    status = cublasSetVector(size, sizeof(float), observed, 1, d_pObs, 1);
-    if (status != CUBLAS_STATUS_SUCCESS) 
-      {
-	carp(CARP_FATAL, "!!!! CUBLAS set observed error\n");
-	return 0.0;
-      }
-    h_pObs_current = observed;
-  }
-  else {
-    //carp(CARP_FATAL,"not copying observed");
-  }
+  CUBLASEXEC(cublasSetVector(size, sizeof(float), h_theoretical, 1, d_theoretical, 1),
+	     "cross_correlation_cuda: setVector(theoretical)");
+
+  //observed should have already been set by cuda_set_observed.
+
   //get dot product.
-  score_at_zero = cublasSdot(size, d_pThe, 1, d_pObs, 1); 
+  score_at_zero = cublasSdot(size, d_theoretical, 1, d_observed, 1); 
 
   return score_at_zero / 10000.0;
 }
-#endif /*CRUX_USE_CUDA*/
+#endif /*CRUX_USE_CUDA1*/
 
 #ifdef CRUX_USE_CUDA2
 

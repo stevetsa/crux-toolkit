@@ -4,7 +4,7 @@
  * CREATE DATE: 9 Oct 2006
  * DESCRIPTION: object to score spectrum vs. spectrum or spectrum
  * vs. ion_series 
- * REVISION: $Revision: 1.67.4.13 $
+ * REVISION: $Revision: 1.67.4.14 $
  ****************************************************************************/
 
 #include <math.h>
@@ -25,6 +25,10 @@
 
 #ifdef CRUX_USE_CUDA
 #include "crux_cuda.cu.h"
+#endif
+
+#ifdef CRUX_USE_CUDA1
+#include "crux_cuda.h"
 #endif
 
 
@@ -887,8 +891,10 @@ BOOLEAN_T create_intensity_array_observed(
     intensity = get_peak_intensity(peak);
     if(scorer->observed[mz] < intensity){ 
       scorer->observed[mz] = intensity; 
+      /*
       if (max_intensity_per_region[region] < sqrt(intensity))
 	max_intensity_per_region[region] = sqrt(intensity);
+      */
     }
 
 #else
@@ -910,14 +916,23 @@ BOOLEAN_T create_intensity_array_observed(
 
   
   // DEBUG
-  /*
+  /*  
   int i = 0;
   for(; i < 10; i++){
-    carp(CARP_INFO, "High intensity bin %d: %.2f", i, max_intensity_per_region[i]);
+    printf("High intensity bin %d: %.2f\n", i, max_intensity_per_region[i]);
   }
   */
 
-#ifdef CRUX_USE_CUDA
+#ifdef CRUX_USE_CUDA1
+  cuda_set_observed(scorer -> observed,
+		    scorer -> sp_max_mz,
+		    10,
+		    region_selector,
+		    MAX_XCORR_OFFSET);
+#else 
+#ifdef DEFINED(CRUX_USE_CUDA)
+
+
   //printf("Calling code.\n");
   //process the data, sqrt, find max per region, normalize per region, and do cross correlation function.
   cuda_sqrt_max_normalize_and_cc(scorer -> observed, 
@@ -953,6 +968,7 @@ BOOLEAN_T create_intensity_array_observed(
 
   free(scorer->observed);
   scorer->observed = new_observed;
+#endif
 #endif
   // free heap
   free(max_intensity_per_region);
@@ -1157,7 +1173,7 @@ float cross_correlation(
   #ifdef CRUX_USE_CUDA1
   //make sure that cuda is initialized, otherwise, just do the normal calculation.
   if (is_cudablas_initialized()) {
-    return cross_correlation_cuda(observed, theoretical, size);
+    return cross_correlation_cuda(theoretical, size);
   }
   else
   #endif
