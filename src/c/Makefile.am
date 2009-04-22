@@ -162,12 +162,12 @@ crux_SOURCES = crux-main.c  crux-main.h percolator.c percolator.h
 
 crux_CFLAGS = $(AM_CFLAGS) -DMAIN -I./cuda
 crux_LDADD = ./cuda/crux_cuda.cu.o \
-     -lcrux -L$(CUDA_DIR)/lib -lcublas -lcudart 
+     -lcrux -L$(CUDA_DIR)/lib -lcublasemu -lcudart 
 #crux_LDADD= -lcrux
 endif
 
 ./cuda/crux_cuda.cu.o:./cuda/crux_cuda.cu
-	nvcc -c -DCUDA_NVCC -pg ./cuda/crux_cuda.cu -o ./cuda/crux_cuda.cu.o
+	nvcc -c --device-emulation -DCUDA_NVCC -pg ./cuda/crux_cuda.cu -o ./cuda/crux_cuda.cu.o
 
 
 paramdir = $(prefix)/doc

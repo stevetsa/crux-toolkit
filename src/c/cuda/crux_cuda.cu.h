@@ -17,24 +17,16 @@
 extern "C" {
 #endif
 
-  
+  void d_cuda_sqrt_max_normalize_and_cc(float* d_in, int n, int num_regions, 
+					int region_selector, int max_offset);
 
-  void cuda_sqrt_max_normalize_and_cc(float* h_values, int n, int num_regions, int region_selector, int max_offset);
+  void cuda_sqrt_max_normalize_and_cc(float* h_values, int n, int num_regions, 
+				      int region_selector, int max_offset);
  
+  void cuda_float_malloc(float** a, int current_size, int size);
   
-  void cuda_normalize_and_cc(float*h_values, float* max_per_region,
-			     int n, int num_regions,
-			     int region_selector, int max_offset);
-
-  void cuda_normalize_each_region(float* h_values, float* max_per_region, 
-				  int n, int num_regions, 
-				  int region_selector);
-
-  void cross_correlation_obs(float* h_values, float*h_ans, 
-			     int n, int max_offset);
-  
-  float d_max(float* h_values, int n);
-
+  void crux_cuda_initialize();
+  void crux_cuda_shutdown();
 
 #ifdef CUDA_NVCC
 }
@@ -44,4 +36,5 @@ extern "C" {
                       _status = x; \
                       if (_status != cudaSuccess) \
                       {printf("cuda error: %s: %s\n", cudaGetErrorString(_status),s);}}
+
 
