@@ -6,6 +6,9 @@
 
 #include <math.h>
 
+#include "mytimer.h"
+
+
 BOOLEAN_T cudablas_initialized = FALSE;
 
 #ifdef CRUX_USE_CUDA1
@@ -18,14 +21,22 @@ float* d_theoretical = NULL;
 #ifdef CRUX_USE_CUDA2
 int spectrum_size = -1;
 int max_spectrum_size = -1;
+
+float* h_theoretical_matrix = NULL;
+
+
 float* d_pThe_Matrix = NULL;
 float* d_pObs = NULL;
 float* d_pXCorrs = NULL;
 #endif
 
 
-BOOLEAN_T initialize_cudablas() {
+struct my_timer timer2;
+struct my_timer timer3;
 
+BOOLEAN_T initialize_cudablas() {
+  my_timer_reset(&timer2);
+  my_timer_reset(&timer3);
   cublasStatus status;
 
   carp(CARP_FATAL,"initialize_cudablas(): begin");
@@ -50,6 +61,12 @@ BOOLEAN_T initialize_cudablas() {
 
 BOOLEAN_T shutdown_cudablas() {
   cublasStatus status;
+
+  printf("setVector\n");
+  my_timer_print(&timer2);
+  printf("dot product\n");
+  my_timer_print(&timer3);
+
 #ifdef CRUX_USE_CUDA1
   if (d_cutemp != NULL) cublasFree(d_cutemp);
   if (d_observed != NULL) cublasFree(d_observed);
@@ -113,12 +130,14 @@ BOOLEAN_T checkSpace(int size) {
 
 void cuda_set_observed(float* raw_values, int n, int num_regions, 
 		       int region_selector, int max_offset) {
+  //my_timer_start(&timer2);
   //check space.
   checkSpace(n);
   //push raw data into vector.
   cublasSetVector(n, sizeof(float), raw_values, 1, d_cutemp, 1);
   //run the kernel.
   d_cuda_sqrt_max_normalize_and_cc2(d_cutemp, d_observed, n, num_regions, region_selector, max_offset);
+  //my_timer_stop(&timer2);
 }
 
 
@@ -135,14 +154,19 @@ float cross_correlation_cuda(
   float score_at_zero = 0;
 
   //copy theoretical to the device.
-
-  CUBLASEXEC(cublasSetVector(size, sizeof(float), h_theoretical, 1, d_theoretical, 1),
-	     "cross_correlation_cuda: setVector(theoretical)");
-
+  my_timer_start(&timer2);
+  score_at_zero = *h_theoretical;
+  //CUBLASEXEC(cublasSetVector(size, sizeof(float), h_theoretical, 1, d_theoretical, 1),
+  //	     "cross_correlation_cuda: setVector(theoretical)");
+  my_timer_stop(&timer2);
   //observed should have already been set by cuda_set_observed.
 
   //get dot product.
+
+  my_timer_start(&timer3);
   score_at_zero = cublasSdot(size, d_theoretical, 1, d_observed, 1); 
+
+  my_timer_stop(&timer3);
 
   return score_at_zero / 10000.0;
 }
@@ -208,14 +232,11 @@ int cuda_get_max_theoreticalN(int ssize) {
 
 
 void cuda_set_theoretical(float* h_pThe, int index) {
-  cublasStatus status;
-  float* d_ptr = d_pThe_Matrix+(spectrum_size * index);
-  status = cublasSetVector(spectrum_size, sizeof(float), h_pThe, 1, d_ptr, 1);
-  if (status != CUBLAS_STATUS_SUCCESS) {
-    carp(CARP_FATAL,"!!!! Error setting theoretical. code:%i index:%i",status, index);
-    }
+  float* h_ptr = h_theoretical_matrix + (spectrum_size * index);  
+  memcpy(h_ptr,h_pThe,sizeof(float)*spectrum_size);
 }
 
+/*
 void cuda_set_observed(float* h_pObs) {
   cublasStatus status;
   status = cublasSetVector(spectrum_size, sizeof(float), h_pObs, 1, d_pObs, 1);
@@ -223,6 +244,7 @@ void cuda_set_observed(float* h_pObs) {
     carp(CARP_FATAL,"!!!! Error setting obsered. code:%i",status);
   }
 }
+*/
 
 void cuda_calculate_xcorrs(float* xcorrs) {
   cuda_calculate_xcorrsN(xcorrs, cuda_get_max_theoretical());
@@ -230,6 +252,12 @@ void cuda_calculate_xcorrs(float* xcorrs) {
 
 void cuda_calculate_xcorrsN(float* xcorrs, int nthe) {
   cublasStatus status;
+
+  //copy the theoretical to the device.
+  status = cublasSetVector(d_theoretical_matrix, h_theoretical_matrix, 
+			   nthe*spectrum_size*sizeof(float), cudaMemcpyHostToDevice);
+
+
   /*
     trans specifies op(A). If trans == 'N' or 'n', .
     If trans == 'T', 't', 'C', or 'c', .
@@ -250,12 +278,12 @@ void cuda_calculate_xcorrsN(float* xcorrs, int nthe) {
   int m = spectrum_size; //rows is the spectrum_size.
   int n = nthe; //columns are the number of theoretical spectra.
   float alpha = 1.0 / 10000.0; //for the wierd division part of the cross-correlation calculation.
-  float* A = d_pThe_Matrix;
+  float* A = d_theoretical_matrix;
   int lda = m; //this has to equal the number of rows???
-  float* x = d_pObs;
+  float* x = d_observed;
   int incx = 1;
   float beta = 0;
-  float* y = d_pXCorrs;
+  float* y = d_xcorrs;
   int incy = 1;
 
   //carp(CARP_FATAL, "CRUX_USE_CUDA2:Multiplying");

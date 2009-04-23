@@ -78,8 +78,9 @@ NON_PERCOLATOR_LIB_FILES= \
   utils.h \
   version.h \
   ./cuda/crux_cuda.h \
-  ./cuda/crux_cuda.c
-
+  ./cuda/crux_cuda.c \
+  ./cuda/mytimer.h \
+  ./cuda/mytimer.c
 
 PERCOLATOR_LIB_FILES = 
 
@@ -99,7 +100,7 @@ endif
 
 
 libcrux_la_SOURCES = $(LIBFILES)
-libcrux_la_LIBADD = -lm
+libcrux_la_LIBADD = -lm -lrt
 
 PROGRAM_FILES = \
   crux \
@@ -161,13 +162,14 @@ else
 crux_SOURCES = crux-main.c  crux-main.h percolator.c percolator.h
 
 crux_CFLAGS = $(AM_CFLAGS) -DMAIN -I./cuda
-crux_LDADD = ./cuda/crux_cuda.cu.o \
-     -lcrux -L$(CUDA_DIR)/lib -lcublas -lcudart 
+crux_LDADD = ./cuda/crux_cuda.cu.o -lcrux -L$(CUDA_DIR)/lib -lcublas -lcudart 
 #crux_LDADD= -lcrux
 endif
 
+
+
 ./cuda/crux_cuda.cu.o:./cuda/crux_cuda.cu
-	nvcc -c -pg -DCUDA_NVCC ./cuda/crux_cuda.cu -o ./cuda/crux_cuda.cu.o
+	nvcc -c -DCUDA_NVCC ./cuda/crux_cuda.cu -o ./cuda/crux_cuda.cu.o
 
 
 paramdir = $(prefix)/doc

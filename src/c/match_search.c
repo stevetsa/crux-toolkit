@@ -449,9 +449,10 @@ int search_main(int argc, char** argv){
   #ifdef CRUX_USE_CUDA3
   writeStats();
   #endif
-
+  printf("Finished search\n");
   carp(CARP_INFO, "Finished crux-search-for-matches");
-  exit(0);
+  //exit(0);
+  return 0;
 }// end main
 
 

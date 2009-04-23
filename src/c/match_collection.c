@@ -8,7 +8,7 @@
  *
  * AUTHOR: Chris Park
  * CREATE DATE: 11/27 2006
- * $Revision: 1.89.4.8 $
+ * $Revision: 1.89.4.9 $
  ****************************************************************************/
 #include "match_collection.h"
 
@@ -1319,9 +1319,12 @@ BOOLEAN_T score_matches_one_spectrum_cuda(
 
   //create the observed array.
   create_intensity_array_xcorr(spectrum, scorer, get_ion_series_charge(ion_series));
+
   //put it on the device.
   cuda_set_spectrum_size(get_scorer_sp_max_mz(scorer));
-  cuda_set_observed(get_scorer_observed_array(scorer));
+
+  //already placed on the device.
+  //cuda_set_observed(get_scorer_observed_array(scorer));
 
   //initialize cuda arrays 
   int cuda_matrix_index = 0;

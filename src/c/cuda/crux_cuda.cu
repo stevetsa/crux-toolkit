@@ -13,6 +13,8 @@
 #include <cuda.h>
 //#include "carp.h"
 
+#include "mytimer.h"
+
 void calcMax(int n, float*d_ans);
 void calcMaxP2(float* d_in, int n, float* d_ans);
 void calcMaxNP2(float* d_in, int n, float* d_ans);
@@ -80,6 +82,9 @@ int d_corr_size = -1;
 float* d_ans = NULL;
 int d_ans_size = -1;
 
+
+struct my_timer timer1;
+
 /***************************************************************
  * HOST FUNCTIONS AND PROCEDURES
  ***************************************************************/
@@ -94,17 +99,24 @@ void cuda_float_malloc(float** a, int* current_size, int size) {
 
 void crux_cuda_initialize() {
   printf("crux_cuda_initialize(): start\n");
+  my_timer_reset(&timer1);
   cuda_float_malloc(&d_values, &d_values_size, 1024);
   cuda_float_malloc(&d_temp, &d_temp_size, 1024);
   cuda_float_malloc(&d_ans, &d_ans_size, 1);
   cuda_float_malloc(&d_max_per_region, &d_max_per_region_size, 10);
   cuda_float_malloc(&d_corr, &d_corr_size, 1024);
+  printf("crux_cuda_initialize(): done\n");
 }
 
 void crux_cuda_shutdown() {
+  printf("crux_cuda_shutdown(): start\n");
   CUDAEXEC(cudaFree(d_values),"free(d_values)");
   CUDAEXEC(cudaFree(d_temp),"free(d_temp)");
   CUDAEXEC(cudaFree(d_ans),"free(d_ans)");
+
+  printf("Timer1\n");
+  my_timer_print(&timer1);
+
 }
 
 
@@ -237,6 +249,9 @@ void d_cuda_sqrt_max_normalize_and_cc2(float* d_in, float* d_out, int n, int num
 				       int region_selector, int max_offset) {
   cudaError error;
   int region;
+
+  my_timer_start(&timer1);
+
   cuda_float_malloc(&d_max_per_region, &d_max_per_region_size, num_regions);
  
   int num_blocks = n / NUM_THREADS_PER_BLOCK; 
@@ -267,6 +282,8 @@ void d_cuda_sqrt_max_normalize_and_cc2(float* d_in, float* d_out, int n, int num
 
   if (error != cudaSuccess)
     printf("d_cross_correlation_obs: error %s\n", cudaGetErrorString(error));
+
+  my_timer_stop(&timer1);
 
 }
 
