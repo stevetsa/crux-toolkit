@@ -11,23 +11,23 @@
 
 BOOLEAN_T cudablas_initialized = FALSE;
 
-#ifdef CRUX_USE_CUDA1
 int current_size = -1;
+
+
+#ifdef CRUX_USE_CUDA1
 float* d_cutemp = NULL;
 float* d_observed = NULL;
 float* d_theoretical = NULL;
 #endif
 
 #ifdef CRUX_USE_CUDA2
-int spectrum_size = -1;
-int max_spectrum_size = -1;
 
+
+float* d_cutemp = NULL;
+float* d_observed = NULL;
 float* h_theoretical_matrix = NULL;
-
-
-float* d_pThe_Matrix = NULL;
-float* d_pObs = NULL;
-float* d_pXCorrs = NULL;
+float* d_theoretical_matrix = NULL;
+float* d_xcorrs = NULL;
 #endif
 
 
@@ -73,12 +73,8 @@ BOOLEAN_T shutdown_cudablas() {
   if (d_theoretical != NULL) cublasFree(d_theoretical);
 #endif
 #ifdef CRUX_USE_CUDA2
-  if (d_pThe_Matrix != NULL)
-    cublasFree(d_pThe_Matrix);
-  if (d_pObs != NULL)
-    cublasFree(d_pObs);
-  if (d_pXCorrs != NULL)
-    cublasFree(d_pXCorrs);
+  //cleanup.
+
 #endif
   if (!cudablas_initialized)
     return TRUE;
@@ -175,40 +171,59 @@ float cross_correlation_cuda(
 #ifdef CRUX_USE_CUDA2
 
 
-void cuda_realloc_float(int n,  float** ptr) {
-  if (*ptr !=NULL)
-    CUBLASEXEC(cublasFree(*ptr));
-  CUBLASEXEC(cublasAlloc(n, sizeof(float), (void**)ptr));
+
+BOOLEAN_T checkSpace(int size) {
+  //so if the current allocated space is enough for the vector,
+  //then we have enough.
+  if (size <= current_size)
+    return TRUE;
+  else {
+    int n2 = size * cuda_get_max_theoreticalN(size);
+    
+    //carp(CARP_FATAL," allocating %d space",size);
+    //free the previous vectors
+    if (d_theoretical_matrix != NULL) cublasFree(d_theoretical_matrix);
+    CUBLASEXEC(cublasAlloc(n2, sizeof(float), (void**)&d_theoretical_matrix),"alloc(theo)");
+
+    if (d_observed != NULL) cublasFree(d_observed);
+    CUBLASEXEC(cublasAlloc(size, sizeof(float), (void**)&d_observed),"alloc(obs)");
+
+    if (d_cutemp != NULL) cublasFree(d_cutemp);
+    CUBLASEXEC(cublasAlloc(size, sizeof(float), (void**)&d_cutemp),"alloc(temp)");
+    if (d_xcorrs != NULL) cublasFree(d_xcorrs);
+    CUBLASEXEC(cublasAlloc(size, sizeof(float), (void**)&d_xcorrs),"alloc(xcorrs)");
+
+    if (h_theoretical_matrix != NULL) free(h_theoretical_matrix);
+    h_theoretical_matrix = malloc(n2*sizeof(float));
+      
+    current_size = size;
+    return TRUE;
+  }
 }
 
-void cuda_set_spectrum_size(int size) {
-  //carp(CARP_FATAL,"cuda_set_spectrum_size: start %d",size);
-  if (size != spectrum_size) {
-    carp(CARP_FATAL,"Updating size %d to %d",spectrum_size, size);
-    if (max_spectrum_size < size) {
-      int n = size;
-      int m = cuda_get_max_theoreticalN(n);
-      int n2 = n * m;
-      
-      carp(CARP_FATAL,"Allocating space n:%i n2:%d",n, n2);
-      //allocate space for the theoretical matrix, the observed vector, and the result vector.
-      cuda_realloc_float(n2, &d_pThe_Matrix);
-      cuda_realloc_float(n, &d_pObs);
-      cuda_realloc_float(m, &d_pXCorrs);
-      max_spectrum_size = size;
-      } 
-    spectrum_size = size;
-   }
-  //carp(CARP_FATAL,"cuda_set_spectrum_size: done");
+
+void cuda_set_observed(float* raw_values, int n, int num_regions, 
+		       int region_selector, int max_offset) {
+  //my_timer_start(&timer2);
+  //check space.
+  checkSpace(n);
+  //push raw data into vector.
+  cublasSetVector(n, sizeof(float), raw_values, 1, d_cutemp, 1);
+  //run the kernel.
+  d_cuda_sqrt_max_normalize_and_cc2(d_cutemp, d_observed, n, num_regions, region_selector, max_offset);
+  //my_timer_stop(&timer2);
 }
+
+
 
 int cuda_get_max_theoretical(void) {
-  return cuda_get_max_theoreticalN(spectrum_size);
+  return cuda_get_max_theoreticalN(current_size);
 }
 int cuda_get_max_theoreticalN(int ssize) {
+  
   //carp(CARP_FATAL,"ssize:%d",ssize);
   if (ssize < 1) return 0;
-
+  if (ssize > 1) return 2;
   //TODO: calculate based upon card memory.
   int size = 1 * 1024 * 1024; //1 MB of memory.
   int fsize = size / sizeof(float); //number of floats.
@@ -232,32 +247,28 @@ int cuda_get_max_theoreticalN(int ssize) {
 
 
 void cuda_set_theoretical(float* h_pThe, int index) {
-  float* h_ptr = h_theoretical_matrix + (spectrum_size * index);  
-  memcpy(h_ptr,h_pThe,sizeof(float)*spectrum_size);
+  float* h_ptr = h_theoretical_matrix + (current_size * index);  
+  memcpy(h_ptr, h_pThe, sizeof(float)*current_size);
 }
 
-/*
-void cuda_set_observed(float* h_pObs) {
+void cuda_calculate_xcorrs(float* h_theoretical, float* xcorrs) {
+  cuda_calculate_xcorrsN(h_theoretical, xcorrs, cuda_get_max_theoretical());
+}
+
+void cuda_calculate_xcorrsN(float* h_theoretical, float* xcorrs, int nthe) {
   cublasStatus status;
-  status = cublasSetVector(spectrum_size, sizeof(float), h_pObs, 1, d_pObs, 1);
-  if (status != CUBLAS_STATUS_SUCCESS) {
-    carp(CARP_FATAL,"!!!! Error setting obsered. code:%i",status);
-  }
-}
-*/
-
-void cuda_calculate_xcorrs(float* xcorrs) {
-  cuda_calculate_xcorrsN(xcorrs, cuda_get_max_theoretical());
-}
-
-void cuda_calculate_xcorrsN(float* xcorrs, int nthe) {
-  cublasStatus status;
-
+  //int i;
   //copy the theoretical to the device.
-  status = cublasSetVector(d_theoretical_matrix, h_theoretical_matrix, 
-			   nthe*spectrum_size*sizeof(float), cudaMemcpyHostToDevice);
-
-
+  status = cublasSetVector(nthe*current_size, 
+			   sizeof(float), 
+			   h_theoretical, 
+			   1, 
+			   d_theoretical_matrix, 
+			   1);
+  /*
+  for (i=0;i<current_size;i++)
+    printf("%i: %lf\n",i,h_theoretical[i]);
+  */
   /*
     trans specifies op(A). If trans == 'N' or 'n', .
     If trans == 'T', 't', 'C', or 'c', .
@@ -275,7 +286,7 @@ void cuda_calculate_xcorrsN(float* xcorrs, int nthe) {
     is not read.
   */
   char trans = 'T'; //transpose to get dot products.
-  int m = spectrum_size; //rows is the spectrum_size.
+  int m = current_size; //rows is the spectrum_size.
   int n = nthe; //columns are the number of theoretical spectra.
   float alpha = 1.0 / 10000.0; //for the wierd division part of the cross-correlation calculation.
   float* A = d_theoretical_matrix;
@@ -298,7 +309,7 @@ void cuda_calculate_xcorrsN(float* xcorrs, int nthe) {
     
    //carp(CARP_FATAL, "CRUX_USE_CUDA2:recovering result");
   /* Read the result back */
-  status = cublasGetVector(nthe, sizeof(float), d_pXCorrs, 1, xcorrs, 1); 
+  status = cublasGetVector(nthe, sizeof(float), d_xcorrs, 1, xcorrs, 1); 
 
 }
 

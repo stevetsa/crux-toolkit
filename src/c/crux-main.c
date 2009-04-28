@@ -10,16 +10,13 @@
             crux <operation> <options> <arguments>
          where operation is create-index, search, compute-q-values, or
          q-ranker.     
- REVISION: $Revision: 1.2.6.4 $
+ REVISION: $Revision: 1.2.6.5 $
 */
 
 #include "crux-main.h"
 
 #ifdef CRUX_USE_CUDA
 #include "crux_cuda.cu.h"
-#endif
-
-#ifdef CRUX_USE_CUDA1
 #include "crux_cuda.h"
 #endif
 
@@ -57,8 +54,6 @@ int main(int argc, char** argv){
   printf("Hello?\n");
 #ifdef CRUX_USE_CUDA
   crux_cuda_initialize();
-#endif
-#ifdef CRUX_USE_CUDA1
   //initialize cudablas.
   if (!initialize_cudablas())
     fprintf(stderr, "CUDA not initialized, using just CPU\n");
@@ -103,9 +98,9 @@ int main(int argc, char** argv){
   crux_cuda_shutdown();
   //#endif
 
-#ifdef CRUX_USE_CUDA1
+  //#ifdef CRUX_USE_CUDA1
   shutdown_cudablas();
-#endif
+  //#endif
 
   exit (0);
 }// end main

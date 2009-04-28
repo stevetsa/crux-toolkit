@@ -4,7 +4,7 @@
  * CREATE DATE: 9 Oct 2006
  * DESCRIPTION: object to score spectrum vs. spectrum or spectrum
  * vs. ion_series 
- * REVISION: $Revision: 1.67.4.14 $
+ * REVISION: $Revision: 1.67.4.15 $
  ****************************************************************************/
 
 #include <math.h>
@@ -27,9 +27,8 @@
 #include "crux_cuda.cu.h"
 #endif
 
-#ifdef CRUX_USE_CUDA1
 #include "crux_cuda.h"
-#endif
+
 
 
 // the bin width(Sp)
@@ -923,14 +922,14 @@ BOOLEAN_T create_intensity_array_observed(
   }
   */
 
-#ifdef CRUX_USE_CUDA1
+#ifdef CRUX_USE_CUDA2
   cuda_set_observed(scorer -> observed,
 		    scorer -> sp_max_mz,
 		    10,
 		    region_selector,
 		    MAX_XCORR_OFFSET);
 #else 
-#ifdef DEFINED(CRUX_USE_CUDA)
+#ifdef CRUX_USE_CUDA
 
 
   //printf("Calling code.\n");

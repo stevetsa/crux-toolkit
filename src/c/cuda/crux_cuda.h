@@ -1,9 +1,7 @@
 #include "scorer.h"
 #include "utils.h"
 
-#ifdef CRUX_USE_CUDA1
 #include "crux_cuda.cu.h"
-#endif
 
 #ifdef CRUX_USE_CUDA3
 #include "modified_peptides_iterator.h"
@@ -39,12 +37,12 @@ int cuda_get_max_theoreticalN(int ssize);
 //sets the intensity array for a theoretical spectrum.
 void cuda_set_theoretical(float* h_pThe, int index);
 
-//sets the intensity array for the observed spectrum.
-void cuda_set_observed(float*h_pObs);
+void cuda_set_observed(float* raw_values, int n, int num_regions, int region_selector, int max_offset);
+
 
 //runs the calculation and copies the results to xcorrs.
-void cuda_calculate_xcorrs(float* xcorrs);
-void cuda_calculate_xcorrsN(float* xcorrs, int nthe);
+void cuda_calculate_xcorrs(float* h_theoretical, float* xcorrs);
+void cuda_calculate_xcorrsN(float* h_theoretical, float* xcorrs, int nthe);
 #endif
 
 #ifdef CRUX_USE_CUDA3

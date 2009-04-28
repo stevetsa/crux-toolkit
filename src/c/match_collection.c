@@ -8,7 +8,7 @@
  *
  * AUTHOR: Chris Park
  * CREATE DATE: 11/27 2006
- * $Revision: 1.89.4.9 $
+ * $Revision: 1.89.4.10 $
  ****************************************************************************/
 #include "match_collection.h"
 
@@ -1194,6 +1194,7 @@ BOOLEAN_T score_matches_one_spectrum(
 #ifdef CRUX_USE_CUDA2
   if (score_type == XCORR && is_cudablas_initialized()) {
     //carp(CARP_FATAL, "CRUX_USE_CUDA2-doing it");
+    //printf("CRUX_USE_CUDA2-doing it\n");
     return score_matches_one_spectrum_cuda(score_type, matches, num_matches, spectrum, charge);
   }
   else
@@ -1319,18 +1320,15 @@ BOOLEAN_T score_matches_one_spectrum_cuda(
 
   //create the observed array.
   create_intensity_array_xcorr(spectrum, scorer, get_ion_series_charge(ion_series));
+  int max_t = cuda_get_max_theoretical();
+  int ssize = get_scorer_sp_max_mz(scorer);
+  float* h_theoretical = (float*)mymalloc(max_t*ssize*sizeof(float));
 
-  //put it on the device.
-  cuda_set_spectrum_size(get_scorer_sp_max_mz(scorer));
-
-  //already placed on the device.
-  //cuda_set_observed(get_scorer_observed_array(scorer));
-
+  
   //initialize cuda arrays 
   int cuda_matrix_index = 0;
 
-  float* theoretical = (float*)mycalloc(get_scorer_sp_max_mz(scorer), sizeof(float));
-  float* xcorrs = (float*)mycalloc(cuda_get_max_theoretical(), sizeof(float));
+  float* xcorrs = (float*)mycalloc(max_t, sizeof(float));
 
   for(match_idx = 0; match_idx < num_matches; match_idx++){
 
@@ -1353,17 +1351,18 @@ BOOLEAN_T score_matches_one_spectrum_cuda(
     update_ion_series(ion_series, sequence, modified_sequence);
     predict_ions(ion_series);
 
-    //generate a theoretical spectrum
-    memset(theoretical,0,sizeof(float)*get_scorer_sp_max_mz(scorer));
-    create_intensity_array_theoretical(scorer, ion_series, theoretical);
+    float* h_ptr = h_theoretical + (ssize * cuda_matrix_index);
 
-    //load the theoretical onto the device.
-    cuda_set_theoretical(theoretical, cuda_matrix_index);
+    //generate a theoretical spectrum
+    memset(h_ptr, 0,ssize*sizeof(float));
+
+    create_intensity_array_theoretical(scorer, ion_series, h_ptr);
     cuda_matrix_index++;
-    if (cuda_matrix_index >= cuda_get_max_theoretical()) {
+    if (cuda_matrix_index >= max_t) {
       //we are full, go calculate what we have and retrieve the results.
-      cuda_calculate_xcorrs(xcorrs);
-      for (i=0;i<cuda_matrix_index;i++) {
+      printf("Matrix full: Calculating xcorrs:%d\n",cuda_matrix_index);
+      cuda_calculate_xcorrs(h_theoretical, xcorrs);
+      for (i=0;i<max_t;i++) {
 	//carp(CARP_FATAL, "CRUX_USE_CUDA2[%i]=%f",i,xcorrs[i]);
 	//carp(CARP_FATAL, "CRUX_USE_CUDA2: match_idx:%d",match_idx);
 	//carp(CARP_FATAL, "CRUX_USE_CUDA2: temp_idx:%d",(match_idx-(cuda_matrix_index-i-1)));
@@ -1387,7 +1386,8 @@ BOOLEAN_T score_matches_one_spectrum_cuda(
 
   //collect the rest of the results.
   if (cuda_matrix_index != 0) {
-    cuda_calculate_xcorrsN(xcorrs, cuda_matrix_index);
+    printf("Calculating the rest of the xcorrs:%d\n",cuda_matrix_index);
+    cuda_calculate_xcorrsN(h_theoretical, xcorrs, cuda_matrix_index);
   
     for (i=0;i<cuda_matrix_index;i++) {
       match_idx = num_matches-cuda_matrix_index+i;
@@ -1401,7 +1401,7 @@ BOOLEAN_T score_matches_one_spectrum_cuda(
   free_ion_constraint(ion_constraint);
   free_ion_series(ion_series);
   free_scorer(scorer);
-  free(theoretical);
+  free(h_theoretical);
   free(xcorrs);
   return TRUE;
 }
