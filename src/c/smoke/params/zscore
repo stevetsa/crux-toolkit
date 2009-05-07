@@ -1,0 +1,5 @@
+fileroot=zscore
+compute-z-scores=T
+print-search-progress=100
+overwrite=T
+seed=7
