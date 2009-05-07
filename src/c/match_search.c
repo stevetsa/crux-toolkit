@@ -31,7 +31,7 @@
 #include "match_collection.h"
 #include <errno.h>
 
-#define NUM_SEARCH_OPTIONS 13
+#define NUM_SEARCH_OPTIONS 14
 #define NUM_SEARCH_ARGS 2
 #define PARAM_ESTIMATION_SAMPLE_COUNT 500
 
@@ -64,6 +64,7 @@ int search_main(int argc, char** argv){
     "write-parameter-file",
     "overwrite",
     "compute-p-values",
+    "compute-z-scores",
     "spectrum-min-mass",
     "spectrum-max-mass",
     "spectrum-charge",
@@ -178,6 +179,7 @@ int search_main(int argc, char** argv){
 
   // get search parameters for match_collection
   BOOLEAN_T compute_pvalues = get_boolean_parameter("compute-p-values");
+  BOOLEAN_T compute_zscores = get_boolean_parameter("compute-z-scores");
   BOOLEAN_T combine_target_decoy = get_boolean_parameter("tdc");
 
   // flags and counters for loop
@@ -279,6 +281,12 @@ int search_main(int argc, char** argv){
       }
     }
 
+    // calculate z-scores
+    if( compute_zscores == TRUE ){
+      carp(CARP_DEBUG, "Computing z-scores.");
+      compute_z_scores(match_collection);
+    }
+
     if( combine_target_decoy == FALSE ){
       // print matches
       carp(CARP_DEBUG, "About to print target matches");
@@ -355,6 +363,12 @@ int search_main(int argc, char** argv){
         }else{ // there were too few scores to do estimation
           set_p_values_as_unscored(match_collection);
         }
+      }
+
+      // calculate z-scores
+      if( compute_zscores == TRUE ){
+        carp(CARP_DEBUG, "Computing z-scores.");
+        compute_z_scores(match_collection);
       }
 
       // print matches

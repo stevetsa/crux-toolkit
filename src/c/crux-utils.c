@@ -345,6 +345,68 @@ inline BOOLEAN_T compare_float_three(float float_a, float min, float max){
 }
 
 /**
+ * \brief Compute the mean of an array of floats.
+ * \returns The mean (average) of the given values.
+ */
+float get_mean_float(float* array, int size){
+  float sum = 0;
+  int idx = 0;
+
+  for(idx=0; idx < size; idx++){
+    sum += array[idx];
+  }
+
+  return sum / (float)size;
+}
+
+/**
+ * \brief Compute the mean of an array of doubles.
+ * \returns The mean (average) of the given values.
+ */
+double get_mean_double(double* array, int size){
+  double sum = 0;
+  int idx = 0;
+
+  for(idx=0; idx < size; idx++){
+    sum += array[idx];
+  }
+
+  return sum / (double)size;
+}
+
+/**
+ * \brief Compute the standard deviation of an array of floats, given
+ * the mean. 
+ * \returns The standard deviation of the given values.
+ */
+float get_stdev_float(float* array, float mean, int size){
+  float sum = 0;
+  int idx = 0;
+
+  for(idx=0; idx < size; idx++){
+    sum += (array[idx] - mean) * (array[idx] - mean);
+  }
+
+  return sqrt(sum/(float)size);
+}
+
+/**
+ * \brief Compute the standard deviatio of an array of doubles given
+ * the mean.
+ * \returns The standard deviation of the given values.
+ */
+double get_stdev_double(double* array, float mean, int size){
+  double sum = 0;
+  int idx = 0;
+
+  for(idx=0; idx < size; idx++){
+    sum += (array[idx] - mean) * (array[idx] - mean);
+  }
+
+  return sqrt(sum/(double)size);
+}
+
+/**
  * parses the filename and path  
  * returns an array A, with A[0] the filename and A[1] the path to the filename
  * returns A[1] NULL if only a filename was passed in

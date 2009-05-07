@@ -8,7 +8,7 @@
  *
  * AUTHOR: Chris Park
  * CREATE DATE: 11/27 2006
- * $Revision: 1.119 $
+ * $Revision: 1.119.2.1 $
  ****************************************************************************/
 #include "match_collection.h"
 
@@ -556,6 +556,7 @@ BOOLEAN_T sort_match_collection(
     // implement later
     return FALSE;
   case XCORR:
+  case ZSCORE: 
   case LOGP_EVD_XCORR:
   case LOGP_BONF_EVD_XCORR:
   case LOGP_WEIBULL_XCORR: 
@@ -567,7 +568,7 @@ BOOLEAN_T sort_match_collection(
     match_collection->last_sorted = XCORR;
     return TRUE;
   case SP: 
-  case LOGP_EXP_SP: 
+    //case LOGP_EXP_SP: 
   case LOGP_BONF_EXP_SP: 
   case LOGP_WEIBULL_SP: 
   case LOGP_BONF_WEIBULL_SP: 
@@ -616,6 +617,7 @@ BOOLEAN_T spectrum_sort_match_collection(
     break;
 
   case XCORR:
+  case ZSCORE: 
   case LOGP_EVD_XCORR:
   case LOGP_BONF_EVD_XCORR:
   case LOGP_WEIBULL_XCORR: 
@@ -627,7 +629,7 @@ BOOLEAN_T spectrum_sort_match_collection(
     break;
 
   case SP: 
-  case LOGP_EXP_SP: 
+    //case LOGP_EXP_SP: 
   case LOGP_BONF_EXP_SP: 
   case LOGP_WEIBULL_SP: 
   case LOGP_BONF_WEIBULL_SP: 
@@ -1290,6 +1292,53 @@ BOOLEAN_T compute_p_values(MATCH_COLLECTION_T* match_collection){
 }
 
 /**
+ * \brief Use the array of saved xcorrs to compute a z-score for each
+ * psm. 
+ *
+ * A z-score is a function of the mean and stdev: |mean-score|/stdev.
+ * \returns TRUE if z-scores were successfully computed for all
+ * matches in collection.
+ */
+BOOLEAN_T compute_z_scores(MATCH_COLLECTION_T* match_collection){
+
+  if( match_collection == NULL ){
+    carp(CARP_ERROR, "Cannot compute z-scores for NULL match collection.");
+    return FALSE;
+  }
+  // confirm that matches were scored for xcorr
+  if(!match_collection->scored_type[XCORR]){
+    carp(CARP_ERROR, "Cannot compute zscores without xcorrs.");
+    return FALSE;
+  }
+
+  int num_scores = match_collection->num_xcorrs;
+  // get mean
+  float mean = get_mean_float(match_collection->xcorrs, num_scores);
+
+  // get stdev
+  float stdev = get_stdev_float(match_collection->xcorrs, mean, num_scores);
+  // printf("Got mean %f stdev %f.\n", mean, stdev);
+
+  // for each psm compute and set zscore
+  int match_idx = 0;
+  for(match_idx = 0; match_idx < match_collection->match_total; match_idx++){
+    float xcorr = get_match_score(match_collection->match[match_idx],
+                                        XCORR);
+    float diff = mean - xcorr;
+    diff = (diff > 0) ? diff : -1*diff;
+    float zscore = diff / stdev ;
+    //printf("xcorr %f, diff %f, zscore %f\n", xcorr, diff, zscore);
+
+    set_match_score(match_collection->match[match_idx],
+                    ZSCORE,
+                    zscore);
+  }
+
+  return TRUE;
+}
+
+
+/**
  * \brief Indicate that p-values cannot be calculated for this match
  * collection.  
  *
@@ -1795,6 +1844,7 @@ void print_tab_header(FILE* output){
     "sp rank\t"
     "xcorr score\t"
     "xcorr rank\t"
+    "z-score\t"
     "-log(p-value)\t"
     "Weibull est. q-value\t"
     "percolator score\t"
@@ -2007,7 +2057,8 @@ MATCH_ITERATOR_T* new_match_iterator(
   if(sort_match && (match_collection->last_sorted != score_type 
   /*|| (match_collection->last_sorted == SP && score_type == LOGP_EXP_SP)*/)){
 
-    if((score_type == LOGP_EXP_SP || score_type == LOGP_BONF_EXP_SP ||
+    //if((score_type == LOGP_EXP_SP || score_type == LOGP_BONF_EXP_SP ||
+    if((score_type == LOGP_BONF_EXP_SP ||
         score_type == LOGP_WEIBULL_SP || score_type == LOGP_BONF_WEIBULL_SP)
        &&
        match_collection->last_sorted == SP){

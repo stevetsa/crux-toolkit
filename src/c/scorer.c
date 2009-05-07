@@ -4,7 +4,7 @@
  * CREATE DATE: 9 Oct 2006
  * DESCRIPTION: object to score spectrum vs. spectrum or spectrum
  * vs. ion_series 
- * REVISION: $Revision: 1.67 $
+ * REVISION: $Revision: 1.67.12.1 $
  ****************************************************************************/
 
 #include <math.h>
@@ -121,7 +121,8 @@ SCORER_T* new_scorer(
     // the scorer as not been initialized yet.
     scorer->initialized = FALSE;
   }
-  else if(type == LOGP_EXP_SP || type == LOGP_BONF_EXP_SP){
+  //else if(type == LOGP_EXP_SP || type == LOGP_BONF_EXP_SP){
+  else if( type == LOGP_BONF_EXP_SP){
     // the scorer does not need to be initialized for logp_exp_sp.
     scorer->initialized = TRUE;
   }
@@ -213,7 +214,8 @@ void smooth_peaks(
       
     case XCORR:
     case DOTP:
-    case LOGP_EXP_SP:
+      //case LOGP_EXP_SP:
+    case ZSCORE:
     case LOGP_BONF_EXP_SP:
     case LOGP_WEIBULL_SP:
     case LOGP_BONF_WEIBULL_SP:

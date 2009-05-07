@@ -3,7 +3,7 @@
  * AUTHOR: Chris Park
  * CREATE DATE: 21 Sep 2006
  * DESCRIPTION: code to support working with a series of ions
- * REVISION: $Revision: 1.50 $
+ * REVISION: $Revision: 1.50.2.1 $
  ****************************************************************************/
 #include <math.h>
 #include <stdio.h>
@@ -1295,7 +1295,8 @@ ION_CONSTRAINT_T* new_ion_constraint_smart(
     new_constraint = new_ion_constraint_sequest_xcorr(charge);
     break;
   case DOTP:
-  case LOGP_EXP_SP:
+    //case LOGP_EXP_SP:
+  case ZSCORE:
   case LOGP_BONF_EXP_SP:
   case LOGP_EVD_XCORR:
   case LOGP_BONF_EVD_XCORR:

@@ -461,6 +461,9 @@ void initialize_parameters(void){
   set_boolean_parameter("compute-p-values", FALSE, 
       "Compute p-values for the main score type. Default FALSE.",
       "Currently only implemented for XCORR.", "true");
+  set_boolean_parameter("compute-z-scores", FALSE, 
+      "Compute z-scores for the main score type. Default FALSE.",
+      "Currently only implemented for XCORR.", "true");
 
   set_double_parameter("spectrum-min-mass", 0.0, 0, BILLION, 
       "Minimum mass of spectra to be searched.  Default 0.",

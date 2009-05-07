@@ -1,7 +1,7 @@
 /**
  * \file crux-utils.h
- * $Revision: 1.40 $
- * $Author: cegrant $
+ * $Revision: 1.40.2.1 $
+ * $Author: frewen $
  * \brief Utilities for the crux project
  */
 #ifndef CRUX_UTILS_H
@@ -255,6 +255,32 @@ void shuffle_floats(float* array, int size);
  * \returns -1,0,1 if a is <,=,> b
  */
 int compare_floats_descending(const void* a, const void* b);
+
+/**
+ * \brief Compute the mean of an array of floats.
+ * \returns The mean (average) of the given values.
+ */
+float get_mean_float(float* array, int size);
+
+/**
+ * \brief Compute the mean of an array of doubles.
+ * \returns The mean (average) of the given values.
+ */
+double get_mean_double(double* array, int size);
+
+/**
+ * \brief Compute the standard deviation of an array of floats, given
+ * the mean. 
+ * \returns The standard deviation of the given values.
+ */
+float get_stdev_float(float* array, float mean, int size);
+
+/**
+ * \brief Compute the standard deviatio of an array of doubles given
+ * the mean.
+ * \returns The standard deviation of the given values.
+ */
+double get_stdev_double(double* array, float mean, int size);
 
 /**
  *\returns a heap allocated feature name array for the algorithm type

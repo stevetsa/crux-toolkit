@@ -5,8 +5,8 @@
  * DESCRIPTION: Object for matching a peptide and a spectrum, generate
  * a preliminary score(e.g., Sp) 
  *
- * REVISION: $Revision: 1.76 $
- * REVISION: $Revision: 1.76 $
+ * REVISION: $Revision: 1.76.2.1 $
+ * REVISION: $Revision: 1.76.2.1 $
  ****************************************************************************/
 #include <math.h>
 #include <stdlib.h>
@@ -371,7 +371,8 @@ void print_match(
       break;
     case SP:
     case XCORR:
-    case LOGP_EXP_SP:
+      //case LOGP_EXP_SP:
+    case ZSCORE:
     case LOGP_BONF_EXP_SP:
     case LOGP_WEIBULL_SP:
     case LOGP_BONF_WEIBULL_SP:
@@ -610,6 +611,7 @@ void print_match_tab(
   int  sp_rank = get_match_rank(match, SP);
   double xcorr_score = get_match_score(match, XCORR);
   int xcorr_rank = get_match_rank(match, XCORR);
+  float z_score = get_match_score(match, ZSCORE);
   double log_pvalue = get_match_score(match, LOGP_BONF_WEIBULL_XCORR);
   double weibull_qvalue = get_match_score(match, LOGP_QVALUE_WEIBULL_XCORR);
   double percolator_score = get_match_score(match, PERCOLATOR_SCORE);
@@ -641,6 +643,7 @@ void print_match_tab(
   }
   fprintf(file, float_format, xcorr_score);
   fprintf(file, "%d\t", xcorr_rank);
+  fprintf(file, float_format, z_score);
   if (LOGP_BONF_WEIBULL_XCORR == main_score) {
     // print p-value
     if (P_VALUE_NA == log_pvalue) {

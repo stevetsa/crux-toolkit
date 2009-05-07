@@ -1,6 +1,6 @@
 /**
  * \file match_collection.h 
- * $Revision: 1.36 $
+ * $Revision: 1.36.4.1 $
  * \brief A set of peptide spectrum matches for one spectrum.
  *
  * Object for given a database and a spectrum, generate all match objects
@@ -530,8 +530,17 @@ BOOLEAN_T estimate_weibull_parameters_from_xcorrs(
   );
 
 BOOLEAN_T compute_p_values(MATCH_COLLECTION_T* match_collection);
-
 BOOLEAN_T set_p_values_as_unscored(MATCH_COLLECTION_T* match_collection);
+
+/**
+ * \brief Use the array of saved xcorrs to compute a z-score for each
+ * psm. 
+ *
+ * A z-score is a function of the mean and stdev: |mean-score|/stdev.
+ * \returns TRUE if z-scores were successfully computed for all
+ * matches in collection.
+ */
+BOOLEAN_T compute_z_scores(MATCH_COLLECTION_T* match_collection);
 
 /*
  * Local Variables:
