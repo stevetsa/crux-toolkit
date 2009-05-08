@@ -4,7 +4,7 @@
  * CREATE DATE: 9 Oct 2006
  * DESCRIPTION: object to score spectrum vs. spectrum or spectrum
  * vs. ion_series 
- * REVISION: $Revision: 1.67.4.15 $
+ * REVISION: $Revision: 1.67.4.16 $
  ****************************************************************************/
 
 #include <math.h>
@@ -832,6 +832,8 @@ BOOLEAN_T create_intensity_array_observed(
   float precursor_mz = get_spectrum_precursor_mz(spectrum);
   float experimental_mass_cut_off = precursor_mz*charge + 50;
 
+  //printf("create_intensity_array_observed():start\n");
+
   // set max_mz and malloc space for the observed intensity array
   if(experimental_mass_cut_off > 512){
     int x = (int)experimental_mass_cut_off / 1024;
@@ -885,7 +887,7 @@ BOOLEAN_T create_intensity_array_observed(
       continue;
       // region = 9;
     }
-#ifdef CRUX_USE_CUDA
+#ifdef _CRUX_USE_CUDA
     //set intensity in array with correct mz, only if max peak in the bin
     intensity = get_peak_intensity(peak);
     if(scorer->observed[mz] < intensity){ 
@@ -922,17 +924,16 @@ BOOLEAN_T create_intensity_array_observed(
   }
   */
 
-#ifdef CRUX_USE_CUDA2
+  
+#ifdef _CRUX_USE_CUDA2
   cuda_set_observed(scorer -> observed,
 		    scorer -> sp_max_mz,
 		    10,
 		    region_selector,
 		    MAX_XCORR_OFFSET);
 #else 
-#ifdef CRUX_USE_CUDA
-
-
-  //printf("Calling code.\n");
+#ifdef _CRUX_USE_CUDA
+  printf("Calling code.\n");
   //process the data, sqrt, find max per region, normalize per region, and do cross correlation function.
   cuda_sqrt_max_normalize_and_cc(scorer -> observed, 
 				 scorer -> sp_max_mz, 
@@ -967,6 +968,12 @@ BOOLEAN_T create_intensity_array_observed(
 
   free(scorer->observed);
   scorer->observed = new_observed;
+  cuda_set_observed(scorer -> observed,
+		    scorer -> sp_max_mz,
+		    10,
+		    region_selector,
+		    MAX_XCORR_OFFSET);
+
 #endif
 #endif
   // free heap

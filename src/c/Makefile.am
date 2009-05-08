@@ -1,5 +1,5 @@
 distdir = $(PACKAGE)_$(VERSION)
-AM_CFLAGS = -Wall -W -Werror  -fno-strict-aliasing \
+AM_CFLAGS = -Wall -W  -fno-strict-aliasing \
             -D_LARGEFILE_SOURCE=1 -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE
 
 noinst_LTLIBRARIES = libcrux.la
@@ -162,14 +162,15 @@ else
 crux_SOURCES = crux-main.c  crux-main.h percolator.c percolator.h
 
 crux_CFLAGS = $(AM_CFLAGS) -DMAIN -I./cuda
-crux_LDADD = ./cuda/crux_cuda.cu.o -lcrux -L$(CUDA_DIR)/lib -lcublasemu -lcudart 
+crux_LDADD = ./cuda/crux_cuda.cu.o -lcrux -L$(CUDA_DIR)/lib -lcublas -lcudart 
 #crux_LDADD= -lcrux
 endif
 
 
 
+
 ./cuda/crux_cuda.cu.o:./cuda/crux_cuda.cu
-	nvcc -c -DCUDA_NVCC --device-emulation ./cuda/crux_cuda.cu -o ./cuda/crux_cuda.cu.o
+	nvcc -c -DCUDA_NVCC ./cuda/crux_cuda.cu -o ./cuda/crux_cuda.cu.o
 
 
 paramdir = $(prefix)/doc

@@ -15,6 +15,9 @@ crux_cuda_test: crux_cuda_test.o crux_cuda.cu.o
 crux_cuda_test.o:crux_cuda_test.c
 	$(CC) -c crux_cuda_test.c -o crux_cuda_test.o
 
+crux_cuda.o:crux_cuda.c crux_cuda.h
+	$(CC) -c crux_cuda.c -o crux_cuda.o
+
 crux_cuda.cu.o:crux_cuda.cu
 	$(CUDA_CC) $(CUDA_COPTS) -c crux_cuda.cu -o crux_cuda.cu.o
 

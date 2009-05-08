@@ -21,8 +21,7 @@ float* d_theoretical = NULL;
 #endif
 
 #ifdef CRUX_USE_CUDA2
-
-
+int current_max_size = -1;
 float* d_cutemp = NULL;
 float* d_observed = NULL;
 float* h_theoretical_matrix = NULL;
@@ -31,12 +30,19 @@ float* d_xcorrs = NULL;
 #endif
 
 
-struct my_timer timer2;
-struct my_timer timer3;
+struct my_timer dot_product_timer;
+struct my_timer check_space_timer;
+struct my_timer push_matrix_timer;
+struct my_timer matrix_mult_timer;
+struct my_timer pull_xcorr_timer;
+
 
 BOOLEAN_T initialize_cudablas() {
-  my_timer_reset(&timer2);
-  my_timer_reset(&timer3);
+  my_timer_reset(&dot_product_timer);
+  my_timer_reset(&check_space_timer);
+  my_timer_reset(&push_matrix_timer);
+  my_timer_reset(&matrix_mult_timer);
+  my_timer_reset(&pull_xcorr_timer);
   cublasStatus status;
 
   carp(CARP_FATAL,"initialize_cudablas(): begin");
@@ -62,19 +68,30 @@ BOOLEAN_T initialize_cudablas() {
 BOOLEAN_T shutdown_cudablas() {
   cublasStatus status;
 
-  printf("setVector\n");
-  my_timer_print(&timer2);
   printf("dot product\n");
-  my_timer_print(&timer3);
+  my_timer_print(&dot_product_timer);
+  printf("check space\n");
+  my_timer_print(&check_space_timer);
+  printf("push matrix\n");
+  my_timer_print(&push_matrix_timer);
+  printf("matrix mult\n");
+  my_timer_print(&matrix_mult_timer);
+  printf("pull xcorr\n");
+  my_timer_print(&pull_xcorr_timer);
 
-#ifdef CRUX_USE_CUDA1
+
   if (d_cutemp != NULL) cublasFree(d_cutemp);
   if (d_observed != NULL) cublasFree(d_observed);
+#ifdef CRUX_USE_CUDA1
   if (d_theoretical != NULL) cublasFree(d_theoretical);
 #endif
 #ifdef CRUX_USE_CUDA2
-  //cleanup.
-
+  if (h_theoretical_matrix != NULL)
+    free(h_theoretical_matrix);
+  if (d_theoretical_matrix != NULL)
+    cublasFree(d_theoretical_matrix);
+  if (d_xcorrs != NULL)
+    cublasFree(d_xcorrs);
 #endif
   if (!cudablas_initialized)
     return TRUE;
@@ -175,11 +192,17 @@ float cross_correlation_cuda(
 BOOLEAN_T checkSpace(int size) {
   //so if the current allocated space is enough for the vector,
   //then we have enough.
-  if (size <= current_size)
-    return TRUE;
-  else {
+  my_timer_start(&check_space_timer);
+  if (current_size != size) {
+    current_size = size;
+    /*
+      if (size <= current_max_size) 
+      return TRUE;
+      else
+    */ 
     int n2 = size * cuda_get_max_theoreticalN(size);
     
+    printf(" allocating %d space\n",size);
     //carp(CARP_FATAL," allocating %d space",size);
     //free the previous vectors
     if (d_theoretical_matrix != NULL) cublasFree(d_theoretical_matrix);
@@ -196,22 +219,24 @@ BOOLEAN_T checkSpace(int size) {
     if (h_theoretical_matrix != NULL) free(h_theoretical_matrix);
     h_theoretical_matrix = malloc(n2*sizeof(float));
       
-    current_size = size;
-    return TRUE;
+    current_max_size = size;
   }
+  my_timer_stop(&check_space_timer);
+  return TRUE;
+  
 }
 
 
 void cuda_set_observed(float* raw_values, int n, int num_regions, 
 		       int region_selector, int max_offset) {
-  //my_timer_start(&timer2);
   //check space.
   checkSpace(n);
-  //push raw data into vector.
-  cublasSetVector(n, sizeof(float), raw_values, 1, d_cutemp, 1);
-  //run the kernel.
-  d_cuda_sqrt_max_normalize_and_cc2(d_cutemp, d_observed, n, num_regions, region_selector, max_offset);
-  //my_timer_stop(&timer2);
+  CUBLASEXEC(cublasSetVector(current_size, 
+			   sizeof(float), 
+			   raw_values, 
+			   1, 
+			   d_observed, 
+			     1),"Setting observed");
 }
 
 
@@ -223,9 +248,17 @@ int cuda_get_max_theoreticalN(int ssize) {
   
   //carp(CARP_FATAL,"ssize:%d",ssize);
   if (ssize < 1) return 0;
-  if (ssize > 1) return 2;
+  //return 32;
+  //return 64;
+  //return 128;
+  //return 256;
+  //return 512;
+  return 1024;
+  //return 2048;
+
+
   //TODO: calculate based upon card memory.
-  int size = 1 * 1024 * 1024; //1 MB of memory.
+  int size = 1 * 1024 * 1024; //64 MB of memory.
   int fsize = size / sizeof(float); //number of floats.
 
   //m*n + n + m = S
@@ -258,17 +291,17 @@ void cuda_calculate_xcorrs(float* h_theoretical, float* xcorrs) {
 void cuda_calculate_xcorrsN(float* h_theoretical, float* xcorrs, int nthe) {
   cublasStatus status;
   //int i;
+  //int j;
   //copy the theoretical to the device.
-  status = cublasSetVector(nthe*current_size, 
-			   sizeof(float), 
-			   h_theoretical, 
-			   1, 
-			   d_theoretical_matrix, 
-			   1);
-  /*
-  for (i=0;i<current_size;i++)
-    printf("%i: %lf\n",i,h_theoretical[i]);
-  */
+  
+  my_timer_start(&dot_product_timer);
+  my_timer_start(&push_matrix_timer);
+  //printf("cuda_calculate_xcorrsN: start():%i\n",nthe);
+
+  CUBLASEXEC(cublasSetVector(nthe*current_size, sizeof(float), h_theoretical, 
+			   1, d_theoretical_matrix, 1),
+	     "Setting Theoretical Matrix");
+  my_timer_stop(&push_matrix_timer);
   /*
     trans specifies op(A). If trans == 'N' or 'n', .
     If trans == 'T', 't', 'C', or 'c', .
@@ -299,18 +332,30 @@ void cuda_calculate_xcorrsN(float* h_theoretical, float* xcorrs, int nthe) {
 
   //carp(CARP_FATAL, "CRUX_USE_CUDA2:Multiplying");
   //do the calculation.
+
+  my_timer_start(&matrix_mult_timer);
+
   cublasSgemv (trans, m, n, alpha, A, lda, x,
 	       incx, beta, y, incy);
   //check the error.
    status = cublasGetError();
    if (status != CUBLAS_STATUS_SUCCESS) {
-     carp(CARP_FATAL,"!!!! kernel execution error. %i",status);
+     printf("!!!! kernel execution error. %i\n\n",status);
+     printf("current_size:%i nthe:%i\n",current_size, nthe);
     }
-    
-   //carp(CARP_FATAL, "CRUX_USE_CUDA2:recovering result");
-  /* Read the result back */
-  status = cublasGetVector(nthe, sizeof(float), d_xcorrs, 1, xcorrs, 1); 
 
+   my_timer_stop(&matrix_mult_timer);
+    
+  /* Read the result back */
+   
+   my_timer_start(&pull_xcorr_timer);
+
+   CUBLASEXEC(cublasGetVector(nthe, sizeof(float), d_xcorrs, 1, xcorrs, 1),
+	      "Retrieve XCORRS");
+
+   my_timer_stop(&pull_xcorr_timer);
+   //printf("cuda_calculate_xcorrsN: stop()\n");
+   my_timer_stop(&dot_product_timer);
 }
 
 #endif /*CRUX_USE_CUDA2*/

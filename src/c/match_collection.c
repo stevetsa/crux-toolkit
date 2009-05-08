@@ -8,7 +8,7 @@
  *
  * AUTHOR: Chris Park
  * CREATE DATE: 11/27 2006
- * $Revision: 1.89.4.10 $
+ * $Revision: 1.89.4.11 $
  ****************************************************************************/
 #include "match_collection.h"
 
@@ -1319,8 +1319,13 @@ BOOLEAN_T score_matches_one_spectrum_cuda(
 
 
   //create the observed array.
+  //printf("calling create_instensity_array_xcorr\n");
   create_intensity_array_xcorr(spectrum, scorer, get_ion_series_charge(ion_series));
   int max_t = cuda_get_max_theoretical();
+  /*
+  if (max_t > num_matches)
+    max_t = num_matches;
+  */
   int ssize = get_scorer_sp_max_mz(scorer);
   float* h_theoretical = (float*)mymalloc(max_t*ssize*sizeof(float));
 
@@ -1330,16 +1335,19 @@ BOOLEAN_T score_matches_one_spectrum_cuda(
 
   float* xcorrs = (float*)mycalloc(max_t, sizeof(float));
 
+  //printf("score %i matches\n",num_matches);
   for(match_idx = 0; match_idx < num_matches; match_idx++){
 
     match = matches[match_idx];
     assert( match != NULL );
     
+
     // skip it if it's already been scored
+    /*
     if( NOT_SCORED != get_match_score(match, score_type)){
       carp(CARP_FATAL,"Already scored?");
     }
-    
+    */
 
     // make sure it's the same spec and charge
     assert( spectrum == get_match_spectrum(match));
@@ -1360,7 +1368,7 @@ BOOLEAN_T score_matches_one_spectrum_cuda(
     cuda_matrix_index++;
     if (cuda_matrix_index >= max_t) {
       //we are full, go calculate what we have and retrieve the results.
-      printf("Matrix full: Calculating xcorrs:%d\n",cuda_matrix_index);
+      //printf("Matrix full: Calculating xcorrs:%d\n",cuda_matrix_index);
       cuda_calculate_xcorrs(h_theoretical, xcorrs);
       for (i=0;i<max_t;i++) {
 	//carp(CARP_FATAL, "CRUX_USE_CUDA2[%i]=%f",i,xcorrs[i]);
@@ -1386,7 +1394,7 @@ BOOLEAN_T score_matches_one_spectrum_cuda(
 
   //collect the rest of the results.
   if (cuda_matrix_index != 0) {
-    printf("Calculating the rest of the xcorrs:%d\n",cuda_matrix_index);
+    //printf("Calculating the rest of the xcorrs:%d\n",cuda_matrix_index);
     cuda_calculate_xcorrsN(h_theoretical, xcorrs, cuda_matrix_index);
   
     for (i=0;i<cuda_matrix_index;i++) {
@@ -1403,6 +1411,7 @@ BOOLEAN_T score_matches_one_spectrum_cuda(
   free_scorer(scorer);
   free(h_theoretical);
   free(xcorrs);
+  //printf("done scoring matches\n");
   return TRUE;
 }
 

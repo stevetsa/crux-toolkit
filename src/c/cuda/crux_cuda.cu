@@ -233,12 +233,13 @@ void cuda_sqrt_max_normalize_and_cc(float* h_values, int n, int num_regions,
   //printf("allocating memory %i %i\n",size_n, size_reg);
 
   cuda_float_malloc(&d_values, &d_values_size, n);
+  cuda_float_malloc(&d_corr, &d_corr_size, n);
 
   CUDAEXEC(cudaMemcpy(d_values, h_values, 
 		      size_n, cudaMemcpyHostToDevice),
 	   "h_values -> d_values");
 
-  d_cuda_sqrt_max_normalize_and_cc(d_values, n, num_regions, region_selector, max_offset);
+  d_cuda_sqrt_max_normalize_and_cc2(d_values, d_corr, n, num_regions, region_selector, max_offset);
 
   CUDAEXEC(cudaMemcpy(h_values, d_corr, size_n, cudaMemcpyDeviceToHost),"d_corr -> h_values");
 
@@ -254,6 +255,8 @@ void d_cuda_sqrt_max_normalize_and_cc2(float* d_in, float* d_out, int n, int num
 
   cuda_float_malloc(&d_max_per_region, &d_max_per_region_size, num_regions);
  
+  printf("n is:%d\n",n);
+
   int num_blocks = n / NUM_THREADS_PER_BLOCK; 
 
   //printf("Executing d_sqrt_and_max_region\n");

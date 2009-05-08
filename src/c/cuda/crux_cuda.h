@@ -55,7 +55,7 @@ void updateStatCount(float mass, int charge);
 #endif
 
 
-#define CUBLASEXEC(x,s) {cublasStatus _status; _status = x; if (_status != CUBLAS_STATUS_SUCCESS) {printf("cublas error: %i %s", _status,s);}}
+#define CUBLASEXEC(x,s) {cublasStatus _status; _status = x; if (_status != CUBLAS_STATUS_SUCCESS) {printf("cublas error: %i %s\n", _status,s);}}
 
 
 
