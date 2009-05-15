@@ -8,7 +8,7 @@
  * CREATE DATE: November 25, 2008
  * DESCRIPTION: Header file for crux q-ranker command. 
  *
- * $Revision: 1.1.2.2 $
+ * $Revision: 1.1.2.3 $
  */
 #include <stdlib.h>
 #include <stdio.h>
@@ -26,7 +26,7 @@
 #include "scorer.h"
 #include "match.h"
 #include "match_collection.h"
-#include "PercolatorCInterface.h"
+#include "QRankerCInterface.h"
 
 
 int qranker_main(int argc, char** argv);

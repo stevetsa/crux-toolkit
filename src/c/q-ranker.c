@@ -2,7 +2,7 @@
  * \file q-ranker.c
  */
 /*
- * AUTHOR: Barbara Frewen
+ * AUTHOR: Barbara Frewen and Marina Spivak
  * CREATE DATE: November 25, 2008
  * DESCRIPTION: Copied from match_analysis.c with only the percolator
  *         functionality kept.
@@ -16,7 +16,7 @@
  *         directory are concatinated together and presumed to be
  *         non-overlaping parts of the same ms2 file. 
  * 
- * $Revision: 1.1.2.2 $
+ * $Revision: 1.1.2.3 $
  ****************************************************************************/
 #include "q-ranker.h"
 
@@ -92,7 +92,7 @@ int qranker_main(int argc, char** argv){
   MATCH_COLLECTION_T* match_collection = NULL;
 
   /* Perform the analysis */
-  carp(CARP_INFO, "Running percolator");
+  carp(CARP_INFO, "Running q-ranker");
 
   
   match_collection = run_q(psm_file,
@@ -113,7 +113,7 @@ int qranker_main(int argc, char** argv){
   free(feature_file);
 
 
-  carp(CARP_INFO, "crux percolator finished.");
+  carp(CARP_INFO, "crux q-ranker finished.");
   exit(0);
 
 
@@ -141,7 +141,7 @@ void print_sqt_file_q(
   int num_proteins = get_match_collection_num_proteins(match_collection);
   print_sqt_header( sqt_file, "target", num_proteins, TRUE);
 
-  fprintf(sqt_file, "H\tComment\tmatches analyzed by percolator\n");
+  fprintf(sqt_file, "H\tComment\tmatches analyzed by q-ranker\n");
 
   // get match iterator sorted by spectrum
   MATCH_ITERATOR_T* match_iterator = 
@@ -273,7 +273,7 @@ MATCH_COLLECTION_T* run_q(
   
      
       // Call that initiates percolator
-      pcInitiate(
+      qcInitiate(
           (NSet)get_match_collection_iterator_number_collections(
                   match_collection_iterator), 
           number_features, 
@@ -286,13 +286,13 @@ MATCH_COLLECTION_T* run_q(
       // Call that sets verbosity level
       // 0 is quiet, 2 is default, 5 is more than you want
       if(verbosity < CARP_ERROR){
-        pcSetVerbosity(0);
+        qcSetVerbosity(0);
 	}    
       else if(verbosity < CARP_INFO){
-        pcSetVerbosity(1);
+        qcSetVerbosity(1);
       }
       else{
-        pcSetVerbosity(5);
+        qcSetVerbosity(5);
       }
     }
 
@@ -328,7 +328,7 @@ MATCH_COLLECTION_T* run_q(
       }
     
   
-      pcRegisterPSM((SetType)set_idx, 
+      qcRegisterPSM((SetType)set_idx, 
                   NULL, // no sequence used
                     features);
       
@@ -360,12 +360,12 @@ MATCH_COLLECTION_T* run_q(
 
     carp(CARP_DETAILED_DEBUG, "got to here");
   // Start processing
-  pcExecute(); 
+  qcExecute(); 
   
   /* Retrieving target scores and qvalues after 
    * processing, the array should be numSpectra long and will be filled in 
    * the same order as the features were inserted */
-  pcGetScores(results_score, results_q); 
+  qcGetScores(results_score, results_q); 
        
   // fill results for Q_VALUE
   fill_result_to_match_collection(
@@ -376,7 +376,7 @@ MATCH_COLLECTION_T* run_q(
       target_match_collection, results_score, PERCOLATOR_SCORE, FALSE);
    
   // Function that should be called after processing finished
-  pcCleanUp();
+  qcCleanUp();
   
   // TODO put free back in. took out because claimed it was double free
   // free names
