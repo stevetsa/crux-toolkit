@@ -16,7 +16,7 @@
  *         directory are concatinated together and presumed to be
  *         non-overlaping parts of the same ms2 file. 
  * 
- * $Revision: 1.2 $
+ * $Revision: 1.2.2.1 $
  ****************************************************************************/
 #include "percolator.h"
 
@@ -60,6 +60,7 @@ int percolator_main(int argc, char** argv){
     "sqt-output-file"
   };
 
+
   int num_arguments = NUM_PERCOLATOR_ARGUMENTS;
   char* argument_list[NUM_PERCOLATOR_ARGUMENTS] = {
     "psm-folder",
@@ -92,6 +93,8 @@ int percolator_main(int argc, char** argv){
 
   /* Perform the analysis */
   carp(CARP_INFO, "Running percolator");
+
+  
   match_collection = run_percolator(psm_file,
                                     protein_input_name,
                                     feature_file);
@@ -140,6 +143,7 @@ void print_sqt_file_perc(
   char* sqt_filename = get_string_parameter("sqt-output-file");
   BOOLEAN_T overwrite = get_boolean_parameter("overwrite");
   FILE* sqt_file = create_file_in_path( sqt_filename, NULL, overwrite );
+
 
   // print header
   int num_proteins = get_match_collection_num_proteins(match_collection);
@@ -240,6 +244,7 @@ MATCH_COLLECTION_T* run_percolator(
 
   carp(CARP_DETAILED_DEBUG, "Created feature file");
 
+  
   // create MATCH_COLLECTION_ITERATOR_T object
   // which will read in the serialized output PSM results and return
   // first the match_collection of TARGET followed by 
@@ -273,7 +278,8 @@ MATCH_COLLECTION_T* run_percolator(
           get_match_collection_match_total(match_collection), sizeof(double));
       results_score = (double*)mycalloc(
           get_match_collection_match_total(match_collection), sizeof(double));
-      
+  
+     
       // Call that initiates percolator
       pcInitiate(
           (NSet)get_match_collection_iterator_number_collections(
@@ -282,12 +288,14 @@ MATCH_COLLECTION_T* run_percolator(
           get_match_collection_match_total(match_collection), 
           feature_names, 
           pi0);
-      
+    
+   
+  
       // Call that sets verbosity level
       // 0 is quiet, 2 is default, 5 is more than you want
       if(verbosity < CARP_ERROR){
         pcSetVerbosity(0);
-      }    
+	}    
       else if(verbosity < CARP_INFO){
         pcSetVerbosity(1);
       }
@@ -298,7 +306,9 @@ MATCH_COLLECTION_T* run_percolator(
 
     // create iterator, to register each PSM feature to Percolator
     match_iterator = new_match_iterator(match_collection, XCORR, FALSE);
+   
     
+ 
     while(match_iterator_has_next(match_iterator)){
       match = match_iterator_next(match_iterator);
       // Register PSM with features to Percolator    
@@ -324,13 +334,19 @@ MATCH_COLLECTION_T* run_percolator(
           }
         }
       }
-      
+    
+  
       pcRegisterPSM((SetType)set_idx, 
-                    NULL, // no sequence used
+                  NULL, // no sequence used
                     features);
       
       free(features);
     }
+
+
+    
+      
+   
 
     // ok free & update for next set
     // MEMLEAK 

@@ -5,7 +5,7 @@
  * DESCRIPTION: Object for matching a peptide and a spectrum, generate
  * a preliminary score(e.g., Sp) 
  *
- * REVISION: $Revision: 1.58 $
+ * REVISION: $Revision: 1.58.2.1 $
  ****************************************************************************/
 #include <math.h>
 #include <stdlib.h>
@@ -605,7 +605,11 @@ double* get_match_percolator_features(
   // DeltCN
   feature_array[1] = match->delta_cn;
   // DeltLCN
-  feature_array[2] = match->ln_delta_cn;
+  if (match->delta_cn > 0)
+    feature_array[2] = match->ln_delta_cn;
+  else
+    feature_array[2] = 0.0;
+  
   // SP
   feature_array[3] = get_match_score(match, SP);
   // lnrSP

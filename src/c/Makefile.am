@@ -76,7 +76,7 @@ PERCOLATOR_LIB_FILES =
 
 if PERCOLATOR
   LIBFILES=$(PERCOLATOR_LIB_FILES) $(NON_PERCOLATOR_LIB_FILES)
-  libcrux_la_CFLAGS = $(AM_CFLAGS) -I$(PERCOLATOR_DIR)/src
+  libcrux_la_CFLAGS = $(AM_CFLAGS) -I$(PERCOLATOR_DIR)
 else
   LIBFILES=$(NON_PERCOLATOR_LIB_FILES)
   libcrux_la_CFLAGS = $(AM_CFLAGS)
@@ -117,7 +117,7 @@ crux_generate_peptides_LDADD = libcrux.la
 #crux_analyze_matches_SOURCES = match_analysis.c
 #crux_analyze_matches_CFLAGS = $(AM_CFLAGS) -DMAIN -I$(PERCOLATOR_DIR)
 #crux_analyze_matches_LDADD = \
-#  -lstdc++ -L$(PERCOLATOR_DIR)/ -lpercolator -lqvality -lArrayLibrary -lcrux 
+#  -lstdc++ -L$(PERCOLATOR_DIR)/ -lpercolator -lqvality -lArrayLibrary -lmstoolkit -lcrux 
 
 crux_predict_peptide_ions_SOURCES = predict_peptide_ions.c
 crux_predict_peptide_ions_CFLAGS = $(AM_CFLAGS) -DMAIN 
@@ -140,7 +140,7 @@ crux_SOURCES = crux-main.c  crux-main.h percolator.c percolator.h
 
 crux_CFLAGS = $(AM_CFLAGS) -DMAIN -DPERCOLATOR -I$(PERCOLATOR_DIR)
 crux_LDADD = \
-  -lstdc++ -L$(PERCOLATOR_DIR)/ -lpercolator -lqvality -lArrayLibrary -lcrux 
+  -lstdc++ -L$(PERCOLATOR_DIR)/ -lpercolator -lqvality -lArrayLibrary -lmstoolkit -lcrux
 else
 crux_SOURCES = crux-main.c  crux-main.h percolator.c percolator.h
 
