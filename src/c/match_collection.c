@@ -8,7 +8,7 @@
  *
  * AUTHOR: Chris Park
  * CREATE DATE: 11/27 2006
- * $Revision: 1.89.4.11 $
+ * $Revision: 1.89.4.12 $
  ****************************************************************************/
 #include "match_collection.h"
 
@@ -1332,7 +1332,7 @@ BOOLEAN_T score_matches_one_spectrum_cuda(
   
   //initialize cuda arrays 
   int cuda_matrix_index = 0;
-
+  int xcorr_index = 0;
   float* xcorrs = (float*)mycalloc(max_t, sizeof(float));
 
   //printf("score %i matches\n",num_matches);
@@ -1369,7 +1369,8 @@ BOOLEAN_T score_matches_one_spectrum_cuda(
     if (cuda_matrix_index >= max_t) {
       //we are full, go calculate what we have and retrieve the results.
       //printf("Matrix full: Calculating xcorrs:%d\n",cuda_matrix_index);
-      cuda_calculate_xcorrs(h_theoretical, xcorrs);
+      cuda_calculate_xcorrs(h_theoretical, xcorrs, xcorr_index);
+      xcorr_index++;
       for (i=0;i<max_t;i++) {
 	//carp(CARP_FATAL, "CRUX_USE_CUDA2[%i]=%f",i,xcorrs[i]);
 	//carp(CARP_FATAL, "CRUX_USE_CUDA2: match_idx:%d",match_idx);
@@ -1395,7 +1396,7 @@ BOOLEAN_T score_matches_one_spectrum_cuda(
   //collect the rest of the results.
   if (cuda_matrix_index != 0) {
     //printf("Calculating the rest of the xcorrs:%d\n",cuda_matrix_index);
-    cuda_calculate_xcorrsN(h_theoretical, xcorrs, cuda_matrix_index);
+    cuda_calculate_xcorrsN(h_theoretical, xcorrs, xcorr_index, cuda_matrix_index);
   
     for (i=0;i<cuda_matrix_index;i++) {
       match_idx = num_matches-cuda_matrix_index+i;

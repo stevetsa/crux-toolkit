@@ -29,6 +29,11 @@ float* d_theoretical_matrix = NULL;
 float* d_xcorrs = NULL;
 #endif
 
+#ifdef CUDA_USE_SORT
+KeyValuePair* d_sort1;
+KeyValuePair* d_sort2;
+#endif
+
 
 struct my_timer dot_product_timer;
 struct my_timer check_space_timer;
@@ -93,6 +98,12 @@ BOOLEAN_T shutdown_cudablas() {
   if (d_xcorrs != NULL)
     cublasFree(d_xcorrs);
 #endif
+#ifdef CUDA_USE_SORT
+  if (d_sort1 != NULL) cublasFree(d_sort1);
+  if (d_sort2 != NULL) cublasFree(d_sort2);
+#endif
+
+
   if (!cudablas_initialized)
     return TRUE;
   else {
@@ -216,6 +227,7 @@ BOOLEAN_T checkSpace(int size) {
     if (d_xcorrs != NULL) cublasFree(d_xcorrs);
     CUBLASEXEC(cublasAlloc(size, sizeof(float), (void**)&d_xcorrs),"alloc(xcorrs)");
 
+
     if (h_theoretical_matrix != NULL) free(h_theoretical_matrix);
     h_theoretical_matrix = malloc(n2*sizeof(float));
       
@@ -225,6 +237,32 @@ BOOLEAN_T checkSpace(int size) {
   return TRUE;
   
 }
+
+void cuda_set_total_theoretical(int total) {
+  float *h_temp;
+  int i;
+  
+  h_temp = malloc(total*sizeof(float));
+  for (i=0;i<total;i++)
+    h_temp[i] = i;
+
+  if (d_sort1 != NULL) cublasFree(d_sort1);
+  CUBLASEXEC(cublasAlloc(size, sizeof(KeyValuePair), (void**)&d_sort1),"alloc(dsort1)");
+  if (d_sort2 != NULL) cublasFree(d_sort2);
+  CUBLASEXEC(cublasAlloc(size, sizeof(KeyValuePair), (void**)&d_sort2),"alloc(dsort2)");
+  
+
+  
+  CUBLASEXEC(cublasSetVector(total,
+			     sizeof(float),
+			     h_temp,
+			     1,
+			     d_sort1,
+			     2),"set_indices");
+  free(h_temp);
+}
+
+
 
 
 void cuda_set_observed(float* raw_values, int n, int num_regions, 
@@ -284,11 +322,11 @@ void cuda_set_theoretical(float* h_pThe, int index) {
   memcpy(h_ptr, h_pThe, sizeof(float)*current_size);
 }
 
-void cuda_calculate_xcorrs(float* h_theoretical, float* xcorrs) {
-  cuda_calculate_xcorrsN(h_theoretical, xcorrs, cuda_get_max_theoretical());
+void cuda_calculate_xcorrs(float* h_theoretical, float* xcorrs, int cindex) {
+  cuda_calculate_xcorrsN(h_theoretical, xcorrs, cuda_get_max_theoretical(), cindex);
 }
 
-void cuda_calculate_xcorrsN(float* h_theoretical, float* xcorrs, int nthe) {
+void cuda_calculate_xcorrsN(float* h_theoretical, float* xcorrs, int nthe, int cindex) {
   cublasStatus status;
   //int i;
   //int j;
@@ -347,13 +385,25 @@ void cuda_calculate_xcorrsN(float* h_theoretical, float* xcorrs, int nthe) {
    my_timer_stop(&matrix_mult_timer);
     
   /* Read the result back */
-   
+#ifdef CUDA_USE_SORT
+   //copy results to a key value pair.
+   for (i=0;i<nthe;i++) {
+     KeyValuePair* ptr = d_sort1 + cindex*get_max_theoretical+i;
+
+     CUDAEXEC(cudaMemcpy(&(ptr -> value),
+			 d_xcorrs+i,
+			 sizeof(float),
+			 cudaMemcpyDeviceToDevice),
+	      "d_xcorr -> d_sort1");
+   }
+#else
    my_timer_start(&pull_xcorr_timer);
 
    CUBLASEXEC(cublasGetVector(nthe, sizeof(float), d_xcorrs, 1, xcorrs, 1),
 	      "Retrieve XCORRS");
 
    my_timer_stop(&pull_xcorr_timer);
+#endif
    //printf("cuda_calculate_xcorrsN: stop()\n");
    my_timer_stop(&dot_product_timer);
 }
