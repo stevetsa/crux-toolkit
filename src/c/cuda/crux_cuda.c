@@ -8,6 +8,11 @@
 
 #include "mytimer.h"
 
+#ifdef CUDA_USE_SORT
+#include "radixsort.cuh"
+#include <cuda.h>
+#endif
+
 
 BOOLEAN_T cudablas_initialized = FALSE;
 
@@ -237,7 +242,7 @@ BOOLEAN_T checkSpace(int size) {
   return TRUE;
   
 }
-
+#ifdef CRUX_USE_SORT
 void cuda_set_total_theoretical(int total) {
   float *h_temp;
   int i;
@@ -261,7 +266,7 @@ void cuda_set_total_theoretical(int total) {
 			     2),"set_indices");
   free(h_temp);
 }
-
+#endif
 
 
 
@@ -387,8 +392,9 @@ void cuda_calculate_xcorrsN(float* h_theoretical, float* xcorrs, int nthe, int c
   /* Read the result back */
 #ifdef CUDA_USE_SORT
    //copy results to a key value pair.
+   int i;
    for (i=0;i<nthe;i++) {
-     KeyValuePair* ptr = d_sort1 + cindex*get_max_theoretical+i;
+     KeyValuePair* ptr = d_sort1 + cindex*cuda_get_max_theoretical()+i;
 
      CUDAEXEC(cudaMemcpy(&(ptr -> value),
 			 d_xcorrs+i,

@@ -5,8 +5,8 @@
  * DESCRIPTION: Object for matching a peptide and a spectrum, generate
  * a preliminary score(e.g., Sp) 
  *
- * REVISION: $Revision: 1.59.4.4 $
- * REVISION: $Revision: 1.59.4.4 $
+ * REVISION: $Revision: 1.59.4.5 $
+ * REVISION: $Revision: 1.59.4.5 $
  ****************************************************************************/
 #include <math.h>
 #include <stdlib.h>
@@ -745,8 +745,15 @@ void qsort_match(
   void* compare_method ///< the compare method to use -in
   )
 {
+  #ifdef CUDA_USE_SORT
+  if (compare_method == compare_match_xcorr)
+    carp(CARP_FATAL,"sort by xcorr");
+  #endif
+
   qsort(match_array, match_total, sizeof(MATCH_T*), compare_method);
 }
+
+
 
 // START need to rewrite parse_match and serialize_match to include 
 // additional features

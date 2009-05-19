@@ -8,7 +8,7 @@
  *
  * AUTHOR: Chris Park
  * CREATE DATE: 11/27 2006
- * $Revision: 1.89.4.12 $
+ * $Revision: 1.89.4.13 $
  ****************************************************************************/
 #include "match_collection.h"
 
@@ -591,7 +591,7 @@ BOOLEAN_T sort_match_collection(
   case LOGP_EVD_XCORR:
   case LOGP_BONF_EVD_XCORR:
   case LOGP_WEIBULL_XCORR: 
-  case LOGP_BONF_WEIBULL_XCORR: 
+  case LOGP_BONF_WEIBULL_XCORR:
     // LOGP_BONF_EVD_XCORR and XCORR have same order, 
     // sort the match to decreasing XCORR order for the return
     qsort_match(match_collection->match, match_collection->match_total, 

@@ -9,7 +9,7 @@ struct my_timer {
 
 };
 #ifdef CUDA_NVCC
-extern "C" {
+//extern "C" {
 #endif
 void my_timer_reset(struct my_timer* timer);
 void my_timer_start(struct my_timer* timer);
@@ -20,5 +20,5 @@ struct my_timer* new_my_timer();
 void diff(struct timespec start, struct timespec end, struct timespec* ans);
 void add(struct timespec* ans, struct timespec add);
 #ifdef CUDA_NVCC
-}
+//}
 #endif

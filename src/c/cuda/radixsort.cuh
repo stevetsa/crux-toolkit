@@ -56,8 +56,12 @@ typedef struct __align__(8) {
 #endif
 } KeyValuePair;
 
-extern "C" {
+#ifdef CUDA_NVCC
+//extern "C" {
+#endif
     void RadixSort(KeyValuePair *pData0, KeyValuePair *pData1, uint elements, uint bits);
-}
+#ifdef CUDA_NVCC
+//}
+#endif
 
 #endif // #ifndef _RADIXSORT_H_
