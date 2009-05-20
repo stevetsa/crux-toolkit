@@ -90,7 +90,7 @@ struct my_timer timer1;
  ***************************************************************/
 void cuda_float_malloc(float** a, int* current_size, int size) {
   if (*current_size < size) {
-    if (*a == NULL)
+    if (*a != NULL)
       CUDAEXEC(cudaFree(*a),"free(*a)");
     CUDAEXEC(cudaMalloc((void**)a, sizeof(float) * size),"alloc(*a)");
     *current_size = size;
@@ -297,6 +297,54 @@ void d_cuda_sqrt_max_normalize_and_cc(float* d_in, int n, int num_regions,
 }
 
 
+void cuda_mymalloc(void** a, int tsize, 
+		   int*current_size, int size) {
+  if (*current_size < size) {
+    if (*a != NULL)
+      CUDAEXEC(cudaFree(*a),"free(*a)");
+    CUDAEXEC(cudaMalloc((void**)a, tsize * size),"alloc(*a)");
+    *current_size = size;
+  }
+}
+
+int d_sort1_size = -1;
+KeyValuePair* d_sort1=NULL;
+int d_sort2_size = -1;
+KeyValuePair* d_sort2=NULL;
+
+
+
+void cuda_sort(float* d_values, short* d_index, int n) {
+  //step 1 - create a bunch of keyvaluepairs
+  cuda_mymalloc(&d_sort1, sizeof(KeyValuePair), &d_sort1_size, n);
+  cuda_mymalloc(&d_sort2, sizeof(KeyValuePair), &d_sort2_size, n);
+  ushort i;
+  KeyValuePair data;
+  for (i=0;i<n;i++) {
+    CUDAEXEC(cudaMemcpy(d_sort1+i, &i, 
+			sizeof(ushort), 
+			cudaMemcpyHostToDevice),
+	     "h_key -> d_key");
+
+    ushort* data_ptr = ((ushort*)(d_sort1 + i))+1;
+
+    CUDAEXEC(cudaMemcpy(data_ptr, d_values+i,sizeof(ushort),
+			cudaMemcpyDeviceToDevice),"d_value -> d_sort1");
+  }
+
+  //call the radix sort.
+  RadixSort(d_sort1, d_sort2, n, 16);
+
+  //read back the indices into d_index.
+
+  for (i=0;i<n;i++) {
+    ushort* data_ptr = ((ushort*)(d_sort1 + i))+1;
+    CUDAEXEC(cudaMemcpy(d_index+i, data_ptr, sizeof(ushort),
+			cudaMemcpyDeviceToDevice),"d_sort1 -> d_index");
+  }
+  
+
+}
 
 
 #endif

@@ -14,7 +14,7 @@
 //NVCC is compiling the code that references this
 //header, otherwise, the code will not be wrapped.
 #ifdef CUDA_NVCC
-//extern "C" {
+extern "C" {
 #endif
 
   void d_cuda_sqrt_max_normalize_and_cc(float* d_in, int n, int num_regions, 
@@ -27,7 +27,7 @@
 				      int region_selector, int max_offset);
  
   
-
+  void cuda_sort(float* d_values, short* d_index, int n);
 
   void cuda_float_malloc(float** a, int current_size, int size);
   
@@ -35,7 +35,7 @@
   void crux_cuda_shutdown();
 
 #ifdef CUDA_NVCC
-//}
+}
 #endif
 /*
 #define CUDAEXEC(x,s) {cudaError _status; \
