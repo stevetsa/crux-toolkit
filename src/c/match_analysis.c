@@ -425,7 +425,7 @@ MATCH_COLLECTION_T* run_qvalue(
   const int length = MAX_PSMS;
   double* pvalues = (double*) malloc(sizeof(double) * length);
   int num_psms = 0;
-  
+  char* peptide = ""; 
   // create MATCH_COLLECTION_ITERATOR_T object
   MATCH_COLLECTION_ITERATOR_T* match_collection_iterator =
     new_match_collection_iterator(psm_result_folder, fasta_file);
@@ -445,6 +445,8 @@ MATCH_COLLECTION_T* run_qvalue(
 
       FLOAT_T score = get_match_score(match, LOGP_BONF_WEIBULL_XCORR);
       carp(CARP_DETAILED_DEBUG, "p-value is %f", score);
+      peptide = get_match_mod_sequence_str(match);
+      carp(CARP_DETAILED_DEBUG, "peptide is %s", peptide);
       if( score == P_VALUE_NA ){// ignore unscored psms
         continue;
       }

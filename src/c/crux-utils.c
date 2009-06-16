@@ -3,7 +3,6 @@
  * \brief General-use functions for crux
  */
 
-
 #include <errno.h>
 #include <sys/stat.h>
 #include <unistd.h>

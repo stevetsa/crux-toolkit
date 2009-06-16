@@ -3083,7 +3083,7 @@ void setup_match_collection_iterator(
 
 /**
  * Create a match_collection iterator from a directory of serialized files
- * Only hadles up to one target and three decoy sets per folder
+ * Only handles up to one target and three decoy sets per folder
  *\returns match_collection iterator instantiated from a result folder
  */
 MATCH_COLLECTION_ITERATOR_T* new_match_collection_iterator(

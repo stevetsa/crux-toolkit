@@ -826,7 +826,12 @@ void initialize_parameters(void){
       "Print to stdout additional information about the spectrum.",
       "Avaliable only for crux-get-ms2-spectrum.  Does not affect contents "
       "of the output file.", "true");
-
+  
+// spit options
+  set_string_parameter("database", NULL, 
+      "Name of file in fasta format or directory containing the protein index.",
+      "For spit to retrieve proteins and peptides",
+      "false");
   // now we have initialized the parameters
   parameter_initialized = TRUE;
   usage_initialized = TRUE;
