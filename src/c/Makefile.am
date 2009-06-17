@@ -89,6 +89,8 @@ NON_PERCOLATOR_LIB_FILES= \
   spectrum_collection.c \
   spectrum_collection.h \
   spectrum.h \
+  spit.cpp \
+  spit.h \
   utils.c \
   utils.h \
   version.h
@@ -97,7 +99,7 @@ LIBFILES=$(PERCOLATOR_LIB_FILES) $(NON_PERCOLATOR_LIB_FILES)
 libcrux_la_CFLAGS = $(AM_CFLAGS)
 
 libcrux_la_SOURCES = $(LIBFILES)
-libcrux_la_LIBADD = -lm
+libcrux_la_LIBADD = -lm -lstdc++
 
 PROGRAM_FILES = \
   crux \

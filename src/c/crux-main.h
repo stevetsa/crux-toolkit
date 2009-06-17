@@ -16,7 +16,6 @@
 #include "search.h"
 #include "q-value.h"
 #include "percolator.h"
-//#include "spit.h"
 
 /* Private data types */
 enum _command { INDEX_CMD,      // create-index
@@ -24,7 +23,7 @@ enum _command { INDEX_CMD,      // create-index
                 QVALUE_CMD,     // compute-q-values
                 QRANKER_CMD,    // q-ranker
                 PERCOLATOR_CMD, // percolator
-		//SPIT_CMD,       // simple protein identification
+		SPIT_CMD,       // simple protein identification
                 INVALID_CMD };  // use for errors
 typedef enum _command COMMAND_T;
 
