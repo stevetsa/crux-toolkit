@@ -474,11 +474,11 @@ void initialize_parameters(void){
   set_string_parameter("fileroot", NULL, 
       "Prefix added to output file names. Default None. ",
       "Used by crux create-index, crux search-for-matches, "
-      "crux compute-q-values, and crux percolator.", "true");
+      "crux compute-q-values, crux percolator, and crux spit", "true");
   set_string_parameter("output-dir", "crux-output", 
       "Folder to which results will be written. Default 'crux-output'. ",
       "Used by crux create-index, crux search-for-matches, "
-      "crux compute-q-values, and crux percolator.", "true");
+      "crux compute-q-values, crux percolator, and crux spit", "true");
   set_string_parameter("search-sqt-output-file", "search.target.sqt", 
       "SQT output file name. Default 'search.target.sqt'",
       "Only available for crux-search-for-matches. The location of this file is controlled by "
@@ -831,6 +831,11 @@ void initialize_parameters(void){
   set_string_parameter("database", NULL, 
       "Name of file in fasta format or directory containing the protein index.",
       "For spit to retrieve proteins and peptides",
+      "false");
+
+  set_string_parameter("spit-output-file", "proteins.target.txt", 
+      "Name of output file for spit. Default proteins.target.txt",
+      "Used only by crux spit",
       "false");
   // now we have initialized the parameters
   parameter_initialized = TRUE;
