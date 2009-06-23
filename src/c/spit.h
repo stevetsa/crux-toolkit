@@ -20,8 +20,6 @@
 #include "protein.h"
 #include "database.h"
 
-
-
 //int main(int argc, char** argv);
 int spit_main(int argc, char** argv);
 
