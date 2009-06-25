@@ -14,7 +14,7 @@ else
   USEDARWIN = 
 endif
 
-AM_CFLAGS = -Wall -W -Werror  -fno-strict-aliasing $(USEDOUBLES) $(USEDARWIN) \
+AM_CFLAGS = -Wall -W  -fno-strict-aliasing $(USEDOUBLES) $(USEDARWIN) \
             -D_LARGEFILE_SOURCE=1 -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE
 
 noinst_LTLIBRARIES = libcrux.la
@@ -42,19 +42,19 @@ NON_PERCOLATOR_LIB_FILES= \
   hit_collection.h \
   index.c \
   index.h \
-  ion.c \
+  ion.cpp \
   ion.h \
-  ion_series.c \
+  ion_series.cpp \
   ion_series.h \
   linked_list.c \
   linked_list.h \
-  mass.c \
+  mass.cpp \
   mass.h \
-  match.c \
+  match.cpp \
   match.h \
-  match_collection.c \
+  match_collection.cpp \
   match_collection.h \
-  match_search.c \
+  match_search.cpp \
   modifications.c \
   modifications.h \
   modified_peptides_iterator.c \
@@ -81,11 +81,11 @@ NON_PERCOLATOR_LIB_FILES= \
   protein_index.h \
   q-value.c \
   q-value.h \
-  scorer.c \
+  scorer.cpp \
   scorer.h \
   sorter.c \
   sorter.h \
-  spectrum.c \
+  spectrum.cpp \
   spectrum_collection.c \
   spectrum_collection.h \
   spectrum.h \
@@ -133,7 +133,7 @@ crux_generate_peptides_LDADD = libcrux.la
 #crux_analyze_matches_LDADD = \
 #  -lstdc++ -L$(PERCOLATOR_DIR)/ -lpercolator -lqvality -lArrayLibrary -lcrux 
 
-crux_predict_peptide_ions_SOURCES = predict_peptide_ions.c
+crux_predict_peptide_ions_SOURCES = predict_peptide_ions.cpp
 crux_predict_peptide_ions_CFLAGS = $(AM_CFLAGS) -DMAIN 
 crux_predict_peptide_ions_LDADD = libcrux.la 
 

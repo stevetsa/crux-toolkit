@@ -184,7 +184,7 @@ MATCH_COLLECTION_T* allocate_match_collection()
   }
   
   // set last score to -1, thus nothing has been done yet
-  match_collection->last_sorted = -1;
+  match_collection->last_sorted = (SCORER_TYPE_T)-1;
   match_collection->iterator_lock = FALSE;
   match_collection->post_process_collection = FALSE;
   match_collection->null_peptide_collection = FALSE;
@@ -255,7 +255,7 @@ MATCH_COLLECTION_T* new_empty_match_collection(BOOLEAN_T is_decoy){
   for(idx=0; idx<_SCORE_TYPE_NUM; idx++){
     match_collection->scored_type[idx] = FALSE;
   }
-  match_collection->last_sorted = -1;
+  match_collection->last_sorted = (SCORER_TYPE_T)-1;
   match_collection->iterator_lock = FALSE;
   match_collection->num_samples = 0;
   match_collection->num_xcorrs = 0;
@@ -302,7 +302,7 @@ int add_matches(
   // charge==0 if collection has no matches yet
   assert(match_collection->charge==0 || match_collection->charge==charge);
   match_collection->charge = charge;
-  match_collection->last_sorted = -1;
+  match_collection->last_sorted = (SCORER_TYPE_T)-1;
 
   int num_matches_added = 0;
   int start_index = match_collection->match_total;
@@ -1077,8 +1077,7 @@ BOOLEAN_T score_peptides(
   }
 
   // create ion constraint
-  ION_CONSTRAINT_T* ion_constraint = 
-    new_ion_constraint_smart(score_type, charge);
+  ION_CONSTRAINT_T* ion_constraint = new ION_CONSTRAINT_T(score_type, charge);
 
   // create scorer
   SCORER_T* scorer = new_scorer(score_type);
@@ -1093,7 +1092,7 @@ BOOLEAN_T score_peptides(
   carp(CARP_DETAILED_DEBUG, "New match_collection is null? %i", is_decoy);
 
   // create a generic ion_series that will be reused for each peptide sequence
-  ION_SERIES_T* ion_series = new_ion_series_generic(ion_constraint, charge);  
+  ION_SERIES_T* ion_series = new ION_SERIES_T(ion_constraint, charge);  
 
   int starting_number_of_psms = match_collection->match_total;
   carp(CARP_DEBUG, "Scoring all peptides in iterator.");
@@ -1122,8 +1121,8 @@ BOOLEAN_T score_peptides(
     // update ion series for peptide sequene
     sequence = get_match_sequence(match);
     modified_sequence = get_match_mod_sequence(match);
-    update_ion_series(ion_series, sequence, modified_sequence);
-    predict_ions(ion_series);
+    ion_series -> update_ion_series(sequence, modified_sequence);
+    ion_series -> predict_ions();
 
     // calculate the score
     score = score_spectrum_v_ion_series(scorer, spectrum, ion_series);
@@ -1144,9 +1143,9 @@ BOOLEAN_T score_peptides(
           match_collection->match_total, _MAX_NUMBER_PEPTIDES);
       // free heap
       free(sequence);
-      free_ion_series(ion_series);
+      delete ion_series;
       free_scorer(scorer);
-      free_ion_constraint(ion_constraint);
+      ION_CONSTRAINT_T::free(ion_constraint);
       free(modified_sequence);
 
       return FALSE;
@@ -1175,9 +1174,9 @@ BOOLEAN_T score_peptides(
   // Let caller do sorting 
 
   // clean up
-  free_ion_series(ion_series);
+  delete ion_series;
   free_scorer(scorer);
-  free_ion_constraint(ion_constraint);
+  ION_CONSTRAINT_T::free(ion_constraint);
 
   return TRUE;
 }
@@ -1223,13 +1222,13 @@ BOOLEAN_T score_matches_one_spectrum(
   }
   
   // create ion constraint
-  ION_CONSTRAINT_T* ion_constraint = new_ion_constraint_smart(score_type, 
+  ION_CONSTRAINT_T* ion_constraint = new ION_CONSTRAINT_T(score_type, 
                                                               charge);
   // create scorer
   SCORER_T* scorer = new_scorer(score_type);
 
   // create a generic ion_series that will be reused for each peptide sequence
-  ION_SERIES_T* ion_series = new_ion_series_generic(ion_constraint, charge);  
+  ION_SERIES_T* ion_series = new ION_SERIES_T(ion_constraint, charge);  
   
   // score all matches
   int match_idx;
@@ -1255,8 +1254,8 @@ BOOLEAN_T score_matches_one_spectrum(
     modified_sequence = get_match_mod_sequence(match);
 
     // create ion series for this peptide
-    update_ion_series(ion_series, sequence, modified_sequence);
-    predict_ions(ion_series);
+    ion_series -> update_ion_series(sequence, modified_sequence);
+    ion_series -> predict_ions();
 
     // get the score
     FLOAT_T score = score_spectrum_v_ion_series(scorer, spectrum, ion_series);
@@ -1277,8 +1276,8 @@ BOOLEAN_T score_matches_one_spectrum(
   //  match_collection->scored_type[score_type] = TRUE;
 
   // clean up
-  free_ion_constraint(ion_constraint);
-  free_ion_series(ion_series);
+  ION_CONSTRAINT_T::free(ion_constraint);
+  delete ion_series;
   free_scorer(scorer);
   return TRUE;
 }

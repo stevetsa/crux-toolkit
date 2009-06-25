@@ -6,6 +6,10 @@
 #ifndef PEPTIDE_H 
 #define PEPTIDE_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -648,6 +652,9 @@ char *get_protein_ids(PEPTIDE_T *peptide);
  */
 char *get_flanking_aas(PEPTIDE_T *peptide);
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 

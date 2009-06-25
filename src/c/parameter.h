@@ -16,6 +16,11 @@
 #ifndef PARAMETER_FILE_H
 #define PARAMETER_FILE_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -281,4 +286,8 @@ int get_all_aa_mod_list(AA_MOD_T*** mods);
  */
 void print_parameter_file(char** filename);
 
+
+#ifdef __cplusplus
+}
+#endif
 #endif

@@ -11,6 +11,10 @@
 #include "objects.h"
 #include "peak.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * \returns An (empty) spectrum object.
  */
@@ -485,6 +489,12 @@ void peak_iterator_reset(
  * c-basic-offset: 2
  * End:
  */
+
+
+#ifdef __cplusplus
+}
+#endif
+
 
 #endif
 

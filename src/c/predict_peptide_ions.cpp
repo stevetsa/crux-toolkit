@@ -126,27 +126,27 @@ int main(int argc, char** argv){
    MASS_TYPE_T frag_masses = get_mass_type_parameter("fragment-mass");
    ION_CONSTRAINT_T* ion_constraint = 
      //  new_ion_constraint(MONO, max_charge, ion_type, use_precursor_ions);
-     new_ion_constraint(frag_masses, max_charge, ion_type, use_precursor_ions);
+     new ION_CONSTRAINT_T(frag_masses, max_charge, ion_type, use_precursor_ions);
 
    
    // set ion_constraint3 modification counts, if modifications should occur
    if(is_modification){
-     set_ion_constraint_modification( ion_constraint, NH3, 
+     ion_constraint -> set_ion_constraint_modification( NH3, 
                                       neutral_loss_count[NH3]);
-     set_ion_constraint_modification( ion_constraint, H2O, 
+     ion_constraint -> set_ion_constraint_modification( H2O, 
                                       neutral_loss_count[H2O]);
-     set_ion_constraint_modification( ion_constraint, ISOTOPE, 
+     ion_constraint -> set_ion_constraint_modification( ISOTOPE, 
                                       neutral_loss_count[ISOTOPE]);
-     set_ion_constraint_modification( ion_constraint, FLANK, 
+     ion_constraint -> set_ion_constraint_modification( FLANK, 
                                       neutral_loss_count[FLANK]);
    }
 
    // create ion_series
-   ION_SERIES_T* ion_series = new_ion_series(peptide_sequence, 
-                                             charge_state, ion_constraint);
+   ION_SERIES_T* ion_series = new ION_SERIES_T(peptide_sequence, 
+                                               charge_state, ion_constraint);
    
    // now predict ions
-   predict_ions(ion_series);
+   ion_series -> predict_ions();
    
    // print settings
    printf("# PEPTIDE: %s\n",peptide_sequence);
@@ -158,11 +158,12 @@ int main(int argc, char** argv){
    printf("# FLANK modification: %d\n", neutral_loss_count[FLANK]);
 
    // print ions
-   print_ion_series(ion_series, stdout);
+   ion_series -> print_ion_series(stdout);
 
    // free
-   free_ion_constraint(ion_constraint);
-   free_ion_series(ion_series);
+   ION_CONSTRAINT_T::free(ion_constraint);
+
+   delete ion_series;
 
    carp(CARP_INFO, "crux-predict-peptide-ions finished");
  exit(0);

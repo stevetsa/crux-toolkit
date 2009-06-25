@@ -645,17 +645,19 @@ int calculate_ion_type_sp(
   int ion_charge = 0;
   int intensity_array_idx = 0;
 
-  int* before_cleavage = (int*)mymalloc(get_ion_series_charge(ion_series)*sizeof(int));
+  int* before_cleavage = (int*)mymalloc(ion_series -> get_ion_series_charge()*sizeof(int));
   int cleavage_array_idx = 0;
 
   // initialize before cleavage indecies
-  for(; cleavage_array_idx < get_ion_series_charge(ion_series); ++cleavage_array_idx){
+  for(; cleavage_array_idx < ion_series -> get_ion_series_charge(); ++cleavage_array_idx){
     before_cleavage[cleavage_array_idx] = -1;
   }
   
-  // create ion constraint
-  ION_CONSTRAINT_T* ion_constraint = 
-    new_ion_constraint(get_ion_constraint_mass_type(get_ion_series_ion_constraint(ion_series)), get_ion_series_charge(ion_series), ion_type, FALSE);
+  ION_CONSTRAINT_T *ion_constraint = new
+    ION_CONSTRAINT_T(ion_series -> get_ion_series_ion_constraint() -> get_mass_type(),
+		     ion_series -> get_ion_series_charge(),
+		     ion_type,
+		     FALSE);
   
   // create the filtered iterator that will select among the ions
   ION_FILTERED_ITERATOR_T* ion_iterator = new_ion_filtered_iterator(ion_series, ion_constraint);
@@ -663,7 +665,7 @@ int calculate_ion_type_sp(
   // while there are ion's in ion iterator, add matched observed peak intensity
   while(ion_filtered_iterator_has_next(ion_iterator)){
     ion = ion_filtered_iterator_next(ion_iterator);
-    intensity_array_idx = (int)(get_ion_mass_z(ion)/bin_width_mono + 0.5);
+    intensity_array_idx = (int)(ion -> get_ion_mass_z()/bin_width_mono + 0.5);
     // get the intensity matching to ion's m/z
     if(intensity_array_idx < scorer->sp_max_mz){
       one_intensity = scorer->intensity_array[intensity_array_idx];
@@ -685,10 +687,10 @@ int calculate_ion_type_sp(
       *intensity_sum = *intensity_sum + one_intensity;
       
       // get ion charge
-      ion_charge = get_ion_charge(ion) - 1;
+      ion_charge = ion -> get_ion_charge() - 1;
       
       // check if repeated ion b1, b2, ...
-      if((cleavage_idx = get_ion_cleavage_idx(ion)) == before_cleavage[ion_charge] + 1){
+      if((cleavage_idx = ion -> get_ion_cleavage_idx()) == before_cleavage[ion_charge] + 1){
         ++*repeat_count;
       }
       
@@ -700,7 +702,7 @@ int calculate_ion_type_sp(
   
   // free ion iterator, ion_constraint
   free(before_cleavage);
-  free_ion_constraint(ion_constraint);
+  ION_CONSTRAINT_T::free(ion_constraint);
   free_ion_filtered_iterator(ion_iterator);
 
   return ion_match;
@@ -725,7 +727,7 @@ FLOAT_T gen_score_sp(
   // initialize the scorer before scoring if necessary
   if(!scorer->initialized){
     // create intensity array
-    if(!create_intensity_array_sp(spectrum, scorer, get_ion_series_charge(ion_series))){
+    if(!create_intensity_array_sp(spectrum, scorer, ion_series -> get_ion_series_charge())){
       carp(CARP_FATAL, "failed to produce Sp");
     }
   }
@@ -737,8 +739,8 @@ FLOAT_T gen_score_sp(
   
   // set the fraction of  b,y ions matched for this ion_series
   scorer->sp_b_y_ion_matched  = ion_match;
-  scorer->sp_b_y_ion_possible = get_ion_series_num_ions(ion_series);
-  scorer->sp_b_y_ion_fraction_matched = (FLOAT_T)ion_match / get_ion_series_num_ions(ion_series);
+  scorer->sp_b_y_ion_possible = ion_series -> get_ion_series_num_ions();
+  scorer->sp_b_y_ion_fraction_matched = (FLOAT_T)ion_match / ion_series -> get_ion_series_num_ions();
 
   //// DEBUG!!!!
   /*
@@ -749,7 +751,7 @@ FLOAT_T gen_score_sp(
   // calculate Sp score.
   if(ion_match != 0){
     final_score = 
-      (intensity_sum * ion_match) * (1+ (repeat_count * scorer->sp_beta)) / get_ion_series_num_ions(ion_series);
+      (intensity_sum * ion_match) * (1+ (repeat_count * scorer->sp_beta)) / ion_series -> get_ion_series_num_ions();
   }
   
   // return score
@@ -970,9 +972,9 @@ BOOLEAN_T create_intensity_array_theoretical(
   // while there are ion's in ion iterator, add matched observed peak intensity
   while(ion_iterator_has_next(ion_iterator)){
     ion = ion_iterator_next(ion_iterator);
-    intensity_array_idx = (int)(get_ion_mass_z(ion) / bin_width + 0.5);
-    ion_type = get_ion_type(ion);
-    ion_charge = get_ion_charge(ion);
+    intensity_array_idx = (int)(ion -> get_ion_mass_z() / bin_width + 0.5);
+    ion_type = ion -> get_ion_type();
+    ion_charge = ion -> get_ion_charge();
 
     // skip ions that are located beyond max mz limit
     if(intensity_array_idx >= scorer->sp_max_mz){
@@ -1006,7 +1008,7 @@ BOOLEAN_T create_intensity_array_theoretical(
        ion_type == Y_ION){
 
       // neutral loss peak?
-      if(ion_is_modified(ion)){
+      if(ion -> ion_is_modified()){
         // Add peaks of intensity of 10.0 for neutral loss of H2O, ammonia.
         // In addition, add peaks of intensity of 10.0 to +/- 1 m/z flanking each neutral loss.
         // add_intensity(theoretical, intensity_array_idx, 10);
@@ -1031,11 +1033,11 @@ BOOLEAN_T create_intensity_array_theoretical(
         // mass_z + (modification_masses[(int)ion_modification]/(FLOAT_T)charge) * modification_count;  
 
         if(ion_type == B_ION){
-          int h2o_array_idx = (int)((get_ion_mass_z(ion) - (MASS_H2O_MONO/ion_charge) ) / bin_width + 0.5);
+          int h2o_array_idx = (int)((ion -> get_ion_mass_z() - (MASS_H2O_MONO/ion_charge) ) / bin_width + 0.5);
           add_intensity(theoretical, h2o_array_idx, 10);
         }
 
-        int nh3_array_idx = (int)((get_ion_mass_z(ion) -  (MASS_NH3_MONO/ion_charge)) / bin_width + 0.5);
+        int nh3_array_idx = (int)((ion -> get_ion_mass_z() -  (MASS_NH3_MONO/ion_charge)) / bin_width + 0.5);
         add_intensity(theoretical, nh3_array_idx, 10);        
       }
       
@@ -1146,7 +1148,7 @@ FLOAT_T gen_score_xcorr(
   // preprocess the observed spectrum in scorer
   if(!scorer->initialized){
     // create intensity array for observed spectrum, if already not been done
-    if(!create_intensity_array_xcorr(spectrum, scorer, get_ion_series_charge(ion_series))){
+    if(!create_intensity_array_xcorr(spectrum, scorer, ion_series -> get_ion_series_charge())){
       carp(CARP_FATAL, "failed to produce XCORR");
     }
   }
@@ -1443,16 +1445,16 @@ ION_CONSTRAINT_T** single_ion_constraints(
       int neutral_idx;
       for(neutral_idx=0; neutral_idx< GMTK_NUM_NEUTRAL_LOSS+1; neutral_idx++){
         ION_CONSTRAINT_T* ion_constraint =
-          new_ion_constraint( mass_type, charges[charge_idx],
+          new ION_CONSTRAINT_T( mass_type, charges[charge_idx],
                               ion_types[ion_type_idx], FALSE);
-        set_ion_constraint_exactness(ion_constraint, TRUE);
+        ion_constraint -> set_ion_constraint_exactness(TRUE);
         if (neutral_idx == 0){
           ;
         }
         else if (neutral_idx == 1){
-          set_ion_constraint_modification(ion_constraint, NH3, -1);
+          ion_constraint -> set_ion_constraint_modification(NH3, -1);
         } else if (neutral_idx == 2){
-          set_ion_constraint_modification(ion_constraint, H2O, -1);
+          ion_constraint -> set_ion_constraint_modification(H2O, -1);
         }
         ion_constraints[ion_constraint_idx] = ion_constraint;
         ion_constraint_idx++;
@@ -1470,7 +1472,7 @@ void free_single_ion_constraints(
     ){
   int constraint_idx;
   for (constraint_idx=0; constraint_idx<GMTK_NUM_ION_SERIES; constraint_idx++){
-    free_ion_constraint(ion_constraints[constraint_idx]);
+    ION_CONSTRAINT_T::free(ion_constraints[constraint_idx]);
   }
   free(ion_constraints);
 }
@@ -1529,7 +1531,7 @@ ION_CONSTRAINT_T** paired_ion_constraints(
 
   int idx;
   for (idx = 0; idx < GMTK_NUM_PAIRED_ION_SERIES * 2; idx++){
-    ion_constraints[idx] = copy_ion_constraint_ptr(
+    ion_constraints[idx] = ION_CONSTRAINT_T::copy_ion_constraint_ptr(
         base_ion_constraints[indices[idx]]);
   }
   return ion_constraints;
@@ -1544,7 +1546,7 @@ void free_paired_ion_constraints(
   int constraint_idx;
   for (constraint_idx=0; constraint_idx<GMTK_NUM_PAIRED_ION_SERIES; 
        constraint_idx++){
-    free_ion_constraint(ion_constraints[constraint_idx]);
+    ION_CONSTRAINT_T::free(ion_constraints[constraint_idx]);
   }
   free(ion_constraints);
 }
@@ -1591,7 +1593,7 @@ BOOLEAN_T output_psm_files_paired(
   // iterate through each peptide
   carp(CARP_INFO, "Iterating through each peptide.");
   ION_SERIES_T* ion_series;
-  ION_CONSTRAINT_T* ion_constraint = new_ion_constraint_gmtk(charge); 
+  ION_CONSTRAINT_T* ion_constraint = ION_CONSTRAINT_T::new_gmtk(charge); 
   ION_CONSTRAINT_T** ion_constraints = paired_ion_constraints();
 
   int peptide_idx;
@@ -1608,12 +1610,12 @@ BOOLEAN_T output_psm_files_paired(
     }
 
     // create new ion series
-    ion_series = new_ion_series(peptide_sequence, charge, ion_constraint);
+    ion_series = new ION_SERIES_T(peptide_sequence, charge, ion_constraint);
 
     // now predict ions and assign them to their closest peaks
-    predict_ions(ion_series);
+    ion_series -> predict_ions();
 
-    ion_series_assign_nearest_peaks(ion_series, spectrum);
+    ion_series -> ion_series_assign_nearest_peaks(spectrum);
 
     // create our ion constraints
 
@@ -1623,18 +1625,17 @@ BOOLEAN_T output_psm_files_paired(
     for (constraint_idx=0;constraint_idx<GMTK_NUM_PAIRED_ION_SERIES*2;
          constraint_idx+=2){
 
-      print_ion_series_paired_gmtk(
-        ion_series,
+      ion_series -> print_ion_series_paired_gmtk(
         ion_constraints[constraint_idx],
         ion_constraints[constraint_idx+1],
         ion_series_files[ion_series_file_idx++],
         peptide_idx + starting_sentence_idx);
     }
-    free_ion_series(ion_series);
+    delete ion_series;
   } 
 
   free_single_ion_constraints(ion_constraints);
-  free_ion_constraint(ion_constraint);
+  ION_CONSTRAINT_T::free(ion_constraint);
   return TRUE;
 }
 
@@ -1679,7 +1680,7 @@ BOOLEAN_T output_psm_files_single(
   // iterate through each peptide
   carp(CARP_INFO, "Iterating through each peptide.");
   ION_SERIES_T* ion_series;
-  ION_CONSTRAINT_T* ion_constraint = new_ion_constraint_gmtk(charge); 
+  ION_CONSTRAINT_T* ion_constraint = ION_CONSTRAINT_T::new_gmtk(charge); 
   ION_CONSTRAINT_T** ion_constraints = single_ion_constraints();
 
   int peptide_idx;
@@ -1696,12 +1697,13 @@ BOOLEAN_T output_psm_files_single(
     }
 
     // create new ion series
-    ion_series = new_ion_series(peptide_sequence, charge, ion_constraint);
+    ion_series = new ION_SERIES_T(peptide_sequence, charge, ion_constraint);
 
     // now predict ions and assign them to their closest peaks
-    predict_ions(ion_series);
+    ion_series -> predict_ions();
 
-    ion_series_assign_nearest_peaks(ion_series, spectrum);
+    
+    ion_series -> ion_series_assign_nearest_peaks(spectrum);
 
     // create our ion constraints
 
@@ -1710,18 +1712,18 @@ BOOLEAN_T output_psm_files_single(
     for (constraint_idx=0;constraint_idx<GMTK_NUM_ION_SERIES;
          constraint_idx++){
       // output the ions that obey this constraint
-      print_ion_series_single_gmtk(ion_series, 
-          ion_constraints[constraint_idx], 
-          ion_series_files[constraint_idx],
-          peptide_idx + starting_sentence_idx);
+      ion_series -> print_ion_series_single_gmtk(
+        ion_constraints[constraint_idx], 
+	ion_series_files[constraint_idx],
+	peptide_idx + starting_sentence_idx);
     }
     carp(CARP_INFO, "Appended to ion files for: %s", peptide_sequence);
 
-    free_ion_series(ion_series);
+    delete ion_series;
   } 
 
   free_single_ion_constraints(ion_constraints);
-  free_ion_constraint(ion_constraint);
+  ION_CONSTRAINT_T::free(ion_constraint);
   return TRUE;
 }
 

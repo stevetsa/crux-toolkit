@@ -255,20 +255,29 @@ typedef struct sorted_peptide_iterator SORTED_PEPTIDE_ITERATOR_T;
  * \typedef ION_T 
  * \brief An object to represent a (fragment) ion of a peptide
  */
+#ifdef __cplusplus
+//class ION_T;
+#else
 typedef struct ion ION_T;
+#endif
 
 /**
  * \typedef ION_SERIES_T 
  * \brief An object to represent a series of ions
  */
+#ifdef __cplusplus
+#else
 typedef struct ion_series ION_SERIES_T;
-
+#endif
 /**
  * \typedef ION_CONSTRAINT_T
  * \brief An object to represent a constraint to be applied to ions
  */
+#ifdef __cplusplus
+class ION_CONSTRAINT_T;
+#else
 typedef struct ion_constraint ION_CONSTRAINT_T;
-
+#endif
 /**
  * The enum for index type
  */

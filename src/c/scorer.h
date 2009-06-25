@@ -16,7 +16,13 @@
 #include "objects.h"
 #include "peptide.h"
 #include "ion.h"
+#include "ion_series.h"
 #include "scorer.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 /**
  * \returns An (empty) scorer object.
@@ -324,4 +330,10 @@ int get_scorer_sp_b_y_ion_possible(
  * c-basic-offset: 2
  * End:
  */
+
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif
