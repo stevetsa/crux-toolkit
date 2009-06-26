@@ -103,12 +103,10 @@ int search_main(int argc, char** argv){
   BOOLEAN_T overwrite = get_boolean_parameter("overwrite");
   int result = create_output_directory(
     output_folder, 
-    TRUE, // Allow existing directory
-    TRUE // print warnging messages to stderr
+    TRUE // Allow existing directory
   );
   if( result == -1 ){
     carp(CARP_FATAL, "Unable to create output directory %s.", output_folder);
-    exit(1);
   }
 
   /* Open the log file to record carp messages */
@@ -134,8 +132,6 @@ int search_main(int argc, char** argv){
   carp(CARP_INFO, "Reading in ms2 file %s", ms2_file);
   if(!parse_spectrum_collection(spectra)){
     carp(CARP_FATAL, "Failed to parse ms2 file: %s", ms2_file);
-    free_spectrum_collection(spectra);
-    exit(1);
   }
   
   carp(CARP_DEBUG, "There were %i spectra found in the ms2 file",
@@ -153,7 +149,6 @@ int search_main(int argc, char** argv){
   carp(CARP_DEBUG, "Found %i proteins", num_proteins);
   if( num_proteins == 0 ){
     carp(CARP_FATAL, "No proteins were found in the protein source.");
-    exit(1);
   }
   
   /* Prepare output files */
@@ -293,7 +288,7 @@ int search_main(int argc, char** argv){
     
     // calculate p-values
     if( compute_pvalues == TRUE ){
-      carp(CARP_DEBUG, "Estimating Weibull parameters.");
+      carp(CARP_DEBUG, "Estimating Weibull parameters for target.");
       if( estimate_weibull_parameters_from_xcorrs(match_collection,
                                                           spectrum,
                                                           charge) ){
@@ -342,7 +337,7 @@ int search_main(int argc, char** argv){
     int decoy_idx = 0;
     int repeat_idx = 0;
     int num_decoy_repeats = get_int_parameter("num-decoys-per-target");
-    // decoy files is 0 but we want to do at least one decoy searc for tdc
+    // for tdc, the number of decoy files is 0 but we want to do at least one decoy search
     num_decoys = (combine_target_decoy) ? 1 : num_decoys;
 
     carp(CARP_DEBUG, "num_decoys (decoy set) %i, num_decoy_repeats (decoy per target) %i, max mods %i", num_decoys, num_decoy_repeats, max_mods);
@@ -504,7 +499,6 @@ int prepare_protein_input(char* input_file,
 
     if (index == NULL){
       carp(CARP_FATAL, "Could not create index from disk for %s", input_file);
-      exit(1);
     }
     num_proteins = get_index_num_proteins(*index);
 
@@ -513,12 +507,10 @@ int prepare_protein_input(char* input_file,
     *database = new_database(input_file, FALSE);         
     if( database == NULL ){
       carp(CARP_FATAL, "Could not create protein database");
-      exit(1);
     } 
 
     if(!parse_database(*database)){
       carp(CARP_FATAL, "Error with protein input");
-      exit(1);
     } 
     num_proteins = get_database_num_proteins(*database);
   }
