@@ -645,7 +645,6 @@ void print_match_tab(
   PEPTIDE_T* peptide = get_match_peptide(match);
   double peptide_mass = get_peptide_peptide_mass(peptide);
   // this should get the sequence from the match, not the peptide
-  //char* sequence = get_match_sequence_sqt(match);
   char* sequence = get_match_mod_sequence_str(match);
   if( sequence == NULL ){
     sequence = my_copy_string("");  // for post-search, no shuffled sequences
@@ -738,15 +737,12 @@ void print_match_tab(
   else {
     fprintf(file, "\t");
   }
-  //if( decoy_q_val_scored  && match->null_peptide == FALSE ){
   if( scores_computed[DECOY_XCORR_QVALUE]  && match->null_peptide == FALSE ){
     fprintf(file, float_format, decoy_x_qvalue);
   }
   else {
     fprintf(file, "\t");
   }
-  //  if( decoy_q_val_scored && match->null_peptide == FALSE
-  //      && scores_computed[LOGP_BONF_WEIBULL_XCORR] == TRUE ){ 
   if( scores_computed[DECOY_PVALUE_QVALUE] && match->null_peptide == FALSE){
     if (P_VALUE_NA == decoy_p_qvalue) {
       fprintf(file, "NaN\t");
@@ -778,7 +774,6 @@ void print_match_tab(
   }
   fprintf(file, "%d\t", b_y_total);
   fprintf(file, "%d\t", num_matches); // Matches per spectrum
-  //fprintf(file, "%.*s\t", seq_length - 4, sequence+2);
   fprintf(file, "%s\t", sequence);
   fprintf(file, "%s-%s\t", enz_str, dig_str);
   fprintf(file, "%s\t%s", protein_ids, flanking_aas);

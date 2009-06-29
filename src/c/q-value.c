@@ -171,11 +171,11 @@ int compare_doubles_descending(
  * perform Benjamini-Hochberg qvalue calculations as in Klammer et
  * al. (In Press) If decoys are present (in separate files), compute
  * emperical q-values based on the number of decoys and targets above
- * the score threshold.  Use xcorr as the score to rank by and do a
- * second calculation, ranking by p-values if present.
+ * the score threshold.  Use xcorr as the score to rank by. Do a
+ * second calculation, ranking by p-values, if present.
  *
  * \returns a MATCH_COLLECTION object with target PSMs with at least
- * one q-value score in each.
+ * one q-value score in each match.
  */
 MATCH_COLLECTION_T* run_qvalue(
   char* psm_result_folder, 
@@ -187,7 +187,7 @@ MATCH_COLLECTION_T* run_qvalue(
   MATCH_COLLECTION_T* match_collection = NULL;
   MATCH_T* match = NULL;
 
-  // array to store out pvalues for bh
+  // array to store pvalues for bh
   const int length = MAX_PSMS;
   double* pvalues = (double*) malloc(sizeof(double) * length);
   int num_psms = 0;
@@ -218,7 +218,6 @@ MATCH_COLLECTION_T* run_qvalue(
     // does this file contain target or decoy psms?
     BOOLEAN_T is_decoy_collection = 
       get_match_collection_is_decoy(match_collection);
-    carp(CARP_DEBUG, "Is this collection all decoys? %d", is_decoy_collection);
 
     BOOLEAN_T pvalues_scored = 
       get_match_collection_scored_type(match_collection,
@@ -232,7 +231,7 @@ MATCH_COLLECTION_T* run_qvalue(
     // create iterator
     match_iterator = new_match_iterator(match_collection, XCORR, FALSE);
 
-    // get each match, if not decoy, get p-value
+    // gather matches into one collection, put p-value in separate array
     while(match_iterator_has_next(match_iterator)){
       match = match_iterator_next(match_iterator);
 
@@ -243,11 +242,21 @@ MATCH_COLLECTION_T* run_qvalue(
         " Run search-for-matches with --decoy-locations separate-decoy-files.");
       }
 
+      int rank = get_match_rank(match, XCORR);
+
+      // only use top-ranked matches
+      if( rank != 1 ){
+        continue;
+      }
+
       add_match_to_match_collection(all_matches, match);
 
-      // if pvalues were scored, get score
+      // get p-value scores for target psms, if they exist
       if( pvalues_scored && !is_decoy_collection ){
-        pvalues[num_pvals++] =  get_match_score(match, LOGP_BONF_WEIBULL_XCORR);
+        double cur_pval = get_match_score(match, LOGP_BONF_WEIBULL_XCORR);
+        if( cur_pval != P_VALUE_NA ){
+            pvalues[num_pvals++] = cur_pval;
+        }
         if (num_pvals >= MAX_PSMS){
           carp(CARP_FATAL, "Too many psms in directory %s", psm_result_folder);
         }

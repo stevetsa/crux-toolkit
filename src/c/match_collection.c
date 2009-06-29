@@ -2794,6 +2794,7 @@ BOOLEAN_T add_match_to_match_collection(
  * \returns TRUE if successfully adds the match to the
  * match_collection, else FALSE 
  */
+// this method renamed so that a more general add_match_to_match_collection could be implemented
 BOOLEAN_T add_match_to_post_match_collection(
   MATCH_COLLECTION_T* match_collection, ///< the match collection to free -out
   MATCH_T* match ///< the match to add -in
@@ -3305,6 +3306,15 @@ void free_match_collection_iterator(
     free_match_collection(match_collection_iterator->match_collection);
   }
   
+  // if no index, remove the temp binary fasta file
+  char* fasta_file = get_string_parameter("protein input");
+  if( is_directory(fasta_file) == FALSE ){
+    char* binary_fasta = get_binary_fasta_name(fasta_file);
+    carp(CARP_DEBUG, "Protein source %s is not an index.  "
+         "Removing temp binary fasta %s", fasta_file, binary_fasta);
+    remove(binary_fasta);
+  }
+
   // free up all match_collection_iterator 
   free(match_collection_iterator->directory_name);
   free_database(match_collection_iterator->database);
