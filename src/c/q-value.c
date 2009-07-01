@@ -137,6 +137,7 @@ static void print_text_files(
   // print matches
   print_matches_multi_spectra(match_collection, tab_file, NULL);
 
+  free(match_collection);
   free(tab_filename);
   free(out_dir);
 

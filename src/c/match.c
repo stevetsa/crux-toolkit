@@ -649,7 +649,6 @@ void print_match_tab(
   if( sequence == NULL ){
     sequence = my_copy_string("");  // for post-search, no shuffled sequences
   }
-  //  int seq_length = strlen(sequence);
   BOOLEAN_T adjust_delta_cn = FALSE;
 
   // NOTE (BF 12-Feb-08) Here is another ugly fix for post-analysis.
@@ -1210,8 +1209,6 @@ MODIFIED_AA_T* get_match_mod_sequence(
   }
   // if post_process_match and has a null peptide you can't get sequence
   if(match->post_process_match && match->null_peptide){
-    //carp(CARP_ERROR,
-    //    "Cannot retrieve shuffled peptide sequence for post_process_match.");
     return NULL;
   }
 
@@ -1261,8 +1258,6 @@ char* get_match_mod_sequence_str( MATCH_T* match ){
 
   // if post_process_match and has a null peptide you can't get sequence
   if(match->post_process_match && match->null_peptide){
-    //carp(CARP_ERROR,
-    //    "Cannot retrieve null peptide sequence for post_process_match");
     return NULL;
   }
 

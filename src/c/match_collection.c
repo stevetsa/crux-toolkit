@@ -374,8 +374,22 @@ int merge_match_collections(MATCH_COLLECTION_T* source,
     for(type_idx = 0; type_idx < _SCORE_TYPE_NUM; type_idx++){
       destination->scored_type[type_idx] = source->scored_type[type_idx];
     }
+  }else{ // check that same types are scored
+    int type_idx = 0;
+    for(type_idx = 0; type_idx < _SCORE_TYPE_NUM; type_idx++){
+      if( destination->scored_type[type_idx] != source->scored_type[type_idx]){
+        char type_str[SMALL_BUFFER];
+        char* dest_str = (destination->scored_type[type_idx]) ? "" : " not";
+        char* src_str = (source->scored_type[type_idx]) ? "" : " not";
+        scorer_type_to_string((SCORER_TYPE_T)type_idx, type_str);
+        carp(CARP_FATAL, "Cannot merge match collections scored for "
+             "different types.  Trying to add matches%s scored for %s "
+             "to matches%s scored for %s", 
+             src_str, type_str, dest_str, type_str);
+      }
+    }
   }
-  // when adding subsiquent matches, check that same types are scored?
+  
 
   // make sure destination has room for more matches
   int src_num_matches = source->match_total;
