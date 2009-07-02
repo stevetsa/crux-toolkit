@@ -12,8 +12,8 @@
 #include <assert.h>
 #include <ctype.h>
 #include "objects.h"
-#include "ion.h"
 #include "ion_series.h"
+#include "ion.h"
 #include "utils.h"
 #include "crux-utils.h"
 #include "parameter.h"
@@ -37,30 +37,6 @@ struct loss_limit{
   // If change this struct, must also modify update_ion_series method
 };
 
-/**
- * \struct ion_iterator
- * \brief An object to iterate over all ion objects in the ion_series
- */
-struct ion_iterator {
-  ION_SERIES_T* ion_series; ///< the ion series that the ion we are iterating
-  int ion_idx; ///< the current ion that is being returned 
-};
-
-/**
- * \struct ion_filtered_iterator
- * \brief An object to iterate over ion objects that meet constraint in
- * the ion_series 
- */
-struct ion_filtered_iterator {
-  ION_SERIES_T* ion_series; ///< the ion series that the ion we are iterating
-  ION_CONSTRAINT_T* constraint; ///< constraints which the ions obey
-  BOOLEAN_T has_next; ///< the boolean which the iterator has a next ion
-  int ion_idx; ///< the current ion that is being returned 
-  ION_T* ion; ///< the next ion to return when called upon
-  ION_T** ion_array; 
-  ///< the specfic ion array we are iterating over, B ion, Y ion or all
-  int array_size; ///< size of the ion_array
-};
 
 /********************************************************
  *ION_SERIES_T
@@ -68,11 +44,13 @@ struct ion_filtered_iterator {
 void ION_SERIES_T::init() {
   int ion_type_idx = 0;
   is_predicted = FALSE;
+  peptide = NULL;
+  modified_aa_seq = NULL;
+  constraint = NULL;
+  
+  loss_limit = NULL;
+  
 
-  // initialize all num_specific_ion count to 0
-  for(ion_type_idx = 0; ion_type_idx < MAX_NUM_ION_TYPE; ++ion_type_idx){
-    num_specific_ions[ion_type_idx] = 0;
-  }
 }
 
 /**
@@ -101,11 +79,15 @@ ION_SERIES_T::ION_SERIES_T(
   ION_CONSTRAINT_T* constraint ///< constraints which these ions obey.
   )
 {
+  carp(CARP_ERROR,"calling init");
   init();
-
+  
+  carp(CARP_ERROR,"copy string");
   // copy the peptide sequence
   this -> peptide = my_copy_string(peptide);
+  carp(CARP_ERROR,"convert_to_mod_aa_seq");
   this -> modified_aa_seq = convert_to_mod_aa_seq(peptide);
+  carp(CARP_ERROR,"calc_sequence_mass");
   this -> peptide_mass = calc_sequence_mass(peptide, MONO);
   this -> charge = charge;
   this -> constraint = constraint;
@@ -127,32 +109,42 @@ ION_SERIES_T::ION_SERIES_T(
   int charge ///< The charge for this ion series -in
   )
 {
+  carp(CARP_ERROR,"init");
   init();
+  carp(CARP_ERROR,"constraint");
   this -> constraint = constraint;
+  carp(CARP_ERROR,"charge");
   this -> charge = charge;
   // use max peptide len so loss_limit array can be used for any peptide
+  carp(CARP_ERROR,"loss_limit");
   this -> loss_limit = 
     (LOSS_LIMIT_T*)mycalloc(get_int_parameter("max-length"), 
                             sizeof(LOSS_LIMIT_T));
 }
 
 ION_SERIES_T::~ION_SERIES_T() {
+  carp(CARP_ERROR,"ION series destructor");
+  carp(CARP_ERROR,"free(peptide)");
   if(peptide){
     free(peptide);
   }
+  carp(CARP_ERROR,"free modifified_aa_seq");
   if(modified_aa_seq){
     free(modified_aa_seq);
   }
+  carp(CARP_ERROR,"free loss_limit");
   if(loss_limit){
     free(loss_limit);
   }
   // free constraint?
 
   // iterate over all ions, and free them
-  while(num_ions > 0){
-    delete ions[num_ions-1];
-    --num_ions;
-  }
+  carp(CARP_ERROR,"free ions");
+  for (int i=0;i<ions.size();i++)
+    delete ions[i];
+  ions.clear();
+
+  carp(CARP_ERROR,"done ionseries destructor");
 }
 
 
@@ -172,27 +164,28 @@ void ION_SERIES_T::update_ion_series(
 
   // Initialize the ion_series object for the new peptide sequence
   
+  carp(CARP_ERROR,"free peptide");
   // free old peptide sequence
   if(this->peptide){
     free(this->peptide);
   }
+  carp(CARP_ERROR,"free modified_aa_seq");
   if(this->modified_aa_seq){
     free(this->modified_aa_seq);
   }
   
+  carp(CARP_ERROR,"free ions");
   // iterate over all ions, and free them
-  while(this->num_ions > 0){
-    delete this->ions[this->num_ions-1];
-    --this->num_ions;
-  }
+
+  for (int i=0;i<ions.size();i++)
+    delete ions[i];
+  ions.clear();
   
   // initialize all num_specific_ion count back to 0
-  int ion_idx;
-  for(ion_idx=0; ion_type_idx < MAX_NUM_ION_TYPE; ++ion_type_idx){
-    this->num_specific_ions[ion_type_idx] = 0;
+  for(ion_type_idx=0; ion_type_idx < MAX_NUM_ION_TYPE; ++ion_type_idx){
+    this->specific_ions[ion_type_idx].clear();
   }
   
-  this->num_ions = 0;
   this->is_predicted = FALSE;
   
   // set ion_series for new instance of peptide
@@ -204,6 +197,7 @@ void ION_SERIES_T::update_ion_series(
                                                 this->peptide_length);
   
   // Initialize the loss limit array for the new peptide
+  int ion_idx;
   for(ion_idx =0; ion_idx < this->peptide_length; ++ion_idx){
     this->loss_limit->h2o = 0;
     this->loss_limit->nh3 = 0;
@@ -230,7 +224,9 @@ void ION_SERIES_T::print_ion_series(
   
   // print each ion in the ion series
   int ion_idx;
-  for(ion_idx=0; ion_idx < num_ions; ++ion_idx){
+
+  
+  for(ion_idx=0; ion_idx < numIons(); ++ion_idx){
     ions[ion_idx] -> print_ion(file);
   }
 }
@@ -244,15 +240,16 @@ void ION_SERIES_T::print_ion_series_single_gmtk(
   int sentence_idx){
 
   // create the filtered iterator that will select among the ions
-  ION_FILTERED_ITERATOR_T* ion_iterator = 
-    new_ion_filtered_iterator(this, ion_constraint);
   
+  ION_FILTERED_ITERATOR_T ion_iterator;
   // foreach ion in ion iterator, add matched observed peak intensity
   ION_T* ion;
   int frame_idx = 0;
-  while(ion_filtered_iterator_has_next(ion_iterator)){
-    ion = ion_filtered_iterator_next(ion_iterator);
-    
+
+  for (ion_iterator = begin(ion_constraint);
+       ion_iterator != end();
+       ++ion_iterator) {
+    ion = *ion_iterator;
 #ifdef BINARY_GMTK
     ion -> print_ion_gmtk_single_binary(file, sentence_idx, frame_idx);
 #else
@@ -273,7 +270,6 @@ void ION_SERIES_T::print_ion_series_single_gmtk(
 #endif
   }
 #endif 
-  free_ion_filtered_iterator(ion_iterator);
 }
 
 /**
@@ -288,13 +284,15 @@ void ION_SERIES_T::print_ion_series_paired_gmtk(
 {
   
   // create the filtered iterator that will select among the ions
-  ION_FILTERED_ITERATOR_T* ion_iterator = 
-    new_ion_filtered_iterator(this, first_ion_constraint);
-  
+
+  ION_FILTERED_ITERATOR_T ion_iterator;
   // foreach ion in ion iterator, add matched observed peak intensity
   int frame_idx = 0;
-  while(ion_filtered_iterator_has_next(ion_iterator)){
-    ION_T* first_ion = ion_filtered_iterator_next(ion_iterator);
+
+  for (ion_iterator = begin(first_ion_constraint);
+       ion_iterator != end();
+       ++ion_iterator) {
+    ION_T* first_ion = *ion_iterator;
     int cleavage_idx = first_ion -> get_ion_cleavage_idx();
     ION_T* second_ion = this -> get_ion_series_ion(second_ion_constraint, cleavage_idx);
     if ( (first_ion == NULL) || (second_ion == NULL) ){
@@ -313,8 +311,6 @@ void ION_SERIES_T::print_ion_series_paired_gmtk(
     ION_T::print_null_ion_gmtk_paired_binary(file, sentence_idx, frame_idx);
   }
 #endif
- 
-  free_ion_filtered_iterator(ion_iterator);
 }
 
 
@@ -344,6 +340,7 @@ void ION_SERIES_T::scan_for_aa_for_neutral_loss()
        sequence[cleavage_idx] == 'E' ||
        sequence[cleavage_idx] == 'D' )
       {
+	carp(CARP_ERROR,"count");
         loss_limit_count = &this->loss_limit[cleavage_idx];
         loss_limit_count->h2o = ++h2o_aa;
         loss_limit_count->nh3 = nh3_aa;
@@ -354,11 +351,13 @@ void ION_SERIES_T::scan_for_aa_for_neutral_loss()
             sequence[cleavage_idx] == 'Q' ||
             sequence[cleavage_idx] == 'N' )
       {
+	carp(CARP_ERROR,"count2");
         loss_limit_count = &this->loss_limit[cleavage_idx];
         loss_limit_count->nh3 = ++nh3_aa;
         loss_limit_count->h2o = h2o_aa;
       }
     else{
+      carp(CARP_ERROR,"count3");
       loss_limit_count = &this->loss_limit[cleavage_idx];
       loss_limit_count->h2o = h2o_aa;
       loss_limit_count->nh3 = nh3_aa;
@@ -429,11 +428,11 @@ void ION_SERIES_T::add_ion_to_ion_series(
   )
 {
   // add ion to ion series
-  this->ions[this->num_ions++] = ion;   
+  ions.push_back(ion);
   
   // add a pointer of ion to the specific ion_type array
-  this->specific_ions[ion -> get_ion_type()]
-    [this->num_specific_ions[ion -> get_ion_type()]++] = ion;
+
+  specific_ions[ion -> get_ion_type()].push_back(ion);
 }
 
 /**
@@ -452,7 +451,7 @@ BOOLEAN_T ION_SERIES_T::add_ions_by_charge(
   int max_charge;
 
   // check if there's enough space to add the new ions
-  if(this->num_ions + constraint->get_max_charge() > MAX_IONS){
+  if(numIons() + constraint->get_max_charge() > MAX_IONS){
     carp(CARP_ERROR, "exceeds ion array size in ion_series");
     return FALSE;
   }
@@ -760,7 +759,7 @@ BOOLEAN_T ION_SERIES_T::generate_ions(
   )
 {
   int ion_idx = 0;
-  int total_ion = num_ions;
+  int total_ion = numIons();
   ION_T* working_ion = NULL;
   ION_T* new_ion = NULL;
   int* modifications = constraint->get_modifications();
@@ -770,7 +769,7 @@ BOOLEAN_T ION_SERIES_T::generate_ions(
   int type_increment = 1;
 
   // check if there's enough space to add the new ions
-  if(num_ions*2 > MAX_IONS){
+  if(numIons()*2 > MAX_IONS){
     carp(CARP_ERROR, "exceeds ion array size in ion_series");
     return FALSE;
   }
@@ -822,7 +821,7 @@ BOOLEAN_T ION_SERIES_T::generate_ions(
 BOOLEAN_T ION_SERIES_T::generate_ions_flank()
 {
   int ion_idx = 0;
-  int total_ion = num_ions;
+  int total_ion = numIons();
   ION_T* working_ion = NULL;
   ION_T* new_ion = NULL;
   ION_T* new_ion2 = NULL;
@@ -833,7 +832,7 @@ BOOLEAN_T ION_SERIES_T::generate_ions_flank()
   int type_increment = 1;
 
   // check if there's enough space to add the new ions
-  if(num_ions*2 > MAX_IONS){
+  if(numIons()*2 > MAX_IONS){
     carp(CARP_ERROR, "exceeds ion array size in ion_series");
     return FALSE;
   }
@@ -883,6 +882,8 @@ void ION_SERIES_T::predict_ions()
     carp(CARP_WARNING, "The ion series has already been predicted and added");
     return;
   }
+
+  carp(CARP_ERROR,"Predicting mass matrix");
   // create a mass matrix
   FLOAT_T* mass_matrix = 
     create_ion_mass_matrix(modified_aa_seq, constraint -> get_mass_type(), peptide_length);  
@@ -896,8 +897,11 @@ void ION_SERIES_T::predict_ions()
   // scan for the first and last  (S, T, E, D) and (R, K, Q, N), 
   // initialize to determine modification is ok.
   // the first, last of STED, RKQN are stored in ion_series.
+
+  carp(CARP_ERROR,"Scanning for neutral losses");
   scan_for_aa_for_neutral_loss();
   
+  carp(CARP_ERROR,"generating ions no modification");
   // generate ions without any modifications
   if(!generate_ions_no_modification(mass_matrix)){
     carp(CARP_FATAL, "failed to generate ions, no modifications");
@@ -954,15 +958,18 @@ void ION_SERIES_T::ion_series_assign_nearest_peaks(
   //  FLOAT_T max = 0.5; // TODO set in param file 
   FLOAT_T max = get_double_parameter("ion-tolerance"); 
   ION_T* ion = NULL;
-  ION_ITERATOR_T* iterator = new_ion_iterator(this);
+
+  ION_ITERATOR_T iterator;
   PEAK_T* peak = NULL;
-  while(ion_iterator_has_next(iterator)){
-    ion = ion_iterator_next(iterator);
+
+  for(iterator = ions.begin();
+      iterator != ions.end();
+      ++iterator) {
+    ion = *iterator;
     FLOAT_T mz = ion -> get_ion_mass_z(); // TODO change to mz, not mass_z
     peak = get_nearest_peak(spectrum, mz, max);
     ion -> set_ion_peak(peak);
   }
-  free_ion_iterator(iterator);
 }
 
 /**
@@ -987,18 +994,18 @@ void ION_SERIES_T::copy_ion_series(
   dest->constraint = src->constraint;
 
   // add copy ion, add ion_filtered_iterator
-  ION_ITERATOR_T* iterator = new_ion_iterator(src);
 
+  ION_ITERATOR_T iterator;
   // iterate over all ions in src and copy them into dest
-  while(ion_iterator_has_next(iterator)){
-    src_ion = ion_iterator_next(iterator);
+  for (iterator = src -> ions.begin();
+       iterator != src -> ions.end();
+       ++iterator) {
+    src_ion = *iterator;
     // add ion
     dest_ion = new ION_T();
     ION_T::copy_ion(src_ion, dest_ion, dest->peptide);
     dest -> add_ion_to_ion_series(dest_ion);
   }
-  // free up iterator
-  free_ion_iterator(iterator);
 
   dest->is_predicted = TRUE;
 }
@@ -1016,12 +1023,14 @@ ION_T* ION_SERIES_T::get_ion_series_ion(
     int cleavage_idx
     ){
 
-  ION_FILTERED_ITERATOR_T* ion_iterator = 
-    new_ion_filtered_iterator(this, ion_constraint);
+  ION_FILTERED_ITERATOR_T ion_iterator;
+  
   ION_T* ion = NULL;
 
-  while(ion_filtered_iterator_has_next(ion_iterator) == TRUE){
-    ion = ion_filtered_iterator_next(ion_iterator);
+  for (ion_iterator = begin(ion_constraint);
+       ion_iterator != end();
+       ++ion_iterator) {
+    ion = *ion_iterator;
     if(ion -> get_ion_cleavage_idx() == cleavage_idx){
       return ion;
     }
@@ -1100,20 +1109,30 @@ void ION_SERIES_T::set_ion_series_ion_constraint(
 /**
  *\returns the total number of ions in the ion_series object
  */
-int ION_SERIES_T::get_ion_series_num_ions()
+int ION_SERIES_T::numIons()
 {
-  return num_ions;
+  return ions.size();
 }
 
 /**
  *\returns the total number of ion_type in the ion_series object
  */
-int ION_SERIES_T::get_ion_series_num_ions_one_type(
+int ION_SERIES_T::numSpecificIons(
   ION_TYPE_T ion_type ///< the type of ions -in
   )
 {
-  return num_specific_ions[ion_type];
+  return specific_ions[ion_type].size();
 }
+
+ION_ITERATOR_T ION_SERIES_T::begin() {
+  return ions.begin();
+}
+
+ION_ITERATOR_T ION_SERIES_T::end() {
+  return ions.end();
+}
+
+
 
 /*************************
  * ION_CONSTRAINT methods
@@ -1382,7 +1401,7 @@ void ION_CONSTRAINT_T::copy_ion_constraint(
  * Determines if a ion satisfies a ion_constraint.
  * \returns TRUE if the constraint is satisified. FALSE if not.
  */
-BOOLEAN_T ION_CONSTRAINT_T::ion_constraint_is_satisfied(
+BOOLEAN_T ION_CONSTRAINT_T::is_satisfied(
    ION_T* ion ///< query ion -in
    )
 {
@@ -1551,57 +1570,6 @@ BOOLEAN_T ION_CONSTRAINT_T::get_use_neutral_losses()
   return use_neutral_losses;
 }
 
-
-/**************************
- *  ION_ITERATOR_T object
- **************************/
-
-/**
- * Instantiates a new ion_iterator object from ion_series.
- * \returns a ION_ITERATOR_T object.
- */
-ION_ITERATOR_T* new_ion_iterator(
-  ION_SERIES_T* ion_series ///< ion_series to iterate -in
-  )
-{
-  ION_ITERATOR_T* iterator = (ION_ITERATOR_T*)mycalloc(1, sizeof(ION_ITERATOR_T));
-  iterator->ion_series = ion_series;
-  return iterator;
-}
-
-/**
- * does not free ions
- * Frees an allocated ion_iterator object.
- */
-void free_ion_iterator(
-  ION_ITERATOR_T* ion_iterator///< free ion_iterator -in
-  )
-{
-  free(ion_iterator);
-}
-
-/**
- * The basic iterator function has_next.
- */
-BOOLEAN_T ion_iterator_has_next(
-  ION_ITERATOR_T* ion_iterator///< is there a next ion? -in
-  )
-{
-  return ion_iterator->ion_series->num_ions > ion_iterator->ion_idx;
-}
-
-/**
- * The basic iterator function next.
- */
-ION_T* ion_iterator_next(
-  ION_ITERATOR_T* ion_iterator///< return the next ion -in
-  )
-{
-  ++ion_iterator->ion_idx;
-  
-  return ion_iterator->ion_series->ions[ion_iterator->ion_idx-1]; 
-}
-
 /**********************************
  * ION_FILTERED_ITERATOR_T object
  **********************************/
@@ -1611,112 +1579,131 @@ ION_T* ion_iterator_next(
  * 
  *\returns TRUE if successfully sets up the ion_filtered_iterator for next iteration
  */
-BOOLEAN_T setup_ion_filtered_iterator(
+
+/*
+  BOOLEAN_T setup_ion_filtered_iterator(
   ION_FILTERED_ITERATOR_T* ion_iterator///< free ion_iterator -in
   )
-{
+  {
   BOOLEAN_T found = FALSE;
   ION_T* ion = NULL;
-
+  
   // iterate over ions until discovers the first ion that meets the ion constraint
   while(ion_iterator->ion_idx < ion_iterator->array_size){
-    // get next ion
-    ion = ion_iterator->ion_array[ion_iterator->ion_idx];
-    
-    // check if the current ion satisfies the ion_constraint for the iterator
-    if(ion_iterator -> constraint -> ion_constraint_is_satisfied(ion)){
-      found = TRUE;
-      ion_iterator->ion = ion;
-      ++ion_iterator->ion_idx;
-      break;
-    }
-    ++ion_iterator->ion_idx;
+  // get next ion
+  ion = ion_iterator->ion_array[ion_iterator->ion_idx];
+  
+  // check if the current ion satisfies the ion_constraint for the iterator
+  if(ion_iterator -> constraint -> ion_constraint_is_satisfied(ion)){
+  found = TRUE;
+  ion_iterator->ion = ion;
+  ++ion_iterator->ion_idx;
+  break;
+  }
+  ++ion_iterator->ion_idx;
   }
   
   ion_iterator->has_next = found;
-
+  
   return TRUE;
-}
+  }
+*/
+
+
+
 
 /**
  * Only copies in the constraint as pointer
  * Instantiates a new ion_filtered_iterator object from ion_series.
  * \returns a ION_FILTERED_ITERATOR_T object.
  */
-ION_FILTERED_ITERATOR_T* new_ion_filtered_iterator(
-  ION_SERIES_T* ion_series, ///< ion_series to iterate -in
-  ION_CONSTRAINT_T* constraint  ///< ion_constraint which returned ions satisfy
-  )
-{
-  ION_FILTERED_ITERATOR_T* iterator = 
-    (ION_FILTERED_ITERATOR_T*)mycalloc(1, sizeof(ION_FILTERED_ITERATOR_T));
-  
-  // set constraint, ion_series
-  iterator->constraint = constraint;
-  iterator->ion_series = ion_series;
-  iterator->has_next = FALSE;
 
-  // set the working array of ions
+ION_FILTERED_ITERATOR_T ION_SERIES_T::begin(ION_CONSTRAINT_T* constraint) {
+  return FilteredIterator(this, constraint);
+}
+
+
+
+ION_FILTERED_ITERATOR_T::FilteredIterator() {
+}
+
+ION_FILTERED_ITERATOR_T::FilteredIterator(ION_SERIES_T* ion_series, ION_CONSTRAINT_T* constraint) {
+  this -> ion_series = ion_series;
+  this -> constraint = constraint;
+
+  
   if(constraint-> get_ion_type() == ALL_ION ||
      constraint-> get_ion_type() == BY_ION ||
      constraint-> get_ion_type() == BYA_ION){
-
-    iterator->ion_array = ion_series->ions;
-    iterator->array_size = ion_series->num_ions;
+    current = ion_series -> begin();
+    end_iter = ion_series -> end();
   }
   else{
-    iterator->ion_array = ion_series->specific_ions[constraint->get_ion_type()];
-    iterator->array_size = ion_series->num_specific_ions[constraint->get_ion_type()];
+    current = ion_series -> specific_ions[constraint->get_ion_type()].begin();
+    end_iter = ion_series -> specific_ions[constraint->get_ion_type()].end();
   }
-  
-  // initialize iterator
-  setup_ion_filtered_iterator(iterator);
 
-  return iterator;
-}        
+  satisfyConstraint();
 
-/**
- * The constraint is NOT freed from the iterator.
- * Frees an allocated ion_filtered_iterator object.
- */
-void free_ion_filtered_iterator(
-  ION_FILTERED_ITERATOR_T* ion_iterator///< free ion_iterator -in
-  )
-{
-  free(ion_iterator);
 }
 
-/**
- * The basic iterator function has_next.
- */
-BOOLEAN_T ion_filtered_iterator_has_next(
-  ION_FILTERED_ITERATOR_T* ion_iterator///< is there a next ion? -in
-  )
-{
-  return ion_iterator->has_next;
+
+ION_FILTERED_ITERATOR_T::~FilteredIterator() {
+  ;
 }
 
-/**
- * The basic iterator function next.
- */
-ION_T* ion_filtered_iterator_next(
-  ION_FILTERED_ITERATOR_T* ion_iterator///< return the next ion -in
-  )
-{
-  ION_T* next_ion = NULL;
+ION_FILTERED_ITERATOR_T& ION_FILTERED_ITERATOR_T::operator=(const FilteredIterator& other) {
+  constraint = other.constraint;
+  current = other.current;
+}
   
-  // check if a ion is present to return
-  if(!ion_iterator->has_next){
-    carp(CARP_FATAL, "index out of bounds for ion_filtered_iterator");
+bool ION_FILTERED_ITERATOR_T::operator==(const ION_FILTERED_ITERATOR_T& other) {
+  return (constraint == other.constraint) && (current == other.current); 
+}
+
+bool ION_FILTERED_ITERATOR_T::operator!=(const ION_FILTERED_ITERATOR_T& other) {
+  return (constraint != other.constraint) || (current != other.current);
+}
+
+bool ION_FILTERED_ITERATOR_T::operator!=(const ION_ITERATOR_T& other) {
+  return (current != other);
+}
+
+ION_FILTERED_ITERATOR_T& ION_FILTERED_ITERATOR_T::operator++() {
+  ++current;
+  satisfyConstraint();
+}
+
+ION_FILTERED_ITERATOR_T& ION_FILTERED_ITERATOR_T::operator++(int c) {
+  ++current;
+  satisfyConstraint();
+}
+
+ION_T*& ION_FILTERED_ITERATOR_T::operator*() {
+  return *current;
+}
+
+ION_T* ION_FILTERED_ITERATOR_T::operator->() {
+  return *current;
+}
+
+/*
+ * if the current ion doesn't satisfy the constraint
+ * find the next one until we reached the end of the 
+ * list.  If we reach the end of the list, set current
+ * to the ion_series's end so that we can use end
+ * in all of the iterating loops.
+ */
+void ION_FILTERED_ITERATOR_T::satisfyConstraint() {
+  if (current == ion_series -> end()) return;
+  while (current != end_iter && !constraint -> is_satisfied(*current)) {
+    ++current;    
   }
-  
-  next_ion = ion_iterator->ion;
-  
-  // re-initialize iterator
-  setup_ion_filtered_iterator(ion_iterator);
 
-  return next_ion;
+  if (current == end_iter)
+    current = ion_series -> end();
 }
+
 
 /*
  * Local Variables:

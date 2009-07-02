@@ -7,6 +7,8 @@
  *
  * REVISION: $ $ 
  ****************************************************************************/
+
+#include "ion_series.h"
 #include <math.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -19,7 +21,7 @@
 #include "objects.h"
 #include "parameter.h"
 #include "ion.h"
-#include "ion_series.h"
+
 
 #define NUM_PREDICT_OPTIONS 9
 #define NUM_PREDICT_ARGUMENTS 2
@@ -47,8 +49,8 @@ int main(int argc, char** argv){
   };
 
   /* for debugging of parameter processing */
-  //set_verbosity_level( CARP_DETAILED_DEBUG );
-  set_verbosity_level( CARP_ERROR );
+  set_verbosity_level( CARP_DETAILED_DEBUG );
+  //set_verbosity_level( CARP_ERROR );
 
   /* Set default values for parameters in parameter.c */
   initialize_parameters();
@@ -121,7 +123,8 @@ int main(int argc, char** argv){
           "max-ion-charge option must be 1,2,3 or peptide. '%s' is not legal",
           max_charge);
    }
-   
+
+
    // create ion_constraint
    MASS_TYPE_T frag_masses = get_mass_type_parameter("fragment-mass");
    ION_CONSTRAINT_T* ion_constraint = 
@@ -141,13 +144,19 @@ int main(int argc, char** argv){
                                       neutral_loss_count[FLANK]);
    }
 
+
    // create ion_series
    ION_SERIES_T* ion_series = new ION_SERIES_T(peptide_sequence, 
                                                charge_state, ion_constraint);
    
+     
+   
    // now predict ions
    ion_series -> predict_ions();
    
+     
+   
+
    // print settings
    printf("# PEPTIDE: %s\n",peptide_sequence);
    printf("# CHARGE: %d\n", charge_state);

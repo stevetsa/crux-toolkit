@@ -8,12 +8,12 @@
  separate protgrams--create-index, search-for-matches, analyze-matches.
  REVISION: $Revision: 1.2 $
 */
-
+#include "search.h"
 #include "carp.h"
 #include "utils.h"
 #include "crux-utils.h"
 #include "create_index.h"
-#include "search.h"
+
 #include "q-value.h"
 #include "percolator.h"
 

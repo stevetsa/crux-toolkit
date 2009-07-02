@@ -10,13 +10,13 @@
  *****************************************************************************/
 #ifndef SCORER_H 
 #define SCORER_H
-
+#include "ion_series.h"
 #include <stdio.h>
 #include <dirent.h>
 #include "objects.h"
 #include "peptide.h"
 #include "ion.h"
-#include "ion_series.h"
+
 #include "scorer.h"
 
 #ifdef __cplusplus

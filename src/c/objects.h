@@ -256,7 +256,7 @@ typedef struct sorted_peptide_iterator SORTED_PEPTIDE_ITERATOR_T;
  * \brief An object to represent a (fragment) ion of a peptide
  */
 #ifdef __cplusplus
-//class ION_T;
+class ION_T;
 #else
 typedef struct ion ION_T;
 #endif
@@ -343,13 +343,17 @@ typedef struct protein_index_iterator PROTEIN_INDEX_ITERATOR_T;
  * \typedef ION_ITERATOR_T
  * \brief An object to iterate over all ion objects in the ion_series
  */
+#ifndef __cplusplus
 typedef struct ion_iterator ION_ITERATOR_T;
+#endif
 
 /**
  * \typedef ION_FILTERED_ITERATOR_T
  * \brief An object to iterate over ion objects that meet constraint in the ion_series
  */
+#ifndef __cplusplus
 typedef struct ion_filtered_iterator ION_FILTERED_ITERATOR_T;
+#endif
 
 /**
  *\typedef LOSS_LIMIT_T

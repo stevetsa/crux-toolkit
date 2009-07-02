@@ -54,10 +54,10 @@ search_for_matches_noops = good_results/empty_file = rm -rf crux-output;crux sea
 analyze_matches_no_ops_test_search = good_results/standard_analyze_default =  crux percolator --parameter-file params/set_rand_seed test.fasta ; cat crux-output/percolator.target.sqt = 'Time'
 
 # Search and estimate p-values
-search_pvalues = good_results/pvalues.sqt = crux search-for-matches --parameter-file params/pval demo.ms2 small-yeast.fasta; cat crux-output/search.target.sqt = 'Time'
+search_pvalues = good_results/pvalues.sqt = rm -rf crux-output; crux search-for-matches --parameter-file params/pval demo.ms2 small-yeast.fasta; cat crux-output/search.target.sqt = 'Time'
 
 # Get q-values from above search
-compute-q-values = good_results/qvalues.sqt = crux compute-q-values --parameter-file params/pval small-yeast.fasta ; cat crux-output/qvalues.target.sqt = 'Time'
+compute-q-values = good_results/qvalues.txt = crux compute-q-values --parameter-file params/pval small-yeast.fasta ; cat crux-output/qvalues.target.txt 
 
 # Search for matches with modifications
 search_mods_fasta = good_results/standard_search_mods = rm -rf crux-output; crux search-for-matches --parameter-file params/mods test.ms2 test.fasta; cat crux-output/search.target.sqt = 'Time' 'Database'
@@ -95,7 +95,7 @@ generate_peptides_use_existing_index = good_results/standard_generate_peptides_u
 search_for_matches_default_existing_index = good_results/standard_search_default_existing_index.target.sqt = rm -rf crux-output; crux search-for-matches --parameter-file params/set_rand_seed test.ms2 existing_crux_index; cat crux-output/search.target.sqt = 'Time' 'Database'
 
 # See that match_analysis works with an existing index and existing results
- analyze_matches_existing_index_and_results = good_results/standard_existing-perc.sqt =  rm -f existing_search/percolator*; crux percolator --output-dir existing_search existing_crux_index; cat existing_search/percolator.target.sqt = 'StartTime' 'Database'
+analyze_matches_existing_index_and_results = good_results/standard_existing-perc.sqt =  rm -f existing_search/percolator*; crux percolator --output-dir existing_search existing_crux_index; cat existing_search/percolator.target.sqt = 'StartTime' 'Database'
 
 # See that match_analysis works with an existing index and new results
 analyze_matches_existing_index = good_results/standard_existing-index-new-results-perc.sqt =  crux percolator --parameter-file params/set_rand_seed existing_crux_index; cat crux-output/percolator.target.sqt = 'StartTime'
@@ -127,11 +127,7 @@ search_mods_index = good_results/standard_search_mods = crux search-for-matches 
 analyze_mods_index = good_results/standard_analyze_mods = crux percolator --overwrite T --parameter-file params/mods test_crux_index; cat crux-output/percolator.target.sqt = 'Time' 'Database'
 
 # Test the q-values generated from decoys
-decoy_qval = good_results/decoy-qval.txt = crux search-for-matches --parameter-file params/decoy-qval-pval demo.ms2 small-yeast.fasta; cat decoy-qval-pval/search.target.txt decoy-qval-pval/search.decoy.txt 
-
-# Test q-values with tdc from decoys
-decoy_qval_tdc = good_results/decoy-qval-tdc.txt = crux search-for-matches --parameter-file params/decoy-qval-tdc demo.ms2 small-yeast.fasta; cat decoy-qval-tdc/search.target.txt
-
+decoy_qval = good_results/decoy-qval.txt = rm -rf decoy-qval-pval; crux search-for-matches --parameter-file params/decoy-qval-pval demo.ms2 small-yeast.fasta; crux compute-q-values --parameter-file params/decoy-qval-pval small-yeast.fasta; cat decoy-qval-pval/qvalues.target.txt
 
 # Do mod search with spec that match sequest results exactly
 sequest_matching_search = good_results/seq_test.sqt = crux search-for-matches --parameter-file params/mods-sequest select-spectra.ms2 index-for-sequest-comparison; cat crux-output/search.target.sqt = 'Time' 

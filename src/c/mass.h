@@ -10,10 +10,6 @@
 #ifndef _MASS_H
 #define _MASS_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /**
  * Mass of ammonia
  */
@@ -44,6 +40,10 @@ extern "C" {
  */
 #define MASS_CO_MONO 27.9949 ///< Mass of  (monoisotopic)
 #define MASS_CO_AVERAGE 28.0101 ///< Mass of  (average)
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * \returns The mass of the given amino acid.

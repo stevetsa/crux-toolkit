@@ -14,7 +14,7 @@ else
   USEDARWIN = 
 endif
 
-AM_CFLAGS = -Wall -W  -fno-strict-aliasing $(USEDOUBLES) $(USEDARWIN) \
+AM_CFLAGS = -Wall -W -Werror  -fno-strict-aliasing $(USEDOUBLES) $(USEDARWIN) \
             -D_LARGEFILE_SOURCE=1 -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE
 
 noinst_LTLIBRARIES = libcrux.la
@@ -162,6 +162,10 @@ EXTRA_DIST = default.params ../../bin/spectacle.pl
 
 doc:	*.h *.c
 	doxygen Doxyfile
+
+ignore-files:
+	svn update .svnignore
+	svn propset svn:ignore -F .svnignore .
 
 dist-hook:
 	grep '#define VERSION' ../../config.h > version.h

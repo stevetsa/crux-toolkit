@@ -9,6 +9,8 @@
 #ifndef SEARCH_H
 #define SEARCH_H
 
+#include "scorer.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -26,7 +28,7 @@ extern "C" {
 #include "spectrum_collection.h"
 #include "generate_peptides_iterator.h"
 #include "crux-utils.h"
-#include "scorer.h"
+
 #include "objects.h"
 #include "match.h"
 #include "match_collection.h"

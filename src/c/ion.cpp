@@ -1,5 +1,5 @@
 /*************************************************************************//**
- * \file ion.c
+ * \file ion.cpp
  * $Revision: 1.31 $
  * \brief: Object for representing a single ion.
  ****************************************************************************/
@@ -115,6 +115,7 @@ ION_T::ION_T( ION_TYPE_T type,   ///< intensity for the new ion -in
   init(type, cleavage_idx, charge, peptide);
   //calculate and set ion mass/z
   
+  // calculate and set ion mass/z
   if (!calc_ion_mass_z(mass_type, FALSE)) {
     carp(CARP_ERROR, "failed to calculate ion mass/z");
   }
@@ -436,10 +437,12 @@ void ION_T::print_ion_gmtk_single_binary(
  * For using neutral losses with GMTK.
  * Come in both binary and ascii versions.
  */
-void ION_T::print_null_ion_gmtk_single_binary(FILE* file,
-					      int sentence_idx,
-					      int frame_idx
-					      ){
+void ION_T::print_null_ion_gmtk_single_binary(
+  FILE* file,
+  int sentence_idx,
+  int frame_idx
+  ){
+
   FLOAT_T float_array[3] = {0.0, 0.0, 0.0};
   int int_array[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
   fwrite(&sentence_idx, sizeof(int), 1, file);
@@ -453,10 +456,10 @@ void ION_T::print_null_ion_gmtk_single_binary(FILE* file,
  * For using neutral losses with GMTK.
  */
 void ION_T::print_null_ion_gmtk_paired_binary(
-					      FILE* file,
-					      int sentence_idx,
-					      int frame_idx
-					      ){
+  FILE* file,
+  int sentence_idx,
+  int frame_idx
+  ){
 
   // FIX get rid of magic numbers
   FLOAT_T float_array[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};

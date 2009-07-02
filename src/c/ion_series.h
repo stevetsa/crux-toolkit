@@ -9,12 +9,14 @@
 #define ION_SERIES_H
 
 #ifdef __cplusplus
-
+#include <vector>
 #include <stdio.h>
 #include "objects.h"
 #include "peptide.h"
 #include "ion.h"
 #include "ion_series.h"
+
+
 
 #define BINARY_GMTK 1
 #define PRINT_NULL_IONS 1
@@ -28,12 +30,25 @@
  * loss_limit can be equal to NULL, thus if need to use should always
  * check that it is not NULL.
  */
+
+typedef std::vector<ION_T*>::iterator ION_ITERATOR_T;
+
+
+
+
+
 class ION_SERIES_T {
   /********************************************************
    *PRIVATE
    ********************************************************/
  private:
   // TODO change name to unmodified_char_seq
+
+  std::vector<ION_T*> ions;//< The ions in this series
+  //< the number of ions of a specific ion_type
+  std::vector<ION_T*> specific_ions[MAX_NUM_ION_TYPE]; 
+  
+
   char* peptide; //< The peptide sequence for this ion series
   MODIFIED_AA_T* modified_aa_seq; //< sequence of the peptide
   FLOAT_T peptide_mass; //< The peptide neutral mass. For efficiency. 
@@ -136,12 +151,12 @@ class ION_SERIES_T {
    *PUBLIC
    ********************************************************/
  public:
-  //TODO PROTECT THESE (out of public)
-    ION_T* ions[MAX_IONS]; //< The ions in this series
-    int num_ions; //< the number of ions in this series
-    int num_specific_ions[MAX_NUM_ION_TYPE]; 
-    //< the number of ions of a specific ion_type
-    ION_T* specific_ions[MAX_NUM_ION_TYPE][MAX_IONS]; 
+
+  int numIons();
+  int numSpecificIons(ION_TYPE_T ion_type);
+  
+  ION_ITERATOR_T begin();
+  ION_ITERATOR_T end();
 
   void init();
   /**
@@ -308,10 +323,43 @@ class ION_SERIES_T {
     ION_TYPE_T ion_type ///< the type of ions -in
     );
 
-  
+
+  /*FilteredIterator for ion series*/
+  class FilteredIterator :
+  public std::iterator<std::forward_iterator_tag, ION_T*> {
+  protected:
+    ION_SERIES_T* ion_series;
+    ION_CONSTRAINT_T* constraint;
+    void satisfyConstraint();
+  public:
+    ION_ITERATOR_T current;
+    ION_ITERATOR_T end_iter;
+    FilteredIterator();
+    FilteredIterator(ION_SERIES_T* ion_series, ION_CONSTRAINT_T* constraint);
+    ~FilteredIterator();
+    
+    FilteredIterator& operator=(const FilteredIterator& other);
+    bool operator==(const FilteredIterator& other);
+    bool operator!=(const FilteredIterator& other);
+    bool operator!=(const ION_ITERATOR_T& other);
+    FilteredIterator& operator++();
+    FilteredIterator& operator++(int);
+    
+    //return a reference to the current ion pointer.
+    ION_T*& operator*();
+    ION_T* operator->();
+    
+
+    
+    
+  };
+
+
+  FilteredIterator begin(ION_CONSTRAINT_T* constraint);
 
 };
 
+typedef ION_SERIES_T::FilteredIterator ION_FILTERED_ITERATOR_T;
 
 
 
@@ -447,7 +495,7 @@ class ION_CONSTRAINT_T{
    * Determines if a ion satisfies a ion_constraint.
    * \returns TRUE if the constraint is satisified. FALSE if not.
    */
-  BOOLEAN_T ion_constraint_is_satisfied(
+  BOOLEAN_T is_satisfied(
    ION_T* ion ///< query ion -in
    );
 
@@ -512,81 +560,9 @@ class ION_CONSTRAINT_T{
 
 };
 
+
 #endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-/**************************
- *  ION_ITERATOR_T object
- **************************/
-
-/**
- * Instantiates a new ion_iterator object from ion_series.
- * \returns a ION_ITERATOR_T object.
- */
-ION_ITERATOR_T* new_ion_iterator(
-  ION_SERIES_T* ion_series ///< ion_series to iterate -in
-  );        
-
-/**
- * does not free ion
- * Frees an allocated ion_iterator object.
- */
-void free_ion_iterator(
-  ION_ITERATOR_T* ion_iterator///< free ion_iterator -in
-);
-
-/**
- * The basic iterator function has_next.
- */
-BOOLEAN_T ion_iterator_has_next(
-  ION_ITERATOR_T* ion_iterator///< is there a next ion? -in
-);
-
-/**
- * The basic iterator function next.
- */
-ION_T* ion_iterator_next(
-  ION_ITERATOR_T* ion_iterator///< return the next ion -in
-);
-
-/**********************************
- * ION_FILTERED_ITERATOR_T object
- **********************************/
-
-/**
- * Only copies in the constraint as pointer
- * Instantiates a new ion_filtered_iterator object from ion_series.
- * \returns a ION_FILTERED_ITERATOR_T object.
- */
-ION_FILTERED_ITERATOR_T* new_ion_filtered_iterator(
-  ION_SERIES_T* ion_series, ///< ion_series to iterate -in
-  ION_CONSTRAINT_T* constraint  ///< ion_constraint which returned ions satisfy
-  );        
-
-/**
- * The constraint is NOT freed from the iterator.
- * Frees an allocated ion_filtered_iterator object.
- */
-void free_ion_filtered_iterator(
-  ION_FILTERED_ITERATOR_T* ion_iterator///< free ion_iterator -in
-);
-
-/**
- * The basic iterator function has_next.
- */
-BOOLEAN_T ion_filtered_iterator_has_next(
-  ION_FILTERED_ITERATOR_T* ion_iterator///< is there a next ion? -in
-);
-
-/**
- * The basic iterator function next.
- */
-ION_T* ion_filtered_iterator_next(
-  ION_FILTERED_ITERATOR_T* ion_iterator///< return the next ion -in
-);
 
 /*
  * Local Variables:
@@ -595,9 +571,6 @@ ION_T* ion_filtered_iterator_next(
  * End:
  */
 
-#ifdef __cplusplus
-}
-#endif
 
 
 #endif

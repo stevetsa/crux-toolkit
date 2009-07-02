@@ -629,20 +629,26 @@ void print_match_tab(
   FLOAT_T spectrum_mass,       ///< spectrum neutral mass -in
   int num_matches,            ///< num matches in spectrum -in
   int charge,                 ///< charge -in
-  SCORER_TYPE_T main_score   ///< the main score to report -in
+  const BOOLEAN_T* scores_computed ///< scores_computed[TYPE] = T if match was scored for TYPE
   ){
 
-  if( match == NULL || file == NULL ){
+  if( file == NULL ){ // usually b/c no decoy file to print to
+    return;
+  }
+
+  if( match == NULL  ){
     carp(CARP_ERROR, 
-         "Cannot print match to tab delimited file from null inputs");
+         "Cannot print NULL match to tab delimited file.");
     return;
   }
 
   PEPTIDE_T* peptide = get_match_peptide(match);
   double peptide_mass = get_peptide_peptide_mass(peptide);
   // this should get the sequence from the match, not the peptide
-  char* sequence = get_match_sequence_sqt(match);
-  int seq_length = strlen(sequence);
+  char* sequence = get_match_mod_sequence_str(match);
+  if( sequence == NULL ){
+    sequence = my_copy_string("");  // for post-search, no shuffled sequences
+  }
   BOOLEAN_T adjust_delta_cn = FALSE;
 
   // NOTE (BF 12-Feb-08) Here is another ugly fix for post-analysis.
@@ -672,14 +678,13 @@ void print_match_tab(
     delta_cn = 0.0;
   }
 
-  int sp_scored = get_int_parameter("max-rank-preliminary");
+  BOOLEAN_T sp_scored = scores_computed[SP];
   double sp_score = get_match_score(match, SP);
   int  sp_rank = get_match_rank(match, SP);
   double xcorr_score = get_match_score(match, XCORR);
   int xcorr_rank = get_match_rank(match, XCORR);
   double log_pvalue = get_match_score(match, LOGP_BONF_WEIBULL_XCORR);
   double weibull_qvalue = get_match_score(match, LOGP_QVALUE_WEIBULL_XCORR);
-  BOOLEAN_T decoy_q_val_scored = get_boolean_parameter("compute-q-values");
   double decoy_x_qvalue = get_match_score(match, DECOY_XCORR_QVALUE);
   double decoy_p_qvalue = get_match_score(match, DECOY_PVALUE_QVALUE);
   double percolator_score = get_match_score(match, PERCOLATOR_SCORE);
@@ -703,7 +708,7 @@ void print_match_tab(
   fprintf(file, float_format, spectrum_mass);
   fprintf(file, float_format, peptide_mass);
   fprintf(file, float_format, delta_cn);
-  if (sp_scored == 0 ){
+  if (sp_scored == FALSE){
     fprintf(file, "\t\t"); //score and rank
   }else{
     fprintf(file, float_format, sp_score);
@@ -711,7 +716,7 @@ void print_match_tab(
   }
   fprintf(file, float_format, xcorr_score);
   fprintf(file, "%d\t", xcorr_rank);
-  if (LOGP_BONF_WEIBULL_XCORR == main_score) {
+  if( scores_computed[LOGP_BONF_WEIBULL_XCORR] == TRUE ){ 
     // print p-value
     if (P_VALUE_NA == log_pvalue) {
       fprintf(file, "NaN\t");
@@ -724,21 +729,20 @@ void print_match_tab(
     // no p-value
     fprintf(file, "\t");
   }
-  if (LOGP_QVALUE_WEIBULL_XCORR == main_score) {
+  if( scores_computed[LOGP_QVALUE_WEIBULL_XCORR] == TRUE ){ 
     // print q-value (Weibull est.)
     fprintf(file, float_format, weibull_qvalue);
   }
   else {
     fprintf(file, "\t");
   }
-  if( decoy_q_val_scored  && match->null_peptide == FALSE ){
+  if( scores_computed[DECOY_XCORR_QVALUE]  && match->null_peptide == FALSE ){
     fprintf(file, float_format, decoy_x_qvalue);
   }
   else {
     fprintf(file, "\t");
   }
-  if( decoy_q_val_scored && match->null_peptide == FALSE
-      && LOGP_BONF_WEIBULL_XCORR == main_score ){ 
+  if( scores_computed[DECOY_PVALUE_QVALUE] && match->null_peptide == FALSE){
     if (P_VALUE_NA == decoy_p_qvalue) {
       fprintf(file, "NaN\t");
     }else{
@@ -747,7 +751,7 @@ void print_match_tab(
   }else {
     fprintf(file, "\t");
   }
-  if (PERCOLATOR_SCORE == main_score)  {
+  if (scores_computed[PERCOLATOR_SCORE] == TRUE)  {
     // print percolator score
     fprintf(file, float_format, percolator_score);
     // print percolator rank
@@ -756,7 +760,7 @@ void print_match_tab(
     fprintf(file, float_format, percolator_qvalue);
   }
   else {
-    // no percolator score, score, or p-value
+    // no percolator score, rank, or p-value
     fprintf(file, "\t\t\t");
   }
   // Output of q-ranker score and q-value will be handled here where available.
@@ -769,7 +773,7 @@ void print_match_tab(
   }
   fprintf(file, "%d\t", b_y_total);
   fprintf(file, "%d\t", num_matches); // Matches per spectrum
-  fprintf(file, "%.*s\t", seq_length - 4, sequence+2);
+  fprintf(file, "%s\t", sequence);
   fprintf(file, "%s-%s\t", enz_str, dig_str);
   fprintf(file, "%s\t%s", protein_ids, flanking_aas);
 
@@ -1099,7 +1103,7 @@ char* get_match_sequence(
   // if post_process_match and has a null peptide you can't get sequence
   if(match->post_process_match && match->null_peptide){
     carp(CARP_ERROR, 
-        "Cannot retrieve null peptide sequence for post_process_match");
+         "Cannot retrieve null peptide sequence for post_process_match");
     return NULL;
   }
   
@@ -1156,6 +1160,9 @@ char* get_match_sequence_sqt(
   }
   // get_match_mod_sequence (use method in case match->mod_seq == NULL) 
   MODIFIED_AA_T* mod_seq = get_match_mod_sequence(match);
+  if( mod_seq == NULL ){
+    return NULL;
+  }
   int length = get_peptide_length(get_match_peptide(match));
 
   // turn it into string
@@ -1202,8 +1209,6 @@ MODIFIED_AA_T* get_match_mod_sequence(
   }
   // if post_process_match and has a null peptide you can't get sequence
   if(match->post_process_match && match->null_peptide){
-    carp(CARP_ERROR,
-        "Cannot retrieve null peptide sequence for post_process_match");
     return NULL;
   }
 
@@ -1253,8 +1258,6 @@ char* get_match_mod_sequence_str( MATCH_T* match ){
 
   // if post_process_match and has a null peptide you can't get sequence
   if(match->post_process_match && match->null_peptide){
-    carp(CARP_ERROR,
-        "Cannot retrieve null peptide sequence for post_process_match");
     return NULL;
   }
 
