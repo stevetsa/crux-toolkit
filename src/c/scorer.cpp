@@ -668,6 +668,7 @@ int calculate_ion_type_sp(
   for (ion_iterator = ion_series -> begin(ion_constraint);
        ion_iterator != ion_series -> end();
        ++ion_iterator) {
+    carp(CARP_ERROR,"sp calculating ion");
     ion = *ion_iterator;
     intensity_array_idx = (int)(ion -> get_ion_mass_z()/bin_width_mono + 0.5);
     // get the intensity matching to ion's m/z

@@ -180,7 +180,7 @@ void *mycalloc
    size_t size)
 {
   void * temp_ptr;
-
+  //carp(CARP_ERROR,"mycalloc:start");
   /* Make sure we allocate something. */
   if (size == 0) {
     size = 1;
@@ -188,13 +188,13 @@ void *mycalloc
   if (nelem == 0) {
     nelem = 1;
   }
-
+  //carp(CARP_ERROR,"calling calloc");
   temp_ptr = calloc(nelem, size);
 
   if (temp_ptr == NULL) {
     carp(CARP_FATAL, "Memory exhausted.  Cannot allocate %d bytes.", (int)size);
   }
-
+  //carp(CARP_ERROR,"returning temp_ptr");
   return(temp_ptr);
 }
 

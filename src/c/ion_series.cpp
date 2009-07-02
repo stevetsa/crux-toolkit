@@ -47,7 +47,6 @@ void ION_SERIES_T::init() {
   peptide = NULL;
   modified_aa_seq = NULL;
   constraint = NULL;
-  
   loss_limit = NULL;
   
 
@@ -132,6 +131,7 @@ ION_SERIES_T::~ION_SERIES_T() {
   if(modified_aa_seq){
     free(modified_aa_seq);
   }
+
   carp(CARP_ERROR,"free loss_limit");
   if(loss_limit){
     free(loss_limit);
@@ -324,7 +324,6 @@ void ION_SERIES_T::print_ion_series_paired_gmtk(
  */
 void ION_SERIES_T::scan_for_aa_for_neutral_loss()
 {
-  int peptide_length = peptide_length;
   char* sequence = peptide;
 
   int h2o_aa = 0;
@@ -352,13 +351,13 @@ void ION_SERIES_T::scan_for_aa_for_neutral_loss()
             sequence[cleavage_idx] == 'N' )
       {
 	carp(CARP_ERROR,"count2");
-        loss_limit_count = &this->loss_limit[cleavage_idx];
+        loss_limit_count = &loss_limit[cleavage_idx];
         loss_limit_count->nh3 = ++nh3_aa;
         loss_limit_count->h2o = h2o_aa;
       }
     else{
       carp(CARP_ERROR,"count3");
-      loss_limit_count = &this->loss_limit[cleavage_idx];
+      loss_limit_count = &loss_limit[cleavage_idx];
       loss_limit_count->h2o = h2o_aa;
       loss_limit_count->nh3 = nh3_aa;
     }
@@ -496,7 +495,6 @@ BOOLEAN_T ION_SERIES_T::generate_ions_no_modification(
     return FALSE;
   }
   int cleavage_idx = 1;
-  ION_CONSTRAINT_T* constraint = this->constraint;
   FLOAT_T mass = 0;
 
   // get peptide length
@@ -1148,6 +1146,11 @@ void ION_CONSTRAINT_T::init(){
   for(; modification_idx < MAX_MODIFICATIONS; ++modification_idx){
     modifications[modification_idx] = 0;
   }
+  pointer_count = 1;
+  min_charge = 0;
+  use_neutral_losses = FALSE;
+  exact_modifications = FALSE;
+  
 }
 
 void ION_CONSTRAINT_T::init(
@@ -1157,17 +1160,12 @@ void ION_CONSTRAINT_T::init(
   BOOLEAN_T precursor_ion  ///< should include precursor ion?
   ) 
 {
+  //set all fields of constraint
   init();
-  this -> use_neutral_losses = FALSE;
-  
-  // set all fields of constraint
   this -> mass_type = mass_type;
   this -> max_charge = max_charge;
-  this -> min_charge = 0;
-  this -> exact_modifications = FALSE;
   this -> ion_type = ion_type;
   this -> precursor_ion = precursor_ion;
-  this -> pointer_count = 1;
 }
 
 ION_CONSTRAINT_T::ION_CONSTRAINT_T() {
@@ -1347,6 +1345,7 @@ void ION_CONSTRAINT_T::init_ion_constraint_sequest_xcorr(
  * Frees an allocated ion_constraint object.
  */
 ION_CONSTRAINT_T::~ION_CONSTRAINT_T() {
+
 }
 
 /**
@@ -1354,10 +1353,13 @@ ION_CONSTRAINT_T::~ION_CONSTRAINT_T() {
  */
 void ION_CONSTRAINT_T::free(ION_CONSTRAINT_T* ion_constraint) 
 {
+  carp(CARP_ERROR,"Inside ion_constraint free");
   ion_constraint -> pointer_count--;
   if (ion_constraint -> pointer_count == 0){
+    carp(CARP_ERROR,"really deleting ion_constraint");
     delete ion_constraint;
   }
+  carp(CARP_ERROR,"Done ion_constraint free");
 }
 
 
@@ -1622,15 +1624,16 @@ ION_FILTERED_ITERATOR_T ION_SERIES_T::begin(ION_CONSTRAINT_T* constraint) {
   return FilteredIterator(this, constraint);
 }
 
-
-
 ION_FILTERED_ITERATOR_T::FilteredIterator() {
+  ion_series = NULL;
+  constraint = NULL;
 }
 
 ION_FILTERED_ITERATOR_T::FilteredIterator(ION_SERIES_T* ion_series, ION_CONSTRAINT_T* constraint) {
   this -> ion_series = ion_series;
   this -> constraint = constraint;
 
+  
   
   if(constraint-> get_ion_type() == ALL_ION ||
      constraint-> get_ion_type() == BY_ION ||
@@ -1642,9 +1645,7 @@ ION_FILTERED_ITERATOR_T::FilteredIterator(ION_SERIES_T* ion_series, ION_CONSTRAI
     current = ion_series -> specific_ions[constraint->get_ion_type()].begin();
     end_iter = ion_series -> specific_ions[constraint->get_ion_type()].end();
   }
-
   satisfyConstraint();
-
 }
 
 
@@ -1652,9 +1653,11 @@ ION_FILTERED_ITERATOR_T::~FilteredIterator() {
   ;
 }
 
-ION_FILTERED_ITERATOR_T& ION_FILTERED_ITERATOR_T::operator=(const FilteredIterator& other) {
+ION_FILTERED_ITERATOR_T& ION_FILTERED_ITERATOR_T::operator=(const ION_FILTERED_ITERATOR_T& other) {
   constraint = other.constraint;
   current = other.current;
+  ion_series = other.ion_series;
+  end_iter = other.end_iter;
 }
   
 bool ION_FILTERED_ITERATOR_T::operator==(const ION_FILTERED_ITERATOR_T& other) {
@@ -1670,13 +1673,20 @@ bool ION_FILTERED_ITERATOR_T::operator!=(const ION_ITERATOR_T& other) {
 }
 
 ION_FILTERED_ITERATOR_T& ION_FILTERED_ITERATOR_T::operator++() {
-  ++current;
-  satisfyConstraint();
+  if (current != 
+      ion_series -> end()) { 
+      ++current;
+      satisfyConstraint();
+    }
+  return(*this);
 }
 
 ION_FILTERED_ITERATOR_T& ION_FILTERED_ITERATOR_T::operator++(int c) {
-  ++current;
-  satisfyConstraint();
+  if (current != ion_series -> end()) {
+    ++current;
+    satisfyConstraint();
+  }
+  return(*this);
 }
 
 ION_T*& ION_FILTERED_ITERATOR_T::operator*() {
@@ -1695,13 +1705,17 @@ ION_T* ION_FILTERED_ITERATOR_T::operator->() {
  * in all of the iterating loops.
  */
 void ION_FILTERED_ITERATOR_T::satisfyConstraint() {
-  if (current == ion_series -> end()) return;
+  if (current == ion_series -> end()) 
+    return;
+
   while (current != end_iter && !constraint -> is_satisfied(*current)) {
+    carp(CARP_ERROR,"incrementing current");
     ++current;    
   }
 
-  if (current == end_iter)
+  if (current == end_iter || current == ion_series -> end()) {
     current = ion_series -> end();
+  }
 }
 
 
