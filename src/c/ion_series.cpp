@@ -48,8 +48,6 @@ void ION_SERIES_T::init() {
   modified_aa_seq = NULL;
   constraint = NULL;
   loss_limit = NULL;
-  
-
 }
 
 /**
@@ -78,15 +76,15 @@ ION_SERIES_T::ION_SERIES_T(
   ION_CONSTRAINT_T* constraint ///< constraints which these ions obey.
   )
 {
-  carp(CARP_ERROR,"calling init");
+  //carp(CARP_ERROR,"calling init");
   init();
   
-  carp(CARP_ERROR,"copy string");
+  //carp(CARP_ERROR,"copy string");
   // copy the peptide sequence
   this -> peptide = my_copy_string(peptide);
-  carp(CARP_ERROR,"convert_to_mod_aa_seq");
+  //carp(CARP_ERROR,"convert_to_mod_aa_seq");
   this -> modified_aa_seq = convert_to_mod_aa_seq(peptide);
-  carp(CARP_ERROR,"calc_sequence_mass");
+  //carp(CARP_ERROR,"calc_sequence_mass");
   this -> peptide_mass = calc_sequence_mass(peptide, MONO);
   this -> charge = charge;
   this -> constraint = constraint;
@@ -108,43 +106,43 @@ ION_SERIES_T::ION_SERIES_T(
   int charge ///< The charge for this ion series -in
   )
 {
-  carp(CARP_ERROR,"init");
+  //carp(CARP_ERROR,"init");
   init();
-  carp(CARP_ERROR,"constraint");
+  //carp(CARP_ERROR,"constraint");
   this -> constraint = constraint;
-  carp(CARP_ERROR,"charge");
+  //carp(CARP_ERROR,"charge");
   this -> charge = charge;
   // use max peptide len so loss_limit array can be used for any peptide
-  carp(CARP_ERROR,"loss_limit");
+  //carp(CARP_ERROR,"loss_limit");
   this -> loss_limit = 
     (LOSS_LIMIT_T*)mycalloc(get_int_parameter("max-length"), 
                             sizeof(LOSS_LIMIT_T));
 }
 
 ION_SERIES_T::~ION_SERIES_T() {
-  carp(CARP_ERROR,"ION series destructor");
-  carp(CARP_ERROR,"free(peptide)");
+  //carp(CARP_ERROR,"ION series destructor");
+  //carp(CARP_ERROR,"free(peptide)");
   if(peptide){
     free(peptide);
   }
-  carp(CARP_ERROR,"free modifified_aa_seq");
+  //carp(CARP_ERROR,"free modifified_aa_seq");
   if(modified_aa_seq){
     free(modified_aa_seq);
   }
 
-  carp(CARP_ERROR,"free loss_limit");
+  //carp(CARP_ERROR,"free loss_limit");
   if(loss_limit){
     free(loss_limit);
   }
   // free constraint?
 
   // iterate over all ions, and free them
-  carp(CARP_ERROR,"free ions");
+  //carp(CARP_ERROR,"free ions");
   for (int i=0;i<ions.size();i++)
     delete ions[i];
   ions.clear();
 
-  carp(CARP_ERROR,"done ionseries destructor");
+  //carp(CARP_ERROR,"done ionseries destructor");
 }
 
 
@@ -164,17 +162,17 @@ void ION_SERIES_T::update_ion_series(
 
   // Initialize the ion_series object for the new peptide sequence
   
-  carp(CARP_ERROR,"free peptide");
+  //carp(CARP_ERROR,"free peptide");
   // free old peptide sequence
   if(this->peptide){
     free(this->peptide);
   }
-  carp(CARP_ERROR,"free modified_aa_seq");
+  //carp(CARP_ERROR,"free modified_aa_seq");
   if(this->modified_aa_seq){
     free(this->modified_aa_seq);
   }
   
-  carp(CARP_ERROR,"free ions");
+  //carp(CARP_ERROR,"free ions");
   // iterate over all ions, and free them
 
   for (int i=0;i<ions.size();i++)
@@ -339,7 +337,7 @@ void ION_SERIES_T::scan_for_aa_for_neutral_loss()
        sequence[cleavage_idx] == 'E' ||
        sequence[cleavage_idx] == 'D' )
       {
-	carp(CARP_ERROR,"count");
+	//carp(CARP_ERROR,"count");
         loss_limit_count = &this->loss_limit[cleavage_idx];
         loss_limit_count->h2o = ++h2o_aa;
         loss_limit_count->nh3 = nh3_aa;
@@ -350,13 +348,13 @@ void ION_SERIES_T::scan_for_aa_for_neutral_loss()
             sequence[cleavage_idx] == 'Q' ||
             sequence[cleavage_idx] == 'N' )
       {
-	carp(CARP_ERROR,"count2");
+	//carp(CARP_ERROR,"count2");
         loss_limit_count = &loss_limit[cleavage_idx];
         loss_limit_count->nh3 = ++nh3_aa;
         loss_limit_count->h2o = h2o_aa;
       }
     else{
-      carp(CARP_ERROR,"count3");
+      //carp(CARP_ERROR,"count3");
       loss_limit_count = &loss_limit[cleavage_idx];
       loss_limit_count->h2o = h2o_aa;
       loss_limit_count->nh3 = nh3_aa;
@@ -451,7 +449,7 @@ BOOLEAN_T ION_SERIES_T::add_ions_by_charge(
 
   // check if there's enough space to add the new ions
   if(numIons() + constraint->get_max_charge() > MAX_IONS){
-    carp(CARP_ERROR, "exceeds ion array size in ion_series");
+    carp(CARP_FATAL, "exceeds ion array size in ion_series");
     return FALSE;
   }
   
@@ -768,7 +766,7 @@ BOOLEAN_T ION_SERIES_T::generate_ions(
 
   // check if there's enough space to add the new ions
   if(numIons()*2 > MAX_IONS){
-    carp(CARP_ERROR, "exceeds ion array size in ion_series");
+    carp(CARP_FATAL, "exceeds ion array size in ion_series");
     return FALSE;
   }
 
@@ -831,7 +829,7 @@ BOOLEAN_T ION_SERIES_T::generate_ions_flank()
 
   // check if there's enough space to add the new ions
   if(numIons()*2 > MAX_IONS){
-    carp(CARP_ERROR, "exceeds ion array size in ion_series");
+    carp(CARP_FATAL, "exceeds ion array size in ion_series");
     return FALSE;
   }
   
@@ -881,7 +879,7 @@ void ION_SERIES_T::predict_ions()
     return;
   }
 
-  carp(CARP_ERROR,"Predicting mass matrix");
+  //carp(CARP_ERROR,"Predicting mass matrix");
   // create a mass matrix
   FLOAT_T* mass_matrix = 
     create_ion_mass_matrix(modified_aa_seq, constraint -> get_mass_type(), peptide_length);  
@@ -896,10 +894,10 @@ void ION_SERIES_T::predict_ions()
   // initialize to determine modification is ok.
   // the first, last of STED, RKQN are stored in ion_series.
 
-  carp(CARP_ERROR,"Scanning for neutral losses");
+  //carp(CARP_ERROR,"Scanning for neutral losses");
   scan_for_aa_for_neutral_loss();
   
-  carp(CARP_ERROR,"generating ions no modification");
+  //carp(CARP_ERROR,"generating ions no modification");
   // generate ions without any modifications
   if(!generate_ions_no_modification(mass_matrix)){
     carp(CARP_FATAL, "failed to generate ions, no modifications");
@@ -1353,13 +1351,13 @@ ION_CONSTRAINT_T::~ION_CONSTRAINT_T() {
  */
 void ION_CONSTRAINT_T::free(ION_CONSTRAINT_T* ion_constraint) 
 {
-  carp(CARP_ERROR,"Inside ion_constraint free");
+  //carp(CARP_ERROR,"Inside ion_constraint free");
   ion_constraint -> pointer_count--;
   if (ion_constraint -> pointer_count == 0){
-    carp(CARP_ERROR,"really deleting ion_constraint");
+    //carp(CARP_ERROR,"really deleting ion_constraint");
     delete ion_constraint;
   }
-  carp(CARP_ERROR,"Done ion_constraint free");
+  //carp(CARP_ERROR,"Done ion_constraint free");
 }
 
 
@@ -1575,45 +1573,6 @@ BOOLEAN_T ION_CONSTRAINT_T::get_use_neutral_losses()
 /**********************************
  * ION_FILTERED_ITERATOR_T object
  **********************************/
-
-/**
- * sets up the iterator for next iteration.
- * 
- *\returns TRUE if successfully sets up the ion_filtered_iterator for next iteration
- */
-
-/*
-  BOOLEAN_T setup_ion_filtered_iterator(
-  ION_FILTERED_ITERATOR_T* ion_iterator///< free ion_iterator -in
-  )
-  {
-  BOOLEAN_T found = FALSE;
-  ION_T* ion = NULL;
-  
-  // iterate over ions until discovers the first ion that meets the ion constraint
-  while(ion_iterator->ion_idx < ion_iterator->array_size){
-  // get next ion
-  ion = ion_iterator->ion_array[ion_iterator->ion_idx];
-  
-  // check if the current ion satisfies the ion_constraint for the iterator
-  if(ion_iterator -> constraint -> ion_constraint_is_satisfied(ion)){
-  found = TRUE;
-  ion_iterator->ion = ion;
-  ++ion_iterator->ion_idx;
-  break;
-  }
-  ++ion_iterator->ion_idx;
-  }
-  
-  ion_iterator->has_next = found;
-  
-  return TRUE;
-  }
-*/
-
-
-
-
 /**
  * Only copies in the constraint as pointer
  * Instantiates a new ion_filtered_iterator object from ion_series.
@@ -1632,8 +1591,6 @@ ION_FILTERED_ITERATOR_T::FilteredIterator() {
 ION_FILTERED_ITERATOR_T::FilteredIterator(ION_SERIES_T* ion_series, ION_CONSTRAINT_T* constraint) {
   this -> ion_series = ion_series;
   this -> constraint = constraint;
-
-  
   
   if(constraint-> get_ion_type() == ALL_ION ||
      constraint-> get_ion_type() == BY_ION ||
@@ -1709,7 +1666,6 @@ void ION_FILTERED_ITERATOR_T::satisfyConstraint() {
     return;
 
   while (current != end_iter && !constraint -> is_satisfied(*current)) {
-    carp(CARP_ERROR,"incrementing current");
     ++current;    
   }
 
