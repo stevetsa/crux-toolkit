@@ -1,6 +1,6 @@
 #include "spit.h"
 
-#define NUM_SPIT_OPTIONS 7
+#define NUM_SPIT_OPTIONS 8
 #define NUM_SPIT_ARGUMENTS 1
 
 // crux spit (simple protein identification tool)
@@ -32,9 +32,14 @@ bool print_spit_scores (
 void get_spit_scores(
 	ProteinScore&,
 	const PeptideScore&,
-	const ProteinPeptides&,
-	map<string, int>&
+	ProteinPeptides&,
+	map<string, int>&,
+        BOOLEAN_T
 	);
+
+// post process
+void filter_proteins(ProteinScore&,
+	ProteinPeptides&);
 
 // gets top scoring psms from a txt file created by
 // crux search-for-matches
@@ -68,6 +73,7 @@ int spit_main(int argc, char** argv) {
     "overwrite",
     "parameter-file",
     "verbosity",
+    "filter",
     "version"};
 
   int num_arguments = NUM_SPIT_ARGUMENTS;
@@ -90,6 +96,7 @@ int spit_main(int argc, char** argv) {
   char* output_dir = get_string_parameter("output-dir");
   char* output_file = get_string_parameter("spit-output-file");
   BOOLEAN_T overwrite = get_boolean_parameter("overwrite");
+  BOOLEAN_T filter = get_boolean_parameter("filter");
 
   prefix_fileroot_to_name(&output_file);
   char* full_output_file = get_full_filename(output_dir, output_file); 
@@ -119,7 +126,7 @@ int spit_main(int argc, char** argv) {
   }
 
   // calculate final protein scores
-  get_spit_scores(proteinScores, peptideScore, proteinPeptides, numPeptides);
+  get_spit_scores(proteinScores, peptideScore, proteinPeptides, numPeptides, filter);
 
   // print out scores in crux output directory
   if (!print_spit_scores(proteinScores, full_output_file)) {
@@ -129,10 +136,25 @@ int spit_main(int argc, char** argv) {
   return 0;
 }
 
+void filter_proteins(ProteinScore& proteinScores, ProteinPeptides& proteinPeptides) {
+  set<string> top_peptides;
+  for (ProteinScore::iterator score_pair = proteinScores.begin(); score_pair != proteinScores.end(); ++score_pair) {
+    for (set<string>::iterator peptide = proteinPeptides[score_pair->second].begin(); 
+	                       peptide != proteinPeptides[score_pair->second].end(); ++peptide) {
+      // if a unique peptide so far
+      if (top_peptides.find(*peptide) == top_peptides.end()) {
+	top_peptides.insert(*peptide);
+      } else {
+        proteinPeptides[score_pair->second].erase(peptide);
+      }
+    }
+  } 
+}
+
 
 // takes a map of peptide scores and map from proteins to peptides and
 // stores a list of pairs of protein IDs and scores
-void get_spit_scores (ProteinScore& proteinScores, const PeptideScore& peptideScore, const ProteinPeptides& proteinPeptides, map<string, int>& numPeptides) {
+void get_spit_scores (ProteinScore& proteinScores, const PeptideScore& peptideScore, ProteinPeptides& proteinPeptides, map<string, int>& numPeptides, BOOLEAN_T filter) {
   carp(CARP_INFO, "getting scores");
   if (peptideScore.size() == 0) {
     carp(CARP_ERROR, "no psms found");
@@ -164,6 +186,11 @@ void get_spit_scores (ProteinScore& proteinScores, const PeptideScore& peptideSc
   // sort the pairs by their scores
   sort(proteinScores.begin(), proteinScores.end()); 
   reverse(proteinScores.begin(), proteinScores.end());
+  if (filter) {
+    filter_proteins(proteinScores, proteinPeptides);
+    ProteinScore new_proteinScores;
+    get_spit_scores(new_proteinScores, peptideScore, proteinPeptides, numPeptides, FALSE); 
+  }
 }
 
 // prints the tab-delimited file of protein ids and their
