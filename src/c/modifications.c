@@ -293,13 +293,9 @@ MODIFIED_AA_T* convert_to_mod_aa_seq(char* sequence){
     carp(CARP_ERROR, "Cannot convert NULL sequence to modifiable characters"); 
     return NULL;
   }
-
-  carp(CARP_ERROR, "strlen");
   int seq_len = strlen(sequence);
-  carp(CARP_ERROR, "mycalloc:%i",seq_len);
   MODIFIED_AA_T* new_string = mycalloc( seq_len+1, sizeof(MODIFIED_AA_T) );
 
-  carp(CARP_ERROR, "converting");
   unsigned int seq_idx = 0;
   //  while( sequence[seq_idx] != '\0' ){
   for(seq_idx = 0; seq_idx < strlen(sequence); seq_idx++){
@@ -308,7 +304,6 @@ MODIFIED_AA_T* convert_to_mod_aa_seq(char* sequence){
 
   // null terminate
   new_string[seq_idx] = MOD_SEQ_NULL;
-  carp(CARP_ERROR,"returning");
   return new_string;
 }
 
