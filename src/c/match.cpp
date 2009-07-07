@@ -15,12 +15,14 @@
 #include <assert.h>
 #include <ctype.h>
 #include <unistd.h>
+#include "ion_series.h"
+
 #include "carp.h"
 #include "parse_arguments.h"
 #include "spectrum.h"
 #include "spectrum_collection.h"
 #include "ion.h"
-#include "ion_series.h"
+
 #include "crux-utils.h"
 #include "objects.h"
 #include "parameter.h"
@@ -132,7 +134,7 @@ void free_match(
       free_peptide(match->peptide);
     }
     if(match->post_process_match && match->spectrum !=NULL){
-      free_spectrum(match->spectrum);
+      delete match->spectrum;
     }
     if (match->peptide_sequence != NULL){
       free(match->peptide_sequence);
@@ -158,8 +160,8 @@ int compare_match_spectrum(
 
   SPECTRUM_T* spec_a = get_match_spectrum((*match_a));
   SPECTRUM_T* spec_b = get_match_spectrum((*match_b));
-  int scan_a = get_spectrum_first_scan(spec_a);
-  int scan_b = get_spectrum_first_scan(spec_b);
+  int scan_a = spec_a -> get_first_scan();
+  int scan_b = spec_b -> get_first_scan();
   int charge_a = get_match_charge((*match_a));
   int charge_b = get_match_charge((*match_b));
 
@@ -456,7 +458,7 @@ void print_match(
 
   if(output_mode == Q_VALUE || output_mode == PERCOLATOR_SCORE){
     fprintf(file, "P\t%i\t%i\t%d\t%d\t%.9f\t%.9f\t%.9f\t", 
-            get_spectrum_first_scan(match->spectrum),
+            match -> spectrum -> get_first_scan(),
             match->charge,
             match->match_rank[primary_score], 
             match->match_rank[primary_score], 
@@ -466,7 +468,7 @@ void print_match(
   }
   else{
     fprintf(file, "P\t%i\t%i\t%d\t%d\t%.9f\t%.9f\t%.9f\t", 
-            get_spectrum_first_scan(match->spectrum),
+            match -> spectrum -> get_first_scan(),
             match->charge,
             match->match_rank[primary_score], 
             match->match_rank[secondary_score], 
@@ -552,7 +554,7 @@ void print_match_sqt(
       factor = 1;
     }
     b_y_total = (get_peptide_length(peptide)-1) * 2 * factor;
-    b_y_matched = (get_match_b_y_ion_fraction_matched(match)) * b_y_total;
+    b_y_matched = (int) ((get_match_b_y_ion_fraction_matched(match)) * b_y_total);
   }
 
   FLOAT_T delta_cn = get_match_delta_cn(match);
@@ -667,7 +669,7 @@ void print_match_tab(
       factor = 1;
     }
     b_y_total = (get_peptide_length(peptide)-1) * 2 * factor;
-    b_y_matched = (get_match_b_y_ion_fraction_matched(match)) * b_y_total;
+    b_y_matched = (int) ((get_match_b_y_ion_fraction_matched(match)) * b_y_total);
   }
 
   FLOAT_T delta_cn = get_match_delta_cn(match);
@@ -832,9 +834,10 @@ void shuffle_matches(
 void qsort_match(
   MATCH_T** match_array, ///< the match array to sort -in  
   int match_total,  ///< the total number of match objects -in
-  void* compare_method ///< the compare method to use -in
-  )
+  int (*compare_method)(const void*, const void*) ///< the compare method to use -in
+)
 {
+  
   qsort(match_array, match_total, sizeof(MATCH_T*), compare_method);
 }
 
@@ -868,7 +871,7 @@ void serialize_match(
   }
   
   // serialize spectrum in binary
-  serialize_spectrum(match->spectrum, file);
+  match -> spectrum -> serialize(file);
   
   // b/y ion matches ratio
   fwrite(&(match->b_y_ion_fraction_matched), sizeof(float), 1, file);
@@ -903,7 +906,7 @@ double* get_match_percolator_features(
   unsigned int protein_idx = 0;
   double* feature_array = (double*)mycalloc(feature_count, sizeof(double));
   FLOAT_T weight_diff = get_peptide_peptide_mass(match->peptide) -
-    get_spectrum_neutral_mass(match->spectrum, match->charge);
+    match -> spectrum -> get_neutral_mass(match->charge);
 
   // Xcorr
   feature_array[0] = get_match_score(match, XCORR);
@@ -920,7 +923,7 @@ double* get_match_percolator_features(
   // absdM
   feature_array[6] = fabsf(weight_diff);
   // Mass
-  feature_array[7] = get_spectrum_neutral_mass(match->spectrum, match->charge);
+  feature_array[7] = match -> spectrum -> get_neutral_mass(match->charge);
   // ionFrac
   feature_array[8] = match->b_y_ion_fraction_matched;
   // lnSM
@@ -1046,7 +1049,7 @@ MATCH_T* parse_match(
   }
   
   // parse spectrum
-  if((spectrum = parse_spectrum_binary(result_file))== NULL){
+  if((spectrum = SPECTRUM_T::parse_spectrum_binary(result_file))== NULL){
     carp(CARP_ERROR, "Failed to parse binary spectrum.");
   }
   

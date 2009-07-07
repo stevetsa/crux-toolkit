@@ -821,7 +821,7 @@ BOOLEAN_T populate_match_rank_match_collection(
     if( NOT_SCORED == get_match_score(cur_match, score_type) ){
       carp(CARP_WARNING, 
            "PSM spectrum %i charge %i sequence %s was NOT scored for type %i",
-           get_spectrum_first_scan(get_match_spectrum(cur_match)),
+           get_match_spectrum(cur_match) -> get_first_scan(),
            get_match_charge(cur_match),
            score_type);
     }
@@ -867,8 +867,8 @@ MATCH_COLLECTION_T* random_sample_match_collection(
 
   // ranomly select matches upto count_max
   for(; count_idx < count_max; ++count_idx){
-    match_idx = ((double)rand()/((double)RAND_MAX + (double)1)) 
-      * match_collection->match_total;
+    match_idx = (int)(((double)rand()/((double)RAND_MAX + (double)1)) 
+		      * (double)match_collection->match_total);
     
     // match_idx = rand() % match_collection->match_total;
     sample_collection->match[count_idx] = match_collection->match[match_idx];
@@ -990,7 +990,7 @@ BOOLEAN_T estimate_weibull_parameters_from_xcorrs(
   if( num_scores < MIN_WEIBULL_MATCHES ){
     carp(CARP_DETAILED_INFO, "Too few psms (%i) to estimate "
          "p-value parameters for spectrum %i, charge %i",
-         num_scores, get_spectrum_first_scan(spectrum), charge);
+         num_scores, spectrum -> get_first_scan(), charge);
     // set eta, beta, and shift to something???
     return FALSE;
   }
@@ -1731,7 +1731,7 @@ BOOLEAN_T serialize_psm_features(
     
     // serialize matches
     carp(CARP_DETAILED_DEBUG, "About to serialize match %d, z %d, null %d",
-         get_spectrum_first_scan(get_match_spectrum(match)),
+         get_match_spectrum(match) -> get_first_scan(),
          get_match_charge(match),
          get_match_null_peptide(match));
 
@@ -2014,7 +2014,7 @@ BOOLEAN_T print_match_collection_sqt(
   calculate_delta_cn(match_collection);
 
   // First, print spectrum info
-  print_spectrum_sqt(spectrum, output, num_matches, charge);
+  spectrum -> print_sqt(output, num_matches, charge);
   
   MATCH_T* match = NULL;
   
@@ -2066,9 +2066,9 @@ BOOLEAN_T print_match_collection_tab_delimited(
   hold_time = time(0);
   int charge = match_collection->charge; 
   int num_matches = match_collection->experiment_size;
-  int scan_num = get_spectrum_first_scan(spectrum);
-  FLOAT_T spectrum_neutral_mass = get_spectrum_neutral_mass(spectrum, charge);
-  FLOAT_T spectrum_precursor_mz = get_spectrum_precursor_mz(spectrum);
+  int scan_num = spectrum -> get_first_scan();
+  FLOAT_T spectrum_neutral_mass = spectrum -> get_neutral_mass(charge);
+  FLOAT_T spectrum_precursor_mz = spectrum -> get_precursor_mz();
 
   // If we calculated p-values, change which scores get printed
   // since this is really only valid for xcorr...
@@ -2423,9 +2423,9 @@ void print_matches(
   carp(CARP_DETAILED_DEBUG, 
        "About to serialize psm features for collection starting with "
        "match scan %d, z %d, null %d",
-  get_spectrum_first_scan(get_match_spectrum(match_collection->match[0])),
-                          get_match_charge(match_collection->match[0]),
-                          get_match_null_peptide(match_collection->match[0]));
+       get_match_spectrum(match_collection->match[0]) -> get_first_scan(),
+       get_match_charge(match_collection->match[0]),
+       get_match_null_peptide(match_collection->match[0]));
 
   // BF: this is an ugly fix so that we don't have to estimate pvalues
   // for decoy psms but can still serialize the matches
@@ -2490,10 +2490,10 @@ void print_matches_multi_spectra
     MATCH_T* cur_match = match_collection->match[match_idx];
     BOOLEAN_T is_decoy = get_match_null_peptide(cur_match);
     SPECTRUM_T* spectrum = get_match_spectrum(cur_match);
-    int scan_num = get_spectrum_first_scan(spectrum);
-    FLOAT_T mz = get_spectrum_precursor_mz(spectrum);
+    int scan_num = spectrum -> get_first_scan();
+    FLOAT_T mz = spectrum -> get_precursor_mz();
     int charge = get_match_charge(cur_match);
-    FLOAT_T spec_mass = get_spectrum_neutral_mass(spectrum, charge);
+    FLOAT_T spec_mass = spectrum -> get_neutral_mass(charge);
     FLOAT_T num_psm_per_spec = get_match_ln_experiment_size(cur_match);
     num_psm_per_spec = expf(num_psm_per_spec) + 0.5; // round to nearest int
 

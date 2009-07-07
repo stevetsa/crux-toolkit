@@ -8,7 +8,7 @@
  ****************************************************************************/
 #ifndef HIT_H
 #define HIT_H
-
+#include "spectrum_collection.h"
 #include <math.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -19,7 +19,7 @@
 #include "carp.h"
 #include "objects.h"
 #include "parameter.h"
-#include "spectrum_collection.h"
+
 #include "protein.h"
 
 /**

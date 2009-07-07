@@ -24,11 +24,12 @@
       if passes criteria, print results and move on
       else next peptide modification  
  */
+#include "match_collection.h"
 #include "carp.h"
 #include "crux-utils.h"
 #include "parameter.h"
 #include "spectrum_collection.h"
-#include "match_collection.h"
+
 #include <errno.h>
 
 #define NUM_SEARCH_OPTIONS 12
@@ -198,7 +199,7 @@ int search_main(int argc, char** argv){
   int num_decoys = get_int_parameter("number-decoy-set");
   int progress_increment = get_int_parameter("print-search-progress");
   if( progress_increment == 0 ){
-    progress_increment = BILLION;
+    progress_increment = (int)BILLION;
   }
 
   // get list of mods
@@ -210,12 +211,12 @@ int search_main(int argc, char** argv){
     int charge = 0;
     SPECTRUM_T* spectrum = 
       filtered_spectrum_charge_iterator_next(spectrum_iterator, &charge);
-    double mass = get_spectrum_neutral_mass(spectrum, charge);
+    double mass = spectrum -> get_neutral_mass(charge);
 
     if( ((spectrum_searches_counter+1) % progress_increment) == 0 ){
       carp(CARP_INFO, 
            "Searching spectrum number %i, charge %i, search number %i",
-           get_spectrum_first_scan(spectrum), charge,
+           spectrum -> get_first_scan(), charge,
            spectrum_searches_counter+1 );
     }
 
@@ -272,7 +273,7 @@ int search_main(int argc, char** argv){
     if( get_match_collection_match_total(match_collection) == 0 ){
       // don't print and don't search decoys
       carp(CARP_WARNING, "No matches found for spectrum %i, charge %i",
-           get_spectrum_first_scan(spectrum), charge);
+           spectrum -> get_first_scan(), charge);
       free_match_collection(match_collection);
       spectrum_searches_counter++;
       continue; // next spectrum

@@ -42,7 +42,6 @@ struct loss_limit{
  *ION_SERIES_T
  ********************************************************/
 void ION_SERIES_T::init() {
-  int ion_type_idx = 0;
   is_predicted = FALSE;
   peptide = NULL;
   modified_aa_seq = NULL;
@@ -138,7 +137,7 @@ ION_SERIES_T::~ION_SERIES_T() {
 
   // iterate over all ions, and free them
   //carp(CARP_ERROR,"free ions");
-  for (int i=0;i<ions.size();i++)
+  for (unsigned int i=0;i<ions.size();i++)
     delete ions[i];
   ions.clear();
 
@@ -175,7 +174,7 @@ void ION_SERIES_T::update_ion_series(
   //carp(CARP_ERROR,"free ions");
   // iterate over all ions, and free them
 
-  for (int i=0;i<ions.size();i++)
+  for (unsigned int i=0;i<ions.size();i++)
     delete ions[i];
   ions.clear();
   
@@ -963,7 +962,7 @@ void ION_SERIES_T::ion_series_assign_nearest_peaks(
       ++iterator) {
     ion = *iterator;
     FLOAT_T mz = ion -> get_ion_mass_z(); // TODO change to mz, not mass_z
-    peak = get_nearest_peak(spectrum, mz, max);
+    peak = spectrum -> get_nearest_peak(mz, max);
     ion -> set_ion_peak(peak);
   }
 }
@@ -1255,6 +1254,7 @@ ION_CONSTRAINT_T* ION_CONSTRAINT_T::new_gmtk(
 {
   ION_CONSTRAINT_T* ans = new ION_CONSTRAINT_T();
   ans -> init_ion_constraint_gmtk(charge);
+  return ans;
 }
 
 /**
@@ -1615,6 +1615,7 @@ ION_FILTERED_ITERATOR_T& ION_FILTERED_ITERATOR_T::operator=(const ION_FILTERED_I
   current = other.current;
   ion_series = other.ion_series;
   end_iter = other.end_iter;
+  return (*this);
 }
   
 bool ION_FILTERED_ITERATOR_T::operator==(const ION_FILTERED_ITERATOR_T& other) {
@@ -1639,9 +1640,11 @@ ION_FILTERED_ITERATOR_T& ION_FILTERED_ITERATOR_T::operator++() {
 }
 
 ION_FILTERED_ITERATOR_T& ION_FILTERED_ITERATOR_T::operator++(int c) {
-  if (current != ion_series -> end()) {
-    ++current;
-    satisfyConstraint();
+  for (int i=0;i<c;i++) {
+    if (current != ion_series -> end()) {
+      ++current;
+      satisfyConstraint();
+    }
   }
   return(*this);
 }

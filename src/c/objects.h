@@ -29,8 +29,11 @@ typedef enum _peak_sort_type PEAK_SORT_TYPE_T;
  * \typedef SPECTRUM_T 
  * \brief A spectrum
  */
-typedef struct spectrum SPECTRUM_T;
 
+#ifdef __cplusplus
+#else
+typedef struct spectrum SPECTRUM_T;
+#endif
 /**
  * The enum for spectrum type (MS1, MS2, MS3)
  */

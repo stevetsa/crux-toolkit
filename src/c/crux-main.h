@@ -15,7 +15,7 @@
 #include "create_index.h"
 
 #include "q-value.h"
-#include "percolator.h"
+//#include "percolator.h"
 
 
 /* Private data types */

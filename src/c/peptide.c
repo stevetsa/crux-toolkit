@@ -300,7 +300,8 @@ void set_peptide_peptide_mass(
 /**
  * \returns the peptide mass
  */
-inline FLOAT_T get_peptide_peptide_mass( 
+
+FLOAT_T get_peptide_peptide_mass( 
   PEPTIDE_T* peptide  ///< the peptide to query the mass -in
   )
 {

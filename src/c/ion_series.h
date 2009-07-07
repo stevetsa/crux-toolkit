@@ -15,7 +15,7 @@
 #include "peptide.h"
 #include "ion.h"
 #include "ion_series.h"
-
+#include "spectrum.h"
 
 
 #define BINARY_GMTK 1

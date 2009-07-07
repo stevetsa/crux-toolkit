@@ -133,7 +133,7 @@ void free_spectrum_collection(
 {
   int spectrum_index = 0;
   for(;spectrum_index < spectrum_collection->num_spectra; ++spectrum_index){
-    free_spectrum(spectrum_collection->spectra[spectrum_index]);
+    delete spectrum_collection->spectra[spectrum_index];
   }
   free(spectrum_collection->filename);
   free(spectrum_collection);
@@ -155,7 +155,7 @@ void print_spectrum_collection(
   // print each spectrum
   spectrum_iterator = new_spectrum_iterator(spectrum_collection);
   while(spectrum_iterator_has_next(spectrum_iterator)){
-    print_spectrum(spectrum_iterator_next(spectrum_iterator), file);
+    spectrum_iterator_next(spectrum_iterator) -> print(file);
   }
   free_spectrum_iterator(spectrum_iterator);
 }
@@ -179,8 +179,8 @@ void copy_spectrum_collection(
   // copy spectrum
   SPECTRUM_ITERATOR_T* spectrum_iterator = new_spectrum_iterator(src);
   while(spectrum_iterator_has_next(spectrum_iterator)){
-    new_spectrum = allocate_spectrum();
-    copy_spectrum(spectrum_iterator_next(spectrum_iterator), new_spectrum);
+    new_spectrum = new SPECTRUM_T();
+    SPECTRUM_T::copy(spectrum_iterator_next(spectrum_iterator), new_spectrum);
     add_spectrum_to_end(dest, new_spectrum);
   }
   free_spectrum_iterator(spectrum_iterator);
@@ -247,19 +247,19 @@ BOOLEAN_T parse_spectrum_collection(
   // parse header lines 'H' into spectrum_collection comment 
   parse_header_line(spectrum_collection, file);
 
-  parsed_spectrum = allocate_spectrum();
+  parsed_spectrum = new SPECTRUM_T();
   // parse one spectrum at a time
-  while(parse_spectrum_file(parsed_spectrum, file, spectrum_collection->filename)){
+  while(parsed_spectrum -> parse_spectrum_file(file, spectrum_collection->filename)){
     // is spectrum capacity not full?
     if(!add_spectrum_to_end(spectrum_collection, parsed_spectrum)){
-      free_spectrum(parsed_spectrum);
+      delete parsed_spectrum;
       fclose(file);
       return FALSE;
     }
-    parsed_spectrum = allocate_spectrum();
+    parsed_spectrum = new SPECTRUM_T();
   }
   
-  free_spectrum(parsed_spectrum); // CHECKME why free_spectrum??
+  delete parsed_spectrum; // CHECKME why free_spectrum??
   fclose(file);
 
   spectrum_collection->is_parsed = TRUE;
@@ -290,7 +290,7 @@ BOOLEAN_T add_spectrum_to_end(
   // set spectrum
   spectrum_collection->spectra[spectrum_collection->num_spectra] = spectrum;
   ++spectrum_collection->num_spectra;
-  spectrum_collection->num_charged_spectra += get_spectrum_num_possible_z(spectrum);
+  spectrum_collection->num_charged_spectra += spectrum -> get_num_possible_z();
   return TRUE;
 }
 
@@ -315,8 +315,8 @@ BOOLEAN_T add_spectrum(
   }
   // find correct location
   for(; add_index < spectrum_collection->num_spectra; ++add_index){
-    if(get_spectrum_first_scan(spectrum_collection->spectra[add_index])>
-       get_spectrum_first_scan(spectrum)){
+    if(spectrum_collection->spectra[add_index] -> get_first_scan() >
+       spectrum -> get_first_scan()){
       break;
     }
   }
@@ -333,7 +333,7 @@ BOOLEAN_T add_spectrum(
   // set spectrum
   spectrum_collection->spectra[add_index] = spectrum;
   ++spectrum_collection->num_spectra;
-  spectrum_collection->num_charged_spectra += get_spectrum_num_possible_z(spectrum);
+  spectrum_collection->num_charged_spectra += spectrum -> get_num_possible_z();
   return TRUE;
 }
 
@@ -347,18 +347,18 @@ void remove_spectrum(
   SPECTRUM_T* spectrum ///< spectrum to be removed from spectrum_collection -in
   )
 {
-  int scan_num = get_spectrum_first_scan(spectrum);
+  int scan_num = spectrum -> get_first_scan();
   int spectrum_index = 0;
   
   // find where the spectrum is located in the spectrum array
   for(; spectrum_index < spectrum_collection->num_spectra; ++spectrum_index){
     if(scan_num ==
-       get_spectrum_first_scan(spectrum_collection->spectra[spectrum_index])){
+       spectrum_collection->spectra[spectrum_index] -> get_first_scan()){
       break;
     }
   }
   
-  free_spectrum(spectrum_collection->spectra[spectrum_index]);
+  delete spectrum_collection->spectra[spectrum_index];
   
   // shift all the spectra to the left to fill in the gap
   for(; spectrum_index < spectrum_collection->num_spectra; ++spectrum_index){
@@ -367,7 +367,7 @@ void remove_spectrum(
   }
   
   --spectrum_collection->num_spectra;
-  spectrum_collection->num_charged_spectra -= get_spectrum_num_possible_z(spectrum);
+  spectrum_collection->num_charged_spectra -= spectrum -> get_num_possible_z();
 } 
 
 
@@ -398,7 +398,7 @@ BOOLEAN_T get_spectrum_collection_spectrum(
   }
   fseek(file, target_index, SEEK_SET);
   // parse spectrum, check if failed to parse spectrum return false
-  if(!parse_spectrum_file(spectrum, file, spectrum_collection->filename)){
+  if(!spectrum -> parse_spectrum_file(file, spectrum_collection->filename)){
     fclose(file);
     return FALSE;
   }
@@ -1019,7 +1019,7 @@ void queue_next_spectrum(FILTERED_SPECTRUM_CHARGE_ITERATOR_T* iterator){
     if( iterator->charges ){
       free(iterator->charges);
     }
-    iterator->num_charges = get_charges_to_search(spec, &(iterator->charges));
+    iterator->num_charges = spec -> get_charges_to_search(&(iterator->charges));
     iterator->charge_index = 0;
   }else{ // none left
     iterator->has_next = FALSE;
@@ -1029,7 +1029,7 @@ void queue_next_spectrum(FILTERED_SPECTRUM_CHARGE_ITERATOR_T* iterator){
   // Does the current pass?
   spec = iterator->spectrum_collection->spectra[iterator->spectrum_index];
   int this_charge = iterator->charges[iterator->charge_index];
-  double mz = get_spectrum_precursor_mz(spec);
+  double mz = spec -> get_precursor_mz();
 
   if( iterator->search_charge == 0 || iterator->search_charge == this_charge ){
     if( mz >= iterator->min_mz && mz <= iterator->max_mz ){

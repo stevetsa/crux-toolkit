@@ -70,7 +70,7 @@ int main(int argc, char** argv){
     break;
 
   case PERCOLATOR_CMD:
-    percolator_main(argc-1, argv+1);
+    //percolator_main(argc-1, argv+1);
     break;
 
   case INVALID_CMD:

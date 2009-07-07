@@ -1,6 +1,6 @@
 distdir = $(PACKAGE)_$(VERSION)
 
-SUBDIRS = percolator .
+SUBDIRS = MSToolkit .
 
 if USEDOUBLES
   USEDOUBLES='-DUSE_DOUBLES'
@@ -16,10 +16,12 @@ endif
 
 AM_CFLAGS = -Wall -W -Werror  -fno-strict-aliasing $(USEDOUBLES) $(USEDARWIN) \
             -D_LARGEFILE_SOURCE=1 -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE
+AM_CPPFLAGS = -Wall -W -Werror  -fno-strict-aliasing $(USEDOUBLES) $(USEDARWIN) \
+            -D_LARGEFILE_SOURCE=1 -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE
 
 noinst_LTLIBRARIES = libcrux.la
 
-NON_PERCOLATOR_LIB_FILES= \
+LIBFILES= \
   alphabet.c \
   alphabet.h \
   array.c \
@@ -36,7 +38,7 @@ NON_PERCOLATOR_LIB_FILES= \
   generate_peptides_iterator.h \
   hash.c \
   hash.h \
-  hit.c \
+  hit.cpp \
   hit.h \
   hit_collection.c \
   hit_collection.h \
@@ -86,17 +88,17 @@ NON_PERCOLATOR_LIB_FILES= \
   sorter.c \
   sorter.h \
   spectrum.cpp \
-  spectrum_collection.c \
+  spectrum_collection.cpp \
   spectrum_collection.h \
   spectrum.h \
   utils.c \
   utils.h \
   version.h
 
-LIBFILES=$(PERCOLATOR_LIB_FILES) $(NON_PERCOLATOR_LIB_FILES)
-libcrux_la_CFLAGS = $(AM_CFLAGS)
-
 libcrux_la_SOURCES = $(LIBFILES)
+libcrux_la_CFLAGS = \
+  $(AM_CFLAGS)
+
 libcrux_la_LIBADD = -lm
 
 PROGRAM_FILES = \
@@ -124,14 +126,14 @@ crux_generate_peptides_LDADD = libcrux.la
 #crux_create_index_CFLAGS = $(AM_CFLAGS) -DMAIN 
 #crux_create_index_LDADD = libcrux.la 
 
-#crux_search_for_matches_SOURCES = match_search.c
+#crux_search_for_matches_SOURCES = match_search.cpp
 #crux_search_for_matches_CFLAGS = $(AM_CFLAGS) -DMAIN -I$(PERCOLATOR_DIR)/
 #crux_search_for_matches_LDADD = libcrux.la 
 
 #crux_analyze_matches_SOURCES = match_analysis.c
 #crux_analyze_matches_CFLAGS = $(AM_CFLAGS) -DMAIN -I$(PERCOLATOR_DIR)
 #crux_analyze_matches_LDADD = \
-#  -lstdc++ -L$(PERCOLATOR_DIR)/ -lpercolator -lqvality -lArrayLibrary -lcrux 
+#  -lstdc++ -L$(PERCOLATOR_DIR)/ -lpercolator -lqvality -lcrux 
 
 crux_predict_peptide_ions_SOURCES = predict_peptide_ions.cpp
 crux_predict_peptide_ions_CFLAGS = $(AM_CFLAGS) -DMAIN 
@@ -149,11 +151,15 @@ crux_predict_peptide_ions_LDADD = libcrux.la
 #create_psm_files_CFLAGS = $(AM_CFLAGS) -DMAIN 
 #create_psm_files_LDADD = libcrux.la 
 
-crux_SOURCES = crux-main.cpp  crux-main.h percolator.c percolator.h
-crux_CFLAGS = $(AM_CFLAGS) -DMAIN -Ipercolator
-crux_CPPFLAGS = $(AM_CFLAGS) -DMAIN -Ipercolator
+crux_SOURCES = crux-main.cpp crux-main.h
+crux_CPPFLAGS = \
+  $(AM_CPPFLAGS) \
+  -DMAIN
 crux_LDADD = \
-  libcrux.la -lstdc++ -L./percolator -lpercolator -lqvality -lArrayLibrary
+  libcrux.la \
+  -lstdc++ \
+  -L$(top_builddir)/src/c/MSToolkit \
+  -lmstoolkit
 
 paramdir = $(prefix)/doc
 param_DATA = default.params
@@ -166,6 +172,9 @@ doc:	*.h *.c
 ignore-files:
 	svn update .svnignore
 	svn propset svn:ignore -F .svnignore .
+
+DISTCLEANFILES = \
+  version.h
 
 dist-hook:
 	grep '#define VERSION' ../../config.h > version.h
