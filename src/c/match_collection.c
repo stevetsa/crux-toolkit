@@ -3106,7 +3106,6 @@ MATCH_COLLECTION_ITERATOR_T* new_match_collection_iterator(
   struct dirent* directory_entry = NULL;
   DATABASE_T* database = NULL;
   BOOLEAN_T use_index = is_directory(fasta_file);
-
   // get directory from path name and prefix from filename
   /*
   char** file_path_array = parse_filename_path_extension(  // free me

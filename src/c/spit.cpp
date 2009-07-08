@@ -25,7 +25,7 @@ typedef std::vector< std::pair<FLOAT_T, std::string> > ProteinScore;
 // scores in sorted order
 bool print_spit_scores (
 	const ProteinScore&,
-	char* file 
+	char* file 		// output file
 	);
 
 // assigns a score to each protein
@@ -34,10 +34,12 @@ void get_spit_scores(
 	const PeptideScore&,
 	ProteinPeptides&,
 	map<string, int>&,
-        BOOLEAN_T
+        bool
 	);
 
-// post process
+// post process to create unique protein-peptide links
+// by removing peptides from lower scored proteins for filter option.
+// recalculates spit scores afterwards.
 void filter_proteins(ProteinScore&,
 	ProteinPeptides&);
 
@@ -99,6 +101,7 @@ int spit_main(int argc, char** argv) {
   BOOLEAN_T filter = get_boolean_parameter("filter");
 
   prefix_fileroot_to_name(&output_file);
+
   char* full_output_file = get_full_filename(output_dir, output_file); 
   create_output_directory(output_dir, TRUE, FALSE);
   create_file_in_path(output_file, output_dir, overwrite);
@@ -133,10 +136,13 @@ int spit_main(int argc, char** argv) {
     carp(CARP_ERROR, "error printing protein scores");
     exit(1);
   }
+  carp(CARP_INFO, "completed succesfully");
   return 0;
 }
 
+// does post-processing on the proteins. 
 void filter_proteins(ProteinScore& proteinScores, ProteinPeptides& proteinPeptides) {
+  carp(CARP_INFO, "filtering protein-peptide links");
   set<string> top_peptides;
   for (ProteinScore::iterator score_pair = proteinScores.begin(); score_pair != proteinScores.end(); ++score_pair) {
     for (set<string>::iterator peptide = proteinPeptides[score_pair->second].begin(); 
@@ -154,14 +160,11 @@ void filter_proteins(ProteinScore& proteinScores, ProteinPeptides& proteinPeptid
 
 // takes a map of peptide scores and map from proteins to peptides and
 // stores a list of pairs of protein IDs and scores
-void get_spit_scores (ProteinScore& proteinScores, const PeptideScore& peptideScore, ProteinPeptides& proteinPeptides, map<string, int>& numPeptides, BOOLEAN_T filter) {
-  carp(CARP_INFO, "getting scores");
-  if (peptideScore.size() == 0) {
-    carp(CARP_ERROR, "no psms found");
-  }
+void get_spit_scores (ProteinScore& proteinScores, const PeptideScore& peptideScore, ProteinPeptides& proteinPeptides, map<string, int>& numPeptides, bool filter) {
+  carp(CARP_INFO, "computing protein scores");
   
   char* database = get_string_parameter("database");
-
+ 
   for (ProteinPeptides::const_iterator protein = proteinPeptides.begin(); protein != proteinPeptides.end(); ++protein) { 
     // calculate score
     FLOAT_T score = 1.0;
@@ -174,7 +177,7 @@ void get_spit_scores (ProteinScore& proteinScores, const PeptideScore& peptideSc
     }
     // take the nth root. if using a database, n is total number of peptides found in the database,
     // otherwise n is number of peptides found in the text file.
-    if (database != NULL) {
+    if (database) {
       string id = protein->first;
       score = pow(score, (1.0 / numPeptides[protein->first.c_str()]));
     } else {
@@ -189,7 +192,8 @@ void get_spit_scores (ProteinScore& proteinScores, const PeptideScore& peptideSc
   if (filter) {
     filter_proteins(proteinScores, proteinPeptides);
     ProteinScore new_proteinScores;
-    get_spit_scores(new_proteinScores, peptideScore, proteinPeptides, numPeptides, FALSE); 
+    // recalculate spit scores, skipping filter step
+    get_spit_scores(new_proteinScores, peptideScore, proteinPeptides, numPeptides, false); 
   }
 }
 
@@ -208,8 +212,9 @@ bool print_spit_scores(const ProteinScore& proteinScores, char* file) {
   return true;
 }
 
-// gets all the spit matches from a database
-// returns TRUE on success 
+// gets all the spit matches from a protein database
+// and counts number of peptides for each parent protein for scoring
+// returns true on success 
 bool get_database_matches(
 	PeptideScore& peptideScore,
 	ProteinPeptides& proteinPeptides,
@@ -221,7 +226,7 @@ bool get_database_matches(
   // declarations
   PEPTIDE_SRC_ITERATOR_T* src_iterator = NULL;
   PROTEIN_T* protein = NULL;  
-  PEPTIDE_SRC_T* peptide_src;
+  PEPTIDE_SRC_T* peptide_src; 
   PEPTIDE_CONSTRAINT_T* peptide_constraint = NULL;
   PROTEIN_PEPTIDE_ITERATOR_T* peptide_iterator = NULL;
   MATCH_ITERATOR_T* match_iterator = NULL;
@@ -235,6 +240,7 @@ bool get_database_matches(
   char* peptide_sequence;
   char* protein_id;
 
+  carp(CARP_INFO, "reading matches from %s", psm_dir);
   while(match_collection_iterator_has_next(match_collection_iterator)) {
     peptide_constraint = new_peptide_constraint_from_parameters();
     // get the next match_collection
@@ -296,7 +302,7 @@ bool get_database_matches(
       carp(CARP_DEBUG, "num proteins: %d", get_match_collection_num_proteins(match_collection));
     } // get the next match
     free_match_iterator(match_iterator); 
-  } // get the next match_collection
+  } // get the next match collection
   free_match_collection_iterator(match_collection_iterator);
   return true;
 }
@@ -304,131 +310,104 @@ bool get_database_matches(
 
 // gets all spit matches from a txt file created by search-for-matches
 // returns true on success
-
-// TODO: make it c++
 bool get_txt_matches(PeptideScore& peptideScore, ProteinPeptides& proteinPeptides, char* psm_dir) {
-    cout << psm_dir << endl;	
-    DIR *dir = opendir(psm_dir);
-    struct dirent* directory_entry = NULL;
-    FILE* txt_file;
+ 
+  // file handling declarations
+  DIR *dir = opendir(psm_dir);
+  struct dirent* directory_entry = NULL;
+  char* file;
+  ifstream txt_file;
+  string line;
+  vector<string> tokens;
+
+  int scan_number;
+  int next_scan;
+
+  FLOAT_T pvalue;
+
+  // indeces for each psm
+  int scan_index, pvalue_index, sequence_index, protein_index;
+
+  while ((directory_entry = readdir(dir)) != NULL) {
+    if (!suffix_compare(directory_entry->d_name, "search.target.txt")) {
+      continue;
+    }
     
-    // which index the values are in the tab delimited txt file
-    int scan_index, pvalue_index, sequence_index, protein_index, field_index;
+    file = get_full_filename(psm_dir, directory_entry->d_name);
 
-    int scan_number; // keep track of the last scan number
+    carp(CARP_INFO, "reading matches from %s", file); 
+    // open the file stream 
+    txt_file.open(file, ios::in);
 
-    char line[500]; 
-    char field[50]; 
-    int field_length; 
-    
-    char *ptr; // pointer to the current position in the line 
+    scan_index = -1;
+    pvalue_index = -1;
+    sequence_index = -1;
+    protein_index = -1;
 
-    // for each file in psm directory
-    while ((directory_entry = readdir(dir)) != NULL) {
-      carp(CARP_DEBUG, "reading file: %s", directory_entry->d_name);
-      if (!suffix_compare(directory_entry->d_name, "txt")) {
-	continue;
-      }
-      cout << directory_entry->d_name << endl;
-      txt_file = fopen(get_full_filename(psm_dir, directory_entry->d_name), "r");
-      if (!txt_file) {
-	carp(CARP_ERROR, "Error reading %s", directory_entry->d_name);
-    	return false;
-      }
-      
-      //initialize indeces
-      scan_index = -1;
-      pvalue_index = -1;
-      sequence_index = -1;
-      protein_index = -1;
-      field_index = 0;
+    // get header and find indeces 
+    tokens.clear();
+    getline(txt_file, line);
+    string_split(line, tokens, "\t");
+    for (int i = 0; i < tokens.size(); ++i) {
+      if (tokens[i] == "-log(p-value)") pvalue_index = i;
+      else if (tokens[i] == "sequence") sequence_index = i;
+      else if (tokens[i] == "protein id") protein_index = i;
+      else if (tokens[i] == "scan") scan_index = i;
+    }
 
-      // store the header
-      fgets(line, 500, txt_file);
+    carp(CARP_DETAILED_DEBUG, "header indeces: pvalue %d sequence %d protein %d",
+			          pvalue_index, sequence_index, protein_index);
+    if (pvalue_index   < 0
+    ||  sequence_index < 0
+    ||  protein_index  < 0
+    ||  scan_index     < 0) {
+      carp(CARP_INFO, "found invalid .txt peptide-spectrum match file, skipping");
+      continue;
+    }
+  
+    scan_number = 0;
+    // for each psm in file
+    while (getline(txt_file, line)) {
+      tokens.clear();
+      string_split(line, tokens, "\t");
+      next_scan = atoi(tokens[scan_index].c_str());
 
-      // extract the positions of the useful information from header
-      ptr = line;
-      while (sscanf(ptr, "%[^\t]%n", field, &field_length) == 1) {
-        //carp(CARP_INFO, "%s", field);
-        if (strstr("-log(p-value)", field)) {
-	  pvalue_index = field_index;
-        } else if (strstr("sequence", field)) {
-	  sequence_index = field_index;
-        } else if (strstr("protein id", field)) {
-          protein_index = field_index;
-        } else if (strstr("scan", field)) {
-	  scan_index = field_index;
-	}
-        ptr += field_length; // move to next field
-        if (*ptr != '\t') break; // if done
-        while (*ptr == '\t') ++ptr; // adjust for multiple delimiters
-        ++field_index;
-      } // get next field in header 
+      // skip if not the best match
+      if (scan_number == next_scan) continue;
+      else scan_number = next_scan;
+   
+      carp(CARP_DETAILED_DEBUG, "scan number %d", scan_number);
 
-      // skip if the fields not found in the header
-      if (pvalue_index   < 0
-      ||  sequence_index < 0
-      ||  protein_index  < 0
-      ||  scan_index     < 0) {
-        carp(CARP_INFO, "found invalid .txt file, skipping");
+      pvalue = atof(tokens[pvalue_index].c_str());
+      // skip if nan or unscored
+      if (pvalue == 0 || pvalue != pvalue) {
+        carp(CARP_INFO, "No p-value found for scan %d, skipping", scan_number);
         continue;
       }
- 
-      carp(CARP_DETAILED_DEBUG, "header indeces: pvalue %d sequence %d protein %d",
-				          pvalue_index, sequence_index, protein_index);
-      scan_number = 0;    
-      // get every line from txt file, adding top matches
-      // to sdpit_matches array
-      while (fgets(line, 500, txt_file)) {
-        char* fields[field_index + 1]; // store fields of every line
-        field_index = 0;
-	ptr = line; 
-        while (sscanf(ptr, "%[^\t]%n", field, &field_length)) {
-	  fields[field_index++] = ptr;
-	  ptr += field_length;
-	  if (*ptr != '\t') break; // no more fields
-	  // split the string, move to next field
-          *ptr = '\0';
- 	  ++ptr; 
-	  // adjust for missing fields
- 	  while (*ptr == '\t') {
-	    ++ptr;
-	    ++field_index; 
-	  }
-        }
-
-	// skip if not best match for the scan
- 	if (scan_number == atoi(fields[scan_index]) ) {
-	  continue;
-	} else {
-	  scan_number = atoi(fields[scan_index]);
-	}
-	carp(CARP_DETAILED_DEBUG, "scan %d", scan_number);
-
-	// skip if p-value nan
-	if (strcmp(fields[pvalue_index], "nan") == 0 ||
-            strcmp(fields[pvalue_index], "NaN") == 0 ) {
-	  carp(CARP_INFO, "skipping unscored PSM");
-	  continue;
-        }
-	
-      PeptideScore::iterator it = peptideScore.find(fields[sequence_index]);
+   
+      PeptideScore::iterator it = peptideScore.find(tokens[sequence_index]);
       // if a new peptide, or a larger score, add the peptide and its score to the map
-      if (it == peptideScore.end() || (it->second < atof(fields[pvalue_index]))) {
-	peptideScore[fields[sequence_index]] = atof(fields[pvalue_index]);
+      if (it == peptideScore.end() || (it->second < pvalue)) {
+	peptideScore[tokens[sequence_index]] = pvalue;
       }	
       // split the protein string by commas
       vector<string> parent_proteins;
-      string_split(string(fields[protein_index]), parent_proteins, ",");
+      string_split(tokens[protein_index], parent_proteins, ",");
       // for each parent protein, add the peptide 
       for (vector<string>::const_iterator protein = parent_proteins.begin(); protein != parent_proteins.end(); ++protein) {
-	proteinPeptides[*protein].insert(fields[sequence_index]);	
+	proteinPeptides[*protein].insert(tokens[sequence_index]);	
       }      
-    } // get next scan
-    fclose(txt_file);
-  } // get another file from psm_dir
-    closedir(dir);
-    return true;
+    } // get next psm
+    txt_file.close();
+  } // get next txt file
+  closedir(dir);
+  // die if no p-values found
+  if (peptideScore.size() == 0) {
+    carp(CARP_ERROR, "No p-values for peptide-spectrum matches found.");
+    carp(CARP_ERROR, "spit requires search-for-matches to be run with --compute-p-values option");
+    return false;
+  }
+  return true;
 }
 
 // splits a string into a vector of tokens
@@ -441,8 +420,8 @@ void string_split(const string& str, vector<string>& tokens, const string& delim
     {
         // found a token, add it to the vector.
         tokens.push_back(str.substr(lastPos, pos - lastPos));
-        // skip delimiters  
-        lastPos = str.find_first_not_of(delimiters, pos);
+ 	if (pos != string::npos) lastPos = pos+1;
+        else lastPos = str.find_first_not_of(delimiters, pos);
         // Find next "non-delimiter"
         pos = str.find_first_of(delimiters, lastPos);
     }
