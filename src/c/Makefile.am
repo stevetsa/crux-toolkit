@@ -114,7 +114,7 @@ PROGRAM_FILES = \
 
 bin_PROGRAMS = $(PROGRAM_FILES)
 
-crux_get_ms2_spectrum_SOURCES = get_ms2_spectrum.c
+crux_get_ms2_spectrum_SOURCES = get_ms2_spectrum.cpp
 crux_get_ms2_spectrum_CFLAGS = $(AM_CFLAGS) -DMAIN 
 crux_get_ms2_spectrum_LDADD = libcrux.la 
 
