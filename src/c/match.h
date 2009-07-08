@@ -29,6 +29,11 @@
 #define NOT_SCORED FLT_MIN
 #define P_VALUE_NA -1.0
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 /**
  * \returns a new memory allocated match
  */
@@ -50,6 +55,16 @@ void shuffle_matches(
   int end_index          ///< index AFTER the last element to shuffle
   );
 
+#ifdef __cplusplus
+#define MATCH_COMPARE_METHOD int(*)(const void*, const void*)
+
+void qsort_match(
+  MATCH_T** match_array, ///< the match array to sort -in  
+  int match_total,  ///< the total number of match objects -in
+  int (*compare_method)(const void*, const void*) ///< the compare method to use -in
+);
+#else
+
 /**
  * sort the match array with the corresponding compare method
  */
@@ -58,6 +73,7 @@ void qsort_match(
   int match_total,  ///< the total number of match objects -in
   void* compare_method ///< the compare method to use -in
   );
+#endif
 
 /**
  * compare two matches, used for qsort
@@ -480,6 +496,10 @@ int get_match_b_y_ion_matched(
 int get_match_b_y_ion_possible(
   MATCH_T* match ///< the match to work -out
   );
+
+#ifdef __cplusplus
+}
+#endif
 
 /*
  * Local Variables:

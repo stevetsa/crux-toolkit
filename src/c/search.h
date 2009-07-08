@@ -11,9 +11,9 @@
 
 #include "scorer.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+//#ifdef __cplusplus
+//extern "C" {
+//#endif
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -46,8 +46,8 @@ void open_output_files(FILE*** binary_filehandle_array,
 
 int search_main(int argc, char** argv);
 
-#ifdef __cplusplus
-}
-#endif
+//#ifdef __cplusplus
+//}
+//#endif
 
 #endif // SEARCH_H
