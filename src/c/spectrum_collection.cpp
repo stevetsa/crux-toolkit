@@ -5,6 +5,8 @@
  * DESCRIPTION: code to support working with collection of multiple spectra
  * REVISION: $Revision: 1.43 $
  ****************************************************************************/
+
+#include "spectrum_collection.h" 
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -14,7 +16,7 @@
 #include <errno.h>
 #include "objects.h"
 #include "spectrum.h"
-#include "spectrum_collection.h" 
+
 #include "protein_index.h" 
 #include "peak.h"
 #include "utils.h"
@@ -222,8 +224,14 @@ BOOLEAN_T SPECTRUM_COLLECTION_T::parse() {
     return FALSE;
   }
 
+
+  
+
+
   FILE* file;
   SPECTRUM_T* parsed_spectrum;
+
+  
 
   // check if file is still avaliable
   if ((file = fopen(filename,"r")) == NULL) {
@@ -232,6 +240,8 @@ BOOLEAN_T SPECTRUM_COLLECTION_T::parse() {
   }
   // parse header lines 'H' into spectrum_collection comment 
   parse_header_line(this, file);
+
+  /*
 
   parsed_spectrum = new SPECTRUM_T();
   // parse one spectrum at a time
@@ -246,7 +256,25 @@ BOOLEAN_T SPECTRUM_COLLECTION_T::parse() {
   }
   
   delete parsed_spectrum; // CHECKME why free_spectrum??
+  */
+
+
   fclose(file);
+
+  MSToolkit::Spectrum mst_spectrum;
+
+  mst_reader.readFile(filename, mst_spectrum);
+
+  while(mst_spectrum.getScanNumber() != 0) {
+    parsed_spectrum = new SPECTRUM_T(mst_spectrum);
+    if (!add_to_end(parsed_spectrum)) {
+      delete parsed_spectrum;
+      //mst_reader.close();
+      return FALSE;
+    }
+    mst_reader.readFile(NULL, mst_spectrum);
+  }
+
 
   is_parsed = TRUE;
   

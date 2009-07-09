@@ -6,11 +6,11 @@
  *              scan number.
  * REVISION: 
  ****************************************************************************/
-
+#include "spectrum_collection.h"
 #include "spectrum.h"
-#include <math.h>
-#include <stdlib.h>
-#include <stdio.h>
+#include <cmath>
+#include <cstdlib>
+#include <cstdio>
 #include <string.h>
 #include <assert.h>
 #include <ctype.h>
@@ -18,7 +18,7 @@
 #include "carp.h"
 
 #include "peak.h"
-#include "spectrum_collection.h"
+
 #include "unistd.h"
 
 #define NUM_MS2_OPTIONS 3

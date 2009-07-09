@@ -50,7 +50,7 @@
  */
 class SPECTRUM_T {
  protected:
-  MSToolkit::Spectrum mst_spectrum;
+  //MSToolkit::Spectrum mst_spectrum;
 
   int              first_scan;    ///< The number of the first scan
   int              last_scan;     ///< The number of the last scan
@@ -135,6 +135,9 @@ BOOLEAN_T add_possible_z(
     int               num_possible_z,     ///< The number of possible charge states of this spectrum  -in  
     char*             filename);          ///< Optional filename  -in    
     
+
+ SPECTRUM_T(MSToolkit::Spectrum& mst_spectrum);
+
  ~SPECTRUM_T(); // free_spectrum
  void print(FILE* file);
  void print_sqt(FILE* file,///< output file to print at -out

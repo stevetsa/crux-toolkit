@@ -9,7 +9,7 @@
  */
 #ifndef MATCH_COLLECTION_H
 #define MATCH_COLLECTION_H
-
+#include "spectrum_collection.h"
 #include "ion_series.h"
 
 #ifdef __cplusplus
@@ -27,7 +27,7 @@ extern "C" {
 #include "carp.h"
 #include "parse_arguments.h"
 #include "spectrum.h"
-#include "spectrum_collection.h"
+
 #include "ion.h"
 
 #include "crux-utils.h"

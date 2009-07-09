@@ -8,6 +8,8 @@
  * REVISION: $Revision: 1.78 $
  * REVISION: $Revision: 1.78 $
  ****************************************************************************/
+
+#include "spectrum_collection.h"
 #include <math.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -20,7 +22,7 @@
 #include "carp.h"
 #include "parse_arguments.h"
 #include "spectrum.h"
-#include "spectrum_collection.h"
+
 #include "ion.h"
 
 #include "crux-utils.h"

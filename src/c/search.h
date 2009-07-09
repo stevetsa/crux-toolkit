@@ -8,7 +8,7 @@
  */
 #ifndef SEARCH_H
 #define SEARCH_H
-
+#include "spectrum_collection.h"
 #include "scorer.h"
 
 //#ifdef __cplusplus
@@ -25,7 +25,7 @@
 #include "parse_arguments.h"
 #include "parameter.h"
 #include "spectrum.h"
-#include "spectrum_collection.h"
+
 #include "generate_peptides_iterator.h"
 #include "crux-utils.h"
 

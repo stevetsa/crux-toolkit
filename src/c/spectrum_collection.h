@@ -8,6 +8,10 @@
 #ifndef SPECTRUM_COLLECTION_H
 #define SPECTRUM_COLLECTION_H
 
+#ifdef __cplusplus
+#include "MSReader.h"
+#endif
+
 #include <stdio.h>
 #include "objects.h"
 #include "spectrum.h"
@@ -17,8 +21,13 @@
 #define MAX_COMMENT 1000 ///< max length of comment
 
 #ifdef __cplusplus
+
+
+
 class SPECTRUM_COLLECTION_T {
  protected:
+
+  MSToolkit::MSReader mst_reader;
 
   int  num_spectra;     ///< The number of spectra
   int  num_charged_spectra; ///< The number of spectra assuming differnt charge(i.e. one spectrum with two charge states are counted as two spectra)
