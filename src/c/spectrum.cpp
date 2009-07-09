@@ -223,10 +223,10 @@ SPECTRUM_T::SPECTRUM_T(
   set_new_possible_z(possible_z, num_possible_z);
   set_new_filename(filename);
 }
-
+/*****************************************
+ *Creates a spectrum_t object from a MSToolkit::Spectrum object
+ *****************************************/
 SPECTRUM_T::SPECTRUM_T(MSToolkit::Spectrum& mst_spectrum) {
-
-  carp(CARP_ERROR,"SPECTRUM_T::SPECTRUM_T(MSToolkit):start");
   init();
   first_scan = mst_spectrum.getScanNumber();
   last_scan = mst_spectrum.getScanNumber();
@@ -236,33 +236,21 @@ SPECTRUM_T::SPECTRUM_T(MSToolkit::Spectrum& mst_spectrum) {
   switch (mst_spectrum.getFileType()) {
   case MSToolkit::MS1:
     spectrum_type = MS1;
-    carp(CARP_ERROR,"MS1 File");
     break;
   case MSToolkit::MS2:
     spectrum_type = MS2;
-    carp(CARP_ERROR,"MS2 File");
     break;
   case MSToolkit::MS3:
     spectrum_type = MS3;
-    carp(CARP_ERROR,"MS3 File");
     break;
   case MSToolkit::ZS:
-    carp(CARP_ERROR,"ZS File");
-    break;
   case MSToolkit::UZS:
-    carp(CARP_ERROR,"UZS File");
-    break;
   case MSToolkit::IonSpec:
-    carp(CARP_ERROR,"IonSpec File");
-    break;
   case MSToolkit::SRM:
-    carp(CARP_ERROR,"SRM File");
-    break;
   case MSToolkit::Unspecified:
-    carp(CARP_ERROR,"Unspecified file");
   default:
-    carp(CARP_ERROR,"Unsuppported spectra type!:%d",mst_spectrum.getFileType());
-    carp(CARP_ERROR,"Assuming ms2");
+    carp(CARP_DETAILED_DEBUG,"Unsuppported spectra type!:%d",mst_spectrum.getFileType());
+    carp(CARP_DETAILED_DEBUG,"Assuming ms2");
   }
   
   precursor_mz = mst_spectrum.getMZ();
@@ -275,7 +263,6 @@ SPECTRUM_T::SPECTRUM_T(MSToolkit::Spectrum& mst_spectrum) {
     add_peak(mst_spectrum[peak_idx].intensity,
 	     mst_spectrum[peak_idx].mz);
   }
-  print(stdout);
 }
 
 /**
