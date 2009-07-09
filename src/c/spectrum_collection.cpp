@@ -75,14 +75,19 @@ struct filtered_spectrum_charge_iterator {
 };
 
 
+
+void SPECTRUM_COLLECTION_T::init() {
+  num_spectra = 0;
+  num_charged_spectra = 0;
+  filename = NULL;
+  is_parsed = FALSE;
+}
+
 /**
  * \returns An (empty) heap allocated spectrum_collection object.
  */
-SPECTRUM_COLLECTION_T * allocate_spectrum_collection(void){
-  SPECTRUM_COLLECTION_T* collection =
-    (SPECTRUM_COLLECTION_T*)mycalloc(1,sizeof(SPECTRUM_COLLECTION_T));
-  collection->is_parsed = FALSE;
-  return collection;
+SPECTRUM_COLLECTION_T::SPECTRUM_COLLECTION_T() {
+  init();
 }
 
 /**
@@ -92,68 +97,55 @@ SPECTRUM_COLLECTION_T * allocate_spectrum_collection(void){
  * calls (parse_spectrum_collection get_spectrum_collection_spectrum).
  * \returns  SPECTRUM_COLLECTION_T
  */
-SPECTRUM_COLLECTION_T* new_spectrum_collection(
-  char* filename///< The spectrum collection filename. -in
-  )
-{
-  SPECTRUM_COLLECTION_T* spectrum_collection =  allocate_spectrum_collection();
-  #if DARWIN
+SPECTRUM_COLLECTION_T::SPECTRUM_COLLECTION_T(char* filename) {
+#if DARWIN
   char path_buffer[PATH_MAX];
   char* absolute_path_file =  realpath(filename, path_buffer);
-  #else
+#else
   char* absolute_path_file =  realpath(filename, NULL);
-  #endif
+#endif
+
+  carp(CARP_ERROR,"Filename:%s",filename);
+  carp(CARP_ERROR,"ABsolute:%s",absolute_path_file);
+
   if (absolute_path_file == NULL){
     carp(CARP_FATAL,
-	   "Error from file '%s'. (%s)",
-	   filename,
-	   strerror(errno)); 
+	 "Error from file '%s'. (%s)",
+	 filename,
+	 strerror(errno)); 
   }
-  
-  if(access(absolute_path_file, F_OK)){
-    free(spectrum_collection);
-    free(absolute_path_file);
-    carp(CARP_FATAL,"File %s could not be opened\n", absolute_path_file);
+  int err;
+  carp(CARP_ERROR,"ABsolute:%s",absolute_path_file);
+  err = access(absolute_path_file, F_OK);
+  if (err) {
+    carp(CARP_FATAL,"new(file) File could not be opened %i\n", err);
   } // FIXME check if file is empty
   
-  set_spectrum_collection_filename(spectrum_collection, absolute_path_file);
-  #ifndef DARWIN
+  set_filename(absolute_path_file);
+#ifndef DARWIN
   free(absolute_path_file);
-  #endif
-  
-  return spectrum_collection;
+#endif
 }
 
 /**
  * Frees an allocated spectrum_collection object.
  */
-void free_spectrum_collection(
-  SPECTRUM_COLLECTION_T* spectrum_collection ///< the spectrum collection to free - in
-)
-{
+SPECTRUM_COLLECTION_T::~SPECTRUM_COLLECTION_T() {
   int spectrum_index = 0;
-  for(;spectrum_index < spectrum_collection->num_spectra; ++spectrum_index){
-    delete spectrum_collection->spectra[spectrum_index];
+  for(;spectrum_index < num_spectra; ++spectrum_index){
+    delete spectra[spectrum_index];
   }
-  free(spectrum_collection->filename);
-  free(spectrum_collection);
+  free(filename);
 }
-
-/**
- * Prints a spectrum_collection object to file.
- */
-void print_spectrum_collection(
-  SPECTRUM_COLLECTION_T* spectrum_collection, ///< spectrum_collection to print -in 
-  FILE* file ///< file for output -out
-  )
-{
+  
+void SPECTRUM_COLLECTION_T::print(FILE* file) {
   SPECTRUM_ITERATOR_T* spectrum_iterator;
   
-  fprintf(file,"comment:\n%s", spectrum_collection->comment);
-  fprintf(file,".ms2 Filename: %s\n", spectrum_collection->filename);
+  fprintf(file,"comment:\n%s", comment);
+  fprintf(file,".ms2 Filename: %s\n", filename);
   
   // print each spectrum
-  spectrum_iterator = new_spectrum_iterator(spectrum_collection);
+  spectrum_iterator = new_spectrum_iterator(this);
   while(spectrum_iterator_has_next(spectrum_iterator)){
     spectrum_iterator_next(spectrum_iterator) -> print(file);
   }
@@ -164,24 +156,21 @@ void print_spectrum_collection(
  * Copies spectrum_collection object from src to dest.
  *  must pass in a memory allocated SPECTRUM_COLLECTION_T* dest
  */
-void copy_spectrum_collection(
-  SPECTRUM_COLLECTION_T* src,///< spectrum to copy from -in
-  SPECTRUM_COLLECTION_T* dest///< spectrum to copy to -out
-  )
-{
+void SPECTRUM_COLLECTION_T::copy(SPECTRUM_COLLECTION_T* src,
+					SPECTRUM_COLLECTION_T* dest) {
   SPECTRUM_T* new_spectrum;
   // copy each varible
-  set_spectrum_collection_filename(dest,src->filename);
-  set_spectrum_collection_comment(dest,src->comment);
-  dest->num_charged_spectra = src->num_charged_spectra;
-  dest->is_parsed = src->is_parsed;
+  dest -> set_filename(src -> filename);
+  dest -> set_comment(src -> comment);
+  dest -> num_charged_spectra = src -> num_charged_spectra;
+  dest -> is_parsed = src -> is_parsed;
   
   // copy spectrum
   SPECTRUM_ITERATOR_T* spectrum_iterator = new_spectrum_iterator(src);
   while(spectrum_iterator_has_next(spectrum_iterator)){
     new_spectrum = new SPECTRUM_T();
     SPECTRUM_T::copy(spectrum_iterator_next(spectrum_iterator), new_spectrum);
-    add_spectrum_to_end(dest, new_spectrum);
+    dest -> add_to_end(new_spectrum);
   }
   free_spectrum_iterator(spectrum_iterator);
 }
@@ -227,12 +216,9 @@ void parse_header_line(SPECTRUM_COLLECTION_T* spectrum_collection, FILE* file){
  * variable.
  * \returns TRUE if the spectra are parsed successfully. FALSE if otherwise.
  */
-BOOLEAN_T parse_spectrum_collection(
-  SPECTRUM_COLLECTION_T* spectrum_collection ///< empty spectrum to parse into -out
-)
-{
+BOOLEAN_T SPECTRUM_COLLECTION_T::parse() {
   // spectrum_collection has already been parsed
-  if(spectrum_collection->is_parsed){
+  if(is_parsed){
     return FALSE;
   }
 
@@ -240,18 +226,18 @@ BOOLEAN_T parse_spectrum_collection(
   SPECTRUM_T* parsed_spectrum;
 
   // check if file is still avaliable
-  if ((file = fopen(spectrum_collection->filename,"r")) == NULL) {
-    carp(CARP_ERROR, "File %s could not be opened",spectrum_collection->filename);
+  if ((file = fopen(filename,"r")) == NULL) {
+    carp(CARP_ERROR, "parse(): File %s could not be opened",filename);
     return (FALSE);
   }
   // parse header lines 'H' into spectrum_collection comment 
-  parse_header_line(spectrum_collection, file);
+  parse_header_line(this, file);
 
   parsed_spectrum = new SPECTRUM_T();
   // parse one spectrum at a time
-  while(parsed_spectrum -> parse_spectrum_file(file, spectrum_collection->filename)){
+  while(parsed_spectrum -> parse_spectrum_file(file, filename)){
     // is spectrum capacity not full?
-    if(!add_spectrum_to_end(spectrum_collection, parsed_spectrum)){
+    if(!add_to_end(parsed_spectrum)){
       delete parsed_spectrum;
       fclose(file);
       return FALSE;
@@ -262,131 +248,25 @@ BOOLEAN_T parse_spectrum_collection(
   delete parsed_spectrum; // CHECKME why free_spectrum??
   fclose(file);
 
-  spectrum_collection->is_parsed = TRUE;
+  is_parsed = TRUE;
   
   // good job!
   return TRUE;
 }
-
-// CHECKME test if capacity is correct might be off by one
-/**
- * Adds a spectrum to the spectrum_collection.
- * adds the spectrum to the end of the spectra array
- * should only be used when the adding in increasing scan num order
- * when adding in random order should use add_spectrum
- * spectrum must be heap allocated
- */
-BOOLEAN_T add_spectrum_to_end(
-  SPECTRUM_COLLECTION_T* spectrum_collection,///< the working spectrum_collection -out
-  SPECTRUM_T* spectrum ///< spectrum to add to spectrum_collection -in
-  )
-{
-  // FIXME eventually might want it to grow dynamically
-  // check if spectrum capacity is full
-  if(get_spectrum_collection_num_spectra(spectrum_collection) == MAX_SPECTRA){
-    carp(CARP_ERROR,"ERROR: cannot add spectrum, capacity full\n"); 
-    return FALSE;
-  }
-  // set spectrum
-  spectrum_collection->spectra[spectrum_collection->num_spectra] = spectrum;
-  ++spectrum_collection->num_spectra;
-  spectrum_collection->num_charged_spectra += spectrum -> get_num_possible_z();
-  return TRUE;
-}
-
-/**
- * Adds a spectrum to the spectrum_collection.
- * adds the spectrum in correct order into the spectra array
- * spectrum must be heap allocated
- */
-BOOLEAN_T add_spectrum(
-  SPECTRUM_COLLECTION_T* spectrum_collection,///< the working spectrum_collection -out
-  SPECTRUM_T* spectrum ///< spectrum to add to spectrum_collection -in
-  )
-{
-  // FIXME eventually might want it to grow dynamically
-  int add_index = 0;
-  int spectrum_index;
   
-  // check if spectrum capacity is full
-  if(get_spectrum_collection_num_spectra(spectrum_collection) == MAX_SPECTRA){
-    carp(CARP_ERROR,"ERROR: cannot add spectrum, capacity full\n"); 
-    return FALSE;
-  }
-  // find correct location
-  for(; add_index < spectrum_collection->num_spectra; ++add_index){
-    if(spectrum_collection->spectra[add_index] -> get_first_scan() >
-       spectrum -> get_first_scan()){
-      break;
-    }
-  }
-  // do we add to end?
-  if(add_index != spectrum_collection->num_spectra +1){
-    spectrum_index = spectrum_collection->num_spectra;
-    // shift all spectrum that have greater or equal index to add_index to right  
-    for(; spectrum_index >= add_index; --spectrum_index){
-      spectrum_collection->spectra[spectrum_index+1] = 
-        spectrum_collection->spectra[spectrum_index];
-    }
-  }
-  
-  // set spectrum
-  spectrum_collection->spectra[add_index] = spectrum;
-  ++spectrum_collection->num_spectra;
-  spectrum_collection->num_charged_spectra += spectrum -> get_num_possible_z();
-  return TRUE;
-}
-
-
-// FIXME maybe a faster way? can't perform binary search since we must know the array index
-/**
- * Removes a spectrum from the spectrum_collection.
- */
-void remove_spectrum(
-  SPECTRUM_COLLECTION_T* spectrum_collection,///< the working spectrum_collection -out
-  SPECTRUM_T* spectrum ///< spectrum to be removed from spectrum_collection -in
-  )
-{
-  int scan_num = spectrum -> get_first_scan();
-  int spectrum_index = 0;
-  
-  // find where the spectrum is located in the spectrum array
-  for(; spectrum_index < spectrum_collection->num_spectra; ++spectrum_index){
-    if(scan_num ==
-       spectrum_collection->spectra[spectrum_index] -> get_first_scan()){
-      break;
-    }
-  }
-  
-  delete spectrum_collection->spectra[spectrum_index];
-  
-  // shift all the spectra to the left to fill in the gap
-  for(; spectrum_index < spectrum_collection->num_spectra; ++spectrum_index){
-    spectrum_collection->spectra[spectrum_index] =
-      spectrum_collection->spectra[spectrum_index+1];
-  }
-  
-  --spectrum_collection->num_spectra;
-  spectrum_collection->num_charged_spectra -= spectrum -> get_num_possible_z();
-} 
-
-
 /**
  * Parses a single spectrum from a spectrum_collection with first scan
  * number equal to first_scan. Use binary search
  * \returns TRUE if the spectrum with. FALSE is failure.
  */
-BOOLEAN_T get_spectrum_collection_spectrum(
-  SPECTRUM_COLLECTION_T* spectrum_collection, ///< The spectrum collection -out
-  int first_scan,      ///< The first scan of the spectrum to retrieve -in
-  SPECTRUM_T* spectrum ///< The (empty) allocated SPECTRUM_T object -in
-  )
-{
+BOOLEAN_T SPECTRUM_COLLECTION_T::get_spectrum(int first_scan,  ///< The first scan of the spectrum to retrieve -in
+			 SPECTRUM_T* spectrum
+					      ) {
   FILE* file;
   long target_index;
   // check if file is still avaliable
-  if ((file = fopen(spectrum_collection->filename,"r")) == NULL) {
-    carp(CARP_ERROR,"File %s could not be opened",spectrum_collection->filename);
+  if ((file = fopen(filename,"r")) == NULL) {
+    carp(CARP_ERROR,"get_spectrum(): File %s could not be opened",filename);
     return (FALSE);
   }
 
@@ -398,13 +278,331 @@ BOOLEAN_T get_spectrum_collection_spectrum(
   }
   fseek(file, target_index, SEEK_SET);
   // parse spectrum, check if failed to parse spectrum return false
-  if(!spectrum -> parse_spectrum_file(file, spectrum_collection->filename)){
+  if(!spectrum -> parse_spectrum_file(file, filename)){
     fclose(file);
     return FALSE;
   }
   fclose(file);
   return TRUE;
 }
+
+/**
+ * Adds a spectrum to the spectrum_collection.
+ * adds the spectrum in correct order into the spectra array
+ * spectrum must be heap allocated
+ */
+BOOLEAN_T SPECTRUM_COLLECTION_T::add(SPECTRUM_T* spectrum) {
+  // FIXME eventually might want it to grow dynamically
+  int add_index = 0;
+  int spectrum_index;
+  
+  // check if spectrum capacity is full
+  if(get_num_spectra() == MAX_SPECTRA){
+    carp(CARP_ERROR,"ERROR: cannot add spectrum, capacity full\n"); 
+    return FALSE;
+  }
+  // find correct location
+  for(; add_index < num_spectra; ++add_index){
+    if(spectra[add_index] -> get_first_scan() >
+       spectrum -> get_first_scan()){
+      break;
+    }
+  }
+  // do we add to end?
+  if(add_index != num_spectra +1){
+    spectrum_index = num_spectra;
+    // shift all spectrum that have greater or equal index to add_index to right  
+    for(; spectrum_index >= add_index; --spectrum_index){
+      spectra[spectrum_index+1] = spectra[spectrum_index];
+    }
+  }
+  
+  // set spectrum
+  spectra[add_index] = spectrum;
+  ++num_spectra;
+  num_charged_spectra += spectrum -> get_num_possible_z();
+  return TRUE;
+}
+
+
+// CHECKME test if capacity is correct might be off by one
+/**
+ * Adds a spectrum to the spectrum_collection.
+ * adds the spectrum to the end of the spectra array
+ * should only be used when the adding in increasing scan num order
+ * when adding in random order should use add_spectrum
+ * spectrum must be heap allocated
+ */
+BOOLEAN_T SPECTRUM_COLLECTION_T::add_to_end(SPECTRUM_T* spectrum) {
+  // FIXME eventually might want it to grow dynamically
+  // check if spectrum capacity is full
+  if(get_num_spectra() == MAX_SPECTRA){
+    carp(CARP_ERROR,"ERROR: cannot add spectrum, capacity full\n"); 
+    return FALSE;
+  }
+  // set spectrum
+  spectra[num_spectra] = spectrum;
+  ++num_spectra;
+  num_charged_spectra += spectrum -> get_num_possible_z();
+  return TRUE;
+}
+
+// FIXME maybe a faster way? can't perform binary search since we must know the array index
+/**
+ * Removes a spectrum from the spectrum_collection.
+ */
+BOOLEAN_T SPECTRUM_COLLECTION_T::remove(SPECTRUM_T* spectrum) {
+  int scan_num = spectrum -> get_first_scan();
+  int spectrum_index = 0;
+  
+  // find where the spectrum is located in the spectrum array
+  for(; spectrum_index < num_spectra; ++spectrum_index){
+    if(scan_num == spectra[spectrum_index] -> get_first_scan()){
+      break;
+    }
+  }
+  
+  delete spectra[spectrum_index];
+  
+  // shift all the spectra to the left to fill in the gap
+  for(; spectrum_index < num_spectra; ++spectrum_index){
+    spectra[spectrum_index] =
+      spectra[spectrum_index+1];
+  }
+  
+  --num_spectra;
+  num_charged_spectra -= spectrum -> get_num_possible_z();
+
+  return TRUE;
+
+}
+
+/******************************************************************************/
+
+/**  ////// TESTME////
+ * sets the filename of the ms2 file the spectra were parsed
+ * this function should be used only the first time the filename is set
+ * to change existing filename use set_spectrum_collection_filename
+ * copies the value from arguement char* filename into a heap allocated memory
+ */
+void SPECTRUM_COLLECTION_T::set_new_filename(char* filename) {
+  int filename_length = strlen(filename) +1; // +\0
+  char * copy_filename = 
+    (char *)mymalloc(sizeof(char)*filename_length);
+  
+  this -> filename =
+    strncpy(copy_filename,filename,filename_length);  
+
+  carp(CARP_ERROR,"new filename is:%s",filename);
+}
+
+/**
+ * sets the filename of the ms2 file the spectrum_collection was parsed
+ * copies the value from arguement char* filename into a heap allocated memory
+ * frees memory for the filename that is replaced
+ */
+void SPECTRUM_COLLECTION_T::set_filename(char* filename) {
+  free(this -> filename);
+  set_new_filename(filename);
+}
+ 
+/**
+ * \returns the filename of the ms2 file the spectra was parsed
+ * returns a char* to a heap allocated copy of the filename
+ * user must free the memory
+ */
+char* SPECTRUM_COLLECTION_T::get_filename() {
+  int filename_length = strlen(filename) +1; // +\0
+  char * copy_filename = 
+    (char *)mymalloc(sizeof(char)*filename_length);
+  return strncpy(copy_filename, filename, filename_length);
+}
+
+/**
+ * \returns the current number of spectrum in the spectrum_collection
+ */
+int SPECTRUM_COLLECTION_T::get_num_spectra() {
+  return num_spectra;
+}
+
+/**
+ * \returns The current number of spectra assuming differnt charge(i.e. one spectrum with two charge states are counted as two spectra) in the spectrum_collection
+ */
+int SPECTRUM_COLLECTION_T::get_num_charged_spectra() {
+  return num_charged_spectra;
+}
+
+/**
+ * \returns the comments from the spectrum_collection
+ * the return char* points to a newly heap allocated copy of the comments
+ * user must free the new string object
+ */
+char* SPECTRUM_COLLECTION_T::get_comment() {
+  char* comments = (char *)mycalloc(1, sizeof(char)*MAX_COMMENT);
+  return strncpy(comments, comment, MAX_COMMENT); 
+}
+
+/**
+ * sets the comment of the spectrum_collection
+ * copies the new_comment into a newly heap allocated copy of the comment
+ */
+void SPECTRUM_COLLECTION_T::set_comment(char* new_comment) {
+  // is there enough memory for new comments?
+  if(strlen(new_comment) + strlen(comment) +1 < MAX_COMMENT){
+    strncat(comment, new_comment, MAX_COMMENT); 
+  }
+  else{
+    carp(CARP_ERROR,"max comment exceeded\n");
+  }
+}
+
+/**
+ * \returns TRUE if the spectrum_collection file has been parsed
+ */
+BOOLEAN_T SPECTRUM_COLLECTION_T::get_is_parsed() {
+  return is_parsed;
+}
+
+/**
+ * Takes the spectrum file name and creates a file with unique filenames.
+ * The method will create one file for PSM result serializations for the 
+ * target sequence and #number_decoy_set number of files for decoy PSM 
+ * result serialization.  Thus, the FILE* array will contain,
+ * at index 0, the target file and the allowed indices the decoy files.
+ *
+ * Template: "fileName_XXXXXX", where XXXXXX is random generated to be unique.
+ * Also, sets psm_result_filenames pointer to the array of filenames for 
+ * both the target and decoy psm results. The array is heap allocated, 
+ * thus user must free it. Size is number_decoy_set +1 (for target)
+ * \returns file handle array to the newly created files (target & decoy) 
+ * and sets psm_result_filename.
+ */
+FILE** SPECTRUM_COLLECTION_T::get_psm_result_filenames(
+  char* psm_result_folder_name, ///< the folder name for where the result file should be placed -in
+  char*** psm_result_filenames, ///< pointer to be set to the array of filenames for both the target and decoy psm results -out
+  int number_decoy_set,  ///< the number of decoy sets to produce -in
+  char* file_extension ///< the file extension of the spectrum file(i.e. ".ms2") -in
+  ) {
+  int file_descriptor = -1;
+  char suffix[25];
+  // total number of files to create, target plus how many decoys needed
+  int total_files = number_decoy_set + 1; 
+  
+  // check if psm_result_folder exist?
+  if(access(psm_result_folder_name, F_OK)){
+    // create PSM result folder
+    if(mkdir(psm_result_folder_name, S_IRWXU+S_IRWXG+S_IRWXO) != 0){
+      carp(CARP_ERROR, "failed to create psm result folder: %s", 
+	   psm_result_folder_name);
+    }
+  }
+  
+  // create FILE* array
+  FILE** file_handle_array = (FILE**)mycalloc(total_files, sizeof(FILE*));
+  char** filename_array = (char**)mycalloc(total_files, sizeof(char*));
+  
+  // extract filename from absolute path
+  char** spectrum_file_path = 
+    parse_filename_path(this->filename);
+  
+  // create a filename template that has psm_result_folder_name/spectrum_fname
+  char* filename_template 
+    = get_full_filename(psm_result_folder_name, spectrum_file_path[0]); 
+  
+  // now create files for first target file and then for decoys
+  int file_idx;
+  for(file_idx = 0; file_idx < total_files; ++file_idx){
+    
+    // is it target?
+    if(file_idx == 0){
+
+      // generate psm_result filename as 
+      // psm_result_folder_name/spectrum_filename_XXXXXX
+      filename_array[file_idx] = generate_name(filename_template, "_XXXXXX", 
+          file_extension, "crux_match_target_");
+    }
+
+    // for decoys
+    else{
+      sprintf(suffix, "crux_match_decoy_%d_", file_idx);
+      filename_array[file_idx] = generate_name(filename_template, "_XXXXXX", 
+          file_extension, suffix);
+    }
+
+    // now open file handle
+    if((file_descriptor = mkstemp(filename_array[file_idx])) == -1 ||
+       (file_handle_array[file_idx] = fdopen(file_descriptor, "w+")) == NULL){
+      
+      // did we successfully create a file?
+      if(file_descriptor != -1){
+        unlink(filename_array[file_idx]);
+        close(file_descriptor);
+      }
+      free(spectrum_file_path[0]);
+      free(spectrum_file_path[1]);
+      free(spectrum_file_path);
+      free(filename_template);
+      carp(CARP_ERROR, "failed to create PSM output file");
+      return NULL;
+    }
+    // set permission for the file
+    chmod(filename_array[file_idx], 0664);
+  }
+  
+  free(spectrum_file_path[0]);
+  free(spectrum_file_path[1]);
+  free(spectrum_file_path);
+  free(filename_template);
+  
+  // set output for result filenames
+  *psm_result_filenames = filename_array;
+  return file_handle_array;
+}
+
+/**
+ * <int: number spectra> <--this will be over written by serialize_total_number_of_spectra method
+ * <int: number of spectrum features>
+ * <int: number of top ranked peptides serialized per spectra>
+ *
+ * 
+ * // FIXME <int: ms2 file length><char*: ms2 filename>
+ * // FIXME <int: fasta file length><char*: fasta filename>
+ *
+ * Serializes the header information for the binary PSM serialized files
+ * Must run in pair with serialize_total_number_of_spectra.
+ *
+ * General order is, 
+ * serialize_header -> serialize_psm_features -> serialize_total_number_of_spectra
+ *\returns TRUE if serialized header successfully, else FALSE
+ */
+BOOLEAN_T SPECTRUM_COLLECTION_T::serailize_header(
+			     char* fasta_file,
+			     FILE* psm_file) {
+  int num_spectrum_features = 0;
+  // set max number of matches to be serialized per spectrum
+  int number_top_rank_peptide = get_int_parameter("top-match");
+  char* file_fasta = parse_filename(fasta_file);
+  // int file_fasta_length = strlen(file_fasta);
+  char* file_ms2 = parse_filename(filename);
+  // int file_ms2_length = strlen(file_ms2);
+  
+  // FIXME later if you want to be selective on charge to run
+  // must refine the current serialize methods
+  
+  // num_charged_spectra will be over written by serialize_total_number_of_spectra method
+  fwrite(&(num_charged_spectra), sizeof(int), 1, psm_file);
+  fwrite(&(num_spectrum_features), sizeof(int), 1, psm_file);
+  fwrite(&(number_top_rank_peptide), sizeof(int), 1, psm_file);
+  
+  carp(CARP_DETAILED_DEBUG, "Serialize header wrote %i top matches", 
+       number_top_rank_peptide);
+  // free up files
+  free(file_ms2);
+  free(file_fasta);
+  
+  return TRUE;
+}
+
 
 /**
  * 
@@ -571,272 +769,6 @@ int match_first_scan_line(
   }
   return -1; // first_scan <  query_first_scan
 }
-
-/******************************************************************************/
-
-/**  ////// TESTME////
- * sets the filename of the ms2 file the spectra were parsed
- * this function should be used only the first time the filename is set
- * to change existing filename use set_spectrum_collection_filename
- * copies the value from arguement char* filename into a heap allocated memory
- */
-void set_spectrum_collection_new_filename(
-  SPECTRUM_COLLECTION_T* spectrum_collection, ///< the spectrum_collection save filename -out
-  char* filename ///< filename -in
-  )
-{
-  int filename_length = strlen(filename) +1; // +\0
-  char * copy_filename = 
-    (char *)mymalloc(sizeof(char)*filename_length);
-
-  spectrum_collection->filename =
-    strncpy(copy_filename,filename,filename_length);  
-}
-
-/**
- * sets the filename of the ms2 file the spectrum_collection was parsed
- * copies the value from arguement char* filename into a heap allocated memory
- * frees memory for the filename that is replaced
- */
-void set_spectrum_collection_filename(
-  SPECTRUM_COLLECTION_T* spectrum_collection, ///< the spectrum_collection save filename -out
-  char* filename ///< filename -in
-  )
-{
-  free(spectrum_collection->filename);
-  set_spectrum_collection_new_filename(spectrum_collection, filename);
-}
-
-/**
- * \returns the filename of the ms2 file the spectra was parsed
- * returns a char* to a heap allocated copy of the filename
- * user must free the memory
- */
-char* get_spectrum_collection_filename(
-  SPECTRUM_COLLECTION_T* spectrum_collection ///< the spectrum collection's filename -in 
-  )
-{  
-  int filename_length = strlen(spectrum_collection->filename) +1; // +\0
-  char * copy_filename = 
-    (char *)mymalloc(sizeof(char)*filename_length);
-  return strncpy(copy_filename, spectrum_collection->filename, filename_length);  
-}
-
-/**
- * \returns the current number of spectrum in the spectrum_collection
- */
-int get_spectrum_collection_num_spectra(
-  SPECTRUM_COLLECTION_T* spectrum_collection ///< the spectrum_collection save filename -in                                         
-  )
-{
-  return spectrum_collection->num_spectra;
-}
-
-/**
- * \returns The current number of spectra assuming differnt charge(i.e. one spectrum with two charge states are counted as two spectra) in the spectrum_collection
- */
-int get_spectrum_collection_num_charged_spectra(
-  SPECTRUM_COLLECTION_T* spectrum_collection ///< the spectrum_collection save filename -in
-  )
-{
-  return spectrum_collection->num_charged_spectra;
-}
-
-
-/**
- * \returns the comments from the spectrum_collection
- * the return char* points to a newly heap allocated copy of the comments
- * user must free the new string object
- */
-
-char* get_spectrum_collection_comment(
-  SPECTRUM_COLLECTION_T* spectrum_collection ///< the spectrum_collection -in                                         
-  )
-{
-  char* comments = (char *)mycalloc(1, sizeof(char)*MAX_COMMENT);
-  return strncpy(comments, spectrum_collection->comment, MAX_COMMENT); 
-}
-
-/**
- * sets the comment of the spectrum_collection
- * copies the new_comment into a newly heap allocated copy of the comment
- */
-
-void set_spectrum_collection_comment(
-  SPECTRUM_COLLECTION_T* spectrum_collection, ///< the spectrum_collection save comment -in                                         
-  char* new_comment ///< the new comments to be copied
-  )
-{
-  // is there enough memory for new comments?
-  if(strlen(new_comment) + strlen(spectrum_collection->comment) +1 < MAX_COMMENT){
-    strncat(spectrum_collection->comment, new_comment, MAX_COMMENT); 
-  }
-  else{
-    carp(CARP_ERROR,"max comment exceeded\n");
-  }
-}
-
-
-/**
- * \returns TRUE if the spectrum_collection file has been parsed
- */
-BOOLEAN_T get_spectrum_collection_is_parsed(
-  SPECTRUM_COLLECTION_T* spectrum_collection ///< the spectrum_collection -in                                         
-)
-{
-  return spectrum_collection->is_parsed;
-}
-
-/**
- * Takes the spectrum file name and creates a file with unique filenames.
- * The method will create one file for PSM result serializations for the 
- * target sequence and #number_decoy_set number of files for decoy PSM 
- * result serialization.  Thus, the FILE* array will contain,
- * at index 0, the target file and the allowed indices the decoy files.
- *
- * Template: "fileName_XXXXXX", where XXXXXX is random generated to be unique.
- * Also, sets psm_result_filenames pointer to the array of filenames for 
- * both the target and decoy psm results. The array is heap allocated, 
- * thus user must free it. Size is number_decoy_set +1 (for target)
- * \returns file handle array to the newly created files (target & decoy) 
- * and sets psm_result_filename.
- */
-FILE** get_spectrum_collection_psm_result_filenames(
-  SPECTRUM_COLLECTION_T* spectrum_collection, 
-    ///< the spectrum_collection -in
-  char* psm_result_folder_name, 
-    ///< the folder name for where the result file should be placed -in
-  char*** psm_result_filenames, 
-    ///< pointer to be set to the array of filenames -out
-  int number_decoy_set,  
-    ///< the number of decoy sets to produce -in
-  char* file_extension 
-    ///< the file extension of the spectrum file (i.e. ".ms2") -in
-  )
-{
-  int file_descriptor = -1;
-  char suffix[25];
-  // total number of files to create, target plus how many decoys needed
-  int total_files = number_decoy_set + 1; 
-
-  // check if psm_result_folder exist?
-  if(access(psm_result_folder_name, F_OK)){
-    // create PSM result folder
-    if(mkdir(psm_result_folder_name, S_IRWXU+S_IRWXG+S_IRWXO) != 0){
-      carp(CARP_ERROR, "failed to create psm result folder: %s", 
-          psm_result_folder_name);
-    }
-  }
-  
-  // create FILE* array
-  FILE** file_handle_array = (FILE**)mycalloc(total_files, sizeof(FILE*));
-  char** filename_array = (char**)mycalloc(total_files, sizeof(char*));
-  
-  // extract filename from absolute path
-  char** spectrum_file_path = 
-    parse_filename_path(spectrum_collection->filename);
-  
-  // create a filename template that has psm_result_folder_name/spectrum_fname
-  char* filename_template 
-    = get_full_filename(psm_result_folder_name, spectrum_file_path[0]); 
-  
-  // now create files for first target file and then for decoys
-  int file_idx;
-  for(file_idx = 0; file_idx < total_files; ++file_idx){
-
-    // is it target?
-    if(file_idx == 0){
-
-      // generate psm_result filename as 
-      // psm_result_folder_name/spectrum_filename_XXXXXX
-      filename_array[file_idx] = generate_name(filename_template, "_XXXXXX", 
-          file_extension, "crux_match_target_");
-    }
-
-    // for decoys
-    else{
-      sprintf(suffix, "crux_match_decoy_%d_", file_idx);
-      filename_array[file_idx] = generate_name(filename_template, "_XXXXXX", 
-          file_extension, suffix);
-    }
-
-    // now open file handle
-    if((file_descriptor = mkstemp(filename_array[file_idx])) == -1 ||
-       (file_handle_array[file_idx] = fdopen(file_descriptor, "w+")) == NULL){
-      
-      // did we successfully create a file?
-      if(file_descriptor != -1){
-        unlink(filename_array[file_idx]);
-        close(file_descriptor);
-      }
-      free(spectrum_file_path[0]);
-      free(spectrum_file_path[1]);
-      free(spectrum_file_path);
-      free(filename_template);
-      carp(CARP_ERROR, "failed to create PSM output file");
-      return NULL;
-    }
-    // set permission for the file
-    chmod(filename_array[file_idx], 0664);
-  }
-  
-  free(spectrum_file_path[0]);
-  free(spectrum_file_path[1]);
-  free(spectrum_file_path);
-  free(filename_template);
-  
-  // set output for result filenames
-  *psm_result_filenames = filename_array;
-  return file_handle_array;
-}
-
-/**
- * <int: number spectra> <--this will be over written by serialize_total_number_of_spectra method
- * <int: number of spectrum features>
- * <int: number of top ranked peptides serialized per spectra>
- *
- * 
- * // FIXME <int: ms2 file length><char*: ms2 filename>
- * // FIXME <int: fasta file length><char*: fasta filename>
- *
- * Serializes the header information for the binary PSM serialized files
- * Must run in pair with serialize_total_number_of_spectra.
- *
- * General order is, 
- * serialize_header -> serialize_psm_features -> serialize_total_number_of_spectra
- *\returns TRUE if serialized header successfully, else FALSE
- */
-BOOLEAN_T serialize_header(
-  SPECTRUM_COLLECTION_T* spectrum_collection, ///< the spectrum_collection -in
-  char* fasta_file, ///< the fasta file 
-  FILE* psm_file ///< the file to serialize the header information -out
-  )
-{
-  int num_spectrum_features = 0;
-  // set max number of matches to be serialized per spectrum
-  int number_top_rank_peptide = get_int_parameter("top-match");
-  char* file_fasta = parse_filename(fasta_file);
-  // int file_fasta_length = strlen(file_fasta);
-  char* file_ms2 = parse_filename(spectrum_collection->filename);
-  // int file_ms2_length = strlen(file_ms2);
-  
-  // FIXME later if you want to be selective on charge to run
-  // must refine the current serialize methods
-  
-  // num_charged_spectra will be over written by serialize_total_number_of_spectra method
-  fwrite(&(spectrum_collection->num_charged_spectra), sizeof(int), 1, psm_file);
-  fwrite(&(num_spectrum_features), sizeof(int), 1, psm_file);
-  fwrite(&(number_top_rank_peptide), sizeof(int), 1, psm_file);
-  
-  carp(CARP_DETAILED_DEBUG, "Serialize header wrote %i top matches", 
-       number_top_rank_peptide);
-  // free up files
-  free(file_ms2);
-  free(file_fasta);
-  
-  return TRUE;
-}
-
 /**
  * Modifies the serialized header information for the binary PSM serialized files
  * Sets the total number of spectra serialized in the file
@@ -848,7 +780,8 @@ BOOLEAN_T serialize_header(
  *
  *\returns TRUE if total number of spectra seerialized in the file, else FALSE
  */
-BOOLEAN_T serialize_total_number_of_spectra(
+
+BOOLEAN_T SPECTRUM_COLLECTION_T::serialize_total_number_of_spectra(
   int spectra_idx, ///< the number of spectra serialized in PSM file -in 
   FILE* psm_file ///< the file to serialize the header information -out
   )
@@ -864,6 +797,7 @@ BOOLEAN_T serialize_total_number_of_spectra(
 
   return TRUE;
 }
+
 /******************************************************************************/
 
 /**
@@ -944,8 +878,7 @@ BOOLEAN_T spectrum_iterator_has_next(
 )
 {
   return (spectrum_iterator->spectrum_index 
-          < get_spectrum_collection_num_spectra(
-                    spectrum_iterator->spectrum_collection));
+          < spectrum_iterator->spectrum_collection -> get_num_spectra());
 }
 
 /**
@@ -1011,8 +944,7 @@ void queue_next_spectrum(FILTERED_SPECTRUM_CHARGE_ITERATOR_T* iterator){
     iterator->charge_index++;
   }
   // Are there any more spectra?
-  else if( iterator->spectrum_index < get_spectrum_collection_num_spectra(
-                                 iterator->spectrum_collection)-1 ){
+  else if( iterator->spectrum_index < iterator->spectrum_collection -> get_num_spectra()-1 ){
     iterator->spectrum_index++;
     spec = iterator->spectrum_collection->spectra[iterator->spectrum_index];
     // first free any existing charges in the iterator

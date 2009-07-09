@@ -6,6 +6,8 @@
  *              scan number.
  * REVISION: 
  ****************************************************************************/
+
+#include "spectrum.h"
 #include <math.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -14,7 +16,7 @@
 #include <ctype.h>
 #include "parameter.h"
 #include "carp.h"
-#include "spectrum.h"
+
 #include "peak.h"
 #include "spectrum_collection.h"
 #include "unistd.h"
@@ -81,13 +83,12 @@ int main(int argc, char** argv){
     carp(CARP_FATAL, "Could not read from ms2 file '%s'", ms2_filename);
   }
   carp(CARP_DETAILED_DEBUG, "Creating spectrum collection.");
-  collection = new_spectrum_collection(ms2_filename);
+  collection = new SPECTRUM_COLLECTION_T(ms2_filename);
   spectrum = new SPECTRUM_T();
   
   /* search for spectrum with correct scan number */
-  spectrum_found = get_spectrum_collection_spectrum(collection, 
-                                                    scan_number, 
-                                                    spectrum);
+  spectrum_found = collection -> get_spectrum(scan_number, 
+					      spectrum);
   if( !spectrum_found ){
     carp(CARP_FATAL, "Could not find scan number %i", scan_number);
   }
@@ -141,7 +142,7 @@ int main(int argc, char** argv){
 
   free(possible_z_array);
   delete spectrum;
-  free_spectrum_collection(collection);
+  delete collection;
   
   carp(CARP_INFO, "crux-get-ms2-spectrum finished.");
   return(0);

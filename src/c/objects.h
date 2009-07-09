@@ -55,7 +55,10 @@ typedef struct peak_iterator PEAK_ITERATOR_T;
  * \typedef SPECTRUM_COLLECTION_T 
  * \brief A collection of spectra
  */
+#ifdef __cplusplus
+#else
 typedef struct spectrum_collection SPECTRUM_COLLECTION_T;
+#endif
 
 /**
  * \typedef SPECTRUM_ITERATOR_T 

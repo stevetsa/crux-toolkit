@@ -126,16 +126,16 @@ int search_main(int argc, char** argv){
   char* ms2_file = get_string_parameter_pointer("ms2 file");
 
   // open ms2 file
-  SPECTRUM_COLLECTION_T* spectra = new_spectrum_collection(ms2_file);
+  SPECTRUM_COLLECTION_T* spectra = new SPECTRUM_COLLECTION_T(ms2_file);
 
   // parse the ms2 file for spectra
   carp(CARP_INFO, "Reading in ms2 file %s", ms2_file);
-  if(!parse_spectrum_collection(spectra)){
+  if(!spectra -> parse()){
     carp(CARP_FATAL, "Failed to parse ms2 file: %s", ms2_file);
   }
   
   carp(CARP_DEBUG, "There were %i spectra found in the ms2 file",
-       get_spectrum_collection_num_spectra(spectra));
+       spectra -> get_num_spectra());
 
   /* Get input: protein file */
   char* input_file = get_string_parameter("protein input");
@@ -426,8 +426,8 @@ int search_main(int argc, char** argv){
   for(file_idx=0; file_idx < num_decoys + 1; file_idx++){
     carp(CARP_DEBUG, "Changing csm header to have %i spectrum searches",
          num_successful_searches);
-    serialize_total_number_of_spectra(num_successful_searches,
-                                      psm_file_array[file_idx]);
+    SPECTRUM_COLLECTION_T::serialize_total_number_of_spectra(num_successful_searches,
+							    psm_file_array[file_idx]);
   }
   // clean up memory
 

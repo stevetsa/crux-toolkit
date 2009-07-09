@@ -17,7 +17,8 @@ endif
 AM_CFLAGS = -Wall -W -Werror  -fno-strict-aliasing $(USEDOUBLES) $(USEDARWIN) \
             -D_LARGEFILE_SOURCE=1 -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE
 AM_CPPFLAGS = -Wall -W -Werror  -fno-strict-aliasing $(USEDOUBLES) $(USEDARWIN) \
-            -D_LARGEFILE_SOURCE=1 -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE
+            -D_LARGEFILE_SOURCE=1 -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -I./MSToolkit
+
 
 noinst_LTLIBRARIES = libcrux.la
 
@@ -116,7 +117,7 @@ bin_PROGRAMS = $(PROGRAM_FILES)
 
 crux_get_ms2_spectrum_SOURCES = get_ms2_spectrum.cpp
 crux_get_ms2_spectrum_CFLAGS = $(AM_CFLAGS) -DMAIN 
-crux_get_ms2_spectrum_LDADD = libcrux.la 
+crux_get_ms2_spectrum_LDADD = libcrux.la   -L$(top_builddir)/src/c/MSToolkit -lmstoolkit
 
 crux_generate_peptides_SOURCES = generate_peptides.c
 crux_generate_peptides_CFLAGS = $(AM_CFLAGS) -DMAIN 
@@ -137,7 +138,7 @@ crux_generate_peptides_LDADD = libcrux.la
 
 crux_predict_peptide_ions_SOURCES = predict_peptide_ions.cpp
 crux_predict_peptide_ions_CFLAGS = $(AM_CFLAGS) -DMAIN 
-crux_predict_peptide_ions_LDADD = libcrux.la 
+crux_predict_peptide_ions_LDADD = libcrux.la  -L$(top_builddir)/src/c/MSToolkit -lmstoolkit
 
 #create_protein_index_SOURCES = create_protein_index.c
 #create_protein_index_CFLAGS = $(AM_CFLAGS) -DMAIN 

@@ -6,10 +6,16 @@
 #ifndef SPECTRUM_H
 #define SPECTRUM_H
 
+#ifdef __cplusplus
+//MSToolkit Includes
+#include "Spectrum.h"
+#endif
+
 //#include <stdio.h>
 #include "utils.h"
 #include "objects.h"
 #include "peak.h"
+
 
 
 #define MAX_I_LINES 2 // number of 'I' lines albe to parse for one spectrum object
@@ -18,6 +24,8 @@
 #define _SPECTRUM_T_CLASS_ 1
 #ifdef _SPECTRUM_T_CLASS_
 #ifdef __cplusplus
+
+
 
 
 /**
@@ -42,7 +50,7 @@
  */
 class SPECTRUM_T {
  protected:
-  //MSToolkit::Spectrum mst_spectrum;
+  MSToolkit::Spectrum mst_spectrum;
 
   int              first_scan;    ///< The number of the first scan
   int              last_scan;     ///< The number of the last scan
