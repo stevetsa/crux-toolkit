@@ -35,6 +35,7 @@ typedef enum _peak_sort_type PEAK_SORT_TYPE_T;
  */
 
 #ifdef __cplusplus
+class SPECTRUM_T;
 #else
 typedef struct spectrum SPECTRUM_T;
 #endif
@@ -53,8 +54,10 @@ typedef enum _spectrum_type SPECTRUM_TYPE_T;
  * \typedef PEAK_ITERATOR_T 
  * \brief An object to iterate over the peaks in a spectrum
  */
+#ifdef __cplusplus
+#else
 typedef struct peak_iterator PEAK_ITERATOR_T;
-
+#endif
 /**
  * \typedef SPECTRUM_COLLECTION_T 
  * \brief A collection of spectra
