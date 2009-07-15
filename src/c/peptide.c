@@ -1568,6 +1568,8 @@ PEPTIDE_T* parse_peptide(
   BOOLEAN_T use_array  ///< should I use array peptide_src or link list -in  
   )
 {  
+
+  carp(CARP_INFO,"parse_peptide: start");
   carp(CARP_DETAILED_DEBUG, "Parsing peptide");
   //PROTEIN_T* parent_protein = NULL;
   //PEPTIDE_SRC_T* peptide_src = NULL;
@@ -1695,7 +1697,7 @@ PEPTIDE_T* parse_peptide(
   }
   
   carp(CARP_DETAILED_DEBUG, "Finished parsing peptide.");
-  
+  carp(CARP_INFO,"parse peptide:done.");
   return peptide;
 }
 

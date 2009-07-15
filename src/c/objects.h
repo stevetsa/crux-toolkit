@@ -12,7 +12,11 @@
  * \typedef PEAK_T 
  * A peak in a spectrum
  */
+#ifdef __cplusplus
+class PEAK_T;
+#else
 typedef struct peak PEAK_T;
+#endif
 
 /**
  * The enum for peak sort type(_PEAK_LOCATION, _PEAK_INTENSITY)

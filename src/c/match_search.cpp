@@ -103,7 +103,7 @@ int search_main(int argc, char** argv){
   BOOLEAN_T overwrite = get_boolean_parameter("overwrite");
   int result = create_output_directory(
     output_folder, 
-    TRUE // Allow existing directory
+    overwrite
   );
   if( result == -1 ){
     carp(CARP_FATAL, "Unable to create output directory %s.", output_folder);
@@ -248,11 +248,14 @@ int search_main(int argc, char** argv){
       }
 
       // get peptide iterator
-      MODIFIED_PEPTIDES_ITERATOR_T* peptide_iterator = 
-        new_modified_peptides_iterator_from_mass(mass,
-                                                 peptide_mod,
-                                                 index,
-                                                 database);
+      MODIFIED_PEPTIDES_ITERATOR_T* peptide_iterator =
+	new_modified_peptides_iterator_from_mz(spectrum -> get_precursor_mz(),
+					       charge,
+					       peptide_mod, 
+					       index,
+					       database);
+
+
       // score peptides
       int added = add_matches(match_collection, 
                               spectrum, 

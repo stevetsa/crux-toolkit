@@ -3,6 +3,8 @@
  * $Revision: 1.31 $
  * \brief: Object for representing a single ion.
  ****************************************************************************/
+#include "peak.h"
+
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -11,7 +13,7 @@
 #include "ion.h"
 #include "alphabet.h"
 #include "peptide.h"
-#include "peak.h"
+
 #include "mass.h"
 #include "utils.h"
 #include <sys/types.h>
@@ -280,8 +282,8 @@ void ION_T::print_ion_gmtk_single(
   FLOAT_T intensity = 0.0;
   FLOAT_T intensity_rank = 0.0;
   if (peak != NULL){
-    intensity = get_peak_intensity(peak);
-    intensity_rank = get_peak_intensity_rank(peak);
+    intensity = peak -> get_intensity();
+    intensity_rank = peak -> get_intensity_rank();
     is_detected = 1;
   }
 
@@ -347,8 +349,8 @@ void ION_T::print_ion_gmtk_single_binary(
   float_array[2] = 0.0;                                   // 2
   int is_detected = 0;
   if (this->peak != NULL){
-    float_array[1] = get_peak_intensity(peak);       // 1 
-    float_array[2] = get_peak_intensity_rank(peak);  // 2 
+    float_array[1] = peak -> get_intensity();       // 1 
+    float_array[2] = peak -> get_intensity_rank();  // 2 
     is_detected = 1; 
 
 #ifdef LOG_INTENSITY
@@ -536,16 +538,16 @@ void ION_T::print_ion_gmtk_paired_binary(
   int first_is_detected = 0;
   if (first_ion->peak != NULL){
     // put in LOG_INTENSITY ?
-    float_array[2] = get_peak_intensity(first_ion->peak);         // 2 
-    float_array[4] = get_peak_intensity_rank(first_ion->peak);    // 4 
+    float_array[2] = first_ion -> peak -> get_intensity();         // 2 
+    float_array[4] = first_ion -> peak -> get_intensity_rank();    // 4 
     first_is_detected = 1; 
   }
 
   int second_is_detected = 0;
   if (second_ion->peak != NULL){
     // put in LOG_INTENSITY ?
-    float_array[3] = get_peak_intensity(second_ion->peak);        // 3 
-    float_array[5] = get_peak_intensity_rank(second_ion->peak);   // 5 
+    float_array[3] = second_ion -> peak -> get_intensity();        // 3 
+    float_array[5] = second_ion -> peak -> get_intensity_rank();   // 5 
     second_is_detected = 1; 
   }
 

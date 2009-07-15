@@ -1024,6 +1024,7 @@ MATCH_T* parse_match(
   // int num_top_match  ///< number of top PSMs serialized per spectrum -in
   )
 {
+  carp(CARP_INFO,"parse_match:start");
   MATCH_T* match = new_match();
   carp(CARP_DETAILED_DEBUG, "New match charge is %d",get_match_charge(match));
   SPECTRUM_T* spectrum = NULL;
@@ -1049,12 +1050,12 @@ MATCH_T* parse_match(
     fread(&(match->match_rank[score_type_idx]), 
       sizeof(int), 1, result_file);
   }
-  
+  carp(CARP_INFO,"parsing spectrum");
   // parse spectrum
   if((spectrum = SPECTRUM_T::parse_spectrum_binary(result_file))== NULL){
     carp(CARP_ERROR, "Failed to parse binary spectrum.");
   }
-  
+  carp(CARP_INFO,"done parsing spectrum");
   // spectrum specific features
   fread(&(match->b_y_ion_fraction_matched), sizeof(float), 1, result_file);
 
@@ -1084,6 +1085,7 @@ MATCH_T* parse_match(
   carp(CARP_DETAILED_DEBUG, "End of parse match charge is %d",
        get_match_charge(match));
   
+  carp(CARP_INFO,"parse match: done");
   return match;  
 }
 

@@ -458,6 +458,10 @@ void initialize_parameters(void){
       "when used with --compute-p-values. Requires --num-decoys-per-target 1.",
       "true");
 
+  set_boolean_parameter("use-mz-window", FALSE,
+			"use the mz rather than mass for finding the window of peptides",
+			"Available for crux-search-for-matches", "false");
+
   set_double_parameter("spectrum-min-mass", 0.0, 0, BILLION, 
       "Minimum mass of spectra to be searched.  Default 0.",
       "Available for crux-search-for-matches.", "true");
@@ -999,10 +1003,12 @@ void translate_decoy_options(){
     tdc = FALSE;
     new_num_decoy_set = 1;
     new_num_decoy_per_target = num_decoy_per_target;
+    free(location);
   }else if( strcmp(location, "separate-decoy-files") == 0 ){
     tdc = FALSE;
     new_num_decoy_set = num_decoy_per_target;
     new_num_decoy_per_target = 1;
+    free(location);
   }
 
   // now update all values
@@ -1474,6 +1480,7 @@ void print_parameter_file(char** filename){
     }
   }
 
+  free_hash_iterator(iterator);
   fclose(param_file);
   free(output_dir);
 }

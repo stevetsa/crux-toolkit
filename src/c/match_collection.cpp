@@ -988,7 +988,7 @@ BOOLEAN_T estimate_weibull_parameters_from_xcorrs(
   FLOAT_T* scores = match_collection->xcorrs;
   int num_scores = match_collection->num_xcorrs;
   if( num_scores < MIN_WEIBULL_MATCHES ){
-    carp(CARP_DETAILED_INFO, "Too few psms (%i) to estimate "
+    carp(CARP_ERROR, "Too few psms (%i) to estimate "
          "p-value parameters for spectrum %i, charge %i",
          num_scores, spectrum -> get_first_scan(), charge);
     // set eta, beta, and shift to something???
@@ -1002,7 +1002,8 @@ BOOLEAN_T estimate_weibull_parameters_from_xcorrs(
 
   //int num_samples = num_scores;
   // reverse sort the first num_samples of them
-  qsort(scores, num_samples, sizeof(float), compare_floats_descending);
+  
+  sort(scores, scores+num_samples-1, greater<FLOAT_T>());
 
   // use only a fraction of the samples, the high-scoring tail
   // this parameter is hidden from the user
@@ -1354,6 +1355,19 @@ BOOLEAN_T compute_p_values(MATCH_COLLECTION_T* match_collection){
                                     match_collection->beta,
                                     match_collection->shift,
                                     match_collection->experiment_size);
+
+    if (score != score || 
+	score == std::numeric_limits<double>::infinity() ||
+	score == -std::numeric_limits<double>::infinity()) {
+      carp(CARP_ERROR,"NaN or infinite value detected!");
+      carp(CARP_ERROR,"Orig Score:%lf",get_match_score(cur_match, main_score));
+      carp(CARP_ERROR,"eta:%lf",match_collection -> eta);
+      carp(CARP_ERROR,"beta:%lf",match_collection -> beta);
+      carp(CARP_ERROR,"shift:%lf",match_collection -> shift);
+      carp(CARP_ERROR,"experiment_size:%d",match_collection -> experiment_size);
+      carp(CARP_FATAL,"new score:%lf",score);
+    }
+
     // set score in match
     set_match_score(cur_match, LOGP_BONF_WEIBULL_XCORR, score);
 
@@ -1946,7 +1960,7 @@ void print_tab_header(FILE* output){
     "spectrum precursor m/z\t"
     "spectrum neutral mass\t"
     "peptide mass\t"
-    "deta_cn\t"
+    "delta_cn\t"
     "sp score\t"
     "sp rank\t"
     "xcorr score\t"
@@ -2661,7 +2675,9 @@ BOOLEAN_T extend_match_collection(
   // could parse fasta file and ms2 file
   
   // now iterate over all spectra serialized
+  
   for(spectrum_idx = 0; spectrum_idx < total_spectra; ++spectrum_idx){
+    carp(CARP_INFO,"Parsing %i of a total of %i",spectrum_idx, total_spectra);
     /*** get all spectrum specific features ****/
     
     // get charge of the spectrum
@@ -2735,7 +2751,8 @@ BOOLEAN_T extend_match_collection(
       }
     }
     
-    // now iterate over all 
+    // now iterate over all
+    carp(CARP_INFO,"Iterating matches");
     for(match_idx = 0; match_idx < num_top_match; ++match_idx){
       // break if there are no match objects serialized
       //      if(match_total_of_serialized_collection <= 0){
@@ -2759,9 +2776,9 @@ BOOLEAN_T extend_match_collection(
       // now add match to match collection
       add_match_to_post_match_collection(match_collection, match);
     }// next match for this spectrum
-
+    carp(CARP_INFO,"number of matches:%d",match_collection -> match_total);
   }// next spectrum
-  
+  carp(CARP_INFO,"done parsing matches and spectra");
   return TRUE;
 }
 
@@ -2813,6 +2830,8 @@ BOOLEAN_T add_match_to_post_match_collection(
   MATCH_T* match ///< the match to add -in
   )
 {
+  carp(CARP_INFO,"add_match_to_post_match_collection:start");
+
   if( match_collection == NULL || match == NULL ){
     carp(CARP_FATAL, "Cannot add NULL match to NULL collection.");
   }
@@ -2850,9 +2869,10 @@ BOOLEAN_T add_match_to_post_match_collection(
   update_protein_counters(match_collection, peptide);
   
   // update hash table
-  char* hash_value = get_peptide_hash_value(peptide); 
+  char* hash_value = get_peptide_hash_value(peptide);
+  carp(CARP_INFO,"adding hash");
   add_hash(match_collection->post_hash, hash_value, NULL); 
-  
+  carp(CARP_INFO,"done adding hash");
   return TRUE;
 }
 

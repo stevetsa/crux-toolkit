@@ -68,7 +68,7 @@ LIBFILES= \
   parameter.h \
   parse_arguments.c \
   parse_arguments.h \
-  peak.c \
+  peak.cpp \
   peak.h \
   peptide.c \
   peptide_constraint.c \

@@ -41,6 +41,10 @@
 #define BONFERRONI_CUT_OFF_P 0.0001
 #define BONFERRONI_CUT_OFF_NP 0.01
 
+// negative log of bonferroni cutoffs
+#define BONFERRONI_CUT_OFF_NLP -log(BONFERRONI_CUT_OFF_P)
+#define BONFERRONI_CUT_OFF_NLNP -log(BONFERRONI_CUT_OFF_NP)
+
 #define GMTK_MAX_ION_FILES 50
 #define GMTK_NUM_CHARGES 2
 // FIX !! check different charges
@@ -532,7 +536,7 @@ BOOLEAN_T create_intensity_array_sp(
   // while there are more peaks to iterate over..
   while(peak_iterator_has_next(peak_iterator)){
     peak = peak_iterator_next(peak_iterator);
-    peak_location = get_peak_location(peak);
+    peak_location = peak -> get_location();
     
     // skip all peaks larger than experimental mass
     if(peak_location > experimental_mass_cut_off){
@@ -548,7 +552,7 @@ BOOLEAN_T create_intensity_array_sp(
     mz = (int)(peak_location/bin_width + 0.5);
     
     // get intensity
-    intensity = sqrt(get_peak_intensity(peak));
+    intensity = sqrt(peak -> get_intensity());
     
     // set intensity in array with correct mz, only if max peak in the bin
     if(scorer->intensity_array[mz] < intensity){
@@ -858,7 +862,7 @@ BOOLEAN_T create_intensity_array_observed(
   double max_peak = 0.0;
   while(peak_iterator_has_next(peak_iterator)){
     peak = peak_iterator_next(peak_iterator);
-    peak_location = get_peak_location(peak);
+    peak_location = peak -> get_location();
     if (peak_location < experimental_mass_cut_off && peak_location > max_peak) {
       max_peak = peak_location;
     }
@@ -875,7 +879,7 @@ BOOLEAN_T create_intensity_array_observed(
   // while there are more peaks to iterate over..
   while(peak_iterator_has_next(peak_iterator)){
     peak = peak_iterator_next(peak_iterator);
-    peak_location = get_peak_location(peak);
+    peak_location = peak -> get_location();
     
     // skip all peaks larger than experimental mass
     if(peak_location > experimental_mass_cut_off){
@@ -899,7 +903,7 @@ BOOLEAN_T create_intensity_array_observed(
 
     // get intensity
     // sqrt the original intensity
-    intensity = sqrt(get_peak_intensity(peak));
+    intensity = sqrt(peak -> get_intensity());
 
     // Record the max intensity in the full spectrum
     if (intensity > max_intensity_overall) {
@@ -1254,25 +1258,37 @@ double score_logp_bonf_weibull(
   int num_peptide ///< The number of peptides
   ){
   carp(CARP_DETAILED_DEBUG, "Stat: score = %.6f", score);
-  double p_value = exp( - pow( (score+shift)/eta, beta));
-  carp(CARP_DETAILED_DEBUG, "Stat: pvalue before = %.15f", p_value);
-
-  // The Bonferroni correction 
-  // use original equation 1-(1-p_value)^n when p is not too small
-  if(p_value > BONFERRONI_CUT_OFF_P 
-     || p_value*num_peptide > BONFERRONI_CUT_OFF_NP){
-
-    double corrected_pvalue = -log(1-pow((1-p_value), num_peptide));
-    carp(CARP_DETAILED_DEBUG, "Stat: pvalue after = %.6f", corrected_pvalue);
-    return corrected_pvalue;
+  
+  double temp = score + shift;
+  if (temp <=0) {
+    //undefined past shift, give lowest possible score (-log(1.0)).
+    carp(CARP_DETAILED_DEBUG,"undefined returning 0");
+    return 0.0;
   }
-  // else, use the approximation
-  else{
-    double corrected_pvalue = -log(p_value*num_peptide);
-    carp(CARP_DETAILED_DEBUG, "Stat: pvalue after = %.6f", corrected_pvalue);
-    return corrected_pvalue;
-  }
+  else {
+    double nlp_value = pow(temp / eta, beta);
 
+    //double p_value = exp(-nlp_value);
+    carp(CARP_DETAILED_DEBUG, "Stat: nlpvalue before = %.15f", nlp_value);
+
+    // The Bonferroni correction 
+    // use original equation 1-(1-p_value)^n when p is not too small
+
+    double nln = -log((double)num_peptide);
+   
+    if (nlp_value <= BONFERRONI_CUT_OFF_NLP || (nlp_value + nln) <= BONFERRONI_CUT_OFF_NLNP) {
+      double p_value = exp(-nlp_value);
+      double corrected_pvalue = -log(1-pow((1-p_value), num_peptide));
+      carp(CARP_DETAILED_DEBUG, "Stat: nlpvalue after = %.6f", corrected_pvalue);
+      return corrected_pvalue;
+    }
+    // else, use the approximation
+    else{
+      double corrected_pvalue = nlp_value + nln;
+      carp(CARP_DETAILED_DEBUG, "Stat: nlpvalue after = %.6f", corrected_pvalue);
+      return corrected_pvalue;
+    }
+  }
 }
 
 /**

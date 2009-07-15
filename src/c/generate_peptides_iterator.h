@@ -62,6 +62,9 @@ GENERATE_PEPTIDES_ITERATOR_T* new_generate_peptides_iterator_from_mass(
   DATABASE_T* database///< The database from which to draw peptides
 );
 
+
+
+
 /**
  * \brief Create a peptide iterator for peptides in a specific range
  * of masses.

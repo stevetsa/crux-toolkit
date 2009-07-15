@@ -149,13 +149,14 @@ BOOLEAN_T add_possible_z(
  *SPECTRUM_T: PUBLIC MEMBER FUNCTIONS
  ***************************************************/
 void SPECTRUM_T::init() {
+  //carp(CARP_INFO,"SPECTRUM_T::init(): start.");
   first_scan = 0;
   last_scan = 0;
   id = 0;
   spectrum_type = (SPECTRUM_TYPE_T)0;
   precursor_mz = 0;
   num_possible_z = 0;
-  peaks = NULL;
+  peaks.clear();
   min_peak_mz = 0;
   max_peak_mz = 0;
   num_peaks = 0;
@@ -172,7 +173,6 @@ void SPECTRUM_T::init() {
 
   int line_idx;
   possible_z = (int*)mymalloc(sizeof(int) * MAX_CHARGE);
-  peaks = allocate_peak_array(MAX_PEAKS);
   
   // initialize D lines
   for(line_idx = 0; line_idx < MAX_D_LINES; ++line_idx){
@@ -184,6 +184,7 @@ void SPECTRUM_T::init() {
     i_lines[line_idx] = NULL;
   }  
   has_peaks = FALSE;
+  //carp(CARP_INFO,"SPECTRUM_T::init() end");
 
 }
 /**
@@ -209,7 +210,7 @@ SPECTRUM_T::SPECTRUM_T(
 {
   init();
   
-  
+  this-> num_peaks = 0;
   this->first_scan = first_scan;
   this->last_scan = last_scan;
   this->spectrum_type = spectrum_type;
@@ -217,8 +218,6 @@ SPECTRUM_T::SPECTRUM_T(
   this->sorted_by_mz = FALSE;
   this->has_mz_peak_array = FALSE;
   this->sorted_by_intensity = FALSE;
-  this->peaks = NULL;
-  this->num_peaks = 0;
   this->mz_peak_array = NULL;
   set_new_possible_z(possible_z, num_possible_z);
   set_new_filename(filename);
@@ -274,7 +273,7 @@ SPECTRUM_T::~SPECTRUM_T() {
   // only non post_process spectrum has these features to free
   if(has_peaks){
     free(possible_z);
-    free(peaks);
+    peaks.clear();
     free(filename);
     
     // free D lines
@@ -348,8 +347,8 @@ void SPECTRUM_T::print(
   // print peaks
   for(; num_peak_index < num_peaks; ++num_peak_index){
     fprintf(file, "%.2f %.13f\n", 
-            get_peak_location(find_peak(peaks, num_peak_index)),
-            get_peak_intensity(find_peak(peaks, num_peak_index)));
+	    PEAK_T::find_peak(peaks, num_peak_index) -> get_location(),
+	    PEAK_T::find_peak(peaks, num_peak_index) -> get_intensity());
   }
 }
 
@@ -445,8 +444,9 @@ void SPECTRUM_T::copy(
 
   // copy each peak
   for(; num_peak_index < src -> get_num_peaks(); ++num_peak_index){
-    dest -> add_peak(get_peak_intensity(find_peak(src->peaks, num_peak_index)),
-                         get_peak_location(find_peak(src->peaks, num_peak_index))); 
+    PEAK_T* src_peak = PEAK_T::find_peak(src-> peaks, num_peak_index);
+    dest -> add_peak(src_peak -> get_intensity(),
+		     src_peak -> get_location());
   }
 }
 
@@ -844,11 +844,11 @@ BOOLEAN_T SPECTRUM_T::add_peak(
   FLOAT_T location_mz ///< the location of peak to add -in
   )
 {
+
   if(num_peaks < MAX_PEAKS){  // FIXME change it to be dynamic
-    set_peak_intensity(find_peak(peaks, num_peaks),
-                       intensity);
-    set_peak_location(find_peak(peaks, num_peaks),
-                      location_mz);
+    PEAK_T* peak = PEAK_T::find_peak(peaks, num_peaks);
+    peak -> set_intensity(intensity);
+    peak -> set_location(location_mz);
     update_spectrum_fields(intensity, location_mz);
     has_peaks = TRUE;
     return TRUE;
@@ -873,11 +873,11 @@ void SPECTRUM_T::populate_mz_peak_array()
   PEAK_T* peak = NULL;
   while(peak_iterator_has_next(peak_iterator)){
     peak = peak_iterator_next(peak_iterator);
-    FLOAT_T peak_mz = get_peak_location(peak);
+    FLOAT_T peak_mz = peak -> get_location();
     int mz_idx = (int) (peak_mz * MZ_TO_PEAK_ARRAY_RESOLUTION);
     if (mz_peak_array[mz_idx] != NULL){
       carp(CARP_INFO, "Peak collision at mz %.3f = %i", peak_mz, mz_idx);
-      if(get_peak_intensity(mz_peak_array[mz_idx])< get_peak_intensity(peak)){
+      if(mz_peak_array[mz_idx] -> get_intensity()< peak -> get_intensity()){
         mz_peak_array[mz_idx] = peak;
       }
     } else {
@@ -917,7 +917,7 @@ PEAK_T* SPECTRUM_T::get_nearest_peak(
     if ((peak = mz_peak_array[peak_idx]) == NULL){
       continue;
     }
-    FLOAT_T peak_mz = get_peak_location(peak);
+    FLOAT_T peak_mz = peak -> get_location();
     //FLOAT_T distance = abs((FLOAT_T)mz - (FLOAT_T)peak_mz);
     FLOAT_T distance = mz - peak_mz;
     if (distance < 0) distance = -distance;
@@ -1291,8 +1291,10 @@ FLOAT_T SPECTRUM_T::get_max_peak_intensity()
   FLOAT_T max_intensity = -1;
 
   for(; num_peak_index < get_num_peaks(); ++num_peak_index){
-    if(max_intensity <= get_peak_intensity(find_peak(peaks, num_peak_index))){
-      max_intensity = get_peak_intensity(find_peak(peaks, num_peak_index));
+    PEAK_T* current_peak = PEAK_T::find_peak(peaks, num_peak_index);
+    FLOAT_T current_intensity = current_peak -> get_intensity();
+    if(max_intensity <= current_intensity) {
+      max_intensity = current_intensity;
     }
   }
   return max_intensity; 
@@ -1355,9 +1357,9 @@ SPECTRUM_T* SPECTRUM_T::parse_spectrum_binary(
   FILE* file ///< output stream -out
   )
 {
-
+  carp(CARP_INFO,"creating a new spectrum object:%d",sizeof(SPECTRUM_T));
   SPECTRUM_T* spectrum = new SPECTRUM_T();
-
+  carp(CARP_INFO,"done creating a new spectrum object:%d",sizeof(SPECTRUM_T));
   // get spectrum struct
   if(fread(spectrum, (sizeof(SPECTRUM_T)), 1, file) != 1){
     carp(CARP_ERROR, "serialized file corrupted, incorrect spectrum format");
@@ -1379,8 +1381,9 @@ void SPECTRUM_T::sum_normalize_spectrum()
   PEAK_ITERATOR_T* peak_iterator = new_peak_iterator(this);
   while(peak_iterator_has_next(peak_iterator)){
     peak = peak_iterator_next(peak_iterator);
-    FLOAT_T new_intensity = get_peak_intensity(peak) / this->total_energy;
-    set_peak_intensity(peak, new_intensity);
+    
+    FLOAT_T new_intensity = peak -> get_intensity() / this->total_energy;
+    peak -> set_intensity(new_intensity);
   }
   free_peak_iterator(peak_iterator);
 }
@@ -1392,7 +1395,7 @@ void SPECTRUM_T::spectrum_rank_peaks()
 {
   PEAK_T* peak = NULL;
   PEAK_ITERATOR_T* peak_iterator = new_peak_iterator(this);
-  sort_peaks(peaks, num_peaks, _PEAK_INTENSITY);
+  PEAK_T::sort_peaks(peaks, _PEAK_INTENSITY);
   sorted_by_intensity = TRUE;
   sorted_by_mz = FALSE;
   int rank = num_peaks;
@@ -1400,7 +1403,7 @@ void SPECTRUM_T::spectrum_rank_peaks()
     peak = peak_iterator_next(peak_iterator);
     FLOAT_T new_rank = rank/(float)num_peaks;
     rank--;
-    set_peak_intensity_rank(peak, new_rank); 
+    peak -> set_intensity_rank(new_rank);
   }
   free_peak_iterator(peak_iterator);
 }
@@ -2624,7 +2627,7 @@ SPECTRUM_T* parse_spectrum_binary(
   )
 {
   SPECTRUM_T* spectrum = (SPECTRUM_T*)mycalloc(1, sizeof(SPECTRUM_T));
-  
+  free_peak_array(spectrum -> peaks);
   // get spectrum struct
   if(fread(spectrum, (sizeof(SPECTRUM_T)), 1, file) != 1){
     carp(CARP_ERROR, "serialized file corrupted, incorrect spectrum format");
@@ -2728,7 +2731,7 @@ PEAK_T* peak_iterator_next(
   PEAK_ITERATOR_T* peak_iterator  ///< the interator for the peaks -in
   )
 {
-  PEAK_T* next_peak = find_peak(peak_iterator->spectrum->peaks, peak_iterator->peak_index);
+  PEAK_T* next_peak = PEAK_T::find_peak(peak_iterator->spectrum->peaks, peak_iterator->peak_index);
   ++peak_iterator->peak_index;
   return next_peak;
 }

@@ -121,7 +121,9 @@ BOOLEAN_T add_possible_z(
  //TODO : Protect these!
   BOOLEAN_T        has_peaks;  ///< Does the spectrum contain peak information
   PEAK_T**         mz_peak_array;  ///< Allows rapid peak retrieval by mz.
-  PEAK_T*          peaks;         ///< The spectrum peaks
+    
+  vector<PEAK_T>   peaks;  
+  //PEAK_T*          peaks;         ///< The spectrum peaks
 
 
   void init();
