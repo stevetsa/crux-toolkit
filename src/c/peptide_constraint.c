@@ -69,7 +69,7 @@ PEPTIDE_CONSTRAINT_T* new_peptide_constraint(
 {
   // max length must be less or equal than 255 becuase of the unsigned char limit of 255
   if(max_length > 255){
-    die("ERROR: cannot set max length higer than 255");
+    carp(CARP_FATAL, "ERROR: cannot set max length higer than 255");
   }
 
   PEPTIDE_CONSTRAINT_T* peptide_constraint =
@@ -101,7 +101,7 @@ PEPTIDE_CONSTRAINT_T* new_peptide_constraint_from_parameters(){
   new_constraint->max_mass = get_double_parameter("max-mass");
   new_constraint->min_length = get_int_parameter("min-length");
   new_constraint->max_length = get_int_parameter("max-length");
-  new_constraint->num_mis_cleavage = get_int_parameter("missed-cleavages");
+  new_constraint->num_mis_cleavage = get_boolean_parameter("missed-cleavages");
   new_constraint->mass_type = get_mass_type_parameter("isotopic-mass");
 
   return new_constraint;
@@ -294,7 +294,6 @@ void set_peptide_constraint_max_length(
   // check if maximum length is with in range <= 255
   if(max_length > 255){
     carp(CARP_FATAL, "maximum length:%d over limit 255.", max_length);
-    exit(1);
   }
   
   peptide_constraint->max_length = max_length;

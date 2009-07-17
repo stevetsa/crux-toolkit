@@ -6,6 +6,9 @@
  */
 #ifndef ION_H
 #define ION_H
+#ifdef __cplusplus
+extern "C" {
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -385,4 +388,7 @@ BOOLEAN_T calc_ion_mass_z_with_mass(
  * c-basic-offset: 2
  * End:
  */
+#ifdef __cplusplus
+}
+#endif
 #endif

@@ -150,6 +150,10 @@ static void print_text_files(
   print_sqt_header(sqt_file, "target", num_proteins, TRUE);
   print_tab_header(tab_file);
 
+  // print matches to tab file
+  print_matches_multi_spectra(match_collection, tab_file, NULL);
+
+  // print matches to sqt file
   fprintf(sqt_file, "H\tComment\tmatches analyzed by percolator\n");
 
   // get match iterator sorted by spectrum
@@ -160,7 +164,6 @@ static void print_text_files(
   int cur_spectrum_num = -1;
   int cur_charge = 0;
   int match_counter = 0;
-  //  int max_matches = get_int_parameter("max-sqt-result");
   int max_matches = get_int_parameter("top-match");
 
   // for all matches
@@ -171,8 +174,6 @@ static void print_text_files(
     SPECTRUM_T* spectrum = get_match_spectrum(match);
     int this_spectrum_num = get_spectrum_first_scan(spectrum);
     int charge = get_match_charge(match);
-    FLOAT_T spectrum_neutral_mass = get_spectrum_neutral_mass(spectrum, charge);
-    FLOAT_T spectrum_precursor_mz = get_spectrum_precursor_mz(spectrum);
     int num_peptides = get_match_ln_experiment_size(match);
     num_peptides = expf(num_peptides);
 
@@ -193,9 +194,7 @@ static void print_text_files(
 
       // print match to sqt file
       print_match_sqt(match, sqt_file, scorer, second_scorer);
-      // print match to tab file
-      print_match_tab(match, tab_file, this_spectrum_num, spectrum_precursor_mz,
-                      spectrum_neutral_mass, num_peptides, charge, scorer);
+
       match_counter = 1;
     }
     // if this spectrum has been printed
@@ -203,9 +202,6 @@ static void print_text_files(
       if( match_counter < max_matches ){
         // print match to sqt file
         print_match_sqt(match, sqt_file, scorer, second_scorer);
-        // print match to tab file
-        print_match_tab(match, tab_file, this_spectrum_num, spectrum_precursor_mz,
-                        spectrum_neutral_mass, num_peptides, charge, scorer);
         match_counter++;
       }
     }
@@ -252,7 +248,6 @@ MATCH_COLLECTION_T* run_percolator(
     feature_fh = create_file_in_path(feature_file, psm_result_folder, overwrite);
     if(feature_fh == NULL){
       carp(CARP_FATAL, "Problem opening output file %s", feature_file);
-      return NULL;
     }
   }
 
@@ -267,7 +262,6 @@ MATCH_COLLECTION_T* run_percolator(
 
   if( match_collection_iterator == NULL ){
     carp(CARP_FATAL, "Failed to create a match collection iterator");
-    exit(1);
   }
   carp(CARP_DETAILED_DEBUG, "Created the match collection iterator");
 

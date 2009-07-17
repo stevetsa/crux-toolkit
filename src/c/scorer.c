@@ -23,7 +23,9 @@
 #include "parameter.h"
 #include "unistd.h"
 
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 // the bin width(Sp)
 #define bin_width_mono 1.0005079
 #define bin_width_average 1.0011413
@@ -55,7 +57,7 @@
  * \struct scorer
  * \brief An object to score spectrum v. spectrum or spectrum v. ion_series
  */
-struct scorer {
+/*struct scorer {
   SCORER_TYPE_T type; ///< The type of scorer
   FLOAT_T sp_beta; ///< used for Sp: the beta variable 
   FLOAT_T sp_max_mz; ///< used for Sp: the max mz for the intensity array
@@ -71,7 +73,7 @@ struct scorer {
   /// used for xcorr
   FLOAT_T* observed; ///< used for Xcorr: observed spectrum intensity array
   FLOAT_T* theoretical; ///< used for Xcorr: theoretical spectrum intensity array
-};
+};*/
 
 // defined later
 void add_intensity(
@@ -726,11 +728,7 @@ FLOAT_T gen_score_sp(
   if(!scorer->initialized){
     // create intensity array
     if(!create_intensity_array_sp(spectrum, scorer, get_ion_series_charge(ion_series))){
-      carp(CARP_ERROR, "failed to produce Sp");
-      free(spectrum);
-      free(ion_series);
-      free(scorer);
-      exit(1);
+      carp(CARP_FATAL, "failed to produce Sp");
     }
   }
 
@@ -1151,11 +1149,7 @@ FLOAT_T gen_score_xcorr(
   if(!scorer->initialized){
     // create intensity array for observed spectrum, if already not been done
     if(!create_intensity_array_xcorr(spectrum, scorer, get_ion_series_charge(ion_series))){
-      carp(CARP_ERROR, "failed to produce XCORR");
-      free(spectrum);
-      free(ion_series);
-      free(scorer);
-      exit(1);
+      carp(CARP_FATAL, "failed to produce XCORR");
     }
   }
   
@@ -1579,7 +1573,6 @@ BOOLEAN_T output_psm_files_paired(
   if(access(output_directory, F_OK)){
     if (mkdir(output_directory, dir_access) != 0){
       carp(CARP_FATAL, "Trouble creating dir %s!", output_directory); 
-      exit(1);
     }
   }
 
@@ -1594,7 +1587,6 @@ BOOLEAN_T output_psm_files_paired(
     if (open_file(full_path, "a", FALSE, "append", "", 
           &ion_series_files[ion_series_idx])==FALSE){
       carp(CARP_FATAL, "Trouble opening output file %s!", full_path); 
-      exit(1);
     }
   }
 
@@ -1670,7 +1662,6 @@ BOOLEAN_T output_psm_files_single(
   if(access(output_directory, F_OK)){
     if (mkdir(output_directory, dir_access) != 0){
       carp(CARP_FATAL, "Trouble creating dir %s!", output_directory); 
-      exit(1);
     }
   }
 
@@ -1684,7 +1675,6 @@ BOOLEAN_T output_psm_files_single(
     if (open_file(full_path, "a", FALSE, "append", "", 
           &ion_series_files[ion_series_idx])==FALSE){
       carp(CARP_FATAL, "Trouble opening output file %s!", full_path); 
-      exit(1);
     }
   }
 
@@ -1815,6 +1805,7 @@ void add_intensity(
   FLOAT_T intensity         ///< the intensity to add -in
   )
 {
+  //carp(CARP_ERROR, "index %d\n", add_idx);
   assert(add_idx >= 0);
   if(intensity_array[add_idx] < intensity){
     intensity_array[add_idx] = intensity;
@@ -1926,6 +1917,9 @@ void set_scorer_sp_equalize_resolution(
 }
 */
 
+#ifdef __cplusplus
+}
+#endif
 /*
  * Local Variables:
  * mode: c

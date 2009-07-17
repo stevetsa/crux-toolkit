@@ -6,6 +6,10 @@
 #ifndef PEPTIDE_H 
 #define PEPTIDE_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -31,6 +35,11 @@
 /**
  * \returns An (empty) peptide object.
  */
+FLOAT_T calc_mod_sequence_mass(
+  char* peptide, ///< the query peptide -in
+  MASS_TYPE_T mass_type ///< isotopic mass type (AVERAGE, MONO) -in
+  );
+
 PEPTIDE_T* allocate_peptide(void);
 
 /**
@@ -648,6 +657,9 @@ char *get_protein_ids(PEPTIDE_T *peptide);
  */
 char *get_flanking_aas(PEPTIDE_T *peptide);
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 

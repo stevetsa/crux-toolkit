@@ -23,6 +23,10 @@
 #ifndef PARSE_ARGUMENTS_H
 #define PARSE_ARGUMENTS_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 #define DOXYGEN_SHOULD_SKIP_THIS
 
@@ -64,4 +68,7 @@ enum argument_type string_to_argument_type(char* arg_type_str);
 //BOOLEAN_T update_parameter(void);
 
 #endif /* DOXYGEN_SHOULD_SKIP_THIS */
+#ifdef __cplusplus
+}
+#endif
 #endif /* PARSE_ARGUMENTS_H */

@@ -474,11 +474,11 @@ void initialize_parameters(void){
   set_string_parameter("fileroot", NULL, 
       "Prefix added to output file names. Default None. ",
       "Used by crux create-index, crux search-for-matches, "
-      "crux compute-q-values, and crux percolator.", "true");
+      "crux compute-q-values, crux percolator, and crux spit", "true");
   set_string_parameter("output-dir", "crux-output", 
       "Folder to which results will be written. Default 'crux-output'. ",
       "Used by crux create-index, crux search-for-matches, "
-      "crux compute-q-values, and crux percolator.", "true");
+      "crux compute-q-values, crux percolator, and crux spit", "true");
   set_string_parameter("search-sqt-output-file", "search.target.sqt", 
       "SQT output file name. Default 'search.target.sqt'",
       "Only available for crux-search-for-matches. The location of this file is controlled by "
@@ -826,12 +826,23 @@ void initialize_parameters(void){
       "Print to stdout additional information about the spectrum.",
       "Avaliable only for crux-get-ms2-spectrum.  Does not affect contents "
       "of the output file.", "true");
+  
+// spit options
+  set_string_parameter("database", NULL, 
+      "Name of file in fasta format or directory containing the protein index.",
+      "For spit to retrieve proteins and peptides",
+      "false");
 
+  set_string_parameter("spit-output-file", "proteins.target.txt", 
+      "Name of output file for spit. Default proteins.target.txt",
+      "Used only by crux spit",
+      "false");
   // now we have initialized the parameters
   parameter_initialized = TRUE;
   usage_initialized = TRUE;
   type_initialized = TRUE;
 
+  //update_aa_masses();
 }
 
 
@@ -913,7 +924,6 @@ BOOLEAN_T select_cmd_line(  //remove options from name
            usage_ptr,
            type_ptr);
       
-      exit(1);  // or  set success to F?  or die()?
     }
 
     /* add the option via parse_arguments.c. pointer decides opt or req */
@@ -947,7 +957,6 @@ BOOLEAN_T find_param_filename(int argc,
   // check for error
   if( param_file_index >= argc ){
     carp(CARP_FATAL, "Option '--parameter-file' requires argument");
-    exit(1);
   }
   //return the filename
   else if( param_file_index > 0 ){  
@@ -960,7 +969,6 @@ BOOLEAN_T find_param_filename(int argc,
     }
     else{
       carp(CARP_FATAL, "Parameter filename is too long");
-      exit(1);
     }
   }
   else{ //parameter_file_index < 0, i.e. no paramter file option
@@ -1080,11 +1088,14 @@ BOOLEAN_T parse_cmd_line_into_params_hash(int argc,
     char* error_message = NULL;
     char* usage = parse_arguments_get_usage(exe_name);
     int error_code = parse_arguments_get_error(&error_message);
-    fprintf(stderr, "Error in command line. Error # %d\n", error_code);
-    fprintf(stderr, "%s\n", error_message);
-    fprintf(stderr, "%s", usage);
     free(usage);
-    exit(1);
+    carp(
+      CARP_FATAL, 
+      "Error in command line. Error # %d\n%s\n%s", 
+      error_code,
+      error_message,
+      usage
+    );
   }
   
   // do global checks on parameters
@@ -1134,13 +1145,9 @@ BOOLEAN_T parse_cmd_line_into_params_hash(int argc,
   if( get_boolean_parameter("compute-q-values") ){
     if( get_int_parameter("top-match") != 1 ){
       carp(CARP_FATAL, "For compute-q-values top-match must be 1.");
-      exit(1);
     }
-
-    if( (get_int_parameter("num-decoys-per-target") * 
-         get_int_parameter("number-decoy-set")) > 1 ){
+    if( get_int_parameter("num-decoys-per-target") != 1 ){
       carp(CARP_FATAL, "For compute-q-values num-decoys-per-target must be 1.");
-      exit(1);
     }
   }
 
@@ -1238,7 +1245,6 @@ void parse_custom_enzyme(char* rule_str){
          "AZ is a list of residues (letters A-Z) required [] or prohibited {}. "
          "Use [X] to indicate any reside is legal.",
          rule_str);
-    exit(1);
   }
 
   // 4. allocate lists and fill
@@ -1281,7 +1287,6 @@ void check_parameter_consistency(){
   if( min_length > max_length){
     carp(CARP_FATAL, "Parameter inconsistency.  Minimum peptide length (%i)"
          " must be less than max (%i).", min_length, max_length);
-    exit(1);
   }
 
   double min_mass = get_double_parameter("min-mass");
@@ -1290,7 +1295,6 @@ void check_parameter_consistency(){
   if( min_mass > max_mass){
     carp(CARP_FATAL, "Parameter inconsistency.  Minimum peptide mass (%.2f)"
          " must be less than max (%.2f).", min_mass, max_mass);
-    exit(1);
   }
 
   double min_spec_mass = get_double_parameter("spectrum-min-mass");
@@ -1299,7 +1303,6 @@ void check_parameter_consistency(){
   if( min_spec_mass > max_spec_mass){
     carp(CARP_FATAL, "Parameter inconsistency. Minimum spectrum mass (%.2f)"
          " must be less than max (%.2f).", min_spec_mass, max_spec_mass);
-    exit(1);
   }
 
   /* If no-enzyme, set digestion to non-specific and missed to true */
@@ -1441,12 +1444,10 @@ BOOLEAN_T check_option_type_and_bounds(char* name){
   default:
     carp(CARP_FATAL, "Your param type '%s' wasn't found (code %i)", 
         type_str, (int)param_type);
-    exit(1);
   }
 
   if( ! success ){
     carp(CARP_FATAL, die_str);
-    exit(1);
   }
   return success;
 }
@@ -1526,19 +1527,16 @@ void parse_parameter_file(
   /* check if parameters can be changed */
   if(!parameter_plasticity){
     carp(CARP_FATAL, "Can't change parameters once they are confirmed");
-    exit(1);
   }
 
   /* check if parameter file exists, if not die */
   if(access(parameter_filename, F_OK)){
     carp(CARP_FATAL, "Could not open parameter file.");
-    exit(1);
   }
 
   file = fopen(parameter_filename, "r");
   if(file == NULL){
     carp(CARP_FATAL, "Couldn't open parameter file '%s'", parameter_filename);
-    exit(1);
   }
 
   line = (char*)mycalloc(MAX_LINE_LENGTH, sizeof(char));
@@ -1573,7 +1571,6 @@ void parse_parameter_file(
              "\n\tname=value\n\n"
              "In file %s, the line '%s' does not have this format",
              parameter_filename, line);
-        exit(1);
       }
 
       line[idx] = '\0';
@@ -1583,8 +1580,7 @@ void parse_parameter_file(
            option_name, option_value);
 
       if(! update_hash_value(parameters, option_name, option_value) ){
-        carp(CARP_ERROR, "Unexpected parameter file option '%s'", option_name);
-        exit(1);
+        carp(CARP_FATAL, "Unexpected parameter file option '%s'", option_name);
       }
 
       check_option_type_and_bounds(option_name);
@@ -1618,8 +1614,7 @@ BOOLEAN_T get_boolean_parameter(
  
   // can't find parameter
   if(value == NULL){
-    carp(CARP_ERROR, "Parameter name '%s' doesn't exist", name);
-    exit(1);
+    carp(CARP_FATAL, "Parameter name '%s' doesn't exist", name);
   }
   
   //check type
@@ -1635,7 +1630,7 @@ BOOLEAN_T get_boolean_parameter(
  // make sure that there is enough storage allocated in the string
   if((int)strlen(value) 
      > PARAMETER_LENGTH) {
-    die("parameter %s with value %s was too long to copy to string\n",
+    carp(CARP_FATAL, "parameter %s with value %s was too long to copy to string\n",
         name,
         value);
   }
@@ -1650,11 +1645,11 @@ BOOLEAN_T get_boolean_parameter(
     return(FALSE);
   } 
   else {
-    die("Invalid Boolean parameter %s.\n", buffer);
+    carp(CARP_FATAL, "Invalid Boolean parameter %s.\n", buffer);
   }
   
   carp(CARP_FATAL, "parameter name: %s, doesn't exist", name);
-  exit(1);
+  return FALSE; // Return value to avoid compiler warning
 }
 
 /**
@@ -1679,7 +1674,6 @@ int get_int_parameter(
   // can't find parameter
   if(int_value == NULL){
     carp(CARP_FATAL, "parameter name: %s, doesn't exist", name);
-    exit(1);
   }
   //check type
   char* type_str = get_hash_value(types, name);
@@ -1698,9 +1692,10 @@ int get_int_parameter(
   if ((value == LONG_MIN) || 
       (value == LONG_MAX) || 
       (endptr == int_value)) {
-    die("Conversion error when trying to convert parameter %s with value %s to an int\n",
+    carp(CARP_FATAL, "Conversion error when trying to convert parameter %s with value %s to an int\n",
         name, 
         int_value);
+        exit(1);
   } 
   return((int)value);
   */
@@ -1725,7 +1720,6 @@ double get_double_parameter(
   // check if parameter file has been parsed
   if(!parameter_initialized){
     carp(CARP_FATAL, "parameters have not been set yet");
-    exit(1);
   }
 
   char* double_value = get_hash_value(parameters, name);
@@ -1733,7 +1727,6 @@ double get_double_parameter(
   // can't find parameter
   if(double_value == NULL){
     carp(CARP_FATAL, "parameter name '%s', doesn't exit", name);
-    exit(1);
   }
  
   //check type
@@ -1752,15 +1745,15 @@ double get_double_parameter(
   /*if((value == HUGE_VALF) ||  // AAK removed //BF: why?
     (value == -HUGE_VALF) || 
     (endptr == double_value)) {
-    die("Conversion error when trying to convert parameter %s with value %s to an double\n",
+    capr(CARP_FATAL, "Conversion error when trying to convert parameter %s with value %s to an double\n",
     name,
-    double_value);*/
+    double_value);
+    exit(1); */
   // } else {  
   return(value);
   // }
   
-  carp(CARP_ERROR, "parameter name: %s, doesn't exist", name);
-  exit(1);
+  carp(CARP_FATAL, "parameter name: %s, doesn't exist", name);
 }
 
 /**
@@ -1782,7 +1775,6 @@ char* get_string_parameter(
   // can't find parameter
   if(string_value == NULL){
     carp(CARP_FATAL, "Parameter name: %s, doesn't exist", name);
-    exit(1);
   }
 
   //change "__NULL_STR" to NULL
@@ -1825,7 +1817,6 @@ char* get_string_parameter_pointer(
   // can't find parameter
   if(string_value == NULL){
     carp(CARP_FATAL, "parameter name: %s, doesn't exist", name);
-    exit(1);
   }
   //check type
   char* type_str = get_hash_value(types, name);
@@ -1849,7 +1840,6 @@ DIGEST_T get_digest_type_parameter( char* name ){
   if( digest_type == INVALID_DIGEST ){
     carp(CARP_FATAL, "Digest_type parameter %s has the value %s " 
          "which is not of the correct type\n", name, param);
-    exit(1);
   }
   return digest_type;
 }
@@ -1862,7 +1852,6 @@ ENZYME_T get_enzyme_type_parameter( char* name ){
   if( enzyme_type == INVALID_ENZYME ){
     carp(CARP_FATAL, "Enzyme_type parameter %s has the value %s " 
          "which is not of the correct type\n", name, param);
-    exit(1);
   }
   return enzyme_type;
 }
@@ -1878,7 +1867,6 @@ MASS_TYPE_T get_mass_type_parameter(
     carp(CARP_FATAL, 
          "Mass_type parameter %s has the value %s which is not of "
           "the correct type", name, param_value_str);
-    exit(1);
   }
   return param_value;
 }
@@ -1891,7 +1879,6 @@ SORT_TYPE_T get_sort_type_parameter(char* name){
   if( ! success){
     carp(CARP_FATAL, "Sort_type parameter %s has the value %s which " 
          "is not of the correct type", name, param_value_str);
-    exit(1);
   }
   return param_value;
 }
@@ -1904,7 +1891,6 @@ ALGORITHM_TYPE_T get_algorithm_type_parameter(char* name){
   if(!success){
     carp(CARP_FATAL, "Algorithm_type parameter %s has the value %s "
          "which is not of the correct type.", name, param_value_str);
-    exit(1);
   }
   return param_value;
 }
@@ -1918,7 +1904,6 @@ SCORER_TYPE_T get_scorer_type_parameter(char* name){
   if(!success){
     carp(CARP_FATAL, "Scorer_type parameter %s has the value %s " 
          "which is not of the correct type.", name, param_value_str);
-    exit(1);
   }
   return param_value;
 }
@@ -1932,7 +1917,6 @@ ION_TYPE_T get_ion_type_parameter(char* name){
     carp(CARP_FATAL, 
    "Ion_type parameter %s ahs the value %s which is not of the correct type.",
          name, param_value_str);
-    exit(1);
   }
   return param_value;
 }
@@ -2393,7 +2377,6 @@ char* read_mass_change(AA_MOD_T* mod, char* line, char separator){
   if( aa_mod_get_mass_change(mod) == 0){
   //if( mod->mass_change == 0){
     carp(CARP_FATAL, "The mass change is not valid for mod %s", line);
-    exit(1);
   }
   char* next = line;
   while(*next != separator){
@@ -2424,7 +2407,6 @@ char* set_aa_list(AA_MOD_T* mod, char* line, char separator){
 
     if( aa < 'A' || aa > 'Z' ){
       carp(CARP_FATAL, "The letter '%c' in the aa list is invalid.", aa);
-      exit(1);
     }
     carp(CARP_DETAILED_DEBUG, "aa index is %d", aa - 'A');
     aa_list[aa - 'A'] = TRUE;
@@ -2450,7 +2432,6 @@ void read_max_per_peptide(AA_MOD_T* mod, char* line){
   //carp(CARP_DETAILED_DEBUG, "token points to %s", line);
   if( *line == '\0' ){
     carp(CARP_FATAL, "Missing maximum mods per peptide for mod %s", line);
-    exit(1);
   }
 
   aa_mod_set_max_per_peptide(mod, atoi(line));
@@ -2458,7 +2439,6 @@ void read_max_per_peptide(AA_MOD_T* mod, char* line){
   if( aa_mod_get_max_per_peptide(mod) == 0 ){
   //if( mod->max_per_peptide == 0 ){
     carp(CARP_FATAL, "Maximum mods per peptide is invalid for mod %s", line);
-    exit(1);
   }
 
 }
@@ -2475,7 +2455,6 @@ void read_max_distance(AA_MOD_T* mod, char* line){
   if( *line == '\0' ){
     carp(CARP_FATAL,
          "Missing maximum distance from protein terminus for mod %s", line);
-    exit(1);
   }
 
   aa_mod_set_max_distance(mod, atoi(line));
@@ -2516,7 +2495,6 @@ int read_mods(FILE* param_file, ///< file from which to read mod info
     if( cur_index == MAX_AA_MODS ){
       carp(CARP_FATAL, "Too many modifications in parameter file, " \
            "%d maximum", MAX_AA_MODS);
-      exit(1);
     }
     AA_MOD_T* cur_mod = list_of_mods[cur_index];
 
@@ -2580,7 +2558,6 @@ void read_mods_from_file(char* param_filename){
   FILE* param_file = fopen(param_filename, "r");
   if( param_file == NULL ){
     carp(CARP_FATAL, "Could not open parameter file '%s'", param_filename);
-    exit(1);
   }
 
   // get first mod

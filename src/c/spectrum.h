@@ -6,16 +6,45 @@
 #ifndef SPECTRUM_H
 #define SPECTRUM_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 #include <stdio.h>
 #include "utils.h"
 #include "objects.h"
 #include "peak.h"
 
+
+#define MAX_I_LINES 2 // number of 'I' lines albe to parse for one spectrum object
+#define MAX_D_LINES 2 // number of 'D' lines albe to parse for one spectrum object
+struct spectrum{
+  int              first_scan;    ///< The number of the first scan
+  int              last_scan;     ///< The number of the last scan
+  int              id;            ///< A unique identifier
+                                  // FIXME, this field is not set when parsing
+  SPECTRUM_TYPE_T  spectrum_type; ///< The type of spectrum. 
+  FLOAT_T            precursor_mz;  ///< The m/z of precursor (MS-MS spectra)
+  int*             possible_z;    ///< The possible charge states of this spectrum
+  int              num_possible_z;///< The number of possible charge states of this spectrum
+  PEAK_T*          peaks;         ///< The spectrum peaks
+  FLOAT_T            min_peak_mz;   ///< The minimum m/z of all peaks
+  FLOAT_T            max_peak_mz;   ///< The maximum m/z of all peaks
+  int              num_peaks;     ///< The number of peaks
+  double           total_energy;  ///< The sum of intensities in all peaks
+  char*            filename;      ///< Optional filename
+  char*            i_lines[MAX_I_LINES]; ///< store i lines, upto MAX_I_LINES
+  char*            d_lines[MAX_D_LINES]; ///< store d lines, upto MAX_D_LINES 
+  BOOLEAN_T        has_peaks;  ///< Does the spectrum contain peak information
+  BOOLEAN_T        sorted_by_mz; ///< Are the spectrum peaks sorted by m/z...
+  BOOLEAN_T        sorted_by_intensity; ///< ... or by intensity?
+  BOOLEAN_T        has_mz_peak_array; ///< Is the mz_peak_array populated.
+  PEAK_T**         mz_peak_array;  ///< Allows rapid peak retrieval by mz.
+};    
+
 /**
  * \returns An (empty) spectrum object.
  */
 SPECTRUM_T* allocate_spectrum(void);
-
 /**
  * \returns A new spectrum object, populated with the user specified parameters.
  */
@@ -486,6 +515,9 @@ void peak_iterator_reset(
  * End:
  */
 
+#ifdef __cplusplus
+}
+#endif
 #endif
 
 /** \mainpage The crux API documentation page.

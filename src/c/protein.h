@@ -6,6 +6,9 @@
 #ifndef PROTEIN_H 
 #define PROTEIN_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 #include <stdio.h>
 #include "utils.h"
 #include "objects.h"
@@ -46,6 +49,19 @@ PROTEIN_T* new_light_protein(
  * convert light protein to heavy, by parsing all the sequence from fasta file
  * \returns TRUE if successfully converts the protein to heavy 
  */
+
+void prepare_protein_peptide_iterator(
+    PROTEIN_PEPTIDE_ITERATOR_T* iterator
+  );
+
+void iterator_add_cleavages(
+    PROTEIN_PEPTIDE_ITERATOR_T* iterator, 
+    int* nterm_allowed_cleavages, 
+    int  nterm_num_cleavages, 
+    int* cterm_allowed_cleavages, 
+    int  cterm_num_cleavages, 
+    BOOLEAN_T skip_cleavage_locations);
+
 BOOLEAN_T protein_to_heavy(
   PROTEIN_T* protein ///< protein to convert to heavy -in 
   );
@@ -318,4 +334,7 @@ PROTEIN_T* get_protein_peptide_iterator_portein(
  * c-basic-offset: 2
  * End:
  */
+#ifdef __cplusplus
+}
+#endif
 #endif

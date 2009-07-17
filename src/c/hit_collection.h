@@ -9,6 +9,9 @@
 #ifndef HIT_COLLECTION_H
 #define HIT_COLLECTION_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -124,3 +127,7 @@ void free_hit_iterator(
  * c-basic-offset: 2
  * End:
  */
+
+#ifdef __cplusplus
+}
+#endif

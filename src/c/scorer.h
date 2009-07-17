@@ -18,6 +18,50 @@
 #include "ion.h"
 #include "scorer.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+struct scorer {
+  SCORER_TYPE_T type; ///< The type of scorer
+  FLOAT_T sp_beta; ///< used for Sp: the beta variable 
+  FLOAT_T sp_max_mz; ///< used for Sp: the max mz for the intensity array
+  int sp_b_y_ion_matched; ///< The most recent ion_collection number of the b, y ion matched while scoring for SP
+  int sp_b_y_ion_possible; ///< The most recent ion_collection number of the b, y ion possible while scoring for SP
+  FLOAT_T sp_b_y_ion_fraction_matched; ///< The ratio of matched and possible.
+
+  FLOAT_T* intensity_array; ///< used for Sp: the intensity array, which can be indexed using the m/z
+  FLOAT_T max_intensity; ///< the max intensity in the intensity array
+  BOOLEAN_T initialized; ///< has the scorer been initialized?
+  int last_idx; ///< the last index in the array, the data size of the array
+
+  /// used for xcorr
+  FLOAT_T* observed; ///< used for Xcorr: observed spectrum intensity array
+  FLOAT_T* theoretical; ///< used for Xcorr: theoretical spectrum intensity array
+};
+
+FLOAT_T cross_correlation(
+  SCORER_T* scorer,  ///< the scorer object that contains observed spectrum -in
+  FLOAT_T* theoretical ///< the theoretical spectrum to score against the observed spectrum -in
+  );
+
+
+void add_intensity(
+  FLOAT_T* intensity_array, ///< the intensity array to add intensity at index add_idx -out
+  int add_idx,            ///< the idex to add the intensity -in
+  FLOAT_T intensity         ///< the intensity to add -in
+  );
+
+
+BOOLEAN_T create_intensity_array_xcorr(
+  SPECTRUM_T* spectrum,    ///< the spectrum to score(observed) -in
+  SCORER_T* scorer,        ///< the scorer object -in/out
+  int charge               ///< the peptide charge -in 
+  );
+
+
+
+
 /**
  * \returns An (empty) scorer object.
  */
@@ -324,4 +368,7 @@ int get_scorer_sp_b_y_ion_possible(
  * c-basic-offset: 2
  * End:
  */
+#ifdef __cplusplus
+}
+#endif
 #endif
