@@ -40,6 +40,10 @@ FLOAT_T calc_mod_sequence_mass(
   MASS_TYPE_T mass_type ///< isotopic mass type (AVERAGE, MONO) -in
   );
 
+char* generate_shuffled_sequence_from_sequence(
+  char* sequence ///< The peptide sequence to shuffle -in 
+  );
+
 PEPTIDE_T* allocate_peptide(void);
 
 /**

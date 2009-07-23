@@ -96,6 +96,7 @@ SPECTRUM_COLLECTION_T* new_spectrum_collection(
   char* filename///< The spectrum collection filename. -in
   )
 {
+  //printf("ms2: %s\n", filename);
   SPECTRUM_COLLECTION_T* spectrum_collection =  allocate_spectrum_collection();
   #if DARWIN
   char path_buffer[PATH_MAX];

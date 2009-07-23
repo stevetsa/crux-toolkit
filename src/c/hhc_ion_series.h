@@ -17,6 +17,7 @@ class LinkedIonSeries {
     LinkedIonSeries(char* sequenceA, char* sequenceB, int posA, int posB, int charge, FLOAT_T linker_mass);
     LinkedIonSeries(char* sequenceA, char* sequenceB, char* links, int charge, FLOAT_T linker_mass);
     int charge() { return charge_; }
+    void set_charge(int charge) { charge_ = charge; }
     std::vector<LinkedPeptide>& ions() { return all_ions; }
     void add_linked_ions(LinkedPeptide& linked_peptide);
     //void add_linked_ions_double(char* sequenceA, char* sequenceB);
@@ -180,7 +181,7 @@ FLOAT_T hhc_gen_score_xcorr(
   // use the two intensity arrays that were created
   final_score = cross_correlation(scorer, theoretical);
   //print_spectrums(theoretical, spectrum, spectrum->max_peak_mz, 1);
-  //print_spectrums(theoretical, spectrum, 400, 1400, 1);
+  //print_spectrums(theoretical, spectrum, 300, 750, 1);
 
   // free theoretical spectrum
   free(theoretical);
@@ -226,8 +227,9 @@ bool hhc_create_intensity_array_theoretical(
   for (vector<LinkedPeptide>::iterator ion = ions.begin(); ion != ions.end(); ++ion) {
   //while(ion_iterator_has_next(ion_iterator)){
     //ion = ion_iterator_next(ion_iterator);
-    ion->calculate_mass();
+    //ion->calculate_mass();
     intensity_array_idx = (int)(ion->get_mz() / bin_width + 0.5);
+    //cout << "index " << intensity_array_idx << endl;
     ion_type = ion->type();
     ion_charge = ion->charge();
     //cout << "m/z: " << ion->get_mz() << " charge: " << ion->charge() << endl;

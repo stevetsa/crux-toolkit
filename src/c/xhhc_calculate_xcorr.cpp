@@ -8,7 +8,16 @@ using namespace std;
 
 typedef map<char, set<char> > BondMap;
 
-void find_all_precursor_ions(vector<LinkedPeptide>& all_ions, 
+void add_decoy_peptides(
+	vector<LinkedPeptide>& peptides, 
+	LinkedPeptide& peptide,
+	char* links, 
+	int num_decoys);
+
+FLOAT_T get_linked_xcorr(LinkedPeptide& peptide, int scan_num, char* ms2_file);
+
+void find_all_precursor_ions(
+	vector<LinkedPeptide>& all_ions, 
 	char* links, 
 	FLOAT_T linker_mass, 
 	char* missed_link_cleavage,
@@ -101,14 +110,9 @@ int main(int argc, char** argv) {
   cout << "ms2 " << ms2_file << " charge " << charge << " scan num " << scan_num << endl;
 
   vector<LinkedPeptide> all_ions;
+  // create all theoretical ions
   find_all_precursor_ions(all_ions, links, linker_mass, missed_link_cleavage, database);
   
-  for (vector<LinkedPeptide>::iterator ion = all_ions.begin(); ion != all_ions.end(); ++ion) {
-    ion->calculate_mass();
-  }
- 
-  sort(all_ions.begin(), all_ions.end());
-
   FLOAT_T max_mass = all_ions.back().mass();
   //FLOAT_T max_mass = 1400;
   FLOAT_T min_mass = 0.0;
@@ -119,57 +123,70 @@ int main(int argc, char** argv) {
   }
 
   cout << "min " << min_mass << " max " << max_mass << endl;
+  // ions with masses between min and max
+  vector<LinkedPeptide> filtered_ions;
 
-  LinkedIonSeries ion_fragments;
+  for (vector<LinkedPeptide>::iterator ion = all_ions.begin(); ion != all_ions.end(); ++ion) {
+    ion->calculate_mass();
+    if (min_mass <= ion->mass() && ion->mass() <= max_mass) {
+      filtered_ions.push_back(*ion);
+      cout << *ion << endl;
+      add_decoy_peptides(filtered_ions, *ion, links, 1);
+      cout << *ion << endl;
+    }
+  }
+  
+   
+  cout << "links: " << links << endl;
+  cout << "linker mass: " << linker_mass << endl;
+
+  cout << "ions: " << all_ions.size() << endl;
+   
+  return 0;
+}
+
+void add_decoy_peptides(vector<LinkedPeptide>& ions, LinkedPeptide& peptide, char* links, int num_decoys) {
+
+  vector<Peptide> peptides;
+  while (num_decoys > 0) {
+    if (peptide.size() == 2) {
+      peptides = peptide.peptides();
+      //Peptide p = peptides[0];
+      char* shuffleA = generate_shuffled_sequence_from_sequence((char*)peptides[0].sequence().c_str());
+  
+    }
+    ions.push_back(peptide);
+    --num_decoys;
+  }
+}
+
+FLOAT_T get_linked_xcorr(LinkedPeptide& peptide, int scan_num, char* ms2_file) {
+  LinkedIonSeries ions;
   SPECTRUM_T* spectrum = NULL;
   SPECTRUM_COLLECTION_T* collection = NULL;
   SCORER_T* scorer = NULL;
   FLOAT_T score = 0;
 
-  for (vector<LinkedPeptide>::iterator ion = all_ions.begin(); ion != all_ions.end(); ++ion) {
-    if (min_mass <= ion->mass() && ion->mass() <= max_mass) {
-      ion->set_charge(charge);
-      ion_fragments = LinkedIonSeries(links, charge, linker_mass); 
-      ion_fragments.add_linked_ions(*ion);
-      //cout << "# frags " << ion_fragments.size() << endl;
-      collection = new_spectrum_collection(ms2_file);
-      spectrum = allocate_spectrum();
-      scorer = new_scorer(XCORR);
-    if(!get_spectrum_collection_spectrum(collection, scan_num, spectrum)){
-      carp(CARP_ERROR, "failed to find spectrum with  scan_num: %d", scan_num);
-      free_spectrum_collection(collection);
-      free_spectrum(spectrum);
-      exit(1);
-    }
-      score = hhc_score_spectrum_v_ion_series(scorer, spectrum, ion_fragments);
-      cout << score << "\t" << ion->mass() << "\t" << *ion << endl;
-      free_scorer(scorer);
-      free_spectrum_collection(collection);
-      free_spectrum(spectrum);
-    }
-  }
-  
-  vector<LinkedPeptide> fragments = ion_fragments.ions();
-  //cout << "linked precursors: " << ion_fragments.size() << endl;
+  ions = LinkedIonSeries();
+  ions.set_charge(peptide.charge());
+  ions.add_linked_ions(peptide);
+  collection = new_spectrum_collection(ms2_file);
+  spectrum = allocate_spectrum();
+  scorer = new_scorer(XCORR);
 
-  sort(fragments.begin(), fragments.end());
-  
-  for (vector<LinkedPeptide>::iterator fragment = fragments.begin();
-		fragment != fragments.end(); ++fragment) {
-    //cout << fragment->mass() << "\t" << *fragment << endl;
-  } 
- 
-   
-  cout << "links: " << links << endl;
-  cout << "linker mass: " << linker_mass << endl;
-  //cout << "mass\tpeptide" << endl;
-  for (vector<LinkedPeptide>::iterator ion = all_ions.begin(); ion != all_ions.end(); ++ion) {
-    //cout << ion->mass() << "\t" << *ion << endl;
+  if(!get_spectrum_collection_spectrum(collection, scan_num, spectrum)){
+    carp(CARP_ERROR, "failed to find spectrum with  scan_num: %d", scan_num);
+    free_spectrum_collection(collection);
+    free_spectrum(spectrum);
+    exit(1);
   }
 
-  cout << "ions: " << all_ions.size() << endl;
-   
-  return 0;
+  score = hhc_score_spectrum_v_ion_series(scorer, spectrum, ions);
+  //cout << score << "\t" << ion->mass() << "\t" << *ion << endl;
+  free_scorer(scorer);
+  free_spectrum_collection(collection);
+  free_spectrum(spectrum);
+  return score;
 }
 
 // a hack, works for EDC linker only

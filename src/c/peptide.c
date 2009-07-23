@@ -1019,6 +1019,33 @@ char* generate_shuffled_sequence(
   return sequence;
 }
 
+char* generate_shuffled_sequence_from_sequence(
+  char* sequence ///< The peptide sequence to shuffle -in 
+  )
+{
+  int length = strlen(sequence);
+  int start_idx = 0;
+  int end_idx = length - 1;
+  int switch_idx = 0;
+  char temp_char = 0;
+
+  // set shuffle bound
+  // this had been removed an users did not like the results
+  ++start_idx;
+  --end_idx;
+
+  // shuffle from left ot right, using the Knuth algorithm for shuffling.
+  while(start_idx < end_idx){
+    switch_idx = get_random_number_interval(start_idx, end_idx);
+    temp_char = sequence[start_idx];
+    sequence[start_idx] = sequence[switch_idx];
+    sequence[switch_idx] = temp_char;
+    ++start_idx;
+  }
+
+  return sequence;
+}
+
 /**
  * \brief Return a reversed version of the given peptide's sequence as
  * an array of char (A-Z).  Leave the first and last residue

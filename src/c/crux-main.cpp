@@ -16,12 +16,12 @@
 #include "crux-main.h"
 
 #define NUMBER_COMMAND_TYPES 6
-static char* command_type_strings[NUMBER_COMMAND_TYPES] =
+static const char* command_type_strings[NUMBER_COMMAND_TYPES] =
   {"create-index", "search-for-matches", 
    "compute-q-values", "q-ranker", "percolator", "invalid"};
 
 
-char* usage_str = "Usage: crux <command> [options] <argument>\n"
+const char* usage_str = "Usage: crux <command> [options] <argument>\n"
 "Commands:\n"
 "  create-index        Create an index for all peptides in a fasta file.\n"
 "  search-for-matches  Search a collection of spectra against a sequence\n"
@@ -43,7 +43,7 @@ int main(int argc, char** argv){
 
   // check the syntax for crux <operation>
   if( argc < 2 ){
-    carp(CARP_FATAL, usage_str);
+    //carp(CARP_FATAL, usage_str);
   }
 
   // determine the operation
@@ -74,7 +74,7 @@ int main(int argc, char** argv){
     break;
 
   case INVALID_CMD:
-    carp(CARP_FATAL, "Invalid command '%s'\n%s", op_string, usage_str);
+    //carp(CARP_FATAL, "Invalid command '%s'\n%s", op_string, usage_str);
     break;
 
   }

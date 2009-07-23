@@ -270,6 +270,7 @@ void print_spectrums(FLOAT_T* theoretical, SPECTRUM_T* spectrum, FLOAT_T min_mz_
   int max_mz = (int)max_mz_float;
   int min_mz = (int)min_mz_float;
   //int max_mz = 1300;
+  map<PEAK_T*, string> peak_colors;
   carp(CARP_DEBUG, "min mz: %d, max mz: %d\n", max_mz);
   FLOAT_T average = 0;
   for (int peak_index = 0; peak_index < spectrum->num_peaks; ++peak_index) {
@@ -283,8 +284,9 @@ void print_spectrums(FLOAT_T* theoretical, SPECTRUM_T* spectrum, FLOAT_T min_mz_
     FLOAT_T intensity = get_peak_intensity(find_peak(spectrum->peaks, peak_index)); 
     if (location > min_mz && location < max_mz) {
     if (normalize) {
-      observed_file << location<< "\t" << pow(intensity * average * normalize, 0.2) << "\tnolabel\tred" << endl;
-      spectrums_file << location<< "\t" << pow(intensity * average * normalize, 0.2) << "\tnolabel\tblue" << endl;
+      peak_colors[find_peak(spectrum->peaks, peak_index)] = "blue";
+      //observed_file << location<< "\t" << pow(intensity * average * normalize, 0.2) << "\tnolabel\tred" << endl;
+      //spectrums_file << location<< "\t" << pow(intensity * average * normalize, 0.2) << "\tnolabel\tblue" << endl;
       //spectrums_file << location<< "\t" << pow(intensity * average * normalize, 0.25) << "\tnolabel" << endl;
     } else {
       observed_file << location<< "\t" << intensity << "\tnolabel\tred" << endl;
@@ -307,17 +309,27 @@ void print_spectrums(FLOAT_T* theoretical, SPECTRUM_T* spectrum, FLOAT_T min_mz_
       PEAK_T* peak = get_nearest_peak(spectrum, i, 1);
       if (peak != NULL) {
 	++match_count;
+	peak_colors[peak] = "green";
         //if (*index == 50) ++b_match_count;
-	spectrums_file << i << "\t" << *index << "\tnolabel\tgreen" << endl;
+	spectrums_file << i << "\t" << 40 - *index << "\tnolabel\tgreen" << endl;
+	//spectrums_file << get_peak_location(peak) << "\t" << pow (get_peak_intensity(peak) * average * normalize, 0.2) << "\tnolabel\tgreen" << endl;
       } else {
         //if (*index == 51) ++y_mismatch_count;
 	++mismatch_count;
-        spectrums_file << i << "\t" << *index << "\tnolabel\tred" << endl;
+        spectrums_file << i << "\t" << 40 - *index << "\tnolabel\tred" << endl;
       }
     }
     ++i;
     ++index;
   }
+  FLOAT_T location;
+  FLOAT_T intensity;
+  for (map<PEAK_T*, string>::iterator it = peak_colors.begin(); it != peak_colors.end(); ++it) {
+    location = get_peak_location(it->first);
+    intensity = get_peak_intensity(it->first);
+    spectrums_file << location << "\t" << pow(intensity * average * normalize, 0.2) << "\tnolabel\t" << it->second << endl;
+  }
+
   cout << "b matches " << b_match_count << " y mismatches " << y_mismatch_count << endl;
   cout << "match: " << match_count << " mismatch: " << mismatch_count << endl;
   theoretical_file.close();

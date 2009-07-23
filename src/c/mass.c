@@ -250,7 +250,7 @@ FLOAT_T get_mass_mod_amino_acid_monoisotopic(
   short int aa = amino_acid & GET_AA_MASK;
   unsigned short int mod = amino_acid & GET_MOD_MASK;
   mod = mod >> 5;
-  printf("%c  mod aa idx %hi mass %.3f + mod idx %hu mass %.3f\n", amino_acid, aa,  amino_masses[aa+26], mod, aa_mod_masses[mod]);
+  //printf("%c  mod aa idx %hi mass %.3f + mod idx %hu mass %.3f\n", amino_acid, aa,  amino_masses[aa+26], mod, aa_mod_masses[mod]);
   return amino_masses[aa + 26] + aa_mod_masses[mod];
 
 }

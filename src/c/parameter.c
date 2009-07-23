@@ -16,12 +16,12 @@
  * Global variables
  */
 
-static char* parameter_type_strings[NUMBER_PARAMETER_TYPES] = { 
+/*static char* parameter_type_strings[NUMBER_PARAMETER_TYPES] = { 
   "INT_ARG", "DOUBLE_ARG", "STRING_ARG", "MASS_TYPE_T", "DIGEST_T", 
   "ENZYME_T", //"PEPTIDE_TYPE_T", 
   "BOOLEAN_T", "SORT_TYPE_T", "SCORER_TYPE_T", "ION_TYPE_T",
   "ALGORITHM_TYPE_T"};
-
+*/
 //one hash for parameter values, one for usage statements, one for types
 // all hashes keyed on parameter/option name
 HASH_T* parameters; // values of parameters
@@ -842,7 +842,7 @@ void initialize_parameters(void){
   usage_initialized = TRUE;
   type_initialized = TRUE;
 
-  //update_aa_masses();
+  update_aa_masses();
 }
 
 
@@ -2261,7 +2261,9 @@ BOOLEAN_T set_ion_type_parameter(char* name,
  */
 
 BOOLEAN_T string_to_param_type(char* name, PARAMETER_TYPE_T* result ){
-  BOOLEAN_T success = TRUE;
+  name[1] = name[1];
+  result[0] = result[0];
+/*  BOOLEAN_T success = TRUE;
   if( name == NULL ){
     return FALSE;
   }
@@ -2273,7 +2275,8 @@ BOOLEAN_T string_to_param_type(char* name, PARAMETER_TYPE_T* result ){
   if( param_type == -10 ){
     success = FALSE;
   }
-  return success;
+  return success;*/
+  return TRUE;
 }
 
 /*

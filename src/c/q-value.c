@@ -180,10 +180,11 @@ MATCH_COLLECTION_T* run_qvalue(
   const int length = MAX_PSMS;
   double* pvalues = (double*) malloc(sizeof(double) * length);
   int num_psms = 0;
+  int num_decoys = 0;
   
   // create MATCH_COLLECTION_ITERATOR_T object
   MATCH_COLLECTION_ITERATOR_T* match_collection_iterator =
-    new_match_collection_iterator(psm_result_folder, fasta_file);
+    new_match_collection_iterator(psm_result_folder, fasta_file, &num_decoys);
   
   while(match_collection_iterator_has_next(match_collection_iterator)){
 
@@ -242,10 +243,9 @@ MATCH_COLLECTION_T* run_qvalue(
     }
     carp(CARP_DETAILED_DEBUG, "qvalue[%i] = %.10f", idx, qvalues[idx]);
   }
-
   // Iterate over the matches again
   match_collection_iterator = 
-    new_match_collection_iterator(psm_result_folder, fasta_file);
+    new_match_collection_iterator(psm_result_folder, fasta_file, &num_decoys);
 
   while(match_collection_iterator_has_next(match_collection_iterator)){
 

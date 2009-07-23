@@ -1805,6 +1805,7 @@ void add_intensity(
   FLOAT_T intensity         ///< the intensity to add -in
   )
 {
+  //printf("add_idx %d\n", add_idx);
   //carp(CARP_ERROR, "index %d\n", add_idx);
   assert(add_idx >= 0);
   if(intensity_array[add_idx] < intensity){

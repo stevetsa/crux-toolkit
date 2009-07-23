@@ -209,20 +209,20 @@ void find_all_precursor_ions(vector<LinkedPeptide>& all_ions,
     LinkedPeptide lp = LinkedPeptide(1, linker_mass);
     Peptide p = Peptide(sequenceA);
     lp.add_peptide(p);
-    all_ions.push_back(lp);
+    //all_ions.push_back(lp);
     for (int i = 0; i < pepA->length(); ++i) {
       BondMap::iterator bond = bonds.find(pepA->at(i));
       // if a link aa and doesn't end in K
       if (bond != bonds.end() && i != pepA->length()-1) {
 	if (i == pepA->length()-1 && pepA->at(pepA->length()-1) == 'K') continue;
         // add dead end
-	all_ions.push_back(LinkedPeptide(sequenceA, NULL, i, -1, linker_mass, 1));
+	//all_ions.push_back(LinkedPeptide(sequenceA, NULL, i, -1, linker_mass, 1));
         // add self loop
 	for (int j = i+1; j < pepA->length(); ++j) {
           if (bond->second.find(pepA->at(j)) != bond->second.end()) { 
 	    //skip if linked to a K at the end
 	    if (j == pepA->length()-1 && pepA->at(pepA->length()-1) == 'K') continue;
-	    all_ions.push_back(LinkedPeptide(sequenceA, NULL, i, j, linker_mass,1));
+	    //all_ions.push_back(LinkedPeptide(sequenceA, NULL, i, j, linker_mass,1));
 	  }
 	}
         // add linked precursor

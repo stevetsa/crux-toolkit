@@ -172,11 +172,6 @@ typedef double PROB_T;       // Type definition for probability/frequency.
 #define MAX(a,b)         (((a)>(b))?(a):(b))
 #endif
 
-/**************************************************************************
- * Swap two values.
- **************************************************************************/
-#define swap(type, x, y) {type tmp; tmp = (x); (x) = (y); (y) = (tmp);}
-
 /***************************************************************************
  * Find the nearest integer.
  ***************************************************************************/
@@ -284,7 +279,7 @@ char*  convert_enum_type
 int convert_enum_type_str
   (char*   enum_type_str, /* String to be converted. */
    int     default_value, /* Value to return if first arg is null. */
-   char**  enum_strs,     /* String values associated with this type. */
+   const char**  enum_strs,     /* String values associated with this type. */
    int     num_enums);    /* Number of values of the type. */
 
 /**************************************************************************

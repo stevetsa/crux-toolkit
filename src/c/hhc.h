@@ -33,7 +33,7 @@ class LinkedPeptide {
     // a self link will be created. If an index is -1, a link to nothing
     // will be created.
     LinkedPeptide(char* peptide_A, char* peptide_B, int posA, int posB, FLOAT_T linker_mass, int charge);
-    LinkedPeptide(int charge, FLOAT_T linkermass) : charge_(charge), linker_mass_(linkermass) {}
+    LinkedPeptide(int charge, FLOAT_T linkermass) : charge_(charge), linker_mass_(linkermass), decoy_(false) {}
     //LinkedPeptide(const LinkedPeptide& other); 
     std::vector<Peptide> peptides() 	{ return peptides_;}
     int charge() 			{ return charge_;}
@@ -45,7 +45,10 @@ class LinkedPeptide {
     int size()				{ return peptides_.size(); }
     void calculate_mass();
     FLOAT_T mass() 			{ return mass_; }
+    void set_decoy()			{ decoy_ = true; }
+    bool is_decoy()			{ return decoy_;}
     void add_peptide(Peptide& peptide) { peptides_.push_back(peptide); } 
+
   
     //void split_many(std::vector<std::pair<LinkedPeptide, LinkedPeptide> >& ion_pairs);
     void split(std::vector<std::pair<LinkedPeptide, LinkedPeptide> >& ion_pairs);
@@ -56,6 +59,7 @@ class LinkedPeptide {
       //return lp1.mz < lp2.mz;
     }
    private:
+      bool decoy_;
       ION_TYPE_T type_;
       FLOAT_T mass_;
       FLOAT_T mz;
@@ -72,6 +76,7 @@ class Peptide {
     bool has_link_at(int index);
     Peptide& link_at(int index);
     int length();
+    //Peptide& shuffle();
     bool has_link() { return !links_.empty(); }
     std::string sequence() {return sequence_;}	
     void add_link(int index, Peptide& peptide);
@@ -82,11 +87,29 @@ private:
     int length_;
     std::string sequence_;
 };
+/*
+void Peptide::shuffle() {
+  string copy = string(sequence_);
+  int start_idx = 0;
+  int end_idx = length_-1;
+  int switch_idx = 0;
+  char temp_char = 0;
 
+  ++start_idx;
+  --end_idx;
 
+  while(start_idx < end_idx) {
+    switch_idx = get_random_number_interval(start_idx, end_idx);
+    //temp_char = sequence_[start_idx];
+    copy[start_idx] = sequence_[switch_idx];
+    copy[switch_idx] = sequence_[start_idx];
+  }
+}
+*/
 LinkedPeptide::LinkedPeptide(char* peptide_A, char* peptide_B, int posA, int posB, FLOAT_T linkermass, int charge) {
   charge_ = charge;
   linker_mass_ = linkermass;
+  decoy_ = false;
   Peptide pepA = Peptide(peptide_A);
   // if a self link
   if (peptide_B == NULL) {
@@ -112,7 +135,7 @@ LinkedPeptide::LinkedPeptide(char* peptide_A, char* peptide_B, int posA, int pos
 // remove H2O from mass if it's a b-ion
 // only works for one or two peptides for now
 void LinkedPeptide::calculate_mass() {
-  mass_ = calc_mod_sequence_mass((char*)peptides_[0].sequence().c_str(), MONO);   
+  mass_ = calc_sequence_mass((char*)peptides_[0].sequence().c_str(), MONO);   
   /*for (vector<Peptide>::iterator peptide = peptides_.begin(); peptide != peptides_.end(); ++peptide) {
     mass_ += calc_sequence_mass((char*)peptide->sequence().c_str(), MONO);
    // change this later!!
@@ -127,8 +150,9 @@ void LinkedPeptide::calculate_mass() {
     mass_ += linker_mass_;
     if (size() == 2) mass_ += calc_sequence_mass((char*)peptides_[1].sequence().c_str(), MONO);
   }
-  if (type_ == B_ION) 
+  if (type_ == B_ION) {
     mass_ = mass_ - MASS_H2O_MONO;
+  } 
 }
 
 // 
