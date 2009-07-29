@@ -1,6 +1,6 @@
 #include "Spectrum.h"
 #include <iostream>
-
+#include <cstdlib>
 namespace MSToolkit {
 
 Spectrum::Spectrum(){
