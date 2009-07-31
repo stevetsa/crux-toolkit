@@ -28,8 +28,7 @@ void add_linked_peptides(vector<LinkedPeptide>& all_ions, set<string>& peptides,
 
 void add_decoys(vector<LinkedPeptide>& decoys, LinkedPeptide& lp, char* links, int charge, FLOAT_T linker_mass);
 
-void plot_weibull(vector<FLOAT_T>& scores, SPECTRUM_T* spectrum, int charge, string fit_file,
-	map<FLOAT_T, LinkedPeptide>& score_map); 
+void plot_weibull(vector<pair<FLOAT_T, LinkedPeptide> >& scores, SPECTRUM_T* spectrum, int charge); 
 
 void find_all_precursor_ions(vector<LinkedPeptide>& all_ions, 
 	char* links, 
@@ -47,8 +46,11 @@ int main(int argc, char** argv) {
   char* database = NULL;
   char* links = NULL;
   char* linker_mass_string = NULL;
+  int decoy_iterations = 5;
   int charge = 1;
   int scan_num = 0;
+  bool open_modification = false;
+  int open_modification_int = 0;
   parse_arguments_set_req(
     "protein database", 
     "database containing all proteins", 
@@ -85,6 +87,18 @@ int main(int argc, char** argv) {
     STRING_ARG);
  
   parse_arguments_set_opt(
+    "open-modification",
+    "",
+    (void *) &open_modification_int, 
+    INT_ARG);
+
+  parse_arguments_set_opt(
+    "decoy-iterations",
+    "",
+    (void *) &decoy_iterations,
+    INT_ARG);
+
+  parse_arguments_set_opt(
     "missed-link-cleavage",
     "",
     (void *) &missed_link_cleavage, 
@@ -118,22 +132,15 @@ int main(int argc, char** argv) {
   parse_arguments(argc, argv, 0);
   // something wrong with DOUBLE_ARG
   FLOAT_T linker_mass = atof(linker_mass_string);
-  
-  //atof(min_mass_string);
-  //atof(max_mass_string);
-
+  // and boolean arg
+  if (open_modification_int == 1)
+    open_modification = true;
   cout << "ms2 " << ms2_file << " charge " << charge << " scan num " << scan_num << endl;
 
   vector<LinkedPeptide> all_ions;
   
   find_all_precursor_ions(all_ions, links, linker_mass, charge, missed_link_cleavage, database);
-  /*
-  for (vector<LinkedPeptide>::iterator ion = all_ions.begin(); ion != all_ions.end(); ++ion) {
-    ion->calculate_mass();
-  }
- 
-  sort(all_ions.begin(), all_ions.end());*/
-  //cout << " sorted" << endl;
+
   FLOAT_T max_mass = all_ions.back().mass();
   FLOAT_T min_mass = 0.0;
   if (min_mass_string != NULL) min_mass = atof(min_mass_string);
@@ -144,125 +151,189 @@ int main(int argc, char** argv) {
 
   cout << "min " << min_mass << " max " << max_mass << endl;
 
-  //LinkedIonSeries ion_fragments = LinkedIonSeries();
   int num_ions = 0;
   vector<LinkedPeptide> filtered_ions;
   for (vector<LinkedPeptide>::iterator ion = all_ions.begin(); ion != all_ions.end(); ++ion) {
       ion->calculate_mass();
+    // if the mass is in the range
     if (min_mass <= ion->mass() && ion->mass() <= max_mass) {
       //ion->set_charge(charge);
       ++num_ions;
       filtered_ions.push_back(*ion);
+      // print out the ion
       cout << ion->mass() << "\t" << *ion << endl;
-      for (int i = 0; i < 5; ++i)
+      // iterate to add shuffled decoys
+      //int i = 5;
+      //if (charge == 4) i = 7;
+      for (int i = decoy_iterations; i > 0; --i)
         add_decoys(filtered_ions, *ion, links, charge, linker_mass);
     } 
  }     
   
-  
-  //vector<LinkedPeptide> fragments = ion_fragments.ions();
-  
+  // sort filtered ions and decoy ions by mass
+  cout << "sorting ...";
   sort(filtered_ions.begin(), filtered_ions.end());
+  cout << "done" << endl;
   cout << "scan " << scan_num << " +" << charge << "<br>" << endl;
-  cout << "mass range  " << max_mass - min_mass << " Da <br>" << endl;
   cout << "precursors  " << num_ions << "<br>" << endl;
   cout << "decoys      " << filtered_ions.size() - num_ions << "<br>" << endl;
   cout << "total       " << filtered_ions.size() << "<br>" << endl;
 
- // keep track of xcorr scores
-  map<FLOAT_T, LinkedPeptide> score_map;
-  vector<FLOAT_T> scores;
-  
   SPECTRUM_T* spectrum = allocate_spectrum();
   SPECTRUM_COLLECTION_T* collection = new_spectrum_collection(ms2_file);
   SCORER_T* scorer = new_scorer(XCORR);
+  
   if(!get_spectrum_collection_spectrum(collection, scan_num, spectrum)){
     carp(CARP_ERROR, "failed to find spectrum with  scan_num: %d", scan_num);
     free_spectrum_collection(collection);
     free_spectrum(spectrum);
     exit(1);
   }
-  // for every ion in the mass window
-  for (vector<LinkedPeptide>::iterator it = filtered_ions.begin(); it != filtered_ions.end(); ++it) { it->calculate_mass();/* cout << it->mass() << "\t" << *it << endl;*/}
-    MATCH_COLLECTION_T* match_collection; 
-    FLOAT_T score = 0;
+  
+  FLOAT_T score = 0;
+  FLOAT_T mod_mass;
+  // Pragya's open modification method
+  if (open_modification) {
+    ION_SERIES_T* ion_series = NULL; 
+    ION_CONSTRAINT_T* ion_constraint = 
+	new_ion_constraint_sequest_xcorr(charge);
+    set<pair<FLOAT_T, string> > scores;
+    stringstream ss;
+    // for every precursor in the mass window
+    for (vector<LinkedPeptide>::iterator ion = filtered_ions.begin(); ion != filtered_ions.end(); ++ion) {
+      if (ion->size() == 2) {
+	vector<Peptide> peptides = ion->peptides();
+	// score the first peptide with modification of second peptide	
+        mod_mass = linker_mass + peptides[1].mass();	
+	ion_series = new_ion_series((char*)peptides[0].sequence().c_str(), ion->charge(), ion_constraint);
+	hhc_predict_ions(ion_series, mod_mass, peptides[0].link_site());
+	score = score_spectrum_v_ion_series(scorer, spectrum, ion_series);
+	ss.str("");
+	ss << peptides[0].sequence() << " mod " << peptides[1].sequence() << ", " << peptides[0].link_site();
+        scores.insert(make_pair(score, ss.str()));	
+	// score second peptide with modification of first peptide
+        mod_mass = linker_mass + peptides[0].mass();	
+	ion_series = new_ion_series((char*)peptides[1].sequence().c_str(), ion->charge(), ion_constraint);
+	hhc_predict_ions(ion_series, mod_mass, peptides[1].link_site());
+	score = score_spectrum_v_ion_series(scorer, spectrum, ion_series);
+	ss.str("");
+	ss << peptides[1].sequence() << " mod " << peptides[0].sequence() << ", " << peptides[1].link_site();
+        scores.insert(make_pair(score, ss.str()));
+      }
+    }
+    //sort(scores.begin(), scores.end());
+    int i = 1;
+    for (set<pair<FLOAT_T, string> >::reverse_iterator score_pair = scores.rbegin();
+		score_pair != scores.rend();
+		++score_pair) {
+
+	cout << i << "\t" << score_pair->first << "\t" << score_pair->second << endl;
+	++i;
+    }
+
+  } else { // linked peptide method
+    vector<pair<FLOAT_T, LinkedPeptide> > scores;
     LinkedIonSeries ion_series;
-    //map<FLOAT_T, int> buckets;
-    int count = 0;
-  for (vector<LinkedPeptide>::iterator ion = filtered_ions.begin(); ion != filtered_ions.end(); ++ion) {
-    ion_series = LinkedIonSeries(links, charge, linker_mass);
-    ion_series.add_linked_ions(*ion);
-    vector<LinkedPeptide> series = ion_series.ions();
-    score = hhc_score_spectrum_v_ion_series(scorer, spectrum, ion_series);
-    //cout << count << " " << floor(score*10)/10 << endl;
-    scores.push_back(score);
-    //score_map[score] = *ion;
-    score_map.insert(make_pair(score, *ion));
-    ++count;
+  // for every ion in the mass window
+    for (vector<LinkedPeptide>::iterator ion = filtered_ions.begin(); ion != filtered_ions.end(); ++ion) {
+      ion_series = LinkedIonSeries(links, charge, linker_mass);
+      ion_series.add_linked_ions(*ion);
+      vector<LinkedPeptide> series = ion_series.ions();
+      score = hhc_score_spectrum_v_ion_series(scorer, spectrum, ion_series);
+      //if (!ion->is_decoy())
+        scores.push_back(make_pair(score, *ion));
+    }
+    sort(scores.begin(), scores.end());
+    FLOAT_T range = scores.back().first - scores.front().first;
+    cout << "xcorr range " << range << "<br>" << endl;
+    plot_weibull(scores, spectrum, charge);
   }
   free_scorer(scorer);
   free_spectrum_collection(collection);
-
-  sort(scores.begin(), scores.end());
-  //sort(score_map.begin(), score_map.end());
   free_spectrum(spectrum);
-  //cout << "eta: " << eta << " beta: " << beta << " shift: " << shift << " mean: " << mean << endl;
-
-  //cout << "num scores " << scores.size() << endl;
-  FLOAT_T range = scores.back() - scores.front();
-  //FLOAT_T bin_width = floor(range/sqrt(filtered_ions.size())*1000) / 1000; 
-  cout << "xcorr range " << range << "<br>" << endl;
-  //cout << "candidate peptide xcorr <br>" << endl;
-  //cout << "ions: " << all_ions.size() << endl;
-  
-  string fit_file = "fit";
-  plot_weibull(scores, spectrum, charge, fit_file, score_map);
   return 0;
 }
 
-void plot_weibull(vector<FLOAT_T>& scores, SPECTRUM_T* spectrum, int charge, string fit_file, map<FLOAT_T, LinkedPeptide>& score_map) {
-  ofstream file (fit_file.c_str());
-  ofstream score_file ("scores");
-  ofstream rank_file ("rank");
+// for running experiments. plots fit and pvalues
+void plot_weibull(vector<pair<FLOAT_T, LinkedPeptide> >& scores, SPECTRUM_T* spectrum, int charge) {
+  ofstream target_fit_file ("fit.target");
+  ofstream decoy_fit_file ("fit.decoy");
+  ofstream target_score_file ("scores.target");
+  ofstream decoy_score_file ("scores.decoy");
+  ofstream target_pvalue_file ("pvalues.target");
+  ofstream decoy_pvalue_file ("pvalues.decoy");
+
   int num_scores = scores.size();
-  FLOAT_T mean = 0.0;
-  FLOAT_T eta = 0.0;
-  FLOAT_T beta = 0.0;
-  FLOAT_T shift = 0.0;
-  FLOAT_T correlation = 0.0;
-  FLOAT_T scores_array[scores.size()];
-  for (int i = 0; i < num_scores; ++i) {
-    score_file << scores[i] << endl;
-    mean += scores[i];
-    scores_array[i] = scores[i];
-  }
-  mean = mean / num_scores;
-  hhc_estimate_weibull_parameters_from_xcorrs(scores_array, num_scores, &eta, &beta, &shift, &correlation, spectrum, charge);
-  cout << "correlation " << correlation << "<br>" << endl;
-  cout << "eta: " << eta << " beta: " << beta << " shift: " << shift << " mean: " << mean << endl;
-  //cout << "shift " << shift << " mean " << mean << endl;
-  FLOAT_T y;
-  for (FLOAT_T x = scores.front(); x <= scores.back(); x = x + 0.01) {
-    //y = (beta / eta) * pow(((x-shift)/eta), beta - 1) * pow(2.71828, 0 - pow((x-shift)/eta, beta));
-    //cout << beta / eta << endl;
-    y = (beta / eta) * pow(((x+shift)/eta), beta - 1) * pow(2.71828, 0 - pow((x+shift)/eta, beta));
-    file << x << "\t" << y << endl;
+  int num_targets = 0;
+  int num_decoys = 0;
+
+  FLOAT_T decoy_scores_array[num_scores];
+  FLOAT_T target_scores_array[num_scores];
+
+  for (vector<pair<FLOAT_T, LinkedPeptide> >::iterator score_pair = scores.begin();
+	score_pair != scores.end(); ++score_pair) {
+    if (score_pair->second.is_decoy()) {
+      decoy_score_file << score_pair->first << endl;
+      decoy_scores_array[num_decoys++] = score_pair->first;
+    } else {
+      target_score_file << score_pair->first << endl;
+      target_scores_array[num_targets++] = score_pair->first;
+    }
   }
 
-  int i = 1;
-  map<FLOAT_T, LinkedPeptide>::reverse_iterator score_pair = score_map.rbegin(); 
-  FLOAT_T pvalue;
-  rank_file << "rank\t" << "True/Decoy\t" << "-log(p-value)\t" << "xcorr score\t" << "peptide\t" << endl;
-  while (i <= 10) {
-     pvalue = score_logp_bonf_weibull(score_pair->first, eta, beta, shift, num_scores);
-    if (score_pair->second.is_decoy())
-    	rank_file << i << "\tD\t" << pvalue << "\t" << score_pair->first << "\t" << score_pair->second << endl;
-    else
-    	rank_file << i << "\tT\t" << pvalue << "\t" << score_pair->first << "\t" << score_pair->second << endl;
-    ++i;
-    ++score_pair;
+  FLOAT_T eta_target = 0.0;
+  FLOAT_T beta_target = 0.0;
+  FLOAT_T shift_target = 0.0;
+  FLOAT_T correlation_target = 0.0;
+
+  FLOAT_T eta_decoy = 0.0;
+  FLOAT_T beta_decoy = 0.0;
+  FLOAT_T shift_decoy = 0.0;
+  FLOAT_T correlation_decoy = 0.0;
+
+  FLOAT_T y;
+
+  // plot fit for targets
+  hhc_estimate_weibull_parameters_from_xcorrs(target_scores_array, num_targets, &eta_target, 
+	&beta_target, &shift_target, &correlation_target, spectrum, charge);
+  for (FLOAT_T x = scores.front().first; x <= scores.back().first; x = x + 0.01) {
+      y = (beta_target / eta_target) * pow(((x+shift_target)/eta_target), beta_target - 1) * exp(- pow((x+shift_target)/eta_target, beta_target));
+      target_fit_file << x << "\t" << y << endl;
   }
-}
+
+  // plot fit for decoys 
+  hhc_estimate_weibull_parameters_from_xcorrs(decoy_scores_array, num_decoys, &eta_decoy, 
+	&beta_decoy, &shift_decoy, &correlation_decoy, spectrum, charge);
+  for (FLOAT_T x = scores.front().first; x <= scores.back().first; x = x + 0.01) {
+      y = (beta_decoy / eta_decoy) * pow(((x+shift_decoy)/eta_decoy), beta_decoy - 1) 
+	* exp(- pow((x+shift_decoy)/eta_decoy, beta_decoy));
+      decoy_fit_file << x << "\t" << y << endl;
+  }
+
+  cout << "target correlation " << correlation_target << " <br>" << endl;
+  cout << "decoy correlation " << correlation_decoy << " <br>" << endl;
+
+  FLOAT_T pvalue_target;
+  FLOAT_T pvalue_decoy;
+
+  for (vector<pair<FLOAT_T, LinkedPeptide> >::reverse_iterator score_pair = scores.rbegin();
+	score_pair != scores.rend(); ++score_pair) {
+    pvalue_target = score_logp_weibull(score_pair->first, eta_target, beta_target);
+    pvalue_decoy = score_logp_weibull(score_pair->first, eta_decoy, beta_decoy);
+    if (score_pair->first+shift_target <= 0) 
+      pvalue_target = 1;
+    else  
+      pvalue_target = exp( - pow( (score_pair->first+shift_target)/eta_target, beta_target));
+    if (score_pair->first+shift_decoy <= 0) 
+      pvalue_decoy = 1;
+    else 
+      pvalue_decoy = exp( - pow( (score_pair->first+shift_decoy)/eta_decoy, beta_decoy));
+    if (score_pair->second.is_decoy()) {
+      target_pvalue_file << pvalue_target << endl;
+      decoy_pvalue_file << pvalue_decoy << endl;
+    }
+  }
+} 
 
 // shuffle a sequence, preserving N and C terminals
 string shuffle(string other) {
@@ -489,8 +560,9 @@ BOOLEAN_T hhc_estimate_weibull_parameters_from_xcorrs(
 
   // randomly sample n from the list by shuffling and taking first n 
   shuffle_floats(scores, num_scores);
-  int num_samples = PARAM_ESTIMATION_SAMPLE_COUNT;
-  if(num_samples > num_scores){ num_samples = num_scores; }
+  int num_samples = num_scores;
+  //int num_samples = PARAM_ESTIMATION_SAMPLE_COUNT;
+  //if(num_samples > num_scores){ num_samples = num_scores; }
 
   //int num_samples = num_scores;
   // reverse sort the first num_samples of them
@@ -515,48 +587,3 @@ BOOLEAN_T hhc_estimate_weibull_parameters_from_xcorrs(
 
   return TRUE;
 }
-
-BOOLEAN_T hhc_compute_p_values(MATCH_COLLECTION_T* match_collection, FLOAT_T eta, FLOAT_T beta, FLOAT_T shift){
-  /*if(match_collection == NULL){
-    carp(CARP_ERROR, "Cannot compute p-values for NULL match collection.");
-    return FALSE;
-  }
-
-  SCORER_TYPE_T main_score = get_scorer_type_parameter("score-type");
-
-  // check that the matches have been scored
-  if(!match_collection->scored_type[main_score]){
-    char type_str[64];
-    scorer_type_to_string(main_score, type_str);
-    carp(CARP_FATAL,
-         "Match collection was not scored by %s prior to computing p-values.",
-         type_str);
-  }
-  */
-  // iterate over all matches 
-/*  int match_idx =0;
-  double score = 0;
-  for(match_idx=0; match_idx < match_collection->match_total; match_idx++){
-    MATCH_T* cur_match = match_collection->match[match_idx];
-
-    // scale the score
-    score = score_logp_bonf_weibull(get_match_score(cur_match,main_score),
-                                    match_collection->eta,
-                                    match_collection->beta,
-                                    match_collection->shift,
-                                    match_collection->experiment_size);
-    // set score in match
-    set_match_score(cur_match, LOGP_BONF_WEIBULL_XCORR, score);
-
-  }// next match
-
-  carp(CARP_DETAILED_DEBUG, "Computed p-values for %d psms.", match_idx);
-  populate_match_rank_match_collection(match_collection, XCORR);
-//                                       LOGP_BONF_WEIBULL_XCORR);
-
-  // mark p-values as having been scored
-  match_collection->scored_type[LOGP_BONF_WEIBULL_XCORR] = TRUE;
-  */
-  return TRUE;
-}
-

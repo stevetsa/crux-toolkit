@@ -1008,7 +1008,7 @@ BOOLEAN_T estimate_weibull_parameters_from_xcorrs(
   shuffle_floats(scores, num_scores);
   int num_samples = PARAM_ESTIMATION_SAMPLE_COUNT;
   if(num_samples > num_scores){ num_samples = num_scores; }
-
+  else { num_samples = num_scores; } 
   //int num_samples = num_scores;
   // reverse sort the first num_samples of them
   qsort(scores, num_samples, sizeof(float), compare_floats_descending);

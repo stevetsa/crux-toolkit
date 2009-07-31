@@ -35,7 +35,7 @@ class LinkedPeptide {
     LinkedPeptide(char* peptide_A, char* peptide_B, int posA, int posB, FLOAT_T linker_mass, int charge);
     LinkedPeptide(int charge, FLOAT_T linkermass) : charge_(charge), linker_mass_(linkermass), decoy_(false) {}
     //LinkedPeptide(const LinkedPeptide& other); 
-    std::vector<Peptide> peptides() 	{ return peptides_;}
+    std::vector<Peptide>& peptides() 	{ return peptides_;}
     int charge() 			{ return charge_;}
     void set_charge(int charge)		{ charge_ = charge; }
     void set_type(ION_TYPE_T type)   	{ type_ = type; }
@@ -81,7 +81,8 @@ class Peptide {
     std::string sequence() {return sequence_;}	
     void add_link(int index, Peptide& peptide);
     void split_at(int index, std::vector<std::pair<LinkedPeptide, LinkedPeptide> >& pairs, int charge, LinkedPeptide& parent);
-    
+    int link_site(); 
+    FLOAT_T mass();
 private:
     std::map<int, Peptide> links_;
     int length_;
@@ -106,6 +107,8 @@ void Peptide::shuffle() {
   }
 }
 */
+
+ 
 LinkedPeptide::LinkedPeptide(char* peptide_A, char* peptide_B, int posA, int posB, FLOAT_T linkermass, int charge) {
   charge_ = charge;
   linker_mass_ = linkermass;
@@ -134,6 +137,20 @@ LinkedPeptide::LinkedPeptide(char* peptide_A, char* peptide_B, int posA, int pos
 // calculates mass of linked peptide,
 // remove H2O from mass if it's a b-ion
 // only works for one or two peptides for now
+bool Peptide::has_link_at(int index) { return (links_.find(index) != links_.end()); }
+
+int Peptide::link_site() {
+  for (int i = 0; i < length_; ++i) {
+    if (has_link_at(i)) 
+      return i;
+  }
+  return -1;
+}
+
+FLOAT_T Peptide::mass() {
+  return calc_sequence_mass((char*)sequence_.c_str(), MONO);
+}
+
 void LinkedPeptide::calculate_mass() {
   mass_ = calc_sequence_mass((char*)peptides_[0].sequence().c_str(), MONO);   
   /*for (vector<Peptide>::iterator peptide = peptides_.begin(); peptide != peptides_.end(); ++peptide) {
@@ -158,13 +175,12 @@ void LinkedPeptide::calculate_mass() {
 // 
 FLOAT_T LinkedPeptide::get_mz() {
   if (mz < 1)
-    mz = ((mass_ + MASS_H*charge_) / charge_);
+    mz = ((mass_ + MASS_H_MONO*charge_) / charge_);
   return mz;
 }
 
 int main(int argc, char** argv);
 
-bool Peptide::has_link_at(int index) { return (links_.find(index) != links_.end()); }
 
 Peptide& Peptide::link_at(int index)     { return links_[index]; }
 

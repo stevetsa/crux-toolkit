@@ -18,6 +18,20 @@ extern "C" {
 #include "ion.h"
 #include "ion_series.h"
 
+void hhc_predict_ions(
+  ION_SERIES_T* ion_series, ///< the ion series to predict ions for -in
+  FLOAT_T linker_mass,
+  int linker_site);
+
+FLOAT_T* hhc_create_ion_mass_matrix(
+  //char* peptide, ///< The peptide for this ion series. -in
+  MODIFIED_AA_T* modified_seq, ///< the sequence
+  MASS_TYPE_T mass_type, ///< the mass_type to use MONO|AVERAGE
+  int peptide_length, ///< the length of the peptide
+  FLOAT_T linker_mass,
+  int linker_site
+  );
+
 /**
  * \returns An (empty) ion_series object.
  */

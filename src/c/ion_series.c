@@ -445,6 +445,60 @@ void scan_for_aa_for_neutral_loss(
  * peptide.  
  * \returns an array of ion masses for all sub sequences
  */
+FLOAT_T* hhc_create_ion_mass_matrix(
+  //char* peptide, ///< The peptide for this ion series. -in
+  MODIFIED_AA_T* modified_seq, ///< the sequence
+  MASS_TYPE_T mass_type, ///< the mass_type to use MONO|AVERAGE
+  int peptide_length, ///< the length of the peptide
+  FLOAT_T linker_mass,
+  int linker_site
+  )
+{
+  if( modified_seq == NULL ){
+  //if( peptide == NULL ){
+    carp(CARP_ERROR, "Cannot create mass matrix from NULL seqence");
+    return NULL;
+  }
+  FLOAT_T* mass_matrix = (FLOAT_T*)mymalloc(sizeof(FLOAT_T)*(peptide_length+1));
+  
+  // at index 0, the length of the peptide is stored
+  mass_matrix[0] = peptide_length;
+
+  // add up AA masses
+  int ion_idx = 1;
+  // initialize first to be mass of c-term amino acid
+  // mass_matrix[ion_idx] = get_mass_amino_acid(peptide[ion_idx-1], mass_type);
+  mass_matrix[ion_idx] = get_mass_mod_amino_acid(modified_seq[ion_idx-1], mass_type);
+  // for open modification cross linking
+  if (linker_site == 0) mass_matrix[ion_idx] += linker_mass; 
+  //++ion_idx;
+  //for(; ion_idx <= peptide_length; ++ion_idx){
+  for(ion_idx = 2; ion_idx <= peptide_length; ++ion_idx){
+    mass_matrix[ion_idx] = mass_matrix[ion_idx-1] + 
+      get_mass_mod_amino_acid(modified_seq[ion_idx-1], mass_type);
+    if (linker_site == ion_idx-1)
+      mass_matrix[ion_idx] += linker_mass; 
+      //get_mass_amino_acid(peptide[ion_idx-1], mass_type);
+  }
+  // DEBUGGING
+  /*
+  fprintf(stderr, "seq:");
+  for(ion_idx = 0; ion_idx < peptide_length; ++ion_idx){
+    fprintf(stderr, "\t%s", modified_aa_to_string(modified_seq[ion_idx]));
+  }
+  fprintf(stderr, "\nmas:");
+  for(ion_idx = 0; ion_idx < peptide_length; ++ion_idx){
+    fprintf(stderr, "\t%.2f", get_mass_mod_amino_acid(modified_seq[ion_idx], MONO));
+  }
+  fprintf(stderr, "\nsum:");
+  for(ion_idx = 0; ion_idx < peptide_length; ++ion_idx){
+    fprintf(stderr, "\t%.2f", mass_matrix[ion_idx+1]);
+  }
+  fprintf(stderr, "\n");
+  */
+  return mass_matrix;
+}
+
 FLOAT_T* create_ion_mass_matrix(
   //char* peptide, ///< The peptide for this ion series. -in
   MODIFIED_AA_T* modified_seq, ///< the sequence
@@ -959,6 +1013,81 @@ BOOLEAN_T generate_ions_flank(
  * peptide that meet the ion constraint. All predicted ions are stored
  * in the ion_series as ion objects. 
  */
+void hhc_predict_ions(
+  ION_SERIES_T* ion_series, ///< the ion series to predict ions for -in
+  FLOAT_T linker_mass,
+  int linker_site
+  )
+{
+  if(ion_series->is_predicted){
+    carp(CARP_WARNING, "The ion series has already been predicted and added");
+    return;
+  }
+
+  ION_CONSTRAINT_T* constraint = ion_series->constraint;
+  
+  // create a mass matrix
+  FLOAT_T* mass_matrix = 
+    hhc_create_ion_mass_matrix(ion_series->modified_aa_seq, constraint->mass_type, ion_series->peptide_length, linker_mass, linker_site);  
+  /*
+  printf("cumulative mass sum is:\n");
+  int idx = 0;
+  for(idx = 0; idx < mass_matrix[0]; idx++){
+    printf("%i\t%f\n", idx, mass_matrix[idx]);
+  }
+  */
+  // scan for the first and last  (S, T, E, D) and (R, K, Q, N), 
+  // initialize to determine modification is ok.
+  // the first, last of STED, RKQN are stored in ion_series.
+  scan_for_aa_for_neutral_loss(ion_series);
+  
+  // generate ions without any modifications
+  if(!generate_ions_no_modification(ion_series, mass_matrix)){
+    carp(CARP_FATAL, "failed to generate ions, no modifications");
+  }
+
+  // create modification ions?
+  if(ion_series->constraint->use_neutral_losses){
+    
+    // generate ions with nh3 modification
+    if(abs(constraint->modifications[NH3]) > 0){
+      if(!generate_ions(ion_series, NH3)){
+        carp(CARP_FATAL, "failed to generate ions, NH3 modifications");
+      }
+    }
+    
+    // generate ions with h2o modification
+    if(abs(constraint->modifications[H2O]) > 0){
+      if(!generate_ions(ion_series, H2O)){
+        carp(CARP_FATAL, "failed to generate ions, H2O modifications");
+      }
+    }
+
+    // generate ions with isotope modification
+    if(constraint->modifications[ISOTOPE] > 0){
+      if(!generate_ions(ion_series, ISOTOPE)){
+        carp(CARP_FATAL, "failed to generate ions, ISOTOPE modifications");
+      }
+    }
+
+    // generate ions with flank modification
+    if(constraint->modifications[FLANK] > 0){
+      if(!generate_ions_flank(ion_series)){
+        carp(CARP_FATAL, "failed to generate ions, FLANK modifications");
+      }
+    }
+    
+    // add more modifications here
+
+  }
+  
+  // ion series now been predicted
+  ion_series->is_predicted = TRUE;
+
+  // free mass matrix
+  free(mass_matrix);
+}
+
 void predict_ions(
   ION_SERIES_T* ion_series ///< the ion series to predict ions for -in
   )
