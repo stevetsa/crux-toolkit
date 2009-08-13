@@ -48,7 +48,7 @@ class LinkedPeptide {
     void set_decoy()			{ decoy_ = true; }
     bool is_decoy()			{ return decoy_;}
     void add_peptide(Peptide& peptide) { peptides_.push_back(peptide); } 
-
+    bool is_single();
   
     //void split_many(std::vector<std::pair<LinkedPeptide, LinkedPeptide> >& ion_pairs);
     void split(std::vector<std::pair<LinkedPeptide, LinkedPeptide> >& ion_pairs);
@@ -77,38 +77,35 @@ class Peptide {
     Peptide& link_at(int index);
     int length();
     //Peptide& shuffle();
+    int num_links() { return links_.size(); }
     bool has_link() { return !links_.empty(); }
     std::string sequence() {return sequence_;}	
     void add_link(int index, Peptide& peptide);
+    void remove_link(int index);
     void split_at(int index, std::vector<std::pair<LinkedPeptide, LinkedPeptide> >& pairs, int charge, LinkedPeptide& parent);
     int link_site(); 
+    void set_sequence(string sequence);
     FLOAT_T mass();
 private:
     std::map<int, Peptide> links_;
     int length_;
     std::string sequence_;
 };
-/*
-void Peptide::shuffle() {
-  string copy = string(sequence_);
-  int start_idx = 0;
-  int end_idx = length_-1;
-  int switch_idx = 0;
-  char temp_char = 0;
 
-  ++start_idx;
-  --end_idx;
 
-  while(start_idx < end_idx) {
-    switch_idx = get_random_number_interval(start_idx, end_idx);
-    //temp_char = sequence_[start_idx];
-    copy[start_idx] = sequence_[switch_idx];
-    copy[switch_idx] = sequence_[start_idx];
-  }
+void Peptide::set_sequence(string sequence) {
+  sequence_ = sequence;
+  length_ = sequence.length();  
 }
-*/
 
- 
+void Peptide::remove_link(int index) {
+  links_.erase(links_.find(index));  
+}
+
+bool LinkedPeptide::is_single() {
+  return (peptides_.size() == 1 && peptides_[0].link_site() == -1);
+} 
+
 LinkedPeptide::LinkedPeptide(char* peptide_A, char* peptide_B, int posA, int posB, FLOAT_T linkermass, int charge) {
   charge_ = charge;
   linker_mass_ = linkermass;
@@ -174,9 +171,10 @@ void LinkedPeptide::calculate_mass() {
 
 // 
 FLOAT_T LinkedPeptide::get_mz() {
-  if (mz < 1)
+  //if (mz < 5)
     mz = ((mass_ + MASS_H_MONO*charge_) / charge_);
-  return mz;
+    return mz;
+  //return mz;
 }
 
 int main(int argc, char** argv);

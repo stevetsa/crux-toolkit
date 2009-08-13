@@ -198,16 +198,16 @@ FLOAT_T hhc_score_spectrum_v_ion_series(
 {
   FLOAT_T final_score = 0;
   // if score type equals SP
-  if(scorer->type == SP){
+  //if(scorer->type == SP){
     //final_score = gen_score_sp(scorer, spectrum, ion_series);
-  }
-  else if(scorer->type == XCORR){
+  //}
+  //else if(scorer->type == XCORR){
     final_score = hhc_gen_score_xcorr(scorer, spectrum, ion_series);
-  }
+  //}
   // FIXME, later add different score types...
-  else{
-    carp(CARP_ERROR, "no scoring method availiable for the scorers' score type");
-  }
+ // else{
+ //   carp(CARP_ERROR, "no scoring method availiable for the scorers' score type");
+  //}
   return final_score;
 }
 
@@ -228,7 +228,10 @@ bool hhc_create_intensity_array_theoretical(
   //while(ion_iterator_has_next(ion_iterator)){
     //ion = ion_iterator_next(ion_iterator);
     //ion->calculate_mass();
+    //cout << "ion is " << *ion << "\tmass " << ion->mass() << endl;
+    //cout << "ion " << *ion << "\tmz " << ion->get_mz() << endl;
     intensity_array_idx = (int)(ion->get_mz() / bin_width + 0.5);
+    //if (intensity_array_idx <= 1) continue;
     //cout << "index " << intensity_array_idx << endl;
     ion_type = ion->type();
     ion_charge = ion->charge();

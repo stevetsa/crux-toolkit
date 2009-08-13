@@ -327,7 +327,8 @@ void print_spectrums(FLOAT_T* theoretical, SPECTRUM_T* spectrum, FLOAT_T min_mz_
   for (map<PEAK_T*, string>::iterator it = peak_colors.begin(); it != peak_colors.end(); ++it) {
     location = get_peak_location(it->first);
     intensity = get_peak_intensity(it->first);
-    spectrums_file << location << "\t" << pow(intensity * average * normalize, 0.2) << "\tnolabel\t" << it->second << endl;
+    //spectrums_file << location << "\t" << pow(intensity * average * normalize, 0.2) << "\tnolabel\t" << it->second << endl;
+    spectrums_file << location << "\t" << intensity << "\tnolabel\t" << it->second << endl;
   }
 
   cout << "b matches " << b_match_count << " y mismatches " << y_mismatch_count << endl;

@@ -4,7 +4,7 @@
 #include <math.h>
 //#include <iostream>
 
-#define PARAM_ESTIMATION_SAMPLE_COUNT 500
+//#define PARAM_ESTIMATION_SAMPLE_COUNT 500
 #define MIN_WEIBULL_MATCHES 40
 #define MIN_XCORR_SHIFT -5.0
 #define MAX_XCORR_SHIFT  5.0
@@ -26,7 +26,9 @@ BOOLEAN_T hhc_estimate_weibull_parameters_from_xcorrs(
 
 void add_linked_peptides(vector<LinkedPeptide>& all_ions, set<string>& peptides, string links, FLOAT_T linker_mass, int charge, bool is_decoy);
 
-void add_decoys(vector<LinkedPeptide>& decoys, LinkedPeptide& lp, char* links, int charge, FLOAT_T linker_mass);
+//void add_decoys(vector<LinkedPeptide>& decoys, LinkedPeptide& lp, char* links, int charge, FLOAT_T linker_mass);
+
+void add_decoys(vector<LinkedPeptide>& decoys, LinkedPeptide& lp);
 
 void plot_weibull(vector<pair<FLOAT_T, LinkedPeptide> >& scores, SPECTRUM_T* spectrum, int charge); 
 
@@ -166,7 +168,8 @@ int main(int argc, char** argv) {
       //int i = 5;
       //if (charge == 4) i = 7;
       for (int i = decoy_iterations; i > 0; --i)
-        add_decoys(filtered_ions, *ion, links, charge, linker_mass);
+        add_decoys(filtered_ions, *ion);
+        //add_decoys(filtered_ions, *ion, links, charge, linker_mass);
     } 
  }     
   
@@ -233,20 +236,23 @@ int main(int argc, char** argv) {
 
   } else { // linked peptide method
     vector<pair<FLOAT_T, LinkedPeptide> > scores;
-    LinkedIonSeries ion_series;
+    //LinkedIonSeries ion_series;
   // for every ion in the mass window
     for (vector<LinkedPeptide>::iterator ion = filtered_ions.begin(); ion != filtered_ions.end(); ++ion) {
-      ion_series = LinkedIonSeries(links, charge, linker_mass);
+      LinkedIonSeries ion_series = LinkedIonSeries(links, charge, linker_mass);
       ion_series.add_linked_ions(*ion);
       vector<LinkedPeptide> series = ion_series.ions();
       score = hhc_score_spectrum_v_ion_series(scorer, spectrum, ion_series);
-      //if (!ion->is_decoy())
-        scores.push_back(make_pair(score, *ion));
+      scores.push_back(make_pair(score, *ion));
     }
     sort(scores.begin(), scores.end());
     FLOAT_T range = scores.back().first - scores.front().first;
     cout << "xcorr range " << range << "<br>" << endl;
     plot_weibull(scores, spectrum, charge);
+    reverse(scores.begin(), scores.end());
+    for (int i = 0; i < 20; ++i) {
+	cout << scores[i].first << "\t" << scores[i].second << endl;
+    }
   }
   free_scorer(scorer);
   free_spectrum_collection(collection);
@@ -256,6 +262,7 @@ int main(int argc, char** argv) {
 
 // for running experiments. plots fit and pvalues
 void plot_weibull(vector<pair<FLOAT_T, LinkedPeptide> >& scores, SPECTRUM_T* spectrum, int charge) {
+  
   ofstream target_fit_file ("fit.target");
   ofstream decoy_fit_file ("fit.decoy");
   ofstream target_score_file ("scores.target");
@@ -280,7 +287,6 @@ void plot_weibull(vector<pair<FLOAT_T, LinkedPeptide> >& scores, SPECTRUM_T* spe
       target_scores_array[num_targets++] = score_pair->first;
     }
   }
-
   FLOAT_T eta_target = 0.0;
   FLOAT_T beta_target = 0.0;
   FLOAT_T shift_target = 0.0;
@@ -334,8 +340,7 @@ void plot_weibull(vector<pair<FLOAT_T, LinkedPeptide> >& scores, SPECTRUM_T* spe
     }
   }
 } 
-
-// shuffle a sequence, preserving N and C terminals
+/*
 string shuffle(string other) {
   string shuffled = string(other);
   int start_idx = 1;
@@ -351,8 +356,45 @@ string shuffle(string other) {
   }
   return shuffled;
 }
+*/
+
+// shuffle a Peptide, preserving N and C terminals
+Peptide shuffle(Peptide peptide) {
+  string shuffled = string(peptide.sequence());
+  Peptide shuffled_peptide = Peptide();
+  int start_idx = 1;
+  int end_idx = peptide.length() - 2;
+  int switch_idx = 0;
+  char temp_char = 0;
+  while(start_idx < end_idx){
+    switch_idx = get_random_number_interval(start_idx, end_idx);
+    temp_char = shuffled[start_idx];
+    shuffled[start_idx] = shuffled[switch_idx];
+    shuffled[switch_idx] = temp_char;
+    if (peptide.has_link_at(switch_idx))
+      shuffled_peptide.add_link(start_idx, peptide.link_at(switch_idx));
+    if (peptide.has_link_at(start_idx))
+      shuffled_peptide.add_link(switch_idx, peptide.link_at(start_idx));
+    ++start_idx;
+  }
+  shuffled_peptide.set_sequence(shuffled);
+  return shuffled_peptide;
+}
 
 
+void add_decoys(vector<LinkedPeptide>& decoys, LinkedPeptide& lp) {
+  vector<Peptide> peptides = lp.peptides();
+  LinkedPeptide decoy = LinkedPeptide(lp.charge(), lp.linker_mass());
+  Peptide pepA_shuffled = shuffle(peptides[0]);
+  decoy.add_peptide(pepA_shuffled);
+  if (lp.size() == 2) {
+    Peptide pepB_shuffled = shuffle(peptides[1]);
+    decoy.add_peptide(pepB_shuffled);
+  }
+  decoy.set_decoy();
+  decoys.push_back(decoy);
+}
+/*
 void add_decoys(vector<LinkedPeptide>& decoys, LinkedPeptide& lp, char* links, int charge, FLOAT_T linker_mass) {
   vector<Peptide> peptides = lp.peptides();
   set<string> shuffled_peptides;
@@ -363,7 +405,7 @@ void add_decoys(vector<LinkedPeptide>& decoys, LinkedPeptide& lp, char* links, i
   add_linked_peptides(decoys, shuffled_peptides, string(links), linker_mass, charge, true);  
 
 }
-
+*/
 /*
 void add_decoys(vector<LinkedPeptide>& decoys, LinkedPeptide& lp, char* links, int charge, FLOAT_T linker_mass) {
   vector<Peptide> peps = lp.peptides();
