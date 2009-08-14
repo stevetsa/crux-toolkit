@@ -828,7 +828,7 @@ void initialize_parameters(void){
       "of the output file.", "true");
   
 // spit options
-  set_boolean_parameter("filter", FALSE, "post process proteins.",
+  set_boolean_parameter("parsimony", FALSE, "post process proteins.",
       "If a peptide belongs to more than one protein, remove it from all but top scoring protein.",
       "false");
   set_string_parameter("database", NULL, 
