@@ -165,20 +165,27 @@ int spit_main(int argc, char** argv) {
 }
 
 // post process to create unique protein-peptide links
-// by removing peptides from lower scored proteins for filter option.
-// recalculates spit scores afterwards.
+// by removing peptides with multiple parent proteins from 
+// lower scored proteins. 
 void check_parsimony(ProteinScore& proteinScores, ProteinPeptides& proteinPeptides) {
   set<string> top_peptides; // keep track of peptides seen (higher ranked peptides) 
   for (ProteinScore::iterator score_pair = proteinScores.begin();
 	score_pair != proteinScores.end(); ++score_pair) {
-    for (set<string>::iterator peptide = proteinPeptides[score_pair->second].begin(); 
-	  peptide != proteinPeptides[score_pair->second].end(); ++peptide) {
-      // if a unique peptide so far
+    string protein = score_pair->second;
+    vector<string> removed_peptides;
+    for (set<string>::iterator peptide = proteinPeptides[protein].begin(); 
+	peptide != proteinPeptides[protein].end(); ++peptide) {
+      // if a unique peptide so far, keep the link
       if (top_peptides.find(*peptide) == top_peptides.end()) {
 	top_peptides.insert(*peptide);
       } else {
-        proteinPeptides[score_pair->second].erase(peptide);
+	removed_peptides.push_back(*peptide);
       }
+    }
+    // remove the duplicate links
+    for (vector<string>::iterator peptide = removed_peptides.begin();
+	peptide != removed_peptides.end(); ++peptide) {
+      proteinPeptides[protein].erase(*peptide);
     }
   }
 }
