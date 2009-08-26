@@ -25,9 +25,9 @@
  $Id: BaseSpline.cpp,v 1.6 2008/05/20 00:24:43 lukall Exp $
  
  *******************************************************************************/
-
-#include<iterator>
-#include<vector>
+#include <algorithm>
+#include <iterator>
+#include <vector>
 using namespace std;
 #include "ArrayLibrary.h"
 #include "BaseSpline.h"
