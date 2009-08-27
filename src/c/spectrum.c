@@ -1211,7 +1211,7 @@ int get_charges_to_search(SPECTRUM_T* spectrum, int** select_charge_array){
   int* all_charge_array = spectrum->possible_z;
 
   int param_charge = 0;
-  char* charge_str = get_string_parameter_pointer("spectrum-charge");
+  const char* charge_str = get_string_parameter_pointer("spectrum-charge");
   int i=0;
 
   // Return full array of charges

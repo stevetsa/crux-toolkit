@@ -24,12 +24,14 @@
       if passes criteria, print results and move on
       else next peptide modification  
  */
+#include "match_collection.h"
 #include "carp.h"
 #include "crux-utils.h"
 #include "parameter.h"
 #include "spectrum_collection.h"
-#include "match_collection.h"
+//#include "match_collection.h"
 #include <errno.h>
+#include "output-files.h"
 
 #define NUM_SEARCH_OPTIONS 12
 #define NUM_SEARCH_ARGS 2
@@ -84,7 +86,8 @@ int search_main(int argc, char** argv){
 
   /* Define required command line arguments */
   int num_arguments = NUM_SEARCH_ARGS;
-  char* argument_list[NUM_SEARCH_ARGS] = {"ms2 file", "protein input"};
+  // error here.  WHY?
+  const char* argument_list[NUM_SEARCH_ARGS] = {"ms2 file", "protein input"};
 
   /* Initialize parameter.c and set default values*/
   initialize_parameters();
@@ -132,7 +135,7 @@ int search_main(int argc, char** argv){
   free(param_file_name);
 
   /* Get input: ms2 file */
-  char* ms2_file = get_string_parameter_pointer("ms2 file");
+  const char* ms2_file = get_string_parameter_pointer("ms2 file");
 
   // open ms2 file
   SPECTRUM_COLLECTION_T* spectra = new_spectrum_collection(ms2_file);
@@ -161,7 +164,7 @@ int search_main(int argc, char** argv){
   }
   
   /* Prepare output files */
-
+  OutputFiles output_files("search");
   FILE** psm_file_array = NULL; //file handle array
   FILE* sqt_file = NULL;
   FILE* decoy_sqt_file  = NULL;

@@ -1690,8 +1690,9 @@ FILE** create_psm_files(){
 
   carp(CARP_DEBUG, "Opening %d new psm files", total_files);
 
-  char* output_directory =get_string_parameter_pointer("output-dir");
+  const char* output_directory =get_string_parameter_pointer("output-dir");
 
+  // BEGIN DELETE
   // create the output folder if it doesn't exist
   if(access(output_directory, F_OK)){
     if(mkdir(output_directory, S_IRWXU+S_IRWXG+S_IRWXO) != 0){
@@ -1704,7 +1705,7 @@ FILE** create_psm_files(){
   //TODO change to output filename as argument, force .csm extension
   //     add _decoy1.csm
   //char* base_filename = get_string_parameter_pointer("ms2 file");
-  char* ms2_filename = get_string_parameter_pointer("ms2 file");
+  const char* ms2_filename = get_string_parameter_pointer("ms2 file");
   //char** filename_path_array = parse_filename_path(base_filename);
   char** filename_path_array = 
     parse_filename_path_extension(ms2_filename, ".ms2");
@@ -1717,7 +1718,7 @@ FILE** create_psm_files(){
 
   char* filename_template = get_full_filename(output_directory, 
                                               filename_path_array[0]);
-
+  // END DELETE
   //create target file
   BOOLEAN_T overwrite = get_boolean_parameter("overwrite");
 
@@ -1847,7 +1848,7 @@ BOOLEAN_T serialize_psm_features(
 
 void print_sqt_header(
  FILE* output, 
- char* type, 
+ const char* type, 
  int num_proteins, 
  BOOLEAN_T is_analysis){  // for analyze-matches look at algorithm param
   if( output == NULL ){

@@ -22,6 +22,7 @@
 /* Private data types */
 enum _command { INDEX_CMD,      // create-index
                 SEARCH_CMD,     // search-for-matches
+                SEQUEST_CMD,     // sequest-search
                 QVALUE_CMD,     // compute-q-values
                 QRANKER_CMD,    // q-rakner
                 PERCOLATOR_CMD, // percolator

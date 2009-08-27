@@ -7,6 +7,10 @@
 #ifndef CRUX_UTILS_H
 #define CRUX_UTILS_H
 
+#ifdef __cplusplus
+  extern "C" {
+#endif
+
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -22,10 +26,6 @@
 #include "utils.h"
 #include "objects.h"
 
-#ifdef __cplusplus
-  extern "C" {
-#endif
-
 
 /**
  *\returns a heap copy of the given string
@@ -37,7 +37,7 @@ char* my_copy_string(const char* src);
  * includes a null terminating `\0' character
  * the string is heap allocated thus, user must free
  */
-char* copy_string_part(char*src, int length);
+char* copy_string_part(const char* src, int length);
 
 /**
  * \returns the 0 if equal, 1 if float_a is larger, -1 if float_b is larger
@@ -59,7 +59,7 @@ int compare_float(FLOAT_T float_a, FLOAT_T float_b);
  *
  *\returns A heap allocated array of both filename and path
  */
-char** parse_filename_path(char* file);
+char** parse_filename_path(const char* file);
 
 /**
  * \brief Parses the filename, path, and file extension of given string.
@@ -74,14 +74,14 @@ char** parse_filename_path(char* file);
  * \returns A heap allocated array of filename striped of extension and
  * path.
  */
-char** parse_filename_path_extension(char* file, char* extension);
+char** parse_filename_path_extension(const char* file, const char* extension);
 
 /**
  * parses the filename
  * ex) ../../file_name => returns filename
  *\returns A heap allocated array of filename
  */
-char* parse_filename(char* file);
+char* parse_filename(const char* file);
 
 /**
  * convert the integer into a string
@@ -104,7 +104,7 @@ char* signed_int_to_char(int i);
  * given two strings return a concatenated third string
  * \returns a heap allocated string that concatenates the two inputs
  */
-char* cat_string(char* string_one, char* string_two);
+char* cat_string(const char* string_one, const char* string_two);
 
 /**
  * Adds the fileroot parameter to a string as a prefix.
@@ -119,7 +119,7 @@ void prefix_fileroot_to_name(char** name);
  * "path/filename"
  * \returns a heap allocated string, "path/filename"
  */
-char* get_full_filename(char* path, char* filename);
+char* get_full_filename(const char* path, const char* filename);
 
 /**
  *\returns TRUE if float_a is between the interaval of min and max, else FALSE
@@ -150,7 +150,7 @@ int create_output_directory(
  * Returns TRUE if a directory, FALSE otherwise.
  * Terminates program if unable to determine status of file.
  */
-BOOLEAN_T is_directory(char *FileName);
+BOOLEAN_T is_directory(const char *FileName);
 
 /**
  * deletes a given directory and it's files inside.
@@ -208,8 +208,8 @@ char* generate_psm_filename(int file_index);
  *\returns A file handle to the newly created file.
  */
 FILE* create_file_in_path(
-  char* filename,  ///< the filename to create & open -in
-  char* directory,  ///< the directory to open the file in -in
+  const char* filename,  ///< the filename to create & open -in
+  const char* directory,  ///< the directory to open the file in -in
   BOOLEAN_T overwrite  ///< replace the file (T) or die if exists (F)
   );
 
@@ -227,8 +227,8 @@ BOOLEAN_T prefix_compare(
  * \returns TRUE, if the string starts with the suffix, else FALSE
  */
 BOOLEAN_T suffix_compare(
-  char* string, ///< The string to compare -in
-  char* suffix  ///< The suffix to find in the string -in
+  const char* string, ///< The string to compare -in
+  const char* suffix  ///< The suffix to find in the string -in
   );
 
 /**
@@ -241,7 +241,7 @@ BOOLEAN_T name_is_decoy(char* name);
  * checks if each AA is an AA
  *\returns TRUE if sequence is valid else, FALSE
  */
-BOOLEAN_T valid_peptide_sequence( char* sequence);
+BOOLEAN_T valid_peptide_sequence(const char* sequence);
 
 /**
  * quickSort for FLOAT_Ts

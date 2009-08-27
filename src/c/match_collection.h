@@ -10,6 +10,10 @@
 #ifndef MATCH_COLLECTION_H
 #define MATCH_COLLECTION_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <math.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -361,7 +365,7 @@ BOOLEAN_T serialize_psm_features(
  * Print the SQT file header 
  */
 void print_sqt_header(FILE* outfile, 
-                      char* type, 
+                      const char* type, 
                       int proteins, 
                       BOOLEAN_T is_for_match_analysis);
 
@@ -608,10 +612,15 @@ BOOLEAN_T compute_p_values(MATCH_COLLECTION_T* match_collection);
 
 BOOLEAN_T set_p_values_as_unscored(MATCH_COLLECTION_T* match_collection);
 
+#ifdef __cplusplus
+}
+#endif
+
+#endif
+
 /*
  * Local Variables:
  * mode: c
  * c-basic-offset: 2
  * End:
  */
-#endif

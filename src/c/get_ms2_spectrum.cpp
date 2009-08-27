@@ -68,8 +68,8 @@ int main(int argc, char** argv){
 
   /* Get arguments */
   scan_number = get_int_parameter("scan number");
-  char* ms2_filename = get_string_parameter_pointer("ms2 file");
-  char* output_filename = get_string_parameter_pointer("output file");
+  const char* ms2_filename = get_string_parameter_pointer("ms2 file");
+  const char* output_filename = get_string_parameter_pointer("output file");
   carp(CARP_DETAILED_DEBUG, "ms2_filename: %s", ms2_filename);
   carp(CARP_DETAILED_DEBUG, "output_filename: %s", output_filename);
 

@@ -49,7 +49,7 @@ INDEX_T* new_index(
  * \returns A new index object ready for search.
  */
 INDEX_T* new_index_from_disk(
-  char* fasta_filename  ///< The fasta file
+  const char* fasta_filename  ///< The fasta file
   //  BOOLEAN_T is_unique ///< only unique peptides? -in
   );
 
@@ -124,7 +124,7 @@ BOOLEAN_T create_index_files(
  * for this index.
  */
 
-char* get_index_binary_fasta_name(char* index_name);
+char* get_index_binary_fasta_name(const char* index_name);
 /**
  * foo.fasta --> foo_crux_index/foo_binary_fasta
  * \returns the binary fasta file name with crux directory name
@@ -152,7 +152,7 @@ char* get_index_directory(
  */
 void set_index_directory(
   INDEX_T* index, ///< The index -in
-  char* directory ///< the directory to add -in
+  const char* directory ///< the directory to add -in
   );
 
 /**
