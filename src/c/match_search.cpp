@@ -164,7 +164,7 @@ int search_main(int argc, char** argv){
   }
   
   /* Prepare output files */
-  OutputFiles output_files("search");
+  //OutputFiles output_files("search"); // soon to replace what follows
   FILE** psm_file_array = NULL; //file handle array
   FILE* sqt_file = NULL;
   FILE* decoy_sqt_file  = NULL;
