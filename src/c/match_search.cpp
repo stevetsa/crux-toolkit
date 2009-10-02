@@ -86,7 +86,6 @@ int search_main(int argc, char** argv){
 
   /* Define required command line arguments */
   int num_arguments = NUM_SEARCH_ARGS;
-  // error here.  WHY?
   const char* argument_list[NUM_SEARCH_ARGS] = {"ms2 file", "protein input"};
 
   /* Initialize parameter.c and set default values*/
@@ -164,30 +163,9 @@ int search_main(int argc, char** argv){
   }
   
   /* Prepare output files */
-  //OutputFiles output_files("search"); // soon to replace what follows
-  FILE** psm_file_array = NULL; //file handle array
-  FILE* sqt_file = NULL;
-  FILE* decoy_sqt_file  = NULL;
-  FILE* tab_file = NULL;
-  FILE* decoy_tab_file  = NULL;
+  OutputFiles output_files("search"); 
+  output_files.writeHeaders(num_proteins);
 
-  open_output_files(
-    output_folder,
-    overwrite,
-    &psm_file_array, 
-    &sqt_file, 
-    &decoy_sqt_file, 
-    &tab_file,
-    &decoy_tab_file
-  );
-  free(output_folder);
-
-  //print headers
-  serialize_headers(psm_file_array);
-  print_sqt_header(sqt_file, "target", num_proteins, FALSE);// !analyze-matches
-  print_sqt_header(decoy_sqt_file, "decoy", num_proteins, FALSE);
-  print_tab_header(tab_file);
-  print_tab_header(decoy_tab_file);
   /* Perform search: loop over spectra*/
 
   // create spectrum iterator
@@ -321,6 +299,7 @@ int search_main(int argc, char** argv){
 
     // now print matches to one, two or several files
     if( combine_target_decoy == TRUE ){
+
       // merge all collections
       MATCH_COLLECTION_T* all_psms = target_psms;
       for(decoy_idx = 0; decoy_idx < num_decoy_collections; decoy_idx++){
@@ -332,29 +311,10 @@ int search_main(int argc, char** argv){
         populate_match_rank_match_collection(all_psms, SP);
       }
       populate_match_rank_match_collection(all_psms, XCORR);
-      // print to target file
-      print_matches(all_psms,
-                    spectrum, 
-                    FALSE,// is decoy
-                    psm_file_array[0], 
-                    sqt_file, 
-                    decoy_sqt_file, 
-                    tab_file,
-                    decoy_tab_file
-                    );
+    
+      output_files.writeMatches(all_psms, NULL, 0, XCORR, spectrum); 
 
     }else{ // targets and decoys in separate files
-
-      // print targets to target file
-      print_matches(target_psms,
-                    spectrum, 
-                    FALSE,// is decoy
-                    psm_file_array[0], 
-                    sqt_file, 
-                    decoy_sqt_file, 
-                    tab_file,
-                    decoy_tab_file
-                    );
 
       // if decoys in one file
       if( num_decoy_files == 1 ){
@@ -371,41 +331,16 @@ int search_main(int argc, char** argv){
         }
         populate_match_rank_match_collection(merged_decoy_psms, XCORR);
 
-        // print to one decoy file
-        print_matches(merged_decoy_psms,
-                      spectrum, 
-                      TRUE,// is decoy
-                      psm_file_array[1], // 0 is target, 1 is only decoy
-                      sqt_file, 
-                      decoy_sqt_file,
-                      tab_file, 
-                      decoy_tab_file
-                      );
+        output_files.writeMatches(target_psms, &merged_decoy_psms, 
+                                  1, XCORR, spectrum);
 
       }else{
-        // print each decoy to separate file
-        // only print first to text files
-        FILE* tmp_decoy_sqt_file = decoy_sqt_file;
-        FILE* tmp_decoy_tab_file = decoy_tab_file;
-        for(decoy_idx = 0; decoy_idx < num_decoy_collections; decoy_idx++){
-
-          if( decoy_idx > 0 ){ 
-            tmp_decoy_sqt_file = NULL; 
-            tmp_decoy_tab_file = NULL; 
-          }
-          print_matches(decoy_collection_list[decoy_idx],
-                        spectrum, 
-                        TRUE,// is decoy
-                        psm_file_array[1 + decoy_idx], 
-                        sqt_file, 
-                        tmp_decoy_sqt_file,
-                        tab_file, 
-                        tmp_decoy_tab_file
-                        );
-        }// next decoy file
+        // already sorted and ranked
+        output_files.writeMatches(target_psms, decoy_collection_list, 
+                                  num_decoy_collections, XCORR, spectrum);
       }
-    }
 
+    }
     spectrum_searches_counter++;
     num_successful_searches++;
 
@@ -424,8 +359,7 @@ int search_main(int argc, char** argv){
   for(file_idx=0; file_idx < num_decoy_files + 1; file_idx++){
     carp(CARP_DEBUG, "Changing csm header to have %i spectrum searches",
          num_successful_searches);
-    serialize_total_number_of_spectra(num_successful_searches,
-                                      psm_file_array[file_idx]);
+    output_files.updateHeaders(num_successful_searches);
   }
   // clean up memory
 

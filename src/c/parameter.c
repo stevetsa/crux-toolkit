@@ -1004,7 +1004,7 @@ void translate_decoy_options(){
   // user may not have set target-location if no decoys requested
   if( num_decoy_per_target == 0 ){
     free(location);
-    location = my_copy_string("target-file");
+    location = my_copy_string("separate-decoy-files");
   }
 
   // set new values
@@ -1022,6 +1022,10 @@ void translate_decoy_options(){
   }else if( strcmp(location, "separate-decoy-files") == 0 ){
     tdc = FALSE;
     new_num_decoy_files = num_decoy_per_target;
+  }else{
+    carp(CARP_FATAL, "Unrecoginzed decoy location '%s'."
+         "Must be target-file, one-decoy-file, or separate-decoy-files",
+         location);
   }
 
   free(location);

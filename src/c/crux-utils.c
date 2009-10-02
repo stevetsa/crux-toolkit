@@ -630,12 +630,13 @@ char* get_full_filename(const char* path, const char* filename){
 
 /**
  * \brief Decide if a file name is a decoy csm file
- * \returns TRUE if name ends in -decoy-#.csm 
+ * \returns TRUE if name ends in decoy-#.csm or decoy.csm
  */
 BOOLEAN_T name_is_decoy(char* name){
   char* name_end = strrchr(name, '\0');
   char* last_d = strrchr(name, 'd');
-  int decoy_len = strlen("decoy-1.csm");
+  int decoy_len_1 = strlen("decoy-1.csm");
+  int decoy_len_2 = strlen("decoy.csm");
 
   carp(CARP_DEBUG, "Name is %s", name);
   // where is the last d in the name
@@ -643,12 +644,19 @@ BOOLEAN_T name_is_decoy(char* name){
     carp(CARP_DEBUG, "Found no 'd'");
     return FALSE;
   }
-  if( (name_end - last_d) == decoy_len 
+  if( (name_end - last_d) == decoy_len_1 
       && *(last_d-1) == '.'
       && strncmp(last_d, "decoy-", 6)==0 ){
     carp(CARP_DEBUG, "Name is a decoy file");
     return TRUE;
   } 
+  if( (name_end - last_d) == decoy_len_2
+      && *(last_d-1) == '.'
+      && strncmp(last_d, "decoy", 5)==0 ){
+    carp(CARP_DEBUG, "Name is a decoy file");
+    return TRUE;
+  } 
+
 
   carp(CARP_DEBUG, "Found a 'd' but name is not a decoy file");
   return FALSE;

@@ -19,6 +19,8 @@
 #include <sstream>
 #include "carp.h"
 #include "parameter.h"
+#include "objects.h"
+#include "match_collection.h"
 
 class OutputFiles{
 
@@ -26,6 +28,13 @@ class OutputFiles{
   OutputFiles(const char* program_name);///< name of the crux function
                                       ///(e.g. search)
   ~OutputFiles();
+  void writeHeaders(int num_proteins = 0);
+  void writeMatches(/*const*/ MATCH_COLLECTION_T* matches,
+                    /*const*/ MATCH_COLLECTION_T** decoy_matches_array,
+                    int num_decoys,
+                    SCORER_TYPE_T rank_type = XCORR,
+                    SPECTRUM_T* spectrum = NULL);
+  void updateHeaders(int spectrum_count);
 
  private:
   BOOLEAN_T createFiles(FILE*** file_array_ptr,
@@ -34,12 +43,30 @@ class OutputFiles{
                         const char* command_name,
                         const char* extension,
                         BOOLEAN_T overwrite);
+  void printMatchesTab(
+  /*const*/ MATCH_COLLECTION_T*  target_matches, ///< from real peptides
+  /*const*/ MATCH_COLLECTION_T** decoy_matches_array,  
+                           ///< array of collections from shuffled peptides
+  SCORER_TYPE_T rank_type,
+  SPECTRUM_T* spectrum = NULL);
 
-  int num_files_; // in each array
+  void printMatchesPsm(
+  /*const*/ MATCH_COLLECTION_T*  target_matches, ///< from real peptides
+  /*const*/ MATCH_COLLECTION_T** decoy_matches_array);  
+                           ///< array of collections from shuffled peptides
+                       
+
+  void printMatchesSqt(
+  /*const*/ MATCH_COLLECTION_T*  target_matches, ///< from real peptides
+  /*const*/ MATCH_COLLECTION_T** decoy_matches_array,  
+                           ///< array of collections from shuffled peptides
+  SPECTRUM_T* spectrum = NULL);
+
+  int num_files_;         ///< num files in each array
   FILE** psm_file_array_; ///< array of .csm files
-  FILE** tab_file_array_;
-  FILE** sqt_file_array_;
-
+  FILE** tab_file_array_; ///< array of .txt files
+  FILE** sqt_file_array_; ///< array of .sqt files
+  int matches_per_spec_;   ///< print this many matches per spec
 };
 
 

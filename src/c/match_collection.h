@@ -398,7 +398,6 @@ BOOLEAN_T print_match_collection_tab_delimited(
   int top_match, ///< the top matches to output -in
   MATCH_COLLECTION_T* match_collection, ///< the match_collection to print sqt -in
   SPECTRUM_T* spectrum, ///< the spectrum to print sqt -in
-  SCORER_TYPE_T prelim_score, ///< the preliminary score to report -in
   SCORER_TYPE_T main_score  ///< the main score to report -in
   );
 
