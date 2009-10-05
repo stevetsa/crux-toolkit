@@ -312,7 +312,10 @@ int search_main(int argc, char** argv){
       }
       populate_match_rank_match_collection(all_psms, XCORR);
     
-      output_files.writeMatches(all_psms, NULL, 0, XCORR, spectrum); 
+      output_files.writeMatches(all_psms, // target matches
+                                NULL,     // decoy matches
+                                0,        // num decoys
+                                XCORR, spectrum); 
 
     }else{ // targets and decoys in separate files
 
@@ -332,7 +335,8 @@ int search_main(int argc, char** argv){
         populate_match_rank_match_collection(merged_decoy_psms, XCORR);
 
         output_files.writeMatches(target_psms, &merged_decoy_psms, 
-                                  1, XCORR, spectrum);
+                                  1, // num decoys
+                                  XCORR, spectrum);
 
       }else{
         // already sorted and ranked

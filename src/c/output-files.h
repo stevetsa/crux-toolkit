@@ -44,21 +44,20 @@ class OutputFiles{
                         const char* extension,
                         BOOLEAN_T overwrite);
   void printMatchesTab(
-  /*const*/ MATCH_COLLECTION_T*  target_matches, ///< from real peptides
-  /*const*/ MATCH_COLLECTION_T** decoy_matches_array,  
+    MATCH_COLLECTION_T*  target_matches, ///< from real peptides
+    MATCH_COLLECTION_T** decoy_matches_array,  
                            ///< array of collections from shuffled peptides
-  SCORER_TYPE_T rank_type,
-  SPECTRUM_T* spectrum = NULL);
+    SCORER_TYPE_T rank_type,
+    SPECTRUM_T* spectrum = NULL);
 
   void printMatchesPsm(
-  /*const*/ MATCH_COLLECTION_T*  target_matches, ///< from real peptides
-  /*const*/ MATCH_COLLECTION_T** decoy_matches_array);  
+    MATCH_COLLECTION_T*  target_matches, ///< from real peptides
+    MATCH_COLLECTION_T** decoy_matches_array);  
                            ///< array of collections from shuffled peptides
                        
-
   void printMatchesSqt(
-  /*const*/ MATCH_COLLECTION_T*  target_matches, ///< from real peptides
-  /*const*/ MATCH_COLLECTION_T** decoy_matches_array,  
+    MATCH_COLLECTION_T*  target_matches, ///< from real peptides
+    MATCH_COLLECTION_T** decoy_matches_array,  
                            ///< array of collections from shuffled peptides
   SPECTRUM_T* spectrum = NULL);
 

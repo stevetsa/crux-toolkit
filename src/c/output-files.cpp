@@ -172,9 +172,11 @@ void OutputFiles::writeHeaders(int num_proteins){
  * the number of matches per spectrum based on top-match parameter
  * using the ranks from rank_type.  
  */
+// TODO: ensure this causes no changes to the match collections by
+// making them const
 void OutputFiles::writeMatches(
-  /*const*/ MATCH_COLLECTION_T*  target_matches, ///< from real peptides
-  /*const*/ MATCH_COLLECTION_T** decoy_matches_array,  
+  MATCH_COLLECTION_T*  target_matches, ///< from real peptides
+  MATCH_COLLECTION_T** decoy_matches_array,  
                                 ///< array of collections from shuffled peptides
   int num_decoy_collections,    ///< num collections in array
   SCORER_TYPE_T rank_type,           ///< use ranks for this type
@@ -203,8 +205,8 @@ void OutputFiles::writeMatches(
 
 // already confirmed that num_files_ = num decoy collections + 1
 void OutputFiles::printMatchesTab(
-  /*const*/ MATCH_COLLECTION_T*  target_matches, ///< from real peptides
-  /*const*/ MATCH_COLLECTION_T** decoy_matches_array,  
+  MATCH_COLLECTION_T*  target_matches, ///< from real peptides
+  MATCH_COLLECTION_T** decoy_matches_array,  
   SCORER_TYPE_T rank_type,
   SPECTRUM_T* spectrum
 ){
@@ -242,8 +244,8 @@ void OutputFiles::printMatchesTab(
 }
 
 void OutputFiles::printMatchesPsm(
-  /*const*/ MATCH_COLLECTION_T*  target_matches, ///< from real peptides
-  /*const*/ MATCH_COLLECTION_T** decoy_matches_array  
+  MATCH_COLLECTION_T*  target_matches, ///< from real peptides
+  MATCH_COLLECTION_T** decoy_matches_array  
                                 ///< array of collections from shuffled peptides
 ){
   if( psm_file_array_ == NULL ){
@@ -269,8 +271,8 @@ void OutputFiles::printMatchesPsm(
 }
 
 void OutputFiles::printMatchesSqt(
-  /*const*/ MATCH_COLLECTION_T*  target_matches, ///< from real peptides
-  /*const*/ MATCH_COLLECTION_T** decoy_matches_array,  
+  MATCH_COLLECTION_T*  target_matches, ///< from real peptides
+  MATCH_COLLECTION_T** decoy_matches_array,  
                                 ///< array of collections from shuffled peptides
   SPECTRUM_T* spectrum
 ){
