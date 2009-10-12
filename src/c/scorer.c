@@ -193,40 +193,21 @@ void smooth_peaks(
   // create a new array, which will replace the original intensity array
   FLOAT_T* new_array = (FLOAT_T*)mycalloc(scorer->sp_max_mz, sizeof(FLOAT_T));
 
-  switch (scorer->type){
-    case SP:
-      // iterate over all peaks
-      for(; idx < (int)scorer->sp_max_mz-2; ++idx){
-        // smooooth
-        new_array[idx] = (array[idx-2]+4*array[idx-1]+6*array[idx]+4*array[idx+1]+array[idx+2])/16;
+  if (scorer->type == SP){
+    // iterate over all peaks
+    for(; idx < (int)scorer->sp_max_mz-2; ++idx){
+      // smooooth
+      new_array[idx] = (array[idx-2]+4*array[idx-1]+6*array[idx]+4*array[idx+1]+array[idx+2])/16;
 
-        // DEBUG
-        // carp(CARP_INFO, "smooth data[%d] = %f",idx, new_array[idx]); 
-        
-        // set last idx in the array
-        if(scorer->last_idx < idx && new_array[idx] == 0){
-          scorer->last_idx = idx -1;
-          break;
-        }
-      }
-      break;
+      // DEBUG
+      // carp(CARP_INFO, "smooth data[%d] = %f",idx, new_array[idx]); 
       
-    case XCORR:
-    case DOTP:
-    case LOGP_EXP_SP:
-      //case LOGP_BONF_EXP_SP:
-    case LOGP_WEIBULL_SP:
-    case LOGP_BONF_WEIBULL_SP:
-    case LOGP_WEIBULL_XCORR:
-    case LOGP_BONF_WEIBULL_XCORR:
-      //case LOGP_EVD_XCORR:
-    case LOGP_BONF_EVD_XCORR:
-    case Q_VALUE:
-    case PERCOLATOR_SCORE:  
-    case LOGP_QVALUE_WEIBULL_XCORR:  
-  case DECOY_XCORR_QVALUE:
-  case DECOY_PVALUE_QVALUE:
-      break;
+      // set last idx in the array
+      if(scorer->last_idx < idx && new_array[idx] == 0){
+        scorer->last_idx = idx -1;
+        break;
+      }
+    }
   }
   free(scorer->intensity_array);
   scorer->intensity_array = new_array;
@@ -769,7 +750,8 @@ FLOAT_T gen_score_sp(
  * normalize each 10 regions of the observed spectrum to max 50
  */
 void normalize_each_region(
-  SCORER_T* scorer,        ///< the scorer object -in/out
+  FLOAT_T* observed,  ///< intensities to normalize
+  FLOAT_T sp_max_mz,  ///< num bins in observed
   FLOAT_T max_intensity_overall, /// the max intensity over entire spectrum
   FLOAT_T* max_intensity_per_region, ///< the max intensity in each 10 regions -in
   int region_selector ///< the size of each regions -in
@@ -780,7 +762,7 @@ void normalize_each_region(
   FLOAT_T max_intensity = max_intensity_per_region[region_idx];
 
   // normazlie each region
-  for(; bin_idx < scorer->sp_max_mz; ++bin_idx){
+  for(; bin_idx < sp_max_mz; ++bin_idx){
     if(bin_idx >= region_selector*(region_idx+1) && region_idx < 9){
       ++region_idx;
       max_intensity = max_intensity_per_region[region_idx];;
@@ -789,9 +771,9 @@ void normalize_each_region(
     // Don't normalize if no peaks in region, and for compatibility 
     // with SEQUEST drop peaks with intensity less then 1/20 of 
     // the overall max intensity.
-    if(max_intensity != 0 &&  scorer->observed[bin_idx] > 0.05 * max_intensity_overall){
+    if(max_intensity != 0 && observed[bin_idx] > 0.05 * max_intensity_overall){
       // normalize intensity to max 50
-      scorer->observed[bin_idx] = (scorer->observed[bin_idx] / max_intensity) * 50;
+      observed[bin_idx] = (observed[bin_idx] / max_intensity) * 50;
       
       // DEBUG
       // carp(CARP_INFO, "bin: %d, region idx: %d, obsered_mz: %.2f", bin_idx, region_idx, scorer->observed[bin_idx]);
@@ -825,22 +807,21 @@ BOOLEAN_T create_intensity_array_observed(
   FLOAT_T experimental_mass_cut_off = precursor_mz*charge + 50;
 
   // set max_mz and malloc space for the observed intensity array
+  FLOAT_T sp_max_mz = 512;
+
   if(experimental_mass_cut_off > 512){
     int x = (int)experimental_mass_cut_off / 1024;
     FLOAT_T y = experimental_mass_cut_off - (1024 * x);
-    scorer->sp_max_mz = x * 1024;
+    sp_max_mz = x * 1024;
 
     if(y > 0){
-      scorer->sp_max_mz += 1024;
+      sp_max_mz += 1024;
     }
-  }
-  else{
-    scorer->sp_max_mz = 512;
   }
 
   // DEBUG
   // carp(CARP_INFO, "experimental_mass_cut_off: %.2f sp_max_mz: %.3f", experimental_mass_cut_off, scorer->sp_max_mz);
-  scorer->observed = (FLOAT_T*)mycalloc((int)scorer->sp_max_mz, sizeof(FLOAT_T));
+  FLOAT_T* observed = (FLOAT_T*)mycalloc((int)sp_max_mz, sizeof(FLOAT_T));
   
   // create a peak iterator
   peak_iterator = new_peak_iterator(spectrum);
@@ -850,7 +831,9 @@ BOOLEAN_T create_intensity_array_observed(
   // store the max intensity in each 10 regions to later normalize
   FLOAT_T* max_intensity_per_region = (FLOAT_T*)mycalloc(10, sizeof(FLOAT_T));
   int region_selector = 0;
+
   // while there are more peaks to iterate over..
+  // find the maximum peak m/z (location)
   double max_peak = 0.0;
   while(peak_iterator_has_next(peak_iterator)){
     peak = peak_iterator_next(peak_iterator);
@@ -860,6 +843,7 @@ BOOLEAN_T create_intensity_array_observed(
     }
   }
   region_selector = max_peak / 10;
+
   // reset peak iterator
   peak_iterator_reset(peak_iterator);
 
@@ -869,6 +853,7 @@ BOOLEAN_T create_intensity_array_observed(
   int region = 0;
   
   // while there are more peaks to iterate over..
+  // bin peaks, adjust intensties, find max for each region
   while(peak_iterator_has_next(peak_iterator)){
     peak = peak_iterator_next(peak_iterator);
     peak_location = get_peak_location(peak);
@@ -903,8 +888,8 @@ BOOLEAN_T create_intensity_array_observed(
     }
 
     // set intensity in array with correct mz, only if max peak in the bin
-    if(scorer->observed[mz] < intensity){
-      scorer->observed[mz] = intensity;
+    if(observed[mz] < intensity){
+      observed[mz] = intensity;
             
       // check if this peak is max intensity in the region(one out of 10)
       if(max_intensity_per_region[region] < intensity){
@@ -923,7 +908,8 @@ BOOLEAN_T create_intensity_array_observed(
   */
 
   // normalize each 10 regions to max intensity of 50
-  normalize_each_region(scorer, max_intensity_overall, max_intensity_per_region, region_selector);
+  normalize_each_region(observed, sp_max_mz, max_intensity_overall, 
+                        max_intensity_per_region, region_selector);
   
   // DEBUG
   /*
@@ -933,29 +919,60 @@ BOOLEAN_T create_intensity_array_observed(
   } */
 
   // TODO maybe replace with a faster implementation that uses cum distribution
-  FLOAT_T* new_observed = (FLOAT_T*)mycalloc((int)scorer->sp_max_mz, sizeof(FLOAT_T));
+  FLOAT_T* new_observed = (FLOAT_T*)mycalloc((int)sp_max_mz, sizeof(FLOAT_T));
   int idx;
-  for (idx=0; idx < scorer->sp_max_mz; idx++){
-    new_observed[idx] = scorer->observed[idx];
+  for(idx = 0; idx < sp_max_mz; idx++){
+    new_observed[idx] = observed[idx];
     int sub_idx;
-    for (sub_idx=idx - MAX_XCORR_OFFSET; sub_idx <= idx + MAX_XCORR_OFFSET;
+    for(sub_idx = idx - MAX_XCORR_OFFSET; sub_idx <= idx + MAX_XCORR_OFFSET;
         sub_idx++){
-      if (sub_idx <= 0 || sub_idx >= scorer->sp_max_mz){
+
+      if (sub_idx <= 0 || sub_idx >= sp_max_mz){
         continue;
       }
-      new_observed[idx] -= (scorer->observed[sub_idx] / (MAX_XCORR_OFFSET * 2.0 + 1));
+
+      new_observed[idx] -= (observed[sub_idx] / (MAX_XCORR_OFFSET * 2.0 + 1));
     }
   }
 
-  free(scorer->observed);
+  // set new values
+  scorer->sp_max_mz = sp_max_mz;
   scorer->observed = new_observed;
 
   // free heap
+  free(observed);
   free(max_intensity_per_region);
   free_peak_iterator(peak_iterator);
 
   return TRUE;
 }
+
+/**
+ * Generate the processed peaks for the spectrum and return via the
+ * intensities array.  It's implemented here so that
+ * create_intensity_array_observed() can remain private and so that
+ * the scorer->observed array can be accessed directly.
+ * .
+ */
+void get_processed_peaks(
+  SPECTRUM_T* spectrum, 
+  int charge,
+  FLOAT_T** intensities, ///< pointer to array of intensities
+  int* max_mz_bin){
+
+  // create a scorer
+  SCORER_T* scorer = allocate_scorer();
+
+  // call create_intensity_array_observed
+  create_intensity_array_observed(scorer, spectrum, charge);
+
+  // return the observed array and the sp_max_mz
+  *intensities = scorer->observed;
+  *max_mz_bin = scorer->sp_max_mz;
+
+  return;
+}
+
 
 /**
  * create the intensity arrays for theoretical spectrum
@@ -1193,8 +1210,9 @@ FLOAT_T gen_score_xcorr(
  ************************************/
 
 /**
- * Compute a p-value for a given score w.r.t. an exponential with the given parameters.
- *\returns the -log(p_value) of the exponential distribution
+ * Compute a p-value for a given score w.r.t. an exponential with the
+ * given parameters.
+ * \returns the -log(p_value) of the exponential distribution
  */
 FLOAT_T score_logp_exp_sp(
   FLOAT_T sp_score, ///< The sp score for the scoring peptide -in
@@ -1205,8 +1223,10 @@ FLOAT_T score_logp_exp_sp(
 }
 
 /**
- * Compute a p-value for a given score w.r.t. an exponential with the given parameters.
- *\returns the -log(p_value) of the exponential distribution with Bonferroni correction
+ * Compute a p-value for a given score w.r.t. an exponential with the
+ * given parameters.
+ * \returns the -log(p_value) of the exponential distribution with
+ * Bonferroni correction
  */
 FLOAT_T score_logp_bonf_exp_sp(
   FLOAT_T sp_score, ///< The sp score for the scoring peptide -in
@@ -1218,7 +1238,8 @@ FLOAT_T score_logp_bonf_exp_sp(
   
   // The Bonferroni correction 
   // use original equation 1-(1-p_value)^n when p is not too small
-  if(p_value > BONFERRONI_CUT_OFF_P || p_value*num_peptide > BONFERRONI_CUT_OFF_NP){
+  if(p_value > BONFERRONI_CUT_OFF_P || 
+     p_value*num_peptide > BONFERRONI_CUT_OFF_NP){
     return -log(1-pow((1-p_value), num_peptide));
   }
   // else, use the approximation
@@ -1228,17 +1249,61 @@ FLOAT_T score_logp_bonf_exp_sp(
 }
 
 /**
- * Compute a p-value for a given score w.r.t. a Weibull with given parameters.
- *\returns the -log(p_value)
+ * Apply a Bonferroni correction to a given p-value.
+ * \returns the corrected p_value.
  */
-FLOAT_T score_logp_weibull(
-  FLOAT_T score, ///< The score for the scoring peptide -in
-  FLOAT_T eta,  ///< The eta parameter of the Weibull
-  FLOAT_T beta ///< The beta parameter of the Weibull
-  ){
-  return pow(score/eta, beta);
+FLOAT_T bonferroni_correction(
+  FLOAT_T p_value, ///< The uncorrected p-value.
+  int num_tests ///< The number of tests performed.
+  )
+{
+  FLOAT_T return_value;
+
+  // use original equation 1-(1-p_value)^n when p is not too small
+  if(p_value > BONFERRONI_CUT_OFF_P ||
+     p_value * num_tests > BONFERRONI_CUT_OFF_NP){
+
+    return_value = 1-pow((1-p_value), num_tests);
+  }
+  // else, use the approximation
+  else {
+    return_value = p_value * num_tests;
+  }
+
+  carp(CARP_DETAILED_DEBUG, "Stat: pvalue after = %.6f", return_value);
+  return return_value;
 }
 
+/**
+ * Compute a p-value for a given score w.r.t. a Weibull with given parameters.
+ *\returns the p_value
+ */
+FLOAT_T compute_weibull_pvalue(
+  FLOAT_T score, ///< The score for the scoring peptide -in
+  FLOAT_T eta,   ///< The eta parameter of the Weibull -in
+  FLOAT_T beta,  ///< The beta parameter of the Weibull -in
+  FLOAT_T shift  ///< The shift parameter of the Weibull -in
+  ){
+  carp(CARP_DETAILED_DEBUG, "Stat: score = %.6f", score);
+
+  FLOAT_T return_value;
+
+  // No Weibull parameter, return NaN.
+  if (eta == 0.0) {
+    carp(CARP_DETAILED_DEBUG, "Failed fit, returning p-value=NaN");
+    return_value = NaN();
+  }
+  // undefined past shift, give lowest possible score.
+  else if (score + shift <= 0) {
+    carp(CARP_DETAILED_DEBUG, "Bad shift, returning p-value=1");
+    return_value = 1.0;
+  }
+  else {
+    return_value = exp(-pow((score + shift) / eta, beta));
+    carp(CARP_DETAILED_DEBUG, "Stat: pvalue before = %g", return_value);
+  }
+  return(return_value);
+}
 
 /**
  * Compute a p-value for a given score w.r.t. a Weibull with given parameters.

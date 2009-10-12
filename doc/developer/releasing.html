@@ -15,7 +15,7 @@
 
 <h3>Branching</h3>
 <p>The first release of crux, version 1.0, was given its own development
-branch named <code>rel-1-0</code> in the CVS repository.  Bugs
+branch named <code>rel-1-0</code> in the SVN repository.  Bugs
 reported by users were fixed in this branch and builds from this
 branch were made available for download. Changes made to this branch
 are periodically merged into the trunk. The next major release should
@@ -31,6 +31,17 @@ This controls the numbering of packages and what is reported by the
 <code>--version</code> option.  You must run configure after changing
 configure.ac and make dist (see below) for the new version to take
 effect.</p>
+
+<h3>Creating an open source distribution</h3>
+The process of searching a protein database for matches to observed MS/MS spectra
+is part of the SEQUEST intellectual property. To create an open source distribution
+of Crux this function must be disabled. The search function is disabled by 
+including the <code>--disable-search</code> option on the <code>configure</code> 
+command line before running <code>make dist</code>.
+This option will cause the <code>search_main()</code> function in the <code>match_search.c</code>
+module to be replaced with a stub. The stub simply prints a message that the function has been
+disabled and exits. A warning is added to the <code>crux-search-for-match.html</code>
+man page that searching has been disabled.
 
 <h3>Building packages</h3>
 <p>There are two targets in the root for building packages.  The
@@ -48,7 +59,18 @@ this for each bdist package built.  A new file with the output of the
 checksum is created for each package and will be included on the
 download page.</p>
 
-<p>Each version that is released should be added to CVS in <code>
+<p>The base name for the packages can be modified by specifying a value for
+the variable PACKAGE on the make command line. This is useful when creating
+the open source packages, so that the open source packages have a distinct name.
+For example:
+</p>
+<pre>
+    make dist PACKAGE="open_crux"
+    make bdist PACKAGE="open_crux"
+    make checksum PACKAGE="open_crux"
+</pre>
+
+<p>Each version that is released should be added to SVN in <code>
 crux/doc/user/downloads</code>.  Detailed notes about changes made can be
 recorded in <code>crux/ChangeLog</code>.  A more general description of changes
 (aimed at the user) should be recorded in

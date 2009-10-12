@@ -28,6 +28,7 @@
 #include <algorithm>
 #include <iterator>
 #include <vector>
+#include<algorithm>
 using namespace std;
 #include "ArrayLibrary.h"
 #include "BaseSpline.h"

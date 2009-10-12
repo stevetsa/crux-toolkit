@@ -521,7 +521,7 @@ BOOLEAN_T check_index_constraints(INDEX_T* index){
  */
 void set_index_fields(
   INDEX_T* index,  ///< Index to set -out                       
-  char* output_dir,      ///< The name of the new index
+  const char* output_dir,      ///< The name of the new index
   PEPTIDE_CONSTRAINT_T* constraint,  
   ///< Constraint which these peptides satisfy -in
   FLOAT_T mass_range,  
@@ -570,8 +570,8 @@ void set_index_fields(
  * \returns A new index object.
  */
 INDEX_T* new_index(
-  char* fasta_filename, ///< The fasta file
-  char* output_dir,     ///< The name of the new index
+  const char* fasta_filename, ///< The fasta file
+  const char* output_dir,     ///< The name of the new index
   PEPTIDE_CONSTRAINT_T* constraint,  
     ///< Constraint which these peptides will satisfy
   FLOAT_T mass_range  
@@ -1661,7 +1661,7 @@ BOOLEAN_T parse_crux_index_map(
   strcpy(filename, "crux_index_map");
 
   // open crux_index_file
-  carp(CARP_DEBUG, "Opening map file '%s'", full_filename);
+  carp(CARP_DETAILED_DEBUG, "Opening map file '%s'", full_filename);
   file = fopen(full_filename, "r");
   if(file == NULL){
     carp(CARP_WARNING, "Cannot open crux_index_map file.");

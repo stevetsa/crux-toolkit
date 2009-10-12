@@ -4,21 +4,29 @@ SUBDIRS = ArrayLibrary MSToolkit percolator q-ranker .
 
 # Crux can use either single or double precision floating poinnt.
 if USEDOUBLES
-  USEDOUBLES='-DUSE_DOUBLES'
+  USEDOUBLES = -DUSE_DOUBLES
 else
   USEDOUBLES=
 endif
 
 # Compiling under OS X requires a preprocessor flag.
 if DARWIN
-  USEDARWIN = '-DDARWIN'
+  USEDARWIN = -DDARWIN
 else
   USEDARWIN = 
 endif
 
-AM_CFLAGS = -Wall -W -Werror  -fno-strict-aliasing $(USEDOUBLES) $(USEDARWIN) \
+# We disable search and exclude search related code
+# in open-source distribution of Crux.
+if SEARCH
+  SEARCH_ENABLED = -DSEARCH_ENABLED
+else
+  SEARCH_ENABLED = 
+endif
+
+AM_CFLAGS = -Wall -W -Werror $(USEDOUBLES) $(USEDARWIN) $(SEARCH_ENABLED) \
             -D_LARGEFILE_SOURCE=1 -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE 
-AM_CXXFLAGS = -Wall -W -Werror  -fno-strict-aliasing $(USEDOUBLES) $(USEDARWIN) \
+AM_CXXFLAGS = -Wall -W -Werror  $(USEDOUBLES) $(USEDARWIN) $(SEARCH_ENABLED) \
             -D_LARGEFILE_SOURCE=1 -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE
 
 LIBFILES= \
@@ -40,8 +48,6 @@ LIBFILES= \
   hash.h \
   hit.c \
   hit.h \
-  hit_collection.c \
-  hit_collection.h \
   index.c \
   index.h \
   ion.c \
@@ -81,6 +87,8 @@ LIBFILES= \
   peptide_src.h \
   percolator.c \
   percolator.h \
+  print-processed-spectra.cpp \
+  print-processed-spectra.h \
   protein.c \
   protein.h \
   protein_index.c \
@@ -103,6 +111,7 @@ LIBFILES= \
 
 noinst_LTLIBRARIES = libcrux.la
 libcrux_la_CFLAGS = \
+  $(AM_CFLAGS) \
   -I$(top_srcdir)/src/c/MSToolkit \
   -I$(top_srcdir)/src/c/percolator/ \
   -I$(top_srcdir)/src/c/q-ranker/
@@ -118,24 +127,30 @@ PROGRAM_FILES = \
 bin_PROGRAMS = $(PROGRAM_FILES)
 
 crux_get_ms2_spectrum_SOURCES = get_ms2_spectrum.cpp
-crux_get_ms2_spectrum_CXXFLAGS = -DMAIN -I$(top_srcdir)/src/c//MSToolkit
-crux_get_ms2_spectrum_LDADD = libcrux.la -L$(top_builddir)/src/c/MSToolkit -lm -lmstoolkit
+crux_get_ms2_spectrum_CXXFLAGS = $(AM_CFLAGS) -DMAIN -I$(top_srcdir)/src/c//MSToolkit
+crux_get_ms2_spectrum_LDADD = \
+  $(AM_LDFLAGS) \
+  libcrux.la -L$(top_builddir)/src/c/MSToolkit -lm -lmstoolkit
 
 crux_generate_peptides_SOURCES = generate_peptides.c
-crux_generate_peptides_CFLAGS = -DMAIN
-crux_generate_peptides_LDADD = libcrux.la -lm  
+crux_generate_peptides_CFLAGS = $(AM_CFLAGS) -DMAIN
+crux_generate_peptides_LDADD = $(AM_LDFLAGS) libcrux.la -lm  
 
 crux_predict_peptide_ions_SOURCES = predict_peptide_ions.cpp
-crux_predict_peptide_ions_CXXFLAGS = -DMAIN
-crux_predict_peptide_ions_LDADD = libcrux.la -L$(top_builddir)/src/c/MSToolkit -lm -lmstoolkit
+crux_predict_peptide_ions_CXXFLAGS = $(AM_CFLAGS) -DMAIN
+crux_predict_peptide_ions_LDADD = \
+  $(AM_LDFLAGS) \
+  libcrux.la -L$(top_builddir)/src/c/MSToolkit -lm -lmstoolkit
 
 crux_SOURCES = crux-main.cpp crux-main.h
 crux_CXXFLAGS = \
+  $(AM_CXXFLAGS) \
   -DMAIN \
   -I$(top_srcdir)/src/c/MSToolkit \
   -I$(top_srcdir)/src/c/percolator \
   -I$(top_srcdir)/src/c/q-ranker
 crux_LDADD = \
+  $(AM_LDFLAGS) \
   libcrux.la \
   -lstdc++ \
   -L$(top_builddir)/src/c/ArrayLibrary \
@@ -143,9 +158,9 @@ crux_LDADD = \
   -L$(top_builddir)/src/c/percolator \
   -L$(top_builddir)/src/c/q-ranker \
   -lm \
-  -lmstoolkit \
   -lpercolator \
   -lqranker \
+  -lmstoolkit \
   -lArrayLibrary
 
 paramdir = $(prefix)/doc
@@ -160,5 +175,13 @@ ignore-files:
 	svn update .svnignore
 	svn propset svn:ignore -F .svnignore .
 
+# In the distribution hook we create the version header,
+# and if SEARCH_ENABLED is not defined, we remove peptide-spectrum database 
+# search code  from the files in the distribution.
+# This is needed to support open-source distribution.
 dist-hook:
 	grep '#define VERSION' ../../config.h > version.h
+	if test -z "$(SEARCH_ENABLED)"; then \
+    sed -e '/#ifdef SEARCH_ENABLED/,/#else/d' \
+        -e '/#endif \/\/ SEARCH_ENABLED/d' \
+        < match_search.c > $(distdir)/match_search.c; fi

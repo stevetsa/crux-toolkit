@@ -7,10 +7,6 @@
 #ifndef CRUX_UTILS_H
 #define CRUX_UTILS_H
 
-#ifdef __cplusplus
-  extern "C" {
-#endif
-
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -25,6 +21,10 @@
 #include "carp.h"
 #include "utils.h"
 #include "objects.h"
+
+#ifdef __cplusplus
+  extern "C" {
+#endif
 
 
 /**
@@ -141,7 +141,7 @@ long get_filesize(char *FileName);
  * \returns 0 if successful, -1 if an error occured.
 */
 int create_output_directory(
-  char *output_folder, // Name of output folder.
+  const char *output_folder, // Name of output folder.
   BOOLEAN_T overwrite  // Whether or not to overwrite an existing dir 
 ); 
 
@@ -263,9 +263,7 @@ int compare_floats_descending(const void* a, const void* b);
 /**
  *\returns a heap allocated feature name array for the algorithm type
  */
-char** generate_feature_name_array(
-  ALGORITHM_TYPE_T algorithm ///< the algorithm's feature name to produce -in
-  );
+char** generate_feature_name_array();
 
 /**
  *\returns the number of digits in the number
@@ -299,6 +297,7 @@ void fit_three_parameter_weibull(
     FLOAT_T min_shift, ///< the minimum shift to allow -in
     FLOAT_T max_shift, ///< the maximum shift to allow -in
     FLOAT_T step, ///< the step for shift modification -in
+    FLOAT_T corr_threshold, ///< minimum correlation, else no fit -in
     FLOAT_T* eta,      ///< the eta parameter of the Weibull dist -out
     FLOAT_T* beta,      ///< the beta parameter of the Weibull dist -out
     FLOAT_T* shift,     ///< the best shift -out

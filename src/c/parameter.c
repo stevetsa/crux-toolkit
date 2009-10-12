@@ -505,6 +505,11 @@ void initialize_parameters(void){
       "Tab delimited output file name. Default 'search.target.txt'",
       "Only available for crux search-for-matches. The location of this file is controlled by "
       "--output-dir.", "true");
+  set_string_parameter("search-decoy-pvalue-file", "search.decoy.p.txt", 
+      "Output filename for complete list of decoy p-values.  Default 'search.decoy.p.txt'",
+      "Only available for crux search-for-matches. The location of this file is controlled by "
+      "--output-dir.", "false");
+
   set_string_parameter("percolator-tab-output-file", "percolator.target.txt", 
       "Tab delimited output file name. Default 'percolator.target.txt'",
       "Only available for crux percolator. The location of this file is controlled by "
@@ -577,6 +582,7 @@ void initialize_parameters(void){
       "'separate-decoy-files' will create as many decoy files as "
       "num-decoys-per-target.",
       "true");
+
   // coder options regarding decoys
   set_int_parameter("num-decoy-files", 2, 0, 10,
                     "Replaces number-decoy-set.  Determined by decoy-location"
@@ -585,6 +591,9 @@ void initialize_parameters(void){
   set_boolean_parameter("tdc", FALSE,
       "Target-decoy competition. puts decoy psms in target file. ",
       "Now hidden from the user", "false");
+  set_boolean_parameter("decoy-p-values", FALSE,
+			"Store all decoy p-values in a file",
+			"", "false");
 
   set_boolean_parameter("reverse-sequence", FALSE,
       "Generate decoys by reversing the peptide string rather than shuffling."
@@ -1043,7 +1052,6 @@ void translate_decoy_options(){
   }else{
     update_hash_value(parameters, "tdc", "FALSE");
   }
-
 }
 
 /**
@@ -1125,6 +1133,12 @@ BOOLEAN_T parse_cmd_line_into_params_hash(int argc,
   if( strcmp(argv[0], "compute-q-values") == 0 ){
     char value_str[SMALL_BUFFER];
     algorithm_type_to_string(QVALUE_ALGORITHM, value_str);
+    update_hash_value(parameters, "algorithm", value_str);
+  }
+  // for q-ranker, set algorithm to qranker (perc by default)
+  else if( strcmp(argv[0], "q-ranker") == 0 ){
+    char value_str[SMALL_BUFFER];
+    algorithm_type_to_string(QRANKER_ALGORITHM, value_str);
     update_hash_value(parameters, "algorithm", value_str);
   }
 

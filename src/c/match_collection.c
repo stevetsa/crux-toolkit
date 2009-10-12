@@ -12,9 +12,6 @@
  ****************************************************************************/
 #include "match_collection.h"
 
-#define PARAM_ESTIMATION_SAMPLE_COUNT 500
-//static BOOLEAN_T is_first_spectrum = TRUE;
-
 /* Private data types (structs) */
 
 /**
@@ -56,6 +53,7 @@ struct match_collection{
   FLOAT_T eta;  ///< The eta parameter for the Weibull distribution.
   FLOAT_T beta; ///< The beta parameter for the Weibull distribution.
   FLOAT_T shift; ///< The location parameter for the Weibull distribution.
+  FLOAT_T correlation; ///< The correlation parameter for the Weibull distribution.
   // replace this ...
   MATCH_T* sample_matches[_PSM_SAMPLE_SIZE];
   int num_samples;  // the number of items in the above array
@@ -273,9 +271,9 @@ MATCH_COLLECTION_T* new_empty_match_collection(BOOLEAN_T is_decoy){
  * are stored in a match.  All matches are stored in the
  * match_collection.  Can be called on an empty match_collection or
  * one already containing matches.  No checks to confirm that the same
- * spectrum is being searched in subsiquent calls.
+ * spectrum is being searched in subsequent calls.
  *
- * First, the prelimiary score (as in parameter.c) is used to compare
+ * First, the preliminary score (as in parameter.c) is used to compare
  * peptides and spectrum.  These results are then sorted and the final
  * score (as in parameter.c) is calculated on the top-match
  * (parameter.c) top matches as ranked by the preliminary score.  No
@@ -318,6 +316,7 @@ int add_matches(
   // preliminary scoring
   int sp_max_rank = get_int_parameter("max-rank-preliminary");
   SCORER_TYPE_T prelim_score = get_scorer_type_parameter("prelim-score-type");
+
   if( sp_max_rank == 0 ){ 
     add_unscored_peptides(match_collection, spectrum, charge, 
                           peptide_iterator, is_decoy);
@@ -327,7 +326,7 @@ int add_matches(
   }
   num_matches_added = match_collection->match_total - start_index;
 
-  // score exitsting matches w/second function
+  // score existing matches w/second function
   SCORER_TYPE_T final_score = get_scorer_type_parameter("score-type");
   score_matches_one_spectrum(final_score, match_collection->match,
                              match_collection->match_total, spectrum, charge);
@@ -679,6 +678,13 @@ BOOLEAN_T sort_match_collection(
         (void *)compare_match_percolator_score);
     match_collection->last_sorted = PERCOLATOR_SCORE;
     return TRUE;
+
+  case QRANKER_Q_VALUE:
+  case QRANKER_SCORE:
+    qsort_match(match_collection->match, match_collection->match_total, 
+        (void *)compare_match_qranker_score);
+    match_collection->last_sorted = QRANKER_SCORE;
+    return TRUE;
   }
   return FALSE;
 }
@@ -738,10 +744,24 @@ BOOLEAN_T spectrum_sort_match_collection(
     success = TRUE;
     break;
 
+  case QRANKER_Q_VALUE:
+    qsort_match(match_collection->match, match_collection->match_total,
+                (void*)compare_match_spectrum_qranker_q_value);
+    match_collection->last_sorted = QRANKER_Q_VALUE;
+    success = TRUE;
+    break;
+
   case PERCOLATOR_SCORE:
     qsort_match(match_collection->match, match_collection->match_total,
                 (void*)compare_match_spectrum_percolator_score);
     match_collection->last_sorted = PERCOLATOR_SCORE;
+    success = TRUE;
+    break;
+
+  case QRANKER_SCORE:
+    qsort_match(match_collection->match, match_collection->match_total,
+                (void*)compare_match_spectrum_qranker_score);
+    match_collection->last_sorted = QRANKER_SCORE;
     success = TRUE;
     break;
 
@@ -988,6 +1008,8 @@ void constraint_function(
 #define MIN_WEIBULL_MATCHES 40
 #define MIN_XCORR_SHIFT -5.0
 #define MAX_XCORR_SHIFT  5.0
+//#define CORR_THRESHOLD 0.995   // Must achieve this correlation, else punt.
+#define CORR_THRESHOLD 0.0       // For now, turn off the threshold.
 #define XCORR_SHIFT 0.05
 #define MIN_SP_SHIFT -100.0
 #define MAX_SP_SHIFT 300.0
@@ -1009,7 +1031,7 @@ BOOLEAN_T has_enough_weibull_points(
  * \brief Use the xcorrs saved in the match_collection to estimate the
  * weibull parameters to be used for computing p-values. 
  *
- * Requires that main score be XCORR, but with relativly few changes
+ * Requires that main score be XCORR, but with relatively few changes
  * other scores could be accomodated.
  * Implementation of Weibull distribution parameter estimation from 
  * http:// www.chinarel.com/onlincebook/LifeDataWeb/rank_regression_on_y.htm
@@ -1048,16 +1070,14 @@ BOOLEAN_T estimate_weibull_parameters_from_xcorrs(
        num_tail_samples, fraction_to_fit, num_scores);
 
   // do the estimation
-  FLOAT_T correlation = 0.0;
   fit_three_parameter_weibull(scores, num_tail_samples, num_scores,
-      MIN_XCORR_SHIFT, MAX_XCORR_SHIFT, XCORR_SHIFT, 
+      MIN_XCORR_SHIFT, MAX_XCORR_SHIFT, XCORR_SHIFT, CORR_THRESHOLD,
       &(match_collection->eta), &(match_collection->beta),
-      &(match_collection->shift), &correlation);
-
-  carp(CARP_DETAILED_DEBUG, 
-      "Correlation: %.6f\nEta: %.6f\nBeta: %.6f\nShift: %.6f\n", 
-      correlation, match_collection->eta, match_collection->beta,
-      match_collection->shift);
+      &(match_collection->shift), &(match_collection->correlation));
+  carp(CARP_DEBUG, 
+      "Corr: %.6f  Eta: %.6f  Beta: %.6f  Shift: %.6f", 
+       match_collection->correlation, match_collection->eta, 
+       match_collection->beta, match_collection->shift);
   
   return TRUE;
 }
@@ -1162,7 +1182,6 @@ BOOLEAN_T score_peptides(
   while( modified_peptides_iterator_has_next(peptide_iterator)){
     // get peptide, sequence, and ions
     peptide = modified_peptides_iterator_next(peptide_iterator);
-    
     //SJM: Calling this multiple times for each peptide can get expensive.
     //I defined this macro in carp.h that tests the verbosity level
     //before calling the get_ function.  We could use this to compile out
@@ -1186,6 +1205,7 @@ BOOLEAN_T score_peptides(
     modified_sequence = get_match_mod_sequence(match);
     update_ion_series(ion_series, sequence, modified_sequence);
     predict_ions(ion_series);
+
 
     // calculate the score
     score = score_spectrum_v_ion_series(scorer, spectrum, ion_series);
@@ -1267,7 +1287,6 @@ BOOLEAN_T score_peptides(
  */
 BOOLEAN_T score_matches_one_spectrum(
   SCORER_TYPE_T score_type, 
-  //MATCH_COLLECTION_T* match_collection,
   MATCH_T** matches,
   int num_matches,
   SPECTRUM_T* spectrum,
@@ -1278,7 +1297,6 @@ BOOLEAN_T score_matches_one_spectrum(
   scorer_type_to_string(score_type, type_str);
   carp(CARP_DETAILED_DEBUG, "Scoring matches for %s", type_str);
 
-  //if( match_collection == NULL ){
   if( matches == NULL || spectrum == NULL ){
     carp(CARP_ERROR, "Cannot score matches in a NULL match collection.");
     return FALSE;
@@ -1299,12 +1317,11 @@ BOOLEAN_T score_matches_one_spectrum(
   char* sequence = NULL;
   MODIFIED_AA_T* modified_sequence = NULL;
 
-  //for(match_idx = 0; match_idx < match_collection->match_total; match_idx++){
   for(match_idx = 0; match_idx < num_matches; match_idx++){
 
-    //match = match_collection->match[match_idx];
     match = matches[match_idx];
     assert( match != NULL );
+
     // skip it if it's already been scored
     if( NOT_SCORED != get_match_score(match, score_type)){
       continue;
@@ -1327,7 +1344,8 @@ BOOLEAN_T score_matches_one_spectrum(
     set_match_score(match, score_type, score);
     
     IF_CARP_DETAILED_DEBUG(
-      char* mod_seq = modified_aa_string_to_string(modified_sequence, strlen(sequence));
+      char* mod_seq = modified_aa_string_to_string(modified_sequence,
+						   strlen(sequence));
       carp(CARP_DETAILED_DEBUG, "Second score %f for %s (null:%i)",
 	   score, mod_seq,get_match_null_peptide(match));
       free(mod_seq);
@@ -1336,16 +1354,12 @@ BOOLEAN_T score_matches_one_spectrum(
     free(modified_sequence);
   }// next match
 
-  //  match_collection->scored_type[score_type] = TRUE;
-
   // clean up
   free_ion_constraint(ion_constraint);
   free_ion_series(ion_series);
   free_scorer(scorer);
   return TRUE;
 }
-
-
 
 /**
  * \brief  Uses the Weibull parameters estimated by
@@ -1361,16 +1375,22 @@ BOOLEAN_T score_matches_one_spectrum(
  * else FALSE.
  */
 // FIXME (BF 8-Dec-2008): create new score-type P_VALUE to replace LOG...XCORR
-BOOLEAN_T compute_p_values(MATCH_COLLECTION_T* match_collection){
+BOOLEAN_T compute_p_values(
+  MATCH_COLLECTION_T* match_collection,
+  FILE* output_pvalue_file ///< If non-NULL, file for storing p-values -in
+  ){
+
   if(match_collection == NULL){
     carp(CARP_ERROR, "Cannot compute p-values for NULL match collection.");
     return FALSE;
   }
 
+  int scan_number
+    = get_spectrum_first_scan(get_match_spectrum(match_collection->match[0]));
   carp(CARP_DEBUG, "Computing p-values for %s spec %d charge %d "
        "with eta %f beta %f shift %f",
        (match_collection->null_peptide_collection) ? "decoy" : "target",
-       get_spectrum_first_scan(get_match_spectrum(match_collection->match[0])),
+       scan_number,
        match_collection->charge,
        match_collection->eta, match_collection->beta, match_collection->shift);
 
@@ -1385,62 +1405,51 @@ BOOLEAN_T compute_p_values(MATCH_COLLECTION_T* match_collection){
          type_str);
   }
 
+  // Print separator in the decoy p-value file.
+  if (output_pvalue_file) {
+    fprintf(output_pvalue_file, "# scan: %d charge: %d candidates: %d\n", 
+	    scan_number, match_collection->charge,
+	    match_collection->experiment_size);
+    fprintf(output_pvalue_file, 
+	    "# eta: %g beta: %g shift: %g correlation: %g\n",
+	    match_collection->eta, 
+	    match_collection->beta,
+	    match_collection->shift,
+	    match_collection->correlation);
+  }
+
   // iterate over all matches 
   int match_idx =0;
-  double score = 0;
   for(match_idx=0; match_idx < match_collection->match_total; match_idx++){
     MATCH_T* cur_match = match_collection->match[match_idx];
 
-    // scale the score
-    score = score_logp_bonf_weibull(get_match_score(cur_match,main_score),
-                                    match_collection->eta, 
-                                    match_collection->beta,
-                                    match_collection->shift,
-                                    match_collection->experiment_size);
-    // set score in match
-    set_match_score(cur_match, LOGP_BONF_WEIBULL_XCORR, score);
+    // Get the Weibull p-value.
+    double pvalue = compute_weibull_pvalue(get_match_score(cur_match, 
+							   main_score),
+					   match_collection->eta, 
+					   match_collection->beta,
+					   match_collection->shift);
+
+    // Print the pvalue, if requested
+    if (output_pvalue_file) {
+      fprintf(output_pvalue_file, "%g\n", pvalue);
+    }
+
+    // Apply the Bonferroni correction.
+    pvalue = bonferroni_correction(pvalue, match_collection->experiment_size);
+
+    // set pvalue in match
+    set_match_score(cur_match, LOGP_BONF_WEIBULL_XCORR, -log(pvalue));
+    //#endif
 
   }// next match
 
-  carp(CARP_DETAILED_DEBUG, "Computed p-values for %d psms.", match_idx);
+  carp(CARP_DETAILED_DEBUG, "Computed p-values for %d PSMs.", match_idx);
   populate_match_rank_match_collection(match_collection, XCORR);
-//                                       LOGP_BONF_WEIBULL_XCORR);
 
   // mark p-values as having been scored
   match_collection->scored_type[LOGP_BONF_WEIBULL_XCORR] = TRUE;
   return TRUE;
-}
-
-/**
- * \brief Indicate that p-values cannot be calculated for this match
- * collection.  
- *
- * Usually true when there were too few psms for
- * parameter estimation.  Since a p-value is between 0 and 1, but
- * these are really -log(pvalue) which are non-negative real numbers,
- * set an unscored p-value as P_VALUE_NA (-1).
- */
-BOOLEAN_T set_p_values_as_unscored(MATCH_COLLECTION_T* match_collection){
-  if(match_collection == NULL){
-    carp(CARP_ERROR, "Cannot set p-values for NULL match collection.");
-    return FALSE;
-  }
-
-  FLOAT_T score = P_VALUE_NA;
-  //FLOAT_T score = -1;
-  //FLOAT_T score = NaN(); // could use this instead
-
-  int match_idx = 0;
-  for(match_idx=0; match_idx < match_collection->match_total; match_idx++){
-    set_match_score(match_collection->match[match_idx],
-                    LOGP_BONF_WEIBULL_XCORR, score);  
-  }
-
-
-  // mark p-values as having been scored
-  match_collection->scored_type[LOGP_BONF_WEIBULL_XCORR] = TRUE;
-  return TRUE;
-
 }
 
 /**
@@ -1629,44 +1638,18 @@ FLOAT_T get_match_collection_delta_cn(
 }
 
 /**
- * \brief Get the eta parameter from the Weibull distribution.
- * No check to see that it has been estimated.
+ * \brief Transfer the Weibull distribution parameters, including the
+ * correlation from one match_collection to another.  No check to see
+ * that the parameters have been estimated.
  */
-FLOAT_T get_match_collection_eta(MATCH_COLLECTION_T* match_collection){
-  return match_collection->eta;
-}
-
-/**
- * \brief Get the beta parameter from the Weibull distribution
- * No check to see that it has been estimated.
- */
-FLOAT_T get_match_collection_beta(MATCH_COLLECTION_T* match_collection){
-  return match_collection->beta;
-}
-
-/**
- * \brief Get the shift parameter from the Weibull distribution
- * No check to see that it has been estimated.
- */
-FLOAT_T get_match_collection_shift(MATCH_COLLECTION_T* match_collection){
-  return match_collection->shift;
-}
-
-/**
- * \brief Set the three Weibull parameters.  Intended for
- * match_collections of decoys, the parameters having been estimated
- * from targets.
- */
-void set_match_collection_weibull_params(
-  MATCH_COLLECTION_T* match_collection,
-  FLOAT_T eta,
-  FLOAT_T beta,
-  FLOAT_T shift
-){
-
-  match_collection->eta = eta;
-  match_collection->beta = beta;
-  match_collection->shift = shift;
+void transfer_match_collection_weibull(
+  MATCH_COLLECTION_T* from_collection,
+  MATCH_COLLECTION_T* to_collection
+  ){
+  to_collection->eta = from_collection->eta;
+  to_collection->beta = from_collection->beta;
+  to_collection->shift = from_collection->shift;
+  to_collection->correlation = from_collection->correlation;
 }
 
 /**
@@ -1690,7 +1673,7 @@ FILE** create_psm_files(){
 
   carp(CARP_DEBUG, "Opening %d new psm files", total_files);
 
-  const char* output_directory =get_string_parameter_pointer("output-dir");
+  const char* output_directory = get_string_parameter_pointer("output-dir");
 
   // BEGIN DELETE
   // create the output folder if it doesn't exist
@@ -1813,7 +1796,10 @@ BOOLEAN_T serialize_psm_features(
 
   // serialize each boolean for scored type 
   int score_type_idx;
-  for(score_type_idx=0; score_type_idx < _SCORE_TYPE_NUM; ++score_type_idx){
+  // We don't want to change the CSM files contents so we omit q-ranker scores
+  // which were added to Crux after the CSM file format had been established.
+  int score_type_max = _SCORE_TYPE_NUM - 2;
+  for(score_type_idx=0; score_type_idx < score_type_max; ++score_type_idx){
     myfwrite(&(match_collection->scored_type[score_type_idx]), 
         sizeof(BOOLEAN_T), 1, output);
   }
@@ -2002,6 +1988,9 @@ void print_sqt_header(
   if( is_analysis == TRUE && analysis_score == PERCOLATOR_ALGORITHM){
     main_score = PERCOLATOR_SCORE; 
     other_score = Q_VALUE;
+  }else if( is_analysis == TRUE && analysis_score == QRANKER_ALGORITHM ){
+    main_score = QRANKER_SCORE; 
+    other_score = QRANKER_Q_VALUE;
   }else if( is_analysis == TRUE && analysis_score == QVALUE_ALGORITHM ){
     main_score = LOGP_QVALUE_WEIBULL_XCORR;
   }else if( pvalues == TRUE ){
@@ -2268,6 +2257,10 @@ MATCH_ITERATOR_T* new_match_iterator(
     else if((score_type == Q_VALUE) &&
             match_collection->last_sorted == PERCOLATOR_SCORE){
       // No need to sort, the score_type has same rank as PERCOLATOR_SCORE
+    }
+    else if((score_type == QRANKER_Q_VALUE) &&
+            match_collection->last_sorted == QRANKER_SCORE){
+      // No need to sort, the score_type has same rank as QRANKER_SCORE
     }
     // sort match collection by score type
     else if(!sort_match_collection(match_collection, score_type)){
@@ -2712,7 +2705,10 @@ BOOLEAN_T extend_match_collection(
     
     // Read each boolean for scored type 
     // parse all boolean indicators for scored match object
-    for(score_type_idx=0; score_type_idx < _SCORE_TYPE_NUM; ++score_type_idx){
+    // We don't want to change the CSM files contents so we omit q-ranker scores
+    // which were added to Crux after the CSM file format had been established.
+    int score_type_max = _SCORE_TYPE_NUM - 2;
+    for(score_type_idx=0; score_type_idx < score_type_max; ++score_type_idx){
       fread(&(type_scored), sizeof(BOOLEAN_T), 1, result_file);
       
       // if this is the first time extending the match collection
@@ -2733,7 +2729,7 @@ BOOLEAN_T extend_match_collection(
       // now once we are done with setting scored type
       // set match collection status as set!
       if(!match_collection->post_scored_type_set &&
-         score_type_idx == (_SCORE_TYPE_NUM-1)){
+         score_type_idx == (score_type_max-1)){
         match_collection->post_scored_type_set = TRUE;
       }
     }
@@ -2982,7 +2978,7 @@ void process_run_specific_features(
  * 
  * Delta_cn is the xcorr difference between match[i] and match[i+1]
  * divided by the xcorr of match[0].  This could be generalized to
- * which ever score is the main one.  Sorts by xcorr, if necessary.
+ * whichever score is the main one.  Sorts by xcorr, if necessary.
  * 
  */
 BOOLEAN_T calculate_delta_cn( MATCH_COLLECTION_T* match_collection){
@@ -3013,7 +3009,11 @@ BOOLEAN_T calculate_delta_cn( MATCH_COLLECTION_T* match_collection){
   int match_idx=0;
   for(match_idx=0; match_idx < num_matches; match_idx++){
     FLOAT_T diff = max_xcorr - get_match_score(matches[match_idx], XCORR);
-    set_match_delta_cn(matches[match_idx], (diff / max_xcorr) );
+    double delta_cn = diff / max_xcorr;
+    if( delta_cn == 0 ){ // I hate -0, this prevents it
+      delta_cn = 0.0;
+    }
+    set_match_delta_cn(matches[match_idx], delta_cn);
   }
 
   return TRUE;
@@ -3207,11 +3207,13 @@ MATCH_COLLECTION_ITERATOR_T* new_match_collection_iterator(
     }
     else if(suffix_compare(directory_entry->d_name, "decoy-3.csm")) {
       decoy_3 = TRUE;
-      break;
     }    
     else if(suffix_compare(directory_entry->d_name, ".csm")){
       carp(CARP_DEBUG, "Found target file %s", directory_entry->d_name);
       boolean_result = TRUE;
+    }
+    if (boolean_result && decoy_1 && decoy_2 && decoy_3) {
+      break; // We've found all the files we can use.
     }
   }
   

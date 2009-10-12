@@ -37,8 +37,8 @@ INDEX_T* allocate_index(void);
  * \returns A new index object.
  */
 INDEX_T* new_index(
-  char* fasta_filename,  ///< The fasta file
-  char* output_dir,      ///< The name of the new index
+  const char* fasta_filename,  ///< The fasta file
+  const char* output_dir,      ///< The name of the new index
   PEPTIDE_CONSTRAINT_T* constraint,///< Constraint which these peptides satisfy
   FLOAT_T mass_range  ///< the range of masses contained in each index file
 );         

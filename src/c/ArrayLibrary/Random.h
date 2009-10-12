@@ -30,7 +30,7 @@
 
 #include <iostream>
 #include <math.h>
-
+#include <cstdlib>
 #include "Numerical.h"
 
 using namespace std;

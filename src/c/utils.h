@@ -4,8 +4,6 @@
  ********************************************************************/
 // AUTHOR: William Stafford Noble
 // CREATE DATE: 9-8-97
-// PROJECT: shared
-// COPYRIGHT: 1997-2001, Columbia University
 
 #ifndef UTILS_H
 #define UTILS_H
@@ -271,7 +269,7 @@ BOOLEAN_T char_in_string
  *
  * Assumes that the zeroth enumerated type element is invalid.
  **************************************************************************/
-char*  convert_enum_type
+const char*  convert_enum_type
   (int     enum_type,  /* The enumerated type object to be converted. */
    const char*  enum_strs[],  /* String values associated with this type. */
    int     num_enums); /* Number of values of the type. */
