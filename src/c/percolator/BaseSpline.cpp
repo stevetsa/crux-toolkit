@@ -26,6 +26,7 @@
  
  *******************************************************************************/
 #include <algorithm>
+#include <cstdlib>
 #include <iterator>
 #include <vector>
 #include<algorithm>
