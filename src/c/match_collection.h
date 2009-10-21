@@ -265,13 +265,6 @@ BOOLEAN_T add_match_to_match_collection(
   MATCH_T* match                        ///< add this match
 );
 
-/**
- * Takes the values of match-output-folder, ms2 filename (soon to be
- * named output file), overwrite, and number-decoy-set from parameter.c 
- * and returns an array of filehandles to the newly opened files
- */
-FILE** create_psm_files();
-
 /*
  * Copied from spectrum_collection::serialize_header
  * uses values from paramter.c rather than taking as arguments
@@ -362,10 +355,8 @@ void print_tab_header(FILE* outfile);
 BOOLEAN_T print_match_collection_sqt(
   FILE* output, ///< the output file -out
   int top_match, ///< the top matches to output -in
-  MATCH_COLLECTION_T* match_collection, ///< the match_collection to print sqt -in
-  SPECTRUM_T* spectrum, ///< the spectrum to print sqt -in
-  SCORER_TYPE_T prelim_score, ///< the preliminary score to report -in
-  SCORER_TYPE_T main_score  ///< the main score to report -in
+  MATCH_COLLECTION_T* match_collection, ///< the match_collection to print -in
+  SPECTRUM_T* spectrum ///< the spectrum to print sqt -in
   );
 
 /**

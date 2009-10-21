@@ -65,7 +65,7 @@ int main(int argc, char** argv){
     break;
 
   case SEQUEST_CMD:
-    carp(CARP_FATAL, "sequest-search not implemented yet.");
+    sequest_search_main(argc-1, argv+1);
     break;
 
   case QVALUE_CMD:

@@ -97,6 +97,8 @@ LIBFILES= \
   q-ranker.h \
   q-value.c \
   q-value.h \
+  sequest-search.cpp \
+  sequest-search.h \
   scorer.c \
   scorer.h \
   sorter.c \

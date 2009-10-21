@@ -64,10 +64,7 @@ OutputFiles::OutputFiles(const char* program_name)
   }
 
   // only sequest creates sqt files
-  //if( strcmp(program_name, "sequest") == 0 ){
-  // TEMPORARY: also write sqt for search-for-matches so that smoke
-  //tests will pass
-  if( strcmp(program_name, "sequest") == 0 || strcmp(program_name, "search") == 0){
+  if( strcmp(program_name, "sequest") == 0 ){
     createFiles(&sqt_file_array_, 
                  output_directory, 
                  fileroot, 
@@ -78,6 +75,11 @@ OutputFiles::OutputFiles(const char* program_name)
 }
 
 OutputFiles::~OutputFiles(){
+  for(int file_idx = 0; file_idx < num_files_; file_idx ++){
+    if( psm_file_array_ ){ fclose(psm_file_array_[file_idx]); }
+    if( tab_file_array_ ){ fclose(tab_file_array_[file_idx]); }
+    if( sqt_file_array_ ){ fclose(sqt_file_array_[file_idx]); }
+  }
   delete [] psm_file_array_;
   delete [] tab_file_array_;
   delete [] sqt_file_array_;
@@ -288,8 +290,7 @@ void OutputFiles::printMatchesSqt(
     print_match_collection_sqt(sqt_file_array_[file_idx],
                                matches_per_spec_,
                                cur_matches,
-                               spectrum,
-                               SP, XCORR);
+                               spectrum);
 
     if( decoy_matches_array ){
       cur_matches = decoy_matches_array[file_idx];

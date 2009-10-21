@@ -29,7 +29,6 @@
 #include "crux-utils.h"
 #include "parameter.h"
 #include "spectrum_collection.h"
-//#include "match_collection.h"
 #include <errno.h>
 #include "output-files.h"
 
@@ -37,19 +36,6 @@
 #define NUM_SEARCH_ARGS 2
 
 /* Private functions */
-int prepare_protein_input(char* input_file, 
-                          INDEX_T** index, 
-                          DATABASE_T** database);
-void open_output_files(char *output_directory,
-                       BOOLEAN_T overwrite,
-		       BOOLEAN_T store_decoy_pvalues,
-                       FILE*** binary_filehandle_array, 
-                       FILE** sqt_filehandle,
-                       FILE** decoy_sqt_filehandle,
-                       FILE** tab_file,
-                       FILE** decoy_tab_file,
-		       FILE** decoy_pvalue_file);
-
 int search_pep_mods(
   MATCH_COLLECTION_T* match_collection, ///< store PSMs here
   BOOLEAN_T is_decoy,   ///< generate decoy peptides from index/db
@@ -367,12 +353,11 @@ int search_main(int argc, char** argv){
   // finished searching!
 
   // fix headers in csm files
-  output_files.updateHeaders(num_successful_searches);
-
-  // clean up
-  // FIXME: None of the other output files is closed. WSN 8/26/09
-  if (decoy_pvalue_file) {
-    fclose(decoy_pvalue_file);
+  int file_idx;
+  for(file_idx=0; file_idx < num_decoy_files + 1; file_idx++){
+    carp(CARP_DEBUG, "Changing csm header to have %i spectrum searches",
+         num_successful_searches);
+    output_files.updateHeaders(num_successful_searches);
   }
 
   carp(CARP_INFO, "Finished crux-search-for-matches");
@@ -394,118 +379,9 @@ int search_main(int argc, char **argv){
 }
 #endif // SEARCH_ENABLED
 
+
+
 /* Private function definitions */
-/**
- * \brief Open either the index or fasta file and prepare it for
- * searching.  Die if the input file cannot be found or read.
- * \returns the number of proteins in the file/index
- */
-int prepare_protein_input(char* input_file, 
-                          INDEX_T** index, 
-                          DATABASE_T** database){
-
-  int num_proteins = 0;
-  BOOLEAN_T use_index = is_directory(input_file);
-
-  if (use_index == TRUE){
-    carp(CARP_INFO, "Preparing protein index %s", input_file);
-    *index = new_index_from_disk(input_file);
-
-    if (index == NULL){
-      carp(CARP_FATAL, "Could not create index from disk for %s", input_file);
-    }
-    num_proteins = get_index_num_proteins(*index);
-
-  } else {
-    carp(CARP_INFO, "Preparing protein fasta file %s", input_file);
-    *database = new_database(input_file, FALSE);         
-    if( database == NULL ){
-      carp(CARP_FATAL, "Could not create protein database");
-    } 
-
-    if(!parse_database(*database)){
-      carp(CARP_FATAL, "Error with protein input");
-    } 
-    num_proteins = get_database_num_proteins(*database);
-  }
-  return num_proteins;
-}
-
-/**
- * \brief A private function for crux-search-for-matches to prepare
- * binary psm, tab-delimited text, and sqt files.
- *
- * Opens psm file(s) if requested, setting a given
- * pointer to the array of filehandles.  Opens sqt file(s) if
- * requested, setting the given pointers to each file handle.  If
- * binary files not requested, creates an array of NULL pointers.  If
- * sqt files not requested, sets given pointers to NULL. 
- *
- * \returns void.  Sets given arguments to newly created filehandles.
- */
-void open_output_files(
-  char *output_directory, ///< name of output directory -in
-  BOOLEAN_T overwrite,     ///< overwrite existing files -in
-  BOOLEAN_T store_decoy_pvalues, ///< create decoy p-value file? -in
-  FILE*** psm_file_array, ///< put binary psm filehandles here -out
-  FILE** sqt_file,        ///< put text sqt filehandle here -out
-  FILE** decoy_sqt_file,  ///< put decoy sqt filehandle here -out
-  FILE** tab_file,        ///< put text sqt filehandle here -out
-  FILE** decoy_tab_file,  ///< put decoy sqt filehandle here -out
-  FILE** decoy_pvalue_file ///< if requested, file for decoy p-values -out
-  )
-{
-  // create binary psm files (allocate memory, even if not used)
-  *psm_file_array = create_psm_files();
-
-  //create sqt file handles
-  carp(CARP_DEBUG, "Opening sqt files");
-  char* sqt_filename = get_string_parameter("search-sqt-output-file");
-  prefix_fileroot_to_name(&sqt_filename);
-  *sqt_file = create_file_in_path(sqt_filename, 
-                                  output_directory, 
-                                  overwrite);
-  free(sqt_filename);
-  if( get_int_parameter("num-decoy-files") > 0 ){
-    char* decoy_sqt_filename = get_string_parameter("decoy-sqt-output-file");
-    prefix_fileroot_to_name(&decoy_sqt_filename);
-    *decoy_sqt_file = create_file_in_path(decoy_sqt_filename,
-                                          output_directory,
-                                          overwrite);
-    free(decoy_sqt_filename);
-  }
-
-  //create tab-delimited file handles
-  carp(CARP_DEBUG, "Opening tab delimited files");
-  char* tab_filename = get_string_parameter("search-tab-output-file");
-  prefix_fileroot_to_name(&tab_filename);
-  *tab_file = create_file_in_path(tab_filename, 
-                                  output_directory, 
-                                  overwrite);
-  free(tab_filename);
-  char* decoy_tab_filename = get_string_parameter("decoy-tab-output-file");
-  prefix_fileroot_to_name(&decoy_tab_filename);
-  if( get_int_parameter("num-decoy-files") > 0 ){
-    *decoy_tab_file = create_file_in_path(decoy_tab_filename,
-                                          output_directory,
-                                          overwrite);
-    free(decoy_tab_filename);
-  }
-
-  //create file handle for optional decoy p-values files
-  if (store_decoy_pvalues) {
-    carp(CARP_DEBUG, "Opening decoy p-value file.");
-    char* decoy_pvalue_filename 
-      = get_string_parameter("search-decoy-pvalue-file");
-    prefix_fileroot_to_name(&decoy_pvalue_filename);
-    *decoy_pvalue_file = create_file_in_path(decoy_pvalue_filename, 
-					     output_directory, 
-					     overwrite);
-    free(decoy_pvalue_filename);
-  }
-
-  carp(CARP_DEBUG, "Finished opening output files");
-}
 
 /**
  * \brief Look at matches and search parameters to determine if a

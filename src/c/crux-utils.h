@@ -338,6 +338,17 @@ char* digest_type_to_string(DIGEST_T);
 ENZYME_T string_to_enzyme_type(char*);
 char* enzyme_type_to_string(ENZYME_T);
 
+/**
+ * \brief Open either the index or fasta file and prepare it for
+ * searching.  Die if the input file cannot be found or read.
+ * \returns The number of proteins in the file or index
+ */
+int prepare_protein_input(
+  char* input_file,      ///< name of the fasta file or index directory
+  INDEX_T** index,       ///< return new index here OR
+  DATABASE_T** database);///< return new fasta database here
+
+
 #ifdef __cplusplus
 }
 #endif

@@ -1327,5 +1327,42 @@ void fit_two_parameter_weibull(
 }
 
 
+/**
+ * \brief Open either the index or fasta file and prepare it for
+ * searching.  Die if the input file cannot be found or read.
+ * \returns The number of proteins in the file or index
+ */
+int prepare_protein_input(
+  char* input_file,     ///< name of the fasta file or index directory
+  INDEX_T** index,      ///< return new index here OR
+  DATABASE_T** database)///< return new fasta database here
+{
+
+  int num_proteins = 0;
+  BOOLEAN_T use_index = is_directory(input_file);
+
+  if (use_index == TRUE){
+    carp(CARP_INFO, "Preparing protein index %s", input_file);
+    *index = new_index_from_disk(input_file);
+
+    if (index == NULL){
+      carp(CARP_FATAL, "Could not create index from disk for %s", input_file);
+    }
+    num_proteins = get_index_num_proteins(*index);
+
+  } else {
+    carp(CARP_INFO, "Preparing protein fasta file %s", input_file);
+    *database = new_database(input_file, FALSE);         
+    if( database == NULL ){
+      carp(CARP_FATAL, "Could not create protein database");
+    } 
+
+    if(!parse_database(*database)){
+      carp(CARP_FATAL, "Error with protein input");
+    } 
+    num_proteins = get_database_num_proteins(*database);
+  }
+  return num_proteins;
+}
 
 

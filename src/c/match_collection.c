@@ -1653,92 +1653,6 @@ void transfer_match_collection_weibull(
 }
 
 /**
- * \brief Names and opens the correct number of binary psm files.
- *
- * Takes the values of output-dir parameter, ms2 filename (soon to be
- * named output file), overwrite, and num-decoy-files from parameter.c.
- * Exits with error if can't create new requested directory or if
- * can't create any of the psm files.
- * REPLACES: spectrum_collection::get_spectrum_collection_psm_result_filenames
- *
- * \returns An array of filehandles to the newly opened files
- */
-FILE** create_psm_files(){
-
-  int decoy_files = get_int_parameter("num-decoy-files");
-  int total_files = decoy_files +1;
-  // create FILE* array to return
-  FILE** file_handle_array = (FILE**)mycalloc(total_files, sizeof(FILE*));
-  int file_idx = 0;
-
-  carp(CARP_DEBUG, "Opening %d new psm files", total_files);
-
-  const char* output_directory = get_string_parameter_pointer("output-dir");
-
-  // BEGIN DELETE
-  // create the output folder if it doesn't exist
-  if(access(output_directory, F_OK)){
-    if(mkdir(output_directory, S_IRWXU+S_IRWXG+S_IRWXO) != 0){
-      carp(CARP_FATAL, "Failed to create output directory %s", 
-           output_directory);
-    }
-  }
-
-  // get ms2 file for naming result file
-  //TODO change to output filename as argument, force .csm extension
-  //     add _decoy1.csm
-  //char* base_filename = get_string_parameter_pointer("ms2 file");
-  const char* ms2_filename = get_string_parameter_pointer("ms2 file");
-  //char** filename_path_array = parse_filename_path(base_filename);
-  char** filename_path_array = 
-    parse_filename_path_extension(ms2_filename, ".ms2");
-  if( filename_path_array[1] == NULL ){
-    filename_path_array[1] = ".";
-  }
-
-  carp(CARP_DEBUG, "Base filename is %s and path is %s", 
-       filename_path_array[0], filename_path_array[1]);
-
-  char* filename_template = get_full_filename(output_directory, 
-                                              filename_path_array[0]);
-  // END DELETE
-  //create target file
-  BOOLEAN_T overwrite = get_boolean_parameter("overwrite");
-
-  for(file_idx=0; file_idx<total_files; file_idx++){
-
-    char* psm_filename = generate_psm_filename(file_idx);
-
-    file_handle_array[file_idx] = create_file_in_path(psm_filename,
-                                                      output_directory,
-                                                      overwrite); 
-    //check for error
-    if( file_handle_array[file_idx] == NULL ){//||
-      carp(CARP_FATAL, "Could not create psm file %s", psm_filename);
-    }
-    //rename this, just for a quick fix
-    free(filename_template);
-    filename_template = get_full_filename(output_directory, psm_filename);
-    chmod(filename_template, 0664);
-
-    // clean up
-    free(psm_filename);
-    
-  }// next file
-
-  // clean up 
-  free(filename_path_array[0]);
-  if( *filename_path_array[1] != '.' ){
-    free(filename_path_array[1]);
-  }
-  free(filename_path_array);
-  free(filename_template);
-
-  return file_handle_array;
-
-}
-
-/**
  * \brief Serialize the PSM features to output file up to 'top_match'
  * number of top peptides from the match_collection.
  *
@@ -2063,8 +1977,10 @@ void print_tab_header(FILE* output){
  *
  * Prints one S line, 'top_match' M lines, and one locus line for each
  * peptide source of each M line.
- * Assumes one spectrum per match collection.  Could get top_match,
- * score types from parameter.c.  Could get spectrum from first match.
+ * Assumes one spectrum per match collection.  Only crux
+ * sequset-search produces sqt files so the two scores are always Sp
+ * and xcorr.
+ * Possible side effects: Calculates delta_cn and stores in each match
  *\returns TRUE, if sucessfully print sqt format of the PSMs, else FALSE 
  */
 BOOLEAN_T print_match_collection_sqt(
@@ -2072,9 +1988,7 @@ BOOLEAN_T print_match_collection_sqt(
   int top_match,                 ///< the top matches to output -in
   MATCH_COLLECTION_T* match_collection,
   ///< the match_collection to print sqt -in
-  SPECTRUM_T* spectrum,          ///< the spectrum to print sqt -in
-  SCORER_TYPE_T prelim_score,    ///< the preliminary score to report -in
-  SCORER_TYPE_T main_score       ///< the main score to report -in
+  SPECTRUM_T* spectrum           ///< the spectrum to print sqt -in
   )
 {
 
@@ -2085,17 +1999,6 @@ BOOLEAN_T print_match_collection_sqt(
   hold_time = time(0);
   int charge = match_collection->charge; 
   int num_matches = match_collection->experiment_size;
-
-  // If we calculated p-values, change which scores get printed
-  // since this is really only valid for xcorr...
-  assert( main_score == XCORR );
-  BOOLEAN_T pvalues = get_boolean_parameter("compute-p-values");
-  SCORER_TYPE_T score_to_print_first = main_score;
-  SCORER_TYPE_T score_to_print_second = prelim_score;
-  if( pvalues ){
-    score_to_print_second = score_to_print_first;
-    score_to_print_first = LOGP_BONF_WEIBULL_XCORR; // soon to be P_VALUES
-  }
 
   // calculate delta_cn and populate fields in the matches
   calculate_delta_cn(match_collection);
@@ -2108,22 +2011,25 @@ BOOLEAN_T print_match_collection_sqt(
   // create match iterator
   // TRUE: return match in sorted order of main_score type
   MATCH_ITERATOR_T* match_iterator = 
-    new_match_iterator(match_collection, main_score, TRUE);
+    new_match_iterator(match_collection, XCORR, TRUE);
   
   // Second, iterate over matches, prints M and L lines
   while(match_iterator_has_next(match_iterator)){
     match = match_iterator_next(match_iterator);    
 
     // print only up to max_rank_result of the matches
-    if( get_match_rank(match, main_score) > top_match ){
+    if( get_match_rank(match, XCORR) > top_match ){
       break;
     }// else
 
-    print_match_sqt(match, output, 
-                    score_to_print_first, score_to_print_second);
+    print_match_sqt(match, output);
 
   }// next match
   
+  // TODO (BF oct-6-09): also print the match with Sp rank==1 if xcorr
+  // rank > top_match.  Do this once this match is stored separately
+  // in collection
+
   free_match_iterator(match_iterator);
   
   return TRUE;
