@@ -6,6 +6,10 @@
 #ifndef MATCH_H
 #define MATCH_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <math.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -520,6 +524,10 @@ int get_match_b_y_ion_matched(
 int get_match_b_y_ion_possible(
   MATCH_T* match ///< the match to work -out
   );
+
+#ifdef __cplusplus
+}
+#endif
 
 /*
  * Local Variables:
