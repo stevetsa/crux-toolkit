@@ -11,15 +11,15 @@
  * $Revision: 1.1.2.3 $
  */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+//#ifdef __cplusplus
+//extern "C" {
+//#endif
 
 int qranker_main(int argc, char** argv);
 
-#ifdef __cplusplus
-}
-#endif
+//#ifdef __cplusplus
+//}
+//#endif
 
 #endif //QRANKER_CMD_H
 

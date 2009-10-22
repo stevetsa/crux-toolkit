@@ -93,9 +93,9 @@ LIBFILES= \
   protein.h \
   protein_index.c \
   protein_index.h \
-  q-ranker.c \
+  q-ranker.cpp \
   q-ranker.h \
-  q-value.c \
+  q-value.cpp \
   q-value.h \
   sequest-search.cpp \
   sequest-search.h \
