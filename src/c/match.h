@@ -529,10 +529,11 @@ int get_match_b_y_ion_possible(
 }
 #endif
 
+#endif //MATCH_H
+
 /*
  * Local Variables:
  * mode: c
  * c-basic-offset: 2
  * End:
  */
-#endif

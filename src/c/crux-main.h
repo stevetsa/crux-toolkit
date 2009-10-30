@@ -21,19 +21,3 @@
 #include "print-processed-spectra.h"
 
 
-/* Private data types */
-enum _command { INDEX_CMD,      // create-index
-                SEARCH_CMD,     // search-for-matches
-                SEQUEST_CMD,     // sequest-search
-                QVALUE_CMD,     // compute-q-values
-                QRANKER_CMD,    // q-rakner
-                PERCOLATOR_CMD, // percolator
-                PROCESS_SPEC_CMD,// print-processed-spectra
-                INVALID_CMD,    // use for errors
-
-                NUM_CMD_TYPES}; // always keep this last
-typedef enum _command COMMAND_T;
-
-/* Private functions */
-COMMAND_T string_to_command_type(char*);
-char*     command_type_to_string(COMMAND_T);

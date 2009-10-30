@@ -32,9 +32,6 @@
 #include <errno.h>
 #include "output-files.h"
 
-#define NUM_SEARCH_OPTIONS 12
-#define NUM_SEARCH_ARGS 2
-
 /* Private functions */
 int search_pep_mods(
   MATCH_COLLECTION_T* match_collection, ///< store PSMs here
@@ -53,12 +50,8 @@ BOOLEAN_T is_search_complete(MATCH_COLLECTION_T* matches,
 #ifdef SEARCH_ENABLED // Discard this code in open source release
 int search_main(int argc, char** argv){
 
-  /* Verbosity level for set-up/command line reading */
-  set_verbosity_level(CARP_ERROR);
-
   /* Define optional command line arguments */
-  int num_options = NUM_SEARCH_OPTIONS;
-  const char* option_list[NUM_SEARCH_OPTIONS] = {
+  const char* option_list[] = {
     "verbosity",
     "version",
     "parameter-file",
@@ -72,57 +65,16 @@ int search_main(int argc, char** argv){
     "num-decoys-per-target",
     "decoy-location"
   };
+  int num_options = sizeof(option_list) / sizeof(char*);
 
   /* Define required command line arguments */
-  int num_arguments = NUM_SEARCH_ARGS;
-  const char* argument_list[NUM_SEARCH_ARGS] = {"ms2 file", "protein input"};
+  const char* argument_list[] = {"ms2 file", "protein input"};
+  int num_arguments = sizeof(argument_list) / sizeof(char*);
 
-  /* Initialize parameter.c and set default values*/
-  initialize_parameters();
+  initialize_run(SEARCH_COMMAND, argument_list, num_arguments,
+                 option_list, num_options, argc, argv);
 
-  /* Define optional and required arguments */
-  select_cmd_line_options(option_list, num_options);
-  select_cmd_line_arguments(argument_list, num_arguments);
-
-  /* Parse the command line, including optional params file
-     Includes syntax, type, and bounds checking, dies on error */
-  parse_cmd_line_into_params_hash(argc, argv, "crux search-for-matches");
-
-  /* Set seed for random number generation */
-  if(strcmp(get_string_parameter_pointer("seed"), "time")== 0){
-    time_t seconds; // use current time to seed
-    time(&seconds); // Get value from sys clock and set seconds variable.
-    srand((unsigned int) seconds); // Convert seconds to a unsigned int
-  }
-  else{
-    srand((unsigned int)atoi(get_string_parameter_pointer("seed")));
-  }
-  
-  /* Create output directory */ 
-  char* output_directory = get_string_parameter("output-dir");
-  BOOLEAN_T overwrite = get_boolean_parameter("overwrite");
-  int result = create_output_directory(
-    output_directory, 
-    overwrite
-  );
-  if( result == -1 ){
-    carp(CARP_FATAL, "Unable to create output directory %s.", output_directory);
-  }
-
-  /* Open the log file to record carp messages */
-  char* log_file_name = get_string_parameter("search-log-file");
-  open_log_file(&log_file_name);
-  free(log_file_name);
-  log_command_line(argc, argv);
-
-  carp(CARP_INFO, "Beginning crux search-for-matches");
-
-  // Write the parameter file
-  char* param_file_name = get_string_parameter("search-param-file");
-  print_parameter_file(&param_file_name);
-  free(param_file_name);
-
-  /* Get input: ms2 file */
+  // Get input: ms2 file 
   const char* ms2_file = get_string_parameter_pointer("ms2 file");
 
   // open ms2 file
@@ -152,18 +104,21 @@ int search_main(int argc, char** argv){
   }
   
   /* Prepare output files */
-  OutputFiles output_files("search"); 
+  OutputFiles output_files(SEARCH_COMMAND); 
   output_files.writeHeaders(num_proteins);
+  // TODO (BF oct-21-09): consider adding pvalue file to OutputFiles
   FILE* decoy_pvalue_file = NULL;
   if( get_boolean_parameter("decoy-p-values") ){
     carp(CARP_DEBUG, "Opening decoy p-value file.");
     char* decoy_pvalue_filename 
       = get_string_parameter("search-decoy-pvalue-file");
     prefix_fileroot_to_name(&decoy_pvalue_filename);
+    char* output_directory = get_string_parameter("output-dir");
     decoy_pvalue_file = create_file_in_path(decoy_pvalue_filename, 
                                             output_directory, 
-                                            overwrite);
+                                            get_boolean_parameter("overwrite"));
     free(decoy_pvalue_filename);
+    free(output_directory);
   }
 
   /* Perform search: loop over spectra*/

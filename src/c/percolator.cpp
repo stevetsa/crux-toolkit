@@ -1,5 +1,5 @@
 /**
- * \file percolator.c
+ * \file percolator.cpp
  */
 /*
  * AUTHOR: Barbara Frewen
@@ -21,8 +21,6 @@
 #include "parameter.h"
 #include "percolator.h"
 
-#define NUM_PERCOLATOR_OPTIONS 7
-#define NUM_PERCOLATOR_ARGUMENTS 1
 /* 
  * Private function declarations.  Details below
  */
@@ -31,10 +29,6 @@ MATCH_COLLECTION_T* run_percolator(
   char* fasta_file, 
   char* feature_file); 
 
-
-static void print_text_files(MATCH_COLLECTION_T* match_collection);
-
-  
 /**
  * \brief crux-analyze-matches: takes in a directory containing binary
  * psm files and a protein index and analyzes the psms.
@@ -42,8 +36,7 @@ static void print_text_files(MATCH_COLLECTION_T* match_collection);
 int percolator_main(int argc, char** argv){
 
   /* Define command line arguments */
-  int num_options = NUM_PERCOLATOR_OPTIONS;
-  const char* option_list[NUM_PERCOLATOR_OPTIONS] = {
+  const char* option_list[] = {
     "version",
     "verbosity",
     "parameter-file",
@@ -52,25 +45,15 @@ int percolator_main(int argc, char** argv){
     "output-dir",
     "overwrite"
   };
+  int num_options = sizeof(option_list) / sizeof(char*);
 
-  int num_arguments = NUM_PERCOLATOR_ARGUMENTS;
-  const char* argument_list[NUM_PERCOLATOR_ARGUMENTS] = {
+  const char* argument_list[] = {
     "protein input"
   };
+  int num_arguments = sizeof(argument_list) / sizeof(char*);
 
-  /* for debugging handling of parameters*/
-  set_verbosity_level(CARP_ERROR);
-
-  /* Set up parameters and set defaults in parameter.c */
-  initialize_parameters();
-
-  /* Define optional and required arguments in parameter.c */
-  select_cmd_line_options(option_list, num_options );
-  select_cmd_line_arguments(argument_list, num_arguments);
-
-  /* Parse the command line and optional paramter file
-     does sytnax, type, and bounds checking and dies on error */
-  parse_cmd_line_into_params_hash(argc, argv, "crux-analyze-matches");
+  initialize_run(PERCOLATOR_COMMAND, argument_list, num_arguments,
+                 option_list, num_options, argc, argv);
 
   /* Get arguments */
   char* psm_dir = get_string_parameter("output-dir");
@@ -80,32 +63,16 @@ int percolator_main(int argc, char** argv){
     prefix_fileroot_to_name(&feature_file);
   }
 
-  /* Get options */
-  SCORER_TYPE_T scorer_type = PERCOLATOR_SCORE;
-  SCORER_TYPE_T second_scorer_type = Q_VALUE;
-  MATCH_COLLECTION_T* match_collection = NULL;
-
-  /* Open the log file to record carp messages */
-  char* log_file_name = get_string_parameter("percolator-log-file");
-  open_log_file(&log_file_name);
-  free(log_file_name);
-  log_command_line(argc, argv);
-
-  carp(CARP_INFO, "Running percolator");
-
-  char* param_file_name = get_string_parameter("percolator-param-file");
-  print_parameter_file(&param_file_name);
-  free(param_file_name);
-
   /* Perform the analysis */
+  MATCH_COLLECTION_T* match_collection = NULL;
   match_collection = run_percolator(psm_dir,
                                     protein_input_name,
                                     feature_file);
-  scorer_type = PERCOLATOR_SCORE;
-  second_scorer_type = Q_VALUE;
     
   carp(CARP_INFO, "Outputting matches.");
-  print_text_files(match_collection);
+  OutputFiles output(PERCOLATOR_COMMAND);
+  output.writeHeaders();
+  output.writeMatches(match_collection);
 
   // MEMLEAK below causes seg fault (or used to)
   // free_match_collection(match_collection);
@@ -122,30 +89,6 @@ int percolator_main(int argc, char** argv){
 }
 
 /*  ****************** Subroutines ****************/
-
-
-/*
- */
-static void print_text_files(
-  MATCH_COLLECTION_T* match_collection
-  ){
-
-  // get filename and open file
-  char* out_dir = get_string_parameter("output-dir");
-  char* tab_filename = get_string_parameter("percolator-tab-output-file");
-  prefix_fileroot_to_name(&tab_filename);
-  BOOLEAN_T overwrite = get_boolean_parameter("overwrite");
-  FILE* tab_file = create_file_in_path( tab_filename, out_dir, overwrite );
-
-  // print header
-  print_tab_header(tab_file);
-
-  // print matches to tab file
-  print_matches_multi_spectra(match_collection, tab_file, NULL);
-
-  free(tab_filename);
-
-}
 
 /**
  * \brief Analyze matches using the percolator algorithm

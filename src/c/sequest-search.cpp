@@ -17,15 +17,6 @@
 #include "sequest-search.h"
 
 // Private functions, commented below at definition
-void initialize_run(
-  const char* cmd_name, 
-  const char** arguments,
-  int num_args,
-  const char** options, 
-  int num_options,
-  int argc,
-  char** argv);
-
 void print_matches(
   OutputFiles& output_files,       
   MATCH_COLLECTION_T* target_psms, 
@@ -72,10 +63,8 @@ int sequest_search_main(int argc,   ///< number of cmd line tokens
   const char* argument_list[] = {"ms2 file", "protein input"};
   int num_arguments = sizeof(argument_list) / sizeof(char*);
 
-  initialize_run("crux sequest-search", argument_list, num_arguments,
+  initialize_run(SEQUEST_COMMAND, argument_list, num_arguments,
                  option_list, num_options, argc, argv);
-
-  carp(CARP_INFO, "Beginning crux sequest-search");
 
   // Get input: protein file
   char* input_file = get_string_parameter("protein input");
@@ -107,7 +96,7 @@ int sequest_search_main(int argc,   ///< number of cmd line tokens
        get_spectrum_collection_num_spectra(spectra));
 
   // Prepare output files 
-  OutputFiles output_files("sequest"); 
+  OutputFiles output_files(SEQUEST_COMMAND); 
   output_files.writeHeaders(num_proteins);
 
   // get search parameters for match_collection
@@ -243,86 +232,6 @@ int sequest_search_main(int argc, char **argv){
 
 
 /* Private function definitions */
-/**
- * \brief Perform the set-up steps common to all crux commands:
- * initialize parameters, parse command line, set verbosity, open
- * output directory, write params file. 
- *
- * Uses the given command name, arguments and options for parsing the
- * command line.
- */
-// TODO (BF oct-6-2009): consider using this for all crux commands
-// consider adding the CARP_INFO Beginning crux <cmd> line
-void initialize_run(
-  const char* cmd_name,       ///< name in cmdline, crux <name> ...
-  const char** argument_list, ///< list of required arguments
-  int num_arguments,          ///< number of elements in arguments_list
-  const char** option_list,   ///< list of optional flags
-  int num_options,            ///< number of elements in options_list
-  int argc,                   ///< number of tokens on cmd line
-  char** argv                 ///< array of command line tokens
-){
-
-  // Verbosity level for set-up/command line reading 
-  set_verbosity_level(CARP_WARNING);
-
-  // Initialize parameter.c and set default values
-  initialize_parameters();
-
-  // Define optional and required arguments 
-  select_cmd_line_options(option_list, num_options);
-  select_cmd_line_arguments(argument_list, num_arguments);
-
-  // Parse the command line, including optional params file
-  // Includes syntax, type, and bounds checking, dies on error 
-  parse_cmd_line_into_params_hash(argc, argv, cmd_name);
-
-  // Set seed for random number generation 
-  if(strcmp(get_string_parameter_pointer("seed"), "time")== 0){
-    time_t seconds; // use current time to seed
-    time(&seconds); // Get value from sys clock and set seconds variable.
-    srand((unsigned int) seconds); // Convert seconds to a unsigned int
-  }
-  else{
-    srand((unsigned int)atoi(get_string_parameter_pointer("seed")));
-  }
-  
-  // Create output directory 
-  char* output_folder = get_string_parameter("output-dir");
-  BOOLEAN_T overwrite = get_boolean_parameter("overwrite");
-  int result = create_output_directory(
-    output_folder, 
-    overwrite
-  );
-  if( result == -1 ){
-    carp(CARP_FATAL, "Unable to create output directory %s.", output_folder);
-  }
-
-  // TODO (BF 15-oct-09): pass an enum type instead of string for cmd
-  // convert type to cmd line string for above and to file name here
-  // .. but for now, this icky if
-
-  const char* cmd_file_name = NULL;
-  if( strcmp(cmd_name, "crux search-for-matches") == 0 ){
-    cmd_file_name = "search";
-  } else if( strcmp(cmd_name, "crux sequest-search") == 0 ){
-    cmd_file_name = "sequest";
-  }
-
-  // Open the log file to record carp messages 
-  char* log_file_name = cat_string(cmd_file_name, ".log.txt");
-  //char* log_file_name = get_string_parameter("search-log-file");
-  open_log_file(&log_file_name);
-  free(log_file_name);
-  log_command_line(argc, argv);
-
-  // Write the parameter file
-  //  char* param_file_name = get_string_parameter("search-param-file");
-  char* param_file_name = cat_string(cmd_file_name, ".params.txt");
-  print_parameter_file(&param_file_name);
-  free(param_file_name);
-
-}
 
 /**
  * \brief Pring the target and decoy match collections to their
