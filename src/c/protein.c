@@ -1195,6 +1195,14 @@ void prepare_protein_peptide_iterator(
     PROTEIN_PEPTIDE_ITERATOR_T* iterator
   )
 {
+  prepare_protein_peptide_iterator_mc(iterator,  
+    get_boolean_parameter("missed-cleavages"));
+}
+
+void prepare_protein_peptide_iterator_mc(
+    PROTEIN_PEPTIDE_ITERATOR_T* iterator,
+    BOOLEAN_T missed_cleavages)
+{
   PROTEIN_T* protein = iterator->protein;
   MASS_TYPE_T mass_type = get_peptide_constraint_mass_type(
       iterator->peptide_constraint);
@@ -1255,7 +1263,7 @@ void prepare_protein_peptide_iterator(
   carp(CARP_DETAILED_DEBUG, "num_cleavage_positions = %i", num_cleavage_positions);
 
   // now determine the cleavage positions that actually match our constraints
-  BOOLEAN_T missed_cleavages = get_boolean_parameter("missed-cleavages");
+  //BOOLEAN_T missed_cleavages = get_boolean_parameter("missed-cleavages");
 
   DIGEST_T digestion = 
     get_peptide_constraint_digest(iterator->peptide_constraint);

@@ -850,6 +850,47 @@ void initialize_parameters(void){
       "Avaliable only for crux-get-ms2-spectrum.  Does not affect contents "
       "of the output file.", "true");
 
+  /* search-xlink options */
+  set_boolean_parameter("xlink-include-linears", FALSE, 
+      "Include linear peptides in xlink-search.",
+      "Available for crux xlink-search program (Default False).",
+      "true");
+  set_boolean_parameter("xlink-include-deadends", FALSE, 
+      "Include deadend peptides in xlink-search (Default False).",
+      "Available for crux xlink-search program.",
+      "true");
+
+  set_boolean_parameter("xlink-include-selfloops", FALSE, 
+      "Include self loop peptides in xlink-search (Default False).",
+      "Available for crux xlink-search program.",
+      "true");
+
+  set_double_parameter("mass-window-decoy", 3.0, 0, 100, 
+      "Search decoy-peptides within +/- 'mass-window-decoy' of the "
+      "spectrum mass.  Default 3.0.",
+      "Available for crux xlink-search. ",
+      "true");
+
+  set_string_parameter("link sites", NULL, 
+      "Comma delimited pair of amino acid link sites, ex. A:K,A:D.",
+      "Argument for crux xlink-search.", "true");
+
+  set_double_parameter("link mass", 0.0, -100, BILLION,
+      "The mass modification of a cross link between two amino acids.",
+      "Argument for crux xlink-search.","true");
+
+  set_string_parameter("missed-link-cleavage", "K",
+      "Figure out what this parameter is supposed to mean,"
+      "should be an amino acid. Default K.",
+      "Available for crux xlink-search",
+      "true");
+
+  set_int_parameter("min-weibull-points", 100, 1, BILLION, 
+      "Minimum number of points for estimating the weibull (Default 100).",
+      "Available for crux xlink-search", "true");
+  
+
+
   // now we have initialized the parameters
   parameter_initialized = TRUE;
   usage_initialized = TRUE;

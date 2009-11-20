@@ -18,7 +18,7 @@
 static const char* command_type_strings[NUM_CMD_TYPES] =
   {"create-index", "search-for-matches", "sequest-search",
    "compute-q-values", "q-ranker", "percolator", 
-   "print-processed-spectra", "invalid"};
+   "print-processed-spectra", "xlink-search", "invalid"};
 
 
 const char* usage_str = "Usage: crux <command> [options] <argument>\n"
@@ -39,6 +39,10 @@ const char* usage_str = "Usage: crux <command> [options] <argument>\n"
 "  print-processed-spectra\n"
 "                      Write a new ms2 file with all of the same spectra\n"
 "                      with only the peaks used for computing xcorr.\n"
+"  xlink-search\n"
+"                      Search a collection of spectra against a sequence database,\n"
+"                      returning a collection of matches corresponding to\n" 
+"                      linear and xlinked peptides scored by XCorr.\n"
 "Options and arguments:\n"
 "  Specific to each command. Type 'crux <command>' to get details.\n"
 ;
@@ -83,6 +87,11 @@ int main(int argc, char** argv){
   case PROCESS_SPEC_CMD:
     print_processed_spectra_main(argc-1, argv+1);
     break;
+  
+  case XLINK_SEARCH_CMD:
+    xlink_search_main(argc-1, argv+1);
+    break;
+
   case INVALID_CMD:
     carp(CARP_FATAL, "Invalid command '%s'\n%s", op_string, usage_str);
     break;

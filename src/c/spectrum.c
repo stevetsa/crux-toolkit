@@ -26,7 +26,7 @@
 #define MAX_PEAKS 4000
 #define MZ_TO_PEAK_ARRAY_RESOLUTION 5 // i.e. 0.2 m/z unit
 #define MAX_PEAK_MZ 5000
-#define MAX_CHARGE 3
+#define MAX_CHARGE 6
 #define MAX_I_LINES 2 // number of 'I' lines albe to parse for one spectrum object
 #define MAX_D_LINES 2 // number of 'D' lines albe to parse for one spectrum object
 
@@ -1285,9 +1285,9 @@ int get_charges_to_search(SPECTRUM_T* spectrum, int** select_charge_array){
 
   param_charge = atoi(charge_str);
 
-  if( (param_charge < 1) || (param_charge > 3) ){
-    carp(CARP_FATAL, "spectrum-charge option must be 1,2,3, or 'all'.  " \
-         "%s is not valid", charge_str);
+  if( (param_charge < 1) || (param_charge > MAX_CHARGE) ){
+    carp(CARP_FATAL, "spectrum-charge option must be 1,2,3,.. %d or 'all'.  " \
+         "%s is not valid", MAX_CHARGE, charge_str);
   }
 
 

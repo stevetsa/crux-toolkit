@@ -18,7 +18,7 @@
 #include "q-value.h"
 #include "percolator.h"
 #include "print-processed-spectra.h"
-
+#include "xlink_search.h"
 
 /* Private data types */
 enum _command { INDEX_CMD,      // create-index
@@ -28,6 +28,7 @@ enum _command { INDEX_CMD,      // create-index
                 QRANKER_CMD,    // q-rakner
                 PERCOLATOR_CMD, // percolator
                 PROCESS_SPEC_CMD,// print-processed-spectra
+		XLINK_SEARCH_CMD, // search for xlinks
                 INVALID_CMD,    // use for errors
 
                 NUM_CMD_TYPES}; // always keep this last

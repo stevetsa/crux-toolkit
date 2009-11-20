@@ -54,23 +54,6 @@ BOOLEAN_T generate_ions(
 BOOLEAN_T generate_ions_flank(
   ION_SERIES_T* ion_series ///< ion_series to print -in/out
   );
-
-
-  /**************************************
-   *GET ACCESS TO INTERNAL CRUX STRUCTURES
-   **************************************/
-
-
-  void set_ion_series_is_predicted(ION_SERIES_T* ion_series, 
-				   BOOLEAN_T is_predicted);
-
-  BOOLEAN_T get_ion_series_is_predicted(ION_SERIES_T* ion_series);
-
-
-  MODIFIED_AA_T* get_ion_series_modified_aa_seq(ION_SERIES_T* ion_series);
-
-  BOOLEAN_T get_ion_constraint_use_neutral_losses(ION_CONSTRAINT_T* ion_constraint);
-
 #ifdef _cplusplus
 }
 #endif

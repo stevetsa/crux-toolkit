@@ -52,7 +52,9 @@ libqranker_la_CPPFLAGS = $(AM_CPPFLAGS) \
   -I$(top_srcdir)/src/c/ArrayLibrary \
   -I$(top_srcdir)/src/c/MSToolkit \
   -I$(top_srcdir)/src/c/MSToolkit/zLib \
-  -I$(top_srcdir)/src/c/MSToolkit/RAMP
+  -I$(top_srcdir)/src/c/MSToolkit/RAMP \
+  -D_LARGEFILE_SOURCE=1
+
 
 noinst_LTLIBRARIES = libqranker.la
 

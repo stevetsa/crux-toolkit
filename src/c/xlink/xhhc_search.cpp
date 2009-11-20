@@ -10,21 +10,7 @@ extern "C" {
 
 #include <fstream>
 #include <math.h>
-//#include <iostream>
-/*
-// get rid of these
-#define PARAM_ESTIMATION_SAMPLE_COUNT 500
-#define MIN_WEIBULL_MATCHES 40 
-#define MIN_XCORR_SHIFT -5.0
-#define MAX_XCORR_SHIFT  5.0
-#define XCORR_SHIFT 0.05
 
-// mine
-#define BONFERRONI_CUT_OFF_P 0.0001
-#define BONFERRONI_CUT_OFF_NP 0.01
-#define MIN_WEIBULL_SAMPLES 750 
-#define MIN_PRECURSORS 3
-*/
 using namespace std;
 
 typedef map<char, set<char> > BondMap;
@@ -43,124 +29,104 @@ void get_ions_from_mz_range(vector<LinkedPeptide>& filtered_ions,
 
 void plot_weibull(vector<pair<FLOAT_T, LinkedPeptide> >& scores, SPECTRUM_T* spectrum, int charge); 
 
-int main(int argc, char** argv) {
-  char* missed_link_cleavage = "K";
+#define NUM_XLINK_SEARCH_OPTIONS 13
+#define NUM_XLINK_SEARCH_ARGS 4
+
+int xlink_search_main(int argc, char** argv) {
+
+  /* Verbosity level for set-up/command line reading */
+  set_verbosity_level(CARP_ERROR);
+
+  /* Define optional command line arguments */
+  int num_options = NUM_XLINK_SEARCH_OPTIONS;
+  const char* option_list[NUM_XLINK_SEARCH_OPTIONS] = {
+    "verbosity",
+    "version",
+    "parameter-file",
+    "overwrite",
+    "output-dir",
+    "mass-window",
+    "mass-window-decoy",
+    "min-weibull-points",
+    "missed-link-cleavage",
+    "top-match",
+    "xlink-include-linears",
+    "xlink-include-deadends",
+    "xlink-include-selfloops"
+  };
+
+  /* Define required command line arguments */
+  int num_arguments = NUM_XLINK_SEARCH_ARGS;
+  const char* argument_list[NUM_XLINK_SEARCH_ARGS] = {"ms2 file", 
+						      "protein input", 
+						      "link sites", 
+						      "link mass"};
+
+  /* Initialize parameter.c and set default values*/
+  initialize_parameters();
+
+  /* Define optional and required arguments */
+  select_cmd_line_options(option_list, num_options);
+  select_cmd_line_arguments(argument_list, num_arguments);
+
+  /* Parse the command line, including optional params file
+     Includes syntax, type, and bounds checking, dies on error */
+  parse_cmd_line_into_params_hash(argc, argv, "crux xlink-search");
+
+  /* Set seed for random number generation */
+  if(strcmp(get_string_parameter_pointer("seed"), "time")== 0){
+    time_t seconds; // use current time to seed
+    time(&seconds); // Get value from sys clock and set seconds variable.
+    srand((unsigned int) seconds); // Convert seconds to a unsigned int
+  }
+  else{
+    srand((unsigned int)atoi(get_string_parameter_pointer("seed")));
+  }
+  
+  /* Create output directory */ 
+  char* output_directory = get_string_parameter("output-dir");
+  BOOLEAN_T overwrite = get_boolean_parameter("overwrite");
+  int result = create_output_directory(
+    output_directory, 
+    overwrite
+  );
+  if( result == -1 ){
+    carp(CARP_FATAL, "Unable to create output directory %s.", output_directory);
+  }
+
+  /* Open the log file to record carp messages */
+  char* log_file_name = get_string_parameter("search-log-file");
+  open_log_file(&log_file_name);
+  free(log_file_name);
+  log_command_line(argc, argv);
+
+  // Write the parameter file
+  char* param_file_name = get_string_parameter("search-param-file");
+  print_parameter_file(&param_file_name);
+  free(param_file_name);
+  
+  carp(CARP_INFO, "Beginning crux xlink-search");
+
+  char* missed_link_cleavage = get_string_parameter("missed-link-cleavage");
+
   int num_missed_cleavages = 0;
-  char* ms2_file = NULL;
-  //char* min_mass_string = NULL;
-  //char* max_mass_string = NULL;
+  char* ms2_file = get_string_parameter("ms2 file");
 
-  char* str_mass_window = NULL;
-  char* str_mass_window_decoy = NULL;
+  FLOAT_T mass_window = get_double_parameter("mass-window");
+  FLOAT_T mass_window_decoy = get_double_parameter("mass-window-decoy");
 
-  FLOAT_T mass_window = 5;
-  FLOAT_T mass_window_decoy = 5;
+  char* database = get_string_parameter("protein input");
+  char* links = get_string_parameter("link sites");
 
-  char* database = NULL;
-  char* links = NULL;
-  char* linker_mass_string = NULL;
-  int decoy_iterations = 5;
-  int min_weibull_points = 400;
+  int min_weibull_points = get_int_parameter("min-weibull-points");
+
   int scan_num = 0;
   int charge = 1;
 
-  int top_match = 1;
+  int top_match = get_int_parameter("top-match");
 
-  //bool open_modification = false;
-  BOOLEAN_T compute_pvalues = FALSE;
-  //int open_modification_int = 0;
-  parse_arguments_set_req(
-    "protein database", 
-    "database containing all proteins", 
-    (void *) &database, 
-    STRING_ARG);
+  FLOAT_T linker_mass = get_double_parameter("link mass");
 
-  parse_arguments_set_req(
-    "links", 
-    "comma delimited pair of amino acid link sites, ex. A:K,A:D", 
-    (void *) &links, 
-    STRING_ARG);
-
-  parse_arguments_set_req(
-    "linker mass", 
-    "combined mass of linker and linker modifications", 
-    (void *) &linker_mass_string, 
-    STRING_ARG);
-
-  parse_arguments_set_req(
-    "ms2-filename", 
-    "A file containing multiple MS-MS spectra in .ms2 format.",
-    (void *) &ms2_file,
-    STRING_ARG);
-
-  parse_arguments_set_opt(
-    "compute-p-values",
-    "",
-    (void *) &compute_pvalues,
-    BOOLEAN_ARG);
- 
-  parse_arguments_set_opt(
-    "decoy-iterations",
-    "",
-    (void *) &decoy_iterations,
-    INT_ARG);
-
-  parse_arguments_set_opt(
-    "min-weibull-points",
-    "",
-    (void *)& min_weibull_points,
-    INT_ARG);
-
-
-
-  parse_arguments_set_opt(
-    "missed-link-cleavage",
-    "",
-    (void *) &missed_link_cleavage, 
-    STRING_ARG);
-
-  parse_arguments_set_opt(
-    "top-match",
-    "number of psms to print per scan and charge",
-    (void*)&top_match,
-    INT_ARG);
-
-  parse_arguments_set_opt(
-    "num-missed-cleavages", 
-    "maximum number of missed cleavages (not including one at link site)", 
-    (void *) &num_missed_cleavages, 
-    INT_ARG);
-
-
-  parse_arguments_set_opt(
-    "mass-window",
-    "window around precursor m/z to select target peptides", 
-    (void *) &str_mass_window,
-    STRING_ARG); 
-
-  parse_arguments_set_opt(
-    "mass-window-decoy",
-    "window around precursor m/z to select decoy peptides",
-    (void *) &str_mass_window_decoy,
-    STRING_ARG);
-
-  initialize_parameters();
-  if (!parse_arguments(argc, argv, 0)) {
-   char* error_message;
-   char* usage = parse_arguments_get_usage("xhhc-search");
-   int result = parse_arguments_get_error(&error_message);
-   fprintf(stderr, "Error in command line. Error # %d\n", result);
-   fprintf(stderr, "%s\n", error_message);
-   fprintf(stderr, "%s", usage);
-   free(usage);
-   exit(1);
- }
-  // something wrong with DOUBLE_ARG
-  FLOAT_T linker_mass = atof(linker_mass_string);
-
-  mass_window = atof(str_mass_window);
-  mass_window_decoy = atof(str_mass_window_decoy);
-  
   LinkedPeptide::linker_mass = linker_mass;
   vector<LinkedPeptide> all_ions;
   
@@ -216,7 +182,7 @@ int main(int argc, char** argv) {
     //SCORER_T* scorer = new_scorer(XCORR);
     scan_num = get_spectrum_first_scan(spectrum);
 
-    cout << "scan " << scan_num << endl;
+    carp(CARP_DETAILED_DEBUG,"scan %d", scan_num);
     
     //vector<pair<FLOAT_T, LinkedPeptide> > linked_scores;
     //vector<pair<FLOAT_T, LinkedPeptide> > single_scores;
@@ -232,8 +198,7 @@ int main(int argc, char** argv) {
 
 
 
-
-    cout << "finding target xpeptides in mass window..."<<mass_window<<endl;
+    carp(CARP_DETAILED_DEBUG, "finding target xpeptides in mass window...%g", mass_window);
     get_ions_from_mz_range(
 	target_xpeptides, // stored in this vector
 	all_ions,
@@ -243,12 +208,12 @@ int main(int argc, char** argv) {
 	0);
 
     if (target_xpeptides.size() < 1) {
-      cout << "not enough precursors found in range, skipping" << endl;
+      carp(CARP_INFO, "not enough precursors found in range, skipping %d", scan_num);
       continue;
     }
     
 
-    cout <<"finding training xpeptides in decoy mass window.."<<mass_window_decoy<<endl;
+    carp(CARP_DETAILED_DEBUG, "finding training xpeptides in decoy mass window..%g", mass_window_decoy);
     get_ions_from_mz_range(
 	target_decoy_xpeptides,
 	all_ions,
@@ -256,8 +221,8 @@ int main(int argc, char** argv) {
 	charge,
 	mass_window_decoy,
 	0);
-
-    cout <<"Creating decoys for target window"<<endl;
+    
+    carp(CARP_DETAILED_DEBUG, "Creating decoys for target window");
     //create the decoys from the target found in the target_mass_window.
     for (vector<LinkedPeptide>::iterator ion = target_xpeptides.begin();
 	 ion != target_xpeptides.end(); ++ion) {
@@ -265,33 +230,29 @@ int main(int argc, char** argv) {
     }
     
     
-    cout <<"Creating decoys for decoy mass window"<<endl;
+    carp(CARP_DETAILED_DEBUG, "Creating decoys for decoy mass window");
     //create the decoys from the target found in the decoy_mass_window.
     while (decoy_train_xpeptides.size() < min_weibull_points) {
-      cout<<"np:"<<decoy_train_xpeptides.size()<<endl;
       for (vector<LinkedPeptide>::iterator ion = target_decoy_xpeptides.begin();
 	   ion != target_decoy_xpeptides.end(); ++ion) {
 	add_decoys(decoy_train_xpeptides, *ion);
       }
     }    
-    
-    cout <<"num targets:"<<target_xpeptides.size()<<endl;
-    cout <<"num decoys:"<<decoy_xpeptides.size()<<endl;
-    cout <<"num training decoys:"<<decoy_train_xpeptides.size()<<endl;
 
-
+    carp(CARP_DETAILED_DEBUG, "num targets:%d",target_xpeptides.size());
+    carp(CARP_DETAILED_DEBUG, "num decoys:%d", decoy_xpeptides.size());
+    carp(CARP_DETAILED_DEBUG, "num training decoys:%d", decoy_train_xpeptides.size());
 
     // for every ion in the mass window
-    
-
-    cout <<"Scoring targets"<<endl;
+    carp(CARP_DETAILED_DEBUG, "Scoring targets");
     for (int i=0;i<target_xpeptides.size();i++) {
       LinkedIonSeries ion_series = LinkedIonSeries(links, charge);
       ion_series.add_linked_ions(target_xpeptides[i]);
       score = hhc_scorer.score_spectrum_vs_series(spectrum, ion_series);
       scores.push_back(make_pair(score, target_xpeptides[i]));
     }
-    cout <<"Scoring decoys."<<endl;
+
+    carp(CARP_DETAILED_DEBUG, "Scoring decoys.");
     for (int i=0;i<decoy_xpeptides.size();i++) {
       LinkedIonSeries ion_series = LinkedIonSeries(links, charge);
       ion_series.add_linked_ions(decoy_xpeptides[i]);
@@ -299,20 +260,12 @@ int main(int argc, char** argv) {
       scores.push_back(make_pair(score, decoy_xpeptides[i]));
     }
 
-    // add enough decoys to estimate pvalues
-    cout << "done" << endl;
-
     // create arrays to pass to crux's weibull methods
-
-    //FLOAT_T decoy_scores_array[num_decoys];
     FLOAT_T* linked_decoy_scores_array = new FLOAT_T[decoy_train_xpeptides.size()+target_xpeptides.size()];
     
     //use the decoy scores to build the estimator.
-    cout << "making arrays...";
 
-    //cout << "single_decoy_index " << single_decoy_index << endl; 
-    //cout << "linked_decoy_index " << linked_decoy_index << endl; 
-    cout << "scoring training decoys..."<<endl;
+    carp(CARP_DETAILED_DEBUG, "scoring training decoys...");
     // score all training decoys
     for (int i=0;i<decoy_train_xpeptides.size();i++) {
       LinkedIonSeries ion_series = LinkedIonSeries(links, charge);
@@ -327,17 +280,10 @@ int main(int argc, char** argv) {
 	linked_decoy_scores_array[i+decoy_train_xpeptides.size()] = scores[i].first;
     }
     
+    // sort scores
+    sort(scores.begin(), scores.end(), greater<pair<FLOAT_T, LinkedPeptide> >());
 
-    cout << "done" << endl;
-    // find top single and linked target and decoy psm
-
-    cout <<"Sorting scores"<<endl;
-
-    sort(scores.begin(), scores.end());
-
-
-    cout <<"done"<<endl;
-   // weibull parameters for single and cross-linked 
+   // weibull parameters for candidates
     FLOAT_T eta_linked = 0.0;
     FLOAT_T beta_linked  = 0.0;
     FLOAT_T shift_linked  = 0.0;
@@ -345,15 +291,12 @@ int main(int argc, char** argv) {
 
     // fit weibull to decoys
 
-    cout <<"Fittng weibull"<<endl;
-
     hhc_estimate_weibull_parameters_from_xcorrs(linked_decoy_scores_array, 
 						decoy_train_xpeptides.size(), 
 						&eta_linked, &beta_linked, 
 						&shift_linked, &correlation_linked, 
 						spectrum, charge);
 
-    cout <<"done"<<endl;
 
     int ndecoys = 0;
     int ntargets = 0;
@@ -361,14 +304,14 @@ int main(int argc, char** argv) {
 
     while (score_index < scores.size() && (ndecoys < top_match || ntargets < top_match)) {
       if (scores[score_index].second.is_decoy() && ndecoys < top_match) {
-	double pvalue = score_logp_bonf_weibull(scores[score_index].first, eta_linked, beta_linked, shift_linked, 1);
+	double pvalue = compute_weibull_pvalue(scores[score_index].first, eta_linked, beta_linked, shift_linked);
 	double pvalue_bonf = pvalue;//bonf_correct(pvalue, decoy_xpeptides.size());
 	
 	if (pvalue != pvalue) {
-	  pvalue = 0;
-	  pvalue_bonf = 0;
+	  pvalue = 1;
+	  pvalue_bonf = 1;
 	} else if (pvalue_bonf != pvalue_bonf) {
-	  pvalue_bonf = 0;
+	  pvalue_bonf = 1;
 	}
 	
 	search_decoy_file << scan_num << "\t"; 
@@ -377,7 +320,7 @@ int main(int argc, char** argv) {
 	search_decoy_file << precursor_mass << "\t";
 	search_decoy_file << scores[score_index].second.mass() << "\t";
 	search_decoy_file << scores[score_index].first <<"\t";
-	search_decoy_file << (ndecoys+1) << "\t";
+	search_decoy_file << ndecoys << "\t";
 	search_decoy_file << pvalue << "\t";
 	search_decoy_file << decoy_xpeptides.size() << "\t";
 	search_decoy_file << scores[score_index].second<<endl;
@@ -386,14 +329,14 @@ int main(int argc, char** argv) {
       } else if (ntargets < top_match) {
 	ntargets++;
 
-	double pvalue = score_logp_bonf_weibull(scores[score_index].first, eta_linked, beta_linked, shift_linked, 1);
+	double pvalue = compute_weibull_pvalue(scores[score_index].first, eta_linked, beta_linked, shift_linked);
 	double pvalue_bonf = pvalue;//bonf_correct(pvalue, target_xpeptides.size());
 	
 	if (pvalue != pvalue) {
-	  pvalue = 0;
-	  pvalue_bonf = 0;
+	  pvalue = 1;
+	  pvalue_bonf = 1;
 	} else if (pvalue_bonf != pvalue_bonf) {
-	  pvalue_bonf = 0;
+	  pvalue_bonf = 1;
 	}
 	    
 	search_target_file << scan_num << "\t"; 
@@ -402,7 +345,7 @@ int main(int argc, char** argv) {
 	search_target_file << precursor_mass << "\t";
 	search_target_file << scores[score_index].second.mass() << "\t";
 	search_target_file << scores[score_index].first <<"\t";
-	search_target_file << (ntargets+1) << "\t";
+	search_target_file << ntargets << "\t";
 	search_target_file << pvalue << "\t";
 	search_target_file << target_xpeptides.size() << "\t";
 	search_target_file << scores[score_index].second<<endl;

@@ -1,6 +1,7 @@
 #include "xhhc.h"
 
 extern "C" {
+#include "parameter.h"
 #include "peptide.h"
 }
 
@@ -25,7 +26,7 @@ void get_linkable_peptides(set<string>& peptides,
     protein = database_protein_iterator_next(protein_iterator);
     peptide_iterator = new_protein_peptide_iterator(protein, peptide_constraint);
     // missed_cleavages must be TRUE in protein.c for this to work
-    prepare_protein_peptide_iterator(peptide_iterator); 
+    prepare_protein_peptide_iterator_mc(peptide_iterator, TRUE); 
     while (protein_peptide_iterator_has_next(peptide_iterator)) {
       //peptide = database_peptide_iterator_next(peptide_iterator);
       peptide = protein_peptide_iterator_next(peptide_iterator);
@@ -91,12 +92,7 @@ BOOLEAN_T hhc_estimate_weibull_parameters_from_xcorrs(
   SPECTRUM_T* spectrum,
   int charge
   ){
-/*
-  if( match_collection == NULL || spectrum == NULL ){
-    carp(CARP_ERROR, "Cannot estimate parameters from null inputs.");
-    return FALSE;
-  }
-*/
+
   // check that we have the minimum number of matches
   if( num_scores < MIN_WEIBULL_MATCHES ){
     carp(CARP_DETAILED_INFO, "Too few psms (%i) to estimate "
@@ -106,40 +102,25 @@ BOOLEAN_T hhc_estimate_weibull_parameters_from_xcorrs(
     return FALSE;
   }
 
-  // randomly sample n from the list by shuffling and taking first n 
-  shuffle_floats(scores, num_scores);
-  int num_samples = num_scores;
-  //int num_samples = PARAM_ESTIMATION_SAMPLE_COUNT;
-  //if(num_samples > num_scores){ num_samples = num_scores; }
-
-  //int num_samples = num_scores;
   // reverse sort the first num_samples of them
-  qsort(scores, num_samples, sizeof(float), compare_floats_descending);
+  qsort(scores, num_scores, sizeof(float), compare_floats_descending);
 
   // use only a fraction of the samples, the high-scoring tail
   // this parameter is hidden from the user
   double fraction_to_fit = get_double_parameter("fraction-top-scores-to-fit");
   assert( fraction_to_fit >= 0 && fraction_to_fit <= 1 );
-  int num_tail_samples = (int)(num_samples * fraction_to_fit);
+  int num_tail_samples = (int)(num_scores * fraction_to_fit);
   carp(CARP_INFO, "Estimating Weibull params with %d psms (%.2f of %i)",
-       num_tail_samples, fraction_to_fit, num_samples);
+       num_tail_samples, fraction_to_fit, num_scores);
 
   // do the estimation
-  fit_three_parameter_weibull(scores, 
-			      num_tail_samples, 
-			      num_samples,
-			      MIN_XCORR_SHIFT, 
-			      MAX_XCORR_SHIFT, 
-			      XCORR_SHIFT,
-			      0,  /*CORR_THRESHOLD*/
-			      eta, 
-			      beta, 
-			      shift, 
-			      correlation);
+  fit_three_parameter_weibull(scores, num_tail_samples, num_scores,
+      MIN_XCORR_SHIFT, MAX_XCORR_SHIFT, XCORR_SHIFT, 0,  /*CORR_THRESHOLD*/
+      eta, beta, shift, correlation);
 
   carp(CARP_DETAILED_DEBUG,
-      "Correlation: %.6f\nEta: %.6f\nBeta: %.6f\nShift: %.6f\n",
-      correlation, *eta, *beta, *shift);
+      "Corr: %.6f Eta: %.6f Beta: %.6f Shift: %.6f",
+      *correlation, *eta, *beta, *shift);
 
   return TRUE;
 }
@@ -149,6 +130,7 @@ BOOLEAN_T hhc_estimate_weibull_parameters_from_xcorrs(
 // of peptides and every possible link site
 
 void add_linked_peptides(vector<LinkedPeptide>& all_ions, set<string>& peptides, string links, int charge) {
+  cout<<"add_linked_peptides:start"<<endl;
   //if (peptides.size() < 2) return;
   BondMap bonds; 
   vector<LinkedPeptide> ions;
@@ -156,7 +138,7 @@ void add_linked_peptides(vector<LinkedPeptide>& all_ions, set<string>& peptides,
      bonds[links[i+2]].insert(links[i]);
      bonds[links[i]].insert(links[i+2]);
   }
-
+  cout <<"Iterating over sequences"<<endl;
   // iterate over both sequences, adding linked peptides with correct links
   for (set<string>::iterator pepA = peptides.begin(); pepA != peptides.end(); ++pepA) {
     char* sequenceA = (char*) pepA->c_str();
@@ -165,7 +147,12 @@ void add_linked_peptides(vector<LinkedPeptide>& all_ions, set<string>& peptides,
     Peptide p = Peptide(sequenceA);
     lp.add_peptide(p);
     // don't add non-cross linked peptides?
-    //ions.push_back(lp);
+    cout <<"here"<<endl;
+    if (get_boolean_parameter("xlink-include-linears")) {
+      cout <<"Adding linear peptide:"<<lp<<endl;
+      ions.push_back(lp);
+    }
+
     for (size_t i = 0; i < pepA->length(); ++i) {
       BondMap::iterator bond = bonds.find(pepA->at(i));
       // if a link aa and doesn't end in K
@@ -173,17 +160,21 @@ void add_linked_peptides(vector<LinkedPeptide>& all_ions, set<string>& peptides,
 	if (i == pepA->length()-1 && pepA->at(i) == 'K') continue;
         // add dead end
 	//TODO: make these options.
-	//ions.push_back(LinkedPeptide(sequenceA, NULL, i, -1, charge));
-        // add self loop
-	/*
-	for (size_t j = i+1; j < pepA->length(); ++j) {
-          if (bond->second.find(pepA->at(j)) != bond->second.end()) { 
-	    //skip if linked to a K at the end
-	    if (j == pepA->length()-1 && pepA->at(j) == 'K') continue;
-	    ions.push_back(LinkedPeptide(sequenceA, NULL, i, j, charge));
+	if (get_boolean_parameter("xlink-include-deadends")) {
+	  ions.push_back(LinkedPeptide(sequenceA, NULL, i, -1, charge));
+	}
+        // add self loops
+
+	if (get_boolean_parameter("xlink-include-selfloops")) {
+	  
+	  for (size_t j = i+1; j < pepA->length(); ++j) {
+	    if (bond->second.find(pepA->at(j)) != bond->second.end()) { 
+	      //skip if linked to a K at the end
+	      if (j == pepA->length()-1 && pepA->at(j) == 'K') continue;
+	      ions.push_back(LinkedPeptide(sequenceA, NULL, i, j, charge));
+	    }
 	  }
 	}
-	*/
         // add linked precursor
         for (set<string>::iterator pepB = pepA; pepB != peptides.end(); ++pepB) {
           char* sequenceB = (char*) pepB->c_str();
