@@ -149,7 +149,6 @@ MATCH_COLLECTION_T* run_qvalue(
 
   // match_collection for PSMs of all files
   MATCH_COLLECTION_T* all_matches = new_empty_match_collection(FALSE);//not decoy
-  set_match_collection_scored_type(all_matches, SP, TRUE);
   set_match_collection_scored_type(all_matches, XCORR, TRUE);
 
 

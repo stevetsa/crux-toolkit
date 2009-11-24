@@ -1097,7 +1097,7 @@ FILE* create_file_in_path(
       // Allowed to overwrite, send warning message.
       carp(
         CARP_WARNING, 
-        "The file '%s' already exists and will be overwriten.",
+        "The file '%s' already exists and will be overwritten.",
         file_full_path
       );
     }

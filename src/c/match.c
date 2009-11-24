@@ -706,7 +706,6 @@ void print_match_tab(
   if( delta_cn == 0 ){// I hate -0, this prevents it
     delta_cn = 0.0;
   }
-
   BOOLEAN_T sp_scored = scores_computed[SP];
   double sp_score = get_match_score(match, SP);
   int  sp_rank = get_match_rank(match, SP);
@@ -957,6 +956,11 @@ double* get_match_percolator_features(
   feature_array[3] = get_match_score(match, SP);
   // lnrSP
   feature_array[4] = logf(get_match_rank(match, SP));
+  // SP is no longer scored so we need place holder values
+  if( feature_array[3] == NOT_SCORED ){ 
+    feature_array[3] = 0;
+    feature_array[4] = 0;
+  }
   // dM
   feature_array[5] = weight_diff;
   // absdM

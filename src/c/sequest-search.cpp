@@ -124,9 +124,12 @@ int sequest_search_main(int argc,   ///< number of cmd line tokens
 
     // create empty match collections to store results in
     MATCH_COLLECTION_T* target_psms = new_empty_match_collection(FALSE); 
+    set_match_collection_charge(target_psms, charge);
+
     vector<MATCH_COLLECTION_T*> decoy_psm_collections;
     for(int decoy_idx=0; decoy_idx < num_decoys_per_target; decoy_idx++){
       MATCH_COLLECTION_T* psms = new_empty_match_collection(TRUE);
+      set_match_collection_charge(psms, charge);
       decoy_psm_collections.push_back(psms);
     }
 
@@ -151,7 +154,9 @@ int sequest_search_main(int argc,   ///< number of cmd line tokens
                               charge,
                               peptide_iterator,
                               FALSE, // not decoy
-                              TRUE); // keep all matches
+                              FALSE, // don't save scores for p-values
+                              TRUE   // do preliminary scoring
+                              ); 
 
       // add matches to each decoy
       for(int decoy_idx = 0; decoy_idx < num_decoys_per_target; decoy_idx++){
@@ -171,7 +176,9 @@ int sequest_search_main(int argc,   ///< number of cmd line tokens
                     charge,
                     peptide_iterator,
                     TRUE,  // is decoy
-                    TRUE); // keep all matches
+                    FALSE, // don't save scores for p-values
+                    TRUE   // do preliminary scoring
+                    ); 
       }
 
       carp(CARP_DEBUG, "Found %d peptides.", added);
@@ -262,6 +269,7 @@ void print_matches(
 
     // sort and rank
     populate_match_rank_match_collection(all_psms, SP);
+    save_top_sp_match(all_psms);
     populate_match_rank_match_collection(all_psms, XCORR);
     output_files.writeMatches(all_psms, // target matches
                               NULL,     // decoy matches
@@ -283,6 +291,7 @@ void print_matches(
       
       // sort and rank
       populate_match_rank_match_collection(merged_decoy_psms, SP);
+      save_top_sp_match(merged_decoy_psms);
       populate_match_rank_match_collection(merged_decoy_psms, XCORR);
 
       output_files.writeMatches(target_psms, &merged_decoy_psms, 

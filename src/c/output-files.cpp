@@ -86,9 +86,9 @@ OutputFiles::~OutputFiles(){
     if( tab_file_array_ ){ fclose(tab_file_array_[file_idx]); }
     if( sqt_file_array_ ){ fclose(sqt_file_array_[file_idx]); }
   }
-  delete [] psm_file_array_;
-  delete [] tab_file_array_;
-  delete [] sqt_file_array_;
+  delete psm_file_array_;
+  delete tab_file_array_;
+  delete sqt_file_array_;
 }
 
 /**
@@ -243,6 +243,7 @@ void OutputFiles::printMatchesTab(
                                            spectrum,
                                            rank_type);
 
+      carp(CARP_DETAILED_DEBUG, "done writing file index %d", file_idx);
       if( decoy_matches_array ){
         cur_matches = decoy_matches_array[file_idx];
       }// else if it is NULL, num_files_ == 1 and loop will exit here
