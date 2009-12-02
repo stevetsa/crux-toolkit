@@ -5,8 +5,8 @@
 
 //CRUX includes
 extern "C" {
+#include "ion_series.h"
 #include "scorer.h"
-#include "crux_ion_series.h"
 #include "spectrum.h"
 #include "spectrum_collection.h"
 }

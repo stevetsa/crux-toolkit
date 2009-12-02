@@ -91,7 +91,7 @@ bool Scorer::hhc_create_intensity_array_theoretical(
     for (vector<LinkedPeptide>::iterator ion = ions.begin(); ion != ions.end(); ++ion) {
     //while(ion_iterator_has_next(ion_iterator)){
       //cout << "ion " << *ion << "\tmz " << ion->get_mz() << endl;
-      intensity_array_idx = (int)(ion->get_mz() / bin_width + 0.5);
+      intensity_array_idx = (int)(ion->get_mz(MONO) / bin_width + 0.5);
       //if (intensity_array_idx <= 1) continue;
       //cout << "index " << intensity_array_idx << endl;
       ion_type = ion->type();
@@ -109,10 +109,14 @@ bool Scorer::hhc_create_intensity_array_theoretical(
         //if (ion->type() == Y_ION)
         //add_intensity(theoretical, intensity_array_idx, 51);
         add_intensity(theoretical, intensity_array_idx, 50);
-        add_intensity(theoretical, intensity_array_idx - 1, 25);
+        if (get_boolean_parameter("xcorr-use-flanks") &&
+	    intensity_array_idx > 0) {
+	      add_intensity(theoretical, intensity_array_idx - 1, 25);
       }
-      if((intensity_array_idx + 1)< max_mz){
+	if(get_boolean_parameter("xcorr-use-flanks") &&
+	   ((intensity_array_idx + 1)< max_mz)) {
         add_intensity(theoretical, intensity_array_idx + 1, 25);
+	}
       }
 
       // add neutral loss of water and NH3
@@ -120,12 +124,12 @@ bool Scorer::hhc_create_intensity_array_theoretical(
 
 
       if(ion_type == B_ION){
-        int h2o_array_idx = (int)((ion->get_mz() - (MASS_H2O_MONO/ion->charge()) ) / bin_width + 0.5);
+        int h2o_array_idx = (int)((ion->get_mz(MONO) - (MASS_H2O_MONO/ion->charge()) ) / bin_width + 0.5);
 	if (h2o_array_idx < max_mz)
 	  add_intensity(theoretical, h2o_array_idx, 10);
       }
 
-      int nh3_array_idx = (int)((ion->get_mz() -  (MASS_NH3_MONO/ion->charge())) / bin_width + 0.5);
+      int nh3_array_idx = (int)((ion->get_mz(MONO) -  (MASS_NH3_MONO/ion->charge())) / bin_width + 0.5);
       if (nh3_array_idx < max_mz)
 	add_intensity(theoretical, nh3_array_idx, 10);        
     }

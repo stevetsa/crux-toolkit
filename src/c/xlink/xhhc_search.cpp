@@ -11,6 +11,8 @@ extern "C" {
 #include <fstream>
 #include <math.h>
 
+#include <ctime>
+
 using namespace std;
 
 typedef map<char, set<char> > BondMap;
@@ -29,7 +31,7 @@ void get_ions_from_mz_range(vector<LinkedPeptide>& filtered_ions,
 
 void plot_weibull(vector<pair<FLOAT_T, LinkedPeptide> >& scores, SPECTRUM_T* spectrum, int charge); 
 
-#define NUM_XLINK_SEARCH_OPTIONS 13
+#define NUM_XLINK_SEARCH_OPTIONS 14
 #define NUM_XLINK_SEARCH_ARGS 4
 
 int xlink_search_main(int argc, char** argv) {
@@ -52,7 +54,8 @@ int xlink_search_main(int argc, char** argv) {
     "top-match",
     "xlink-include-linears",
     "xlink-include-deadends",
-    "xlink-include-selfloops"
+    "xlink-include-selfloops",
+    "xcorr-use-flanks"
   };
 
   /* Define required command line arguments */
@@ -129,11 +132,11 @@ int xlink_search_main(int argc, char** argv) {
 
   LinkedPeptide::linker_mass = linker_mass;
   vector<LinkedPeptide> all_ions;
-  
+  carp(CARP_INFO,"Calling find all precursor ions");
   find_all_precursor_ions(all_ions, links, missed_link_cleavage, database,1);
-
+  carp(CARP_INFO,"Sort");
   // sort filtered ions and decoy ions by mass
-  sort(all_ions.begin(), all_ions.end());
+  //sort(all_ions.begin(), all_ions.end());
 
   SPECTRUM_T* spectrum = allocate_spectrum();
   SPECTRUM_COLLECTION_T* spectra = new_spectrum_collection(ms2_file);
@@ -151,7 +154,8 @@ int xlink_search_main(int argc, char** argv) {
   search_target_file << "charge\t";
   search_target_file << "spectrum precursor m/z\t";
   search_target_file << "spectrum neutral mass\t";
-  search_target_file << "peptide mass\t";
+  search_target_file << "peptide mass mono\t";
+  search_target_file << "peptide mass average\t";
   search_target_file << "xcorr score\t";
   search_target_file << "xcorr rank\t";
   search_target_file << "p-value\t";
@@ -166,7 +170,8 @@ int xlink_search_main(int argc, char** argv) {
   search_decoy_file << "charge\t";
   search_decoy_file << "spectrum precursor m/z\t";
   search_decoy_file << "spectrum neutral mass\t";
-  search_decoy_file << "peptide mass\t";
+  search_decoy_file << "peptide mass mono\t";
+  search_decoy_file << "peptide mass average\t";
   search_decoy_file << "xcorr score\t";
   search_decoy_file << "xcorr rank\t";
   search_decoy_file << "p-value\t";
@@ -182,7 +187,7 @@ int xlink_search_main(int argc, char** argv) {
     //SCORER_T* scorer = new_scorer(XCORR);
     scan_num = get_spectrum_first_scan(spectrum);
 
-    carp(CARP_DETAILED_DEBUG,"scan %d", scan_num);
+    carp(CARP_INFO,"scan %d", scan_num);
     
     //vector<pair<FLOAT_T, LinkedPeptide> > linked_scores;
     //vector<pair<FLOAT_T, LinkedPeptide> > single_scores;
@@ -198,7 +203,7 @@ int xlink_search_main(int argc, char** argv) {
 
 
 
-    carp(CARP_DETAILED_DEBUG, "finding target xpeptides in mass window...%g", mass_window);
+    carp(CARP_INFO, "finding target xpeptides in mass window...%g", mass_window);
     get_ions_from_mz_range(
 	target_xpeptides, // stored in this vector
 	all_ions,
@@ -213,7 +218,7 @@ int xlink_search_main(int argc, char** argv) {
     }
     
 
-    carp(CARP_DETAILED_DEBUG, "finding training xpeptides in decoy mass window..%g", mass_window_decoy);
+    carp(CARP_INFO, "finding training xpeptides in decoy mass window..%g", mass_window_decoy);
     get_ions_from_mz_range(
 	target_decoy_xpeptides,
 	all_ions,
@@ -239,12 +244,15 @@ int xlink_search_main(int argc, char** argv) {
       }
     }    
 
-    carp(CARP_DETAILED_DEBUG, "num targets:%d",target_xpeptides.size());
-    carp(CARP_DETAILED_DEBUG, "num decoys:%d", decoy_xpeptides.size());
-    carp(CARP_DETAILED_DEBUG, "num training decoys:%d", decoy_train_xpeptides.size());
+    carp(CARP_INFO, "num targets:%d",target_xpeptides.size());
+    carp(CARP_INFO, "num decoys:%d", decoy_xpeptides.size());
+    carp(CARP_INFO, "num training decoys:%d", decoy_train_xpeptides.size());
+
+    clock_t start_clock = clock();
+
 
     // for every ion in the mass window
-    carp(CARP_DETAILED_DEBUG, "Scoring targets");
+    carp(CARP_INFO, "Scoring targets");
     for (int i=0;i<target_xpeptides.size();i++) {
       LinkedIonSeries ion_series = LinkedIonSeries(links, charge);
       ion_series.add_linked_ions(target_xpeptides[i]);
@@ -252,7 +260,9 @@ int xlink_search_main(int argc, char** argv) {
       scores.push_back(make_pair(score, target_xpeptides[i]));
     }
 
-    carp(CARP_DETAILED_DEBUG, "Scoring decoys.");
+    clock_t target_clock = clock();
+
+    carp(CARP_INFO, "Scoring decoys.");
     for (int i=0;i<decoy_xpeptides.size();i++) {
       LinkedIonSeries ion_series = LinkedIonSeries(links, charge);
       ion_series.add_linked_ions(decoy_xpeptides[i]);
@@ -260,12 +270,13 @@ int xlink_search_main(int argc, char** argv) {
       scores.push_back(make_pair(score, decoy_xpeptides[i]));
     }
 
+
+    //use the decoy scores to build the estimator.
     // create arrays to pass to crux's weibull methods
     FLOAT_T* linked_decoy_scores_array = new FLOAT_T[decoy_train_xpeptides.size()+target_xpeptides.size()];
-    
-    //use the decoy scores to build the estimator.
 
-    carp(CARP_DETAILED_DEBUG, "scoring training decoys...");
+    clock_t decoy_clock = clock();
+    carp(CARP_INFO, "scoring training decoys...");
     // score all training decoys
     for (int i=0;i<decoy_train_xpeptides.size();i++) {
       LinkedIonSeries ion_series = LinkedIonSeries(links, charge);
@@ -274,6 +285,16 @@ int xlink_search_main(int argc, char** argv) {
       score = hhc_scorer.score_spectrum_vs_series(spectrum, ion_series);
       linked_decoy_scores_array[i] = score;
     }
+  
+    
+
+
+
+    clock_t train_decoy_clock = clock();
+
+
+
+
     
     for (int i=0;i<scores.size();i++) {
       if (!scores[i].second.is_decoy())
@@ -282,6 +303,9 @@ int xlink_search_main(int argc, char** argv) {
     
     // sort scores
     sort(scores.begin(), scores.end(), greater<pair<FLOAT_T, LinkedPeptide> >());
+
+    clock_t create_array_clock = clock();
+
 
    // weibull parameters for candidates
     FLOAT_T eta_linked = 0.0;
@@ -296,6 +320,22 @@ int xlink_search_main(int argc, char** argv) {
 						&eta_linked, &beta_linked, 
 						&shift_linked, &correlation_linked, 
 						spectrum, charge);
+    
+    clock_t weibull_clock = clock();
+    
+    double target_time = (double(target_clock) - double(start_clock)) / CLOCKS_PER_SEC;
+    double decoy_time = (double(decoy_clock) - double(target_clock)) / CLOCKS_PER_SEC;
+    double train_decoy_time = (double(train_decoy_clock) - double(decoy_clock)) / CLOCKS_PER_SEC;
+    double create_array_time =(double(create_array_clock) - double(train_decoy_clock)) / CLOCKS_PER_SEC;
+    double weibull_time = (double(weibull_clock) - double(create_array_clock)) / CLOCKS_PER_SEC;
+
+
+    carp(CARP_INFO,"target:%g",target_time);
+    carp(CARP_INFO,"decoy:%g",decoy_time);
+    carp(CARP_INFO,"train decoy:%g",train_decoy_time);
+    carp(CARP_INFO,"create array:%g",create_array_time);
+    carp(CARP_INFO,"weibull:%g",weibull_time);
+    
 
 
     int ndecoys = 0;
@@ -318,7 +358,8 @@ int xlink_search_main(int argc, char** argv) {
 	search_decoy_file << charge << "\t"; 
 	search_decoy_file << precursor_mz << "\t";
 	search_decoy_file << precursor_mass << "\t";
-	search_decoy_file << scores[score_index].second.mass() << "\t";
+	search_decoy_file << scores[score_index].second.mass(MONO) << "\t";
+	search_decoy_file << scores[score_index].second.mass(AVERAGE) << "\t";
 	search_decoy_file << scores[score_index].first <<"\t";
 	search_decoy_file << ndecoys << "\t";
 	search_decoy_file << pvalue << "\t";
@@ -343,7 +384,8 @@ int xlink_search_main(int argc, char** argv) {
 	search_target_file << charge << "\t"; 
 	search_target_file << precursor_mz << "\t";
 	search_target_file << precursor_mass << "\t";
-	search_target_file << scores[score_index].second.mass() << "\t";
+	search_target_file << scores[score_index].second.mass(MONO) << "\t";
+	search_target_file << scores[score_index].second.mass(AVERAGE) << "\t";
 	search_target_file << scores[score_index].first <<"\t";
 	search_target_file << ntargets << "\t";
 	search_target_file << pvalue << "\t";
@@ -356,7 +398,7 @@ int xlink_search_main(int argc, char** argv) {
     delete [] linked_decoy_scores_array;
     //free_spectrum(spectrum);
 
-    cout <<"Done with spectrum"<<endl;
+    carp(CARP_DETAILED_DEBUG,"Done with spectrum %d", scan_num);
   } // get next spectrum
   search_target_file.close();
   search_decoy_file.close();
@@ -374,16 +416,17 @@ void get_ions_from_mz_range(vector<LinkedPeptide>& filtered_ions,
 	int decoy_iterations) {
   FLOAT_T min_mass = precursor_mass - mass_window;
   FLOAT_T max_mass = precursor_mass + mass_window;
-  //cout << "min mass " << min_mass << " max mass " << max_mass << endl;
+  carp(CARP_DETAILED_DEBUG,"get_ions_from_mz_range()");
+  carp(CARP_DETAILED_DEBUG,"min_mass %g max_mass %g", min_mass, max_mass);
+
   FLOAT_T ion_mass;
   for (vector<LinkedPeptide>::iterator ion = all_ions.begin();
 	ion != all_ions.end(); ++ion) {
     ion->set_charge(charge);
-    ion->calculate_mass();
-    ion_mass = ion->mass();
+    ion->calculate_mass(get_mass_type_parameter("isotopic-mass"));
+    ion_mass = ion->mass(get_mass_type_parameter("isotopic-mass"));
     if (ion_mass >= min_mass && ion_mass <= max_mass) {
       filtered_ions.push_back(*ion);
-      //cout << *ion << "\t" << ion->mass() << endl;
       for (int i = decoy_iterations; i > 0; --i)
         add_decoys(filtered_ions, *ion);
     }

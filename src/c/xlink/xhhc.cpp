@@ -37,13 +37,13 @@ void get_linkable_peptides(set<string>& peptides,
       if (index == string::npos || missed_cleavage) {
         missed_cleavage = !missed_cleavage;
         if (!missed_cleavage && last_sequence[last_sequence.size()-1] != 'K') {
-          //cout << "skipping " << get_peptide_sequence(peptide) << endl;
+	  carp(CARP_DETAILED_DEBUG, "skipping %s", get_peptide_sequence(peptide));
 	  continue;
-	} 
-        //cout << "peptide " << get_peptide_sequence(peptide) << endl;
+	}
+	carp(CARP_DETAILED_DEBUG, "peptide %s", get_peptide_sequence(peptide));
         peptides.insert(string(get_peptide_sequence(peptide)));
       } else {
-	//cout << "skipping " << get_peptide_sequence(peptide) << endl;
+	carp(CARP_DETAILED_DEBUG, "skipping %s", get_peptide_sequence(peptide));
 	missed_cleavage = false;
       }
       last_sequence = string(get_peptide_sequence(peptide));
@@ -59,18 +59,25 @@ void find_all_precursor_ions(vector<LinkedPeptide>& all_ions,
 			     int charge)
 {
  
+  carp(CARP_INFO,"find_all_precursor_ions: start()");
   DATABASE_T* db = new_database(database_file, FALSE);
+  carp(CARP_INFO,"peptide constraint");
   PEPTIDE_CONSTRAINT_T* peptide_constraint = new_peptide_constraint_from_parameters();
   // add 
   set_peptide_constraint_num_mis_cleavage(peptide_constraint, 1);
   //set_verbosity_level(CARP_INFO);
   //PROTEIN_T* protein = NULL;
+  carp(CARP_INFO,"protein iterator");
   DATABASE_PROTEIN_ITERATOR_T* protein_iterator = new_database_protein_iterator(db);
   //PROTEIN_PEPTIDE_ITERATOR_T* peptide_iterator = NULL;
   string bonds_string = string(links);
   set<string> peptides;
+  carp(CARP_INFO,"get_linkable_peptides");
   get_linkable_peptides(peptides, protein_iterator, peptide_constraint);
+  carp(CARP_INFO,"add_linked_peptides");
   add_linked_peptides(all_ions, peptides, bonds_string, charge);
+
+  carp(CARP_INFO,"find_all_precursor_ions: done()");
 
   //sort by increasing mass.
 
@@ -130,15 +137,12 @@ BOOLEAN_T hhc_estimate_weibull_parameters_from_xcorrs(
 // of peptides and every possible link site
 
 void add_linked_peptides(vector<LinkedPeptide>& all_ions, set<string>& peptides, string links, int charge) {
-  cout<<"add_linked_peptides:start"<<endl;
-  //if (peptides.size() < 2) return;
   BondMap bonds; 
   vector<LinkedPeptide> ions;
   for (size_t i = 0; i < links.length() - 2; i += 4) {
      bonds[links[i+2]].insert(links[i]);
      bonds[links[i]].insert(links[i+2]);
   }
-  cout <<"Iterating over sequences"<<endl;
   // iterate over both sequences, adding linked peptides with correct links
   for (set<string>::iterator pepA = peptides.begin(); pepA != peptides.end(); ++pepA) {
     char* sequenceA = (char*) pepA->c_str();
@@ -147,9 +151,7 @@ void add_linked_peptides(vector<LinkedPeptide>& all_ions, set<string>& peptides,
     Peptide p = Peptide(sequenceA);
     lp.add_peptide(p);
     // don't add non-cross linked peptides?
-    cout <<"here"<<endl;
     if (get_boolean_parameter("xlink-include-linears")) {
-      cout <<"Adding linear peptide:"<<lp<<endl;
       ions.push_back(lp);
     }
 
@@ -204,19 +206,14 @@ void add_decoys(vector<LinkedPeptide>& decoys, LinkedPeptide& lp) {
     Peptide pepB_shuffled = shuffle(peptides[1]);
     decoy.add_peptide(pepB_shuffled);
   }
-  //cout << "decoy " << decoy << " from " << endl << "peptd " << lp << endl;
-  //cout << "decoy\ttarget" << endl;
-  //cout << decoy.get_mz() << "\t" << lp.get_mz() << endl;
-  //cout << decoy.mass() << "\t" << lp.mass() << endl;
   decoy.set_decoy();
-  decoy.calculate_mass();
+  decoy.calculate_mass(AVERAGE);
   decoys.push_back(decoy);
 }
 
 // return a shuffled peptide, preserving any links
 Peptide shuffle(Peptide peptide) {
   string shuffled = string(peptide.sequence());
-  //cout << shuffled << " before shuffle " << endl;
   Peptide shuffled_peptide = Peptide(peptide.sequence());
   for (size_t i = 0; i < shuffled.length(); ++i) {
     if (peptide.has_link_at(i)) shuffled_peptide.add_link(i);
@@ -227,27 +224,22 @@ Peptide shuffle(Peptide peptide) {
   int switch_idx = 0;
   char temp_char = 0;
   while(start_idx <= end_idx){
-    //cout << shuffled << endl;
     switch_idx = get_random_number_interval(start_idx, end_idx);
-    //cout << "start index " << start_idx << " switch index " << switch_idx << endl;
     temp_char = shuffled[start_idx];
     shuffled[start_idx] = shuffled[switch_idx];
     shuffled[switch_idx] = temp_char;
     if (shuffled_peptide.has_link_at(switch_idx)) {
       //if not a self loop
       if (!shuffled_peptide.has_link_at(start_idx)) {
-        //cout << "there is link at " << switch_idx << " to a " << shuffled[switch_idx] << endl;
         shuffled_peptide.remove_link(switch_idx);
         shuffled_peptide.add_link(start_idx);
       }
     } else if (shuffled_peptide.has_link_at(start_idx)) {
-      //cout << "there is link at " << start_idx << " to a " << shuffled[start_idx] << endl;
       shuffled_peptide.remove_link(start_idx);
       shuffled_peptide.add_link(switch_idx);
     }
     ++start_idx;
   }
-  //cout << shuffled << " after shuffle " << endl;
   shuffled_peptide.set_sequence(shuffled);
   return shuffled_peptide;
 }
@@ -279,7 +271,8 @@ bool LinkedPeptide::is_dead_end() {
 }
 
 LinkedPeptide::LinkedPeptide(char* peptide_A, char* peptide_B, int posA, int posB, int charge) {
-  mass_calculated = false;
+  mass_calculated[MONO] = false;
+  mass_calculated[AVERAGE] = false;
   charge_ = charge;
   decoy_ = false;
   type_ = (ION_TYPE_T)NULL;
@@ -291,7 +284,7 @@ LinkedPeptide::LinkedPeptide(char* peptide_A, char* peptide_B, int posA, int pos
       pepA.add_link(posB);
     peptides_.push_back(pepA);
   } else {
-    //cout << "adding links at " << posA << " and " << posB << endl;
+    carp(CARP_DETAILED_DEBUG, "adding links at %d and %d", posA, posB);
     Peptide pepB = Peptide(peptide_B);
     pepA.add_link(posA);
     pepB.add_link(posB);
@@ -311,52 +304,60 @@ int Peptide::link_site() {
   return -1;
 }
 
-FLOAT_T Peptide::mass() {
-  if (mass_calculated) 
-    return mass_;
+FLOAT_T Peptide::mass(MASS_TYPE_T mass_type) {
+  if (mass_calculated[mass_type]) 
+    return mass_[mass_type];
   else {
-    mass_ = calc_sequence_mass((char*)sequence_.c_str(), MONO);
-    mass_calculated = true;
-    return mass_;
+    mass_[mass_type] = calc_sequence_mass((char*)sequence_.c_str(), mass_type);
+    mass_calculated[mass_type] = true;
+    return mass_[mass_type];
   }
 }
 
 // calculates mass of linked peptide,
 // remove H2O from mass if it's a b-ion
 
-FLOAT_T LinkedPeptide::mass() {
-  if (!mass_calculated)
-    calculate_mass();
-  return mass_;
+FLOAT_T LinkedPeptide::mass(MASS_TYPE_T mass_type) {
+  if (!mass_calculated[mass_type])
+    calculate_mass(mass_type);
+  return mass_[mass_type];
    
 }
 
-void LinkedPeptide::calculate_mass() {
-  mass_ = calc_sequence_mass((char*)peptides_[0].sequence().c_str(), MONO);   
+void LinkedPeptide::calculate_mass(MASS_TYPE_T mass_type) {
+  mass_[mass_type] = calc_sequence_mass((char*)peptides_[0].sequence().c_str(), mass_type);   
   if (peptides_[0].get_num_links() > 0) {
-    mass_ += linker_mass;
+    mass_[mass_type] += linker_mass;
   }
 
   if (size() == 2) {
-    mass_ += calc_sequence_mass((char*)peptides_[1].sequence().c_str(), MONO);
+    mass_[mass_type] += calc_sequence_mass((char*)peptides_[1].sequence().c_str(), mass_type);
   }
   //mass += MASS_H_MONO*charge_;
   if (type_ == B_ION) {
-    mass_ = mass_ - MASS_H2O_MONO;
+    if (mass_type == MONO) {
+      mass_[mass_type] -= MASS_H2O_MONO;
+    }
+    else {
+      mass_[mass_type] -= MASS_H2O_AVERAGE;
+    }
   } 
-  mass_calculated = true;
+  mass_calculated[mass_type] = true;
 }
 
 // calculate mass to charge 
-FLOAT_T LinkedPeptide::get_mz() {
+FLOAT_T LinkedPeptide::get_mz(MASS_TYPE_T mass_type) {
   //if (mz < 5)
-  //mz = mass_ / charge_; 
-  mz = ((mass_ + MASS_H_MONO*charge_) / charge_);
-  return mz;
+  //mz = mass_ / charge_;
+  if (mass_type == MONO) {
+    mz[MONO] = (mass(MONO) + MASS_H_MONO * charge_) / charge_;
+  } else {
+    mz[AVERAGE] = (mass(AVERAGE) + MASS_H_AVERAGE * charge_) / charge_;
+  }
+  return mz[mass_type];
 }
 
 void Peptide::add_link(int index) {
-  //cout << "adding link " << endl;
   links[index] = true;
   num_links++;
 }
@@ -443,9 +444,12 @@ void Peptide::split_at(int index, vector<pair<LinkedPeptide, LinkedPeptide> >& p
 
 
 bool compareMass(const LinkedPeptide& lp1, const LinkedPeptide& lp2) {
-  return lp1.mass_ < lp2.mass_;
+  carp(CARP_INFO,"comparing %g and %g", lp1.mass_[AVERAGE],lp2.mass_[AVERAGE]);
+  return lp1.mass_[AVERAGE] < lp2.mass_[AVERAGE];
 }
 
 void LinkedPeptide::sortByMass(std::vector<LinkedPeptide>& linked_peptides) {
+  carp(CARP_INFO,"sortByMass(): start");
   sort(linked_peptides.begin(), linked_peptides.end(), compareMass);
+  carp(CARP_INFO,"sortByMass(): stop");
 }

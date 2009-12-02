@@ -7,7 +7,6 @@
 #include <vector>
 #include <map>
 #include <set>
-#include <iostream>
 #include <sstream>
 #include <fstream>
 
@@ -19,7 +18,7 @@ extern "C" {
 #include "peptide_constraint.h"
 #include "peptide.h"
 #include "peptide_src.h"
-#include "crux_protein.h"
+#include "protein.h"
 #include "database.h"
 #include "parse_arguments.h"
 #include "parameter.h"
@@ -59,9 +58,9 @@ class LinkedPeptide {
   // constructor for a linked peptide. If A or B null, then
   // a self link will be created. If an index is -1, a link to nothing
   // will be created.
-  LinkedPeptide() {mass_calculated = false;}
+  LinkedPeptide() {mass_calculated[MONO] = false; mass_calculated[AVERAGE]=false;}
     LinkedPeptide(char* peptide_A, char* peptide_B, int posA, int posB, int charge);
-    LinkedPeptide(int charge) : charge_(charge), decoy_(false) {mass_calculated=false;}
+    LinkedPeptide(int charge) : charge_(charge), decoy_(false) {mass_calculated[MONO]=false; mass_calculated[AVERAGE]=false;}
     std::vector<Peptide>& peptides() 	{ return peptides_;}
     int charge() 			{ return charge_;}
     void set_charge(int charge)		{ charge_ = charge; }
@@ -75,9 +74,9 @@ class LinkedPeptide {
     bool is_linked() 			{ return size() == 2; }
     bool is_dead_end();
     bool is_single();
-    FLOAT_T get_mz();
-    void calculate_mass();
-    FLOAT_T mass();
+    FLOAT_T get_mz(MASS_TYPE_T mass_type);
+    void calculate_mass(MASS_TYPE_T mass_type);
+    FLOAT_T mass(MASS_TYPE_T mass_type);
   
     void split(std::vector<std::pair<LinkedPeptide, LinkedPeptide> >& ion_pairs);
     friend std::ostream &operator<< (std::ostream& os, LinkedPeptide& lp); 
@@ -96,12 +95,12 @@ class LinkedPeptide {
 
     static FLOAT_T linker_mass;
    private:
-      bool mass_calculated;
-      int charge_;
-      bool decoy_;
-      ION_TYPE_T type_; //B_ION or Y_ION
-      FLOAT_T mass_;
-      FLOAT_T mz;
+    bool mass_calculated[NUMBER_MASS_TYPES]; //MONO or AVERAGE.
+    int charge_;
+    bool decoy_;
+    ION_TYPE_T type_; //B_ION or Y_ION
+      FLOAT_T mass_[NUMBER_MASS_TYPES];
+      FLOAT_T mz[NUMBER_MASS_TYPES];
       std::vector<Peptide> peptides_;
 };
 
@@ -109,9 +108,10 @@ class LinkedPeptide {
 
 class Peptide {
  public:
-  Peptide() {mass_calculated = false;}
+  Peptide() {mass_calculated[MONO] = false; mass_calculated[AVERAGE] = false;}
   Peptide(std::string sequence) : num_links(0), sequence_(sequence), length_(sequence.length())  {
-    mass_calculated = false;
+    mass_calculated[MONO] = false;
+    mass_calculated[AVERAGE] = false;
     int length = sequence.length();
     for (int i = 0; i < length; ++i)
       links.push_back(false);
@@ -129,15 +129,15 @@ class Peptide {
     void remove_link(int index);
     int link_site(); 
     void set_sequence(std::string sequence);
-    FLOAT_T mass();
+    FLOAT_T mass(MASS_TYPE_T mass_type);
 private:
-    bool mass_calculated;
+    bool mass_calculated[NUMBER_MASS_TYPES];
     int num_links;
     //std::map<int, Peptide> links_;
     std::vector<bool> links;
     std::string sequence_;
     int length_;
-    FLOAT_T mass_;
+    FLOAT_T mass_[NUMBER_MASS_TYPES];
 };
 
 

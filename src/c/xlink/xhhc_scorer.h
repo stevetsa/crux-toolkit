@@ -1,9 +1,9 @@
 #ifndef XHHC_SCORER_H
 #define XHHC_SCORER_H
 
-//#include "hhc.h"
-
-#include "crux_scorer.h"
+extern "C" {
+#include "scorer.h"
+}
 
 #include "xhhc_ion_series.h"
 /* All of these are slightly modified versions of scorer.c,

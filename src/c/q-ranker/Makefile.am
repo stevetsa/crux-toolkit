@@ -48,12 +48,11 @@ libqranker_la_SOURCES = \
   TrainNet.cpp
 
 
-libqranker_la_CPPFLAGS = $(AM_CPPFLAGS) \
+libqranker_la_CXXFLAGS = $(AM_CXXFLAGS) \
   -I$(top_srcdir)/src/c/ArrayLibrary \
   -I$(top_srcdir)/src/c/MSToolkit \
   -I$(top_srcdir)/src/c/MSToolkit/zLib \
-  -I$(top_srcdir)/src/c/MSToolkit/RAMP \
-  -D_LARGEFILE_SOURCE=1
+  -I$(top_srcdir)/src/c/MSToolkit/RAMP
 
 
 noinst_LTLIBRARIES = libqranker.la

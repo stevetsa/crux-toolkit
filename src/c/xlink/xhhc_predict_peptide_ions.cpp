@@ -1,7 +1,6 @@
-
-//#include "hhc.h"
 #include "xhhc_ion_series.h"
-//#include "xhhc.h"
+
+#include <iostream>
 
 #define NUM_ARGUMENTS 7
 #define NUM_OPTIONS 0

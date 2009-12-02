@@ -851,6 +851,11 @@ void initialize_parameters(void){
       "of the output file.", "true");
 
   /* search-xlink options */
+  set_boolean_parameter("xcorr-use-flanks", TRUE,
+      "Use flank peaks in xcorr theoretical spectrum",
+      "Available for crux xlink-search program (Default True).",
+      "true");
+
   set_boolean_parameter("xlink-include-linears", FALSE, 
       "Include linear peptides in xlink-search.",
       "Available for crux xlink-search program (Default False).",

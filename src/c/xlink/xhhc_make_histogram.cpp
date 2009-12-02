@@ -1,10 +1,9 @@
 #include "xhhc_ion_series.h"
 #include "xhhc_scorer.h"
-//#include "xhhc_search.h"
 #include "objects.h"
 #include <fstream>
 #include <math.h>
-//#include <iostream>
+#include <iostream>
 
 //#define PARAM_ESTIMATION_SAMPLE_COUNT 500
 #define MIN_WEIBULL_MATCHES 40
@@ -136,7 +135,7 @@ int main(int argc, char** argv) {
   //find_all_precursor_ions(all_ions, links, linker_mass, charge, missed_link_cleavage, database);
   find_all_precursor_ions(all_ions, links, missed_link_cleavage, database, charge);
 
-  FLOAT_T max_mass = all_ions.back().mass();
+  FLOAT_T max_mass = all_ions.back().mass(AVERAGE);
   FLOAT_T min_mass = 0.0;
   if (min_mass_string != NULL) min_mass = atof(min_mass_string);
   if (max_mass_string != NULL) max_mass = atof(max_mass_string);
@@ -150,9 +149,9 @@ int main(int argc, char** argv) {
   vector<LinkedPeptide> filtered_ions;
   for (vector<LinkedPeptide>::iterator ion = all_ions.begin(); ion != all_ions.end(); ++ion) {
 
-      ion->calculate_mass();
+      ion->calculate_mass(AVERAGE);
     // if the mass is in the range
-    if (min_mass <= ion->mass() && ion->mass() <= max_mass) {
+    if (min_mass <= ion->mass(AVERAGE) && ion->mass(AVERAGE) <= max_mass) {
       //ion->set_charge(charge);
       ++num_ions;
       filtered_ions.push_back(*ion);
@@ -203,7 +202,7 @@ int main(int argc, char** argv) {
       if (ion->size() == 2) {
 	vector<Peptide> peptides = ion->peptides();
 	// score the first peptide with modification of second peptide	
-        mod_mass = linker_mass + peptides[1].mass();	
+        mod_mass = linker_mass + peptides[1].mass(MONO);	
 	ion_series = new_ion_series((char*)peptides[0].sequence().c_str(), ion->charge(), ion_constraint);
 	hhc_predict_ions(ion_series, mod_mass, peptides[0].link_site());
 	score = score_spectrum_v_ion_series(scorer, spectrum, ion_series);
@@ -212,7 +211,7 @@ int main(int argc, char** argv) {
 	ss << peptides[0].sequence() << " mod " << peptides[1].sequence() << ", " << peptides[0].link_site();
         scores.insert(make_pair(score, ss.str()));	
 	// score second peptide with modification of first peptide
-        mod_mass = linker_mass + peptides[0].mass();	
+        mod_mass = linker_mass + peptides[0].mass(MONO);	
 	ion_series = new_ion_series((char*)peptides[1].sequence().c_str(), ion->charge(), ion_constraint);
 	hhc_predict_ions(ion_series, mod_mass, peptides[1].link_site());
         //score = xhhc_scorer.score_spectrum_vs_series(spectrum, ion_series);

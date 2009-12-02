@@ -1,15 +1,7 @@
 #include "xhhc_ion_series.h"
-//#include "xhhc.h"
 #include "xhhc_scorer.h"
-//#include <fstream>
 
-/*
-LinkedIonSeries::LinkedIonSeries(char* sequenceA, char* sequenceB, int posA, int posB, int charge) {
-  charge_ = charge;
-  LinkedPeptide lp = LinkedPeptide(sequenceA, sequenceB, posA, posB, charge);
-  add_linked_ions(lp);
-}
-*/
+#include <iostream>
 
 // main constructor
 LinkedIonSeries::LinkedIonSeries(char* links, int charge) {
@@ -32,7 +24,7 @@ void LinkedIonSeries::print() {
       ion_type = "B_ION";
     else 
       ion_type = "Y_ION";
-    cout << ion->get_mz() << "\t" << ion_type << "\t" << *ion << endl;
+    cout << ion->get_mz(get_mass_type_parameter("fragment-mass")) << "\t" << ion_type << "\t" << *ion << endl;
   }
 }
 
@@ -46,14 +38,14 @@ void LinkedIonSeries::add_linked_ions(LinkedPeptide& linked_peptide) {
     // if b-ion and not a neutral loss
     if (ion_pair->first.charge() != 0) {
       ion_pair->first.set_type(B_ION); 
-      ion_pair->first.calculate_mass();
+      //ion_pair->first.calculate_mass();
       //cout << ion_pair->first.get_mz() << " B " << ion_pair->first << endl;
       all_ions.push_back(ion_pair->first);
     }
     // if y-ion and not a neutral loss
     if (ion_pair->second.charge() != 0) {
       ion_pair->second.set_type(Y_ION); 
-      ion_pair->second.calculate_mass();
+      //ion_pair->second.calculate_mass();
       //cout << ion_pair->second.get_mz() << " Y " << ion_pair->second << endl;
       all_ions.push_back(ion_pair->second);
     }
