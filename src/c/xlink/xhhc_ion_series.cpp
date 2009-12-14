@@ -4,6 +4,16 @@
 #include <iostream>
 
 // main constructor
+
+
+LinkedIonSeries::LinkedIonSeries() {
+  charge_ = 0;
+}
+
+
+
+
+
 LinkedIonSeries::LinkedIonSeries(char* links, int charge) {
   charge_ = charge;
   string bonds_string = string(links);
@@ -16,7 +26,13 @@ LinkedIonSeries::LinkedIonSeries(char* links, int charge) {
 
 // prints out tab delimited information about the ion series
 void LinkedIonSeries::print() {
-  sort(all_ions.begin(), all_ions.end());
+
+  MASS_TYPE_T mass_type = get_mass_type_parameter("fragment-mass");
+
+  cout <<"Sorting ions"<<endl;
+
+  LinkedPeptide::sortByMass(all_ions, mass_type);
+
   cout << "m/z\ttype\tion" << endl;
   string ion_type;
   for (vector<LinkedPeptide>::iterator ion = all_ions.begin(); ion != all_ions.end(); ++ion) {
@@ -24,32 +40,68 @@ void LinkedIonSeries::print() {
       ion_type = "B_ION";
     else 
       ion_type = "Y_ION";
-    cout << ion->get_mz(get_mass_type_parameter("fragment-mass")) << "\t" << ion_type << "\t" << *ion << endl;
+    cout << ion->get_mz(mass_type) << "\t" << ion_type << "\t" << *ion << endl;
   }
 }
 
+#define SPLIT_BOTH 0
+#define SPLIT_A 1
+#define SPLIT_B 2
+
 // cleaves linked_peptide at all positions, adding b and y ions
-void LinkedIonSeries::add_linked_ions(LinkedPeptide& linked_peptide) {
+void LinkedIonSeries::add_linked_ions(LinkedPeptide& linked_peptide,int split_type) {
+
+  MASS_TYPE_T mass_type = get_mass_type_parameter("fragment-mass");
+
   if (charge_ == 0) charge_ = linked_peptide.charge();
   vector<pair<LinkedPeptide, LinkedPeptide> > fragments;
   // split the precursor at every cleavage site
-  linked_peptide.split(fragments);
+
+  switch(split_type) {
+  case SPLIT_A:
+    linked_peptide.splitA(fragments);
+    break;
+  case SPLIT_B:
+    linked_peptide.splitB(fragments);
+    break;
+  case SPLIT_BOTH:
+  default:
+    linked_peptide.split(fragments);
+  }
   for (vector<pair<LinkedPeptide, LinkedPeptide> >::iterator ion_pair = fragments.begin(); ion_pair != fragments.end(); ++ion_pair) {
     // if b-ion and not a neutral loss
     if (ion_pair->first.charge() != 0) {
       ion_pair->first.set_type(B_ION); 
-      //ion_pair->first.calculate_mass();
+      ion_pair->first.calculate_mass(mass_type);
       //cout << ion_pair->first.get_mz() << " B " << ion_pair->first << endl;
       all_ions.push_back(ion_pair->first);
     }
     // if y-ion and not a neutral loss
     if (ion_pair->second.charge() != 0) {
       ion_pair->second.set_type(Y_ION); 
-      //ion_pair->second.calculate_mass();
+      ion_pair->second.calculate_mass(mass_type);
       //cout << ion_pair->second.get_mz() << " Y " << ion_pair->second << endl;
       all_ions.push_back(ion_pair->second);
     }
   }
+}
+
+int LinkedIonSeries::get_total_by_ions() {
+ 
+  
+  int ans = 0;
+  vector<LinkedPeptide>::iterator ion_iter;
+
+  for (ion_iter = all_ions.begin(); 
+       ion_iter != all_ions.end(); 
+       ++ion_iter) {
+        if (ion_iter -> get_mz(MONO) >= 400 && ion_iter -> get_mz(MONO) <= 1200) {
+	  if (ion_iter -> type() == B_ION || ion_iter -> type() == Y_ION) {
+	    ans++;
+	  }
+	}
+  }
+  return ans;
 }
 
 

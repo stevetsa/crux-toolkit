@@ -287,7 +287,7 @@ void initialize_parameters(void){
   set_string_parameter("peptide sequence", NULL, 
       "The sequence of the peptide.",
       "Argument for predict-peptide-ions.", "false");
-  set_int_parameter("charge state", 0, 0, 3, 
+  set_int_parameter("charge state", 0, 0, 10, 
       "The charge state of the peptide.",
       "Argument for predict-peptide-ions", "false");
 
@@ -850,29 +850,57 @@ void initialize_parameters(void){
       "Avaliable only for crux-get-ms2-spectrum.  Does not affect contents "
       "of the output file.", "true");
 
+  
+  /* xlink-predict-peptide-ions options*/
+  set_string_parameter("peptide A", NULL, 
+      "The sequence of peptide A.",
+      "Argument for xlink-predict-peptide-ions.", "false");
+
+  set_string_parameter("peptide B", NULL, 
+      "The sequence of peptide B.",
+      "Argument for xlink-predict-peptide-ions.", "false");
+  
+  set_int_parameter("pos A", 0 , 0, BILLION, 
+      "Position of xlink on peptide A",
+      "Available for xlink-predict-peptide-ions.", "false");
+
+  set_int_parameter("pos B", 0 , 0, BILLION, 
+      "Position of xlink on peptide B",
+      "Available for xlink-predict-peptide-ions.", "false");
+
+  set_boolean_parameter("print-theoretical-spectrum", FALSE,
+      "Print the theoretical spectrum",
+      "Available for xlink-predict-peptide-ions (Default FALSE).",
+      "true");
+
+  /* xlink-score-spectrum options */
+  set_string_parameter("xlink-score-method", "composite", 
+      "Score method for xlink {composite, modification, concatenated}. Default composite.",
+      "Argument for xlink-score-spectrum.", "false");
+
   /* search-xlink options */
   set_boolean_parameter("xcorr-use-flanks", TRUE,
       "Use flank peaks in xcorr theoretical spectrum",
       "Available for crux xlink-search program (Default True).",
       "true");
 
-  set_boolean_parameter("xlink-include-linears", FALSE, 
+  set_boolean_parameter("xlink-include-linears", TRUE, 
       "Include linear peptides in xlink-search.",
-      "Available for crux xlink-search program (Default False).",
+      "Available for crux xlink-search program (Default True).",
       "true");
-  set_boolean_parameter("xlink-include-deadends", FALSE, 
-      "Include deadend peptides in xlink-search (Default False).",
+  set_boolean_parameter("xlink-include-deadends", TRUE, 
+      "Include deadend peptides in xlink-search (Default True).",
       "Available for crux xlink-search program.",
       "true");
 
-  set_boolean_parameter("xlink-include-selfloops", FALSE, 
-      "Include self loop peptides in xlink-search (Default False).",
+  set_boolean_parameter("xlink-include-selfloops", TRUE, 
+      "Include self loop peptides in xlink-search (Default True).",
       "Available for crux xlink-search program.",
       "true");
 
-  set_double_parameter("mass-window-decoy", 3.0, 0, 100, 
+  set_double_parameter("mass-window-decoy", 16.8, 0, 100, 
       "Search decoy-peptides within +/- 'mass-window-decoy' of the "
-      "spectrum mass.  Default 3.0.",
+      "spectrum mass.  Default 16.8.",
       "Available for crux xlink-search. ",
       "true");
 
@@ -890,8 +918,8 @@ void initialize_parameters(void){
       "Available for crux xlink-search",
       "true");
 
-  set_int_parameter("min-weibull-points", 100, 1, BILLION, 
-      "Minimum number of points for estimating the weibull (Default 100).",
+  set_int_parameter("min-weibull-points", 4000, 1, BILLION, 
+      "Minimum number of points for estimating the weibull (Default 4000).",
       "Available for crux xlink-search", "true");
   
 

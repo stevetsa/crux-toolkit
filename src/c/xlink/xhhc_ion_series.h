@@ -19,7 +19,7 @@ using namespace std;
 class LinkedIonSeries {
   public:
     // constructors
-    LinkedIonSeries() : charge_(0) {}
+    LinkedIonSeries();
     LinkedIonSeries(char* links, int charge);
     //LinkedIonSeries(char* sequenceA, char* sequenceB, int posA, int posB, int charge);
     //LinkedIonSeries(char* sequenceA, char* sequenceB, char* links, int charge);
@@ -28,14 +28,18 @@ class LinkedIonSeries {
     int charge()                  { return charge_; }
     vector<LinkedPeptide>& ions() { return all_ions; }
     int size()                    { return all_ions.size(); }
+
+    int get_total_by_ions();
     
     // other
     void set_charge(int charge) { charge_ = charge; }
     void clear()                { all_ions.clear(); }
     // splits
-    void add_linked_ions(LinkedPeptide& linked_peptide);
+    void add_linked_ions(LinkedPeptide& linked_peptide, int split_type=0);
     // print tab-delimited list of all ions
     void print();
+
+
 
   private:
     

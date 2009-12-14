@@ -73,11 +73,15 @@ class LinkedPeptide {
     void add_peptide(Peptide& peptide)  { peptides_.push_back(peptide); } 
     bool is_linked() 			{ return size() == 2; }
     bool is_dead_end();
+    bool is_self_loop();
     bool is_single();
     FLOAT_T get_mz(MASS_TYPE_T mass_type);
     void calculate_mass(MASS_TYPE_T mass_type);
     FLOAT_T mass(MASS_TYPE_T mass_type);
   
+    void splitA(std::vector<std::pair<LinkedPeptide, LinkedPeptide> >& ion_pairs);
+    void splitB(std::vector<std::pair<LinkedPeptide, LinkedPeptide> >& ion_pairs);
+
     void split(std::vector<std::pair<LinkedPeptide, LinkedPeptide> >& ion_pairs);
     friend std::ostream &operator<< (std::ostream& os, LinkedPeptide& lp); 
 
@@ -87,9 +91,10 @@ class LinkedPeptide {
       //return lp1.mz < lp2.mz;
     }
 
-    friend bool compareMass(const LinkedPeptide& lp1, const LinkedPeptide& lp2);
-    
-    static void sortByMass(std::vector<LinkedPeptide>& linked_peptides);
+    friend bool compareMassMono(const LinkedPeptide& lp1, const LinkedPeptide& lp2);
+    friend bool compareMassAverage(const LinkedPeptide& lp1, const LinkedPeptide& lp2);
+
+    static void sortByMass(std::vector<LinkedPeptide>& linked_peptides, MASS_TYPE_T mass_type=MONO);
     
 
 

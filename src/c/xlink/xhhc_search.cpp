@@ -132,12 +132,14 @@ int xlink_search_main(int argc, char** argv) {
 
   LinkedPeptide::linker_mass = linker_mass;
   vector<LinkedPeptide> all_ions;
-  carp(CARP_INFO,"Calling find all precursor ions");
+  carp(CARP_DETAILED_DEBUG,"Calling find all precursor ions");
   find_all_precursor_ions(all_ions, links, missed_link_cleavage, database,1);
-  carp(CARP_INFO,"Sort");
+  carp(CARP_DETAILED_DEBUG,"Sort");
   // sort filtered ions and decoy ions by mass
   //sort(all_ions.begin(), all_ions.end());
 
+
+  carp(CARP_INFO,"Loading Spectra");
   SPECTRUM_T* spectrum = allocate_spectrum();
   SPECTRUM_COLLECTION_T* spectra = new_spectrum_collection(ms2_file);
   parse_spectrum_collection(spectra);
@@ -181,14 +183,18 @@ int xlink_search_main(int argc, char** argv) {
   Scorer hhc_scorer;
   // main loop over spectra in ms2 file
  
+  int search_count = 0;
+
   // for every observed spectrum 
   while (filtered_spectrum_charge_iterator_has_next(spectrum_iterator)) {
     spectrum = filtered_spectrum_charge_iterator_next(spectrum_iterator, &charge);
     //SCORER_T* scorer = new_scorer(XCORR);
     scan_num = get_spectrum_first_scan(spectrum);
 
-    carp(CARP_INFO,"scan %d", scan_num);
-    
+    if (search_count % 100 == 0)
+      carp(CARP_INFO,"count %d scan %d charge %d", search_count, scan_num, charge);
+    search_count++;
+
     //vector<pair<FLOAT_T, LinkedPeptide> > linked_scores;
     //vector<pair<FLOAT_T, LinkedPeptide> > single_scores;
     vector<pair<FLOAT_T, LinkedPeptide> > scores;
@@ -203,7 +209,7 @@ int xlink_search_main(int argc, char** argv) {
 
 
 
-    carp(CARP_INFO, "finding target xpeptides in mass window...%g", mass_window);
+    carp(CARP_DEBUG, "finding target xpeptides in mass window...%g", mass_window);
     get_ions_from_mz_range(
 	target_xpeptides, // stored in this vector
 	all_ions,
@@ -213,12 +219,12 @@ int xlink_search_main(int argc, char** argv) {
 	0);
 
     if (target_xpeptides.size() < 1) {
-      carp(CARP_INFO, "not enough precursors found in range, skipping %d", scan_num);
+      carp(CARP_INFO, "not enough precursors found in range, skipping scan %d charge %d", scan_num, charge);
       continue;
     }
     
 
-    carp(CARP_INFO, "finding training xpeptides in decoy mass window..%g", mass_window_decoy);
+    carp(CARP_DEBUG, "finding training xpeptides in decoy mass window..%g", mass_window_decoy);
     get_ions_from_mz_range(
 	target_decoy_xpeptides,
 	all_ions,
@@ -244,15 +250,15 @@ int xlink_search_main(int argc, char** argv) {
       }
     }    
 
-    carp(CARP_INFO, "num targets:%d",target_xpeptides.size());
-    carp(CARP_INFO, "num decoys:%d", decoy_xpeptides.size());
-    carp(CARP_INFO, "num training decoys:%d", decoy_train_xpeptides.size());
+    carp(CARP_DEBUG, "num targets:%d",target_xpeptides.size());
+    carp(CARP_DEBUG, "num decoys:%d", decoy_xpeptides.size());
+    carp(CARP_DEBUG, "num training decoys:%d", decoy_train_xpeptides.size());
 
     clock_t start_clock = clock();
 
 
     // for every ion in the mass window
-    carp(CARP_INFO, "Scoring targets");
+    carp(CARP_DEBUG, "Scoring targets");
     for (int i=0;i<target_xpeptides.size();i++) {
       LinkedIonSeries ion_series = LinkedIonSeries(links, charge);
       ion_series.add_linked_ions(target_xpeptides[i]);
@@ -262,7 +268,7 @@ int xlink_search_main(int argc, char** argv) {
 
     clock_t target_clock = clock();
 
-    carp(CARP_INFO, "Scoring decoys.");
+    carp(CARP_DEBUG, "Scoring decoys.");
     for (int i=0;i<decoy_xpeptides.size();i++) {
       LinkedIonSeries ion_series = LinkedIonSeries(links, charge);
       ion_series.add_linked_ions(decoy_xpeptides[i]);
@@ -276,7 +282,7 @@ int xlink_search_main(int argc, char** argv) {
     FLOAT_T* linked_decoy_scores_array = new FLOAT_T[decoy_train_xpeptides.size()+target_xpeptides.size()];
 
     clock_t decoy_clock = clock();
-    carp(CARP_INFO, "scoring training decoys...");
+    carp(CARP_DEBUG, "scoring training decoys...");
     // score all training decoys
     for (int i=0;i<decoy_train_xpeptides.size();i++) {
       LinkedIonSeries ion_series = LinkedIonSeries(links, charge);
@@ -330,11 +336,11 @@ int xlink_search_main(int argc, char** argv) {
     double weibull_time = (double(weibull_clock) - double(create_array_clock)) / CLOCKS_PER_SEC;
 
 
-    carp(CARP_INFO,"target:%g",target_time);
-    carp(CARP_INFO,"decoy:%g",decoy_time);
-    carp(CARP_INFO,"train decoy:%g",train_decoy_time);
-    carp(CARP_INFO,"create array:%g",create_array_time);
-    carp(CARP_INFO,"weibull:%g",weibull_time);
+    carp(CARP_DEBUG,"target:%g",target_time);
+    carp(CARP_DEBUG,"decoy:%g",decoy_time);
+    carp(CARP_DEBUG,"train decoy:%g",train_decoy_time);
+    carp(CARP_DEBUG,"create array:%g",create_array_time);
+    carp(CARP_DEBUG,"weibull:%g",weibull_time);
     
 
 

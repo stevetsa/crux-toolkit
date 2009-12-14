@@ -103,7 +103,8 @@ my $line = <ANNOT>;
 #open gnuplot and initialize settings for all plots
 ($gnuplot_file) ? (open GNUPLOT, ">$gnuplot_file") : (open GNUPLOT, "|gnuplot");
 print GNUPLOT $terminal;
-print GNUPLOT "set noytics\nset xtics nomirror\n";
+#print GNUPLOT "set noytics\n"
+print GNUPLOT "set xtics nomirror\n";
 print GNUPLOT "set xlabel \"m/z\"\nset ylabel \"Intensity\"\n";
 print GNUPLOT "set border 3\n" if $no_box;
 #save fig names for html page, temp file names to delete
@@ -217,8 +218,9 @@ while( $line =~ /^>/){  #each loop is one spectrum
 
   #set yrange as greater than highest peak 
   $max_y *= 1.1; # if $label_string;
-  print GNUPLOT "set yrange [-10001:$max_y]\n";
+  #print GNUPLOT "set yrange [-10001:$max_y]\n";
   #print GNUPLOT "set yrange [-100:10]\n";
+  print GNUPLOT "set yrange [0:$max_y]\n";
 
   #write title
   print GNUPLOT "set title \"$title\"\n" if $title;

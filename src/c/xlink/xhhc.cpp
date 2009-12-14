@@ -9,6 +9,35 @@ using namespace std;
 
 FLOAT_T LinkedPeptide::linker_mass;
 
+
+void get_linear_peptides(set<string>& peptides,
+			 DATABASE_PROTEIN_ITERATOR_T* protein_iterator,
+			 PEPTIDE_CONSTRAINT_T* peptide_constraint) {
+
+  PROTEIN_PEPTIDE_ITERATOR_T* peptide_iterator = NULL;
+  PROTEIN_T* protein;
+  PEPTIDE_T* peptide;
+
+  string sequence = "";
+  string last_sequence = "zz";
+  bool missed_cleavage = false;
+  // keep track of whether the next peptide contains the previous one or not
+  size_t index;
+  while (database_protein_iterator_has_next(protein_iterator)) {
+    protein = database_protein_iterator_next(protein_iterator);
+    peptide_iterator = new_protein_peptide_iterator(protein, peptide_constraint);
+    // missed_cleavages must be TRUE in protein.c for this to work
+    prepare_protein_peptide_iterator_mc(peptide_iterator, TRUE); 
+    while (protein_peptide_iterator_has_next(peptide_iterator)) {
+      //peptide = database_peptide_iterator_next(peptide_iterator);
+      peptide = protein_peptide_iterator_next(peptide_iterator);
+      sequence = get_peptide_sequence(peptide); 
+      carp(CARP_INFO,"Adding linear peptide:%s",get_peptide_sequence(peptide));
+      peptides.insert(sequence);
+    }
+  } 
+}
+
 // a hack, works for EDC linker only
 void get_linkable_peptides(set<string>& peptides, 
 	DATABASE_PROTEIN_ITERATOR_T* protein_iterator,
@@ -37,18 +66,45 @@ void get_linkable_peptides(set<string>& peptides,
       if (index == string::npos || missed_cleavage) {
         missed_cleavage = !missed_cleavage;
         if (!missed_cleavage && last_sequence[last_sequence.size()-1] != 'K') {
-	  carp(CARP_DETAILED_DEBUG, "skipping %s", get_peptide_sequence(peptide));
+	  carp(CARP_DETAILED_DEBUG, "skipping1 %s", get_peptide_sequence(peptide));
 	  continue;
 	}
 	carp(CARP_DETAILED_DEBUG, "peptide %s", get_peptide_sequence(peptide));
         peptides.insert(string(get_peptide_sequence(peptide)));
       } else {
-	carp(CARP_DETAILED_DEBUG, "skipping %s", get_peptide_sequence(peptide));
+	carp(CARP_DETAILED_DEBUG, "skipping2 %s", get_peptide_sequence(peptide));
 	missed_cleavage = false;
       }
       last_sequence = string(get_peptide_sequence(peptide));
     }
   } 
+}
+
+void print_precursor_count(vector<LinkedPeptide>& all_ions) {
+  int linear_peptides = 0;
+  int self_loop_products = 0;
+  int dead_end_products = 0;
+  int xlink_products = 0;
+
+  for (int i=0;i<all_ions.size();i++) {
+    LinkedPeptide& current = all_ions[i];
+    if (current.is_single())
+      linear_peptides++;
+    else if (current.is_dead_end())
+      dead_end_products++;
+    else if (current.is_self_loop())
+      self_loop_products++;
+    else if (current.is_linked())
+      xlink_products++;
+    else
+      carp(CARP_ERROR,"Unknown product");
+  }
+  
+  carp(CARP_INFO,"Linear Peptides:%d",linear_peptides);
+  carp(CARP_INFO,"Inter/Intra Xlinks:%d",xlink_products);
+  carp(CARP_INFO,"Dead End Products:%d",dead_end_products);
+  carp(CARP_INFO,"Self Loop Products:%d",self_loop_products);
+
 }
 
 // creates an index of all linked peptides from a fasta file
@@ -59,29 +115,51 @@ void find_all_precursor_ions(vector<LinkedPeptide>& all_ions,
 			     int charge)
 {
  
-  carp(CARP_INFO,"find_all_precursor_ions: start()");
+  carp(CARP_DEBUG,"find_all_precursor_ions: start()");
   DATABASE_T* db = new_database(database_file, FALSE);
-  carp(CARP_INFO,"peptide constraint");
+  carp(CARP_DEBUG,"peptide constraint");
   PEPTIDE_CONSTRAINT_T* peptide_constraint = new_peptide_constraint_from_parameters();
   // add 
   set_peptide_constraint_num_mis_cleavage(peptide_constraint, 1);
   //set_verbosity_level(CARP_INFO);
   //PROTEIN_T* protein = NULL;
-  carp(CARP_INFO,"protein iterator");
+  carp(CARP_DEBUG,"protein iterator");
   DATABASE_PROTEIN_ITERATOR_T* protein_iterator = new_database_protein_iterator(db);
   //PROTEIN_PEPTIDE_ITERATOR_T* peptide_iterator = NULL;
   string bonds_string = string(links);
   set<string> peptides;
-  carp(CARP_INFO,"get_linkable_peptides");
+  carp(CARP_DEBUG,"get_linkable_peptides");
   get_linkable_peptides(peptides, protein_iterator, peptide_constraint);
-  carp(CARP_INFO,"add_linked_peptides");
+  carp(CARP_DEBUG,"add_linked_peptides");
   add_linked_peptides(all_ions, peptides, bonds_string, charge);
+  
+  if (get_boolean_parameter("xlink-include-linears")) {
+    free_database_protein_iterator(protein_iterator);
+    protein_iterator = new_database_protein_iterator(db);
+    peptides.clear();    
+    get_linear_peptides(peptides, protein_iterator, peptide_constraint);
+    
+    set<string>::iterator iter;
+    for (iter = peptides.begin();
+	 iter != peptides.end();
+	 ++iter) {
+      LinkedPeptide lp = LinkedPeptide(charge);
+      Peptide p = Peptide(*iter);
+      lp.add_peptide(p);
+      all_ions.push_back(lp);
+    }
+  }
 
-  carp(CARP_INFO,"find_all_precursor_ions: done()");
+  free_database_protein_iterator(protein_iterator);
+
+
+  carp(CARP_DEBUG,"find_all_precursor_ions: done()");
 
   //sort by increasing mass.
 
   //LinkedPeptide::sortByMass(all_ions);
+
+  IF_CARP(CARP_DEBUG,print_precursor_count(all_ions));
 
  
 }
@@ -117,7 +195,7 @@ BOOLEAN_T hhc_estimate_weibull_parameters_from_xcorrs(
   double fraction_to_fit = get_double_parameter("fraction-top-scores-to-fit");
   assert( fraction_to_fit >= 0 && fraction_to_fit <= 1 );
   int num_tail_samples = (int)(num_scores * fraction_to_fit);
-  carp(CARP_INFO, "Estimating Weibull params with %d psms (%.2f of %i)",
+  carp(CARP_DEBUG, "Estimating Weibull params with %d psms (%.2f of %i)",
        num_tail_samples, fraction_to_fit, num_scores);
 
   // do the estimation
@@ -150,10 +228,6 @@ void add_linked_peptides(vector<LinkedPeptide>& all_ions, set<string>& peptides,
     LinkedPeptide lp = LinkedPeptide(charge);
     Peptide p = Peptide(sequenceA);
     lp.add_peptide(p);
-    // don't add non-cross linked peptides?
-    if (get_boolean_parameter("xlink-include-linears")) {
-      ions.push_back(lp);
-    }
 
     for (size_t i = 0; i < pepA->length(); ++i) {
       BondMap::iterator bond = bonds.find(pepA->at(i));
@@ -267,7 +341,11 @@ bool LinkedPeptide::is_single() {
 } 
 
 bool LinkedPeptide::is_dead_end() {
-  return (peptides_.size() == 1 && peptides_[0].link_site() >= 0);
+  return (peptides_.size() == 1 && peptides_[0].get_num_links() == 1);
+}
+
+bool LinkedPeptide::is_self_loop() {
+  return (peptides_.size() == 1 && peptides_[0].get_num_links() == 2);
 }
 
 LinkedPeptide::LinkedPeptide(char* peptide_A, char* peptide_B, int posA, int posB, int charge) {
@@ -389,6 +467,25 @@ void LinkedPeptide::split(vector<pair<LinkedPeptide, LinkedPeptide> >& ion_pairs
   } 
 }
 
+void LinkedPeptide::splitA(vector<pair<LinkedPeptide, LinkedPeptide> >& ion_pairs) {
+  Peptide peptideA = peptides_[0];
+  Peptide peptideB = peptides_[1];
+
+  for (int i = 1; i < peptideA.length(); ++i) {
+    peptideA.split_at(i, ion_pairs, charge_, peptideB, false);
+  }
+}
+
+void LinkedPeptide::splitB(vector<pair<LinkedPeptide, LinkedPeptide> >& ion_pairs) {
+  Peptide peptideA = peptides_[0];
+  Peptide peptideB = peptides_[1];
+
+  for (int i = 1; i < peptideB.length(); ++i) {
+    peptideB.split_at(i, ion_pairs, charge_, peptideA, false);
+  }
+}
+
+
 // temporary
 std::ostream &operator<< (std::ostream& os, LinkedPeptide& lp) {
   vector<Peptide> peptides = lp.peptides();
@@ -443,13 +540,23 @@ void Peptide::split_at(int index, vector<pair<LinkedPeptide, LinkedPeptide> >& p
 }
 
 
-bool compareMass(const LinkedPeptide& lp1, const LinkedPeptide& lp2) {
-  carp(CARP_INFO,"comparing %g and %g", lp1.mass_[AVERAGE],lp2.mass_[AVERAGE]);
+bool compareMassAverage(const LinkedPeptide& lp1, const LinkedPeptide& lp2) {
   return lp1.mass_[AVERAGE] < lp2.mass_[AVERAGE];
 }
 
-void LinkedPeptide::sortByMass(std::vector<LinkedPeptide>& linked_peptides) {
-  carp(CARP_INFO,"sortByMass(): start");
-  sort(linked_peptides.begin(), linked_peptides.end(), compareMass);
-  carp(CARP_INFO,"sortByMass(): stop");
+bool compareMassMono(const LinkedPeptide& lp1, const LinkedPeptide& lp2) {
+  return lp1.mass_[MONO] < lp2.mass_[MONO];
+}
+
+
+void LinkedPeptide::sortByMass(std::vector<LinkedPeptide>& linked_peptides, MASS_TYPE_T mass_type) {
+  //TODO : should we put code here to make sure that we have
+  //calculated the all of the masses for a particular mass type?
+
+  if (mass_type == MONO) {
+    sort(linked_peptides.begin(), linked_peptides.end(), compareMassMono);
+  }
+  else {
+    sort(linked_peptides.begin(), linked_peptides.end(), compareMassAverage);
+  }
 }

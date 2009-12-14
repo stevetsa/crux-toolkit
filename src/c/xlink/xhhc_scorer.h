@@ -6,6 +6,8 @@ extern "C" {
 }
 
 #include "xhhc_ion_series.h"
+
+#include <map>
 /* All of these are slightly modified versions of scorer.c,
  * made to passed LinkedIonSeries objects rather than crux's 
  * ION_SERIES_T */
@@ -28,6 +30,18 @@ class Scorer {
     // scores against observed spectrum
     // returns xcorr score
     float score_spectrum_vs_series(SPECTRUM_T* spectrum, LinkedIonSeries& ion_series);
+
+    static int get_matched_by_ions(SPECTRUM_T* spectrum,
+				   LinkedIonSeries& ion_series);
+
+    static void add_intensity_map(std::map<int, FLOAT_T>& theoretical, 
+		       int idx, 
+		       FLOAT_T intensity);
+
+    static bool xlink_create_map_theoretical(
+      LinkedIonSeries& ion_series,
+      std::map<int, FLOAT_T>& theoretical);
+
     // modified version of create_intensity_array_theoretical from crux
     bool hhc_create_intensity_array_theoretical(
       LinkedIonSeries& ion_series,
