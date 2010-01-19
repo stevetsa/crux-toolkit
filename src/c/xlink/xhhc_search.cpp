@@ -149,8 +149,9 @@ int xlink_search_main(int argc, char** argv) {
   FLOAT_T score;
  // best pvalues
 
- 
-  ofstream search_target_file ("crux-output/search.target.txt");
+  string target_path = string(output_directory) + "/search.target.txt";
+
+  ofstream search_target_file(target_path.c_str());
   //print header
   search_target_file << "scan\t";
   search_target_file << "charge\t";
@@ -164,9 +165,9 @@ int xlink_search_main(int argc, char** argv) {
   search_target_file << "matches/spectrum\t";
   search_target_file << "sequence"<<endl;
   
+  string decoy_path = string(output_directory) + "/search.decoy.txt";
 
-
-  ofstream search_decoy_file ("crux-output/search.decoy.txt");
+  ofstream search_decoy_file (decoy_path.c_str());
   //print header
   search_decoy_file << "scan\t";
   search_decoy_file << "charge\t";

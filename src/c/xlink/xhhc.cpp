@@ -133,6 +133,7 @@ void find_all_precursor_ions(vector<LinkedPeptide>& all_ions,
   carp(CARP_DEBUG,"add_linked_peptides");
   add_linked_peptides(all_ions, peptides, bonds_string, charge);
   
+  /*
   if (get_boolean_parameter("xlink-include-linears")) {
     free_database_protein_iterator(protein_iterator);
     protein_iterator = new_database_protein_iterator(db);
@@ -149,6 +150,7 @@ void find_all_precursor_ions(vector<LinkedPeptide>& all_ions,
       all_ions.push_back(lp);
     }
   }
+  */
 
   free_database_protein_iterator(protein_iterator);
 
@@ -228,6 +230,12 @@ void add_linked_peptides(vector<LinkedPeptide>& all_ions, set<string>& peptides,
     LinkedPeptide lp = LinkedPeptide(charge);
     Peptide p = Peptide(sequenceA);
     lp.add_peptide(p);
+
+    //TODO separate linears from xlinking stuff.
+    if (get_boolean_parameter("xlink-include-linears")) {
+      ions.push_back(lp);
+    }
+
 
     for (size_t i = 0; i < pepA->length(); ++i) {
       BondMap::iterator bond = bonds.find(pepA->at(i));
