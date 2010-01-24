@@ -12,7 +12,7 @@
 #define XCORR_SHIFT 0.05
 using namespace std;
 
-typedef map<char, set<char> > BondMap;
+//typedef map<char, set<char> > BondMap;
 
 void plot_weibull(vector<pair<FLOAT_T, LinkedPeptide> >& scores, SPECTRUM_T* spectrum, int charge); 
 

@@ -56,7 +56,17 @@ void prepare_protein_peptide_iterator(
 
 //using namespace std;
 
-typedef std::map<char, std::set<char> > BondMap;
+//typedef std::map<char, std::set<char> > BondMap;
+
+class BondMap: public std::map<char, std::set<char> > {
+
+public:
+  BondMap();
+  virtual ~BondMap();
+  BondMap(std::string links_string);
+
+};
+
 
 class Peptide;
 class LinkedPeptide {

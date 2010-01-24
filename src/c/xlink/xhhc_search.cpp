@@ -17,7 +17,7 @@ extern "C" {
 
 using namespace std;
 
-typedef map<char, set<char> > BondMap;
+//typedef map<char, set<char> > BondMap;
 
 double bonf_correct(double nlp_value, int nt);
 

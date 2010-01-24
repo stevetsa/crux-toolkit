@@ -5,6 +5,8 @@ extern "C" {
 #include "peptide.h"
 }
 
+#include "DelimitedFile.h"
+
 using namespace std;
 
 FLOAT_T LinkedPeptide::linker_mass;
@@ -272,12 +274,9 @@ BOOLEAN_T hhc_estimate_weibull_parameters_from_xcorrs(
 // of peptides and every possible link site
 
 void add_linked_peptides(vector<LinkedPeptide>& all_ions, set<string>& peptides, string links, int charge) {
-  BondMap bonds; 
+  BondMap bonds(links); 
   vector<LinkedPeptide> ions;
-  for (size_t i = 0; i < links.length() - 2; i += 4) {
-     bonds[links[i+2]].insert(links[i]);
-     bonds[links[i]].insert(links[i+2]);
-  }
+
   // iterate over both sequences, adding linked peptides with correct links
   for (set<string>::iterator pepA = peptides.begin(); pepA != peptides.end(); ++pepA) {
     char* sequenceA = (char*) pepA->c_str();
@@ -379,6 +378,71 @@ Peptide shuffle(Peptide peptide) {
   }
   shuffled_peptide.set_sequence(shuffled);
   return shuffled_peptide;
+}
+
+
+
+// BondMap class methods definitions below
+//
+///////////////////////////////////////////////////////////
+const static char* amino_alpha="ABCDEFGHIKLMNPQRSTUVWYZX";
+const static int num_amino_alpha = 24;
+
+BondMap::BondMap() : map<char, set<char> >() {
+}
+
+BondMap::~BondMap() {
+}
+
+BondMap::BondMap(string links_string) {
+  /*
+  for (size_t i = 0; i < links.length() - 2; i += 4) {
+     bonds[links[i+2]].insert(links[i]);
+     bonds[links[i]].insert(links[i+2]);
+  }
+*/
+  //get each bond description
+  vector<string> bonds;
+  DelimitedFile::tokenize(links_string, bonds, ',');
+
+  //parse each bond description.
+  for (int bond_idx = 0; bond_idx < bonds.size(); bond_idx++) {
+    vector<string> residues;
+    DelimitedFile::tokenize(bonds[bond_idx], residues, ':');
+    //check for *.
+    if (residues[0] == "*" && residues[1] == "*") {
+      //add all possible links between residues.
+      carp(CARP_INFO, "Linking all residues to each other");
+      for (int i=0;i<num_amino_alpha;i++) {
+        for (int j=i;j<num_amino_alpha;j++) {
+          (*this)[amino_alpha[i]].insert(amino_alpha[j]);
+        }
+      }
+    } else if (residues[0] == "*" || residues[1] == "*") {
+      //only one star detected.
+      char amino = residues[0][0] == '*' ? residues[1][0] : residues[0][0]; 
+      carp(CARP_INFO, "Linking %c to all other residues", amino);
+      for (int i=0;i<num_amino_alpha;i++) {
+        (*this)[amino].insert(amino_alpha[i]);
+      }  
+    } else {
+      //there is no star, insert the link normally
+      (*this)[residues[0][0]].insert(residues[1][0]);
+    }
+  }
+
+  //print out the bond map for debugging purposes.
+
+  for (BondMap::iterator bond_iter = this -> begin();
+        bond_iter != this -> end();
+        ++bond_iter) {
+    for (set<char>::iterator bond2_iter = bond_iter -> second.begin();
+      bond2_iter != bond_iter -> second.end();
+      ++bond2_iter) {
+      cout <<bond_iter -> first << " link to " << *bond2_iter <<endl;
+    }
+  }
+
 }
 
 

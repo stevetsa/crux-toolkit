@@ -42,6 +42,8 @@ LIBFILES= \
   crux-utils.h \
   database.c \
   database.h \
+  DelimitedFile.cpp \
+  DelimitedFile.h \
   generate_peptides_iterator.c \
   generate_peptides_iterator.h \
   hash.c \
@@ -155,19 +157,19 @@ crux_CXXFLAGS = \
   -I$(top_srcdir)/src/c/xlink
 crux_LDADD = \
   $(AM_LDFLAGS) \
+  -L$(top_builddir)/src/c/xlink \
+  -lxlink \
   libcrux.la \
   -lstdc++ \
   -L$(top_builddir)/src/c/ArrayLibrary \
   -L$(top_builddir)/src/c/MSToolkit \
   -L$(top_builddir)/src/c/percolator \
   -L$(top_builddir)/src/c/q-ranker \
-  -L$(top_builddir)/src/c/xlink \
   -lm \
   -lpercolator \
   -lqranker \
   -lmstoolkit \
-  -lArrayLibrary \
-  -lxlink
+  -lArrayLibrary
 
 xlink_predict_peptide_ions_SOURCES=./xlink/xhhc_predict_peptide_ions.cpp
 xlink_predict_peptide_ions_CXXFLAGS= \
