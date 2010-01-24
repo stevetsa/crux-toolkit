@@ -247,9 +247,11 @@ BOOLEAN_T parse_spectrum_collection(
     carp(CARP_ERROR, "File %s could not be opened",spectrum_collection->filename);
     return (FALSE);
   }
-  // parse header lines 'H' into spectrum_collection comment 
-  parse_header_line(spectrum_collection, file);
 
+  if (!get_boolean_parameter("use-mgf")) {
+    // parse header lines 'H' into spectrum_collection comment 
+    parse_header_line(spectrum_collection, file);
+  }
   //check to see if the mstoolkit is going to used.
   if (get_boolean_parameter("use-mstoolkit")) {
     //We now know that the file exists,

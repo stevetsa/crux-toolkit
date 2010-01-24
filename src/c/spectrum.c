@@ -440,6 +440,150 @@ void copy_spectrum(
   }
 }
 
+
+/**
+ * Parses a spectrum from an .mgf file
+ * \returns TRUE if success. FALSE is failure.
+ * 'I'
+ * Skips Header line "H"
+ * FIXME if need to read 'H', header line, does not parse ID
+ */
+BOOLEAN_T parse_spectrum_file_mgf(
+  SPECTRUM_T* spectrum, ///< spectrum to parse the information into -out
+  FILE* file, ///< the input file stream -in
+  char* filename ///< filename of the spectrum, should not free -in
+  )
+{
+  //long file_index = ftell(file); // stores the location of the current working line in the file
+  char* new_line = NULL;
+  int line_length;
+  size_t buf_length = 0;
+  FLOAT_T location_mz;
+  FLOAT_T intensity;
+
+  BOOLEAN_T begin_found = FALSE;
+  BOOLEAN_T title_found = FALSE;
+  BOOLEAN_T charge_found = FALSE;
+  BOOLEAN_T pepmass_found = FALSE;
+  BOOLEAN_T peaks_found = FALSE;
+  BOOLEAN_T end_found = FALSE;
+
+  carp(CARP_DEBUG, "parsing MGF Scan");
+
+  while( (line_length = getline(&new_line, &buf_length, file)) != -1){
+    //scan until BEGIN IONS
+    if (strncmp(new_line, "BEGIN IONS", 10) == 0) {
+      begin_found = TRUE;
+      break;
+    }
+  }
+
+  if (!begin_found) {
+    carp(CARP_DEBUG,"Couldn't find any more scans");
+    return FALSE;
+  }
+  //scan for the header fields
+  while( (line_length = getline(&new_line, &buf_length, file)) != -1){
+    if (strncmp(new_line, "TITLE=",6) == 0) {
+      title_found = TRUE;
+      int first_scan;
+      int last_scan;
+      //parse the title line
+      //assume the format of title line is title.first_scan.last_scan.charge.dta
+      char* period_title_ptr = index(new_line,'.');
+      char* period_first_scan_ptr = index(period_title_ptr+1,'.');
+      char* period_last_scan_ptr = index(period_first_scan_ptr+1,'.');
+      //char* period_charge_ptr = index(period_last_scan_ptr+1,'.');
+
+      *period_title_ptr = '\0';
+      carp(CARP_DETAILED_DEBUG, "title:%s", new_line);
+      
+      *period_first_scan_ptr = '\0';
+      carp(CARP_DETAILED_DEBUG, "first scan:%s", (period_title_ptr+1));
+      first_scan = atoi((period_title_ptr+1));
+
+      *period_last_scan_ptr = '\0';
+      carp(CARP_DETAILED_DEBUG, "last scan:%s", (period_first_scan_ptr+1));
+      last_scan = atoi((period_first_scan_ptr+1));
+
+      carp(CARP_DETAILED_DEBUG, "first_scan:%d", first_scan);
+      carp(CARP_DETAILED_DEBUG, "last_scan:%d", last_scan);
+
+      set_spectrum_first_scan(spectrum, first_scan);
+      set_spectrum_last_scan(spectrum, last_scan);
+      set_spectrum_spectrum_type(spectrum, MS2);
+    } else if (strncmp(new_line, "CHARGE=",7) == 0) {
+      //parse the charge line
+      int charge;
+      char* plus_index = index(new_line,'+');
+      *plus_index = '\0';
+      carp(CARP_DETAILED_DEBUG,"Parsing %s",(new_line+7));
+      charge = atoi(new_line+7);
+
+      carp(CARP_DETAILED_DEBUG, "charge:%d", charge);
+
+      add_possible_z(spectrum, charge);
+
+      charge_found = TRUE;
+    } else if (strncmp(new_line, "PEPMASS=",8) == 0) {
+      //parse the pepmass line
+      FLOAT_T pepmass;
+      carp(CARP_DETAILED_DEBUG, "Parsing %s",(new_line+8));
+      pepmass = atof(new_line+8);
+      carp(CARP_DETAILED_DEBUG, "pepmass:%f",pepmass);
+      //TODO - check to see if this is correct.
+      set_spectrum_precursor_mz(spectrum, pepmass);
+      pepmass_found = TRUE;
+    } else if (isdigit(new_line[0])) {
+      //no more header lines, peak information is up
+      peaks_found = TRUE;
+      break;
+    } else if (strcmp(new_line, "END IONS")) {
+      //we found the end of the ions without any peaks.
+      carp(CARP_WARNING,"No peaks found for mgf spectrum");
+      return TRUE;
+    }
+  }
+
+  //TODO check to make sure we gleaned the information from
+  //the headers.
+
+  //parse peak information
+  do {
+    if (strncmp(new_line, "END IONS", 8) == 0) {
+      //we are done parsing this charged spectrum.
+      end_found = TRUE;
+      break;
+    }
+    #ifdef USE_DOUBLES
+    else if(sscanf(new_line,"%lf %lf", &location_mz, &intensity) == 2){
+    #else
+    else if(sscanf(new_line,"%f %f", &location_mz, &intensity) == 2){
+    #endif
+      carp(CARP_DETAILED_DEBUG,"adding peak %f %f",location_mz, intensity);
+      //add the peak to the spectrum object
+      add_peak_to_spectrum(spectrum, intensity, location_mz);
+    } else {
+      //file format error.
+      carp(CARP_ERROR,
+      "File format error\n"
+      "At line: %s",
+      new_line);
+    }
+  } while( (line_length = getline(&new_line, &buf_length, file)) != -1);
+
+  if (end_found) {
+    //we successfully parsed this spectrum.
+    spectrum -> has_peaks = TRUE;
+    set_spectrum_new_filename(spectrum, filename);  
+    return TRUE;
+  } else {
+    //something happened, bomb.
+    return FALSE;
+  }
+}
+ 
+
 /**
  * Parses a spectrum from file.
  * \returns TRUE if success. FALSE is failure.
@@ -453,6 +597,11 @@ BOOLEAN_T parse_spectrum_file(
   char* filename ///< filename of the spectrum, should not free -in
   )
 {
+
+  if (get_boolean_parameter("use-mgf")) {
+    return parse_spectrum_file_mgf(spectrum, file, filename);
+  }
+
   long file_index = ftell(file); // stores the location of the current working line in the file
   char* new_line = NULL;
   int line_length;

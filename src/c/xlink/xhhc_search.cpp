@@ -7,9 +7,11 @@ extern "C" {
 #include "objects.h"
 }
 
-
+#include <cmath>
+#include <ctime>
 #include <fstream>
-#include <math.h>
+#include <iomanip>
+
 
 #include <ctime>
 
@@ -31,7 +33,7 @@ void get_ions_from_mz_range(vector<LinkedPeptide>& filtered_ions,
 
 void plot_weibull(vector<pair<FLOAT_T, LinkedPeptide> >& scores, SPECTRUM_T* spectrum, int charge); 
 
-#define NUM_XLINK_SEARCH_OPTIONS 14
+#define NUM_XLINK_SEARCH_OPTIONS 15
 #define NUM_XLINK_SEARCH_ARGS 4
 
 int xlink_search_main(int argc, char** argv) {
@@ -55,7 +57,8 @@ int xlink_search_main(int argc, char** argv) {
     "xlink-include-linears",
     "xlink-include-deadends",
     "xlink-include-selfloops",
-    "xcorr-use-flanks"
+    "xcorr-use-flanks",
+    "use-mgf"
   };
 
   /* Define required command line arguments */
@@ -152,6 +155,8 @@ int xlink_search_main(int argc, char** argv) {
   string target_path = string(output_directory) + "/search.target.txt";
 
   ofstream search_target_file(target_path.c_str());
+  //set precision
+  search_target_file << setprecision(get_int_parameter("precision"));
   //print header
   search_target_file << "scan\t";
   search_target_file << "charge\t";
@@ -159,6 +164,7 @@ int xlink_search_main(int argc, char** argv) {
   search_target_file << "spectrum neutral mass\t";
   search_target_file << "peptide mass mono\t";
   search_target_file << "peptide mass average\t";
+  search_target_file << "mass error(ppm)\t";
   search_target_file << "xcorr score\t";
   search_target_file << "xcorr rank\t";
   search_target_file << "p-value\t";
@@ -168,6 +174,8 @@ int xlink_search_main(int argc, char** argv) {
   string decoy_path = string(output_directory) + "/search.decoy.txt";
 
   ofstream search_decoy_file (decoy_path.c_str());
+  //set precision
+  search_decoy_file << setprecision(get_int_parameter("precision"));
   //print header
   search_decoy_file << "scan\t";
   search_decoy_file << "charge\t";
@@ -175,6 +183,7 @@ int xlink_search_main(int argc, char** argv) {
   search_decoy_file << "spectrum neutral mass\t";
   search_decoy_file << "peptide mass mono\t";
   search_decoy_file << "peptide mass average\t";
+  search_decoy_file << "mass error(ppm)\t";
   search_decoy_file << "xcorr score\t";
   search_decoy_file << "xcorr rank\t";
   search_decoy_file << "p-value\t";
@@ -350,49 +359,45 @@ int xlink_search_main(int argc, char** argv) {
     int score_index = 0;
 
     while (score_index < scores.size() && (ndecoys < top_match || ntargets < top_match)) {
+ 
+      
+      double ppm_error = fabs(scores[score_index].second.mass(AVERAGE) - precursor_mass) / 
+          scores[score_index].second.mass(AVERAGE) * 1e6;
+
+      double pvalue = compute_weibull_pvalue(scores[score_index].first, eta_linked, beta_linked, shift_linked);
+      double pvalue_bonf = pvalue;//bonf_correct(pvalue, decoy_xpeptides.size());
+	
+      if (pvalue != pvalue) {
+        pvalue = 1;
+	pvalue_bonf = 1;
+      } else if (pvalue_bonf != pvalue_bonf) {
+        pvalue_bonf = 1;
+      }
+
       if (scores[score_index].second.is_decoy() && ndecoys < top_match) {
-	double pvalue = compute_weibull_pvalue(scores[score_index].first, eta_linked, beta_linked, shift_linked);
-	double pvalue_bonf = pvalue;//bonf_correct(pvalue, decoy_xpeptides.size());
-	
-	if (pvalue != pvalue) {
-	  pvalue = 1;
-	  pvalue_bonf = 1;
-	} else if (pvalue_bonf != pvalue_bonf) {
-	  pvalue_bonf = 1;
-	}
-	
+        ndecoys++;
 	search_decoy_file << scan_num << "\t"; 
 	search_decoy_file << charge << "\t"; 
 	search_decoy_file << precursor_mz << "\t";
 	search_decoy_file << precursor_mass << "\t";
 	search_decoy_file << scores[score_index].second.mass(MONO) << "\t";
 	search_decoy_file << scores[score_index].second.mass(AVERAGE) << "\t";
+        search_decoy_file << ppm_error << "\t";
 	search_decoy_file << scores[score_index].first <<"\t";
 	search_decoy_file << ndecoys << "\t";
 	search_decoy_file << pvalue << "\t";
 	search_decoy_file << decoy_xpeptides.size() << "\t";
 	search_decoy_file << scores[score_index].second<<endl;
 
-	ndecoys++;
       } else if (ntargets < top_match) {
 	ntargets++;
-
-	double pvalue = compute_weibull_pvalue(scores[score_index].first, eta_linked, beta_linked, shift_linked);
-	double pvalue_bonf = pvalue;//bonf_correct(pvalue, target_xpeptides.size());
-	
-	if (pvalue != pvalue) {
-	  pvalue = 1;
-	  pvalue_bonf = 1;
-	} else if (pvalue_bonf != pvalue_bonf) {
-	  pvalue_bonf = 1;
-	}
-	    
 	search_target_file << scan_num << "\t"; 
 	search_target_file << charge << "\t"; 
 	search_target_file << precursor_mz << "\t";
 	search_target_file << precursor_mass << "\t";
 	search_target_file << scores[score_index].second.mass(MONO) << "\t";
 	search_target_file << scores[score_index].second.mass(AVERAGE) << "\t";
+        search_target_file << ppm_error << "\t";
 	search_target_file << scores[score_index].first <<"\t";
 	search_target_file << ntargets << "\t";
 	search_target_file << pvalue << "\t";

@@ -873,6 +873,12 @@ void initialize_parameters(void){
       "Available for xlink-predict-peptide-ions (Default FALSE).",
       "true");
 
+  set_boolean_parameter("use-mgf", FALSE,
+      "Use MGF file format for parsing files",
+      "Available for xlink-search program (Default FALSE).",
+      "true");
+
+
   /* xlink-score-spectrum options */
   set_string_parameter("xlink-score-method", "composite", 
       "Score method for xlink {composite, modification, concatenated}. Default composite.",
