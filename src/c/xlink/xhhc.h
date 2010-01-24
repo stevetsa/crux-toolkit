@@ -42,6 +42,12 @@ extern "C" {
 
 typedef struct spectrum SPECTRUM_T;
 
+
+//HACK for getting protein ids.
+std::vector<PEPTIDE_T*>& get_peptides_from_sequence(std::string& sequence);
+void free_peptides();
+
+
 /*
 void prepare_protein_peptide_iterator(
     PROTEIN_PEPTIDE_ITERATOR_T* iterator

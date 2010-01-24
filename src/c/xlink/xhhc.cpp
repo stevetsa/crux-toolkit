@@ -10,6 +10,8 @@ using namespace std;
 FLOAT_T LinkedPeptide::linker_mass;
 
 
+map<string, vector<PEPTIDE_T*> > sequence_peptide_map; //hack to keep track of peptides.
+
 void get_linear_peptides(set<string>& peptides,
 			 DATABASE_PROTEIN_ITERATOR_T* protein_iterator,
 			 PEPTIDE_CONSTRAINT_T* peptide_constraint) {
@@ -34,9 +36,44 @@ void get_linear_peptides(set<string>& peptides,
       sequence = get_peptide_sequence(peptide); 
       carp(CARP_INFO,"Adding linear peptide:%s",get_peptide_sequence(peptide));
       peptides.insert(sequence);
+
+      map<string, vector<PEPTIDE_T*> >::iterator find_iter;
+
+      find_iter = sequence_peptide_map.find(sequence);
+
+      carp(CARP_DEBUG,"Adding to map:%s,",sequence.c_str());
+
+      if (find_iter == sequence_peptide_map.end()) {
+        vector<PEPTIDE_T*> peptide_vector;
+        peptide_vector.push_back(peptide);
+        sequence_peptide_map.insert(make_pair(sequence, peptide_vector));
+      } else {
+        find_iter -> second.push_back(peptide);
+      }
+      
+
     }
   } 
 }
+
+vector<PEPTIDE_T*>& get_peptides_from_sequence(string& sequence) {
+  return sequence_peptide_map[sequence];
+}
+
+void free_peptides() {
+  map<string, vector<PEPTIDE_T*> >::iterator map_iter;
+
+  for (map_iter = sequence_peptide_map.begin();
+       map_iter != sequence_peptide_map.end();
+       ++map_iter) {
+    vector<PEPTIDE_T*>& peptides = map_iter -> second;
+    for (int i=0;i<peptides.size();i++) {
+      free_peptide(peptides[i]);
+    }
+  }
+  sequence_peptide_map.clear();
+}
+
 
 // a hack, works for EDC linker only
 void get_linkable_peptides(set<string>& peptides, 
@@ -60,6 +97,24 @@ void get_linkable_peptides(set<string>& peptides,
       //peptide = database_peptide_iterator_next(peptide_iterator);
       peptide = protein_peptide_iterator_next(peptide_iterator);
       sequence = get_peptide_sequence(peptide); 
+
+      map<string, vector<PEPTIDE_T*> >::iterator find_iter;
+
+      find_iter = sequence_peptide_map.find(sequence);
+
+      carp(CARP_DEBUG,"Adding to map:%s",sequence.c_str());
+
+      if (find_iter == sequence_peptide_map.end()) {
+        vector<PEPTIDE_T*> peptide_vector;
+        peptide_vector.push_back(peptide);
+        sequence_peptide_map.insert(make_pair(sequence, peptide_vector));
+      } else {
+        find_iter -> second.push_back(peptide);
+      }
+      
+
+
+
       index = sequence.find(last_sequence);
       // if doesn't contain last peptide
       if (sequence[0] == 'R' && sequence[1] != 'P') { continue;}
@@ -500,11 +555,11 @@ std::ostream &operator<< (std::ostream& os, LinkedPeptide& lp) {
   ostringstream link_positions;
   link_positions << "(";
   for (int i = 0; i < peptides[0].length(); ++i) {
-	if (peptides[0].has_link_at(i)) link_positions << i << "," ;
+	if (peptides[0].has_link_at(i)) link_positions << (i+1) << "," ;
   }
   if (peptides.size() == 2) {
     for (int i = 0; i < peptides[1].length(); ++i) {
-	if (peptides[1].has_link_at(i)) link_positions << i << ")";
+	if (peptides[1].has_link_at(i)) link_positions << (i+1) << ")";
     }
     return os << peptides[0].sequence() << ", " << peptides[1].sequence() << " " << link_positions.str();// << " +" << lp.charge();
   }
