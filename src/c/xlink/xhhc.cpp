@@ -432,7 +432,7 @@ BondMap::BondMap(string links_string) {
   }
 
   //print out the bond map for debugging purposes.
-
+/*
   for (BondMap::iterator bond_iter = this -> begin();
         bond_iter != this -> end();
         ++bond_iter) {
@@ -442,7 +442,7 @@ BondMap::BondMap(string links_string) {
       cout <<bond_iter -> first << " link to " << *bond2_iter <<endl;
     }
   }
-
+*/
 }
 
 

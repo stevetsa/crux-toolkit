@@ -924,8 +924,8 @@ void initialize_parameters(void){
       "Available for crux xlink-search",
       "true");
 
-  set_int_parameter("min-weibull-points", 4000, 1, BILLION, 
-      "Minimum number of points for estimating the weibull (Default 4000).",
+  set_int_parameter("min-weibull-points", 400, 1, BILLION, 
+      "Minimum number of points for estimating the weibull (Default 400).",
       "Available for crux xlink-search", "true");
   
 
