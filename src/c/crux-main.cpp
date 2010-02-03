@@ -33,6 +33,9 @@ const char* usage_str = "Usage: crux <command> [options] <argument>\n"
 "  print-processed-spectra\n"
 "                      Write a new ms2 file with all of the same spectra\n"
 "                      with only the peaks used for computing xcorr.\n"
+"  search-for-mpsms    Search a collection of spectra against a sequence\n"
+"                      database, returning a collection of multiple peptide\n"
+"                      perspectrum matches (mPSMs) scored by XCorr.\n"
 "Options and arguments:\n"
 "  Specific to each command. Type 'crux <command>' to get details.\n"
 ;
@@ -57,6 +60,9 @@ int main(int argc, char** argv){
   case SEARCH_COMMAND:
     search_main(argc-1, argv+1);
     break;
+
+  case SEARCH_MPSMS_COMMAND:
+    mpsm_search_main(argc-1, argv+1);
 
   case SEQUEST_COMMAND:
     sequest_search_main(argc-1, argv+1);

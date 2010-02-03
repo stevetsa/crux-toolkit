@@ -1,6 +1,6 @@
 distdir = $(PACKAGE)_$(VERSION)
 
-SUBDIRS = ArrayLibrary MSToolkit percolator q-ranker .
+SUBDIRS = ArrayLibrary MSToolkit percolator q-ranker mpsm .
 
 # Crux can use either single or double precision floating poinnt.
 if USEDOUBLES
@@ -111,7 +111,8 @@ LIBFILES= \
   spectrum.h \
   utils.c \
   utils.h \
-  version.h
+  version.h \
+  mpsm_search.h
 
 noinst_LTLIBRARIES = libcrux.la
 libcrux_la_CFLAGS = \
@@ -122,6 +123,7 @@ libcrux_la_CFLAGS = \
 
 libcrux_la_CXXFLAGS = \
   $(AM_CXXFLAGS) \
+  -I$(top_builddir)/src/c/mpsm \
   -I$(top_srcdir)/src/c/MSToolkit \
   -I$(top_srcdir)/src/c/MSToolkit/RAMP \
   -I$(top_srcdir)/src/c/percolator/ \
@@ -159,9 +161,13 @@ crux_CXXFLAGS = \
   -DMAIN \
   -I$(top_srcdir)/src/c/MSToolkit \
   -I$(top_srcdir)/src/c/percolator \
-  -I$(top_srcdir)/src/c/q-ranker
+  -I$(top_srcdir)/src/c/q-ranker \
+  -I$(top_srcdir)/src/c/mpsm
+
 crux_LDADD = \
   $(AM_LDFLAGS) \
+  -L$(top_builddir)/src/c/mpsm \
+  -lmpsm \
   libcrux.la \
   -lstdc++ \
   -L$(top_builddir)/src/c/ArrayLibrary \
