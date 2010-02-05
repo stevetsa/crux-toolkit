@@ -136,7 +136,7 @@ int xlink_search_main(int argc, char** argv) {
 
   FLOAT_T linker_mass = get_double_parameter("link mass");
 
-  MASS_Type_T 
+  //MASS_Type_T 
 
   LinkedPeptide::linker_mass = linker_mass;
   vector<LinkedPeptide> all_ions;
@@ -366,8 +366,8 @@ int xlink_search_main(int argc, char** argv) {
     while (score_index < scores.size() && (ndecoys < top_match || ntargets < top_match)) {
  
       
-      double ppm_error = fabs(scores[score_index].second.mass(AVERAGE) - precursor_mass) / 
-          scores[score_index].second.mass(AVERAGE) * 1e6;
+      double ppm_error = fabs(scores[score_index].second.mass(MONO) - precursor_mass) / 
+          scores[score_index].second.mass(MONO) * 1e6;
 
       double pvalue = compute_weibull_pvalue(scores[score_index].first, eta_linked, beta_linked, shift_linked);
       double pvalue_bonf = pvalue;//bonf_correct(pvalue, decoy_xpeptides.size());
@@ -439,6 +439,11 @@ int xlink_search_main(int argc, char** argv) {
   search_decoy_file.close();
   //free_spectrum_collection(spectra);
   //free_spectrum(spectrum);
+
+  //Calculate q-values.
+  
+
+
   return 0;
 }
 

@@ -1,2 +1,3 @@
-SUBDIRS = . c
+SUBDIRS = . c python
+
 

@@ -1549,7 +1549,7 @@ FLOAT_T get_spectrum_neutral_mass(
   int charge ///< the charge of precursor ion -in
   )
 {
-  return (get_spectrum_mass(spectrum, charge) - MASS_H*charge); // TESTME
+  return (get_spectrum_mass(spectrum, charge) - MASS_PROTON * charge); // TESTME
 }
 
 /**
@@ -1561,7 +1561,7 @@ FLOAT_T get_spectrum_singly_charged_mass(
   int charge ///< the charge of the precursor ion -in
   )
 {
-  return (get_spectrum_mass(spectrum, charge) - MASS_H*(charge-1));  // TESTME
+  return (get_spectrum_mass(spectrum, charge) - MASS_PROTON*(charge-1));  // TESTME
 }
 
 
