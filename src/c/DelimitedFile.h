@@ -159,7 +159,12 @@ class DelimitedFile {
     const char* column_name ///< the column name
   );
 
-  
+  /**
+    * adds a row to the delimited file
+    *\returns the new row index
+    */
+  unsigned int addRow();
+ 
   /**
    *\returns the string vector corresponding to the column
    */
@@ -359,7 +364,9 @@ class DelimitedFile {
     char delimiter = '\t'
   );
 
-  
+
+  //Allows object to be printed to a stream
+  friend std::ostream &operator<< (std::ostream& os, DelimitedFile& delimited_file); 
 
 };
 

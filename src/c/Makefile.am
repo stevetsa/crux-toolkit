@@ -127,7 +127,8 @@ PROGRAM_FILES = \
   crux-generate-peptides \
   crux-predict-peptide-ions \
   xlink-predict-peptide-ions \
-  xlink-score-spectrum 
+  xlink-score-spectrum \
+  xlink-assign-ions
 
 bin_PROGRAMS = $(PROGRAM_FILES)
 
@@ -200,6 +201,22 @@ xlink_score_spectrum_LDADD = \
   -lxlink \
   libcrux.la \
   -lmstoolkit
+
+xlink_assign_ions_SOURCES=./xlink/xlink_assign_ions.cpp
+xlink_assign_ions_CXXFLAGS= \
+  $(AM_CFLAGS) \
+  -DMAIN \
+  -I$(top_srcdir)/src/c/xlink
+
+xlink_assign_ions_LDADD = \
+  $(AM_LDFLAGS) \
+  -L$(top_builddir)/src/c/MSToolkit \
+  -L$(top_builddir)/src/c/xlink \
+  -lm \
+  -lxlink \
+  libcrux.la \
+  -lmstoolkit
+
 
 paramdir = $(prefix)/doc
 param_DATA = default.params

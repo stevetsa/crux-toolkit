@@ -530,14 +530,29 @@ FLOAT_T LinkedPeptide::mass(MASS_TYPE_T mass_type) {
 }
 
 void LinkedPeptide::calculate_mass(MASS_TYPE_T mass_type) {
+
+  if (mass_type == MONO) {
+    //cout <<"MONO ";
+  } else {
+    //cout <<"AVERAGE ";
+  }
+
   mass_[mass_type] = calc_sequence_mass((char*)peptides_[0].sequence().c_str(), mass_type);   
+  //cout << "Mass of "<<peptides_[0].sequence().c_str()<<":"
+  //    <<calc_sequence_mass((char*)peptides_[0].sequence().c_str(), mass_type)<<endl;
+
   if (peptides_[0].get_num_links() > 0) {
     mass_[mass_type] += linker_mass;
   }
 
   if (size() == 2) {
     mass_[mass_type] += calc_sequence_mass((char*)peptides_[1].sequence().c_str(), mass_type);
+     //cout << "Mass of "<<peptides_[1].sequence().c_str() <<":"
+       //<<calc_sequence_mass((char*)peptides_[1].sequence().c_str(), mass_type)<<endl;
   }
+
+  //cout <<"Total Mass of" << (*this) << ":" <<mass_[mass_type]<<endl;
+
   //mass += MASS_H_MONO*charge_;
   if (type_ == B_ION) {
     if (mass_type == MONO) {
@@ -555,7 +570,7 @@ FLOAT_T LinkedPeptide::get_mz(MASS_TYPE_T mass_type) {
   //if (mz < 5)
   //mz = mass_ / charge_;
   if (mass_type == MONO) {
-    mz[MONO] = (mass(MONO) + MASS_H_MONO * charge_) / charge_;
+    mz[MONO] = (mass(MONO) + MASS_PROTON * charge_) / charge_;
   } else {
     mz[AVERAGE] = (mass(AVERAGE) + MASS_H_AVERAGE * charge_) / charge_;
   }

@@ -214,38 +214,6 @@ void DelimitedFile::saveData(
   ) {
   ofstream fout(file);
 
-  //find the maximum number of rows.
-  unsigned int maxRow = 0;
-  for (unsigned int col_idx=0; col_idx < numCols(); col_idx++) {
-    maxRow = max(maxRow, numRows(col_idx));
-  }
-
-  //print out the header if it exists.
-  if (column_names_.size() != 0) {
-    fout << column_names_[0];
-    for (unsigned int col_idx=1; col_idx<column_names_.size(); col_idx++) {
-      fout << "\t" << column_names_[col_idx];
-    }
-    fout << endl;
-  }
-
-  //print out all rows, using \t when
-  //the row goes past the current column
-  //size.
-  for (unsigned int row_idx=0; row_idx<maxRow; row_idx++) {
-    if (row_idx < numRows(0)) {
-      fout << getString((unsigned int)0, row_idx);
-    } else {
-      fout << "\t";
-    }
-    for (unsigned int col_idx=1;col_idx<numCols();col_idx++) {
-      fout <<"\t";
-      if (row_idx < numRows(col_idx))
-	fout << getString(col_idx, row_idx);
-    }
-    fout << endl;
-  }
-
   fout.close();
 }
 
@@ -346,6 +314,22 @@ string& DelimitedFile::getColumnName(
   unsigned int col_idx ///< the column index
   ) {
   return column_names_.at(col_idx);
+}
+
+/**
+ * adds a row to the delimited file
+ *\returns the new row index
+ */
+unsigned int DelimitedFile::addRow() {
+  if (numCols() == 0) {
+    carp(CARP_FATAL,"Must have at least one column before calling add row!");
+  }
+
+  unsigned int row_idx = numRows();
+  for (unsigned int col_idx = 0;col_idx < numCols(); col_idx++) {
+      setString(col_idx, row_idx, "");
+  }
+  return row_idx;
 }
 
 /**
@@ -637,4 +621,43 @@ void DelimitedFile::next() {
  */
 BOOLEAN_T DelimitedFile::hasNext() {
   return current_row_ < numRows();
+}
+
+
+//Allows object to be printed to a stream
+std::ostream &operator<< (std::ostream& os, DelimitedFile& delimited_file) {
+
+  //find the maximum number of rows.
+  unsigned int maxRow = 0;
+  for (unsigned int col_idx=0; col_idx < delimited_file.numCols(); col_idx++) {
+    maxRow = max(maxRow, delimited_file.numRows(col_idx));
+  }
+
+  //print out the header if it exists.
+  if (delimited_file.column_names_.size() != 0) {
+    os << delimited_file.column_names_[0];
+    for (unsigned int col_idx=1; col_idx < delimited_file.column_names_.size(); col_idx++) {
+      os << "\t" << delimited_file.column_names_[col_idx];
+    }
+    os << endl;
+  }
+
+  //print out all rows, using \t when
+  //the row goes past the current column
+  //size.
+  for (unsigned int row_idx=0; row_idx<maxRow; row_idx++) {
+    if (row_idx < delimited_file.numRows(0)) {
+      os << delimited_file.getString((unsigned int)0, row_idx);
+    } else {
+      os << "\t";
+    }
+    for (unsigned int col_idx=1;col_idx<delimited_file.numCols();col_idx++) {
+      os <<"\t";
+      if (row_idx < delimited_file.numRows(col_idx))
+	os << delimited_file.getString(col_idx, row_idx);
+    }
+    os << endl;
+  }
+
+  return os;
 }

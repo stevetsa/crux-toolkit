@@ -136,6 +136,8 @@ int xlink_search_main(int argc, char** argv) {
 
   FLOAT_T linker_mass = get_double_parameter("link mass");
 
+  MASS_Type_T 
+
   LinkedPeptide::linker_mass = linker_mass;
   vector<LinkedPeptide> all_ions;
   carp(CARP_DETAILED_DEBUG,"Calling find all precursor ions");
@@ -308,8 +310,6 @@ int xlink_search_main(int argc, char** argv) {
     }
   
     
-
-
 
     clock_t train_decoy_clock = clock();
 

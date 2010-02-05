@@ -11,7 +11,8 @@ libxlink_la_SOURCES = \
   xhhc_score_peptide_spectrum.cpp \
   xhhc_scorer.cpp \
   xhhc_scorer.h \
-  xhhc_search.cpp
+  xhhc_search.cpp \
+  xlink_assign_ions.cpp
 
 libxlink_la_CPPFLAGS = $(AM_CPPFLAGS) \
   -I$(top_srcdir)/src/c/ \
