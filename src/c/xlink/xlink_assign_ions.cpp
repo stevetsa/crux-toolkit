@@ -154,7 +154,8 @@ void print_spectrum(SPECTRUM_T* spectrum, LinkedIonSeries& ion_series) {
       for (vector<LinkedPeptide>::iterator ion = ions.begin();
 	   ion != ions.end(); 
 	   ++ion) {
-	if (ion -> get_mz(MONO) >= 400 && ion -> get_mz(MONO) <= 1200) {
+        
+	//if (ion -> get_mz(MONO) >= 400 && ion -> get_mz(MONO) <= 1400) {
 	  if (ion -> type() == B_ION || ion -> type() == Y_ION) {
 	    PEAK_T* peak = get_nearest_peak(spectrum, ion -> get_mz(MONO), bin_width);
 	    if (peak != NULL) {
@@ -163,7 +164,7 @@ void print_spectrum(SPECTRUM_T* spectrum, LinkedIonSeries& ion_series) {
               carp(CARP_DETAILED_DEBUG,"Ion clash!");
             }
 	  }
-	}
+	//}
       }
 
       //now print out the spectrum
@@ -184,7 +185,7 @@ void print_spectrum(SPECTRUM_T* spectrum, LinkedIonSeries& ion_series) {
       while (peak_iterator_has_next(peak_iter)) {
 	PEAK_T* peak = peak_iterator_next(peak_iter);
         
-	if (get_peak_location(peak) >= 400 && get_peak_location(peak) <= 1200) {
+	//if (get_peak_location(peak) >= 400 && get_peak_location(peak) <= 1400) {
           unsigned int row_idx = result_file.addRow();
           result_file.setValue(mz_obs_col, row_idx, get_peak_location(peak));
           result_file.setValue(int_col, row_idx, get_peak_intensity(peak));
@@ -221,7 +222,7 @@ void print_spectrum(SPECTRUM_T* spectrum, LinkedIonSeries& ion_series) {
               result_file.setValue(ion_col, row_idx, ion_string_oss.str());
               result_file.setValue(seq_col, row_idx, ion);
           }
-        }
+        //}
       }
       free_peak_iterator(peak_iter);
 
