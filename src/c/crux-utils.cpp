@@ -277,7 +277,8 @@ const char* command_type_to_file_string_ptr(COMMAND_T type){
 
 static const char* command_type_command_line_strings[NUMBER_COMMAND_TYPES] =
   { "invalid", "create-index", "search-for-matches", "sequest-search",
-    "compute-q-values", "percolator", "q-ranker", "print-processed-spectra" 
+    "compute-q-values", "percolator", "q-ranker", "print-processed-spectra",
+    "xlink-search"
   };
 /**
  * Conversion of COMMAND_T to the string used on the command line.

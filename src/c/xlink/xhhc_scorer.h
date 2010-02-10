@@ -1,9 +1,7 @@
 #ifndef XHHC_SCORER_H
 #define XHHC_SCORER_H
 
-extern "C" {
 #include "scorer.h"
-}
 
 #include "xhhc_ion_series.h"
 

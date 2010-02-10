@@ -18,6 +18,10 @@
 #include "ion.h"
 #include "scorer.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * \returns An (empty) scorer object.
  */
@@ -371,6 +375,13 @@ void add_intensity(
   int add_idx,            ///< the idex to add the intensity -in
   FLOAT_T intensity         ///< the intensity to add -in
   );
+
+
+#ifdef __cplusplus
+}
+#endif
+
+
 
 /*
  * Local Variables:

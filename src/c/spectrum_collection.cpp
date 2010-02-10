@@ -244,6 +244,15 @@ BOOLEAN_T parse_spectrum_collection(
   FILE* file;
   SPECTRUM_T* parsed_spectrum;
 
+  // get a list of scans to include if requested
+  const char* range_string = get_string_parameter("scan-number");
+  int first_scan = get_first_in_range_string(range_string);
+  int last_scan = get_last_in_range_string(range_string);
+  if( first_scan == -1 || last_scan == -1 ){
+    carp(CARP_FATAL, "The scan number range '%s' is invalid. "
+         "Must be of the form <first>-<last>.", range_string);
+  }
+  
   // check if file is still avaliable
   if ((file = fopen(spectrum_collection->filename,"r")) == NULL) {
     carp(CARP_ERROR, "File %s could not be opened",spectrum_collection->filename);
@@ -254,15 +263,8 @@ BOOLEAN_T parse_spectrum_collection(
   // parse header lines 'H' into spectrum_collection comment 
   parse_header_line(spectrum_collection, file);
 
-  // get a list of scans to include if requested
-  const char* range_string = get_string_parameter("scan-number");
-  int first_scan = get_first_in_range_string(range_string);
-  int last_scan = get_last_in_range_string(range_string);
-  if( first_scan == -1 || last_scan == -1 ){
-    carp(CARP_FATAL, "The scan number range '%s' is invalid. "
-         "Must be of the form <first>-<last>.", range_string);
-    }
   }
+
   //check to see if the mstoolkit is going to used.
   if (get_boolean_parameter("use-mstoolkit")) {
     //We now know that the file exists,
