@@ -9,6 +9,10 @@
 #ifndef __HASH__
 #define __HASH__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * Create new hashtable with capacity.
  *\returns the hash table
@@ -32,8 +36,8 @@ void free_hash(
  */
 BOOLEAN_T add_hash(
   HASH_T* h, ///< Hash object to add -in/out
-  char *key, ///< key of the record to add -in
-  void *value ///< value to add to be hashed if needed -in
+  const char *key, ///< key of the record to add -in
+  const void *value ///< value to add to be hashed if needed -in
   );
 
 /**
@@ -45,7 +49,7 @@ BOOLEAN_T add_hash(
 BOOLEAN_T update_hash_value(
   HASH_T* h, ///< Hash object to add -in/out
   const char *key, ///< key of the record to update -in
-  void *value ///< value to add to be hash -in
+  const void *value ///< value to add to be hash -in
   );
 
 /**
@@ -57,7 +61,7 @@ BOOLEAN_T update_hash_value(
 BOOLEAN_T add_or_update_hash_copy(
   HASH_T* h, ///< Hash object to add to -in/out
   const char *key, ///< key of the record to add or update -in
-  void *value ///< value to associate with the key -in
+  const void *value ///< value to associate with the key -in
   );
 
 /**
@@ -69,7 +73,7 @@ BOOLEAN_T add_or_update_hash_copy(
 BOOLEAN_T add_or_update_hash(
   HASH_T* h, ///< Hash object to add to -in/out
   const char *key, ///< key of the record to add or update -in
-  void *value ///< value to associate with the key -in
+  const void *value ///< value to associate with the key -in
   );
 
 /**
@@ -83,7 +87,7 @@ void* get_hash_value(
 
 void** get_hash_value_ref(
   HASH_T* h, ///< working hash object -in
-  char *key  ///< the key of the record to retrieve -in
+  const char *key  ///< the key of the record to retrieve -in
   );
 
 /**
@@ -92,7 +96,7 @@ void** get_hash_value_ref(
  */
 int get_hash_count(
   HASH_T* h, ///< working hash object -in
-  char *key  ///< the key of the record to retrieve -in
+  const char *key  ///< the key of the record to retrieve -in
   );
 
 /**
@@ -101,7 +105,7 @@ int get_hash_count(
  */
 void* remove_hash(
   HASH_T* h, ///< working hash object -in
-  char *key  ///< the key of the record to remove -in
+  const char *key  ///< the key of the record to remove -in
   );
 
 /**
@@ -140,6 +144,10 @@ char* hash_iterator_next(
 void free_hash_iterator(
   HASH_ITERATOR_T* hash_iterator ///< the hash iterator to free
   );
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 

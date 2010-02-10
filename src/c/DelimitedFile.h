@@ -4,10 +4,16 @@
  * DATE: Jan 7, 2010
  * AUTHOR: Sean McIlwain
  * \brief Object for reading tab-delimited files.
+ * This class generates a table of values. The default delimiter is tab.
+ * This class is capable of reading string, integers, and floating point
+ * Types from each cell of the table.  This class also provides function
+ * for reading a list of integers or string from a cell using a delimiter
+ * that is different from the column delimiter (default is comma ',').
  ****************************************************************************/
 #ifndef DELIMITEDFILE_H
 #define DELIMITEDFILE_H
 
+#include <limits>
 #include <ios>
 #include <iomanip>
 #include <iostream>
@@ -15,9 +21,7 @@
 #include <string>
 #include <vector>
 
-//extern "C" {
 #include "parameter.h"
-//}
 
 
 class DelimitedFile {
@@ -30,15 +34,6 @@ class DelimitedFile {
   std::vector<std::vector<std::string> > data_;
   std::vector<std::string> column_names_;
   unsigned int current_row_; //used for iterating through the table.
-
-  /**
-   * convert string to data type
-   */
-  template<typename T>  
-  bool from_string(
-    T& value,
-    const std::string& s
-  );
 
  public:
   /**
@@ -65,13 +60,15 @@ class DelimitedFile {
   );
 
   /**
+   * clears the table
+   */
+  void clear();
+
+  /**
    * Destructor
    */
   virtual ~DelimitedFile();
   
-  void clear();
-
-
   /**
    *\returns the number of rows, assuming a square matrix
    */
@@ -139,10 +136,16 @@ class DelimitedFile {
     const char* column_name ///< the column name
   );
 
+  /**
+   * adds a vector of columns to the delimited file
+   */
   void addColumns(
     std::vector<std::string>& column_names);
 
-  std::vector<std::string>& getColumns();
+  /**
+   *\returns the column_names
+   */
+  std::vector<std::string>& getColumnNames();
 
 
   /**
@@ -349,10 +352,30 @@ class DelimitedFile {
   );
 
   /**
-   * gets an vector of integers from cell
+   * gets an vector of strings from cell where the
+   * string in the cell has delimiters that are
+   * different than the column delimiter. The
+   * default delimiter is a comma
    * uses the current_row_ as the row index.
+   * clears the integer vector before 
+   * populating it.
    */
-  void getIntegerVector(
+  void getStringVectorFromCell(
+    const char* column_name, ///< the column name
+    std::vector<std::string>& string_vector, ///<the vector of integers
+    char delimiter=',' ///<the delimiter to use
+  );
+
+  /**
+   * gets an vector of integers from cell where the
+   * string in the cell are integers which are separated
+   * by a delimiter which is differnt than the column
+   * delimiter.  The default delimiter is a comma
+   * uses the current_row_ as the row index.
+   * clears the integer vector before 
+   * populating it.
+   */
+  void getIntegerVectorFromCell(
     const char* column_name, ///< the column name
     std::vector<int>& int_vector, ///<the vector of integers
     char delimiter=',' ///<the delimiter to use
@@ -364,12 +387,12 @@ class DelimitedFile {
    */
   void sortByFloatColumn(
     const std::string& column_name, ///< the column name
-    bool ascending = true);
+    BOOLEAN_T ascending = TRUE);
   
   /**
    * sorts the table by a column. Assumes the data type is 
    * integer.
-  /*
+ 
   void sortByIntegerColumn(
     const std::string& column_name, ///< the column name
     bool ascending = true);
@@ -409,8 +432,22 @@ class DelimitedFile {
     char delimiter = '\t'
   );
 
+  /**
+   * convert string to data type
+   */
+  template<typename TValue>  
+  static bool from_string(
+    TValue& value,
+    const std::string& s
+    ) {
 
-  //Allows object to be printed to a stream
+    std::istringstream iss(s);
+    return !(iss >> std::dec >> value).fail();
+  }   
+  
+  /**
+   * Allows object to be printed to a stream
+   */
   friend std::ostream &operator<< (std::ostream& os, DelimitedFile& delimited_file); 
 
 };

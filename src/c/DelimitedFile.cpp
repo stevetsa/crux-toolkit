@@ -3,12 +3,11 @@
 #include <fstream>
 #include <sstream>
 
-extern "C" {
+#include <map>
+
+
 
 #include "carp.h"
-
-}
-
 
 using namespace std;
 
@@ -36,19 +35,6 @@ void DelimitedFile::tokenize(
     pos = str.find(delimiter,lastPos);
   }
 }
-
-/**
- * convert string to data type
- */
-template<typename TValue>  
-bool DelimitedFile::from_string(
-  TValue& value,
-  const string& s
-  ) {
-
-  istringstream iss(s);
-  return !(iss >> dec >> value).fail();
-} 
 
 /**
  * \returns a DelimitedFile object
@@ -81,22 +67,20 @@ DelimitedFile::DelimitedFile(
   loadData(file_name, hasHeader);
 }
 
+
+void DelimitedFile::clear() {
+  for (unsigned int idx=0;idx < data_.size(); idx++) {
+    data_[idx].clear();
+  }
+  data_.clear();
+  column_names_.clear();
+}
+
 /**
  * Destructor
  */
 DelimitedFile::~DelimitedFile() {
-
-  //TODO : Do we need to do anything here?
-}
-
-void DelimitedFile::clear() {
-
-  for (int col_idx=0;col_idx < numCols();col_idx++) {
-    data_[col_idx].clear();
-  }
-  data_.clear();
-  column_names_.clear();
-
+  clear();
 }
 
 
@@ -123,7 +107,7 @@ unsigned int DelimitedFile::numRows(
   if (col_idx >= numCols()) {
     return 0;
   }
-
+  
   return(data_[col_idx].size());
 }
 
@@ -147,8 +131,7 @@ void DelimitedFile::loadData(
   bool hasHeader ///< header indicator
   ) {
 
-  data_.clear();
-  column_names_.clear();
+  clear();
 
   fstream file(file_name, ios::in);
 
@@ -223,8 +206,9 @@ void DelimitedFile::saveData(
 void DelimitedFile::saveData(
   const char* file ///< the file path
   ) {
+  
   ofstream fout(file);
-
+  fout << *this;
   fout.close();
 }
 
@@ -269,7 +253,7 @@ unsigned int DelimitedFile::addColumn() {
  *\returns the column index, -1 if not found.
  */ 
 int DelimitedFile::findColumn(
-  string& column_name ///< the column name
+  const string& column_name ///< the column name
   ) {
 
   for (unsigned int col_idx=0;col_idx<column_names_.size();col_idx++) {
@@ -579,20 +563,46 @@ int DelimitedFile::getInteger(
 }
 
 /**
- * gets an vector of integers from cell
+ * gets an vector of strings from cell where the
+ * string in the cell has delimiters that are
+ * different than the column delimiter. The
+ * default delimiter is a comma
  * uses the current_row_ as the row index.
+ * clears the integer vector before 
+ * populating it.
  */
-void DelimitedFile::getIntegerVector(
+void DelimitedFile::getStringVectorFromCell(
+  const char* column_name, ///< the column name
+  std::vector<std::string>& string_vector, ///<the vector of integers
+  char delimiter ///<the delimiter to use
+  ) {
+
+  string& string_ans = getString(column_name);
+
+  //get the list of strings separated by delimiter
+  string_vector.clear();
+  tokenize(string_ans, string_vector, delimiter);
+}
+
+/**
+ * gets an vector of integers from cell where the
+ * string in the cell are integers which are separated
+ * by a delimiter which is differnt than the column
+ * delimiter.  The default delimiter is a comma
+ * uses the current_row_ as the row index.
+ * clears the integer vector before 
+ * populating it.
+ */
+void DelimitedFile::getIntegerVectorFromCell(
     const char* column_name, ///< the column name
     vector<int>& int_vector, ///<the vector of integers
     char delimiter ///<the delimiter to use
   ) {
   
-  string& string_ans = getString(column_name);
-
   //get the list of strings separated by delimiter
   vector<string> string_vector_ans;
-  tokenize(string_ans, string_vector_ans, delimiter);
+
+  getStringVectorFromCell(column_name, string_vector_ans, delimiter);
 
   //convert each string into an integer.
   int_vector.clear();
@@ -612,33 +622,35 @@ void DelimitedFile::sortByFloatColumn(
   const string& column_name,
   BOOLEAN_T ascending) {
 
-  multimap<FLOAT_T, int>* sort_indices;
-
+  multimap<FLOAT_T, unsigned int> sort_indices;
+  carp(CARP_DETAILED_DEBUG,"ascending:%d", ascending);
+/*
   if (ascending) {
-    sort_indices = new multimap<FLOAT_T, int, greater<FLOAT_T> >();
+  	greater<FLOAT_T> compare;
+    sort_indices = multimap<FLOAT_T, unsigned int>(compare);
   } else {
-    sort_indices = new multimap<FLOAT_T, int, less<FLOAT_T> >();
+    sort_indices = multimap<FLOAT_T, unsigned int>(less<FLOAT_T>);
   }
-
+*/
   int col_idx = findColumn(column_name);
   
   if (col_idx == -1) {
     carp(CARP_FATAL,"column %s doesn't exist",column_name.c_str());
   }
 
-  for (int row_idx=0;row_idx<numRows();row_idx++) {
-    sort_indices -> insert(make_pair(getFloat(col_idx, row_idx), row_idx);
+  for (unsigned int row_idx=0;row_idx<numRows();row_idx++) {
+    sort_indices.insert(pair<FLOAT_T, unsigned int>(getFloat(col_idx, row_idx), row_idx));
   }
   //after map is built, the indices will give the order.
 
   vector<vector<string> > newData;
 
-  mulitmap<FLOAT_T, int>::iterator sort_iter;
+  multimap<FLOAT_T, unsigned int>::iterator sort_iter;
 
-  for (sort_iter = sort_indices -> begin();
-    sort_iter != sort_indices -> end();
+  for (sort_iter = sort_indices.begin();
+    sort_iter != sort_indices.end();
     ++sort_iter) {
-    int row_idx = sort_iter -> second;
+    unsigned int row_idx = sort_iter -> second;
 
     vector<string> &current_row = data_[row_idx];
     newData.push_back(current_row);
@@ -678,7 +690,9 @@ BOOLEAN_T DelimitedFile::hasNext() {
 }
 
 
-//Allows object to be printed to a stream
+/**
+ *Allows object to be printed to a stream
+ */
 std::ostream &operator<< (std::ostream& os, DelimitedFile& delimited_file) {
 
   //find the maximum number of rows.

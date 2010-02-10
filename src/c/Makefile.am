@@ -46,7 +46,7 @@ LIBFILES= \
   DelimitedFile.h \
   generate_peptides_iterator.c \
   generate_peptides_iterator.h \
-  hash.c \
+  hash.cpp \
   hash.h \
   hit.c \
   hit.h \
@@ -73,9 +73,9 @@ LIBFILES= \
   objects.h \
   output-files.cpp \
   output-files.h \
-  parameter.c \
+  parameter.cpp \
   parameter.h \
-  parse_arguments.c \
+  parse_arguments.cpp \
   parse_arguments.h \
   peak.c \
   peak.h \
@@ -103,8 +103,8 @@ LIBFILES= \
   scorer.h \
   sorter.c \
   sorter.h \
-  spectrum.c \
-  spectrum_collection.c \
+  spectrum.cpp \
+  spectrum_collection.cpp \
   spectrum_collection.h \
   spectrum.h \
   utils.c \

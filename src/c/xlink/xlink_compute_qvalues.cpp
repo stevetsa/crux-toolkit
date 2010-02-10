@@ -48,18 +48,18 @@ void getBestBonf(DelimitedFile& matches, int start, int stop,
         charge_best_score[charge] = make_pair(match_idx, pvalue);
       }
       if (charge_ntests.find(charge) == charge_ntests.end()) {
-        int ntests = matches.getDouble("matches/spectrum", match_idx);
+        int ntests = matches.getInteger("matches/spectrum", match_idx);
         charge_ntests[charge] = ntests;
       }
     }
   
   
     int best_charge = charge_best_score.begin() -> first;
-    double best_charge_pvalue = charge_best_score[best_charge].second.second;
+    double best_charge_pvalue = charge_best_score[best_charge].second;
     double best_charge_pvalue_bonf = 
       bonferroni_correction(best_charge_pvalue, charge_ntests[best_charge]);
 
-    int best_charge_idx = charge_best_score[best_charge] -> second.first;
+    int best_charge_idx = charge_best_score[best_charge].first;
 
     for (map<int, pair<int, double> >::iterator iter = 
       charge_best_score.begin();
@@ -72,7 +72,7 @@ void getBestBonf(DelimitedFile& matches, int start, int stop,
         best_charge = iter -> first;
         best_charge_pvalue = iter -> second.second;
         best_charge_pvalue_bonf = current_charge_pvalue_bonf;
-        best_charge_idx = charge_best_score[best_charge] -> second.first;  
+        best_charge_idx = charge_best_score[best_charge].first;  
       }
     
     }
@@ -86,7 +86,7 @@ void getBestBonf(DelimitedFile& matches, int start, int stop,
       ntests_total += iter -> second;
     }
 
-    best_bonf = bonferonni_correction(best_charge_pvalue, ntests_total);
+    best_bonf = bonferroni_correction(best_charge_pvalue, ntests_total);
     best_index = best_charge_idx;
   }
 }
@@ -102,21 +102,20 @@ void collapseScans(DelimitedFile& matches_in, DelimitedFile& matches_out) {
 
   int last_scan = matches_in.getInteger("scan", 0);
   int first_row = 0;
-
+  int best_row = 0;
+  double best_bonf = 0;
   
 
   for (int match_idx = 0;match_idx < matches_in.numRows(); match_idx++) {
     int current_scan = matches_in.getInteger("scan");
     if (last_scan != current_scan) {
       //process the scans between the first and match_idx-1.
-      int best_row;
-      double best_bonf;
       //find the best row and calculate the bonferroni corrected p-value
-      getBestBonf(matches_in, first_row, match_idx-1, best_index, best_bonf);  
+      getBestBonf(matches_in, first_row, match_idx-1, best_row, best_bonf);  
 
       //update matches out
       int new_row = matches_out.addRow();
-      matches_in.copyToRow(matches_out, best_index, new_row);
+      matches_in.copyToRow(matches_out, best_row, new_row);
       matches_out.setValue<double>("p-value bonf.", new_row, best_bonf);
 
 
@@ -129,7 +128,7 @@ void collapseScans(DelimitedFile& matches_in, DelimitedFile& matches_out) {
   //finish the last entry
   getBestBonf(matches_in, first_row, matches_in.numRows() - 1, best_row, best_bonf);
   int new_row = matches_out.addRow();
-  matches_in.copyToRow(matches_out, best_index, new_row);
+  matches_in.copyToRow(matches_out, best_row, new_row);
   matches_out.setValue("p-value bonf.", new_row, best_bonf);
 
 
@@ -186,8 +185,8 @@ int main(int argc, char** argv){
   set_verbosity_level(get_int_parameter("verbosity"));
 
   /* Get Arguments */
- 
-  // create new ion series
+
+  string output_dir = get_string_parameter("output-dir");
 
 
   //Read in targets.
@@ -237,6 +236,6 @@ int main(int argc, char** argv){
     target_matches_bonf.setValue("q-value decoy", target_idx, q_value_decoy);
   }
   
-  string result_file = outputdir + "/qvalues.target.txt";
-  target_matches_bonf.saveData(outputdir);
+  string result_file = output_dir + "/qvalues.target.txt";
+  target_matches_bonf.saveData(result_file);
 }

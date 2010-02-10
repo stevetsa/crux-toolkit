@@ -8,6 +8,13 @@
 
 #include <stdio.h>
 
+#define QSORT_COMPARE_METHOD int(*)(const void*, const void*)
+
+
+#ifdef __cplusplus
+class DelimitedFile;
+#endif
+
 /**
  * \typedef PEAK_T 
  * A peak in a spectrum
