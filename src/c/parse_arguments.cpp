@@ -1,5 +1,5 @@
 /**
- * \file parse_arguments.c
+ * \file parse_arguments.cpp
  * \brief A central storage location for parameter values, reading in
  * from command line and parameter file.
  */
@@ -71,7 +71,7 @@ int assign_value_from_option_to_hash(/*const*/ argument * option,
 void build_message(const char * arg);
 size_t get_usage_size(const char * name);
 int sprintf_option_default_value(argument * o);
-char * get_option_value_type(argument * o);
+const char * get_option_value_type(argument * o);
 int is_numeric(/*const*/ char * s);
 
 /***********************************************************************
@@ -195,7 +195,7 @@ int parse_arguments(int argc, char * argv[], int die_on_error) {
     n = strlen(argv[i]);
     if (argv[i][0] == '-' && argv[i][1] == '-' && n > 1) {
       if ((option = find_option(&(argv[i][1]))) != NULL) {
-        error = assign_value_from_option(option, &i);
+        error = (argument_error)assign_value_from_option(option, &i);
         if (error != NO_ERROR) {
           /* Missing or incorrect value */
           build_message(argv[i]);
@@ -209,7 +209,7 @@ int parse_arguments(int argc, char * argv[], int die_on_error) {
       }
     } else {
       if ((req = get_next_req_argument()) != NULL) {
-        error = assign_value_from_required(req, argv[i]);
+        error = (argument_error)assign_value_from_required(req, argv[i]);
         if (error != NO_ERROR) {
           /* Should never reach here */
           break;
@@ -288,7 +288,7 @@ int parse_arguments_into_hash(int argc, char * argv[],
     if (argv[i][0] == '-' && argv[i][1] == '-' && n > 1) {
       if ((option = find_option(&(argv[i][1]))) != NULL) {
         // error = assign_value_from_option(option, &i);
-        error = assign_value_from_option_to_hash(option, &i, hash);
+        error = (argument_error)assign_value_from_option_to_hash(option, &i, hash);
         if (error != NO_ERROR) {
           /* Missing or incorrect value */
           build_message(argv[i]);
@@ -303,7 +303,7 @@ int parse_arguments_into_hash(int argc, char * argv[],
     } else {
       if ((req = get_next_req_argument()) != NULL) {
         //error = assign_value_from_required(req, argv[i]);
-        error = assign_value_from_required_to_hash(req, argv[i], hash);
+        error = (argument_error)assign_value_from_required_to_hash(req, argv[i], hash);
         if (error != NO_ERROR) {
           /* Should never reach here */
           break;
@@ -465,7 +465,7 @@ int assign_value_from_required_to_hash(/*const*/ argument * req,
   switch (req->type) {
     case FLAG_ARG:
       //      *((int *) req->container) = 1;
-      update_hash_value(hash, req->name, "1");
+      update_hash_value(hash, req->name, (void*)"1");
       break;
     case INT_ARG:
     case LONG_ARG:
@@ -647,7 +647,7 @@ int assign_value_from_option_to_hash(/*const*/ argument * option,
     case FLAG_ARG:
       /* No value for this argument */
       //      *((int *) option->container) = 1;
-      update_hash_value(hash, option->name , "1");
+      update_hash_value(hash, option->name , (void*)"1");
       result = NO_ERROR;
       break;
     case INT_ARG:
@@ -808,9 +808,9 @@ size_t get_usage_size(const char * name) {
  *               describing the type of the option value
  *               "", "int", "long", "double", "string"
  ***********************************************************************/
-char * get_option_value_type(argument * o) {
+const char * get_option_value_type(argument * o) {
 
-  char *v = "";
+  const char *v = "";
   if (o) {
     switch (o->type){
       case FLAG_ARG:
@@ -1007,7 +1007,7 @@ void build_message(const char * arg) {
   /* The error message are in 1-1 correspondence with the  */
   /* argument_error enumeration                            */
 
-  /*const*/ char * error_messages[] = {
+  const char * error_messages[] = {
     "no error.",
     "%s is not a valid option.",
     "the option %s is missing its value.",

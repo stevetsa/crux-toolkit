@@ -30,60 +30,58 @@ AM_CXXFLAGS = -Wall -W -Werror  $(USEDOUBLES) $(USEDARWIN) $(SEARCH_ENABLED) \
             -D_LARGEFILE_SOURCE=1 -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE
 
 LIBFILES= \
-  alphabet.c \
+  alphabet.cpp \
   alphabet.h \
-  array.c \
+  array.cpp \
   array.h \
-  carp.c \
+  carp.cpp \
   carp.h \
-  create_index.c \
+  create_index.cpp \
   create_index.h \
-  crux-utils.c \
+  crux-utils.cpp \
   crux-utils.h \
-  database.c \
+  database.cpp \
   database.h \
   DelimitedFile.cpp \
   DelimitedFile.h \
-  generate_peptides_iterator.c \
+  generate_peptides_iterator.cpp \
   generate_peptides_iterator.h \
-  hash.c \
+  hash.cpp \
   hash.h \
-  hit.c \
-  hit.h \
-  index.c \
+  index.cpp \
   index.h \
-  ion.c \
+  ion.cpp \
   ion.h \
-  ion_series.c \
+  ion_series.cpp \
   ion_series.h \
-  linked_list.c \
+  linked_list.cpp \
   linked_list.h \
-  mass.c \
+  mass.cpp \
   mass.h \
   match.cpp \
   match.h \
   match_collection.cpp \
   match_collection.h \
   match_search.cpp \
-  modifications.c \
+  modifications.cpp \
   modifications.h \
-  modified_peptides_iterator.c \
+  modified_peptides_iterator.cpp \
   modified_peptides_iterator.h \
   search.h \
   objects.h \
   output-files.cpp \
   output-files.h \
-  parameter.c \
+  parameter.cpp \
   parameter.h \
-  parse_arguments.c \
+  parse_arguments.cpp \
   parse_arguments.h \
-  peak.c \
+  peak.cpp \
   peak.h \
   peptide.cpp \
-  peptide_constraint.c \
+  peptide_constraint.cpp \
   peptide_constraint.h \
   peptide.h \
-  peptide_modifications.c \
+  peptide_modifications.cpp \
   peptide_modifications.h \
   peptide_src.cpp \
   peptide_src.h \
@@ -91,9 +89,9 @@ LIBFILES= \
   percolator.h \
   print-processed-spectra.cpp \
   print-processed-spectra.h \
-  protein.c \
+  protein.cpp \
   protein.h \
-  protein_index.c \
+  protein_index.cpp \
   protein_index.h \
   q-ranker.cpp \
   q-ranker.h \
@@ -101,15 +99,15 @@ LIBFILES= \
   q-value.h \
   sequest-search.cpp \
   sequest-search.h \
-  scorer.c \
+  scorer.cpp \
   scorer.h \
-  sorter.c \
+  sorter.cpp \
   sorter.h \
   spectrum.cpp \
   spectrum_collection.cpp \
   spectrum_collection.h \
   spectrum.h \
-  utils.c \
+  utils.cpp \
   utils.h \
   version.h \
   mpsm_search.h
@@ -185,7 +183,7 @@ param_DATA = default.params
 
 EXTRA_DIST = default.params
 
-doc:	*.h *.c
+doc:	*.h *.cpp
 	doxygen Doxyfile
 
 ignore-files:
@@ -201,4 +199,4 @@ dist-hook:
 	if test -z "$(SEARCH_ENABLED)"; then \
     sed -e '/#ifdef SEARCH_ENABLED/,/#else/d' \
         -e '/#endif \/\/ SEARCH_ENABLED/d' \
-        < match_search.c > $(distdir)/match_search.c; fi
+        < match_search.cpp > $(distdir)/match_search.cpp; fi

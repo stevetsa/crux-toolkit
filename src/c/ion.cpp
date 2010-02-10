@@ -1,5 +1,5 @@
 /*************************************************************************//**
- * \file ion.c
+ * \file ion.cpp
  * $Revision: 1.31 $
  * \brief: Object for representing a single ion.
  ****************************************************************************/
@@ -330,7 +330,7 @@ void print_ion_gmtk_single(
   FLOAT_T mz_ratio = (ion->ion_mass_z)/(ion->peptide_mass);
   int mz_int = (int)(mz_ratio * (MZ_INT_MAX - MZ_INT_MIN) + MZ_INT_MIN);
 
-  char* format = "%.6f\t%.6f\t%.6f\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\n";
+  const char* format = "%.6f\t%.6f\t%.6f\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\n";
   fprintf(file, format,
       mz_ratio,                                                 // 1 
       intensity,                                                // 2 
@@ -518,7 +518,7 @@ void print_null_ion_gmtk_single(
   FILE* file
   ){
 
-  char* string = "0.0\t0.0\t0.0\t0\t0\t0\t0\t0\t0\t0\t0\t0\n";
+  const char* string = "0.0\t0.0\t0.0\t0\t0\t0\t0\t0\t0\t0\t0\t0\n";
   fprintf(file, "%s", string);
 }
 
@@ -751,7 +751,7 @@ FLOAT_T get_ion_mass(
   // get sequence for a,b,c ion
   else{
     ion_length = ion->cleavage_idx;
-    ion_sequence = mycalloc(ion_length+1, sizeof(char));
+    ion_sequence = (char*)mycalloc(ion_length+1, sizeof(char));
     strncpy(ion_sequence, ion->peptide_sequence, ion_length);
     memory_used = TRUE;
   }
