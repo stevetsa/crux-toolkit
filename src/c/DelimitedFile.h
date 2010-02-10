@@ -31,8 +31,6 @@ class DelimitedFile {
   std::vector<std::string> column_names_;
   unsigned int current_row_; //used for iterating through the table.
 
-
-
   /**
    * convert string to data type
    */
@@ -71,6 +69,9 @@ class DelimitedFile {
    */
   virtual ~DelimitedFile();
   
+  void clear();
+
+
   /**
    *\returns the number of rows, assuming a square matrix
    */
@@ -138,6 +139,12 @@ class DelimitedFile {
     const char* column_name ///< the column name
   );
 
+  void addColumns(
+    std::vector<std::string>& column_names);
+
+  std::vector<std::string>& getColumns();
+
+
   /**
    * adds a column to the delimited file
    */
@@ -148,7 +155,7 @@ class DelimitedFile {
    *\returns the column index, -1 if not found.
    */ 
   int findColumn(
-    std::string& column_name ///< the column name
+    const std::string& column_name ///< the column name
   );
 
  /**
@@ -254,6 +261,20 @@ class DelimitedFile {
       setString(col_idx, row_idx, svalue);
   }  
 
+  template<typename TValue>
+  void setValue(
+    const std::string& column_name, ///< the column index
+    unsigned int row_idx, ///< the row index
+    TValue value ///< the new value
+  ) {
+
+    int col_idx = findColumn(column_name);
+    if (col_idx == -1) {
+      carp(CARP_FATAL,"Column not found %s",column_name.c_str());
+    }
+    setValue(col_idx, row_idx, value);
+  }
+
   /**
    * gets a double type from cell, checks for infinity. 
    */
@@ -336,6 +357,30 @@ class DelimitedFile {
     std::vector<int>& int_vector, ///<the vector of integers
     char delimiter=',' ///<the delimiter to use
   );
+
+  /**
+   * sorts the table by a column. Assumes the data type is
+   * Float. By default sorts in ascending order.
+   */
+  void sortByFloatColumn(
+    const std::string& column_name, ///< the column name
+    bool ascending = true);
+  
+  /**
+   * sorts the table by a column. Assumes the data type is 
+   * integer.
+  /*
+  void sortByIntegerColumn(
+    const std::string& column_name, ///< the column name
+    bool ascending = true);
+  */
+
+  void copyToRow(
+    DelimitedFile& dest,
+    int src_row_idx, 
+    int dest_row_idx
+  ); 
+
 
   /*Iterator functions.*/
   /**

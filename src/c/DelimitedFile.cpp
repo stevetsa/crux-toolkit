@@ -89,6 +89,17 @@ DelimitedFile::~DelimitedFile() {
   //TODO : Do we need to do anything here?
 }
 
+void DelimitedFile::clear() {
+
+  for (int col_idx=0;col_idx < numCols();col_idx++) {
+    data_[col_idx].clear();
+  }
+  data_.clear();
+  column_names_.clear();
+
+}
+
+
 /**
  *\returns the number of rows, assuming a square matrix
  */
@@ -595,6 +606,49 @@ void DelimitedFile::getIntegerVector(
     int_vector.push_back(int_ans);
   }
 }
+
+
+void DelimitedFile::sortByFloatColumn(
+  const string& column_name,
+  BOOLEAN_T ascending) {
+
+  multimap<FLOAT_T, int>* sort_indices;
+
+  if (ascending) {
+    sort_indices = new multimap<FLOAT_T, int, greater<FLOAT_T> >();
+  } else {
+    sort_indices = new multimap<FLOAT_T, int, less<FLOAT_T> >();
+  }
+
+  int col_idx = findColumn(column_name);
+  
+  if (col_idx == -1) {
+    carp(CARP_FATAL,"column %s doesn't exist",column_name.c_str());
+  }
+
+  for (int row_idx=0;row_idx<numRows();row_idx++) {
+    sort_indices -> insert(make_pair(getFloat(col_idx, row_idx), row_idx);
+  }
+  //after map is built, the indices will give the order.
+
+  vector<vector<string> > newData;
+
+  mulitmap<FLOAT_T, int>::iterator sort_iter;
+
+  for (sort_iter = sort_indices -> begin();
+    sort_iter != sort_indices -> end();
+    ++sort_iter) {
+    int row_idx = sort_iter -> second;
+
+    vector<string> &current_row = data_[row_idx];
+    newData.push_back(current_row);
+  }
+  //hopefully this works
+  data_ = newData;
+  
+
+}
+
 
 
 /*Iterator functions.*/

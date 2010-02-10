@@ -3,9 +3,11 @@
 #include "xhhc_scorer.h"
 
 extern "C" {
+#include "crux-utils.h"
 #include "objects.h"
 #include "scorer.h"
 #include "spectrum_collection.h"
+
 }
 
 #include "DelimitedFile.h"
@@ -40,52 +42,53 @@ void getBestBonf(DelimitedFile& matches, int start, int stop,
       int charge = matches.getInteger("charge", match_idx);
       double pvalue = matches.getDouble("p-value", match_idx);
 
-      if (charge_best_scan_idx.find(charge) == charge_best_scan_idx.end()) {
-        charge_best_scan_idx[charge] = make_pair(match_idx, pvalue);
-      } else if (pvalue < charge_best_scan_idx[charge].second) {
-        charge_best_scan_idx[charge] = make_pair(match_idx, pvalue);
+      if (charge_best_score.find(charge) == charge_best_score.end()) {
+        charge_best_score[charge] = make_pair(match_idx, pvalue);
+      } else if (pvalue < charge_best_score[charge].second) {
+        charge_best_score[charge] = make_pair(match_idx, pvalue);
       }
       if (charge_ntests.find(charge) == charge_ntests.end()) {
         int ntests = matches.getDouble("matches/spectrum", match_idx);
         charge_ntests[charge] = ntests;
       }
     }
-  }
   
-  int best_charge = charge_best_score.begin() -> first;
-  double best_charge_pvalue = charge_best_score[best_charge] -> second.second;
-  double best_charge_pvalue_bonf = 
-    bonferroni_correct(best_charge_pvalue, charge_ntests[best_charge]);
+  
+    int best_charge = charge_best_score.begin() -> first;
+    double best_charge_pvalue = charge_best_score[best_charge].second.second;
+    double best_charge_pvalue_bonf = 
+      bonferroni_correction(best_charge_pvalue, charge_ntests[best_charge]);
 
-  int best_charge_idx = charge_best_score[best_charge] -> second.first;
+    int best_charge_idx = charge_best_score[best_charge] -> second.first;
 
-  for (map<int, pair<int, double> >::iterator iter = 
-    charge_best_score.begin();
-    iter != charge_best_score.end();
-    ++iter) {
+    for (map<int, pair<int, double> >::iterator iter = 
+      charge_best_score.begin();
+      iter != charge_best_score.end();
+      ++iter) {
 
-    double current_charge_pvalue_bonf =
-      bonferroni_correct(iter -> second.second, charge_ntests[iter -> first]);
-    if (current_charge_pvalue_bonf < best_charge_pvalue_bonf) {
-      best_charge = iter -> first;
-      best_charge_pvalue = iter -> second.second;
-      best_charge_pvalue_bonf = current_charge_pvalue_bonf;
-      best_charge_idx = charge_best_score[best_charge] -> second.first;  
-    }
+      double current_charge_pvalue_bonf =
+        bonferroni_correction(iter -> second.second, charge_ntests[iter -> first]);
+      if (current_charge_pvalue_bonf < best_charge_pvalue_bonf) {
+        best_charge = iter -> first;
+        best_charge_pvalue = iter -> second.second;
+        best_charge_pvalue_bonf = current_charge_pvalue_bonf;
+        best_charge_idx = charge_best_score[best_charge] -> second.first;  
+      }
     
+    }
+
+    int ntests_total = 0;
+    for (map<int, int>::iterator iter =
+      charge_ntests.begin();
+      iter != charge_ntests.end();
+      ++iter) {
+
+      ntests_total += iter -> second;
+    }
+
+    best_bonf = bonferonni_correction(best_charge_pvalue, ntests_total);
+    best_index = best_charge_idx;
   }
-
-  int ntests_total = 0;
-  for (map<int, int>::iterator iter =
-    charge_ntests.begin();
-    iter != charge_ntests.end();
-    ++iter) {
-
-    ntests_total += iter -> second;
-  }
-
-  best_bonf = bonferonni_correct(best_charge_pvalue, ntests_total);
-  best_index = best_charge_idx;
 }
 
 void collapseScans(DelimitedFile& matches_in, DelimitedFile& matches_out) {
@@ -93,7 +96,7 @@ void collapseScans(DelimitedFile& matches_in, DelimitedFile& matches_out) {
   matches_out.clear();
   matches_out.addColumns(matches_in.getColumnNames());
 
-  matches_in.sortByColumn("scan", INTEGER_TYPE, ASCENDING);
+  //matches_in.sortByIntegerColumn("scan");
 
   matches_out.addColumn("p-value bonf.");
 
@@ -113,8 +116,8 @@ void collapseScans(DelimitedFile& matches_in, DelimitedFile& matches_out) {
 
       //update matches out
       int new_row = matches_out.addRow();
-      matches_in.copyRow(best_index, matches_out, new_row);
-      matches_out.setValue("p-value bonf.", best_bonf);
+      matches_in.copyToRow(matches_out, best_index, new_row);
+      matches_out.setValue<double>("p-value bonf.", new_row, best_bonf);
 
 
       //update first_row and last scan.
@@ -125,8 +128,8 @@ void collapseScans(DelimitedFile& matches_in, DelimitedFile& matches_out) {
 
   //finish the last entry
   getBestBonf(matches_in, first_row, matches_in.numRows() - 1, best_row, best_bonf);
-  new_row = matches_out.addRow();
-  matches_in.copyRow(best_index, matches_out, new_row);
+  int new_row = matches_out.addRow();
+  matches_in.copyToRow(matches_out, best_index, new_row);
   matches_out.setValue("p-value bonf.", new_row, best_bonf);
 
 
@@ -205,8 +208,8 @@ int main(int argc, char** argv){
 
 
   //Sort by increasing p-value.
-  target_matches_bonf.sortByColumn("p-value bonf.", DOUBLE_TYPE, ASCENDING);
-  decoy_matches_bonf.sortByColumn("p-value bonf.", DOUBLE_TYPE, ASCENDING); 
+  target_matches_bonf.sortByFloatColumn("p-value bonf.");
+  decoy_matches_bonf.sortByFloatColumn("p-value bonf."); 
   
   target_matches.addColumn("q-value b-h");
   target_matches.addColumn("q-value decoy");
@@ -217,10 +220,10 @@ int main(int argc, char** argv){
     //calculate q-value by b-h
     double current_pvalue = target_matches_bonf.getDouble("p-value bonf.", target_idx);
     double q_value_bh = (double)(target_idx + 1) / 
-      (double) target_matches_bonf.size() * 
+      (double) target_matches_bonf.numRows() * 
       current_pvalue;
 
-    while ((decoy_idx < decoy_matches_bonf.size()) && 
+    while ((decoy_idx < decoy_matches_bonf.numRows()) && 
       (decoy_matches_bonf.getDouble("p-value bonf.") <= current_pvalue)) {
       decoy_idx++;
     }
@@ -230,8 +233,8 @@ int main(int argc, char** argv){
       q_value_decoy = decoy_idx / (target_idx + 1);
     }
 
-    target_matches_bonf.setDouble("q-value b-h", target_idx, q_value_bh);
-    target_matches_bonf.setDouble("q-value decoy", target_idx, q_value_decoy);
+    target_matches_bonf.setValue("q-value b-h", target_idx, q_value_bh);
+    target_matches_bonf.setValue("q-value decoy", target_idx, q_value_decoy);
   }
   
   string result_file = outputdir + "/qvalues.target.txt";

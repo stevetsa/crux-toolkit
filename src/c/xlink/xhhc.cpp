@@ -414,7 +414,7 @@ BondMap::BondMap(string links_string) {
       //add all possible links between residues.
       carp(CARP_INFO, "Linking all residues to each other");
       for (int i=0;i<num_amino_alpha;i++) {
-        for (int j=i;j<num_amino_alpha;j++) {
+        for (int j=0;j<num_amino_alpha;j++) {
           (*this)[amino_alpha[i]].insert(amino_alpha[j]);
         }
       }
@@ -424,10 +424,12 @@ BondMap::BondMap(string links_string) {
       carp(CARP_INFO, "Linking %c to all other residues", amino);
       for (int i=0;i<num_amino_alpha;i++) {
         (*this)[amino].insert(amino_alpha[i]);
+        (*this)[amino_alpha[i]].insert(amino);
       }  
     } else {
       //there is no star, insert the link normally
       (*this)[residues[0][0]].insert(residues[1][0]);
+      (*this)[residues[1][0]].insert(residues[0][0]);
     }
   }
 

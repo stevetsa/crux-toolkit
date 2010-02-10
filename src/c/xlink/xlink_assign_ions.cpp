@@ -198,7 +198,7 @@ void print_spectrum(SPECTRUM_T* spectrum, LinkedIonSeries& ion_series) {
               double mz_obs = get_peak_location(peak);
               int charge = ion.charge();
               double mass_calc = ion.mass(MONO);
-              double mass_obs = mz_obs * (double)charge - MASS_PROTON;
+              double mass_obs = (mz_obs - MASS_PROTON) * (double)charge;
               double ppm =  fabs(mass_calc - mass_obs) / mass_calc * 1e6;
               
               result_file.setValue(mz_calc_col, row_idx, mz_calc);
