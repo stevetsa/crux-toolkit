@@ -5,8 +5,6 @@
 
 #include <map>
 
-
-
 #include "carp.h"
 
 using namespace std;

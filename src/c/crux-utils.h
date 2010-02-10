@@ -165,10 +165,10 @@ BOOLEAN_T delete_dir(char* dir);
  * \returns A heap allocated file name of the given fasta file
  */
 char* generate_name(
-  char* fasta_filename,
-  char* name_tag,
-  char* file_extension,
-  char* suffix
+  const char* fasta_filename,
+  const char* name_tag,
+  const char* file_extension,
+  const char* suffix
   );
 
 /**
@@ -181,10 +181,10 @@ char* generate_name(
  * \returns A heap allocated filename
  */
 char* generate_name_path(
-  char* filename,
-  char* old_suffix,
-  char* new_suffix,
-  char* new_path
+  const char* filename,
+  const char* old_suffix,
+  const char* new_suffix,
+  const char* new_path
   );
 
 /**
@@ -327,10 +327,54 @@ BOOLEAN_T ion_type_to_string(ION_TYPE_T, char*);
 
 // new style of type_to_string and string_to_type functions
 // requires an invalid value for each enum
+char* command_type_to_file_string(COMMAND_T type);
+const char* command_type_to_file_string_ptr(COMMAND_T type);
+char* command_type_to_command_line_string(COMMAND_T type);
+const char* command_type_to_command_line_string_ptr(COMMAND_T type);
+COMMAND_T string_to_command_type(char*);
 DIGEST_T string_to_digest_type(char*);
 char* digest_type_to_string(DIGEST_T);
 ENZYME_T string_to_enzyme_type(char*);
 char* enzyme_type_to_string(ENZYME_T);
+
+/**
+ * \brief Open either the index or fasta file and prepare it for
+ * searching.  Die if the input file cannot be found or read.
+ * \returns The number of proteins in the file or index
+ */
+int prepare_protein_input(
+  char* input_file,      ///< name of the fasta file or index directory
+  INDEX_T** index,       ///< return new index here OR
+  DATABASE_T** database);///< return new fasta database here
+
+/**
+ * \brief Perform the set-up steps common to all crux commands:
+ * initialize parameters, parse command line, set verbosity, open
+ * output directory, write params file. 
+ *
+ * Uses the given command name, arguments and options for parsing the
+ * command line.
+ */
+void initialize_run(
+  COMMAND_T cmd,              ///< the command we are initializing 
+  const char** argument_list, ///< list of required arguments
+  int num_arguments,          ///< number of elements in arguments_list
+  const char** option_list,   ///< list of optional flags
+  int num_options,            ///< number of elements in options_list
+  int argc,                   ///< number of tokens on cmd line
+  char** argv                 ///< array of command line tokens
+);
+
+/**
+ *  Read the string of the form <first>-<last> and returns <first>
+ *  or -1 if the range is invalid.
+ */
+int get_first_in_range_string(const char* range_string);
+/**
+ *  Read the string of the form <first>-<last> and returns <last>
+ *  or -1 if the range is invalid.
+ */
+int get_last_in_range_string(const char* range_string);
 
 #ifdef __cplusplus
 }

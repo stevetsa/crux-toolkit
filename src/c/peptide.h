@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include "utils.h"
 #include "crux-utils.h"
 #include "hash.h"
@@ -26,6 +27,7 @@
 #define MAX_PEPTIDE_LENGTH 255
 
 #ifdef __cplusplus
+#include <string>
 extern "C" {
 #endif
 
@@ -62,7 +64,7 @@ PEPTIDE_T* new_peptide(
 PEPTIDE_T* copy_peptide(
   PEPTIDE_T* src ///< source peptide -in
 );
-
+ 
 /**
  * Merge to identical peptides, copy all peptide_src into one of the peptide
  * peptide_dest, peptide_bye must have at least one peptide src
@@ -115,7 +117,7 @@ void set_peptide_peptide_mass(
 /**
  * \returns the peptide mass
  */
-inline FLOAT_T get_peptide_peptide_mass( 
+/*inline*/ FLOAT_T get_peptide_peptide_mass( 
   PEPTIDE_T* peptide  ///< the peptide to query the mass -in
   );
 
@@ -530,6 +532,28 @@ BOOLEAN_T serialize_peptide(
   FILE* file
   );
  
+#ifdef __cplusplus
+
+/**
+ * \brief Read in a peptide from a tab-delimited file and return it.
+ *
+ * Parses the information for a peptide match from the search
+ * file.  Allocates memory for the peptide and all of
+ * its peptide_src's.  Requires a database so that the protein can be
+ * set for each peptide_src.  Returns NULL if eof or if file format
+ * appears incorrect.
+ *
+ * \returns A newly allocated peptide or NULL
+ */
+PEPTIDE_T* parse_peptide_tab_delimited(
+  DelimitedFile& file, ///< the tab delimited peptide file -in
+  DATABASE_T* database,///< the database containing the peptides -in
+  BOOLEAN_T use_array  ///< should I use array peptide_src or link list -in  
+  );
+
+#endif
+
+
 /**
  * \brief Read in a peptide from a binary file and return it.
  *
@@ -633,6 +657,17 @@ BOOLEAN_T peptide_src_iterator_has_next(
 PEPTIDE_SRC_T* peptide_src_iterator_next(
   PEPTIDE_SRC_ITERATOR_T* peptide_src_iterator///< the query iterator -in
   );
+
+#ifdef __cplusplus
+/**
+ * \brief Builds a comma delimited string listing the 
+ * protein id(peptide start index) for the sources of 
+ * a peptide
+ *
+ * \returns a string of the protein sources for this peptide
+ */
+std::string get_protein_ids_peptide_locations(PEPTIDE_T* peptide);
+#endif
 
 /**
  * \brief Builds a comma delimited string listing the protein ids

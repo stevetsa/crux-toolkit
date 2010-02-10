@@ -5,10 +5,15 @@
  */
 #ifndef PEPTIDE_SRC_H
 #define PEPTIDE_SRC_H
+#include <stdio.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #include "utils.h"
 #include "mass.h"
-#include <stdio.h>
+
 #include "objects.h"
 #include "carp.h"
 #include "peptide_constraint.h"
@@ -91,6 +96,26 @@ void print_peptide_src(
   PEPTIDE_SRC_T* peptide_src, ///< object to print -in 
   FILE* file  ///< the out put stream -out
   );
+
+#ifdef __cplusplus
+/**
+ * \brief Read in the peptide_src objects from the given file and
+ * assosiated them with the given peptide.  
+ * Proteins for the pepitde_src are found in the given database.  If
+ * database is NULL, does not set proteins.  (This option is used for
+ * sorting index files while creating index.)  Either array or 
+ * linked list implementation of multiple peptide_src is used based on
+ * the value of use_array.
+ *
+ * \returns TRUE if peptide_src's were successfully parsed, else
+ * returns FALSE.
+ */
+BOOLEAN_T parse_peptide_src_tab_delimited(
+  PEPTIDE_T* peptide,   ///< assign peptide_src(s) to this peptide
+  DelimitedFile& file,           ///< file to read from
+  DATABASE_T* database, ///< database containing proteins
+  BOOLEAN_T use_array); ///< use array implementation vs. linked list
+#endif
 
 /**
  * \brief Read in the peptide_src objects from the given file and
@@ -228,6 +253,10 @@ void serialize_peptide_src(
  * file. 
  */
 int size_of_serialized_peptide_src();
+
+#ifdef __cplusplus
+}
+#endif
 
 /*
  * Local Variables:

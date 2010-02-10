@@ -29,6 +29,10 @@
 #define NOT_SCORED FLT_MIN
 #define P_VALUE_NA -1.0
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * \returns a new memory allocated match
  */
@@ -50,14 +54,17 @@ void shuffle_matches(
   int end_index          ///< index AFTER the last element to shuffle
   );
 
+#ifdef __cplusplus
+
 /**
  * sort the match array with the corresponding compare method
  */
 void qsort_match(
   MATCH_T** match_array, ///< the match array to sort -in  
   int match_total,  ///< the total number of match objects -in
-  void* compare_method ///< the compare method to use -in
+  int (*compare_method)(const void*, const void*) ///< the compare method to use -in
   );
+#endif
 
 /**
  * compare two matches, used for qsort
@@ -236,9 +243,7 @@ void print_match(
  */
 void print_match_sqt(
   MATCH_T* match, ///< the match to print -in  
-  FILE* file, ///< output stream -out
-  SCORER_TYPE_T main_score,  ///< the main score to report -in
-  SCORER_TYPE_T other_score  ///< the score to report -in
+  FILE* file      ///< output stream -out
 );
 
 /**
@@ -287,6 +292,18 @@ double* get_match_percolator_features(
   MATCH_T* match, ///< the match to work -in                                          
   MATCH_COLLECTION_T* match_collection ///< the match collection to iterate -in
   );
+
+#ifdef __cplusplus
+/**
+ *
+ *\returns a match object that is parsed from the tab-delimited result file
+ */
+MATCH_T* parse_match_tab_delimited(
+  DelimitedFile& result_file,  ///< the result file to parse PSMs -in
+  DATABASE_T* database ///< the database to which the peptides are created -in
+  );
+
+#endif
 
 /**
  *
@@ -524,10 +541,15 @@ int get_match_b_y_ion_possible(
   MATCH_T* match ///< the match to work -out
   );
 
+#ifdef __cplusplus
+}
+#endif
+
+#endif //MATCH_H
+
 /*
  * Local Variables:
  * mode: c
  * c-basic-offset: 2
  * End:
  */
-#endif
