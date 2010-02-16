@@ -806,6 +806,10 @@ void initialize_parameters(void){
       "Use MGF file format for parsing files",
       "Available for xlink-search program (Default FALSE).",
       "true");
+  set_boolean_parameter("xlink-qvalues", FALSE,
+			"",
+			"",
+			"true");
 
 
   /* xlink-score-spectrum options */

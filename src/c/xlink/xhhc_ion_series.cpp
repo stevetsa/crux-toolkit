@@ -3,35 +3,28 @@
 
 #include <iostream>
 
+FLOAT_T* mass_matrix = NULL;
+int mass_matrix_size = -1;
 // main constructor
 
 
 LinkedIonSeries::LinkedIonSeries() {
   charge_ = 0;
+  fragment_mass_type = get_mass_type_parameter("fragment-mass");
 }
-
-
-
 
 
 LinkedIonSeries::LinkedIonSeries(char* links, int charge) {
   charge_ = charge;
-  string bonds_string = string(links);
-  int stop = (int) bonds_string.length() - 2;
-  for (int i = 0; i < stop; i += 4) {
-     bond_map[bonds_string[i]].insert(bonds_string[i+2]);
-     bond_map[bonds_string[i+2]].insert(bonds_string[i]);
-  }
+  fragment_mass_type = get_mass_type_parameter("fragment-mass");
 }
 
 // prints out tab delimited information about the ion series
 void LinkedIonSeries::print() {
 
-  MASS_TYPE_T mass_type = get_mass_type_parameter("fragment-mass");
-
   cout <<"Sorting ions"<<endl;
 
-  LinkedPeptide::sortByMass(all_ions, mass_type);
+  LinkedPeptide::sortByMass(all_ions, fragment_mass_type);
 
   cout << "m/z\ttype\tion" << endl;
   string ion_type;
@@ -40,7 +33,7 @@ void LinkedIonSeries::print() {
       ion_type = "B_ION";
     else 
       ion_type = "Y_ION";
-    cout << ion->get_mz(mass_type) << "\t" << ion_type << "\t" << *ion << endl;
+    cout << ion->get_mz(fragment_mass_type) << "\t" << ion_type << "\t" << *ion << endl;
   }
 }
 
@@ -51,10 +44,9 @@ void LinkedIonSeries::print() {
 // cleaves linked_peptide at all positions, adding b and y ions
 void LinkedIonSeries::add_linked_ions(LinkedPeptide& linked_peptide,int split_type) {
 
-  MASS_TYPE_T mass_type = get_mass_type_parameter("fragment-mass");
-
   if (charge_ == 0) charge_ = linked_peptide.charge();
-  vector<pair<LinkedPeptide, LinkedPeptide> > fragments;
+
+  fragments.clear();
   // split the precursor at every cleavage site
 
   switch(split_type) {
@@ -68,22 +60,28 @@ void LinkedIonSeries::add_linked_ions(LinkedPeptide& linked_peptide,int split_ty
   default:
     linked_peptide.split(fragments);
   }
-  for (vector<pair<LinkedPeptide, LinkedPeptide> >::iterator ion_pair = fragments.begin(); ion_pair != fragments.end(); ++ion_pair) {
+  
+  for (vector<pair<LinkedPeptide, LinkedPeptide> >::iterator ion_pair = 
+    fragments.begin(); 
+    ion_pair != fragments.end(); 
+    ++ion_pair) {
+
     // if b-ion and not a neutral loss
     if (ion_pair->first.charge() != 0) {
       ion_pair->first.set_type(B_ION); 
-      ion_pair->first.calculate_mass(mass_type);
+      ion_pair->first.calculate_mass(fragment_mass_type);
       //cout << ion_pair->first.get_mz() << " B " << ion_pair->first << endl;
       all_ions.push_back(ion_pair->first);
     }
     // if y-ion and not a neutral loss
     if (ion_pair->second.charge() != 0) {
       ion_pair->second.set_type(Y_ION); 
-      ion_pair->second.calculate_mass(mass_type);
+      ion_pair->second.calculate_mass(fragment_mass_type);
       //cout << ion_pair->second.get_mz() << " Y " << ion_pair->second << endl;
       all_ions.push_back(ion_pair->second);
     }
   }
+  
 }
 
 int LinkedIonSeries::get_total_by_ions() {
@@ -117,7 +115,7 @@ int LinkedIonSeries::get_total_by_ions() {
  * peptide.  
  * \returns an array of ion masses for all sub sequences
  */
-FLOAT_T* hhc_create_ion_mass_matrix(
+void hhc_create_ion_mass_matrix(
   //char* peptide, ///< The peptide for this ion series. -in
   MODIFIED_AA_T* modified_seq, ///< the sequence
   MASS_TYPE_T mass_type, ///< the mass_type to use MONO|AVERAGE
@@ -129,10 +127,16 @@ FLOAT_T* hhc_create_ion_mass_matrix(
   if( modified_seq == NULL ){
   //if( peptide == NULL ){
     carp(CARP_ERROR, "Cannot create mass matrix from NULL seqence");
-    return NULL;
   }
-  FLOAT_T* mass_matrix = (FLOAT_T*)mymalloc(sizeof(FLOAT_T)*(peptide_length+1));
-  
+
+  if (mass_matrix_size < peptide_length+1) {
+    if (mass_matrix != NULL) {
+      free(mass_matrix);
+    }
+    mass_matrix = (FLOAT_T*)mymalloc(sizeof(FLOAT_T)*(peptide_length+1));
+    mass_matrix_size = peptide_length+1;
+  }
+
   // at index 0, the length of the peptide is stored
   mass_matrix[0] = peptide_length;
 
@@ -168,9 +172,7 @@ FLOAT_T* hhc_create_ion_mass_matrix(
   }
   fprintf(stderr, "\n");
   */
-  return mass_matrix;
 }
-
 
 /**
  * \brief The engine of ion series. Predicts all the ions from the
@@ -194,7 +196,7 @@ void hhc_predict_ions(
   ION_CONSTRAINT_T* constraint = get_ion_series_ion_constraint(ion_series);
   
   // create a mass matrix
-  FLOAT_T* mass_matrix = 
+ 
     hhc_create_ion_mass_matrix(get_ion_series_modified_aa_seq(ion_series), 
 			       get_ion_constraint_mass_type(constraint), 
 			       get_ion_series_peptide_length(ion_series), 
@@ -254,6 +256,4 @@ void hhc_predict_ions(
   // ion series now been predicted
   set_ion_series_is_predicted(ion_series, TRUE);
 
-  // free mass matrix
-  free(mass_matrix);
 }

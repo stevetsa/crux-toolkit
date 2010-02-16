@@ -16,7 +16,7 @@
  * $Revision: 1.13 $
  ****************************************************************************/
 #include "q-value.h"
-
+#include "xlink_compute_qvalues.h"
 #define MAX_PSMS 10000000
 // 14th decimal place
 #define EPSILON 0.00000000000001 
@@ -50,7 +50,8 @@ int qvalue_main(int argc, char** argv){
     "parameter-file",
     "overwrite",
     "output-dir",
-    "fileroot"
+    "fileroot",
+    "xlink-qvalues"
   };
   int num_options = sizeof(option_list) / sizeof(char*);
 
@@ -61,6 +62,12 @@ int qvalue_main(int argc, char** argv){
 
   initialize_run(QVALUE_COMMAND, argument_list, num_arguments,
                  option_list, num_options, argc, argv);
+
+
+  if (get_boolean_parameter("xlink-qvalues")) {
+    xlink_compute_qvalues();
+    exit(0);
+  }
 
   /* Get arguments */
   char* psm_dir = get_string_parameter("output-dir");

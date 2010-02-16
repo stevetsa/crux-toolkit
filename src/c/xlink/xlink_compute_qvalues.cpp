@@ -12,6 +12,8 @@ extern "C" {
 
 #include "DelimitedFile.h"
 
+#include "xlink_compute_qvalues.h"
+
 #include <math.h>
 #include <assert.h>
 #include <ctype.h>
@@ -20,10 +22,6 @@ extern "C" {
 #include <fstream>
 //#define bin_width_mono 1.0005079
 
-
-#define NUM_ARGUMENTS 8
-#define NUM_OPTIONS 5
-
 void getBestBonf(DelimitedFile& matches, int start, int stop, 
   int& best_index, double& best_bonf) {
 
@@ -31,8 +29,8 @@ void getBestBonf(DelimitedFile& matches, int start, int stop,
   //if there is only 1 scan, then return it.
   if (numScans == 1) {
     best_index = start;
-    double pvalue = matches.getDouble("p-value");
-    int ntests = matches.getInteger("matches/spectrum");
+    double pvalue = matches.getDouble("p-value", best_index);
+    int ntests = matches.getInteger("matches/spectrum", best_index);
     best_bonf = bonferroni_correction(pvalue, ntests);
   } else {
     map<int, pair<int, double> > charge_best_score; 
@@ -94,9 +92,14 @@ void getBestBonf(DelimitedFile& matches, int start, int stop,
 void collapseScans(DelimitedFile& matches_in, DelimitedFile& matches_out) {
 
   matches_out.clear();
-  matches_out.addColumns(matches_in.getColumnNames());
-
-  //matches_in.sortByIntegerColumn("scan");
+  //matches_out.addColumns(matches_in.getColumnNames());
+  vector<string>& column_names = matches_in.getColumnNames();
+  for (int idx=0;idx<column_names.size();idx++) {
+    matches_out.addColumn(column_names[idx]);
+  }
+  
+  //make sure scans are together.
+  matches_in.sortByIntegerColumn("scan");
 
   matches_out.addColumn("p-value bonf.");
 
@@ -107,15 +110,18 @@ void collapseScans(DelimitedFile& matches_in, DelimitedFile& matches_out) {
   
 
   for (int match_idx = 0;match_idx < matches_in.numRows(); match_idx++) {
-    int current_scan = matches_in.getInteger("scan");
+    int current_scan = matches_in.getInteger("scan", match_idx);
+    cout << "current scan:"<<current_scan <<endl;
     if (last_scan != current_scan) {
       //process the scans between the first and match_idx-1.
-      //find the best row and calculate the bonferroni corrected p-value
+      //find the best row and calculate the bonferroni corrected p-value.
+      carp(CARP_INFO,"Collaping %d %d %d",last_scan, first_row, match_idx-1);
       getBestBonf(matches_in, first_row, match_idx-1, best_row, best_bonf);  
-
+      carp(CARP_INFO,"Copying row best: %d %lf", best_row, best_bonf);
       //update matches out
       int new_row = matches_out.addRow();
       matches_in.copyToRow(matches_out, best_row, new_row);
+      carp(CARP_INFO,"Adding bonferroni");
       matches_out.setValue<double>("p-value bonf.", new_row, best_bonf);
 
 
@@ -125,8 +131,10 @@ void collapseScans(DelimitedFile& matches_in, DelimitedFile& matches_out) {
     }
   }
 
+  carp(CARP_INFO,"Doing last entry");
   //finish the last entry
   getBestBonf(matches_in, first_row, matches_in.numRows() - 1, best_row, best_bonf);
+  carp(CARP_INFO,"best: %d %lf", best_row, best_bonf);
   int new_row = matches_out.addRow();
   matches_in.copyToRow(matches_out, best_row, new_row);
   matches_out.setValue("p-value bonf.", new_row, best_bonf);
@@ -137,52 +145,7 @@ void collapseScans(DelimitedFile& matches_in, DelimitedFile& matches_out) {
 }
 
 
-int main(int argc, char** argv){
-
-  /* Verbosity level for set-up/command line reading */
-  set_verbosity_level(CARP_ERROR);
-  
-  /* Define optional command line arguments */
-  int num_options = NUM_OPTIONS;
-  const char* option_list[NUM_OPTIONS] = {
-    "verbosity",
-    "version",
-    "use-mgf",
-    "ion-tolerance",
-    "precision"
-  };
-
-  
-
-  /* Define required command line arguments */
-  int num_arguments = NUM_ARGUMENTS;
-  const char* argument_list[NUM_ARGUMENTS] = {"peptide A",
-                                              "peptide B",
-					      "pos A",
-					      "pos B",
-					      "link mass",
-					      "charge state",
-					      "scan number",
-					      "ms2 file"};
-
-  
-  /* for debugging of parameter processing */
-  //set_verbosity_level( CARP_DETAILED_DEBUG );
-  set_verbosity_level( CARP_ERROR );
-  
-  /* Set default values for parameters in parameter.c */
-  initialize_parameters();
-
-  /* Define optional and required command line arguments */
-  select_cmd_line_options( option_list, num_options );
-  select_cmd_line_arguments( argument_list, num_arguments);
-
-  /* Parse the command line, including the optional params file */
-  /* does sytnax, type, bounds checking and dies if neccessessary */
-  parse_cmd_line_into_params_hash(argc, argv, "xlink-assign-ions");
-
-  /* Set verbosity */
-  set_verbosity_level(get_int_parameter("verbosity"));
+int xlink_compute_qvalues(){
 
   /* Get Arguments */
 
@@ -191,51 +154,78 @@ int main(int argc, char** argv){
 
   //Read in targets.
   string target_file = output_dir + "/search.target.txt";
+  carp(CARP_INFO,"reading in target");
   DelimitedFile target_matches(target_file);
+
+  //cout << target_matches << endl;
 
   //Read in decoys.
   string decoy_file = output_dir + "/search.decoy.txt";
+  carp(CARP_INFO,"reading in decoy %s", decoy_file.c_str());
   DelimitedFile decoy_matches(decoy_file);
 
+  //cout << decoy_matches << endl;
+
   //Collapse to the best target/decoy and calculate bonferonni corrected p-value.
+
+  carp(CARP_INFO,"collapsing targets");
   DelimitedFile target_matches_bonf;
   collapseScans(target_matches, target_matches_bonf);
-  
+  cout << target_matches_bonf << endl;
+
+  carp(CARP_INFO,"collapsing decoys");
   DelimitedFile decoy_matches_bonf;
   collapseScans(decoy_matches, decoy_matches_bonf);
-
+  cout << decoy_matches_bonf << endl;
 
 
   //Sort by increasing p-value.
+  carp(CARP_INFO,"Sorting by p-value bonf.");
   target_matches_bonf.sortByFloatColumn("p-value bonf.");
+  cout << target_matches_bonf << endl;
   decoy_matches_bonf.sortByFloatColumn("p-value bonf."); 
   
-  target_matches.addColumn("q-value b-h");
-  target_matches.addColumn("q-value decoy");
+  carp(CARP_INFO,"Adding q-value column");
+  target_matches_bonf.addColumn("q-value b-h");
+  target_matches_bonf.addColumn("q-value decoy");
 
+
+  //carp(CARP_INFO,"Calculating q-values");
   int decoy_idx = 0;
-
+  //cout <<"Number of target rows:"<<target_matches_bonf.numRows()<<endl;
   for (int target_idx = 0; target_idx < target_matches_bonf.numRows(); target_idx++) {
     //calculate q-value by b-h
     double current_pvalue = target_matches_bonf.getDouble("p-value bonf.", target_idx);
-    double q_value_bh = (double)(target_idx + 1) / 
-      (double) target_matches_bonf.numRows() * 
+    //cout <<"Current pvalue:"<<current_pvalue<<endl;
+    
+    double q_value_bh = (double) target_matches_bonf.numRows() /
+      (double)(target_idx + 1) *
       current_pvalue;
 
+    //cout <<"q_value_bh:"<<q_value_bh<<endl;
+
     while ((decoy_idx < decoy_matches_bonf.numRows()) && 
-      (decoy_matches_bonf.getDouble("p-value bonf.") <= current_pvalue)) {
+	   (decoy_matches_bonf.getDouble("p-value bonf.", decoy_idx) <= 
+	    current_pvalue)) {
       decoy_idx++;
     }
 
     double q_value_decoy = 0;
     if (decoy_idx != 0) {
-      q_value_decoy = decoy_idx / (target_idx + 1);
+      q_value_decoy = (double)decoy_idx / (double)(target_idx + 1);
     }
 
+    
+
+    //cout <<"Setting row "<<target_idx<<":"<<q_value_bh<<":"<<q_value_decoy<<endl;
     target_matches_bonf.setValue("q-value b-h", target_idx, q_value_bh);
     target_matches_bonf.setValue("q-value decoy", target_idx, q_value_decoy);
   }
   
+
+  //sort back by scans? or q-value?
+  target_matches_bonf.sortByFloatColumn("q-value decoy");
+
   string result_file = output_dir + "/qvalues.target.txt";
   target_matches_bonf.saveData(result_file);
 }

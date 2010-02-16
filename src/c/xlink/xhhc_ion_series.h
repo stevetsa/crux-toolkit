@@ -43,11 +43,17 @@ class LinkedIonSeries {
 
   private:
     
-    std::map<char, std::set<char> > bond_map;
     int charge_; 
     // a list of all the ions 
     std::vector<LinkedPeptide> all_ions;
 
+    //for add linked ions.
+    std::vector<pair<LinkedPeptide, LinkedPeptide> > fragments;
+
+    MASS_TYPE_T fragment_mass_type;
+
+    //for ion mass matrix.
+    //std::vector<FLOAT_T> mass_matrix;
 };
 
 

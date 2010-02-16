@@ -1,6 +1,8 @@
 #include "xhhc_scorer.h"
 #include "xhhc_ion_series.h"
 //#include "xhhc_search.h"
+#include "xlink_compute_qvalues.h"
+
 
 //CRUX INCLUDES
 extern "C" {
@@ -36,17 +38,13 @@ void plot_weibull(vector<pair<FLOAT_T, LinkedPeptide> >& scores, SPECTRUM_T* spe
 
 string get_protein_ids_locations(vector<PEPTIDE_T*>& peptides);
 
-#define NUM_XLINK_SEARCH_OPTIONS 15
-#define NUM_XLINK_SEARCH_ARGS 4
-
 int xlink_search_main(int argc, char** argv) {
 
   /* Verbosity level for set-up/command line reading */
   set_verbosity_level(CARP_ERROR);
 
   /* Define optional command line arguments */
-  int num_options = NUM_XLINK_SEARCH_OPTIONS;
-  const char* option_list[NUM_XLINK_SEARCH_OPTIONS] = {
+  const char* option_list[] = {
     "verbosity",
     "version",
     "parameter-file",
@@ -63,56 +61,20 @@ int xlink_search_main(int argc, char** argv) {
     "xcorr-use-flanks",
     "use-mgf"
   };
+  int num_options = sizeof(option_list) / sizeof(char*);
 
   /* Define required command line arguments */
-  int num_arguments = NUM_XLINK_SEARCH_ARGS;
-  const char* argument_list[NUM_XLINK_SEARCH_ARGS] = {"ms2 file", 
-						      "protein input", 
-						      "link sites", 
-						      "link mass"};
+  const char* argument_list[] = {
+    "ms2 file", 
+    "protein input", 
+    "link sites", 
+    "link mass"
+  };
 
-  /* Initialize parameter.c and set default values*/
-  initialize_parameters();
+  int num_arguments = sizeof(argument_list) / sizeof(char*);
 
-  /* Define optional and required arguments */
-  select_cmd_line_options(option_list, num_options);
-  select_cmd_line_arguments(argument_list, num_arguments);
-
-  /* Parse the command line, including optional params file
-     Includes syntax, type, and bounds checking, dies on error */
-  parse_cmd_line_into_params_hash(argc, argv, "crux xlink-search");
-
-  /* Set seed for random number generation */
-  if(strcmp(get_string_parameter_pointer("seed"), "time")== 0){
-    time_t seconds; // use current time to seed
-    time(&seconds); // Get value from sys clock and set seconds variable.
-    srand((unsigned int) seconds); // Convert seconds to a unsigned int
-  }
-  else{
-    srand((unsigned int)atoi(get_string_parameter_pointer("seed")));
-  }
-  
-  /* Create output directory */ 
-  char* output_directory = get_string_parameter("output-dir");
-  BOOLEAN_T overwrite = get_boolean_parameter("overwrite");
-  int result = create_output_directory(
-    output_directory, 
-    overwrite
-  );
-  if( result == -1 ){
-    carp(CARP_FATAL, "Unable to create output directory %s.", output_directory);
-  }
-
-  /* Open the log file to record carp messages */
-  char* log_file_name = get_string_parameter("search-log-file");
-  open_log_file(&log_file_name);
-  free(log_file_name);
-  log_command_line(argc, argv);
-
-  // Write the parameter file
-  char* param_file_name = get_string_parameter("search-param-file");
-  print_parameter_file(&param_file_name);
-  free(param_file_name);
+  initialize_run(XLINK_SEARCH_COMMAND, argument_list, num_arguments,
+		 option_list, num_options, argc, argv);
   
   carp(CARP_INFO, "Beginning crux xlink-search");
 
@@ -156,6 +118,8 @@ int xlink_search_main(int argc, char** argv) {
  
   FLOAT_T score;
  // best pvalues
+
+  char* output_directory = get_string_parameter("output-dir");
 
   string target_path = string(output_directory) + "/search.target.txt";
 
@@ -224,7 +188,7 @@ int xlink_search_main(int argc, char** argv) {
     FLOAT_T precursor_mz = get_spectrum_precursor_mz(spectrum);
     FLOAT_T precursor_mass = get_spectrum_neutral_mass(spectrum, charge); 
 
-
+    clock_t start_clock = clock();
 
     carp(CARP_DEBUG, "finding target xpeptides in mass window...%g", mass_window);
     get_ions_from_mz_range(
@@ -271,13 +235,15 @@ int xlink_search_main(int argc, char** argv) {
     carp(CARP_DEBUG, "num decoys:%d", decoy_xpeptides.size());
     carp(CARP_DEBUG, "num training decoys:%d", decoy_train_xpeptides.size());
 
-    clock_t start_clock = clock();
+    clock_t candidate_clock = clock();
 
+    LinkedIonSeries ion_series = LinkedIonSeries(links, charge);
 
     // for every ion in the mass window
     carp(CARP_DEBUG, "Scoring targets");
     for (int i=0;i<target_xpeptides.size();i++) {
-      LinkedIonSeries ion_series = LinkedIonSeries(links, charge);
+      //LinkedIonSeries ion_series = LinkedIonSeries(links, charge);
+      ion_series.clear();
       ion_series.add_linked_ions(target_xpeptides[i]);
       score = hhc_scorer.score_spectrum_vs_series(spectrum, ion_series);
       scores.push_back(make_pair(score, target_xpeptides[i]));
@@ -287,7 +253,8 @@ int xlink_search_main(int argc, char** argv) {
 
     carp(CARP_DEBUG, "Scoring decoys.");
     for (int i=0;i<decoy_xpeptides.size();i++) {
-      LinkedIonSeries ion_series = LinkedIonSeries(links, charge);
+      //LinkedIonSeries ion_series = LinkedIonSeries(links, charge);
+      ion_series.clear();
       ion_series.add_linked_ions(decoy_xpeptides[i]);
       score = hhc_scorer.score_spectrum_vs_series(spectrum, ion_series);
       scores.push_back(make_pair(score, decoy_xpeptides[i]));
@@ -302,8 +269,8 @@ int xlink_search_main(int argc, char** argv) {
     carp(CARP_DEBUG, "scoring training decoys...");
     // score all training decoys
     for (int i=0;i<decoy_train_xpeptides.size();i++) {
-      LinkedIonSeries ion_series = LinkedIonSeries(links, charge);
-      //ion_series.clear();
+      //LinkedIonSeries ion_series = LinkedIonSeries(links, charge);
+      ion_series.clear();
       ion_series.add_linked_ions(decoy_train_xpeptides[i]);
       score = hhc_scorer.score_spectrum_vs_series(spectrum, ion_series);
       linked_decoy_scores_array[i] = score;
@@ -343,20 +310,20 @@ int xlink_search_main(int argc, char** argv) {
 						spectrum, charge);
     
     clock_t weibull_clock = clock();
-    
-    double target_time = (double(target_clock) - double(start_clock)) / CLOCKS_PER_SEC;
+    double candidate_time = (double(candidate_clock) - double(start_clock)) / CLOCKS_PER_SEC;
+    double target_time = (double(target_clock) - double(candidate_clock)) / CLOCKS_PER_SEC;
     double decoy_time = (double(decoy_clock) - double(target_clock)) / CLOCKS_PER_SEC;
     double train_decoy_time = (double(train_decoy_clock) - double(decoy_clock)) / CLOCKS_PER_SEC;
     double create_array_time =(double(create_array_clock) - double(train_decoy_clock)) / CLOCKS_PER_SEC;
     double weibull_time = (double(weibull_clock) - double(create_array_clock)) / CLOCKS_PER_SEC;
 
-
-    carp(CARP_DEBUG,"target:%g",target_time);
-    carp(CARP_DEBUG,"decoy:%g",decoy_time);
-    carp(CARP_DEBUG,"train decoy:%g",train_decoy_time);
-    carp(CARP_DEBUG,"create array:%g",create_array_time);
-    carp(CARP_DEBUG,"weibull:%g",weibull_time);
-    
+    carp(CARP_INFO,"candidate:%g",candidate_time);
+    carp(CARP_INFO,"target:%g",target_time);
+    carp(CARP_INFO,"decoy:%g",decoy_time);
+    carp(CARP_INFO,"train decoy:%g",train_decoy_time);
+    carp(CARP_INFO,"create array:%g",create_array_time);
+    carp(CARP_INFO,"weibull:%g",weibull_time);
+    carp(CARP_INFO,"========================");
 
 
     int ndecoys = 0;
@@ -441,7 +408,8 @@ int xlink_search_main(int argc, char** argv) {
   //free_spectrum(spectrum);
 
   //Calculate q-values.
-  
+  carp(CARP_INFO,"Computing Q-Values");
+  xlink_compute_qvalues();
 
 
   return 0;

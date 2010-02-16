@@ -16,7 +16,6 @@
 #include "objects.h"
 #include "peptide.h"
 #include "ion.h"
-#include "scorer.h"
 
 #ifdef __cplusplus
 extern "C" {

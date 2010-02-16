@@ -1,9 +1,6 @@
 #include "DelimitedFile.h"
 
 #include <fstream>
-#include <sstream>
-
-#include <map>
 
 #include "carp.h"
 
@@ -38,7 +35,7 @@ void DelimitedFile::tokenize(
  * \returns a DelimitedFile object
  */  
 DelimitedFile::DelimitedFile() {
-  reset();
+  clear();
 }
 
 /**
@@ -72,6 +69,7 @@ void DelimitedFile::clear() {
   }
   data_.clear();
   column_names_.clear();
+  reset();
 }
 
 /**
@@ -162,11 +160,12 @@ void DelimitedFile::loadData(
   hasLine = getline(file, line) != NULL;
   while (hasLine) {
     tokenize(line, tokens, '\t');
-    for (unsigned int idx = 0; idx < tokens.size(); idx++) {
-      if (numCols() <= idx) {
+    int row_idx = addRow();
+    for (unsigned int col_idx = 0; col_idx < tokens.size(); col_idx++) {
+      if (numCols() <= col_idx) {
         addColumn();
       }
-      data_[idx].push_back(tokens[idx]);
+      setString(col_idx, row_idx, tokens[col_idx]);
     }
     hasLine = getline(file, line) != NULL;
   }
@@ -247,6 +246,21 @@ unsigned int DelimitedFile::addColumn() {
 }
 
 /**
+ * adds a vector of columns to the delimited file
+ */
+void DelimitedFile::addColumns(
+  vector<string>& column_names
+  ) {
+  cout <<"Number of columns:"<<column_names.size()<<endl;
+  for (int col_idx = 0;col_idx = column_names.size(); col_idx++) {
+    cout <<"Adding :"<<column_names[col_idx]<<endl;
+    //addColumn(column_names[col_idx]);
+  }
+}
+
+
+
+/**
  * finds the index of a column
  *\returns the column index, -1 if not found.
  */ 
@@ -310,6 +324,15 @@ string& DelimitedFile::getColumnName(
 }
 
 /**
+ *\returns the column_names
+ */
+vector<string>& DelimitedFile::getColumnNames() {
+
+  return column_names_;
+}
+
+
+/**
  * adds a row to the delimited file
  *\returns the new row index
  */
@@ -332,7 +355,7 @@ string& DelimitedFile::getString(
   unsigned int col_idx, ///< the column index
   unsigned int row_idx  ///< the row index
   ) {
-  return getColumn(col_idx)[row_idx];
+  return getColumn(col_idx).at(row_idx);
 }
 
 /** 
@@ -615,48 +638,118 @@ void DelimitedFile::getIntegerVectorFromCell(
   }
 }
 
+template <typename T>
+void DelimitedFile::reorderRows(multimap<T, unsigned int>& sort_indices, BOOLEAN_T ascending) {
+  //cout <<"reorderRows: start"<<endl;
+  vector<vector<string> > newData;
+
+  for (unsigned int col_idx = 0;col_idx < numCols();col_idx++) {
+    vector<string> current_col;
+    unsigned int row_idx;
+    if (ascending) {
+      typename multimap<T, unsigned int>::iterator sort_iter;
+      for (sort_iter = sort_indices.begin();
+	   sort_iter != sort_indices.end();
+	   ++sort_iter) {
+	row_idx = sort_iter -> second;
+	//cout <<"Getting data_["<<col_idx<<"]["<<row_idx<<"]"<<endl;
+	string current_cell = getString(col_idx, row_idx);
+	//cout <<"Ans:"<<current_cell<<endl;
+	current_col.push_back(current_cell);
+      }
+    } else {
+      typename multimap<T, unsigned int>::reverse_iterator sort_iter;
+      for (sort_iter = sort_indices.rbegin();
+	   sort_iter != sort_indices.rend();
+	   ++sort_iter) {
+	row_idx = sort_iter -> second;
+	string current_cell = data_[col_idx][row_idx];
+	current_col.push_back(current_cell);
+      }
+    }
+    //cout <<"Adding new column"<<endl;
+    newData.push_back(current_col);
+  }
+  //cout <<"reorderRows(): swapping"<<endl;
+  data_.swap(newData);
+  //newData.clear();
+  //cout <<"reorderRows(): Done."<<endl;
+}
 
 void DelimitedFile::sortByFloatColumn(
   const string& column_name,
   BOOLEAN_T ascending) {
 
   multimap<FLOAT_T, unsigned int> sort_indices;
-  carp(CARP_DETAILED_DEBUG,"ascending:%d", ascending);
-/*
-  if (ascending) {
-  	greater<FLOAT_T> compare;
-    sort_indices = multimap<FLOAT_T, unsigned int>(compare);
-  } else {
-    sort_indices = multimap<FLOAT_T, unsigned int>(less<FLOAT_T>);
-  }
-*/
-  int col_idx = findColumn(column_name);
+  int sort_col_idx = findColumn(column_name); 
   
-  if (col_idx == -1) {
+  if (sort_col_idx == -1) {
     carp(CARP_FATAL,"column %s doesn't exist",column_name.c_str());
   }
 
   for (unsigned int row_idx=0;row_idx<numRows();row_idx++) {
-    sort_indices.insert(pair<FLOAT_T, unsigned int>(getFloat(col_idx, row_idx), row_idx));
+    //cout <<" Inserting "<<getFloat(sort_col_idx, row_idx)<<endl;
+    sort_indices.insert(pair<FLOAT_T, unsigned int>(getFloat(sort_col_idx, row_idx), row_idx));
   }
-  //after map is built, the indices will give the order.
 
-  vector<vector<string> > newData;
+  reorderRows(sort_indices, ascending);
+}
 
-  multimap<FLOAT_T, unsigned int>::iterator sort_iter;
-
-  for (sort_iter = sort_indices.begin();
-    sort_iter != sort_indices.end();
-    ++sort_iter) {
-    unsigned int row_idx = sort_iter -> second;
-
-    vector<string> &current_row = data_[row_idx];
-    newData.push_back(current_row);
-  }
-  //hopefully this works
-  data_ = newData;
+void DelimitedFile::sortByIntegerColumn(
+  const string& column_name,
+  BOOLEAN_T ascending
+  ) {
   
+  multimap<int, unsigned int> sort_indices;
+  int sort_col_idx = findColumn(column_name); 
+  
+  if (sort_col_idx == -1) {
+    carp(CARP_FATAL,"column %s doesn't exist",column_name.c_str());
+  }
 
+  for (unsigned int row_idx=0;row_idx<numRows();row_idx++) {
+    //cout <<" Inserting "<<getInteger(sort_col_idx, row_idx)<<endl;
+    sort_indices.insert(pair<int, unsigned int>(getInteger(sort_col_idx, row_idx), row_idx));
+  }
+
+  reorderRows(sort_indices, ascending);
+}
+
+void DelimitedFile::sortByStringColumn(
+  const string& column_name,
+  BOOLEAN_T ascending) {
+  
+  multimap<string, unsigned int> sort_indices;
+
+  int sort_col_idx = findColumn(column_name); 
+  
+  if (sort_col_idx == -1) {
+    carp(CARP_FATAL,"column %s doesn't exist",column_name.c_str());
+  }
+
+  for (unsigned int row_idx=0;row_idx<numRows();row_idx++) {
+    cout <<" Inserting "<<getInteger(sort_col_idx, row_idx)<<endl;
+    sort_indices.insert(pair<string, unsigned int>(getString(sort_col_idx, row_idx), row_idx));
+  }
+
+  reorderRows(sort_indices, ascending);
+
+}
+
+
+void DelimitedFile::copyToRow(
+  DelimitedFile& dest,
+  int src_row_idx,
+  int dest_row_idx
+  ) {
+
+  for (unsigned int src_col_idx=0;src_col_idx < numCols();src_col_idx++) {
+
+    int dest_col_idx = dest.findColumn(getColumnName(src_col_idx));
+    if (dest_col_idx != -1) {
+      dest.setString(dest_col_idx, dest_row_idx, getString(src_col_idx, src_row_idx));
+    }
+  }
 }
 
 

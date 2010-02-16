@@ -17,6 +17,7 @@
 #include <ios>
 #include <iomanip>
 #include <iostream>
+#include <map>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -34,6 +35,11 @@ class DelimitedFile {
   std::vector<std::vector<std::string> > data_;
   std::vector<std::string> column_names_;
   unsigned int current_row_; //used for iterating through the table.
+
+  template <typename T>
+  void reorderRows(
+    std::multimap<T, unsigned int>& sort_indices, 
+    BOOLEAN_T ascending);  
 
  public:
   /**
@@ -143,12 +149,6 @@ class DelimitedFile {
     std::vector<std::string>& column_names);
 
   /**
-   *\returns the column_names
-   */
-  std::vector<std::string>& getColumnNames();
-
-
-  /**
    * adds a column to the delimited file
    */
   unsigned int addColumn();
@@ -196,6 +196,11 @@ class DelimitedFile {
     unsigned int col_idx ///< the column index
   );
   
+  /**
+   *\returns the column_names
+   */
+  std::vector<std::string>& getColumnNames();
+
   /**
    *\returns the string value of the cell
    */
@@ -392,11 +397,19 @@ class DelimitedFile {
   /**
    * sorts the table by a column. Assumes the data type is 
    * integer.
- 
+   */
   void sortByIntegerColumn(
     const std::string& column_name, ///< the column name
-    bool ascending = true);
-  */
+    BOOLEAN_T ascending = TRUE);
+  
+  /**
+   * sorts the table by a column. Assumes the data type is 
+   * string.
+   */
+  void sortByStringColumn(
+    const std::string& column_name,
+    BOOLEAN_T ascending = TRUE);
+
 
   void copyToRow(
     DelimitedFile& dest,
