@@ -22,7 +22,7 @@
 #include "carp.h"
 
 #include "DelimitedFile.h"
-#include "Spectrum.h"
+#include "./MSToolkit/Spectrum.h"
 
 //There is a name clash with MS2 in MSToolkit, so can't use the namespace decl here
 //using namespace MSToolkit;
@@ -1296,9 +1296,9 @@ int get_charges_to_search(SPECTRUM_T* spectrum, int** select_charge_array){
 
   param_charge = atoi(charge_str);
 
-  if( (param_charge < 1) || (param_charge > 3) ){
-    carp(CARP_FATAL, "spectrum-charge option must be 1,2,3, or 'all'.  " \
-         "%s is not valid", charge_str);
+  if( (param_charge < 1) || (param_charge > MAX_CHARGE) ){
+    carp(CARP_FATAL, "spectrum-charge option must be 1,2,3,.. %d or 'all'.  " \
+         "%s is not valid", MAX_CHARGE, charge_str);
   }
 
 
@@ -1411,7 +1411,7 @@ FLOAT_T get_spectrum_neutral_mass(
   int charge ///< the charge of precursor ion -in
   )
 {
-  return (get_spectrum_mass(spectrum, charge) - MASS_H*charge); // TESTME
+  return (get_spectrum_mass(spectrum, charge) - MASS_PROTON * charge); // TESTME
 }
 
 /**
@@ -1423,7 +1423,7 @@ FLOAT_T get_spectrum_singly_charged_mass(
   int charge ///< the charge of the precursor ion -in
   )
 {
-  return (get_spectrum_mass(spectrum, charge) - MASS_H*(charge-1));  // TESTME
+  return (get_spectrum_mass(spectrum, charge) - MASS_PROTON*(charge-1));  // TESTME
 }
 
 

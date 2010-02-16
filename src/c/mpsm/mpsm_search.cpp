@@ -39,8 +39,13 @@
 
 /* Private functions */
 
-/*
-int search_pep_mods(
+void search_for_mpsms(
+  MPSM_ChargeMap& charge_spsm_map, 
+  MPSM_ChargeMap& charge_mpsm_map
+);
+
+
+int mpsm_search_pep_mods(
   MATCH_COLLECTION_T* match_collection, ///< store PSMs here
   BOOLEAN_T is_decoy,   ///< generate decoy peptides from index/db
   INDEX_T* index,       ///< index to use for generating peptides
@@ -51,6 +56,7 @@ int search_pep_mods(
   int num_peptide_mods, ///< how many p_mods to use from the list
   BOOLEAN_T store_scores///< keep all scores for p-value estimation
 );
+/*
 void add_decoy_scores(
   MATCH_COLLECTION_T* target_psms, ///< add scores to these matches
   SPECTRUM_T* spectrum, ///<
@@ -60,7 +66,8 @@ void add_decoy_scores(
   PEPTIDE_MOD_T** peptitde_mods, ///< list of peptide mods to search
   int num_peptide_mods ///< number of mods in the above array
 );
-BOOLEAN_T is_search_complete(MATCH_COLLECTION_T* matches, 
+*/
+BOOLEAN_T mpsm_is_search_complete(MATCH_COLLECTION_T* matches, 
                              int mods_per_peptide);
 void print_spectrum_matches(
   OutputFiles& output_files,       
@@ -71,7 +78,7 @@ void print_spectrum_matches(
   BOOLEAN_T combine_target_decoy,
   int num_decoy_files
                    );
-*/
+
 #ifdef SEARCH_ENABLED // Discard this code in open source release
 int mpsm_search_main(int argc, char** argv){
 
@@ -167,7 +174,8 @@ int mpsm_search_main(int argc, char** argv){
 
   SPECTRUM_T* current_spectrum = NULL;
 
-
+  MPSM_ChargeMap spsm_map;
+  MPSM_ChargeMap mpsm_map;
 
   // for each spectrum
   while(filtered_spectrum_charge_iterator_has_next(spectrum_iterator)){
@@ -175,20 +183,26 @@ int mpsm_search_main(int argc, char** argv){
     SPECTRUM_T* spectrum = 
       filtered_spectrum_charge_iterator_next(spectrum_iterator, &charge);
     BOOLEAN_T is_decoy = FALSE;
-    /*
+
+    //we want to collect all charges for a particular spectrum.
+    if (current_spectrum == NULL) {
+      current_spectrum = spectrum;
+    }
     if (spectrum != current_spectrum) {
-      search_for_mpsms(mpsm_map);
+      search_for_mpsms(spsm_map, mpsm_map);
       //print out map.
       //clear map.
+      spsm_map.clear();
       mpsm_map.clear();
+      current_spectrum = spectrum;
     }
-    */
+    
 
     progress.report(get_spectrum_first_scan(spectrum), charge);
-    /*
+ 
     // with the target database decide how many peptide mods to use
     MATCH_COLLECTION_T* target_psms = new_empty_match_collection(is_decoy); 
-    int max_pep_mods = search_pep_mods( target_psms, 
+    int max_pep_mods = mpsm_search_pep_mods( target_psms, 
                                         is_decoy,   
                                         index,       
                                         database, 
@@ -207,7 +221,7 @@ int mpsm_search_main(int argc, char** argv){
       progress.increment(FALSE);
       continue; // next spectrum
     }
-    
+    /*   
     // now search decoys with the same number of mods
     is_decoy = TRUE;
     // create separate decoy match_collections 
@@ -238,21 +252,21 @@ int mpsm_search_main(int argc, char** argv){
     
     //add to map, indexed by charge
 
-    /*
+    
     vector<MPSM_MatchCollection> mpsm_collections;
 
     MPSM_MatchCollection mpsm_targets(target_psms);
     mpsm_collections.push_back(mpsm_targets);
-    
+    /*
     for (decoy_idx = 0; decoy_idx < num_decoy_collections; decoy_idx++) {
       MPSM_MatchCollection mpsm_decoy(decoy_collection_list[decoy_idx]);
     }
-
+    */
     ChargeIndex charge_index(charge);
 
 
-    charge_mpsm_map.insert(make_pair(charge_index, mpsm_collections));
-    */
+    spsm_map.insert(mpsm_collections);
+    
 
 
 
@@ -308,8 +322,8 @@ int mpsm_search_main(int argc, char **argv){
  * In the future, implement and option and test for a minimum score.
  * \returns TRUE if no more PSMs need be searched.
  */
-/*
-BOOLEAN_T is_search_complete(MATCH_COLLECTION_T* matches, 
+
+BOOLEAN_T mpsm_is_search_complete(MATCH_COLLECTION_T* matches, 
                              int mods_per_peptide){
 
 
@@ -331,7 +345,7 @@ BOOLEAN_T is_search_complete(MATCH_COLLECTION_T* matches,
   return FALSE;
   
 }
-*/
+
 
 /**
  * \brief Search the database OR index with up to num_peptide_mods from
@@ -344,8 +358,8 @@ BOOLEAN_T is_search_complete(MATCH_COLLECTION_T* matches,
  * \return The number of peptide mods searched.
  */
 
-/*
-int search_pep_mods(
+
+int mpsm_search_pep_mods(
   MATCH_COLLECTION_T* match_collection, ///< store PSMs here
   BOOLEAN_T is_decoy,   ///< generate decoy peptides from index/db
   INDEX_T* index,       ///< index to use for generating peptides
@@ -375,7 +389,7 @@ int search_pep_mods(
     
     if( this_aa_mods > cur_aa_mods ){
       carp(CARP_DEBUG, "Finished searching %i mods", cur_aa_mods);
-      BOOLEAN_T passes = is_search_complete(match_collection, cur_aa_mods);
+      BOOLEAN_T passes = mpsm_is_search_complete(match_collection, cur_aa_mods);
       if( passes ){
         carp(CARP_DETAILED_DEBUG, 
              "Ending search with %i modifications per peptide", cur_aa_mods);
@@ -419,7 +433,7 @@ int search_pep_mods(
 
   return mod_idx;
 }
-*/
+
 /**
  * Print the target and decoy match collections to their respective
  * target and decoy files.

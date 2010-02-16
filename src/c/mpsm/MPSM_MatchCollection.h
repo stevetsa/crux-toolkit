@@ -1,7 +1,13 @@
 #ifndef MPSM_MATCHCOLLECTION_H
 #define MPSM_MATCHCOLLECTION_H
 
+#include <vector>
+
+
 #include "MPSM_Match.h"
+
+#include "match.h"
+#include "match_collection.h"
 
 
 
@@ -13,6 +19,8 @@ protected:
 public:
 
   MPSM_MatchCollection();
+  MPSM_MatchCollection(MATCH_COLLECTION_T* spsm_matches);
+
   
   BOOLEAN_T addMatch(MPSM_Match& match);
   MPSM_Match& getMatch(int idx);
