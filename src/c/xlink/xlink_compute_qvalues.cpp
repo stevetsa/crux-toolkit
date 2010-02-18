@@ -20,7 +20,6 @@ extern "C" {
 #include <unistd.h>
 #include <iostream>
 #include <fstream>
-//#define bin_width_mono 1.0005079
 
 void getBestBonf(DelimitedFile& matches, int start, int stop, 
   int& best_index, double& best_bonf) {
@@ -111,17 +110,16 @@ void collapseScans(DelimitedFile& matches_in, DelimitedFile& matches_out) {
 
   for (int match_idx = 0;match_idx < matches_in.numRows(); match_idx++) {
     int current_scan = matches_in.getInteger("scan", match_idx);
-    cout << "current scan:"<<current_scan <<endl;
     if (last_scan != current_scan) {
       //process the scans between the first and match_idx-1.
       //find the best row and calculate the bonferroni corrected p-value.
-      carp(CARP_INFO,"Collaping %d %d %d",last_scan, first_row, match_idx-1);
+      carp(CARP_DEBUG,"Collaping %d %d %d",last_scan, first_row, match_idx-1);
       getBestBonf(matches_in, first_row, match_idx-1, best_row, best_bonf);  
-      carp(CARP_INFO,"Copying row best: %d %lf", best_row, best_bonf);
+      carp(CARP_DEBUG,"Copying row best: %d %lf", best_row, best_bonf);
       //update matches out
       int new_row = matches_out.addRow();
       matches_in.copyToRow(matches_out, best_row, new_row);
-      carp(CARP_INFO,"Adding bonferroni");
+      carp(CARP_DEBUG,"Adding bonferroni");
       matches_out.setValue<double>("p-value bonf.", new_row, best_bonf);
 
 
@@ -131,10 +129,10 @@ void collapseScans(DelimitedFile& matches_in, DelimitedFile& matches_out) {
     }
   }
 
-  carp(CARP_INFO,"Doing last entry");
+  carp(CARP_DEBUG,"Doing last entry");
   //finish the last entry
   getBestBonf(matches_in, first_row, matches_in.numRows() - 1, best_row, best_bonf);
-  carp(CARP_INFO,"best: %d %lf", best_row, best_bonf);
+  carp(CARP_DEBUG,"best: %d %lf", best_row, best_bonf);
   int new_row = matches_out.addRow();
   matches_in.copyToRow(matches_out, best_row, new_row);
   matches_out.setValue("p-value bonf.", new_row, best_bonf);
@@ -171,24 +169,21 @@ int xlink_compute_qvalues(){
   carp(CARP_INFO,"collapsing targets");
   DelimitedFile target_matches_bonf;
   collapseScans(target_matches, target_matches_bonf);
-  cout << target_matches_bonf << endl;
 
   carp(CARP_INFO,"collapsing decoys");
   DelimitedFile decoy_matches_bonf;
   collapseScans(decoy_matches, decoy_matches_bonf);
-  cout << decoy_matches_bonf << endl;
-
 
   //Sort by increasing p-value.
   carp(CARP_INFO,"Sorting by p-value bonf.");
   target_matches_bonf.sortByFloatColumn("p-value bonf.");
-  cout << target_matches_bonf << endl;
   decoy_matches_bonf.sortByFloatColumn("p-value bonf."); 
   
   carp(CARP_INFO,"Adding q-value column");
+  target_matches_bonf.addColumn("fdr b-h");
+  target_matches_bonf.addColumn("fdr decoy");
   target_matches_bonf.addColumn("q-value b-h");
   target_matches_bonf.addColumn("q-value decoy");
-
 
   //carp(CARP_INFO,"Calculating q-values");
   int decoy_idx = 0;
@@ -198,7 +193,7 @@ int xlink_compute_qvalues(){
     double current_pvalue = target_matches_bonf.getDouble("p-value bonf.", target_idx);
     //cout <<"Current pvalue:"<<current_pvalue<<endl;
     
-    double q_value_bh = (double) target_matches_bonf.numRows() /
+    double fdr_bh = (double) target_matches_bonf.numRows() /
       (double)(target_idx + 1) *
       current_pvalue;
 
@@ -210,17 +205,36 @@ int xlink_compute_qvalues(){
       decoy_idx++;
     }
 
-    double q_value_decoy = 0;
+    double fdr_decoy = 0;
     if (decoy_idx != 0) {
-      q_value_decoy = (double)decoy_idx / (double)(target_idx + 1);
+      fdr_decoy = (double)decoy_idx / (double)(target_idx + 1);
     }
 
     
 
     //cout <<"Setting row "<<target_idx<<":"<<q_value_bh<<":"<<q_value_decoy<<endl;
-    target_matches_bonf.setValue("q-value b-h", target_idx, q_value_bh);
-    target_matches_bonf.setValue("q-value decoy", target_idx, q_value_decoy);
+    target_matches_bonf.setValue("fdr b-h", target_idx, fdr_bh);
+    target_matches_bonf.setValue("fdr decoy", target_idx, fdr_decoy);
   }
+
+  double min_fdr = 1.0;
+  for (int idx=target_matches_bonf.numRows()-1;idx>=0;idx--) {
+    double cur_fdr = target_matches_bonf.getDouble("fdr b-h", idx);
+    if (cur_fdr < min_fdr) {
+      min_fdr = cur_fdr;
+    }
+    target_matches_bonf.setValue("q-value b-h", idx, min_fdr); 
+  }
+
+  min_fdr = 1.0;
+  for (int idx=target_matches_bonf.numRows()-1;idx>=0;idx--) {
+    double cur_fdr = target_matches_bonf.getDouble("fdr decoy", idx);
+    if (cur_fdr < min_fdr) {
+      min_fdr = cur_fdr;
+    }
+    target_matches_bonf.setValue("q-value decoy", idx, min_fdr); 
+  }
+
   
 
   //sort back by scans? or q-value?

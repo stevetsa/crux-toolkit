@@ -252,7 +252,7 @@ void DelimitedFile::addColumns(
   vector<string>& column_names
   ) {
   cout <<"Number of columns:"<<column_names.size()<<endl;
-  for (int col_idx = 0;col_idx = column_names.size(); col_idx++) {
+  for (unsigned int col_idx = 0;col_idx < column_names.size(); col_idx++) {
     cout <<"Adding :"<<column_names[col_idx]<<endl;
     //addColumn(column_names[col_idx]);
   }
@@ -367,7 +367,12 @@ string& DelimitedFile::getString(
   ) {
   int col_idx = findColumn(column_name);
   if (col_idx == -1) {
-    carp(CARP_FATAL, "Cannot find column %s", column_name);
+    carp(CARP_ERROR, "Cannot find column %s", column_name);
+    carp(CARP_ERROR, "Available columns");
+    for (unsigned int idx = 0;idx < numCols();idx++) {
+      carp(CARP_ERROR,"%s",getColumnName(idx).c_str());
+    }
+    carp(CARP_FATAL,"Calling FATAL");
   }
   return getColumn(col_idx)[row_idx];
 }
@@ -468,7 +473,12 @@ FLOAT_T DelimitedFile::getFloat(
   
   int col_idx = findColumn(column_name);
   if (col_idx == -1) {
-    carp(CARP_FATAL, "Cannot find column %s", column_name);
+    carp(CARP_ERROR, "Cannot find column %s", column_name);
+    carp(CARP_ERROR, "Available columns");
+    for (unsigned int idx = 0;idx < numCols();idx++) {
+      carp(CARP_ERROR,"%s",getColumnName(idx).c_str());
+    }
+    carp(CARP_FATAL,"Calling FATAL");
   }
   return getFloat(col_idx, row_idx);
 }
@@ -521,8 +531,14 @@ double DelimitedFile::getDouble(
 
   int col_idx = findColumn(column_name);
   if (col_idx == -1) {
-    carp(CARP_FATAL, "Cannot find column %s", column_name);
+    carp(CARP_ERROR, "Cannot find column %s", column_name);
+    carp(CARP_ERROR, "Available columns");
+    for (unsigned int idx = 0;idx < numCols();idx++) {
+      carp(CARP_ERROR,"%s",getColumnName(idx).c_str());
+    }
+    carp(CARP_FATAL,"Calling FATAL");
   }
+
   return getDouble(col_idx, row_idx);
 }
 

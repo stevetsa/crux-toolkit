@@ -445,6 +445,25 @@ class DelimitedFile {
     char delimiter = '\t'
   );
 
+  template<typename T>
+  static std::string splice(
+    const std::vector<T>& elements,
+    char delimiter = '\t') {
+
+      if (elements.size() == 0) return "";
+
+      int precision = get_int_parameter("precision");
+      std::ostringstream ss;
+      ss << std::setprecision(precision);
+      
+      ss << elements[0];
+      for (int idx=1;idx < elements.size();idx++) {
+        ss << delimiter << elements[idx];
+      }
+      std::string out_string = ss.str();
+      return out_string;
+  }
+
   /**
    * convert string to data type
    */
