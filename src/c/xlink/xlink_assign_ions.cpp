@@ -150,7 +150,7 @@ void print_spectrum(SPECTRUM_T* spectrum, LinkedIonSeries& ion_series) {
       vector<LinkedPeptide>& ions = ion_series.ions();
       
       map<PEAK_T*, LinkedPeptide> matched;
-
+      double matched_intensity = 0;
       for (vector<LinkedPeptide>::iterator ion = ions.begin();
 	   ion != ions.end(); 
 	   ++ion) {
@@ -159,6 +159,9 @@ void print_spectrum(SPECTRUM_T* spectrum, LinkedIonSeries& ion_series) {
 	  if (ion -> type() == B_ION || ion -> type() == Y_ION) {
 	    PEAK_T* peak = get_nearest_peak(spectrum, ion -> get_mz(MONO), bin_width);
 	    if (peak != NULL) {
+              if (matched.find(peak) == matched.end()) {
+                matched_intensity += get_peak_intensity(peak);
+              }
 	      matched[peak] = *ion;
 	    } else {
               carp(CARP_DETAILED_DEBUG,"Ion clash!");
@@ -166,6 +169,14 @@ void print_spectrum(SPECTRUM_T* spectrum, LinkedIonSeries& ion_series) {
 	  }
 	//}
       }
+
+      double total_intensity = get_spectrum_total_energy(spectrum);
+      double frac_intensity = matched_intensity / total_intensity;
+
+      carp(CARP_INFO,"matched intensity:%lf",matched_intensity);
+      carp(CARP_INFO,"total intensity:%lf",total_intensity);
+      carp(CARP_INFO,"frac intensity:%lf",frac_intensity);
+      
 
       //now print out the spectrum
 

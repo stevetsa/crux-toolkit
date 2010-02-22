@@ -415,6 +415,53 @@ int xlink_search_main(int argc, char** argv) {
   return 0;
 }
 
+
+void get_ions_from_window(vector<LinkedPeptide>& filtered_ions,
+  vector<LinkedPeptide>& all_ions,
+  FLOAT_T precursor_mass) {
+
+  WINDOW_TYPE_T precursor_window_type = get_window_type_parameter("precursor-window-type");
+
+  double window = get_double_parameter("precursor-window");
+
+  double min_mass = 0;
+  double max_mass = 0;
+  
+  if (precursor_window_type == WINDOW_MASS) {
+    min_mass = precursor_mass - window;
+    max_mass = precursor_mass + window;
+  } else if (precursor_window_type == WINDOW_PPM) {
+    min_mass = precursor_mass / (1.0 + window * 1e-6);
+    max_mass = precursor_mass / (1.0 - window * 1e-6);
+  } else {
+    carp(CARP_FATAL,"Precursor m/z window type not supported!");
+  }
+
+  get_ions_from_mass_range(filtered_ions, all_ions, min_mass, max_mass);
+
+}
+
+
+void get_ions_from_mass_range(
+  vector<LinkedPeptide>& filtered_ions,
+  vector<LinkedPeptide>& all_ions,
+  double min_mass,
+  double max_mass) {
+
+  MASS_TYPE_T mass_type = get_mass_type_parameter("isotopic-mass");
+
+  filtered_ions.clear();
+  for (vector<LinkedPeptide>::iterator ion = all_ions.begin();
+    ion != all_ions.end();
+    ++ion) {
+    double mass = ion -> mass(mass_type);
+    if (mass >= min_mass && mass <= max_mass) {
+      filtered_ions.push_back(*ion);
+    }
+  }
+
+}
+
 // get all precursor ions within given mass window
 void get_ions_from_mz_range(vector<LinkedPeptide>& filtered_ions,
 	vector<LinkedPeptide>& all_ions,
