@@ -211,7 +211,8 @@ int xlink_search_main(int argc, char** argv) {
 
     clock_t start_clock = clock();
 
-    carp(CARP_INFO, "finding target xpeptides in mass window...%g", precursor_window);
+    
+    carp(CARP_DEBUG, "finding target xpeptides in mass window...%g", precursor_window);
     get_ions_from_window(
       target_xpeptides,
       all_ions,
@@ -226,7 +227,7 @@ int xlink_search_main(int argc, char** argv) {
     }
     
 
-    carp(CARP_INFO, "finding training xpeptides in decoy precursor window..%g", precursor_window_decoy);
+    carp(CARP_DEBUG, "finding training xpeptides in decoy precursor window..%g", precursor_window_decoy);
     get_ions_from_window(
 	target_decoy_xpeptides,
 	all_ions,
@@ -337,13 +338,13 @@ int xlink_search_main(int argc, char** argv) {
     double create_array_time =(double(create_array_clock) - double(train_decoy_clock)) / CLOCKS_PER_SEC;
     double weibull_time = (double(weibull_clock) - double(create_array_clock)) / CLOCKS_PER_SEC;
 
-    carp(CARP_INFO,"candidate:%g",candidate_time);
-    carp(CARP_INFO,"target:%g",target_time);
-    carp(CARP_INFO,"decoy:%g",decoy_time);
-    carp(CARP_INFO,"train decoy:%g",train_decoy_time);
-    carp(CARP_INFO,"create array:%g",create_array_time);
-    carp(CARP_INFO,"weibull:%g",weibull_time);
-    carp(CARP_INFO,"========================");
+    carp(CARP_DEBUG, "candidate:%g", candidate_time);
+    carp(CARP_DEBUG, "target:%g", target_time);
+    carp(CARP_DEBUG, "decoy:%g", decoy_time);
+    carp(CARP_DEBUG, "train decoy:%g", train_decoy_time);
+    carp(CARP_DEBUG, "create array:%g", create_array_time);
+    carp(CARP_DEBUG, "weibull:%g", weibull_time);
+    carp(CARP_DEBUG, "========================");
 
 
     int ndecoys = 0;

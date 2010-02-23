@@ -853,9 +853,9 @@ void initialize_parameters(void){
       "Available for crux xlink-search program.",
       "true");
 
-  set_double_parameter("precursor-window-decoy", 16.8, 0, 1e6, 
+  set_double_parameter("precursor-window-decoy", 20.0, 0, 1e6, 
       "Search decoy-peptides within +/- 'mass-window-decoy' of the "
-      "spectrum mass.  Default 16.8.",
+      "spectrum mass.  Default 20.0.",
       "Available for crux xlink-search. ",
       "true");
 
@@ -865,10 +865,6 @@ void initialize_parameters(void){
       "(mass, mz, ppm) Default: mass.",
       "Available for crux search-for-matches",
       "true");
-
-
-
-
 
   set_string_parameter("link sites", NULL, 
       "Comma delimited pair of amino acid link sites, ex. A:K,A:D.",
