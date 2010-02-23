@@ -68,30 +68,30 @@ void initialize_amino_masses (void)
   amino_masses['Z' - 'A'] = 128.6231;
   
   // monoisotopic mass
-  amino_masses['A' - 'A' + 26] = 71.037113785;
+  amino_masses['A' - 'A' + 26] =  71.03711378471;
   amino_masses['B' - 'A' + 26] = 114.53494; // TODO
-  amino_masses['C' - 'A' + 26] = 103.00918478;
-  amino_masses['D' - 'A' + 26] = 115.02694302;
-  amino_masses['E' - 'A' + 26] = 129.04259309;
-  amino_masses['F' - 'A' + 26] = 147.06841391;
-  amino_masses['G' - 'A' + 26] = 57.021463721;
-  amino_masses['H' - 'A' + 26] = 137.05891186;
-  amino_masses['I' - 'A' + 26] = 113.08406398;
-  amino_masses['K' - 'A' + 26] = 128.09496301;
-  amino_masses['L' - 'A' + 26] = 113.08406398;
-  amino_masses['M' - 'A' + 26] = 131.04048491;
-  amino_masses['N' - 'A' + 26] = 114.04292744;
+  amino_masses['C' - 'A' + 26] = 103.00918478471;
+  amino_masses['D' - 'A' + 26] = 115.02694302383;
+  amino_masses['E' - 'A' + 26] = 129.04259308797;
+  amino_masses['F' - 'A' + 26] = 147.06841391299;
+  amino_masses['G' - 'A' + 26] =  57.02146372057;
+  amino_masses['H' - 'A' + 26] = 137.05891185845;
+  amino_masses['I' - 'A' + 26] = 113.08406397713;
+  amino_masses['K' - 'A' + 26] = 128.09496301400;
+  amino_masses['L' - 'A' + 26] = 113.08406397713;
+  amino_masses['M' - 'A' + 26] = 131.04048491299;
+  amino_masses['N' - 'A' + 26] = 114.04292744114;
   amino_masses['O' - 'A' + 26] = 114.07931; // TODO
-  amino_masses['P' - 'A' + 26] = 97.052763849;
-  amino_masses['Q' - 'A' + 26] = 128.05857751;
-  amino_masses['R' - 'A' + 26] = 156.10111102;
-  amino_masses['S' - 'A' + 26] = 87.032028404;
-  amino_masses['T' - 'A' + 26] = 101.04767847;
+  amino_masses['P' - 'A' + 26] =  97.05276384885;
+  amino_masses['Q' - 'A' + 26] = 128.05857750528;
+  amino_masses['R' - 'A' + 26] = 156.10111102360;
+  amino_masses['S' - 'A' + 26] =  87.03202840427;
+  amino_masses['T' - 'A' + 26] = 101.04767846841;
   amino_masses['U' - 'A' + 26] = 150.04344; // TODO
-  amino_masses['V' - 'A' + 26] = 99.068413913;
-  amino_masses['W' - 'A' + 26] = 186.07931295;
+  amino_masses['V' - 'A' + 26] =  99.06841391299;
+  amino_masses['W' - 'A' + 26] = 186.07931294986;
   amino_masses['X' - 'A' + 26] = 113.08406; // TODO
-  amino_masses['Y' - 'A' + 26] = 163.06332853;
+  amino_masses['Y' - 'A' + 26] = 163.06332853255;
   amino_masses['Z' - 'A' + 26] = 128.55059; // TODO
   
   // modifications

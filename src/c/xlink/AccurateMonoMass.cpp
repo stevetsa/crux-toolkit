@@ -78,7 +78,7 @@ void AccurateMonoMass::generateMap() {
 
   amino_acid_to_formula_['A'] = MolecularFormula(5,  3, 1, 1, 0, 0);
   amino_acid_to_formula_['C'] = MolecularFormula(5,  3, 1, 1, 0, 1);
-  //amino_acid_to_formula_['c'] = MolecularFormula(8,  5, 2, 2, 0, 1); //iodoacetmide adds C2H3NO
+  amino_acid_to_formula_['c'] = MolecularFormula(8,  5, 2, 2, 0, 1); //iodoacetmide adds C2H3NO
   amino_acid_to_formula_['D'] = MolecularFormula(5,  4, 1, 3, 0, 0);
   amino_acid_to_formula_['E'] = MolecularFormula(7,  5, 1, 3, 0, 0);
   amino_acid_to_formula_['F'] = MolecularFormula(9,  9, 1, 1, 0, 0);
@@ -126,11 +126,17 @@ int main(int argc, char**argv) {
 
   map<char, MolecularFormula>::iterator iter;
 
+  cout << fixed << setprecision(11);
+
   for (iter = amino_acid_to_formula_.begin();
     iter != amino_acid_to_formula_.end();
     ++iter) {
-    cout <<setprecision(11) << "Mass of :"<<iter -> first <<" = " << iter -> second.calculateMass() << endl;
+    cout << "Mass of :"<<iter -> first <<" = " << iter -> second.calculateMass() << endl;
   }
+
+  double diff = amino_acid_to_formula_['c'].calculateMass() - amino_acid_to_formula_['C'].calculateMass();
+
+  cout <<"Diff of acetomide:"<<diff<<endl;
 
   cout <<"Mass of AA:"<<AccurateMonoMass::calculateMass(string("AA"))<<endl;
   cout <<"Mass of A + A:"<<(AccurateMonoMass::calculateMass(string("A")) + AccurateMonoMass::calculateMass(string("A"))-H2O.calculateMass())<<endl;

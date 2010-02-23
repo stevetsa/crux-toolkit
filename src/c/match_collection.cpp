@@ -1701,7 +1701,7 @@ void print_sqt_header(
   mass_type_to_string(mass_type, temp_str);
   fprintf(output, "H\tFragmentMasses\t%s\n", temp_str); //?????????
 
-  double tol = get_double_parameter("mass-window");
+  double tol = get_double_parameter("precursor-window");
   fprintf(output, "H\tAlg-PreMasTol\t%.1f\n",tol);
   fprintf(output, "H\tAlg-FragMassTol\t%.2f\n", 
           get_double_parameter("ion-tolerance"));
@@ -3429,21 +3429,8 @@ void add_decoy_scores_match_collection(
 
     // get peptide and sequence
     PEPTIDE_T* peptide = modified_peptides_iterator_next(peptides);
-    //char* sequence = get_peptide_sequence(peptide);
-    // shuffle (this step normally done by the match)
-    char* decoy_sequence = NULL;
-    if( get_boolean_parameter("reverse-sequence") == TRUE ){
-      decoy_sequence = generate_reversed_sequence(peptide);
-    }else{
-      decoy_sequence = generate_shuffled_sequence(peptide);
-    }
-    IF_CARP_DETAILED_DEBUG(
-      char* seq = get_peptide_sequence(peptide);
-      carp(CARP_DETAILED_DEBUG, "Shuffling transforms: %s -> %s", 
-           seq, decoy_sequence);
-      free(seq);
-    )
-    MODIFIED_AA_T* modified_seq = convert_to_mod_aa_seq(decoy_sequence);
+    char* decoy_sequence = get_peptide_sequence(peptide);
+    MODIFIED_AA_T* modified_seq = get_peptide_modified_aa_sequence(peptide);
 
     // create the ion series for this peptide
     update_ion_series(ion_series, decoy_sequence, modified_seq);
@@ -3457,7 +3444,6 @@ void add_decoy_scores_match_collection(
     target_matches->num_xcorrs++;
 
     // clean up
-    //    free(sequence);
     free(decoy_sequence);
     free(modified_seq);
     free_peptide(peptide);

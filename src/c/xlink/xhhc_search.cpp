@@ -25,6 +25,19 @@ double bonf_correct(double nlp_value, int nt);
 
 
 
+void get_ions_from_window(vector<LinkedPeptide>& filtered_ions,
+  vector<LinkedPeptide>& all_ions,
+  FLOAT_T precursor_mass,
+  FLOAT_T window,
+  WINDOW_TYPE_T window_type
+);
+
+void get_ions_from_mass_range(
+  vector<LinkedPeptide>& filtered_ions,
+  vector<LinkedPeptide>& all_ions,
+  double min_mass,
+  double max_mass
+);
 
 void get_ions_from_mz_range(vector<LinkedPeptide>& filtered_ions,
 	vector<LinkedPeptide>& all_ions,
@@ -50,8 +63,10 @@ int xlink_search_main(int argc, char** argv) {
     "parameter-file",
     "overwrite",
     "output-dir",
-    "mass-window",
-    "mass-window-decoy",
+    "precursor-window",
+    "precursor-window-type",
+    "precursor-window-decoy",
+    "precursor-window-type-decoy",
     "min-weibull-points",
     "missed-link-cleavage",
     "top-match",
@@ -83,8 +98,14 @@ int xlink_search_main(int argc, char** argv) {
   int num_missed_cleavages = 0;
   char* ms2_file = get_string_parameter("ms2 file");
 
-  FLOAT_T mass_window = get_double_parameter("mass-window");
-  FLOAT_T mass_window_decoy = get_double_parameter("mass-window-decoy");
+  FLOAT_T precursor_window = get_double_parameter("precursor-window");
+  FLOAT_T precursor_window_decoy = get_double_parameter("precursor-window-decoy");
+  WINDOW_TYPE_T precursor_window_type = 
+    get_window_type_parameter("precursor-window-type");
+  WINDOW_TYPE_T window_type_decoy = 
+    get_window_type_parameter("precursor-window-type-decoy");
+
+
 
   char* database = get_string_parameter("protein input");
   char* links = get_string_parameter("link sites");
@@ -190,14 +211,14 @@ int xlink_search_main(int argc, char** argv) {
 
     clock_t start_clock = clock();
 
-    carp(CARP_DEBUG, "finding target xpeptides in mass window...%g", mass_window);
-    get_ions_from_mz_range(
-	target_xpeptides, // stored in this vector
-	all_ions,
-	precursor_mass,
-	charge,
-	mass_window,
-	0);
+    carp(CARP_INFO, "finding target xpeptides in mass window...%g", precursor_window);
+    get_ions_from_window(
+      target_xpeptides,
+      all_ions,
+      precursor_mass,
+      precursor_window,
+      precursor_window_type
+      );
 
     if (target_xpeptides.size() < 1) {
       carp(CARP_INFO, "not enough precursors found in range, skipping scan %d charge %d", scan_num, charge);
@@ -205,14 +226,13 @@ int xlink_search_main(int argc, char** argv) {
     }
     
 
-    carp(CARP_DEBUG, "finding training xpeptides in decoy mass window..%g", mass_window_decoy);
-    get_ions_from_mz_range(
+    carp(CARP_INFO, "finding training xpeptides in decoy precursor window..%g", precursor_window_decoy);
+    get_ions_from_window(
 	target_decoy_xpeptides,
 	all_ions,
 	precursor_mass,
-	charge,
-	mass_window_decoy,
-	0);
+	precursor_window_decoy,
+	window_type_decoy);
     
     carp(CARP_DETAILED_DEBUG, "Creating decoys for target window");
     //create the decoys from the target found in the target_mass_window.
@@ -418,19 +438,17 @@ int xlink_search_main(int argc, char** argv) {
 
 void get_ions_from_window(vector<LinkedPeptide>& filtered_ions,
   vector<LinkedPeptide>& all_ions,
-  FLOAT_T precursor_mass) {
-
-  WINDOW_TYPE_T precursor_window_type = get_window_type_parameter("precursor-window-type");
-
-  double window = get_double_parameter("precursor-window");
+			  FLOAT_T precursor_mass,
+			  FLOAT_T window,
+			  WINDOW_TYPE_T window_type) {
 
   double min_mass = 0;
   double max_mass = 0;
   
-  if (precursor_window_type == WINDOW_MASS) {
+  if (window_type == WINDOW_MASS) {
     min_mass = precursor_mass - window;
     max_mass = precursor_mass + window;
-  } else if (precursor_window_type == WINDOW_PPM) {
+  } else if (window_type == WINDOW_PPM) {
     min_mass = precursor_mass / (1.0 + window * 1e-6);
     max_mass = precursor_mass / (1.0 - window * 1e-6);
   } else {

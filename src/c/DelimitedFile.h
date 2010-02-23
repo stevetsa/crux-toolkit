@@ -401,6 +401,12 @@ class DelimitedFile {
   void sortByIntegerColumn(
     const std::string& column_name, ///< the column name
     BOOLEAN_T ascending = TRUE);
+
+  void sortByIntegerColumn(
+    unsigned int col_idx,
+    BOOLEAN_T ascending = TRUE);
+
+
   
   /**
    * sorts the table by a column. Assumes the data type is 
