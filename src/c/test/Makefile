@@ -15,7 +15,7 @@ check-unit-tests:
 check-smoke-tests:
 	cd smoke-tests && ./runall
 
-# Remove generated files in unit-tess
+# Remove generated files in unit-test
 clean:
 	cd unit-tests && $(MAKE) clean
 
