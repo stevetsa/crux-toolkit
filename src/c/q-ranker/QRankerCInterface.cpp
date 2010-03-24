@@ -41,9 +41,11 @@ static Caller * getCaller() {
 
 
 /** Call that initiates percolator */
-void qcInitiate(NSet sets, unsigned int numFeat, unsigned int numSpectra, char ** featureNames, double pi0) {
+/** void qcInitiate(NSet sets, unsigned int numFeat, unsigned int numSpectra, char ** featureNames, double pi0){ **/
+    void qcInitiate(int sets, unsigned int numFeat, int* numSpectra, char ** featureNames, double pi0) {
+         
     pCaller=new Caller();
-    nset=sets;
+    nset=(NSet)sets;
     numFeatures = numFeat;
     pCaller->filelessSetup((int)sets,numFeatures, numSpectra, featureNames, pi0);
     normal = new SetHandler::Iterator(pCaller->getSetHandler(Caller::NORMAL));
@@ -54,6 +56,7 @@ void qcInitiate(NSet sets, unsigned int numFeat, unsigned int numSpectra, char *
       decoy3 = new SetHandler::Iterator(pCaller->getSetHandler(Caller::SHUFFLED2));
     if (nset>4)
       cerr << "This version of percolator only suports 3 decoy sets. Pecolator was called with nset=" << nset << endl;
+    
 }
 
 /** Call that sets verbosity level

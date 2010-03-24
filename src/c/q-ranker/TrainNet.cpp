@@ -510,10 +510,12 @@ void Caller::train_many_nets()
   //cost linear flag indicating whether to use the sigmoid(0) or linear loss(1)
   int clf = 0;
 
-  xvalidate_net(selectionfdr);
+  //xvalidate_net(selectionfdr);
 
   net.initialize(FeatureNames::getNumFeatures(),num_hu,mu,clf,lf,bs);
   net.set_weightDecay(weightDecay);
+  for(int count = 0; count < num_qvals; count++)
+    max_net_gen[count] = net;
 
   cerr << "Before iterating\n";
   cerr << "trainset: ";
