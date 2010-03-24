@@ -344,7 +344,7 @@ void initialize_parameters(void){
       "false"); 
 
   /* generate_peptide, create_index parameters  */
-  set_int_parameter("min-length", 6, 1, MAX_PEPTIDE_LENGTH,
+  set_int_parameter("min-length", 4, 1, MAX_PEPTIDE_LENGTH,
       "The minimum length of peptides to consider. Default 6.",
       "Used from the command line or parameter file by "
       "crux-create-index and crux-generate-peptides.  Parameter file "
@@ -364,9 +364,9 @@ void initialize_parameters(void){
       "Available from command line or parameter file for crux-create-index "
       "and crux-generate-peptides. Parameter file only for crux-search-"
       "for-matches.", "true");
-  set_mass_type_parameter("isotopic-mass", AVERAGE, 
+  set_mass_type_parameter("isotopic-mass", MONO, 
       "Which isotopes to use in calcuating peptide mass (average, mono). "
-      "Default average.", 
+      "Default mono.", 
       "Used from command line or parameter file by crux-create-index and "
       "crux-generate-peptides.  Parameter file only for "
       "crux-search-for-matches.", "true");
@@ -557,9 +557,9 @@ void initialize_parameters(void){
   set_string_parameter("seed", "time", "HIDE ME FROM USER",
       "Given a real-number value, will always produce the same decoy seqs",
       "false");
-  set_double_parameter("precursor-window", 3.0, 0, 1e6, 
+  set_double_parameter("precursor-window", 3.0, 0, 100, 
       "Search peptides within +/- 'precursor-window' of the "
-      "spectrum mass.  Definition of precursor windows depends "
+      "spectrum mass.  Definition of precursor window depends "
       "upon precursor-window-type. Default 3.0.",
       "Available from the parameter file only for crux-search-for-matches, "
       "crux-create-index, and crux-generate-peptides.",
@@ -593,7 +593,7 @@ void initialize_parameters(void){
       "Available from parameter file for crux-generate-peptides and "
       "crux-search-for-matches and the "
       "the same must be used for crux compute-q-value.", "true");
-  set_int_parameter("max-mods", MAX_PEPTIDE_LENGTH, 0, MAX_PEPTIDE_LENGTH,
+  set_int_parameter("max-mods", 3, 0, MAX_PEPTIDE_LENGTH,
       "The maximum number of modifications that can be applied to a single " 
       "peptide.  Default no limit.",
       "Available from parameter file for crux-search-for-matches.", "true");
@@ -718,7 +718,7 @@ void initialize_parameters(void){
       "For parameter file only.  Default no mass change.", "false");
   set_double_parameter("C", 57.0214637206, -100, BILLION,
       "Change the mass of all amino acids 'C' by the given amount.",
-      "For parameter file only.  Default +57.0.", "true");
+      "For parameter file only.  Default +57.0214637206.", "true");
   set_double_parameter("D", 0.0, -100, BILLION,
       "Change the mass of all amino acids 'D' by the given amount.",
       "For parameter file only.  Default no mass change.", "true");
@@ -820,7 +820,7 @@ void initialize_parameters(void){
 
   set_boolean_parameter("use-mgf", FALSE,
       "Use MGF file format for parsing files",
-      "Available for xlink-search program (Default FALSE).",
+      "Available for search-for-xlinks program (Default FALSE).",
       "true");
   set_boolean_parameter("xlink-qvalues", FALSE,
 			"",
@@ -836,27 +836,27 @@ void initialize_parameters(void){
   /* search-xlink options */
   set_boolean_parameter("xcorr-use-flanks", TRUE,
       "Use flank peaks in xcorr theoretical spectrum",
-      "Available for crux xlink-search program (Default True).",
+      "Available for crux search-for-xlinks program (Default True).",
       "true");
 
   set_boolean_parameter("xlink-include-linears", TRUE, 
-      "Include linear peptides in xlink-search.",
-      "Available for crux xlink-search program (Default True).",
+      "Include linear peptides in search-for-xlinks.",
+      "Available for crux search-for-xlinks program (Default True).",
       "true");
   set_boolean_parameter("xlink-include-deadends", TRUE, 
-      "Include deadend peptides in xlink-search (Default True).",
-      "Available for crux xlink-search program.",
+      "Include deadend peptides in search-for-xlinks (Default True).",
+      "Available for crux search-for-xlinks program.",
       "true");
 
   set_boolean_parameter("xlink-include-selfloops", TRUE, 
-      "Include self loop peptides in xlink-search (Default True).",
-      "Available for crux xlink-search program.",
+      "Include self loop peptides in search-for-xlinks (Default True).",
+      "Available for crux search-for-xlinks program.",
       "true");
 
   set_double_parameter("precursor-window-decoy", 20.0, 0, 1e6, 
       "Search decoy-peptides within +/- 'mass-window-decoy' of the "
       "spectrum mass.  Default 20.0.",
-      "Available for crux xlink-search. ",
+      "Available for crux search-for-xlinks. ",
       "true");
 
   
@@ -868,22 +868,30 @@ void initialize_parameters(void){
 
   set_string_parameter("link sites", NULL, 
       "Comma delimited pair of amino acid link sites, ex. A:K,A:D.",
-      "Argument for crux xlink-search.", "true");
+      "Argument for crux search-for-xlinks.", "true");
 
   set_double_parameter("link mass", 0.0, -100, BILLION,
       "The mass modification of a cross link between two amino acids.",
-      "Argument for crux xlink-search.","true");
+      "Argument for crux search-for-xlinks.","true");
 
   set_string_parameter("missed-link-cleavage", "K",
       "Figure out what this parameter is supposed to mean,"
       "should be an amino acid. Default K.",
-      "Available for crux xlink-search",
+      "Available for crux search-for-xlinks",
       "true");
 
-  set_int_parameter("min-weibull-points", 400, 1, BILLION, 
-      "Minimum number of points for estimating the weibull (Default 400).",
-      "Available for crux xlink-search", "true");
+  set_int_parameter("min-weibull-points", 4000, 1, BILLION, 
+      "Minimum number of points for estimating the weibull (Default 4000).",
+      "Available for crux search-for-xlinks", "true");
   
+
+  set_string_parameter("search-tab-output-file", "search.target.txt",
+    "The filename for the target psms resulting from the search",
+    "Available for crux search-for-xlinks", "true");
+
+  set_string_parameter("decoy-tab-output-file", "search.decoy.txt",
+    "The filename for the decoy psms resultsing from the search",
+    "Available for crux search-for-xlinks", "true");
 
 
   // now we have initialized the parameters

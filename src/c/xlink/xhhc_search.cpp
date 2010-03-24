@@ -141,9 +141,9 @@ int xlink_search_main(int argc, char** argv) {
  // best pvalues
 
   char* output_directory = get_string_parameter("output-dir");
-
-  string target_path = string(output_directory) + "/search.target.txt";
-
+  char* target_filename = get_string_parameter("search-tab-output-file");
+  
+  string target_path = string(output_directory) + "/" + string(target_filename);
   ofstream search_target_file(target_path.c_str());
   //set precision
   search_target_file << setprecision(get_int_parameter("precision"));
@@ -161,9 +161,19 @@ int xlink_search_main(int argc, char** argv) {
   search_target_file << "matches/spectrum\t";
   search_target_file << "sequence\t";
   search_target_file << "protein id(loc) 1\t";
-  search_target_file << "protein id(loc) 2" <<endl;
-  
-  string decoy_path = string(output_directory) + "/search.decoy.txt";
+  search_target_file << "protein id(loc) 2\t";
+  search_target_file << "by total\t";
+  search_target_file << "by observable (0-1200)\t";
+  search_target_file << "by observable bin (0-1200)\t";
+  search_target_file << "by observable (0-max)\t";
+  search_target_file << "by observable bin (0-max)\t";
+  search_target_file << "by observed bin\t";
+  search_target_file << "ion current total\t";
+  search_target_file << "ion current observed"<<"\t";
+  search_target_file << "ions observable bin (0-1200)"<<endl;
+
+  char *decoy_filename = get_string_parameter("decoy-tab-output-file");
+  string decoy_path = string(output_directory) + "/" + string(decoy_filename);
 
   ofstream search_decoy_file (decoy_path.c_str());
   //set precision
@@ -208,6 +218,8 @@ int xlink_search_main(int argc, char** argv) {
 
     FLOAT_T precursor_mz = get_spectrum_precursor_mz(spectrum);
     FLOAT_T precursor_mass = get_spectrum_neutral_mass(spectrum, charge); 
+ 
+
 
     clock_t start_clock = clock();
 
@@ -409,12 +421,44 @@ int xlink_search_main(int argc, char** argv) {
           vector<PEPTIDE_T*>& peptides2 = get_peptides_from_sequence(sequence2);
           string result_string = get_protein_ids_locations(peptides2);
           search_target_file << result_string;
-        } 
+        }
+        search_target_file <<"\t";
+                //get theoretical ions count for (0-1200, with 1Da bins).
+        Scorer scorer;
+        LinkedIonSeries ion_series(links, charge);
+        ion_series.add_linked_ions(scores[score_index].second);
+
+        FLOAT_T ion_current_observed;
+        FLOAT_T ion_current_total = get_spectrum_total_energy(spectrum);
+        int by_total = ion_series.get_total_by_ions();
+        int by_observable;
+        int by_observable2;
+        int by_observable_bin;
+        int by_observable_bin2;
+        int by_observed_bin;
+        int ions_observable;
+        int ions_observable_bin;
+        ion_series.get_observable_ions(0, 1200, bin_width_mono, ions_observable, ions_observable_bin);
+        ion_series.get_observable_by_ions(0, 1200, bin_width_mono, by_observable, by_observable_bin);
+        ion_series.get_observable_by_ions(0, get_spectrum_max_peak_mz(spectrum), bin_width_mono, by_observable2, by_observable_bin2);
+        scorer.getIonCurrentExplained(ion_series, spectrum, ion_current_observed, by_observed_bin);
+        
+  
+
+        search_target_file << by_total << "\t";
+        search_target_file << by_observable << "\t";
+        search_target_file << by_observable_bin << "\t";
+        search_target_file << by_observable2 << "\t";
+        search_target_file << by_observable_bin2 << "\t";
+        search_target_file << by_observed_bin << "\t";
+        search_target_file << ion_current_total << "\t";
+        search_target_file << ion_current_observed << "\t";
+        search_target_file << ions_observable_bin;
         
         search_target_file << endl;
 
-      }
 
+        } 
       score_index++;
     }
 

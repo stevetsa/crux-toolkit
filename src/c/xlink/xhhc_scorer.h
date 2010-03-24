@@ -22,7 +22,11 @@ class Scorer {
       scorer = NULL;
 	current_spectrum = NULL;
     }
-    float get_max_mz() { return max_mz; }
+
+    Scorer(FLOAT_T a_max_mz);
+
+    FLOAT_T get_max_mz() { return max_mz; }
+    
     // main scoring function
     // creates theoretical spectrum from ion series and
     // scores against observed spectrum
@@ -35,7 +39,13 @@ class Scorer {
     static void add_intensity_map(std::map<int, FLOAT_T>& theoretical, 
 		       int idx, 
 		       FLOAT_T intensity);
-
+/* 
+    void add_intensity(
+      FLOAT_T* intensity_array, ///< the intensity array to add intensity at index add_idx -out
+      int add_idx,            ///< the idex to add the intensity -in
+      FLOAT_T intensity         ///< the intensity to add -in
+    );
+*/
     static bool xlink_create_map_theoretical(
       LinkedIonSeries& ion_series,
       std::map<int, FLOAT_T>& theoretical);
@@ -51,12 +61,19 @@ class Scorer {
       LinkedIonSeries& ion_series ///< the ion series to score against the spectrum -in
     );
 
+    FLOAT_T getIonCurrentExplained(LinkedIonSeries& ion_series, 
+      SPECTRUM_T* spectrum, 
+      FLOAT_T& explained, 
+      int& by_observed);
+
+
   private:
     void print_spectrums(FLOAT_T* theoretical, SPECTRUM_T* spectrum);
     bool print_spectrums_;
     SCORER_T* scorer;
     SPECTRUM_T* current_spectrum;
-    float max_mz;
+    FLOAT_T max_mz;
+    static int ion_counter;
 };
 
 // Everything below here is in a crux .c file but not included in headers, not sure

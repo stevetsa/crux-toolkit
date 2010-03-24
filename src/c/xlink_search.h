@@ -11,7 +11,7 @@ extern "C" {
 /*
  * AUTHOR: Sean McIlwain
  * CREATE DATE: November 19, 2009
- * DESCRIPTION: Header file for crux xlink-search command. 
+ * DESCRIPTION: Header file for crux search-for-xlinks command. 
  *
  * $Revision: 1.0 $
  */

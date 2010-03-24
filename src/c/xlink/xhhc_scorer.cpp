@@ -12,6 +12,11 @@
 #define NO_FLANKS 1
 
 
+Scorer::Scorer(FLOAT_T a_max_mz) {
+  max_mz = a_max_mz;
+}
+
+
 int Scorer::get_matched_by_ions(SPECTRUM_T* spectrum,
 				LinkedIonSeries& ion_series) {
   FLOAT_T bin_width = bin_width_mono;
@@ -142,12 +147,15 @@ bool Scorer::xlink_create_map_theoretical(
     // add neutral loss of water and NH3
     //  mass_z + (modification_masses[(int)ion_modification]/(FLOAT_T)charge) * modification_count;  
     
-    
-    if(ion_type == B_ION){
+    //TODO put this back in
+    //if(ion_type == B_ION){
       int h2o_array_idx = (int)((ion->get_mz(MONO) - (MASS_H2O_MONO/ion->charge()) ) / bin_width + 0.5);
       add_intensity_map(theoretical, h2o_array_idx, 10);
-    }
+    //}
     
+    int co_array_idx = (int)((ion -> get_mz(MONO) - (MASS_CO_MONO/ion->charge())) / bin_width + 0.5);
+    add_intensity_map(theoretical, co_array_idx, 10);
+
     int nh3_array_idx = (int)((ion->get_mz(MONO) -  (MASS_NH3_MONO/ion->charge())) / bin_width + 0.5);
     add_intensity_map(theoretical, nh3_array_idx, 10);        
   }
@@ -214,6 +222,54 @@ bool Scorer::hhc_create_intensity_array_theoretical(
     }
     return true;
   }
+
+
+FLOAT_T Scorer::getIonCurrentExplained(LinkedIonSeries& ion_series, 
+  SPECTRUM_T* spectrum, 
+  FLOAT_T& explained, 
+  int& by_observed) {
+
+  max_mz = get_spectrum_max_peak_mz(spectrum);
+  FLOAT_T* theoretical = (FLOAT_T*)mycalloc((size_t)max_mz+1, sizeof(FLOAT_T));
+  hhc_create_intensity_array_theoretical(ion_series, theoretical);
+
+  explained = 0.0;
+  by_observed = 0;
+
+  FLOAT_T bin_width = bin_width_mono;
+
+  FLOAT_T ans = 0.0;
+  
+  PEAK_ITERATOR_T* peak_iter = new_peak_iterator(spectrum);
+
+  map<int, bool> by_found;
+
+  while (peak_iterator_has_next(peak_iter)) {
+
+    PEAK_T* peak = peak_iterator_next(peak_iter);
+    FLOAT_T spec_mz = get_peak_location(peak);
+    FLOAT_T spec_intensity = get_peak_intensity(peak);
+    //for each peak in the spectrum, find the array index for the theoretical.
+    int intensity_array_idx = (int)(spec_mz / bin_width + 0.5);
+
+    if (theoretical[intensity_array_idx] >= 45) {
+    //it is a b-y ions that is observed.
+      if (by_found.find(intensity_array_idx) == by_found.end()) {
+        by_found[intensity_array_idx] = true;
+        by_observed ++;
+      }
+      ans += spec_intensity;
+    }
+  }
+  free_peak_iterator(peak_iter);
+  free(theoretical);
+
+
+  explained = ans;
+  return ans;
+}
+
+
 
 //creates three files for spectacle.pl: spectrums.out, theoretical.out, observed.out
 void Scorer::print_spectrums(FLOAT_T* theoretical, SPECTRUM_T* spectrum) {

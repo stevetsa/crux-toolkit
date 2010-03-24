@@ -364,6 +364,14 @@ FLOAT_T cross_correlation(
   FLOAT_T* theoretical ///< the theoretical spectrum to score against the observed spectrum -in
   );
 
+FLOAT_T* get_intensity_array_observed(SCORER_T* scorer);
+
+BOOLEAN_T create_intensity_array_observed(
+  SCORER_T* scorer,        ///< the scorer object -in/out
+  SPECTRUM_T* spectrum,    ///< the spectrum to score(observed) -in
+  int charge               ///< the peptide charge -in 
+  );
+
 /**
  * adds the intensity at add_idx
  * if, there already exist a peak at the index, only overwrite if

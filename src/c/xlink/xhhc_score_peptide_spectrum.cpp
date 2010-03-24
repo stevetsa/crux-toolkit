@@ -102,22 +102,27 @@ int main(int argc, char** argv){
     free_spectrum(spectrum);
     exit(1);
   }
-
+  
   //created linked peptide.
   LinkedPeptide lp = LinkedPeptide(peptideA, peptideB, posA, posB, charge);
+
+  cout <<"LinkedPeptide:"<<lp<<" mass:"<<lp.mass(MONO)<<endl;
+  
   Scorer xhhc_scorer;
   xhhc_scorer.set_print(false);
+
+
 
   string scoremethod(get_string_parameter("xlink-score-method"));
 
   if (scoremethod=="composite") {
 
-    LinkedIonSeries ion_series;
+    LinkedIonSeries ion_series("",charge);
 
     //cout << lp << endl;
     
     ion_series.add_linked_ions(lp);
-     
+       
     double score = xhhc_scorer.score_spectrum_vs_series(spectrum, ion_series);
 
     cout <<score<<endl;
@@ -301,57 +306,106 @@ double get_concat_score(char* peptideA, char* peptideB, int link_site, int charg
 
 }
 
+FLOAT_T* get_observed_raw(SPECTRUM_T* spectrum, int charge) {
+  PEAK_T* peak = NULL;
+  PEAK_ITERATOR_T* peak_iterator = NULL;
+  FLOAT_T peak_location = 0;
+  int mz = 0;
+  FLOAT_T intensity = 0;
+  FLOAT_T bin_width = bin_width_mono;
+  FLOAT_T precursor_mz = get_spectrum_precursor_mz(spectrum);
+  FLOAT_T experimental_mass_cut_off = precursor_mz*charge + 50;
+
+  // set max_mz and malloc space for the observed intensity array
+  FLOAT_T sp_max_mz = 512;
+
+  if(experimental_mass_cut_off > 512){
+    int x = (int)experimental_mass_cut_off / 1024;
+    FLOAT_T y = experimental_mass_cut_off - (1024 * x);
+    sp_max_mz = x * 1024;
+
+    if(y > 0){
+      sp_max_mz += 1024;
+    }
+  }
+
+  // DEBUG
+  // carp(CARP_INFO, "experimental_mass_cut_off: %.2f sp_max_mz: %.3f", experimental_mass_cut_off, scorer->sp_max_mz);
+  FLOAT_T* observed = (FLOAT_T*)mycalloc((int)sp_max_mz, sizeof(FLOAT_T));
+  
+  // create a peak iterator
+  peak_iterator = new_peak_iterator(spectrum);
+
+  // DEBUG
+  // carp(CARP_INFO, "max_peak_mz: %.2f, region size: %d",get_spectrum_max_peak_mz(spectrum), region_selector);
+  
+  // while there are more peaks to iterate over..
+  // bin peaks, adjust intensties, find max for each region
+  while(peak_iterator_has_next(peak_iterator)){
+    peak = peak_iterator_next(peak_iterator);
+    peak_location = get_peak_location(peak);
+    
+    // skip all peaks larger than experimental mass
+    if(peak_location > experimental_mass_cut_off){
+      continue;
+    }
+    
+    // skip all peaks within precursor ion mz +/- 15
+    if(peak_location < precursor_mz + 15 &&  peak_location > precursor_mz - 15){
+      continue;
+    }
+    
+    // map peak location to bin
+    mz = (int)(peak_location / bin_width + 0.5);
+
+    // get intensity
+    // sqrt the original intensity
+    intensity = get_peak_intensity(peak);
+
+    // set intensity in array with correct mz, only if max peak in the bin
+    if(observed[mz] < intensity){
+      observed[mz] = intensity;
+      }
+    }    
+  
+
+  return observed;
+
+}
+
+
+
 void print_spectrum(SPECTRUM_T* spectrum, LinkedIonSeries& ion_series) {
 
-      int total_by_ions = ion_series.get_total_by_ions();
-      int matched_by_ions = Scorer::get_matched_by_ions(spectrum, ion_series);
-      FLOAT_T frac_by_ions = (double)matched_by_ions / (double) total_by_ions;
 
-      carp(CARP_DEBUG,"total:%d",total_by_ions);
-      carp(CARP_DEBUG,"matched:%d",matched_by_ions);
-      carp(CARP_DEBUG,"frac:%d",frac_by_ions);
-      carp(CARP_DEBUG,"npeaks:",get_spectrum_num_peaks(spectrum));
-      FLOAT_T bin_width = bin_width_mono;
-      vector<LinkedPeptide>& ions = ion_series.ions();
-      
-      map<PEAK_T*, bool> matched;
+      SCORER_T* scorer = new_scorer(XCORR);
+      create_intensity_array_observed(scorer, spectrum, ion_series.charge());
 
-      for (vector<LinkedPeptide>::iterator ion = ions.begin();
-	   ion != ions.end(); 
-	   ++ion) {
-	if (ion -> get_mz(MONO) >= 400 && ion -> get_mz(MONO) <= 1200) {
-	  if (ion -> type() == B_ION || ion -> type() == Y_ION) {
-	    PEAK_T* peak = get_nearest_peak(spectrum, ion -> get_mz(MONO), bin_width);
-	    if (peak != NULL) {
-	      matched[peak] = true;
-	    }
-	  }
-	}
-      }
+      FLOAT_T* observed_raw = get_observed_raw(spectrum, ion_series.charge());
+      FLOAT_T* observed_processed = get_intensity_array_observed(scorer);
 
-      //now print the spectrum and whether or not it has been matched.
+
+      FLOAT_T max_mz = get_scorer_sp_max_mz(scorer);
+
+        
+
+
+      Scorer xhhc_scorer(max_mz);
+
+      FLOAT_T* theoretical = (FLOAT_T*)mycalloc((size_t)max_mz, sizeof(FLOAT_T));
+      xhhc_scorer.hhc_create_intensity_array_theoretical(ion_series, theoretical);
+
+
       
       ofstream fout("ion_match.out");
-
-      PEAK_ITERATOR_T* peak_iter = new_peak_iterator(spectrum);
-      while (peak_iterator_has_next(peak_iter)) {
-	PEAK_T* peak = peak_iterator_next(peak_iter);
-
-	if (get_peak_location(peak) >= 400 && get_peak_location(peak) <= 1200) {
-
-	  fout << get_peak_location(peak) << "\t";
-	  fout << get_peak_intensity(peak) << "\t";
-	  if (matched.find(peak) == matched.end())
-	    fout << "0";
-	  else
-	    fout << "1";
-	  fout<<endl;
-	}
+      for (int i=0;i<max_mz;i++) {
+        fout << i << "\t" 
+             << observed_raw[i] << "\t"
+             << observed_processed[i] << "\t" 
+             << theoretical[i] << "\t" 
+             << (theoretical[i] != 0) << "\t" 
+             << (theoretical[i] > 25) << endl;
       }
 
       fout.close();
-      free_peak_iterator(peak_iter);
-
-
-
 }

@@ -30,7 +30,23 @@ class LinkedIonSeries {
     int size()                    { return all_ions.size(); }
 
     int get_total_by_ions();
+
+    int get_observable_ions(
+      FLOAT_T min_mz,
+      FLOAT_T max_mz,
+      FLOAT_T bin_width,
+      int& ions_observable,
+      int& ions_observable_bin);
+
     
+    int get_observable_by_ions(
+      FLOAT_T min_mz, 
+      FLOAT_T max_mz, 
+      FLOAT_T bin_width,
+      int &by_observable,
+      int &by_observable_bin);
+
+
     // other
     void set_charge(int charge) { charge_ = charge; }
     void clear()                { all_ions.clear(); }

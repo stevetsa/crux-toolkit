@@ -97,6 +97,7 @@ LIBFILES= \
   q-ranker.h \
   q-value.cpp \
   q-value.h \
+  search-progress.h \
   sequest-search.cpp \
   sequest-search.h \
   scorer.cpp \
@@ -110,7 +111,8 @@ LIBFILES= \
   utils.cpp \
   utils.h \
   version.h \
-  xlink_search.h
+  xlink_search.h \
+  xlink_compute_qvalues.h
 
 noinst_LTLIBRARIES = libcrux.la
 libcrux_la_CFLAGS = \

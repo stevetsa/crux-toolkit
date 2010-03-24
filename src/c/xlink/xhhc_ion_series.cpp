@@ -44,7 +44,8 @@ void LinkedIonSeries::print() {
 // cleaves linked_peptide at all positions, adding b and y ions
 void LinkedIonSeries::add_linked_ions(LinkedPeptide& linked_peptide,int split_type) {
 
-  if (charge_ == 0) charge_ = linked_peptide.charge();
+  //if (charge_ == 0) charge_ = linked_peptide.charge();
+  linked_peptide.set_charge(charge_);
 
   fragments.clear();
   // split the precursor at every cleavage site
@@ -93,13 +94,111 @@ int LinkedIonSeries::get_total_by_ions() {
   for (ion_iter = all_ions.begin(); 
        ion_iter != all_ions.end(); 
        ++ion_iter) {
-        if (ion_iter -> get_mz(MONO) >= 400 && ion_iter -> get_mz(MONO) <= 1200) {
+        //if (ion_iter -> get_mz(MONO) >= 400 && ion_iter -> get_mz(MONO) <= 1200) {
 	  if (ion_iter -> type() == B_ION || ion_iter -> type() == Y_ION) {
 	    ans++;
 	  }
-	}
+	//}
   }
   return ans;
+}
+
+void add_ion_bin(map<int, bool>& observed, 
+                int& ions, int& ions_bin, 
+                FLOAT_T mz, FLOAT_T bin_width,
+                FLOAT_T min_mz, FLOAT_T max_mz, bool add_flanks) {
+
+  if ((mz >= min_mz) && (mz <= max_mz)) {
+    ions++;
+    int bin_idx = (int)(mz / bin_width + 0.5);
+    if (observed.find(bin_idx) == observed.end()) {
+      observed[bin_idx] = true;
+      ions_bin++;
+    }
+    if (add_flanks) {
+      
+      bin_idx = bin_idx - 1;
+      FLOAT_T flank_mz = bin_idx * bin_width;
+      if (flank_mz >= min_mz) {
+        ions++;
+        if (observed.find(bin_idx) == observed.end()) {
+          observed[bin_idx] = true;
+          ions_bin++;
+        }
+      }
+      bin_idx = bin_idx + 2;
+      flank_mz = bin_idx * bin_width;
+      if (flank_mz <= max_mz) {
+        ions++;
+        if (observed.find(bin_idx) == observed.end()) {
+          observed[bin_idx] = true;
+          ions_bin++;
+        }
+      }
+    }
+  }
+}
+
+int LinkedIonSeries::get_observable_ions(
+  FLOAT_T min_mz,
+  FLOAT_T max_mz,
+  FLOAT_T bin_width,
+  int& ions_observable,
+  int& ions_observable_bin) {
+  
+  ions_observable = 0;
+  ions_observable_bin = 0;
+
+  map<int, bool> observed;
+
+  for (vector<LinkedPeptide>::iterator ion_iter = all_ions.begin();
+    ion_iter != all_ions.end();
+    ++ion_iter) {
+
+    double mz = ion_iter -> get_mz(MONO);
+
+    if (ion_iter -> type() == B_ION || ion_iter -> type() == Y_ION) {
+      add_ion_bin(observed, ions_observable, ions_observable_bin, mz, bin_width, min_mz, max_mz, true);
+      double h2O_mz = ion_iter -> get_mz(MONO) - (MASS_H2O_MONO/ ion_iter -> charge());
+      add_ion_bin(observed, ions_observable, ions_observable_bin, h2O_mz, bin_width, min_mz, max_mz, false);
+      double nh3_mz = ion_iter -> get_mz(MONO) - (MASS_NH3_MONO/ ion_iter -> charge());
+      add_ion_bin(observed, ions_observable, ions_observable_bin, nh3_mz, bin_width, min_mz, max_mz, false);
+      double co_mz = ion_iter -> get_mz(MONO) - (MASS_CO_MONO / ion_iter -> charge());
+      add_ion_bin(observed, ions_observable, ions_observable_bin, co_mz, bin_width, min_mz, max_mz, false);
+    }
+  }
+}
+
+
+int LinkedIonSeries::get_observable_by_ions(
+  FLOAT_T min_mz, 
+  FLOAT_T max_mz, 
+  FLOAT_T bin_width,
+  int &by_observable,
+  int &by_observable_bin) {
+
+  by_observable = 0;
+  by_observable_bin = 0;
+
+  map<int, bool> observed;
+
+  vector<LinkedPeptide>::iterator ion_iter;
+
+  for (ion_iter = all_ions.begin(); 
+       ion_iter != all_ions.end(); 
+       ++ion_iter) {
+    if (ion_iter -> get_mz(MONO) >= min_mz && ion_iter -> get_mz(MONO) <= max_mz) {
+      if (ion_iter -> type() == B_ION || ion_iter -> type() == Y_ION) {
+        by_observable++;
+        int bin_idx = 
+          (int)(ion_iter->get_mz(MONO) / bin_width + 0.5);
+        if (observed.find(bin_idx) == observed.end()) {
+          observed[bin_idx] = true;
+          by_observable_bin++;
+        }
+      }
+    }
+  }
 }
 
 
