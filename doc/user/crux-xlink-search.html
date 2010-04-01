@@ -205,10 +205,6 @@ command-line or additional parameters.  See the <a
 href="parameter-file.html">parameter documentation</a> page for
 details.
 
-
-
-
-
 <LI>
 <code>--verbosity &lt;0-100&gt;</code> &ndash; Specify the verbosity of the
 current processes. Each level prints the following messages, including
@@ -222,6 +218,18 @@ Default = 30.
 Print the version number and quit.  Please note that you must include
 the 'T' after --version.
 
+<li><code>--precursor-window-decoy &lt;0-1e6&gt;</code> &ndash; Search
+decoy peptides within +/- 'precursor-window-decoy of the precursor mass.
+Default = 20.
+</li>
+
+<li><code>--precursor-window-type-decoy &lt;mass, mz, ppm&gt;</code> &ndash;
+precursor window type for selecting decoy peptides from precursor mz.
+Default = mass.
+</li>
+
+
+
 </UL>
 <B>Parameter file options:</B>
 <ul>
@@ -229,18 +237,17 @@ the 'T' after --version.
 <code>fragment-mass &lt;average|mono&gt;</code> &ndash; Which isotopes to use
 in calcuating fragment ion mass (average, mono). Default = mono.
 
-
 <li>
-<code>mass-window</code> &ndash;
+<code>precursor-window</code> &ndash;
 Tolerance used for matching peptides to spectra.  Peptides must be
-within +/- 'mass-window' of the spectrum mass.  Default = 3.0.
+within +/- 'precursor-window' of the spectrum mass.  Definition of
+precursor window depends upon precursor-window-type. Default = 3.0.
 
-<!--
 <li>
-<code>use-mz-window</code> &ndash;
-Use mass-to-charge instead of a mass-window. Peptides must be
-within +/- 'm/z-window' of the spectrum m/z. The m/z-window value is taken from <code>mass-window</code>. Default = F.
--->
+<code>precursor-window-type</code> &ndash;
+Window type for use in selecting peptides from precursor-window 
+(mass, mz, ppm). Default: mass. 
+
 <!--
 <li>
 <code>use-mstoolkit</code> &ndash;
@@ -354,7 +361,7 @@ index. Default = 7200.
 	
 <LI>
 <code>min-length &lt;int&gt;</code> &ndash; 
-The minimum length of the peptides to place in the index. Default = 6.
+The minimum length of the peptides to place in the index. Default = 4.
 	
 <LI>
 <code>max-length &lt;int&gt;</code> &ndash; 
@@ -413,14 +420,14 @@ one of those proteins.  Default = F.
 <LI>
 <code>isotopic-mass &lt;average|mono&gt;</code> &ndash; 
 Specify the type of isotopic masses to use when calculating the
-peptide mass. Default = average.
+peptide mass. Default = mono.
    
 <li>
 <code>&lt;A-Z&gt &lt;float&gt;</code> &ndash;
 Specify static modifications.  This is a mass change applied to the
 given amino acid (in single-letter-code A thru Z) for every peptide in
 which it occurs.  Use the <code>mod</code> option for generating
-peptides both with and without the mass change.  Default C=57.
+peptides both with and without the mass change.  Default C=57.0214637206.
 </ul>
 
 <HR></hr>
