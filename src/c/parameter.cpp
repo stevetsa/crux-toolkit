@@ -74,7 +74,7 @@ void parse_parameter_file(
 BOOLEAN_T check_option_type_and_bounds(const char* name);
 
 void check_parameter_consistency();
-void parse_custom_enzyme(char* rule_str);
+void parse_custom_enzyme(const char* rule_str);
 
 /**
  *
@@ -344,7 +344,7 @@ void initialize_parameters(void){
       "false"); 
 
   /* generate_peptide, create_index parameters  */
-  set_int_parameter("min-length", 4, 1, MAX_PEPTIDE_LENGTH,
+  set_int_parameter("min-length", 6, 1, MAX_PEPTIDE_LENGTH,
       "The minimum length of peptides to consider. Default 6.",
       "Used from the command line or parameter file by "
       "crux-create-index and crux-generate-peptides.  Parameter file "
@@ -364,9 +364,9 @@ void initialize_parameters(void){
       "Available from command line or parameter file for crux-create-index "
       "and crux-generate-peptides. Parameter file only for crux-search-"
       "for-matches.", "true");
-  set_mass_type_parameter("isotopic-mass", MONO, 
+  set_mass_type_parameter("isotopic-mass", AVERAGE, 
       "Which isotopes to use in calcuating peptide mass (average, mono). "
-      "Default mono.", 
+      "Default average.", 
       "Used from command line or parameter file by crux-create-index and "
       "crux-generate-peptides.  Parameter file only for "
       "crux-search-for-matches.", "true");
@@ -593,7 +593,7 @@ void initialize_parameters(void){
       "Available from parameter file for crux-generate-peptides and "
       "crux-search-for-matches and the "
       "the same must be used for crux compute-q-value.", "true");
-  set_int_parameter("max-mods", 3, 0, MAX_PEPTIDE_LENGTH,
+  set_int_parameter("max-mods", MAX_PEPTIDE_LENGTH, 0, MAX_PEPTIDE_LENGTH,
       "The maximum number of modifications that can be applied to a single " 
       "peptide.  Default no limit.",
       "Available from parameter file for crux-search-for-matches.", "true");
@@ -602,6 +602,13 @@ void initialize_parameters(void){
       "The maximum number of modified amino acids that can appear in one "
       "peptide.  Each aa can be modified multiple times.  Default no limit.",
       "Available from parameter file for search-for-matches.", "true");
+  set_boolean_parameter("display-summed-mod-masses", TRUE,
+      "When a residue has multiple modifications, print the sum of those "
+      "modifications rather than listing each in a comma-separated list.  "
+      "Default T.",
+      "Available in the parameter file for any command that prints peptides "
+      "sequences.  Example: TRUE is SE[12.40]Q and FALSE is SE[10.00,2.40]Q",
+      "true" );
   set_int_parameter("precision", 8, 1, 100, //max is arbitrary
       "Set the precision for masses and scores written to sqt and text files. "
       "Default 8.",
@@ -1235,7 +1242,7 @@ BOOLEAN_T parse_cmd_line_into_params_hash(int argc,
  */
 // NOTE (BF mar-11-09): for testing would be nice if this returned
 // error code instead of dying
-void parse_custom_enzyme(char* rule_str){
+void parse_custom_enzyme(const char* rule_str){
 
   BOOLEAN_T success = TRUE;
   int len = strlen(rule_str);
@@ -2027,11 +2034,11 @@ BOOLEAN_T set_boolean_parameter(
   else{
     bool_str = "FALSE";
   }
-  result = add_or_update_hash_copy(parameters, name, bool_str);
-  result = add_or_update_hash_copy(usages, name, usage);
-  result = add_or_update_hash_copy(file_notes, name, filenotes);
-  result = add_or_update_hash_copy(for_users, name, foruser);
-  result = add_or_update_hash_copy(types, name, (void*)"BOOLEAN_T");
+  result = add_or_update_hash(parameters, name, bool_str);
+  result = add_or_update_hash(usages, name, usage);
+  result = add_or_update_hash(file_notes, name, filenotes);
+  result = add_or_update_hash(for_users, name, foruser);
+  result = add_or_update_hash(types, name, (void*)"BOOLEAN_T");
   return result;
 }
 
@@ -2056,18 +2063,18 @@ BOOLEAN_T set_int_parameter(
   
   //stringify default, min, and max values and set
   snprintf(buffer, PARAMETER_LENGTH, "%i", set_value);
-  result = add_or_update_hash_copy(parameters, name, buffer);
+  result = add_or_update_hash(parameters, name, buffer);
 
   snprintf(buffer, PARAMETER_LENGTH, "%i", min_value);
-  result = add_or_update_hash_copy(min_values, name, buffer);
+  result = add_or_update_hash(min_values, name, buffer);
 
   snprintf(buffer, PARAMETER_LENGTH, "%i", max_value);
-  result = add_or_update_hash_copy(max_values, name, buffer);
+  result = add_or_update_hash(max_values, name, buffer);
 
-  result = add_or_update_hash_copy(usages, name, usage);
-  result = add_or_update_hash_copy(file_notes, name, filenotes);
-  result = add_or_update_hash_copy(for_users, name, foruser);
-  result = add_or_update_hash_copy(types, name, (void*)"INT_ARG");
+  result = add_or_update_hash(usages, name, usage);
+  result = add_or_update_hash(file_notes, name, filenotes);
+  result = add_or_update_hash(for_users, name, foruser);
+  result = add_or_update_hash(types, name, (void*)"INT_ARG");
   return result;
 }
 
@@ -2092,18 +2099,18 @@ BOOLEAN_T set_double_parameter(
   
   // convert to string
   snprintf(buffer, PARAMETER_LENGTH, "%f", set_value);
-  result = add_or_update_hash_copy(parameters, name, buffer);    
+  result = add_or_update_hash(parameters, name, buffer);    
 
   snprintf(buffer, PARAMETER_LENGTH, "%f", min_value);
-  result = add_or_update_hash_copy(min_values, name, buffer);    
+  result = add_or_update_hash(min_values, name, buffer);    
 
   snprintf(buffer, PARAMETER_LENGTH, "%f", max_value);
-  result = add_or_update_hash_copy(max_values, name, buffer);    
+  result = add_or_update_hash(max_values, name, buffer);    
 
-  result = add_or_update_hash_copy(usages, name, usage);    
-  result = add_or_update_hash_copy(file_notes, name, filenotes);
-  result = add_or_update_hash_copy(for_users, name, foruser);
-  result = add_or_update_hash_copy(types, name, (void*)"DOUBLE_ARG");    
+  result = add_or_update_hash(usages, name, usage);    
+  result = add_or_update_hash(file_notes, name, filenotes);
+  result = add_or_update_hash(for_users, name, foruser);
+  result = add_or_update_hash(types, name, (void*)"DOUBLE_ARG");    
   return result;
 }
 
@@ -2131,11 +2138,11 @@ BOOLEAN_T set_string_parameter(
     set_value = "__NULL_STR";
   }
 
-  result = add_or_update_hash_copy(parameters, name, set_value);
-  result = add_or_update_hash_copy(usages, name, usage);
-  result = add_or_update_hash_copy(file_notes, name, filenotes);
-  result = add_or_update_hash_copy(for_users, name, foruser);
-  result = add_or_update_hash_copy(types, name, (void*)"STRING_ARG");
+  result = add_or_update_hash(parameters, name, set_value);
+  result = add_or_update_hash(usages, name, usage);
+  result = add_or_update_hash(file_notes, name, filenotes);
+  result = add_or_update_hash(for_users, name, foruser);
+  result = add_or_update_hash(types, name, (void*)"STRING_ARG");
 
   return result;
 }
@@ -2160,11 +2167,11 @@ BOOLEAN_T set_mass_type_parameter(
   /* stringify the value */
   mass_type_to_string(set_value, value_str);
   
-  result = add_or_update_hash_copy(parameters, name, value_str);
-  result = add_or_update_hash_copy(usages, name, usage);
-  result = add_or_update_hash_copy(file_notes, name, filenotes);
-  result = add_or_update_hash_copy(for_users, name, foruser);
-  result = add_or_update_hash_copy(types, name, (void*)"MASS_TYPE_T");
+  result = add_or_update_hash(parameters, name, value_str);
+  result = add_or_update_hash(usages, name, usage);
+  result = add_or_update_hash(file_notes, name, filenotes);
+  result = add_or_update_hash(for_users, name, foruser);
+  result = add_or_update_hash(types, name, (void*)"MASS_TYPE_T");
   return result;
 
 }
@@ -2189,11 +2196,11 @@ BOOLEAN_T set_digest_type_parameter(
   char* value_str = digest_type_to_string(set_value);
   carp(CARP_DETAILED_DEBUG, "Setting digest param '%s' to value '%s'.", name, value_str);
 
-  result = add_or_update_hash_copy(parameters, name, value_str);
-  result = add_or_update_hash_copy(usages, name, usage);
-  result = add_or_update_hash_copy(file_notes, name, filenotes);
-  result = add_or_update_hash_copy(for_users, name, foruser);
-  result = add_or_update_hash_copy(types, name, (void*)"DIGEST_T");
+  result = add_or_update_hash(parameters, name, value_str);
+  result = add_or_update_hash(usages, name, usage);
+  result = add_or_update_hash(file_notes, name, filenotes);
+  result = add_or_update_hash(for_users, name, foruser);
+  result = add_or_update_hash(types, name, (void*)"DIGEST_T");
   free(value_str);
   return result;
 
@@ -2218,11 +2225,11 @@ BOOLEAN_T set_enzyme_type_parameter(
   /* stringify the value */
   char* value_str = enzyme_type_to_string(set_value);
 
-  result = add_or_update_hash_copy(parameters, name, value_str);
-  result = add_or_update_hash_copy(usages, name, usage);
-  result = add_or_update_hash_copy(file_notes, name, filenotes);
-  result = add_or_update_hash_copy(for_users, name, foruser);
-  result = add_or_update_hash_copy(types, name, (void*)"ENZYME_T");
+  result = add_or_update_hash(parameters, name, value_str);
+  result = add_or_update_hash(usages, name, usage);
+  result = add_or_update_hash(file_notes, name, filenotes);
+  result = add_or_update_hash(for_users, name, foruser);
+  result = add_or_update_hash(types, name, (void*)"ENZYME_T");
   free(value_str);
   return result;
 
@@ -2246,11 +2253,11 @@ BOOLEAN_T set_window_type_parameter(
   /* stringify the value */
   char* value_str = window_type_to_string(set_value);
 
-  result = add_or_update_hash_copy(parameters, name, value_str);
-  result = add_or_update_hash_copy(usages, name, usage);
-  result = add_or_update_hash_copy(file_notes, name, filenotes);
-  result = add_or_update_hash_copy(for_users, name, foruser);
-  result = add_or_update_hash_copy(types, name, (void*)"WINDOW_TYPE_T");
+  result = add_or_update_hash(parameters, name, value_str);
+  result = add_or_update_hash(usages, name, usage);
+  result = add_or_update_hash(file_notes, name, filenotes);
+  result = add_or_update_hash(for_users, name, foruser);
+  result = add_or_update_hash(types, name, "WINDOW_TYPE_T");
   free(value_str);
   return result;
 
@@ -2273,11 +2280,11 @@ BOOLEAN_T set_sort_type_parameter(
   /* stringify value */
   sort_type_to_string(set_value, value_str);
   
-  result = add_or_update_hash_copy(parameters, name, value_str);
-  result = add_or_update_hash_copy(usages, name, usage);
-  result = add_or_update_hash_copy(file_notes, name, filenotes);
-  result = add_or_update_hash_copy(for_users, name, foruser);
-  result = add_or_update_hash_copy(types, name, (void*)"SORT_TYPE_T");
+  result = add_or_update_hash(parameters, name, value_str);
+  result = add_or_update_hash(usages, name, usage);
+  result = add_or_update_hash(file_notes, name, filenotes);
+  result = add_or_update_hash(for_users, name, foruser);
+  result = add_or_update_hash(types, name, (void*)"SORT_TYPE_T");
   return result;
 }
 
@@ -2300,11 +2307,11 @@ BOOLEAN_T set_algorithm_type_parameter(
   algorithm_type_to_string(set_value, value_str);
   carp(CARP_DETAILED_DEBUG, "setting algorithm type to %s", value_str);  
 
-  result = add_or_update_hash_copy(parameters, name, value_str);
-  result = add_or_update_hash_copy(usages, name, usage);
-  result = add_or_update_hash_copy(file_notes, name, filenotes);
-  result = add_or_update_hash_copy(for_users, name, foruser);
-  result = add_or_update_hash_copy(types, name, (void*)"ALGORITHM_TYPE_T");
+  result = add_or_update_hash(parameters, name, value_str);
+  result = add_or_update_hash(usages, name, usage);
+  result = add_or_update_hash(file_notes, name, filenotes);
+  result = add_or_update_hash(for_users, name, foruser);
+  result = add_or_update_hash(types, name, (void*)"ALGORITHM_TYPE_T");
   return result;
 }
 
@@ -2328,11 +2335,11 @@ BOOLEAN_T set_scorer_type_parameter(
   scorer_type_to_string(set_value, value_str);
   carp(CARP_DETAILED_DEBUG, "setting score type to %s", value_str);  
 
-  result = add_or_update_hash_copy(parameters, name, value_str);
-  result = add_or_update_hash_copy(usages, name, usage);
-  result = add_or_update_hash_copy(file_notes, name, filenotes);
-  result = add_or_update_hash_copy(for_users, name, foruser);
-  result = add_or_update_hash_copy(types, name, (void*)"SCORER_TYPE_T");
+  result = add_or_update_hash(parameters, name, value_str);
+  result = add_or_update_hash(usages, name, usage);
+  result = add_or_update_hash(file_notes, name, filenotes);
+  result = add_or_update_hash(for_users, name, foruser);
+  result = add_or_update_hash(types, name, (void*)"SCORER_TYPE_T");
 
 
   return result;
@@ -2357,11 +2364,11 @@ BOOLEAN_T set_ion_type_parameter(
   /* stringify value */
   ion_type_to_string(set_value, value_str);
 
-  result = add_or_update_hash_copy(parameters, name, value_str);
-  result = add_or_update_hash_copy(usages, name, usage);
-  result = add_or_update_hash_copy(file_notes, name, filenotes);
-  result = add_or_update_hash_copy(for_users, name, foruser);
-  result = add_or_update_hash_copy(types, name, (void*)"ION_TYPE_T");
+  result = add_or_update_hash(parameters, name, value_str);
+  result = add_or_update_hash(usages, name, usage);
+  result = add_or_update_hash(file_notes, name, filenotes);
+  result = add_or_update_hash(for_users, name, foruser);
+  result = add_or_update_hash(types, name, (void*)"ION_TYPE_T");
   return result;
 }
 /**

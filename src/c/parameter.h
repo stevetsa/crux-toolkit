@@ -80,8 +80,8 @@ enum parameter_type {
   SORT_TYPE_P,       ///< parameters of type SORT_TYPE_T
   SCORER_TYPE_P,     ///< parameters of type SCORER_TYPE_T
   ION_TYPE_P,        ///< parameters of type ION_TYPE_T
-  ALGORITHM_TYPE_P,
-  WINDOW_TYPE_P}; ///< parameters of type ALGORITHM_TYPE_T
+  ALGORITHM_TYPE_P,  ///< parameters of type ALGORITHM_TYPE_T
+  WINDOW_TYPE_P};    ///< parameters of type WINDOW_TYPE_T
 typedef enum parameter_type PARAMETER_TYPE_T;
 
 #ifdef __cplusplus

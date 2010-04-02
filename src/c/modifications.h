@@ -31,6 +31,7 @@
 enum {MAX_AA_MODS = 11};
 enum {MAX_PROTEIN_SEQ_LENGTH = 40000};
 enum {AA_LIST_LENGTH = 26}; // A-Z
+#define MOD_MASS_PRECISION 2  // printed as X[1.23]X
 #define GET_AA_MASK  0x001F   // 0000 0000 0001 1111
 #define GET_MOD_MASK 0xFFE0   // 1111 1111 1110 0000
 
@@ -94,7 +95,35 @@ MODIFIED_AA_T char_aa_to_modified(char aa);
  * \returns A newly allocated char* with amino acid and modifciation
  * symbols. 
  */
-char* modified_aa_to_string(MODIFIED_AA_T aa);
+char* modified_aa_to_string_with_symbols(MODIFIED_AA_T aa);
+
+/**
+ * \brief Converts a MODIFIED_AA_T to it's textual representation,
+ * i.e. a letter either alone or followed by square braces containing
+ * the mass(es) of any modifications.  If merge_masses is false, all
+ * masses are listed in a comma-separated list.  If true, they are
+ * summed and returned in one number.  Fixed precision of 2.
+ * 
+ * \returns A newly allocated char* with amino acid and modifciation
+ * masses in square brackets.
+ */
+char* modified_aa_to_string_with_masses(MODIFIED_AA_T aa, 
+                                        BOOLEAN_T merge_masses);
+/**
+ * \brief Take an array of MODIFIED_AA_T's and return an array of
+ * char's that includes the letter of each aa and the mass change of
+ * any modifications in brackets following the modified residue.  If
+ * merge_masses is true, all AA_MOD_T's are added and one value is
+ * printed.  If false, each the mass of each AA_MOD_T is printed in a
+ * comma-separated list.
+ *
+ * \returns A newly allocated array of characters, a text
+ * representation of the modified sequence.
+ */
+char* modified_aa_string_to_string_with_masses(
+ MODIFIED_AA_T* aa_string, // the modified aa's to translate
+ int length, // length of aa_string
+ BOOLEAN_T merge_masses); // false==print each mod mass per aa, true== sum them
 
 /**
  * \brief Take an array of MODIFIED_AA_T's and return an array of
@@ -104,7 +133,9 @@ char* modified_aa_to_string(MODIFIED_AA_T aa);
  * \returns A newly allocated array of characters, a text
  * representation of the modified sequence.
  */
-char* modified_aa_string_to_string(MODIFIED_AA_T* aa_string, int length);
+char* modified_aa_string_to_string_with_symbols(
+ MODIFIED_AA_T* aa_string, // modified aa's to translate
+ int length); // length of aa_string
 
 /**
  * \brief Takes an array of MODIFIED_AA_T's and returns an array of
@@ -116,15 +147,14 @@ char* modified_aa_string_to_string(MODIFIED_AA_T* aa_string, int length);
 char* modified_aa_to_unmodified_string(MODIFIED_AA_T* aa_string, int length);
 
 /**
- * \brief Allocates an array of MODIFIED_AA_T's the same length as
- * sequence and populates it with the MODIFIED_AA_T value that
- * corresponds to each sequence char value.  No modifications are
- * applied to the new array.
+ * \brief Allocates an array of MODIFIED_AA_T's and populates it with
+ * the MODIFIED_AA_T value that corresponds to each sequence char
+ * value and trailing modification symbols or masses.  Returns the new
+ * sequence via the mod_sequence argument.
  *
- * \returns A newly allocated copy of the sequnce converted to type
- * MODIFIED_AA_T. 
+ * \returns The length of the mod_sequence array.
  */
-MODIFIED_AA_T* convert_to_mod_aa_seq(const char* sequence);
+int convert_to_mod_aa_seq(const char* sequence, MODIFIED_AA_T** mod_sequence);
 
 /**
  * \brief Allocate a new MODIFIED_AA_T array and copy values into it.
@@ -189,30 +219,23 @@ BOOLEAN_T is_aa_modifiable(MODIFIED_AA_T aa, AA_MOD_T* mod);
  * Assumes that the aa is modifiable, no explicit check.  If the aa is
  * already modified for the mod, no change to aa.
  */
-void modify_aa(MODIFIED_AA_T* aa, AA_MOD_T* mod);
+void modify_aa(MODIFIED_AA_T* aa, const AA_MOD_T* mod);
 
 /**
- * \brief Finds the list of modifications made to an amino acid.
- *
- * Allocates a list of length(possible_mods) and fills it with pointers
- * to the modifications made to this aa as defined by
- * is_aa_modified().  Returns 0 and sets mod_list to NULL if the amino
- * acid is unmodified
- *
- * \returns The number of modifications made to this amino acid.
+ * \brief Return the AA_MOD_T associated with the given symbol.  If
+ * the symbol does not represent a modification, returns null.
+ * Requires that parameters have been initialized.
  */
-int get_aa_mods(MODIFIED_AA_T aa, 
-                AA_MOD_T* possible_mods, 
-                AA_MOD_T** mod_list);
+const AA_MOD_T* get_aa_mod_from_symbol(const char symbol);
 
-
-// in parameter.c
-//global
-//enum {MAX_AA_MODS = 11};//instead of #define forces typechecking, obeys scope
-//AA_MOD_T* list_of_mods;
-//int num_mods;
-//AA_MOD_T* position_mods;
-//int num_position_mods;
+/**
+ * \brief Return the AA_MOD_T associated with the given mass shift.
+ * The mass may either be from a single AA_MOD_T as given by the user
+ * or from any combination of AA_MOD_T's.  If no AA_MOD_T(s) can be
+ * found for the mass, returns null.
+ * Requires that parameters have been initialized.
+ */
+const AA_MOD_T* get_aa_mod_from_mass(FLOAT_T mass);
 
 /**
  * \brief Read the paramter file and populate the static parameter
@@ -359,13 +382,13 @@ MOD_POSITION_T aa_mod_get_position(AA_MOD_T* mod);
  * \brief The character used to uniquely identify the mod in the sqt file.
  * \returns The character identifier.
  */
-char aa_mod_get_symbol(AA_MOD_T* mod);
+char aa_mod_get_symbol(const AA_MOD_T* mod);
 
 /**
  * \brief The bitmask used to uniquely identify the mod.
  * \returns The short int bitmask used to identify the mod.
  */
-int aa_mod_get_identifier(AA_MOD_T* mod);
+int aa_mod_get_identifier(const AA_MOD_T* mod);
 
 /**
  * \brief Generates a string representation of an aa_mod and returns a

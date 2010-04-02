@@ -643,7 +643,7 @@ char* get_peptide_sequence_from_peptide_src_sqt(
     get_protein_sequence_pointer(protein);
 
   // get modified petpide sequence
-  char* mod_pep_seq = get_peptide_modified_sequence(peptide);
+  char* mod_pep_seq = get_peptide_modified_sequence_with_symbols(peptide);
   int mod_pep_len = strlen(mod_pep_seq);
 
   // allocate peptide memory
@@ -776,16 +776,15 @@ MODIFIED_AA_T* get_peptide_modified_aa_sequence(PEPTIDE_T* peptide){
 
   MODIFIED_AA_T* seq_copy = NULL;
   
-  // comment me to fix files
-  if( peptide->modified_seq != NULL ){
-      carp(CARP_DETAILED_DEBUG, "mod seq cached of len %d", peptide->length);
-      //    seq_copy = copy_mod_aa_seq(peptide->modified_seq);
+  if( peptide->modified_seq != NULL ){ 
+    carp(CARP_DETAILED_DEBUG, "Getting modified seq from peptide.");
     seq_copy = copy_mod_aa_seq(peptide->modified_seq,
                                peptide->length);
-  }else{// create one from char seq
-      carp(CARP_DETAILED_DEBUG, "mod seq NOT cached");
+
+  } else {// create one from char seq
+    carp(CARP_DETAILED_DEBUG, "mod seq NOT cached");
     char* seq = get_peptide_sequence(peptide);
-    seq_copy = convert_to_mod_aa_seq(seq);
+    convert_to_mod_aa_seq(seq, &seq_copy);
     free(seq);
   }
   
@@ -800,19 +799,55 @@ MODIFIED_AA_T* get_peptide_modified_aa_sequence(PEPTIDE_T* peptide){
  * \returns A newly allocated string of the peptide sequence including
  * any modifications.
  */
-char* get_peptide_modified_sequence(
+char* get_peptide_modified_sequence_with_symbols(
  PEPTIDE_T* peptide
  ){
   char* seq_string = NULL;
 
   if( peptide->decoy_modified_seq ){
-    seq_string = modified_aa_string_to_string(peptide->decoy_modified_seq, 
+    seq_string = 
+      modified_aa_string_to_string_with_symbols(peptide->decoy_modified_seq, 
                                               peptide->length); 
   } else if( peptide->modified_seq == NULL ){
     seq_string = get_peptide_sequence(peptide);
   }else{
-    seq_string = modified_aa_string_to_string(peptide->modified_seq,
-                                              peptide->length);
+    seq_string = 
+      modified_aa_string_to_string_with_symbols(peptide->modified_seq,
+                                                peptide->length);
+  }
+  
+  return seq_string;
+}
+
+/**
+ * \brief Get the modified aa sequence in string form.
+ *
+ * If the peptide has no modifications, returns same string as
+ * get_peptide_sequence.  If modified, adds in brackets the masses of
+ * all modifications.  If merge_masses is true, prints the sum of all
+ * modifications for a residue.  If false, prints all masses in a
+ * comma separated list.
+ * \returns A newly allocated string of the peptide sequence including
+ * any modifications.
+ */
+char* get_peptide_modified_sequence_with_masses(
+ PEPTIDE_T* peptide,
+ BOOLEAN_T merge_masses
+ ){
+  char* seq_string = NULL;
+
+  if( peptide->decoy_modified_seq ){
+    seq_string = 
+      modified_aa_string_to_string_with_masses(peptide->decoy_modified_seq, 
+                                               peptide->length,
+                                               merge_masses); 
+  } else if( peptide->modified_seq == NULL ){
+    seq_string = get_peptide_sequence(peptide);
+  }else{
+    seq_string = 
+      modified_aa_string_to_string_with_masses(peptide->modified_seq,
+                                               peptide->length,
+                                               merge_masses);
   }
   
   return seq_string;
@@ -836,8 +871,9 @@ char* get_peptide_unshuffled_modified_sequence(
   if( peptide->modified_seq == NULL ){
     seq_string = get_peptide_sequence(peptide);
   }else{
-    seq_string = modified_aa_string_to_string(peptide->modified_seq,
-                                              peptide->length);
+    seq_string = 
+      modified_aa_string_to_string_with_symbols(peptide->modified_seq,
+                                                peptide->length);
   }
   
   return seq_string;
@@ -1096,7 +1132,8 @@ void transform_peptide_to_decoy(PEPTIDE_T* peptide){
     } else {
       new_seq = generate_shuffled_sequence(peptide);
     }
-    peptide->decoy_modified_seq = convert_to_mod_aa_seq(new_seq);
+    convert_to_mod_aa_seq(new_seq, &(peptide->decoy_modified_seq));
+    free(new_seq);
   }
 }
 
@@ -1427,9 +1464,10 @@ void print_peptide_in_format(
     if( peptide->modified_seq== NULL ){
       sequence = get_peptide_sequence(peptide);
     }else{
-      //      sequence = modified_aa_string_to_string(peptide->modified_seq);
-      sequence = modified_aa_string_to_string(peptide->modified_seq, 
-                                              peptide->length);
+      sequence = 
+        modified_aa_string_to_string_with_masses(peptide->modified_seq, 
+                                                 peptide->length,
+                         get_boolean_parameter("display-summed-mod-masses"));
     }
   }
 
@@ -1684,8 +1722,10 @@ PEPTIDE_T* parse_peptide_tab_delimited(
 
   //populate peptide struct.
   string string_sequence = file.getString("sequence");
-  peptide -> length = string_sequence.length();
-  peptide -> peptide_mass = file.getFloat("peptide mass");
+  // string length may include mod symbols and be longer than the peptide seq
+  peptide->length = convert_to_mod_aa_seq(string_sequence.c_str(),
+                                          &peptide->modified_seq);
+  peptide->peptide_mass = file.getFloat("peptide mass");
   
   if(!parse_peptide_src_tab_delimited(peptide, file, database, use_array)){
     carp(CARP_ERROR, "Failed to parse peptide src.");
@@ -1693,11 +1733,6 @@ PEPTIDE_T* parse_peptide_tab_delimited(
     return NULL;
   };
 
-  //TODO: write parse_peptide_modification()
-  //TODO: Output this Modified Sequence to the tab delimited file, 
-  //      so it can be parsed
-  peptide -> modified_seq = convert_to_mod_aa_seq(string_sequence.c_str());
-  
   carp(CARP_DETAILED_DEBUG, "Finished parsing peptide.");
 
   return peptide;
