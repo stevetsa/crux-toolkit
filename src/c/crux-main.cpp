@@ -76,6 +76,9 @@ int main(int argc, char** argv){
     qranker_main(argc-1, argv+1);
     break;
 
+  case MPSM_QRANKER_COMMAND:
+    mpsm_qranker_main(argc-1, argv+1);
+
   case PERCOLATOR_COMMAND:
     percolator_main(argc-1, argv+1);
     break;

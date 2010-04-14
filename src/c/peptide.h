@@ -226,6 +226,16 @@ char* get_peptide_sequence(
  );
 
 /**
+ * \brief Get a string representation of the target (unshuffled)
+ * peptide sequence with no added modification symbols.
+ * For target peptides, returns the same as get_peptide_sequence.
+ * \returns The newly-allocated sequence of peptide
+ */
+char* get_peptide_unshuffled_sequence(
+ PEPTIDE_T* peptide ///< peptide to query sequence -in
+ );
+
+/**
  * \returns a pointer to the start of peptide sequence with in it's protein parent sequence, thus does not have terminating signe until end of parent protein
  * goes to the first peptide_src to find the location of start, thus must have at least one peptide src
  * should not print, will result in printing the entire protein sequence
@@ -316,10 +326,40 @@ unsigned short* get_peptide_modified_aa_sequence(
  * \returns A newly allocated string of the peptide sequence including
  * any modifications.
  */
-char* get_peptide_modified_sequence(
+char* get_peptide_modified_sequence_with_symbols(
  PEPTIDE_T* peptide
  );
 
+/**
+ * \brief Get the modified aa sequence in string form.
+ *
+ * If the peptide has no modifications, returns same string as
+ * get_peptide_sequence.  If modified, adds in brackets the masses of
+ * all modifications.  If merge_masses is true, prints the sum of all
+ * modifications for a residue.  If false, prints all masses in a
+ * comma separated list.
+ * \returns A newly allocated string of the peptide sequence including
+ * any modifications.
+ */
+char* get_peptide_modified_sequence_with_masses(
+ PEPTIDE_T* peptide,
+ BOOLEAN_T merge_masses
+ );
+
+/**
+ * \brief Get the target sequence of the peptide encoded as char*
+ * including modification symbols (e.g. *,#).
+ *
+ * If the peptide is not a decoy, returns the same sequence as
+ * get_peptide_modified_sequence.  If the peptide has no
+ * modifications, returns same string as get_peptide_sequence.  If
+ * modified, adds the mod symbols to the string. 
+ * \returns A newly allocated string of the peptide's unshuffled
+ * (target) sequence including any modifications.
+ */
+char* get_peptide_unshuffled_modified_sequence(
+ PEPTIDE_T* peptide
+ );
 /*  Getters requiring calculation */
 int count_peptide_modified_aas(PEPTIDE_T* peptide);
 
@@ -381,6 +421,14 @@ int get_peptide_c_distance(PEPTIDE_T* peptide);
 char* get_peptide_hash_value( 
   PEPTIDE_T*  peptide ///< The peptide whose residues to iterate over.
   );
+
+/**
+ * Change the given target peptide into a decoy by randomizing its sequence.
+ * Uses settings in parameter.c to decide between shuffling and
+ * reversing the sequence.  Any modifications that exist will be
+ * maintained on the same amino acids whose position will move.
+ */
+void transform_peptide_to_decoy(PEPTIDE_T* peptide);
 
 /**
  * \brief Return a randomly shuffled version of the given peptide's 

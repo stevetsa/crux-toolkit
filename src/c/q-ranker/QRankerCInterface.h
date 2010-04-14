@@ -11,14 +11,19 @@
 
 #include "PercolatorCommon.h"
 
+
+/** Call that initiates percolator */
+#include <vector>
+void qcInitiate2(NSet sets, unsigned int numFeatures, 
+  std::vector<unsigned int>& numSpectra, char ** featureNames, double pi0);
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-
 /** Call that initiates percolator */
 void qcInitiate(NSet sets, unsigned int numFeatures, unsigned int numSpectra, char ** featureNames, double pi0);
-
+ 
 /** Call that sets verbosity level
  *  0 is quiet, 2 is default, 5 is more than you want */
 void qcSetVerbosity(int verbosity);

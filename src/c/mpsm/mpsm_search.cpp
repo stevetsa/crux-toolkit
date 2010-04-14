@@ -35,7 +35,10 @@
 
 #include "MPSM_Match.h"
 #include "MPSM_MatchCollection.h"
+#include "MPSM_OutputFiles.h"
 #include "MPSM_ChargeMap.h"
+
+#include "RetentionPredictor.h"
 
 /* Private functions */
 
@@ -96,9 +99,17 @@ int mpsm_search_main(int argc, char** argv){
     "output-dir",
     "fileroot",
     "num-decoys-per-target",
-    "decoy-location"
+    "decoy-location",
+    "precursor-window",
+    "precursor-window-type",
+    "mpsm-max-peptides",
+    "mpsm-rtime-threshold",
+    "mpsm-top-n",
+    "mpsm-do-sort"
   };
   int num_options = sizeof(option_list) / sizeof(char*);
+
+  
 
   /* Define required command line arguments */
   const char* argument_list[] = {"ms2 file", "protein input"};
@@ -130,14 +141,20 @@ int mpsm_search_main(int argc, char** argv){
   DATABASE_T* database = NULL;
   int num_proteins = prepare_protein_input(input_file, &index, &database); 
   free(input_file);
-
+  /*
+  char* decoy_input_file = "./shuffled_index";
+  INDEX_T* index_shuffled = NULL;
+  DATABASE_T* database_shuffled = NULL;
+  int num_proteins_shuffled = 
+    prepare_protein_input(decoy_input_file, &index_shuffled, &database_shuffled);
+  */
   carp(CARP_DEBUG, "Found %i proteins", num_proteins);
   if( num_proteins == 0 ){
     carp(CARP_FATAL, "No proteins were found in the protein source.");
   }
   
   /* Prepare output files */
-  OutputFiles output_files(SEARCH_COMMAND); 
+  MPSM_OutputFiles output_files(SEARCH_COMMAND); 
   output_files.writeHeaders(num_proteins);
   // TODO (BF oct-21-09): consider adding pvalue file to OutputFiles
   FILE* decoy_pvalue_file = NULL;
@@ -188,12 +205,41 @@ int mpsm_search_main(int argc, char** argv){
     if (current_spectrum == NULL) {
       current_spectrum = spectrum;
     }
+
+    carp(CARP_INFO,"processing spec %d charge:%d", get_spectrum_first_scan(spectrum), charge);
     if (spectrum != current_spectrum) {
+      carp(CARP_INFO,"Processed all charges for spec %d",get_spectrum_first_scan(current_spectrum));
+      carp(CARP_INFO,"Searching for mpsms");
       search_for_mpsms(spsm_map, mpsm_map);
-      //print out map.
-      //clear map.
-      spsm_map.clear();
-      mpsm_map.clear();
+      cout <<"calcDeltaCN spsm"<<endl;
+      spsm_map.calcDeltaCN();
+      cout <<"calcDeltaCN mpsm"<<endl;
+      mpsm_map.calcDeltaCN();
+      cout <<"Sorting matches"<<endl;
+      if (get_boolean_parameter("mpsm-do-sort"))
+        mpsm_map.sortMatches(XCORR);
+      //print out map
+      //output the spsms.
+      cout <<"Writing matches"<<endl;
+      output_files.writeMatches(spsm_map);
+      output_files.writeMatches(mpsm_map);
+
+      //clear map and clean up match collections.
+      mpsm_map.clearMap();
+
+      for (MPSM_ChargeMap::iterator iter = spsm_map.begin();
+        iter != spsm_map.end();
+        ++iter) {
+
+        vector<MPSM_MatchCollection>& spsm_match_collections = iter -> second;
+        for (int idx = 0;idx < spsm_match_collections.size();idx++) {
+          spsm_match_collections[idx].free();
+        }
+      }
+
+      spsm_map.clearMap();
+
+      //carp(CARP_FATAL,"Stopping here for now");
       current_spectrum = spectrum;
     }
     
@@ -201,6 +247,7 @@ int mpsm_search_main(int argc, char** argv){
     progress.report(get_spectrum_first_scan(spectrum), charge);
  
     // with the target database decide how many peptide mods to use
+    carp(CARP_INFO,"Getting spsm targets");
     MATCH_COLLECTION_T* target_psms = new_empty_match_collection(is_decoy); 
     int max_pep_mods = mpsm_search_pep_mods( target_psms, 
                                         is_decoy,   
@@ -212,6 +259,8 @@ int mpsm_search_main(int argc, char** argv){
                                         num_peptide_mods,
                                         compute_pvalues); 
  
+    carp(CARP_INFO,"There are %i matches",get_match_collection_match_total(target_psms));
+
     // are there any matches?
     if( get_match_collection_match_total(target_psms) == 0 ){
       // don't print and don't search decoys
@@ -221,10 +270,11 @@ int mpsm_search_main(int argc, char** argv){
       progress.increment(FALSE);
       continue; // next spectrum
     }
-    /*   
+
     // now search decoys with the same number of mods
     is_decoy = TRUE;
-    // create separate decoy match_collections 
+    // create separate decoy match_collections
+    carp(CARP_INFO,"getting spsm decoys");
     int num_decoy_collections = get_int_parameter("num-decoys-per-target"); 
     MATCH_COLLECTION_T** decoy_collection_list = 
       (MATCH_COLLECTION_T**)mycalloc(sizeof(MATCH_COLLECTION_T*), 
@@ -232,12 +282,12 @@ int mpsm_search_main(int argc, char** argv){
 
     int decoy_idx = 0;
     for(decoy_idx = 0; decoy_idx < num_decoy_collections; decoy_idx++){
-
+      carp(CARP_INFO,"Getting spsm decoy-%d", decoy_idx);
       MATCH_COLLECTION_T* decoy_psms = new_empty_match_collection(is_decoy);
       decoy_collection_list[decoy_idx] = decoy_psms;
 
-      search_pep_mods(decoy_psms, 
-                      is_decoy, 
+      mpsm_search_pep_mods(decoy_psms, 
+                      is_decoy,   
                       index, 
                       database, 
                       spectrum, 
@@ -247,7 +297,7 @@ int mpsm_search_main(int argc, char** argv){
                       compute_pvalues);
     }
 
-    */
+   
     //add all matches to an mpsm collection.
     
     //add to map, indexed by charge
@@ -255,44 +305,73 @@ int mpsm_search_main(int argc, char** argv){
     
     vector<MPSM_MatchCollection> mpsm_collections;
 
-    MPSM_MatchCollection mpsm_targets(target_psms);
-    mpsm_collections.push_back(mpsm_targets);
-    /*
-    for (decoy_idx = 0; decoy_idx < num_decoy_collections; decoy_idx++) {
-      MPSM_MatchCollection mpsm_decoy(decoy_collection_list[decoy_idx]);
-    }
-    */
-    ChargeIndex charge_index(charge);
+    carp(CARP_INFO, "Adding spsm_targets:%d", get_match_collection_match_total(target_psms));
 
-
-    spsm_map.insert(mpsm_collections);
+    MPSM_MatchCollection spsm_targets(target_psms);
+    mpsm_collections.push_back(spsm_targets);
     
+    carp(CARP_INFO, "Adding spsm_decoys");
+    for (decoy_idx = 0; decoy_idx < num_decoy_collections; decoy_idx++) {
+      MPSM_MatchCollection spsm_decoy(decoy_collection_list[decoy_idx]);
+      mpsm_collections.push_back(spsm_decoy);
+    }
+    
+    carp(CARP_INFO, "Inserting into spsm_map");
+    spsm_map.insert(mpsm_collections);
 
-
+   
 
     progress.increment(TRUE);
 
     // clean up
-    /*
-    free_match_collection(target_psms);
+    
+    //free_match_collection(target_psms);
     for(decoy_idx = 0; decoy_idx < num_decoy_collections; decoy_idx++){
-      free_match_collection(decoy_collection_list[decoy_idx]);
+      decoy_collection_list[decoy_idx] = NULL;
     }
-    */
+    //free the array.
+    free(decoy_collection_list);
 
   }// next spectrum
 
-  // finished searching!
+  //process last spectrum.
+  carp(CARP_INFO, "Processing last spectrum");
+  carp(CARP_INFO, "Searching for mpsms");
+  search_for_mpsms(spsm_map, mpsm_map);
+  if (get_boolean_parameter("mpsm-do-sort")) 
+    mpsm_map.sortMatches(XCORR);
+  //print out map
+  //output the spsms.
 
-  // fix headers in csm files
-  int file_idx;
-  for(file_idx=0; file_idx < num_decoy_files + 1; file_idx++){
-    carp(CARP_DEBUG, "Changing csm header to have %i spectrum searches",
-         progress.getNumSearchesWithMatches());
-    output_files.updateHeaders(progress.getNumSearchesWithMatches());
+  spsm_map.calcDeltaCN();
+  mpsm_map.calcDeltaCN();
+
+  output_files.writeMatches(spsm_map);
+  output_files.writeMatches(mpsm_map);
+
+  //clear map and clean up match collections.
+  mpsm_map.clearMap();
+
+  for (MPSM_ChargeMap::iterator iter = spsm_map.begin();
+    iter != spsm_map.end();
+    ++iter) {
+    
+    vector<MPSM_MatchCollection>& spsm_match_collections = iter -> second;
+    for (int idx = 0;idx < spsm_match_collections.size();idx++) {
+      spsm_match_collections[idx].free();
+    }
   }
 
+  spsm_map.clearMap();
+
+  // Finished Searching!
+
+
   carp(CARP_INFO, "Finished crux-search-for-matches");
+  free(spectrum_iterator);
+  free_spectrum_collection(spectra);
+  free_parameters();
+
   exit(0);
 }// end main
 #else // SEARCH_ENABLED not defined
@@ -410,22 +489,23 @@ int mpsm_search_pep_mods(
     MODIFIED_PEPTIDES_ITERATOR_T* peptide_iterator =
       new_modified_peptides_iterator_from_mz(get_spectrum_precursor_mz(spectrum),
                                              charge,
-                                             peptide_mod, 
+                                             peptide_mod,
+                                             is_decoy,
                                              index,
                                              database);
     
     
     // score peptides
-    int added = add_matches(match_collection, 
-                            spectrum, 
-                            charge, 
-                            peptide_iterator,
-                            is_decoy,
-                            store_scores,
-                            FALSE // don't do prelim scoring
-                            );
+
+
+  int added = add_unscored_peptides(match_collection, spectrum, charge,
+                                    peptide_iterator, is_decoy);
+
+  score_matches_one_spectrum(XCORR, match_collection, spectrum, charge, 
+                             store_scores); 
+  populate_match_rank_match_collection(match_collection, XCORR);
     
-    carp(CARP_DEBUG, "Added %i matches", added);
+    carp(CARP_INFO, "Added %i matches", added);
     
     free_modified_peptides_iterator(peptide_iterator);
     
@@ -544,74 +624,190 @@ void add_decoy_scores(
 
 BOOLEAN_T extendMatch(MPSM_Match& orig_mpsm, 
   MPSM_MatchCollection& spsm_matches, 
-  MPSM_MatchCollection& new_mpsms_matches) {
+  MPSM_MatchCollection& new_mpsms_matches,
+  set<MPSM_Match>& visited) {
   
   BOOLEAN_T match_added = FALSE;
+  
+  RetentionPredictor* rtime_predictor = RetentionPredictor::createRetentionPredictor();
 
   for (int idx=0;idx < spsm_matches.numMatches(); idx++) {
     MPSM_Match new_match(orig_mpsm);
     if (new_match.addMatch(spsm_matches.getMatch(idx).getMatch(0))) {
-      match_added |= new_mpsms_matches.addMatch(new_match);
+
+      if (visited.find(new_match) == visited.end()) {
+        visited.insert(new_match);
+        FLOAT_T rtime_max_diff = rtime_predictor -> calcMaxDiff(new_match);
+        if (rtime_max_diff <= get_double_parameter("mpsm-rtime-threshold")) {
+          new_match.setRTimeMaxDiff(rtime_max_diff);
+          match_added |= new_mpsms_matches.addMatch(new_match);
+        }
+      }
     }
   }
+
+  delete rtime_predictor;
+
   return match_added;
+}
+
+void extendChargeMap(MPSM_ChargeMap& spsm_map,
+                     MPSM_ChargeMap& current_mpsm_map,
+                     MPSM_ChargeMap& new_mpsm_map) {
+
+
+  int top_n = get_int_parameter("mpsm-top-n");
+
+  MPSM_ChargeMap::iterator map_iter;
+  MPSM_ChargeMap::iterator map_iter2;
+
+  new_mpsm_map.clear();
+
+  for (map_iter = current_mpsm_map.begin();
+        map_iter != current_mpsm_map.end();
+        ++map_iter) {
+
+  
+
+    ChargeIndex charge_index = map_iter -> first;
+    cout <<"mpsm charge index:"<<charge_index<<endl;
+
+    vector<MPSM_MatchCollection>& match_collections = map_iter -> second;
+    vector<MPSM_MatchCollection> new_match_collections;
+
+    set<MPSM_Match> visited;
+
+    //start with targets.
+    //Take the top candidate and consider matching it with every one else.
+    MPSM_MatchCollection& target_collection = match_collections[0];
+    
+    if (get_boolean_parameter("mpsm-do-sort")) {
+      target_collection.sortByScore(XCORR);
+    }
+
+    int current_top_n = min(target_collection.numMatches(), top_n);
+
+    for (int current_index = 0;current_index < current_top_n; current_index++) {
+      cout <<"current index is :"<<current_index<<" of "<<current_top_n<<endl;
+      MPSM_Match& current_mpsm_target = target_collection.getMatch(current_index);
+    
+      //Loop through spsms by charge, and extend the current mpsm target using targets.
+      for (map_iter2 = spsm_map.begin();
+        map_iter2 != spsm_map.end();
+        ++map_iter2) {
+
+        ChargeIndex spsm_charge_index = map_iter2 -> first;
+        cout <<"Adding charge "<<spsm_charge_index<<" to "<<charge_index<<endl;
+
+        vector<MPSM_MatchCollection>& spsm_match_collections = map_iter2 -> second;
+        MPSM_MatchCollection& spsm_target_match_collection = spsm_match_collections[0];
+      
+        MPSM_MatchCollection new_mpsm_target_collection;
+        extendMatch(current_mpsm_target, 
+          spsm_target_match_collection,
+          new_mpsm_target_collection,
+          visited);
+
+        cout <<"Added "<<new_mpsm_target_collection.numMatches()<<" matches"<<endl;
+        //if there are some matches found, then search the decoys.
+  
+        if (new_mpsm_target_collection.numMatches() == 0) {
+          continue; //search the next charge state extension.
+        }
+
+        vector<MPSM_MatchCollection> new_mpsm_match_collections;
+        new_mpsm_match_collections.push_back(new_mpsm_target_collection);
+      
+
+      MPSM_MatchCollection& decoy1_collection = match_collections[1];
+      if (get_boolean_parameter("mpsm-do-sort")) {
+        decoy1_collection.sortByScore(XCORR);
+      }
+      //MPSM_Match& current_mpsm_decoy1 = decoy1_collection.getMatch(0);
+
+      MPSM_MatchCollection& decoy2_collection = match_collections[2];
+      if (get_boolean_parameter("mpsm-do-sort")) {
+        decoy2_collection.sortByScore(XCORR);
+      }
+      //MPSM_Match& current_mpsm_decoy2 = decoy2_collection.getMatch(0);
+      
+      for (int idx=0;idx < spsm_match_collections.size()-1;idx++) {
+        
+        //target-decoy
+        MPSM_MatchCollection new_mpsm_decoy_match_collection;
+        MPSM_MatchCollection& spsm_decoy_match_collection = spsm_match_collections[idx+1];
+        if (get_boolean_parameter("mpsm-do-sort")) {
+          spsm_decoy_match_collection.sortByScore(XCORR);
+        
+
+          extendMatch(current_mpsm_target,
+            spsm_decoy_match_collection,
+            new_mpsm_decoy_match_collection,
+            visited);
+          
+          cout <<"Added "<<new_mpsm_decoy_match_collection.numMatches()<<" decoy matches"<<endl;
+        }
+        new_mpsm_match_collections.push_back(new_mpsm_decoy_match_collection);
+          /*
+          MPSM_MatchCollection new_mpsm_decoy_match_collection2;
+
+        
+          //decoy-decoy.
+          MPSM_Match current_mpsm_decoy = match_collections[idx+1].getMatch(0);
+          extendMatch(current_mpsm_decoy,
+            spsm_decoy_match_collection,
+            new_mpsm_decoy_match_collection2);
+        
+          new_mpsm_match_collections.push_back(new_mpsm_decoy_match_collection2);
+          */
+      }
+      
+      
+ 
+      new_mpsm_map.insert(new_mpsm_match_collections);  
+
+      } /* map_iter2++ */
+    } /* current_index++ */
+  } /* map_iter++ */
+  if (get_boolean_parameter("mpsm-do-sort"))
+    new_mpsm_map.sortMatches(XCORR);
+  cout <<"Done extendChargeMap"<<endl;
 }
 
 
 void search_for_mpsms(MPSM_ChargeMap& charge_spsm_map, 
   MPSM_ChargeMap& charge_mpsm_map) {
 
-  MPSM_ChargeMap::iterator map_iter;
 
-  for (map_iter = charge_spsm_map.begin();
-    map_iter != charge_spsm_map.end();
-    ++map_iter) {
-  
-    ChargeIndex charge_index = map_iter -> first;
-    vector<MPSM_MatchCollection>& matches = map_iter -> second;
-    vector<MPSM_MatchCollection> new_matches;
-        
-    matches[0].sortByScore(XCORR);
-        
-    //Start with targets.
-    //Take the top candidate and consider matching it with every one else.
-    MPSM_Match& current_mpsm_target = matches[0].getMatch(0);
+  charge_mpsm_map.clear();
 
-    //Loop through spsms by charge, and extend mpsm target using these targets.
-    for (MPSM_ChargeMap::iterator map_iter2 = charge_spsm_map.begin();
-      map_iter2 != charge_spsm_map.end();
-      ++map_iter2) {
-      
-      vector<MPSM_MatchCollection>& spsm_match_collections = map_iter -> second;
-      MPSM_MatchCollection& spsm_target_match_collection = spsm_match_collections[0];
-
-      MPSM_MatchCollection new_mpsm_target_match_collection;
-      extendMatch(current_mpsm_target, 
-        spsm_target_match_collection,
-        new_mpsm_target_match_collection);
-
-      //if there are some matches found, then search the decoys.
-
-      if (new_mpsm_target_match_collection.numMatches() == 0) {
-        continue; //search the next extension of the match.
-      }
-
-      vector<MPSM_MatchCollection> new_mpsm_match_collections;
-
-      new_mpsm_match_collections.push_back(new_mpsm_target_match_collection);
-
-      for (int idx=0;idx < spsm_match_collections.size()-1;idx++) {
-        MPSM_MatchCollection new_mpsm_decoy_match_collection;
-        MPSM_MatchCollection& spsm_decoy_match_collection = spsm_match_collections[idx+1];
-        extendMatch(current_mpsm_target,
-          spsm_decoy_match_collection,
-          new_mpsm_decoy_match_collection);
-          
-        new_mpsm_match_collections.push_back(new_mpsm_decoy_match_collection);
-      }
  
-      charge_mpsm_map.insert(new_mpsm_match_collections);  
-    } //Iterate next possible 2nd charge
-  } //Iteratate next possible 1st charge
+
+  int max_peptides = get_int_parameter("mpsm-max-peptides");
+ 
+  if (max_peptides < 2) return;
+  
+  MPSM_ChargeMap current_mpsm_map = charge_spsm_map;
+
+
+  for (int npeptides = 2 ; npeptides <= max_peptides ; npeptides++) {
+    //create new mpsm matches by extending the current
+    //mpsm map by one using the spsm map
+    MPSM_ChargeMap new_mpsm_map;
+    extendChargeMap(charge_spsm_map,
+        current_mpsm_map,
+        new_mpsm_map);
+    
+    if (new_mpsm_map.size() != 0) {
+      //add the new matches to the results.
+      charge_mpsm_map.insert(new_mpsm_map);
+      //set up the new matches to be extended for the next iteration
+      current_mpsm_map = new_mpsm_map;
+    } else {
+      //we are done extending, there are no viable matches.
+      break;
+    }
+  }
+  cout <<"Done search_for_mpsms"<<endl;
 }
 

@@ -13,7 +13,12 @@
 
 #ifdef __cplusplus
 class DelimitedFile;
+class MPSM_MatchCollection;
+
 #endif
+
+
+
 
 /**
  * \typedef PEAK_T 
@@ -170,6 +175,23 @@ enum _mass_type {AVERAGE, MONO };
  * \brief The typedef for mass type (average, mono);
  */
 typedef enum _mass_type MASS_TYPE_T;
+
+
+/**
+ * The enum for window type for selecting peptides or assigning ions.
+ */
+enum _window_type {
+  WINDOW_INVALID,
+  WINDOW_MASS, 
+  WINDOW_MZ, 
+  WINDOW_PPM 
+};
+#define NUMBER_WINDOW_TYPES 4
+/**
+ * \typedef WINDOW_TYPE_T
+ * \brief The typedef for window type (mass, mz, ppm);
+ */
+typedef enum _window_type WINDOW_TYPE_T;
 
 /**
  * \typedef PEPTIDE_SRC_T
@@ -495,6 +517,7 @@ enum _command {
   QRANKER_COMMAND,      ///< q-ranker
   PROCESS_SPEC_COMMAND, ///< print-processed-spectra
   SEARCH_MPSMS_COMMAND,  ///< search-for-mpsms  
+  MPSM_QRANKER_COMMAND,  ///< mpsm-q-ranker
 
   NUMBER_COMMAND_TYPES  ///< always keep this last so the value
                         /// changes as cmds are added

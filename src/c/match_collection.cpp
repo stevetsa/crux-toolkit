@@ -164,7 +164,9 @@ void update_protein_counters(
   );
 
 BOOLEAN_T calculate_delta_cn(
-  MATCH_COLLECTION_T* match_collection);
+  MATCH_COLLECTION_T* match_collection,
+  COMMAND_T search_type = SEARCH_COMMAND
+);
 
 /********* end of function declarations *******************/
 
@@ -328,7 +330,9 @@ int add_matches(
     populate_match_rank_match_collection(matches, SP);
     save_top_sp_match(matches);
     int sp_max_rank = get_int_parameter("max-rank-preliminary");
-    truncate_match_collection(matches, sp_max_rank, SP);
+    truncate_match_collection(matches, 
+                              sp_max_rank + 1, // extra for deltacn of last
+                              SP);
     xcorr_max_rank = sp_max_rank;
   }
 
@@ -336,7 +340,8 @@ int add_matches(
   score_matches_one_spectrum(XCORR, matches, spectrum, charge, 
                              store_scores); 
   populate_match_rank_match_collection(matches, XCORR);
-  truncate_match_collection(matches, xcorr_max_rank, 
+  truncate_match_collection(matches, 
+                            xcorr_max_rank + 1,// extra for deltacn of last
                             XCORR);
 
   return num_matches_added;
@@ -563,7 +568,8 @@ void consolidate_matches(MATCH_T** matches, int start_idx, int end_idx){
       continue;
     }    
 
-    char* cur_seq = get_match_mod_sequence_str(matches[cur_match_idx]);
+    char* cur_seq = 
+      get_match_mod_sequence_str_with_symbols(matches[cur_match_idx]);
     carp(CARP_DETAILED_DEBUG, "cur seq is %s.", cur_seq);
     int next_match_idx = cur_match_idx+1;
     for(next_match_idx=cur_match_idx+1; next_match_idx<end_idx+1; 
@@ -575,7 +581,8 @@ void consolidate_matches(MATCH_T** matches, int start_idx, int end_idx){
         continue;
       }    
 
-      char* next_seq = get_match_mod_sequence_str(matches[next_match_idx]);
+      char* next_seq = 
+        get_match_mod_sequence_str_with_symbols(matches[next_match_idx]);
       carp(CARP_DETAILED_DEBUG, "next seq is %s.", next_seq);
 
       if( strcmp(cur_seq, next_seq) == 0){
@@ -858,7 +865,7 @@ BOOLEAN_T populate_match_rank_match_collection(
     FLOAT_T this_score = get_match_score(cur_match, score_type);
     
     if( NOT_SCORED == get_match_score(cur_match, score_type) ){
-      char* seq = get_match_mod_sequence_str(cur_match);
+      char* seq = get_match_mod_sequence_str_with_masses(cur_match, FALSE);
       carp(CARP_WARNING, 
            "PSM spectrum %i charge %i sequence %s was NOT scored for type %i",
            get_spectrum_first_scan(get_match_spectrum(cur_match)),
@@ -1246,8 +1253,10 @@ BOOLEAN_T score_matches_one_spectrum(
     }
 
     IF_CARP_DETAILED_DEBUG(
-      char* mod_seq = modified_aa_string_to_string(modified_sequence,
-						   strlen(sequence));
+      char* mod_seq = 
+      modified_aa_string_to_string_with_masses(modified_sequence,
+                                               strlen(sequence),
+                                               FALSE);
       carp(CARP_DETAILED_DEBUG, "Second score %f for %s (null:%i)",
 	   score, mod_seq,get_match_null_peptide(match));
       free(mod_seq);
@@ -1701,7 +1710,7 @@ void print_sqt_header(
   mass_type_to_string(mass_type, temp_str);
   fprintf(output, "H\tFragmentMasses\t%s\n", temp_str); //?????????
 
-  double tol = get_double_parameter("mass-window");
+  double tol = get_double_parameter("precursor-window");
   fprintf(output, "H\tAlg-PreMasTol\t%.1f\n",tol);
   fprintf(output, "H\tAlg-FragMassTol\t%.2f\n", 
           get_double_parameter("ion-tolerance"));
@@ -1910,7 +1919,7 @@ BOOLEAN_T print_match_collection_sqt(
   int num_matches = match_collection->experiment_size;
 
   // calculate delta_cn and populate fields in the matches
-  calculate_delta_cn(match_collection);
+  calculate_delta_cn(match_collection, SEQUEST_COMMAND);
 
   // First, print spectrum info
   print_spectrum_sqt(spectrum, output, num_matches, charge);
@@ -1976,7 +1985,7 @@ BOOLEAN_T print_match_collection_tab_delimited(
   FLOAT_T spectrum_precursor_mz = get_spectrum_precursor_mz(spectrum);
 
   // calculate delta_cn and populate fields in the matches
-  calculate_delta_cn(match_collection);
+  calculate_delta_cn(match_collection, SEARCH_COMMAND);
 
   MATCH_T* match = NULL;
   
@@ -2969,12 +2978,16 @@ void process_run_specific_features(
 /**
  * \brief Calculate the delta_cn of each match and populate the field.
  * 
- * Delta_cn is the xcorr difference between match[i] and match[i+1]
- * divided by the xcorr of match[0].  This could be generalized to
- * whichever score is the main one.  Sorts by xcorr, if necessary.
+ * Delta_cn is the normalized difference between xcorrs of different
+ * ranks.  For SEQUEST style searching
+ * match[i] = (match[0] - match[i]) / match[0] 
+ * For other searching
+ * match[i] = (match[0] - match[i+1]) / match[0].  This functin
+ * defaults to the second case. Sorts match_collection by xcorr, if necessary.
  * 
  */
-BOOLEAN_T calculate_delta_cn( MATCH_COLLECTION_T* match_collection){
+BOOLEAN_T calculate_delta_cn( MATCH_COLLECTION_T* match_collection,
+                              COMMAND_T search_type ){
 
   if( match_collection == NULL ){
     carp(CARP_ERROR, "Cannot calculate deltaCn for NULL match collection");
@@ -2999,13 +3012,28 @@ BOOLEAN_T calculate_delta_cn( MATCH_COLLECTION_T* match_collection){
   FLOAT_T max_xcorr = get_match_score(matches[0], XCORR);
 
   // for each match, calculate deltacn
-  int match_idx=0;
-  for(match_idx=0; match_idx < num_matches; match_idx++){
-    FLOAT_T diff = max_xcorr - get_match_score(matches[match_idx], XCORR);
-    double delta_cn = diff / max_xcorr;
-    if( delta_cn == 0 ){ // I hate -0, this prevents it
-      delta_cn = 0.0;
+  for(int match_idx = 0; match_idx < num_matches; match_idx++){
+    FLOAT_T next_xcorr = 0;
+    
+    if( search_type == SEQUEST_COMMAND ){ // use this match's xcorr
+      next_xcorr = get_match_score(matches[match_idx], XCORR);
+    } else {                              // find next non-equal xcorr
+      FLOAT_T this_xcorr = get_match_score(matches[match_idx], XCORR);
+      int score_idx = match_idx + 1;
+      
+      while( score_idx < num_matches &&
+             get_match_score(matches[score_idx], XCORR) == this_xcorr ){
+        score_idx++;
+      }
+      
+      if( score_idx < num_matches ){
+        next_xcorr = get_match_score(matches[score_idx], XCORR);
+      } else { // if this is the last match, set dcn to 0
+        next_xcorr = max_xcorr;
+      }
     }
+    
+    FLOAT_T delta_cn = (max_xcorr - next_xcorr) / max_xcorr;
     set_match_delta_cn(matches[match_idx], delta_cn);
   }
 
@@ -3429,21 +3457,8 @@ void add_decoy_scores_match_collection(
 
     // get peptide and sequence
     PEPTIDE_T* peptide = modified_peptides_iterator_next(peptides);
-    //char* sequence = get_peptide_sequence(peptide);
-    // shuffle (this step normally done by the match)
-    char* decoy_sequence = NULL;
-    if( get_boolean_parameter("reverse-sequence") == TRUE ){
-      decoy_sequence = generate_reversed_sequence(peptide);
-    }else{
-      decoy_sequence = generate_shuffled_sequence(peptide);
-    }
-    IF_CARP_DETAILED_DEBUG(
-      char* seq = get_peptide_sequence(peptide);
-      carp(CARP_DETAILED_DEBUG, "Shuffling transforms: %s -> %s", 
-           seq, decoy_sequence);
-      free(seq);
-    )
-    MODIFIED_AA_T* modified_seq = convert_to_mod_aa_seq(decoy_sequence);
+    char* decoy_sequence = get_peptide_sequence(peptide);
+    MODIFIED_AA_T* modified_seq = get_peptide_modified_aa_sequence(peptide);
 
     // create the ion series for this peptide
     update_ion_series(ion_series, decoy_sequence, modified_seq);
@@ -3457,14 +3472,17 @@ void add_decoy_scores_match_collection(
     target_matches->num_xcorrs++;
 
     // clean up
-    //    free(sequence);
     free(decoy_sequence);
     free(modified_seq);
     free_peptide(peptide);
   }
 }
 
+// cheater functions for testing
 
+void force_scored_by(MATCH_COLLECTION_T* match_collection, SCORER_TYPE_T type){
+  match_collection->scored_type[type] = TRUE;
+}
 
 
 

@@ -67,6 +67,7 @@ LIBFILES= \
   modifications.h \
   modified_peptides_iterator.cpp \
   modified_peptides_iterator.h \
+  mpsm-q-ranker.cpp \
   search.h \
   objects.h \
   output-files.cpp \
@@ -95,6 +96,8 @@ LIBFILES= \
   protein_index.h \
   q-ranker.cpp \
   q-ranker.h \
+  mpsm-q-ranker.cpp \
+  mpsm-q-ranker.h \
   q-value.cpp \
   q-value.h \
   sequest-search.cpp \
@@ -133,7 +136,7 @@ PROGRAM_FILES = \
   crux \
   crux-get-ms2-spectrum \
   crux-generate-peptides \
-  crux-predict-peptide-ions 
+  crux-predict-peptide-ions
 
 bin_PROGRAMS = $(PROGRAM_FILES)
 

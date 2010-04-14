@@ -354,6 +354,18 @@ BOOLEAN_T create_intensity_array_xcorr(
   );
 
 /**
+ * create the intensity arrays for theoretical spectrum
+ * SCORER must have been created for XCORR type
+ * \returns TRUE if successful, else FLASE
+ */
+BOOLEAN_T create_intensity_array_theoretical(
+  SCORER_T* scorer,        ///< the scorer object -in/out
+  ION_SERIES_T* ion_series, ///< the ion series to score against the spectrum(theoretical) -in
+  FLOAT_T* theoretical       ///< the empty theoretical spectrum -out
+  );
+
+
+/**
  * Uses an iterative cross correlation
  *
  *\return the final cross correlation score between the observed and the
@@ -362,6 +374,14 @@ BOOLEAN_T create_intensity_array_xcorr(
 FLOAT_T cross_correlation(
   SCORER_T* scorer,  ///< the scorer object that contains observed spectrum -in
   FLOAT_T* theoretical ///< the theoretical spectrum to score against the observed spectrum -in
+  );
+
+FLOAT_T* get_intensity_array_observed(SCORER_T* scorer);
+
+BOOLEAN_T create_intensity_array_observed(
+  SCORER_T* scorer,        ///< the scorer object -in/out
+  SPECTRUM_T* spectrum,    ///< the spectrum to score(observed) -in
+  int charge               ///< the peptide charge -in 
   );
 
 /**

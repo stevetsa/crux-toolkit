@@ -20,7 +20,7 @@ static const char* parameter_type_strings[NUMBER_PARAMETER_TYPES] = {
   "INT_ARG", "DOUBLE_ARG", "STRING_ARG", "MASS_TYPE_T", "DIGEST_T", 
   "ENZYME_T", //"PEPTIDE_TYPE_T", 
   "BOOLEAN_T", "SORT_TYPE_T", "SCORER_TYPE_T", "ION_TYPE_T",
-  "ALGORITHM_TYPE_T"};
+  "ALGORITHM_TYPE_T", "WINDOW_TYPE_T"};
 
 //one hash for parameter values, one for usage statements, one for types
 // all hashes keyed on parameter/option name
@@ -74,7 +74,7 @@ void parse_parameter_file(
 BOOLEAN_T check_option_type_and_bounds(const char* name);
 
 void check_parameter_consistency();
-void parse_custom_enzyme(char* rule_str);
+void parse_custom_enzyme(const char* rule_str);
 
 /**
  *
@@ -152,6 +152,14 @@ BOOLEAN_T set_digest_type_parameter(
 BOOLEAN_T set_enzyme_type_parameter(
  const char*     name,  ///< the name of the parameter looking for -in
  ENZYME_T set_value,  ///< the value to be set -in
+ const char* usage,      ///< string to print in usage statement
+ const char* filenotes,   ///< additional info for param file
+ const char* foruser
+  );
+
+BOOLEAN_T set_window_type_parameter(
+ const char*     name,  ///< the name of the parameter looking for -in
+ WINDOW_TYPE_T set_value,  ///< the value to be set -in
  const char* usage,      ///< string to print in usage statement
  const char* filenotes,   ///< additional info for param file
  const char* foruser
@@ -287,7 +295,7 @@ void initialize_parameters(void){
   set_string_parameter("peptide sequence", NULL, 
       "The sequence of the peptide.",
       "Argument for predict-peptide-ions.", "false");
-  set_int_parameter("charge state", 0, 0, 3, 
+  set_int_parameter("charge state", 0, 0, 10, 
       "The charge state of the peptide.",
       "Argument for predict-peptide-ions", "false");
 
@@ -391,6 +399,13 @@ void initialize_parameters(void){
       "[E]|[], modified-chymotrypsin [FWYL]|{P}, elastase-trypsin-chymotrypsin "
       "[ALIVKRWFY]|{P},aspn []|[D] (cuts before D).",
       "true");
+
+  set_window_type_parameter("precursor-window-type", WINDOW_MASS,
+      "Window type to use for selecting peptides from precursor mz."
+      "(mass, mz, ppm) Default: mass.",
+      "Available for crux search-for-matches",
+      "true");
+
   set_string_parameter("custom-enzyme", NULL, 
       "Specify rules for in silico digestion of protein sequences. See html "
       "docs for syntax. Default to use pre-defined enzyme trypsin.",
@@ -542,9 +557,10 @@ void initialize_parameters(void){
   set_string_parameter("seed", "time", "HIDE ME FROM USER",
       "Given a real-number value, will always produce the same decoy seqs",
       "false");
-  set_double_parameter("mass-window", 3.0, 0, 100, 
-      "Search peptides within +/- 'mass-window' of the "
-      "spectrum mass.  Default 3.0.",
+  set_double_parameter("precursor-window", 3.0, 0, 100, 
+      "Search peptides within +/- 'precursor-window' of the "
+      "spectrum mass.  Definition of precursor window depends "
+      "upon precursor-window-type. Default 3.0.",
       "Available from the parameter file only for crux-search-for-matches, "
       "crux-create-index, and crux-generate-peptides.",
       "true");
@@ -586,6 +602,13 @@ void initialize_parameters(void){
       "The maximum number of modified amino acids that can appear in one "
       "peptide.  Each aa can be modified multiple times.  Default no limit.",
       "Available from parameter file for search-for-matches.", "true");
+  set_boolean_parameter("display-summed-mod-masses", TRUE,
+      "When a residue has multiple modifications, print the sum of those "
+      "modifications rather than listing each in a comma-separated list.  "
+      "Default T.",
+      "Available in the parameter file for any command that prints peptides "
+      "sequences.  Example: TRUE is SE[12.40]Q and FALSE is SE[10.00,2.40]Q",
+      "true" );
   set_int_parameter("precision", 8, 1, 100, //max is arbitrary
       "Set the precision for masses and scores written to sqt and text files. "
       "Default 8.",
@@ -636,10 +659,11 @@ void initialize_parameters(void){
       "sq-pvalue>.  Incorrect combinations of score-type and algorithm cause"
       " undefined behavior. Using 'none' will turn the binary .csm files "
       "into text.", "false");
-  set_string_parameter("feature-file", NULL,//"match_analysis.features"
+  set_boolean_parameter("feature-file", FALSE,
      "Optional file into which psm features are printed.",
-     "Available only for crux-analyze-matches.  File will contain features "
-     "used by percolator.", "true");
+     "Available only for percolator and q-ranker.  File will be named "
+     "<fileroot>.percolator.features.txt or <fileroot>.qranker.features.txt.",
+     "true");
 
   /* analyze-matches parameter options */
   set_double_parameter("pi0", 0.9, 0, 1, "Hide from user",
@@ -700,9 +724,9 @@ void initialize_parameters(void){
   set_double_parameter("B", 0.0, -100, BILLION,
       "Change the mass of all amino acids 'B' by the given amount.",
       "For parameter file only.  Default no mass change.", "false");
-  set_double_parameter("C", 57.0, -100, BILLION,
+  set_double_parameter("C", 57.0214637206, -100, BILLION,
       "Change the mass of all amino acids 'C' by the given amount.",
-      "For parameter file only.  Default +57.0.", "true");
+      "For parameter file only.  Default +57.0214637206.", "true");
   set_double_parameter("D", 0.0, -100, BILLION,
       "Change the mass of all amino acids 'D' by the given amount.",
       "For parameter file only.  Default no mass change.", "true");
@@ -778,6 +802,32 @@ void initialize_parameters(void){
       "Print to stdout additional information about the spectrum.",
       "Avaliable only for crux-get-ms2-spectrum.  Does not affect contents "
       "of the output file.", "true");
+
+
+  set_boolean_parameter("use-mgf", FALSE,
+      "Use MGF file format for parsing files",
+      "Available for search-for-xlinks program (Default FALSE).",
+      "true");
+  /* mpsm options */
+    
+  set_int_parameter("mpsm-max-peptides", 2, 1, 10,
+      "maximum number of peptides to consider (1-10). Default 1.",
+      "Available for crux search-for-mpsms ",
+      "true");
+
+  set_int_parameter("mpsm-top-n", 1, 1, BILLION,
+    "number of k-peptides to consider when searching for mpsms",
+    "Available for crux search-for-mpsms",
+    "true");
+
+  set_double_parameter("mpsm-rtime-threshold", BILLION, 0, BILLION,
+    "relative retention time threshold for mpsm candidates",
+    "Available for crux search-for-mpsms",
+    "true");
+
+  set_boolean_parameter("mpsm-do-sort",TRUE,
+    "Sort the mpsms.",
+    "Available for crux search-for-mpsms. Default true.","true");
 
   // now we have initialized the parameters
   parameter_initialized = TRUE;
@@ -1120,7 +1170,7 @@ BOOLEAN_T parse_cmd_line_into_params_hash(int argc,
  */
 // NOTE (BF mar-11-09): for testing would be nice if this returned
 // error code instead of dying
-void parse_custom_enzyme(char* rule_str){
+void parse_custom_enzyme(const char* rule_str){
 
   BOOLEAN_T success = TRUE;
   int len = strlen(rule_str);
@@ -1383,6 +1433,15 @@ BOOLEAN_T check_option_type_and_bounds(const char* name){
       success = FALSE;
       sprintf(die_str, "Illegal ion type '%s' for option '%s'.  "
               "Must be b,y,by.", value_str, name);
+    }
+    break;
+  case WINDOW_TYPE_P:
+    carp(CARP_DETAILED_DEBUG, "found window type param, value '%s'",
+         value_str);
+    if(string_to_window_type(value_str) == WINDOW_INVALID) {
+      success = FALSE;
+      sprintf(die_str, "Illegal window type '%s' for option '%s'.  "
+              "Must be (mass, mz, ppm)", value_str, name);
     }
     break;
   default:
@@ -1816,6 +1875,16 @@ MASS_TYPE_T get_mass_type_parameter(
   return param_value;
 }
 
+WINDOW_TYPE_T get_window_type_parameter(
+  const char* name
+  ){
+  char* param_value_str = (char*)get_hash_value(parameters, name);
+  WINDOW_TYPE_T param_value =  
+    string_to_window_type(param_value_str);
+
+  return param_value;
+}
+
 SORT_TYPE_T get_sort_type_parameter(const char* name){
   char* param_value_str = (char*)get_hash_value(parameters, name);
   SORT_TYPE_T param_value;
@@ -1893,11 +1962,11 @@ BOOLEAN_T set_boolean_parameter(
   else{
     bool_str = "FALSE";
   }
-  result = add_or_update_hash_copy(parameters, name, bool_str);
-  result = add_or_update_hash_copy(usages, name, usage);
-  result = add_or_update_hash_copy(file_notes, name, filenotes);
-  result = add_or_update_hash_copy(for_users, name, foruser);
-  result = add_or_update_hash_copy(types, name, (void*)"BOOLEAN_T");
+  result = add_or_update_hash(parameters, name, bool_str);
+  result = add_or_update_hash(usages, name, usage);
+  result = add_or_update_hash(file_notes, name, filenotes);
+  result = add_or_update_hash(for_users, name, foruser);
+  result = add_or_update_hash(types, name, (void*)"BOOLEAN_T");
   return result;
 }
 
@@ -1922,18 +1991,18 @@ BOOLEAN_T set_int_parameter(
   
   //stringify default, min, and max values and set
   snprintf(buffer, PARAMETER_LENGTH, "%i", set_value);
-  result = add_or_update_hash_copy(parameters, name, buffer);
+  result = add_or_update_hash(parameters, name, buffer);
 
   snprintf(buffer, PARAMETER_LENGTH, "%i", min_value);
-  result = add_or_update_hash_copy(min_values, name, buffer);
+  result = add_or_update_hash(min_values, name, buffer);
 
   snprintf(buffer, PARAMETER_LENGTH, "%i", max_value);
-  result = add_or_update_hash_copy(max_values, name, buffer);
+  result = add_or_update_hash(max_values, name, buffer);
 
-  result = add_or_update_hash_copy(usages, name, usage);
-  result = add_or_update_hash_copy(file_notes, name, filenotes);
-  result = add_or_update_hash_copy(for_users, name, foruser);
-  result = add_or_update_hash_copy(types, name, (void*)"INT_ARG");
+  result = add_or_update_hash(usages, name, usage);
+  result = add_or_update_hash(file_notes, name, filenotes);
+  result = add_or_update_hash(for_users, name, foruser);
+  result = add_or_update_hash(types, name, (void*)"INT_ARG");
   return result;
 }
 
@@ -1958,18 +2027,18 @@ BOOLEAN_T set_double_parameter(
   
   // convert to string
   snprintf(buffer, PARAMETER_LENGTH, "%f", set_value);
-  result = add_or_update_hash_copy(parameters, name, buffer);    
+  result = add_or_update_hash(parameters, name, buffer);    
 
   snprintf(buffer, PARAMETER_LENGTH, "%f", min_value);
-  result = add_or_update_hash_copy(min_values, name, buffer);    
+  result = add_or_update_hash(min_values, name, buffer);    
 
   snprintf(buffer, PARAMETER_LENGTH, "%f", max_value);
-  result = add_or_update_hash_copy(max_values, name, buffer);    
+  result = add_or_update_hash(max_values, name, buffer);    
 
-  result = add_or_update_hash_copy(usages, name, usage);    
-  result = add_or_update_hash_copy(file_notes, name, filenotes);
-  result = add_or_update_hash_copy(for_users, name, foruser);
-  result = add_or_update_hash_copy(types, name, (void*)"DOUBLE_ARG");    
+  result = add_or_update_hash(usages, name, usage);    
+  result = add_or_update_hash(file_notes, name, filenotes);
+  result = add_or_update_hash(for_users, name, foruser);
+  result = add_or_update_hash(types, name, (void*)"DOUBLE_ARG");    
   return result;
 }
 
@@ -1997,11 +2066,11 @@ BOOLEAN_T set_string_parameter(
     set_value = "__NULL_STR";
   }
 
-  result = add_or_update_hash_copy(parameters, name, set_value);
-  result = add_or_update_hash_copy(usages, name, usage);
-  result = add_or_update_hash_copy(file_notes, name, filenotes);
-  result = add_or_update_hash_copy(for_users, name, foruser);
-  result = add_or_update_hash_copy(types, name, (void*)"STRING_ARG");
+  result = add_or_update_hash(parameters, name, set_value);
+  result = add_or_update_hash(usages, name, usage);
+  result = add_or_update_hash(file_notes, name, filenotes);
+  result = add_or_update_hash(for_users, name, foruser);
+  result = add_or_update_hash(types, name, (void*)"STRING_ARG");
 
   return result;
 }
@@ -2026,11 +2095,11 @@ BOOLEAN_T set_mass_type_parameter(
   /* stringify the value */
   mass_type_to_string(set_value, value_str);
   
-  result = add_or_update_hash_copy(parameters, name, value_str);
-  result = add_or_update_hash_copy(usages, name, usage);
-  result = add_or_update_hash_copy(file_notes, name, filenotes);
-  result = add_or_update_hash_copy(for_users, name, foruser);
-  result = add_or_update_hash_copy(types, name, (void*)"MASS_TYPE_T");
+  result = add_or_update_hash(parameters, name, value_str);
+  result = add_or_update_hash(usages, name, usage);
+  result = add_or_update_hash(file_notes, name, filenotes);
+  result = add_or_update_hash(for_users, name, foruser);
+  result = add_or_update_hash(types, name, (void*)"MASS_TYPE_T");
   return result;
 
 }
@@ -2055,11 +2124,11 @@ BOOLEAN_T set_digest_type_parameter(
   char* value_str = digest_type_to_string(set_value);
   carp(CARP_DETAILED_DEBUG, "Setting digest param '%s' to value '%s'.", name, value_str);
 
-  result = add_or_update_hash_copy(parameters, name, value_str);
-  result = add_or_update_hash_copy(usages, name, usage);
-  result = add_or_update_hash_copy(file_notes, name, filenotes);
-  result = add_or_update_hash_copy(for_users, name, foruser);
-  result = add_or_update_hash_copy(types, name, (void*)"DIGEST_T");
+  result = add_or_update_hash(parameters, name, value_str);
+  result = add_or_update_hash(usages, name, usage);
+  result = add_or_update_hash(file_notes, name, filenotes);
+  result = add_or_update_hash(for_users, name, foruser);
+  result = add_or_update_hash(types, name, (void*)"DIGEST_T");
   free(value_str);
   return result;
 
@@ -2084,11 +2153,39 @@ BOOLEAN_T set_enzyme_type_parameter(
   /* stringify the value */
   char* value_str = enzyme_type_to_string(set_value);
 
-  result = add_or_update_hash_copy(parameters, name, value_str);
-  result = add_or_update_hash_copy(usages, name, usage);
-  result = add_or_update_hash_copy(file_notes, name, filenotes);
-  result = add_or_update_hash_copy(for_users, name, foruser);
-  result = add_or_update_hash_copy(types, name, (void*)"ENZYME_T");
+  result = add_or_update_hash(parameters, name, value_str);
+  result = add_or_update_hash(usages, name, usage);
+  result = add_or_update_hash(file_notes, name, filenotes);
+  result = add_or_update_hash(for_users, name, foruser);
+  result = add_or_update_hash(types, name, (void*)"ENZYME_T");
+  free(value_str);
+  return result;
+
+}
+
+BOOLEAN_T set_window_type_parameter(
+ const char*     name,  ///< the name of the parameter looking for -in
+ WINDOW_TYPE_T set_value,  ///< the value to be set -in
+ const char* usage,      ///< string to print in usage statement
+ const char* filenotes,   ///< additional info for param file
+ const char* foruser
+  ) {
+  BOOLEAN_T result = TRUE;
+  
+  // check if parameters can be changed
+  if(!parameter_plasticity){
+    carp(CARP_ERROR, "can't change parameters once they are confirmed");
+    return FALSE;
+  }
+  
+  /* stringify the value */
+  char* value_str = window_type_to_string(set_value);
+
+  result = add_or_update_hash(parameters, name, value_str);
+  result = add_or_update_hash(usages, name, usage);
+  result = add_or_update_hash(file_notes, name, filenotes);
+  result = add_or_update_hash(for_users, name, foruser);
+  result = add_or_update_hash(types, name, "WINDOW_TYPE_T");
   free(value_str);
   return result;
 
@@ -2111,11 +2208,11 @@ BOOLEAN_T set_sort_type_parameter(
   /* stringify value */
   sort_type_to_string(set_value, value_str);
   
-  result = add_or_update_hash_copy(parameters, name, value_str);
-  result = add_or_update_hash_copy(usages, name, usage);
-  result = add_or_update_hash_copy(file_notes, name, filenotes);
-  result = add_or_update_hash_copy(for_users, name, foruser);
-  result = add_or_update_hash_copy(types, name, (void*)"SORT_TYPE_T");
+  result = add_or_update_hash(parameters, name, value_str);
+  result = add_or_update_hash(usages, name, usage);
+  result = add_or_update_hash(file_notes, name, filenotes);
+  result = add_or_update_hash(for_users, name, foruser);
+  result = add_or_update_hash(types, name, (void*)"SORT_TYPE_T");
   return result;
 }
 
@@ -2138,11 +2235,11 @@ BOOLEAN_T set_algorithm_type_parameter(
   algorithm_type_to_string(set_value, value_str);
   carp(CARP_DETAILED_DEBUG, "setting algorithm type to %s", value_str);  
 
-  result = add_or_update_hash_copy(parameters, name, value_str);
-  result = add_or_update_hash_copy(usages, name, usage);
-  result = add_or_update_hash_copy(file_notes, name, filenotes);
-  result = add_or_update_hash_copy(for_users, name, foruser);
-  result = add_or_update_hash_copy(types, name, (void*)"ALGORITHM_TYPE_T");
+  result = add_or_update_hash(parameters, name, value_str);
+  result = add_or_update_hash(usages, name, usage);
+  result = add_or_update_hash(file_notes, name, filenotes);
+  result = add_or_update_hash(for_users, name, foruser);
+  result = add_or_update_hash(types, name, (void*)"ALGORITHM_TYPE_T");
   return result;
 }
 
@@ -2166,11 +2263,11 @@ BOOLEAN_T set_scorer_type_parameter(
   scorer_type_to_string(set_value, value_str);
   carp(CARP_DETAILED_DEBUG, "setting score type to %s", value_str);  
 
-  result = add_or_update_hash_copy(parameters, name, value_str);
-  result = add_or_update_hash_copy(usages, name, usage);
-  result = add_or_update_hash_copy(file_notes, name, filenotes);
-  result = add_or_update_hash_copy(for_users, name, foruser);
-  result = add_or_update_hash_copy(types, name, (void*)"SCORER_TYPE_T");
+  result = add_or_update_hash(parameters, name, value_str);
+  result = add_or_update_hash(usages, name, usage);
+  result = add_or_update_hash(file_notes, name, filenotes);
+  result = add_or_update_hash(for_users, name, foruser);
+  result = add_or_update_hash(types, name, (void*)"SCORER_TYPE_T");
 
 
   return result;
@@ -2195,11 +2292,11 @@ BOOLEAN_T set_ion_type_parameter(
   /* stringify value */
   ion_type_to_string(set_value, value_str);
 
-  result = add_or_update_hash_copy(parameters, name, value_str);
-  result = add_or_update_hash_copy(usages, name, usage);
-  result = add_or_update_hash_copy(file_notes, name, filenotes);
-  result = add_or_update_hash_copy(for_users, name, foruser);
-  result = add_or_update_hash_copy(types, name, (void*)"ION_TYPE_T");
+  result = add_or_update_hash(parameters, name, value_str);
+  result = add_or_update_hash(usages, name, usage);
+  result = add_or_update_hash(file_notes, name, filenotes);
+  result = add_or_update_hash(for_users, name, foruser);
+  result = add_or_update_hash(types, name, (void*)"ION_TYPE_T");
   return result;
 }
 /**

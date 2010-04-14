@@ -118,6 +118,35 @@ char* enzyme_type_to_string(ENZYME_T type){
   return type_str;
 }
 
+/**
+ * The string version of mass types
+ */
+static const char* window_type_strings[NUMBER_WINDOW_TYPES] = 
+  {"invalid", "mass", "mz", "ppm"};
+
+WINDOW_TYPE_T string_to_window_type(char* name){
+  int window_int = convert_enum_type_str(name, -10, 
+                                      window_type_strings, 
+                                      NUMBER_WINDOW_TYPES);
+  if( window_int < 0 ){
+    window_int = 0;
+  }
+
+  return (WINDOW_TYPE_T)window_int;
+}
+
+char* window_type_to_string(WINDOW_TYPE_T type){
+  if( (int)type > NUMBER_WINDOW_TYPES){
+    return NULL;
+  }
+
+  char* type_str = my_copy_string(window_type_strings[type]);
+
+  return type_str;
+}
+
+
+
 
 /**
  * The string version of peptide cleavage type
@@ -247,7 +276,7 @@ BOOLEAN_T algorithm_type_to_string(ALGORITHM_TYPE_T type, char* type_str){
 
 static const char* command_type_file_strings[NUMBER_COMMAND_TYPES] =
   { "invalid", "index", "search", "sequest", "qvalues", "percolator", 
-    "qranker", "processed-spectra", "mpsm-search" 
+    "qranker", "processed-spectra", "mpsm-search", "q-ranker-mpsm" 
   };
 /**
  * Conversion of COMMAND_T to the base filename used for that
@@ -278,7 +307,7 @@ const char* command_type_to_file_string_ptr(COMMAND_T type){
 static const char* command_type_command_line_strings[NUMBER_COMMAND_TYPES] =
   { "invalid", "create-index", "search-for-matches", "sequest-search",
     "compute-q-values", "percolator", "q-ranker", "print-processed-spectra",
-    "search-for-mpsms"
+    "search-for-mpsms","q-ranker-mpsm"
   };
 /**
  * Conversion of COMMAND_T to the string used on the command line.
@@ -416,6 +445,22 @@ char* copy_string_part(const char* src, int length){
   else{
     return -1;
   }
+}
+
+/**
+ * Compares two numbers and returns TRUE if when rounded to the given
+ * precision they are equal.  Otherwise, returns false.  
+ * E.g. is_equal(0.10, 0.14, 1) -> TRUE. is_equal(0.10, 0.15, 1) -> FALSE
+ */
+BOOLEAN_T is_equal(FLOAT_T a, FLOAT_T b, int precision){
+  a = (a * pow(10, precision)) + 0.5;
+  b = (b * pow(10, precision)) + 0.5;
+
+  if( (int)a == (int)b ){
+    return TRUE;
+  }
+  // else
+  return FALSE;
 }
 
 /**
@@ -1559,7 +1604,58 @@ int get_last_in_range_string(const char* range_string){
    return number;
 }
 
+/**
+ * \brief  Decide if a spectrum has precursor charge of +1 or more (+2
+ * or +3 or +4 etc). 
+ * \returns 1 if spectrum precursor is singly charged or 0 if multiply
+ * charged or -1 on error.
+ */
+int choose_charge(FLOAT_T precursor_mz, ///< m/z of spectrum precursor ion
+                  PEAK_T* peaks,        ///< array of spectrum peaks
+                  int num_peaks)        ///< size of peaks array
+{
+  if( num_peaks == 0 || peaks == NULL ){
+    carp(CARP_ERROR, "Cannot determine charge state of empty peak array.");
+    return -1;
+  }
 
+  FLOAT_T max_peak_mz = get_peak_location(find_peak(peaks, num_peaks - 1));
+  
+  // sum peaks below and above the precursor m/z window separately
+  FLOAT_T left_sum = 0.00001;
+  FLOAT_T right_sum= 0.00001;
+  for(int peak_idx = 0; peak_idx < num_peaks; peak_idx++){
+    if(get_peak_location(find_peak(peaks, peak_idx)) < precursor_mz - 20){
+      left_sum += get_peak_intensity(find_peak(peaks, peak_idx));
+
+    } else if(get_peak_location(find_peak(peaks, peak_idx)) 
+              > precursor_mz + 20){
+      right_sum += get_peak_intensity(find_peak(peaks, peak_idx));
+
+    } // else, skip peaks around precursor
+  }
+
+  // What is the justification for this? Ask Mike
+  FLOAT_T FractionWindow = 0;
+  FLOAT_T CorrectionFactor;
+  if( (precursor_mz * 2) < max_peak_mz){
+    CorrectionFactor = 1;
+  } else {
+    FractionWindow = (precursor_mz * 2) - max_peak_mz;
+    CorrectionFactor = fabs((precursor_mz - FractionWindow)) / precursor_mz;
+  }
+
+  // if the ratio of intensities above/below the precursor is small
+  assert(left_sum != 0);
+  if( (right_sum / left_sum) < (0.2 * CorrectionFactor)){
+    return 1;  // +1 spectrum
+  } else {
+    return 0;  // multiply charged spectrum
+  }
+
+  // shouldn't get to here
+  return -1;
+}
 
 
 /*

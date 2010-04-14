@@ -18,7 +18,7 @@
 
 
 // mass of water
-#define MASS_H2O_MONO 18.01056 ///< Mass of water (monoisotopic)
+#define MASS_H2O_MONO 18.010564684 ///< Mass of water (monoisotopic)
 #define MASS_H2O_AVERAGE 18.0153 ///< Mass of water (average)
 
 /**
@@ -28,7 +28,7 @@
 #define MASS_H_AVERAGE 1.00794 ///< Mass of hydrogen (average)
 
 // FIXME, change in spectrum, peptide to be able to pick mono, average
-#define MASS_H 1.0078246 ///< mass of hydrogen
+#define MASS_H       1.00782503207 ///< mass of hydrogen
 #define MASS_PROTON  1.00727646677 ///< mass of proton
 /**
  * Mass of oxygen
@@ -89,6 +89,15 @@ FLOAT_T get_mass_amino_acid_monoisotopic(
 FLOAT_T get_mass_mod_amino_acid_monoisotopic(
   MODIFIED_AA_T amino_acid ///< the query amino acid -in
   );
+
+/**
+ * Finds the modification identifier associated with the given mass
+ * shift.  Can be the identifier from a single modfification or from
+ * multiple modficiations to the same residue.  The returned
+ * identifier can be used to modify a MODIFIED_AA_T so that it has the
+ * given mass shift. 
+ */
+MODIFIED_AA_T get_mod_identifier(FLOAT_T mass_shift);
 
 /**
  * increase the amino acid mass for both mono and average

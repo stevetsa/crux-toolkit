@@ -18,9 +18,11 @@
 #include <dirent.h>
 #include <unistd.h>
 #include <time.h>
+#include <algorithm>
 #include "carp.h"
 #include "utils.h"
 #include "objects.h"
+#include "peak.h"
 
 #ifdef __cplusplus
   extern "C" {
@@ -48,6 +50,14 @@ char* copy_string_part(const char* src, int length);
  * or perhaps all compares.
  */
 int compare_float(FLOAT_T float_a, FLOAT_T float_b);
+
+/**
+ * Compares two numbers and returns TRUE if they are within the given
+ * precision of each other, otherwise returns FALSE.  E.g. if
+ * precision is 2, a and b must be equal when rounded to two decimal
+ * places.
+ */
+BOOLEAN_T is_equal(FLOAT_T a, FLOAT_T b, int precision);
 
 /**
  * \brief Parses the filename and path of given string.
@@ -336,6 +346,9 @@ DIGEST_T string_to_digest_type(char*);
 char* digest_type_to_string(DIGEST_T);
 ENZYME_T string_to_enzyme_type(char*);
 char* enzyme_type_to_string(ENZYME_T);
+WINDOW_TYPE_T string_to_window_type(char*);
+char* window_type_to_string(WINDOW_TYPE_T);
+
 
 /**
  * \brief Open either the index or fasta file and prepare it for
@@ -375,6 +388,16 @@ int get_first_in_range_string(const char* range_string);
  *  or -1 if the range is invalid.
  */
 int get_last_in_range_string(const char* range_string);
+
+/**
+ * \brief  Decide if a spectrum has precursor charge of +1 or more (+2
+ * or +3 or +4 etc). 
+ * \returns 1 if spectrum precursor is singly charged or 0 if multiply
+ * charged.
+ */
+int choose_charge(FLOAT_T precursor_mz, ///< m/z of spectrum precursor ion
+                  PEAK_T* peaks,        ///< array of spectrum peaks
+                  int num_peaks);       ///< size of peaks array
 
 #ifdef __cplusplus
 }

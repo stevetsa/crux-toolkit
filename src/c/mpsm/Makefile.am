@@ -8,8 +8,16 @@ libmpsm_la_SOURCES = \
   MPSM_Match.h \
   MPSM_MatchCollection.cpp \
   MPSM_MatchCollection.h \
+  MPSM_OutputFiles.cpp \
+  MPSM_OutputFiles.h \
   MPSM_Scorer.cpp \
   MPSM_Scorer.h \
+  RetentionPredictor.cpp \
+  RetentionPredictor.h \
+  KrokhinRetentionPredictor.h \
+  KrokhinRetentionPredictor.cpp \
+  PalmbaldRetentionPredictor.cpp \
+  PalmbaldRetentionPredictor.h \
   mpsm_search.cpp
 
 libmpsm_la_CXXFLAGS = $(AM_CXXFLAGS) \

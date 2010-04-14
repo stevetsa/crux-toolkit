@@ -307,6 +307,11 @@ class DelimitedFile {
     const char* column_name ///<the column name
   );
 
+  FLOAT_T getFloat(
+    const std::string& column_name, ///<the column name
+    unsigned int row_idx ///<the row index
+  );
+
   /**
    * gets a double type from cell, checks for infinity. 
    */
@@ -387,6 +392,21 @@ class DelimitedFile {
   );
 
   /**
+   * gets an vector of doubles from cell where the
+   * string in the cell are integers which are separated
+   * by a delimiter which is differnt than the column
+   * delimiter.  The default delimiter is a comma
+   * uses the current_row_ as the row index.
+   * clears the double vector before 
+   * populating it.
+   */
+  void getDoubleVectorFromCell(
+    const char* column_name, ///< the column name
+    std::vector<double>& double_vector, ///<the vector of integers
+    char delimiter=',' ///<the delimiter to use
+  );
+
+  /**
    * sorts the table by a column. Assumes the data type is
    * Float. By default sorts in ascending order.
    */
@@ -445,6 +465,25 @@ class DelimitedFile {
     char delimiter = '\t'
   );
 
+  template<typename T>
+  static std::string splice(
+    const std::vector<T>& elements,
+    char delimiter = '\t') {
+
+      if (elements.size() == 0) return "";
+
+      int precision = get_int_parameter("precision");
+      std::ostringstream ss;
+      ss << std::setprecision(precision);
+      
+      ss << elements[0];
+      for (int idx=1;idx < elements.size();idx++) {
+        ss << delimiter << elements[idx];
+      }
+      std::string out_string = ss.str();
+      return out_string;
+  }
+
   /**
    * convert string to data type
    */
@@ -457,6 +496,18 @@ class DelimitedFile {
     std::istringstream iss(s);
     return !(iss >> std::dec >> value).fail();
   }   
+
+  template<typename TValue>
+  static std::string to_string(
+    TValue& value) {
+
+    std::ostringstream oss;
+    oss << std::setprecision(get_int_parameter("precision"));
+    oss << value;
+    std::string out_string = oss.str();
+    return out_string;
+  }
+
   
   /**
    * Allows object to be printed to a stream

@@ -2,6 +2,7 @@
 #include <iostream>
 
 #include "ChargeIndex.h"
+#include "DelimitedFile.h"
 
 using namespace std;
 
@@ -13,10 +14,41 @@ ChargeIndex::ChargeIndex(int charge) {
   push_back(charge);
 }
 
+ChargeIndex::ChargeIndex(string& charges, char delimiter) {
+  vector<string> vcharges;
+
+  DelimitedFile::tokenize(charges, vcharges, delimiter);
+
+  for (int i=0;i<vcharges.size();i++) {
+    int charge;
+    DelimitedFile::from_string<int>(charge, vcharges[i]);
+    add(charge);
+  }
+
+
+}
+
+
 void ChargeIndex::add(int charge) {
   push_back(charge);
   sort(begin(), end());
 }
+
+int ChargeIndex::max() {
+  return back();
+}
+
+int ChargeIndex::numCharge(int charge) {
+  int ans = 0;
+
+  for (int idx = 0; idx < size(); idx++) {
+    if (at(idx) == charge) {
+      ans++;
+    }
+  }
+  return ans;
+}
+
 
 bool ChargeIndex::operator==(ChargeIndex& c) {
   if (c.size() != size())

@@ -35,6 +35,8 @@ public:
     void printWeights(ostream & weightStream, vector<double>& w);
     void readWeights(istream & weightStream, vector<double>& w);
     void readFiles(bool &doSingleFile);
+
+    void filelessSetup(unsigned int nsets,const unsigned int numFeatures, vector<unsigned int>& numSpectra, char** featureNames, double pi0);
     void filelessSetup(unsigned int nsets,const unsigned int numFeatures, const unsigned int numSpectra, char ** fetureNames, double pi0);
     void fillFeatureSets();    
     int preIterationSetup();

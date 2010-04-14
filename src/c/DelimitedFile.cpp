@@ -252,7 +252,7 @@ void DelimitedFile::addColumns(
   vector<string>& column_names
   ) {
   cout <<"Number of columns:"<<column_names.size()<<endl;
-  for (int col_idx = 0;col_idx = column_names.size(); col_idx++) {
+  for (unsigned int col_idx = 0;col_idx < column_names.size(); col_idx++) {
     cout <<"Adding :"<<column_names[col_idx]<<endl;
     //addColumn(column_names[col_idx]);
   }
@@ -488,6 +488,13 @@ FLOAT_T DelimitedFile::getFloat(
 }
 
 
+FLOAT_T DelimitedFile::getFloat(
+    const string& column_name, ///<the column name
+    unsigned int row_idx ///<the row index
+) {
+
+  return getFloat(column_name.c_str(), row_idx);
+}
 
 /**
  * gets a double type from cell, checks for infinity. 
@@ -498,7 +505,9 @@ double DelimitedFile::getDouble(
   ) {
 
   string& string_ans = getString(col_idx,row_idx);
-  if (string_ans == "Inf") {
+  if (string_ans == "") {
+    return 0.0;
+  } else if (string_ans == "Inf") {
 
     return numeric_limits<double>::infinity();
   } else if (string_ans == "-Inf") {
@@ -637,6 +646,41 @@ void DelimitedFile::getIntegerVectorFromCell(
     int_vector.push_back(int_ans);
   }
 }
+
+/**
+ * gets an vector of doubles from cell where the
+ * string in the cell are integers which are separated
+ * by a delimiter which is differnt than the column
+ * delimiter.  The default delimiter is a comma
+ * uses the current_row_ as the row index.
+ * clears the double vector before 
+ * populating it.
+ */
+void DelimitedFile::getDoubleVectorFromCell(
+  const char* column_name, ///< the column name
+  std::vector<double>& double_vector, ///<the vector of integers
+  char delimiter ///<the delimiter to use
+) {
+  
+  //get the list of strings separated by delimiter
+  vector<string> string_vector_ans;
+
+  getStringVectorFromCell(column_name, string_vector_ans, delimiter);
+
+  //convert each string into an integer.
+  double_vector.clear();
+
+  for (vector<string>::iterator string_iter = string_vector_ans.begin();
+    string_iter != string_vector_ans.end();
+    ++string_iter) {
+
+    double double_ans;
+    from_string<double>(double_ans, *string_iter);
+    double_vector.push_back(double_ans);
+  }
+}
+
+
 
 template <typename T>
 void DelimitedFile::reorderRows(multimap<T, unsigned int>& sort_indices, BOOLEAN_T ascending) {

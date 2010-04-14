@@ -17,6 +17,7 @@
 #include "mpsm_search.h"
 #include "sequest-search.h"
 #include "q-ranker.h"
+#include "mpsm-q-ranker.h"
 #include "q-value.h"
 #include "percolator.h"
 #include "print-processed-spectra.h"

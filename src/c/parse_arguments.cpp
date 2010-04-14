@@ -473,7 +473,7 @@ int assign_value_from_required_to_hash(/*const*/ argument * req,
     case STRING_ARG:
     case BOOLEAN_ARG:
       //      *((int *) req->container) = atoi(value);
-      add_or_update_hash_copy(hash, req->name, value);
+      add_or_update_hash(hash, req->name, value);
       break;
   }
   /* BF: there was no type checking unlike option.  why? */
@@ -638,7 +638,7 @@ int assign_value_from_option_to_hash(/*const*/ argument * option,
 
   if (*index < argument_count -1) {
      more_args = 1;
-     if (arguments[(*index) + 1][1] == '-') {
+     if (arguments[(*index) + 1][0] == '-') {
        next_arg_is_not_option = 0;
      }
   }
