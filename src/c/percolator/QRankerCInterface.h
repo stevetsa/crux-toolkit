@@ -17,7 +17,6 @@ extern "C" {
 
 
 /** Call that initiates percolator */
-/*void qcInitiate(NSet sets, unsigned int numFeatures, unsigned int numSpectra, char ** featureNames, double pi0);*/
 void qcInitiate(int sets, unsigned int numFeatures, int* numSpectra, char ** featureNames, double pi0);
 
 /** Call that sets verbosity level

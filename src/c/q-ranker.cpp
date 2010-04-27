@@ -164,7 +164,6 @@ MATCH_COLLECTION_T* run_q(
     exit(1);
   }
   int num_sets = get_match_collection_iterator_number_collections(match_collection_iterator1);
-  printf("%d\n", num_sets);									
   int* num_spectra = (int*)mycalloc(num_sets, sizeof(int));
   // iterate over each, TARGET, DECOY 1..3 match_collection sets
   int iterations = 0;
@@ -221,14 +220,6 @@ MATCH_COLLECTION_T* run_q(
 					get_match_collection_match_total(match_collection), sizeof(double));
           
       // Call that initiates q-ranker
-      //qcInitiate(
-      //	 (NSet)get_match_collection_iterator_number_collections(
-      //								match_collection_iterator), 
-      //	 number_features, 
-      //	 get_match_collection_match_total(match_collection), 
-      //		 feature_names, 
-      //	 pi0);
-      
       qcInitiate(
 		 (NSet)get_match_collection_iterator_number_collections(
 									match_collection_iterator), 
@@ -282,10 +273,13 @@ MATCH_COLLECTION_T* run_q(
       }
       
       //qcRegisterPSM((SetType)set_idx, NULL, features);
+      //printf("I am here\n");exit(10);
       qcRegisterPSM((SetType)set_idx, get_match_sequence_sqt(match), features);
       
       free(features);
     }
+
+    
 
     // ok free & update for next set
     // MEMLEAK 

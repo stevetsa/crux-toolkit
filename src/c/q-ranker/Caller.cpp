@@ -363,8 +363,6 @@ void Caller::readRetentionTime(string filename) {
   delete [] cstr;
 }
 
-
-//void Caller::filelessSetup(unsigned int nsets, const unsigned int numFeatures, const unsigned int numSpectra, char ** featureNames, double pi0) {
 void Caller::filelessSetup(unsigned int nsets, const unsigned int numFeatures, int* numSpectra, char ** featureNames, double pi0) {
 
   pCheck = new SanityCheck();
