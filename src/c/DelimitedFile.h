@@ -241,7 +241,7 @@ class DelimitedFile {
   void setString(
     unsigned int col_idx, ///< the column index
     unsigned int row_idx, ///< the row index
-    char* value ///< the new value
+    const char* value ///< the new value
   );
 
   /**
@@ -307,11 +307,6 @@ class DelimitedFile {
     const char* column_name ///<the column name
   );
 
-  FLOAT_T getFloat(
-    const std::string& column_name, ///<the column name
-    unsigned int row_idx ///<the row index
-  );
-
   /**
    * gets a double type from cell, checks for infinity. 
    */
@@ -335,6 +330,23 @@ class DelimitedFile {
   double getDouble(
     const char* column_name ///<the column name
   );
+
+  /**
+   * gets an vector of doubles from cell where the
+   * string in the cell are integers which are separated
+   * by a delimiter which is differnt than the column
+   * delimiter.  The default delimiter is a comma
+   * uses the current_row_ as the row index.
+   * clears the double vector before 
+   * populating it.
+   */
+  void getDoubleVectorFromCell(
+    const char* column_name, ///< the column name
+    std::vector<double>& double_vector, ///<the vector of integers
+    char delimiter=',' ///<the delimiter to use
+  );
+
+
 
 
  /**
@@ -392,21 +404,6 @@ class DelimitedFile {
   );
 
   /**
-   * gets an vector of doubles from cell where the
-   * string in the cell are integers which are separated
-   * by a delimiter which is differnt than the column
-   * delimiter.  The default delimiter is a comma
-   * uses the current_row_ as the row index.
-   * clears the double vector before 
-   * populating it.
-   */
-  void getDoubleVectorFromCell(
-    const char* column_name, ///< the column name
-    std::vector<double>& double_vector, ///<the vector of integers
-    char delimiter=',' ///<the delimiter to use
-  );
-
-  /**
    * sorts the table by a column. Assumes the data type is
    * Float. By default sorts in ascending order.
    */
@@ -421,6 +418,12 @@ class DelimitedFile {
   void sortByIntegerColumn(
     const std::string& column_name, ///< the column name
     BOOLEAN_T ascending = TRUE);
+
+  void sortByIntegerColumn(
+    unsigned int col_idx,
+    BOOLEAN_T ascending = TRUE);
+
+
   
   /**
    * sorts the table by a column. Assumes the data type is 
@@ -507,6 +510,7 @@ class DelimitedFile {
     std::string out_string = oss.str();
     return out_string;
   }
+
 
   
   /**

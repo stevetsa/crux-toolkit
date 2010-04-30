@@ -18,6 +18,9 @@ public:
 
   int numCharge(int charge);
 
+  bool isHomogeneous();
+
+
 
   bool operator ==(ChargeIndex& c); 
   

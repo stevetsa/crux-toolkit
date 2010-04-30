@@ -108,6 +108,25 @@ void MPSM_ChargeMap::calcDeltaCN() {
   }
 }
 
+void MPSM_ChargeMap::calcZScores() {
+
+  for (MPSM_ChargeMap::iterator iter = begin();
+    iter != end();
+    ++iter) {
+
+    vector<MPSM_MatchCollection>& match_collections = iter -> second;
+
+    for (int collection_idx = 0;
+      collection_idx < match_collections.size();
+      collection_idx++) {
+
+      MPSM_MatchCollection& match_collection = match_collections[collection_idx];
+      match_collection.calcZScores();
+
+    }
+  }
+}
+
 
 MPSM_ChargeMap::~MPSM_ChargeMap() {
   clearMap();

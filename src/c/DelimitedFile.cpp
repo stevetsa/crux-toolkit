@@ -142,6 +142,7 @@ void DelimitedFile::loadData(
   vector<string>tokens;
 
   if (hasHeader) {
+
     hasLine = getline(file, line) != NULL;
     if (hasLine) {
       tokenize(line, tokens, '\t');
@@ -156,20 +157,31 @@ void DelimitedFile::loadData(
       return;
     }
   }
-
+  
   hasLine = getline(file, line) != NULL;
   while (hasLine) {
+
     tokenize(line, tokens, '\t');
+    if (!hasHeader && numCols() == 0) {
+      //initialize the number of columns so that addRow won't fail.
+      while (numCols() <= tokens.size()) {
+
+        addColumn();
+      }
+    }
+
     int row_idx = addRow();
+
     for (unsigned int col_idx = 0; col_idx < tokens.size(); col_idx++) {
       if (numCols() <= col_idx) {
         addColumn();
       }
+
       setString(col_idx, row_idx, tokens[col_idx]);
     }
     hasLine = getline(file, line) != NULL;
   }
-  
+
   file.close();
 
   //reset the iterator.
@@ -205,7 +217,39 @@ void DelimitedFile::saveData(
   ) {
   
   ofstream fout(file);
-  fout << *this;
+
+  //find the maximum number of rows.
+  unsigned int maxRow = 0;
+  for (unsigned int col_idx=0; col_idx < numCols(); col_idx++) {
+    maxRow = max(maxRow, numRows(col_idx));
+  }
+
+  //print out the header if it exists.
+  if (column_names_.size() != 0) {
+    fout << column_names_[0];
+    for (unsigned int col_idx=1; col_idx<column_names_.size(); col_idx++) {
+      fout << "\t" << column_names_[col_idx];
+    }
+    fout << endl;
+  }
+
+  //print out all rows, using \t when
+  //the row goes past the current column
+  //size.
+  for (unsigned int row_idx=0; row_idx<maxRow; row_idx++) {
+    if (row_idx < numRows(0)) {
+      fout << getString((unsigned int)0, row_idx);
+    } else {
+      fout << "\t";
+    }
+    for (unsigned int col_idx=1;col_idx<numCols();col_idx++) {
+      fout <<"\t";
+      if (row_idx < numRows(col_idx))
+	fout << getString(col_idx, row_idx);
+    }
+    fout << endl;
+  }
+
   fout.close();
 }
 
@@ -340,9 +384,10 @@ unsigned int DelimitedFile::addRow() {
   if (numCols() == 0) {
     carp(CARP_FATAL,"Must have at least one column before calling add row!");
   }
-
+  
   unsigned int row_idx = numRows();
   for (unsigned int col_idx = 0;col_idx < numCols(); col_idx++) {
+
       setString(col_idx, row_idx, "");
   }
   return row_idx;
@@ -367,7 +412,12 @@ string& DelimitedFile::getString(
   ) {
   int col_idx = findColumn(column_name);
   if (col_idx == -1) {
-    carp(CARP_FATAL, "Cannot find column %s", column_name);
+    carp(CARP_ERROR, "Cannot find column %s", column_name);
+    carp(CARP_ERROR, "Available columns");
+    for (unsigned int idx = 0;idx < numCols();idx++) {
+      carp(CARP_ERROR,"%s",getColumnName(idx).c_str());
+    }
+    carp(CARP_FATAL,"Calling FATAL");
   }
   return getColumn(col_idx)[row_idx];
 }
@@ -397,12 +447,14 @@ void DelimitedFile::setString(
 
   //ensure there are enough columns
   while (col_idx >= numCols()) {
+
     addColumn();
   }
   vector<string>& col = getColumn(col_idx);
 
   //ensure there are enough rows
   while (row_idx >= col.size()) {
+
     col.push_back("");
   }
 
@@ -415,8 +467,9 @@ void DelimitedFile::setString(
 void DelimitedFile::setString(
   unsigned int col_idx, ///< the column index
   unsigned int row_idx, ///< the row index
-  char* value ///< the new value
-  ) {
+  const char* value ///< the new value
+) {
+
   string svalue(value);
   setString(col_idx, row_idx, svalue);
 }
@@ -468,7 +521,12 @@ FLOAT_T DelimitedFile::getFloat(
   
   int col_idx = findColumn(column_name);
   if (col_idx == -1) {
-    carp(CARP_FATAL, "Cannot find column %s", column_name);
+    carp(CARP_ERROR, "Cannot find column %s", column_name);
+    carp(CARP_ERROR, "Available columns");
+    for (unsigned int idx = 0;idx < numCols();idx++) {
+      carp(CARP_ERROR,"%s",getColumnName(idx).c_str());
+    }
+    carp(CARP_FATAL,"Calling FATAL");
   }
   return getFloat(col_idx, row_idx);
 }
@@ -488,13 +546,6 @@ FLOAT_T DelimitedFile::getFloat(
 }
 
 
-FLOAT_T DelimitedFile::getFloat(
-    const string& column_name, ///<the column name
-    unsigned int row_idx ///<the row index
-) {
-
-  return getFloat(column_name.c_str(), row_idx);
-}
 
 /**
  * gets a double type from cell, checks for infinity. 
@@ -505,9 +556,7 @@ double DelimitedFile::getDouble(
   ) {
 
   string& string_ans = getString(col_idx,row_idx);
-  if (string_ans == "") {
-    return 0.0;
-  } else if (string_ans == "Inf") {
+  if (string_ans == "Inf") {
 
     return numeric_limits<double>::infinity();
   } else if (string_ans == "-Inf") {
@@ -530,8 +579,14 @@ double DelimitedFile::getDouble(
 
   int col_idx = findColumn(column_name);
   if (col_idx == -1) {
-    carp(CARP_FATAL, "Cannot find column %s", column_name);
+    carp(CARP_ERROR, "Cannot find column %s", column_name);
+    carp(CARP_ERROR, "Available columns");
+    for (unsigned int idx = 0;idx < numCols();idx++) {
+      carp(CARP_ERROR,"%s",getColumnName(idx).c_str());
+    }
+    carp(CARP_FATAL,"Calling FATAL");
   }
+
   return getDouble(col_idx, row_idx);
 }
 
@@ -647,6 +702,7 @@ void DelimitedFile::getIntegerVectorFromCell(
   }
 }
 
+
 /**
  * gets an vector of doubles from cell where the
  * string in the cell are integers which are separated
@@ -682,6 +738,7 @@ void DelimitedFile::getDoubleVectorFromCell(
 
 
 
+
 template <typename T>
 void DelimitedFile::reorderRows(multimap<T, unsigned int>& sort_indices, BOOLEAN_T ascending) {
   //cout <<"reorderRows: start"<<endl;
@@ -695,29 +752,23 @@ void DelimitedFile::reorderRows(multimap<T, unsigned int>& sort_indices, BOOLEAN
       for (sort_iter = sort_indices.begin();
 	   sort_iter != sort_indices.end();
 	   ++sort_iter) {
-	row_idx = sort_iter -> second;
-	//cout <<"Getting data_["<<col_idx<<"]["<<row_idx<<"]"<<endl;
-	string current_cell = getString(col_idx, row_idx);
-	//cout <<"Ans:"<<current_cell<<endl;
-	current_col.push_back(current_cell);
-      }
+          row_idx = sort_iter -> second;
+          string current_cell = getString(col_idx, row_idx);
+          current_col.push_back(current_cell);
+        }
     } else {
       typename multimap<T, unsigned int>::reverse_iterator sort_iter;
       for (sort_iter = sort_indices.rbegin();
 	   sort_iter != sort_indices.rend();
 	   ++sort_iter) {
-	row_idx = sort_iter -> second;
-	string current_cell = data_[col_idx][row_idx];
-	current_col.push_back(current_cell);
+        row_idx = sort_iter -> second;
+        string current_cell = data_[col_idx][row_idx];
+        current_col.push_back(current_cell);
       }
     }
-    //cout <<"Adding new column"<<endl;
     newData.push_back(current_col);
   }
-  //cout <<"reorderRows(): swapping"<<endl;
   data_.swap(newData);
-  //newData.clear();
-  //cout <<"reorderRows(): Done."<<endl;
 }
 
 void DelimitedFile::sortByFloatColumn(
@@ -732,7 +783,6 @@ void DelimitedFile::sortByFloatColumn(
   }
 
   for (unsigned int row_idx=0;row_idx<numRows();row_idx++) {
-    //cout <<" Inserting "<<getFloat(sort_col_idx, row_idx)<<endl;
     sort_indices.insert(pair<FLOAT_T, unsigned int>(getFloat(sort_col_idx, row_idx), row_idx));
   }
 
@@ -740,24 +790,35 @@ void DelimitedFile::sortByFloatColumn(
 }
 
 void DelimitedFile::sortByIntegerColumn(
-  const string& column_name,
-  BOOLEAN_T ascending
-  ) {
+  unsigned int col_idx,
+  BOOLEAN_T ascending) {
   
   multimap<int, unsigned int> sort_indices;
-  int sort_col_idx = findColumn(column_name); 
-  
-  if (sort_col_idx == -1) {
-    carp(CARP_FATAL,"column %s doesn't exist",column_name.c_str());
-  }
-
   for (unsigned int row_idx=0;row_idx<numRows();row_idx++) {
-    //cout <<" Inserting "<<getInteger(sort_col_idx, row_idx)<<endl;
-    sort_indices.insert(pair<int, unsigned int>(getInteger(sort_col_idx, row_idx), row_idx));
+    sort_indices.insert(pair<int, unsigned int>(getInteger(col_idx, row_idx), row_idx));
   }
 
   reorderRows(sort_indices, ascending);
 }
+
+
+
+void DelimitedFile::sortByIntegerColumn(
+  const string& column_name,
+  BOOLEAN_T ascending
+  ) {
+  
+  int sort_col_idx = findColumn(column_name); 
+  if (sort_col_idx == -1) {
+    carp(CARP_FATAL,"column %s doesn't exist",column_name.c_str());
+  }
+  sortByIntegerColumn(sort_col_idx, ascending);
+
+}
+
+
+
+
 
 void DelimitedFile::sortByStringColumn(
   const string& column_name,
@@ -772,7 +833,6 @@ void DelimitedFile::sortByStringColumn(
   }
 
   for (unsigned int row_idx=0;row_idx<numRows();row_idx++) {
-    cout <<" Inserting "<<getInteger(sort_col_idx, row_idx)<<endl;
     sort_indices.insert(pair<string, unsigned int>(getString(sort_col_idx, row_idx), row_idx));
   }
 
@@ -857,7 +917,7 @@ std::ostream &operator<< (std::ostream& os, DelimitedFile& delimited_file) {
     for (unsigned int col_idx=1;col_idx<delimited_file.numCols();col_idx++) {
       os <<"\t";
       if (row_idx < delimited_file.numRows(col_idx))
-	os << delimited_file.getString(col_idx, row_idx);
+        os << delimited_file.getString(col_idx, row_idx);
     }
     os << endl;
   }

@@ -49,6 +49,16 @@ int ChargeIndex::numCharge(int charge) {
   return ans;
 }
 
+bool ChargeIndex::isHomogeneous() {
+
+  if (size() == 1) return true;
+
+  //since the charge mixture is sorted, we can just check the first and last.
+  //elements if they are equal, then it is homogeneous, otherwise, it is not.
+  return at(0) == at(size()-1);
+
+}
+
 
 bool ChargeIndex::operator==(ChargeIndex& c) {
   if (c.size() != size())

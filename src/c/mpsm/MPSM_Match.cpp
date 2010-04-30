@@ -107,15 +107,15 @@ void MPSM_Match::setRTime(int match_idx, FLOAT_T rtime) {
 
 void MPSM_Match::invalidate() {
   for (int idx=0;idx < _SCORE_TYPE_NUM;idx++) {
-    match_scores_valid_[idx] = FALSE;
+    match_scores_valid_[idx] = false;
   }
-  charge_valid_ = FALSE;
+  charge_valid_ = false;
   for (int idx=0;idx < numMatches();idx++) {
     if (rtimes.size() <= idx) {
       rtimes.push_back(0);
-      has_rtime.push_back(FALSE);
+      has_rtime.push_back(false);
     } else {
-      has_rtime[idx] = FALSE;
+      has_rtime[idx] = false;
     }
   }
 
@@ -130,11 +130,16 @@ ChargeIndex& MPSM_Match::getChargeIndex() {
       int charge = get_match_charge(getMatch(idx));
       charge_index_.add(charge);
     }
-    charge_valid_ = TRUE;
+    charge_valid_ = true;
   }
 
   return charge_index_;
 }
+
+bool MPSM_Match::isChargeHomogeneous() {
+  return getChargeIndex().isHomogeneous();
+}
+
 
 MATCH_T* MPSM_Match::getMatch(int match_idx) {
   return matches_[match_idx];
@@ -162,7 +167,7 @@ FLOAT_T MPSM_Match::getScore(SCORER_TYPE_T match_mode) {
 void MPSM_Match::setScore(SCORER_TYPE_T match_mode, FLOAT_T score) {
 
   match_scores_[match_mode] = score;
-  match_scores_valid_[match_mode] = TRUE;
+  match_scores_valid_[match_mode] = true;
 }
 
 void MPSM_Match::getSpectrumNeutralMasses(vector<FLOAT_T>& neutral_masses) {
@@ -216,6 +221,10 @@ FLOAT_T MPSM_Match::getRTimeMaxDiff() {
 
 void MPSM_Match::setDeltaCN(FLOAT_T delta_cn) {
   delta_cn_ = delta_cn;
+}
+
+void MPSM_Match::setZScore(double zscore) {
+  zscore_ = zscore;
 }
 
 bool MPSM_Match::operator < (const MPSM_Match& match_obj) const {
@@ -322,7 +331,7 @@ ostream& operator <<(ostream& os, MPSM_Match& match_obj) {
      << xcorr_score << "\t" //xcorr score
      /*<< xcorr_rank*/ << "\t" //xcorr rank.
      /*<< "TODO"*/ << "\t" //p-value
-     /*<< "TODO"*/ << "\t" //Weibull est. q-value
+     << match_obj.zscore_ << "\t" //Weibull est. q-value
      /*<< "TODO"*/ << "\t" //decoy q-value (xcorr)
      /*<< "TODO"*/ << "\t" //decoy q-value (p-value)
      /*<< "TODO"*/ << "\t" //percolator score

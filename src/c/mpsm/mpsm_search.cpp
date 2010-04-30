@@ -103,9 +103,12 @@ int mpsm_search_main(int argc, char** argv){
     "precursor-window",
     "precursor-window-type",
     "mpsm-max-peptides",
-    "mpsm-rtime-threshold",
+    "rtime-threshold-homogeneous",
+    "rtime-threshold-inhomogeneous",
     "mpsm-top-n",
-    "mpsm-do-sort"
+    "mpsm-do-sort",
+    "rtime-predictor",
+    "top-match"
   };
   int num_options = sizeof(option_list) / sizeof(char*);
 
@@ -211,13 +214,15 @@ int mpsm_search_main(int argc, char** argv){
       carp(CARP_INFO,"Processed all charges for spec %d",get_spectrum_first_scan(current_spectrum));
       carp(CARP_INFO,"Searching for mpsms");
       search_for_mpsms(spsm_map, mpsm_map);
-      cout <<"calcDeltaCN spsm"<<endl;
-      spsm_map.calcDeltaCN();
-      cout <<"calcDeltaCN mpsm"<<endl;
-      mpsm_map.calcDeltaCN();
-      cout <<"Sorting matches"<<endl;
-      if (get_boolean_parameter("mpsm-do-sort"))
+      if (get_boolean_parameter("mpsm-do-sort")) {
+        cout <<"calcDeltaCN spsm"<<endl;
+        spsm_map.calcDeltaCN();
+        cout <<"calcDeltaCN mpsm"<<endl;
+        mpsm_map.calcDeltaCN();
+        cout <<"Sorting matches"<<endl;
+        mpsm_map.calcZScores();
         mpsm_map.sortMatches(XCORR);
+      }
       //print out map
       //output the spsms.
       cout <<"Writing matches"<<endl;
@@ -338,14 +343,15 @@ int mpsm_search_main(int argc, char** argv){
   carp(CARP_INFO, "Processing last spectrum");
   carp(CARP_INFO, "Searching for mpsms");
   search_for_mpsms(spsm_map, mpsm_map);
-  if (get_boolean_parameter("mpsm-do-sort")) 
+  if (get_boolean_parameter("mpsm-do-sort")) { 
     mpsm_map.sortMatches(XCORR);
   //print out map
   //output the spsms.
 
-  spsm_map.calcDeltaCN();
-  mpsm_map.calcDeltaCN();
-
+    spsm_map.calcDeltaCN();
+    mpsm_map.calcDeltaCN();
+    mpsm_map.calcZScores();
+  }
   output_files.writeMatches(spsm_map);
   output_files.writeMatches(mpsm_map);
 
@@ -622,6 +628,18 @@ void add_decoy_scores(
 }
 */
 
+bool passRTimeThreshold(bool homogeneous,
+  FLOAT_T rtime_max_diff) {
+  
+  if (homogeneous) {
+    return (rtime_max_diff <= get_double_parameter("rtime-threshold-homogeneous"));
+  } else {
+    return (rtime_max_diff <= get_double_parameter("rtime-threshold-inhomogeneous"));
+  }
+
+}
+
+
 BOOLEAN_T extendMatch(MPSM_Match& orig_mpsm, 
   MPSM_MatchCollection& spsm_matches, 
   MPSM_MatchCollection& new_mpsms_matches,
@@ -638,7 +656,8 @@ BOOLEAN_T extendMatch(MPSM_Match& orig_mpsm,
       if (visited.find(new_match) == visited.end()) {
         visited.insert(new_match);
         FLOAT_T rtime_max_diff = rtime_predictor -> calcMaxDiff(new_match);
-        if (rtime_max_diff <= get_double_parameter("mpsm-rtime-threshold")) {
+
+        if (passRTimeThreshold(new_match.isChargeHomogeneous(), rtime_max_diff)) {
           new_match.setRTimeMaxDiff(rtime_max_diff);
           match_added |= new_mpsms_matches.addMatch(new_match);
         }
@@ -685,7 +704,12 @@ void extendChargeMap(MPSM_ChargeMap& spsm_map,
       target_collection.sortByScore(XCORR);
     }
 
-    int current_top_n = min(target_collection.numMatches(), top_n);
+    int current_top_n;
+    if (top_n == -1) {
+      current_top_n = target_collection.numMatches();
+    } else {
+      current_top_n = min(target_collection.numMatches(), top_n);
+    }
 
     for (int current_index = 0;current_index < current_top_n; current_index++) {
       cout <<"current index is :"<<current_index<<" of "<<current_top_n<<endl;
@@ -718,18 +742,12 @@ void extendChargeMap(MPSM_ChargeMap& spsm_map,
         vector<MPSM_MatchCollection> new_mpsm_match_collections;
         new_mpsm_match_collections.push_back(new_mpsm_target_collection);
       
+      for (int idx=0;idx < match_collections.size()-1;idx++) {
 
-      MPSM_MatchCollection& decoy1_collection = match_collections[1];
-      if (get_boolean_parameter("mpsm-do-sort")) {
-        decoy1_collection.sortByScore(XCORR);
+        if (get_boolean_parameter("mpsm-do-sort")) {
+          match_collections[idx+1].sortByScore(XCORR);
+        }
       }
-      //MPSM_Match& current_mpsm_decoy1 = decoy1_collection.getMatch(0);
-
-      MPSM_MatchCollection& decoy2_collection = match_collections[2];
-      if (get_boolean_parameter("mpsm-do-sort")) {
-        decoy2_collection.sortByScore(XCORR);
-      }
-      //MPSM_Match& current_mpsm_decoy2 = decoy2_collection.getMatch(0);
       
       for (int idx=0;idx < spsm_match_collections.size()-1;idx++) {
         

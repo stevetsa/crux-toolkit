@@ -176,6 +176,18 @@ enum _mass_type {AVERAGE, MONO };
  */
 typedef enum _mass_type MASS_TYPE_T;
 
+/**
+ * The enum for retention time predictor
+ */
+enum _rtime_predictor_type {
+  RTP_INVALID,
+  RTP_KROKHIN,
+  RTP_PALMBALD
+};  
+
+#define NUMBER_RTP_TYPES 3
+
+typedef enum _rtime_predictor_type RTP_TYPE_T;
 
 /**
  * The enum for window type for selecting peptides or assigning ions.

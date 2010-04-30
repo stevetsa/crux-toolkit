@@ -17,17 +17,19 @@ class MPSM_Match {
 
     std::vector<MATCH_T*> matches_; //the matches that the multi-match is from.
     FLOAT_T match_scores_[_SCORE_TYPE_NUM];
-    BOOLEAN_T match_scores_valid_[_SCORE_TYPE_NUM];
+    bool match_scores_valid_[_SCORE_TYPE_NUM];
     
-    BOOLEAN_T charge_valid_;
+    bool charge_valid_;
 
     ChargeIndex charge_index_;
 
     FLOAT_T rtime_max_diff_;
 
     FLOAT_T delta_cn_;
+    double zscore_;
 
-    std::vector<BOOLEAN_T> has_rtime;
+
+    std::vector<bool> has_rtime;
     std::vector<FLOAT_T> rtimes;
     void invalidate();
 
@@ -57,9 +59,13 @@ class MPSM_Match {
     FLOAT_T getRTimeMaxDiff();
 
     void setDeltaCN(FLOAT_T delta_cn);
+    void setZScore(double zscore);
 
 
     ChargeIndex& getChargeIndex();
+
+    bool isChargeHomogeneous();
+
 
     MATCH_T* getMatch(int match_idx);
     MATCH_T* operator [] (int match_idx);

@@ -136,7 +136,8 @@ PROGRAM_FILES = \
   crux \
   crux-get-ms2-spectrum \
   crux-generate-peptides \
-  crux-predict-peptide-ions
+  crux-predict-peptide-ions \
+  CountCandidates
 
 bin_PROGRAMS = $(PROGRAM_FILES)
 
@@ -155,6 +156,19 @@ crux_predict_peptide_ions_CXXFLAGS = $(AM_CFLAGS) -DMAIN
 crux_predict_peptide_ions_LDADD = \
   $(AM_LDFLAGS) \
   libcrux.la -L$(top_builddir)/src/c/MSToolkit -lm -lmstoolkit
+
+
+CountCandidates_SOURCES=./mpsm/CountCandidates.cpp
+CountCandidates_CXXFLAGS= \
+  $(AM_CFLAGS) \
+  -DMAIN \
+  -I$(top_srcdir)/src/c/mpsm
+
+CountCandidates_LDADD = \
+  -L$(top_builddir)/src/c/mpsm \
+  -lmpsm \
+  libcrux.la
+
 
 crux_SOURCES = crux-main.cpp crux-main.h
 crux_CXXFLAGS = \

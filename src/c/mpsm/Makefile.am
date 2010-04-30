@@ -18,6 +18,8 @@ libmpsm_la_SOURCES = \
   KrokhinRetentionPredictor.cpp \
   PalmbaldRetentionPredictor.cpp \
   PalmbaldRetentionPredictor.h \
+  BigSmallReal.cpp \
+  BigSmallReal.h \
   mpsm_search.cpp
 
 libmpsm_la_CXXFLAGS = $(AM_CXXFLAGS) \

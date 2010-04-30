@@ -17,7 +17,6 @@ protected:
   MATCH_COLLECTION_T* spsm_matches_;
 
   std::vector<MPSM_Match> matches_;
-  std::set<MPSM_Match> visited_;
 
   bool sorted_;
 
@@ -31,7 +30,6 @@ public:
 
   
   bool addMatch(MPSM_Match& match);
-  bool hasMatch(MPSM_Match& match);
 
   MPSM_Match& getMatch(int idx);
   
@@ -42,6 +40,7 @@ public:
   void sortByScore(SCORER_TYPE_T match_mode);
 
   void calcDeltaCN();
+  void calcZScores();
 
   friend std::ostream& operator<<(std::ostream& os, MPSM_MatchCollection& collection_obj);
 

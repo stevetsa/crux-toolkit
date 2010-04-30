@@ -39,7 +39,7 @@
 #define SMALL_BUFFER 256
 #define MAX_SET_PARAMS 256
 
-#define NUMBER_PARAMETER_TYPES 12
+#define NUMBER_PARAMETER_TYPES 13
 ///< number of elements in the parameter type enum
 
 // Global variables
@@ -81,7 +81,8 @@ enum parameter_type {
   SCORER_TYPE_P,     ///< parameters of type SCORER_TYPE_T
   ION_TYPE_P,        ///< parameters of type ION_TYPE_T
   ALGORITHM_TYPE_P,  ///< parameters of type ALGORITHM_TYPE_T
-  WINDOW_TYPE_P};    ///< parameters of type WINDOW_TYPE_T
+  WINDOW_TYPE_P,     ///< parameters of type WINDOW_TYPE_T
+  RTP_TYPE_P};       ///< parameters of type RTP_TYPE_T
 typedef enum parameter_type PARAMETER_TYPE_T;
 
 #ifdef __cplusplus
@@ -230,6 +231,10 @@ ENZYME_T get_enzyme_type_parameter(
   );
 
 WINDOW_TYPE_T get_window_type_parameter(
+  const char* name
+  );
+
+RTP_TYPE_T get_rtp_type_parameter(
   const char* name
   );
 

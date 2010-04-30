@@ -49,21 +49,11 @@ void MPSM_MatchCollection::free() {
   }
 }
 
-
-bool MPSM_MatchCollection::hasMatch(MPSM_Match& match) {
-  return (visited_.find(match) != visited_.end());
-}
-  
 bool MPSM_MatchCollection::addMatch(MPSM_Match& match) {
-
-  pair<set<MPSM_Match>::iterator, bool> result = visited_.insert(match);
-  if (result.second) {
-    match.setParent(this);
-    matches_.push_back(match);
-    sorted_ = false;
-  }
-
-  return result.second;
+  match.setParent(this);
+  matches_.push_back(match);
+  sorted_ = false;
+  return TRUE;
 
 }
 
@@ -114,6 +104,48 @@ void MPSM_MatchCollection::calcDeltaCN() {
       getMatch(idx).setDeltaCN(delta_cn);
     }
   }
+}
+
+void MPSM_MatchCollection::calcZScores() {
+  if (numMatches() == 0) {
+    return;
+  }
+
+  if (numMatches() < 2) {
+    for (int idx=0;idx < numMatches();idx++) {
+      getMatch(idx).setZScore(0);
+    }
+  } else {
+    double sum = 0;
+
+    for (int idx = 0;idx < numMatches();idx++) {
+      sum += getMatch(idx).getScore(XCORR);
+    }
+
+    double avg = sum / (double)numMatches();
+
+    double std = 0;
+
+    for (int idx=0;idx < numMatches();idx++) {
+      double temp = getMatch(idx).getScore(XCORR) - avg;
+      std += temp * temp;
+
+    }
+
+    std = sqrt(1.0 / (double)(numMatches() - 1) * std);
+
+    for (int idx=0;idx < numMatches();idx++) {
+
+      double zscore = (getMatch(idx).getScore(XCORR) - avg) / std;
+      getMatch(idx).setZScore(zscore);
+
+
+    }
+
+
+  }
+
+
 }
 
 

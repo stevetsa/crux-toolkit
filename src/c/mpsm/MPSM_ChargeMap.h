@@ -18,7 +18,7 @@ class MPSM_ChargeMap : public std::map<ChargeIndex, std::vector<MPSM_MatchCollec
     void clearMap();
 
     void calcDeltaCN();
-
+    void calcZScores();
 
     virtual ~MPSM_ChargeMap();
 

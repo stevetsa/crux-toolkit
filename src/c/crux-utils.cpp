@@ -146,6 +146,34 @@ char* window_type_to_string(WINDOW_TYPE_T type){
 }
 
 
+/** 
+ * The string version of retention time predictor types
+ */
+static const char* rtp_type_strings[NUMBER_RTP_TYPES] =
+  {"invalid", "krokhin", "palmbald"};
+
+RTP_TYPE_T string_to_rtp_type(char* name) {
+  int rtp_int = convert_enum_type_str(name, -10,
+                                    rtp_type_strings,
+                                    NUMBER_RTP_TYPES);
+  if (rtp_int < 0) {
+    rtp_int = 0;
+  }
+  return (RTP_TYPE_T)rtp_int;
+}
+
+char* rtp_type_to_string(RTP_TYPE_T type) {
+  if ( (int)type > NUMBER_RTP_TYPES) {
+    return NULL;
+  }
+
+  char* type_str = my_copy_string(rtp_type_strings[type]);
+
+  return type_str;
+
+}
+
+
 
 
 /**
