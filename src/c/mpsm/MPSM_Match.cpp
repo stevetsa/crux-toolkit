@@ -40,6 +40,9 @@ MPSM_Match::MPSM_Match() {
 MPSM_Match::MPSM_Match(MATCH_T* match) {
   parent_ = NULL;
   addMatch(match);
+  rtime_max_diff_ = 0;
+  delta_cn_ = 0;
+  zscore_ = 0;
 }
 
 /*

@@ -632,9 +632,9 @@ bool passRTimeThreshold(bool homogeneous,
   FLOAT_T rtime_max_diff) {
   
   if (homogeneous) {
-    return (rtime_max_diff <= get_double_parameter("rtime-threshold-homogeneous"));
+    return (fabs(rtime_max_diff) <= get_double_parameter("rtime-threshold-homogeneous"));
   } else {
-    return (rtime_max_diff <= get_double_parameter("rtime-threshold-inhomogeneous"));
+    return (fabs(rtime_max_diff) <= get_double_parameter("rtime-threshold-inhomogeneous"));
   }
 
 }
