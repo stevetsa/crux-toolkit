@@ -1,0 +1,316 @@
+/**
+ * \file DelimitedFileReader.h
+ * $Revision: 1.00 $ 
+ * DATE: Jan 7, 2010
+ * AUTHOR: Sean McIlwain
+ * \brief Object for reading tab-delimited files.
+ * This class generates a table of values. The default delimiter is tab.
+ * This class is capable of reading string, integers, and floating point
+ * Types from each cell of the table.  This class also provides function
+ * for reading a list of integers or string from a cell using a delimiter
+ * that is different from the column delimiter (default is comma ',').
+ ****************************************************************************/
+#ifndef DELIMITEDFILEREADER_H
+#define DELIMITEDFILEREADER_H
+
+#include <limits>
+#include <ios>
+#include <iomanip>
+#include <iostream>
+#include <map>
+#include <sstream>
+#include <string>
+#include <vector>
+
+#include "parameter.h"
+
+
+class DelimitedFileReader {
+
+ protected:
+  /** The data vector is indexed by column, then by row
+   *  Ex. data_[0][4] means 0th column, 4th row
+   *  data_[0] is a string vector of all data in a column.
+   */
+  std::vector<std::string> data_;
+  std::vector<std::string> column_names_;
+  unsigned int current_row_; //current row count
+  bool has_next;
+
+  fstream* file_ptr;
+
+
+
+ public:
+  /**
+   * \returns a blank DelimitedFile object 
+   */
+  DelimitedFileReader();
+  
+  /**
+   * \returns a DelimitedFile object and loads the tab-delimited
+   * data specified by file_name.
+   */  
+  DelimitedFileReader(
+    const char *file_name, ///< the path of the file to read 
+    bool hasHeader=true ///< indicate whether header exists
+  );
+
+  /** 
+   * \returns a DelimitedFile object and loads the tab-delimited
+   * data specified by file_name.
+   */
+  DelimitedFileReader(
+    const std::string& file_name, ///< the path of the file  to read
+    bool hasHeader=true ///< indicates whether header exists
+  );
+
+  /**
+   * Destructor
+   */
+  virtual ~DelimitedFileReader();
+
+  /**
+   *\returns the number of columns
+   */
+  unsigned int numCols();
+
+  /**
+   * clears the current data and column names,
+   * parses the header if it exists,
+   * reads the file one line at a time while
+   * populating the data matrix with the 
+   * strings separated by tabs.
+   */
+  void loadData(
+    const char *file_name, ///< the file path
+    bool hasHeader=true ///< header indicator
+  );
+
+  /**
+   * loads a tab delimited file
+   */
+  void loadData(
+    const std::string& file_name, ///< the file path
+    bool hasHeader=true ///< header indicator
+  );
+
+  /**
+   * finds the index of a column
+   *\returns the column index, -1 if not found.
+   */ 
+  int findColumn(
+    const std::string& column_name ///< the column name
+  );
+
+ /**
+   * finds the index of a column
+   *\returns the column index, -1 if not found.
+   */ 
+  int findColumn(
+    const char* column_name ///< the column name
+  );
+ 
+  /**
+   *\returns the string vector corresponding to the column
+   */
+  std::vector<std::string>& getColumn(
+    std::string column ///< the column name
+  );
+
+  /**
+   *\returns the string vector corresponding to the column
+   */
+  std::vector<std::string>& getColumn(
+    unsigned int col_idx ///< the column index
+  );
+
+  /**
+   *\returns the name of the column
+   */
+  std::string& getColumnName(
+    unsigned int col_idx ///< the column index
+  );
+  
+  /**
+   *\returns the column_names
+   */
+  std::vector<std::string>& getColumnNames();
+
+  /**
+   * gets a string value of the cell
+   * uses the current_row_ as the row index
+   */
+  std::string& getString(
+    const char* column_name ///<the column name
+  );
+
+  /**
+   * gets a string value of the cell
+   * uses the current_row_ as the row index
+   */
+  std::string& getString(
+    unsigned int col_idx ///< the column index
+  );
+
+  /**
+   * gets a double value from cell, checks for infinity
+   * uses the current_row_ as the row index
+   */
+  FLOAT_T getFloat(
+    const char* column_name ///<the column name
+  );
+
+  FLOAT_T getFloat(
+    unsigned int col_idx ///<the col index
+  );
+
+  /**
+   * gets a double value from cell, checks for infinity
+   * uses the current_row_ as the row index
+   */
+  double getDouble(
+    const char* column_name ///<the column name
+  );
+
+  double getDouble(
+    unsigned int col_idx ///<the col index
+  );
+
+  /**
+   * get an integer type from cell, checks for infinity.
+   * uses the current_row_ as the row index.
+   */
+  int getInteger(
+    const char* column_name ///< the column name
+  );
+
+  int getInteger(
+    unsigned int col_idx ///<the col index
+  );
+
+  /**
+   * gets an vector of strings from cell where the
+   * string in the cell has delimiters that are
+   * different than the column delimiter. The
+   * default delimiter is a comma
+   * uses the current_row_ as the row index.
+   * clears the integer vector before 
+   * populating it.
+   */
+  void getStringVectorFromCell(
+    const char* column_name, ///< the column name
+    std::vector<std::string>& string_vector, ///<the vector of integers
+    char delimiter=',' ///<the delimiter to use
+  );
+
+  /**
+   * gets an vector of integers from cell where the
+   * string in the cell are integers which are separated
+   * by a delimiter which is differnt than the column
+   * delimiter.  The default delimiter is a comma
+   * uses the current_row_ as the row index.
+   * clears the integer vector before 
+   * populating it.
+   */
+  void getIntegerVectorFromCell(
+    const char* column_name, ///< the column name
+    std::vector<int>& int_vector, ///<the vector of integers
+    char delimiter=',' ///<the delimiter to use
+  );
+
+  /**
+   * gets an vector of doubles from cell where the
+   * string in the cell are integers which are separated
+   * by a delimiter which is differnt than the column
+   * delimiter.  The default delimiter is a comma
+   * uses the current_row_ as the row index.
+   * clears the double vector before 
+   * populating it.
+   */
+  void getDoubleVectorFromCell(
+    const char* column_name, ///< the column name
+    std::vector<double>& double_vector, ///<the vector of integers
+    char delimiter=',' ///<the delimiter to use
+  );
+
+  /*Iterator functions.*/
+  /**
+   * resets the current_row_ index to 0.
+   */
+  void reset();
+
+  /**
+   * increments the current_row_, 
+   */
+  void next();
+
+
+  /**
+   * \returns whether there are more rows to 
+   * iterate through
+   */
+  BOOLEAN_T hasNext();
+
+  /**
+   * tokenize a string by delimiter
+   */
+  static void tokenize(
+    const std::string& str,
+    std::vector<std::string>& tokens,
+    char delimiter = '\t'
+  );
+
+  template<typename T>
+  static std::string splice(
+    const std::vector<T>& elements,
+    char delimiter = '\t') {
+
+      if (elements.size() == 0) return "";
+
+      int precision = get_int_parameter("precision");
+      std::ostringstream ss;
+      ss << std::setprecision(precision);
+      
+      ss << elements[0];
+      for (int idx=1;idx < elements.size();idx++) {
+        ss << delimiter << elements[idx];
+      }
+      std::string out_string = ss.str();
+      return out_string;
+  }
+
+  /**
+   * convert string to data type
+   */
+  template<typename TValue>  
+  static bool from_string(
+    TValue& value,
+    const std::string& s
+    ) {
+
+    std::istringstream iss(s);
+    return !(iss >> std::dec >> value).fail();
+  }   
+
+  template<typename TValue>
+  static std::string to_string(
+    TValue& value) {
+
+    std::ostringstream oss;
+    oss << std::setprecision(get_int_parameter("precision"));
+    oss << value;
+    std::string out_string = oss.str();
+    return out_string;
+  }
+
+};
+
+#endif //DELIMITEDFILEREADER_H
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 2
+ * End:
+ */
