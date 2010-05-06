@@ -4,19 +4,19 @@
 #include <string>
 #include <vector>
 
-class ChargeIndex: public std::vector<int> {
+class ChargeIndex: public std::vector<unsigned char> {
   
 public:
 
   ChargeIndex();
-  ChargeIndex(int charge);
+  ChargeIndex(unsigned char charge);
   ChargeIndex(std::string& charges, char delimiter=',');
 
-  void add(int charge);
+  void add(unsigned char charge);
 
-  int max();
+  unsigned char max();
 
-  int numCharge(int charge);
+  int numCharge(unsigned char charge);
 
   bool isHomogeneous();
 

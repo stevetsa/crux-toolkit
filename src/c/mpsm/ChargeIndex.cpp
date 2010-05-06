@@ -10,7 +10,7 @@ ChargeIndex::ChargeIndex() {
   ;
 }
 
-ChargeIndex::ChargeIndex(int charge) {
+ChargeIndex::ChargeIndex(unsigned char charge) {
   push_back(charge);
 }
 
@@ -20,8 +20,8 @@ ChargeIndex::ChargeIndex(string& charges, char delimiter) {
   DelimitedFile::tokenize(charges, vcharges, delimiter);
 
   for (int i=0;i<vcharges.size();i++) {
-    int charge;
-    DelimitedFile::from_string<int>(charge, vcharges[i]);
+    unsigned char charge;
+    DelimitedFile::from_string<unsigned char>(charge, vcharges[i]);
     add(charge);
   }
 
@@ -29,16 +29,16 @@ ChargeIndex::ChargeIndex(string& charges, char delimiter) {
 }
 
 
-void ChargeIndex::add(int charge) {
+void ChargeIndex::add(unsigned char charge) {
   push_back(charge);
   sort(begin(), end());
 }
 
-int ChargeIndex::max() {
+unsigned char ChargeIndex::max() {
   return back();
 }
 
-int ChargeIndex::numCharge(int charge) {
+int ChargeIndex::numCharge(unsigned char charge) {
   int ans = 0;
 
   for (int idx = 0; idx < size(); idx++) {
@@ -92,9 +92,9 @@ bool ChargeIndex::operator > (ChargeIndex& c) {
 
 std::ostream& operator<<(std::ostream &os, ChargeIndex &obj) {
   if (obj.size() == 0) {os <<"Empty!";return os;}
-  os << obj[0];
+  os << (int)obj[0];
   for (int i=1;i<obj.size();i++) {
-    os <<"," << obj[i];
+    os <<"," << (int)obj[i];
   }
   return os;
 }

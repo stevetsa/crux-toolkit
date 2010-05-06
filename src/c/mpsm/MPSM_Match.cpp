@@ -109,9 +109,8 @@ void MPSM_Match::setRTime(int match_idx, FLOAT_T rtime) {
 }
 
 void MPSM_Match::invalidate() {
-  for (int idx=0;idx < _SCORE_TYPE_NUM;idx++) {
-    match_scores_valid_[idx] = false;
-  }
+
+  xcorr_score_valid_ = false;
   charge_valid_ = false;
   for (int idx=0;idx < numMatches();idx++) {
     if (rtimes.size() <= idx) {
@@ -159,18 +158,21 @@ int MPSM_Match::numMatches() {
 
 FLOAT_T MPSM_Match::getScore(SCORER_TYPE_T match_mode) {
 
-  if (!match_scores_valid_[match_mode]) {
-    FLOAT_T score = MPSM_Scorer::scoreMPSM(*this, match_mode);
+  if (!xcorr_score_valid_) {
+    FLOAT_T score = MPSM_Scorer::scoreMPSM(*this, XCORR);
     setScore(match_mode, score);
     return score;
   }
-  return match_scores_[match_mode];
+  return xcorr_score_;
 }
 
 void MPSM_Match::setScore(SCORER_TYPE_T match_mode, FLOAT_T score) {
 
-  match_scores_[match_mode] = score;
-  match_scores_valid_[match_mode] = true;
+  if (match_mode != XCORR) {
+    carp(CARP_FATAL,"Score type not implemented for mpsms!");
+  }
+  xcorr_score_ = score;
+  xcorr_score_valid_ = true;
 }
 
 void MPSM_Match::getSpectrumNeutralMasses(vector<FLOAT_T>& neutral_masses) {
@@ -361,7 +363,7 @@ ostream& operator <<(ostream& os, MPSM_Match& match_obj) {
 }
 
 bool compareMPSM_Match(const MPSM_Match& c1, const MPSM_Match& c2) {
-  return c1.match_scores_[sort_mode] > c2.match_scores_[sort_mode];
+  return c1.xcorr_score_ > c2.xcorr_score_;
 }
 
 
