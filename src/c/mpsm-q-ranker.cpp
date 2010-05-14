@@ -136,7 +136,7 @@ int mpsm_qranker_main(int argc, char** argv){
 
 }
 
-const int number_features = 11;
+//const int number_features = 11;
 const char* feature_names[number_features] = {
   "xcorr",
   "max_diff",
@@ -150,6 +150,9 @@ const char* feature_names[number_features] = {
   "num_peptides",
   "relative_rtime"
 };
+
+const int number_features = sizeof(feature_names) / sizeof(char*);
+
 
 double getMaxDiff(double a, vector<double>& bs) {
 

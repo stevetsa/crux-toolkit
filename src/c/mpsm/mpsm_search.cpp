@@ -703,7 +703,13 @@ void extendChargeMap(MPSM_ChargeMap& spsm_map,
     vector<MPSM_MatchCollection>& match_collections = map_iter -> second;
     vector<MPSM_MatchCollection> new_match_collections;
 
-    set<MPSM_Match> visited;
+    vector<set<MPSM_Match> > visited;
+    set<MPSM_Match> visited_target;
+    visited.push_back(visited_target);
+    for (int idx=0;idx < match_collections.size(); idx++) {
+      set<MPSM_Match> current_decoy;
+      visited.push_back(current_decoy);
+    }
 
     //start with targets.
     //Take the top candidate and consider matching it with every one else.
@@ -739,7 +745,7 @@ void extendChargeMap(MPSM_ChargeMap& spsm_map,
         extendMatch(current_mpsm_target, 
           spsm_target_match_collection,
           new_mpsm_target_collection,
-          visited);
+          visited[0]);
 
         cout <<"Added "<<new_mpsm_target_collection.numMatches()<<" matches"<<endl;
         //if there are some matches found, then search the decoys.
@@ -770,7 +776,7 @@ void extendChargeMap(MPSM_ChargeMap& spsm_map,
           extendMatch(current_mpsm_target,
             spsm_decoy_match_collection,
             new_mpsm_decoy_match_collection,
-            visited);
+            visited[idx+1]);
           
           cout <<"Added "<<new_mpsm_decoy_match_collection.numMatches()<<" decoy matches"<<endl;
         }
