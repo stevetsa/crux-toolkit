@@ -217,6 +217,8 @@ int mpsm_search_main(int argc, char** argv){
       if (get_boolean_parameter("mpsm-do-sort")) {
         cout <<"calcDeltaCN spsm"<<endl;
         spsm_map.calcDeltaCN();
+        spsm_map.calcZScores();
+        spsm_map.sortMatches(XCORR);
         cout <<"calcDeltaCN mpsm"<<endl;
         mpsm_map.calcDeltaCN();
         cout <<"Sorting matches"<<endl;
@@ -349,6 +351,7 @@ int mpsm_search_main(int argc, char** argv){
   //output the spsms.
 
     spsm_map.calcDeltaCN();
+    spsm_map.calcZScores();
     mpsm_map.calcDeltaCN();
     mpsm_map.calcZScores();
   }
@@ -628,15 +631,21 @@ void add_decoy_scores(
 }
 */
 
-bool passRTimeThreshold(bool homogeneous,
+bool passRTimeThreshold(MPSM_Match& match,
   FLOAT_T rtime_max_diff) {
-  
-  if (homogeneous) {
-    return (fabs(rtime_max_diff) <= get_double_parameter("rtime-threshold-homogeneous"));
-  } else {
-    return (fabs(rtime_max_diff) <= get_double_parameter("rtime-threshold-inhomogeneous"));
-  }
 
+  ChargeIndex& charge_index = match.getChargeIndex();
+
+  double fdiff = fabs(rtime_max_diff);
+
+  //all +2
+  if (charge_index.numCharge(2) == match.numMatches()) {
+    return fdiff <= 8.4;
+  } else if (charge_index.numCharge(3) == match.numMatches()) {
+    return fdiff <= 14.1;
+  } else {
+    return fdiff <= 14.7;
+  }
 }
 
 
@@ -657,7 +666,7 @@ BOOLEAN_T extendMatch(MPSM_Match& orig_mpsm,
         visited.insert(new_match);
         FLOAT_T rtime_max_diff = rtime_predictor -> calcMaxDiff(new_match);
 
-        if (passRTimeThreshold(new_match.isChargeHomogeneous(), rtime_max_diff)) {
+        if (passRTimeThreshold(new_match, rtime_max_diff)) {
           new_match.setRTimeMaxDiff(rtime_max_diff);
           match_added |= new_mpsms_matches.addMatch(new_match);
         }

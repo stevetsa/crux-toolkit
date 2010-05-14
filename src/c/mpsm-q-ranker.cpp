@@ -50,6 +50,11 @@ using namespace std;
  * Private function declarations.  Details below
  */
 
+
+void qcInitiate2(NSet sets, unsigned int numFeatures, 
+  std::vector<unsigned int>& numSpectra, char ** featureNames, double pi0);
+
+
 void run_mpsm_q(
   char* psm_result_folder, 
   char* fasta_file, 
