@@ -61,7 +61,7 @@ class Linear
   inline int getNumNeurons(){return num_neurons;}
   
   inline void set_weightDecay(double lambda) {weightDecay = lambda;}
-  inline double get_weightDecay(double lambda) {return weightDecay;}
+  inline double get_weightDecay(/*double lambda*/) {return weightDecay;}
 
   void write_to_file(ofstream &outfile);
   void read_from_file(ifstream &infile);

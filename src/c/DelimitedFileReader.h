@@ -32,23 +32,33 @@ class DelimitedFileReader {
    *  Ex. data_[0][4] means 0th column, 4th row
    *  data_[0] is a string vector of all data in a column.
    */
-  std::vector<std::string> data_;
-  std::vector<std::string> column_names_;
-  unsigned int current_row_; //current row count
-  bool has_next;
 
-  fstream* file_ptr;
+  std::string next_data_string_; //the next data string.
+  std::string current_data_string_; //the current data string.
+  std::vector<std::string> data_; //the current vectorized data.
+  std::vector<std::string> column_names_; //the column names.
+
+  unsigned int current_row_; //current row count
+  bool has_next_;
+  bool has_current_;
+  bool has_header_;
+  std::fstream* file_ptr_;
+
+  std::string file_name_;
+
+  bool num_rows_valid_;
+  unsigned int num_rows_;
 
 
 
  public:
   /**
-   * \returns a blank DelimitedFile object 
+   * \returns a blank DelimitedFileReader object 
    */
   DelimitedFileReader();
   
   /**
-   * \returns a DelimitedFile object and loads the tab-delimited
+   * \returns a DelimitedFileReader object and loads the tab-delimited
    * data specified by file_name.
    */  
   DelimitedFileReader(
@@ -57,7 +67,7 @@ class DelimitedFileReader {
   );
 
   /** 
-   * \returns a DelimitedFile object and loads the tab-delimited
+   * \returns a DelimitedFileReader object and loads the tab-delimited
    * data specified by file_name.
    */
   DelimitedFileReader(
@@ -69,6 +79,11 @@ class DelimitedFileReader {
    * Destructor
    */
   virtual ~DelimitedFileReader();
+
+   /**
+   *\returns the number of rows, assuming a square matrix
+   */
+  unsigned int numRows();
 
   /**
    *\returns the number of columns
@@ -110,20 +125,6 @@ class DelimitedFileReader {
   int findColumn(
     const char* column_name ///< the column name
   );
- 
-  /**
-   *\returns the string vector corresponding to the column
-   */
-  std::vector<std::string>& getColumn(
-    std::string column ///< the column name
-  );
-
-  /**
-   *\returns the string vector corresponding to the column
-   */
-  std::vector<std::string>& getColumn(
-    unsigned int col_idx ///< the column index
-  );
 
   /**
    *\returns the name of the column
@@ -152,6 +153,12 @@ class DelimitedFileReader {
   std::string& getString(
     unsigned int col_idx ///< the column index
   );
+
+  template<typename TValue>
+  TValue getValue(
+    unsigned int col_idx ///< the column index
+  );
+
 
   /**
    * gets a double value from cell, checks for infinity
@@ -252,46 +259,6 @@ class DelimitedFileReader {
    */
   BOOLEAN_T hasNext();
 
-  /**
-   * tokenize a string by delimiter
-   */
-  static void tokenize(
-    const std::string& str,
-    std::vector<std::string>& tokens,
-    char delimiter = '\t'
-  );
-
-  template<typename T>
-  static std::string splice(
-    const std::vector<T>& elements,
-    char delimiter = '\t') {
-
-      if (elements.size() == 0) return "";
-
-      int precision = get_int_parameter("precision");
-      std::ostringstream ss;
-      ss << std::setprecision(precision);
-      
-      ss << elements[0];
-      for (int idx=1;idx < elements.size();idx++) {
-        ss << delimiter << elements[idx];
-      }
-      std::string out_string = ss.str();
-      return out_string;
-  }
-
-  /**
-   * convert string to data type
-   */
-  template<typename TValue>  
-  static bool from_string(
-    TValue& value,
-    const std::string& s
-    ) {
-
-    std::istringstream iss(s);
-    return !(iss >> std::dec >> value).fail();
-  }   
 
   template<typename TValue>
   static std::string to_string(

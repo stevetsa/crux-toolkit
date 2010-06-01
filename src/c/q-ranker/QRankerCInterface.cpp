@@ -39,6 +39,9 @@ static Caller * getCaller() {
     return pCaller;
 } 
 
+Caller* getCallerQR() {
+  return getCaller();
+}
 
 /** Call that initiates percolator */
 void qcInitiate(NSet sets, unsigned int numFeat, unsigned int numSpectra, char ** featureNames, double pi0) {
@@ -159,3 +162,4 @@ void qcCleanUp() {
     
     Globals::clean();
 }
+

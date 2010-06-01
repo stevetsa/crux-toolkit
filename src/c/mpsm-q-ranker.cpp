@@ -22,6 +22,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <vector>
+#include <fstream>
 
 #include "carp.h"
 #include "crux-utils.h"
@@ -41,6 +42,16 @@
 #include "output-files.h"
 
 #include "DelimitedFile.h"
+#include "DelimitedFileReader.h"
+
+using namespace std;
+#include "./q-ranker/PSMDescription.h"
+#include "./q-ranker/DataSet.h"
+#include "./q-ranker/Scores.h"
+#include "./q-ranker/SetHandler.h"
+//#include "./q-ranker/Net.h"
+#include "./q-ranker/Caller.h"
+//#include "./q-ranker/Globals.h"
 
 #include "ChargeIndex.h"
 
@@ -51,15 +62,54 @@ using namespace std;
  */
 
 
+class QRankerResultRow {
+
+  public:
+    int index_;
+    double score_;
+    double fdr_;
+    double qvalue_;
+
+    //sort in descending order on score.
+    static bool compareScore(const QRankerResultRow& r1, const QRankerResultRow& r2) {
+      return r2.score_ < r1.score_;
+    }
+
+    //sort in ascending order on score.
+    static bool compareIndex(const QRankerResultRow& r1, const QRankerResultRow& r2) {
+      return r1.index_ < r2.index_;
+    }
+
+
+};
+
+
+int argmax(vector<double>& a) {
+  if (a.size() == 0) return -1;
+  int ans = 0;
+
+  double max = a[0];
+  for (unsigned int idx=1;idx < a.size();idx++) {
+    if (a[idx] > max) {
+      ans = idx;
+      max = a[idx];
+    }
+  }
+
+  return ans;
+}
+
+
 void qcInitiate2(NSet sets, unsigned int numFeatures, 
   std::vector<unsigned int>& numSpectra, char ** featureNames, double pi0);
+
+Caller* getCallerQR();
 
 
 void run_mpsm_q(
   char* psm_result_folder, 
   char* fasta_file, 
-  char* feature_file,
-  DelimitedFile& qranker_results); 
+  char* feature_file); 
 
 
 void collapseScans(DelimitedFile& matches_in, DelimitedFile& matches_out, const string& column_name);
@@ -111,19 +161,8 @@ int mpsm_qranker_main(int argc, char** argv){
   carp(CARP_INFO,"run_mpsm_q");
   run_mpsm_q(psm_dir,
              protein_input_name,
-             feature_file,
-             qranker_results);
+             feature_file);
 
-  string output_path = string(psm_dir) + string("/q-ranker.target.txt");
-
-  qranker_results.saveData(output_path);
-
-  //collapse scans to lowest q-value.
-  DelimitedFile collapsed_results;
-  collapseScans(qranker_results, collapsed_results, "q-ranker q-value");
-
-  output_path = string(psm_dir) + string("/q-ranker.target.collapsed.txt");
-  collapsed_results.saveData(output_path);
 
   // clean up
   free(psm_dir);
@@ -137,7 +176,7 @@ int mpsm_qranker_main(int argc, char** argv){
 }
 
 //const int number_features = 11;
-const char* feature_names[number_features] = {
+const char* feature_names[] = {
   "xcorr",
   "max_diff",
   "abs_max_diff",
@@ -181,7 +220,7 @@ unsigned int getMaxLength(vector<string> sequences) {
 }
 
 
-double* get_mpsm_features(DelimitedFile& matches) {
+double* get_mpsm_features(DelimitedFileReader& matches) {
 
 
   double* features = (double*)mycalloc(number_features, sizeof(double));
@@ -235,12 +274,11 @@ double* get_mpsm_features(DelimitedFile& matches) {
   features[9] = num_peptides;
   features[10] = relative_rtime;
 
-
   return features;
 
 }
 
-void registerMatches(DelimitedFile& matches, SetType set_idx, FILE* feature_file) {
+void registerMatches(DelimitedFileReader& matches, SetType set_idx, FILE* feature_file) {
   double* features = NULL;
   matches.reset();
   while (matches.hasNext()) {
@@ -288,17 +326,14 @@ void registerMatches(DelimitedFile& matches, SetType set_idx, FILE* feature_file
 void run_mpsm_q(
   char* psm_result_folder, 
   char* fasta_file, 
-  char* feature_file,
-  DelimitedFile& qranker_results){ 
+  char* feature_file){ 
 
-  DelimitedFile target_search_results;
-  vector<DelimitedFile> decoys_search_results;   
+  DelimitedFileReader target_search_results;
+  vector<DelimitedFileReader> decoys_search_results;   
   vector<unsigned int> counts;
 
   carp(CARP_INFO,"Fasta file:%s",fasta_file);
 
-  double* results_q = NULL;
-  double* results_score = NULL;
   double pi0 = get_double_parameter("pi0");
   FILE* feature_fh = NULL;
 //  int set_idx = 0;
@@ -314,40 +349,37 @@ void run_mpsm_q(
   carp(CARP_DETAILED_DEBUG, "Created feature file");
 
   //load the results file.
-  carp(CARP_INFO,"Loading target");
+  carp(CARP_INFO,"counting target");
   string target_path = psm_result_folder+string("/search.target.txt");
-  qranker_results.loadData(target_path, true);
+  
+  target_search_results.loadData(target_path.c_str());
 
-  counts.push_back(qranker_results.numRows());
+  
+
+
+  counts.push_back(target_search_results.numRows());
+
+  carp(CARP_INFO,"Target count:%u",target_search_results.numRows());
 
   for (int i=1;i<=2;i++) {
-    DelimitedFile decoy_search_results;
+    DelimitedFileReader decoy_search_results;
     string decoy_path = 
       psm_result_folder + 
       string("/search.decoy-") + 
       DelimitedFile::to_string<int>(i) + 
       string(".txt");
-    carp(CARP_INFO,"registering %s",decoy_path.c_str());
+    carp(CARP_INFO,"counting %s",decoy_path.c_str());
 
     decoy_search_results.loadData(decoy_path);
     counts.push_back(decoy_search_results.numRows());
+    carp(CARP_INFO,"count:%u",decoy_search_results.numRows());
 
-    decoys_search_results.push_back(decoy_search_results);  
+    //decoys_search_results.push_back(decoy_search_results);  
   }
 
-  int num_target_matches = qranker_results.numRows();
-
-    
-
+  unsigned int num_target_matches = target_search_results.numRows();
 
   carp(CARP_INFO,"Num target matches:%d", num_target_matches);
-
-  carp(CARP_INFO,"Allocating result memory");
-  results_q = (double*)mycalloc(num_target_matches, sizeof(double));
-  results_score = (double*)mycalloc(num_target_matches, sizeof(double));
-
-
-
 
   carp(CARP_INFO,"Calling qcInitiate");
   // Call that initiates q-ranker
@@ -366,11 +398,12 @@ void run_mpsm_q(
   }
     
   // create iterator, to register each PSM feature to q-ranker.
+
   carp(CARP_INFO,"Registering targets");
-  registerMatches(qranker_results, SetType(0), feature_fh);
+  registerMatches(target_search_results, SetType(0), feature_fh);
 
   for (int i=1;i<=2;i++) {
-    DelimitedFile decoy_search_results;
+    DelimitedFileReader decoy_search_results;
     string decoy_path = 
       psm_result_folder + 
       string("/search.decoy-") + 
@@ -388,44 +421,61 @@ void run_mpsm_q(
     carp(CARP_INFO, "got to here");
     
     // Start processing
-  qcExecute(); 
+  qcExecute();  
   carp(CARP_INFO," Done executing q-ranker");  
   /* Retrieving target scores and qvalues after 
    * processing, the array should be numSpectra long and will be filled in 
    * the same order as the features were inserted */
   carp(CARP_INFO," Getting results");
-  qcGetScores(results_score, results_q); 
 
 
+  Caller* pCaller = getCallerQR();
 
-  carp(CARP_INFO,"Filling in results");
-  carp(CARP_INFO,"Number of columns:%d",qranker_results.numCols());
-  carp(CARP_INFO,"Number of rows:%d",qranker_results.numRows());
-  // fill results for QRANKER_Q_VALUE and QRANKER_SCORE
-  int qranker_q_col = qranker_results.findColumn("q-ranker q-value");
-  carp(CARP_INFO,"q_col:%d",qranker_q_col);
 
-  int qranker_s_col = qranker_results.findColumn("q-ranker score");
-  carp(CARP_INFO,"s_col:%d",qranker_s_col);
+  ofstream fout_target("qranker.target.txt");
+  fout_target << target_search_results.getColumnName(0);
+  
+  for (unsigned int idx = 1; idx < target_search_results.numCols() ; idx++) {
+      fout_target << "\t" << target_search_results.getColumnName(idx);
+  }
+  fout_target << endl;
+
+  target_search_results.reset();
+  
+  int qranker_score_col = target_search_results.findColumn("q-ranker score");
+  
  
-  carp(CARP_INFO,"Filling in results2");
-  for (unsigned int row_idx=0;row_idx<qranker_results.numRows();row_idx++) {
-    qranker_results.setValue(qranker_q_col, row_idx, results_q[row_idx]);
-    qranker_results.setValue(qranker_s_col, row_idx, results_score[row_idx]);
+  cout <<"TARGETS"<<endl;
+  SetHandler::Iterator iter(pCaller->getSetHandler(Caller::NORMAL));
+  while(PSMDescription * pPSM = iter.getNext()) {
+    target_search_results.next();
+  
+    fout_target << target_search_results.getString((unsigned int)0);
+    for (unsigned int idx=1;idx < target_search_results.numCols();idx++) {
+      if ((int)idx != qranker_score_col) {
+        fout_target << "\t" << target_search_results.getString(idx);
+      } else {
+        fout_target << "\t" << pPSM-> sc;
+      }
+    }
+    fout_target << endl;
   }
 
-  carp(CARP_INFO,"Calling cleanup");
-  // Function that should be called after processing finished
-  //qcCleanUp();
-
-  carp(CARP_INFO,"freeing results arrays");
-  free(results_q);
-  free(results_score);
+  fout_target.close();
 
 
-  // TODO put free back in. took out because glibc claimed it was corrupted
-  // double linked list
-  // free_parameters();
+  cout <<"DECOYS (1)"<<endl;
+  iter = SetHandler::Iterator(pCaller->getSetHandler(Caller::SHUFFLED1));
+
+  while(PSMDescription * pPSM = iter.getNext()) {
+    cerr << pPSM -> peptide << "\t" << pPSM -> sc << "\t" << pPSM -> q<<endl;
+    //scoreArr[ix] = pPSM->sc;
+    //qArr[ix++] =  pPSM->q;
+  }
+
+    
+
+
 }
 
 

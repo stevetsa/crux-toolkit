@@ -17,6 +17,9 @@
 void qcInitiate2(NSet sets, unsigned int numFeatures, 
   std::vector<unsigned int>& numSpectra, char ** featureNames, double pi0);
 
+Caller * getCallerQR();
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -51,6 +54,7 @@ void qcGetScores(double *scoreArr, double *qArr);
 
 /** Function that should be called after processing finished */
 void qcCleanUp(); 
+
 
 #ifdef __cplusplus
 }

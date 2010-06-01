@@ -44,6 +44,8 @@ LIBFILES= \
   database.h \
   DelimitedFile.cpp \
   DelimitedFile.h \
+  DelimitedFileReader.cpp \
+  DelimitedFileReader.h \
   generate_peptides_iterator.cpp \
   generate_peptides_iterator.h \
   hash.cpp \
