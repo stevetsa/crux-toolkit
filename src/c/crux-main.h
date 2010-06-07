@@ -17,6 +17,7 @@
 #include "sequest-search.h"
 #include "q-ranker.h"
 #include "q-value.h"
+#include "quantify.h"
 #include "percolator.h"
 #include "print-processed-spectra.h"
 

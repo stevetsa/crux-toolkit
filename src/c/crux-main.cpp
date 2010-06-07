@@ -14,7 +14,6 @@
 */
 
 #include "crux-main.h"
-
 const char* usage_str = "Usage: crux <command> [options] <argument>\n"
 "Commands:\n"
 "  create-index        Create an index for all peptides in a fasta file.\n"
@@ -37,7 +36,6 @@ const char* usage_str = "Usage: crux <command> [options] <argument>\n"
 "  Specific to each command. Type 'crux <command>' to get details.\n"
 ;
 int main(int argc, char** argv){
-
   // check the syntax for crux <operation>
   if( argc < 2 ){
     carp(CARP_FATAL, usage_str);
@@ -68,6 +66,10 @@ int main(int argc, char** argv){
 
   case QRANKER_COMMAND:
     qranker_main(argc-1, argv+1);
+    break;
+
+  case QUANTIFY_COMMAND:
+    quantify_main(argc-1, argv+1);
     break;
 
   case PERCOLATOR_COMMAND:

@@ -766,12 +766,46 @@ void initialize_parameters(void){
       "Avaliable only for crux-get-ms2-spectrum.  Does not affect contents "
       "of the output file.", "true");
 
+  
+  /* quantify options */
+  set_string_parameter("input-ms2", NULL,
+       "ms2 file corresponding to the psm file. Required for SIN",
+       "For SIN to find sequences of spectra",
+       "false");
+  set_string_parameter("database", NULL, 
+       "Name of file in fasta format or directory containing protein index.",
+       "To retrieve proteins and peptides",
+       "false");
+  set_string_parameter("input-PSM", NULL,
+       "Name of file in text format which holds match results",
+       "For quantify to retrieve scores for protein and peptides",
+       "false");
+  set_double_parameter("threshold", 0.01, 0, 1, 
+       "The p-value or q-value threshold. Default 0.01",
+       "All PSMs with q-value higher than this will be ignored",
+       "false");
+  set_string_parameter("measure", "SIN",
+       "Type of analysis to make on the match results: (NSAF|SIN). "
+       "Default SIN.",
+       "For quantify to determine which method of measuring results to use",
+       "false");
+  set_boolean_parameter("unique-mapping", FALSE,
+       "Ignore peptides with multiple mappings to proteins (T,F). Default (F)",
+       "For quantify to determine to use only peptides with only one protein "
+       "mapping", "false");
+  set_string_parameter("input-bullseye", NULL,
+       "Bullseye file produced by using the same ms1 file used to produce ms2"
+       " file",
+       "For SIN to use areas under peaks instead of total ion intensity",
+       "false");
+  
   // now we have initialized the parameters
   parameter_initialized = TRUE;
   usage_initialized = TRUE;
   type_initialized = TRUE;
 
 }
+
 
 
 /*
@@ -812,7 +846,6 @@ BOOLEAN_T select_cmd_line(  //remove options from name
   int    num_options, 
   int (*parse_arguments_set_ptr)(const char*, const char*, void*, enum argument_type) 
   ){
-
   carp(CARP_DETAILED_DEBUG, "Selecting options");
   BOOLEAN_T success = TRUE;
 
