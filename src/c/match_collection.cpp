@@ -2927,6 +2927,11 @@ MATCH_COLLECTION_ITERATOR_T* new_match_collection_iterator(
   // here it will go parse files to construct match collections
   setup_match_collection_iterator(match_collection_iterator);
 
+  if( match_collection_iterator == NULL ){
+    carp(CARP_FATAL, "Failed to create a match collection iterator");
+  }
+  carp(CARP_DETAILED_DEBUG, "Created the match collection iterator");
+
   return match_collection_iterator;
 }
 
