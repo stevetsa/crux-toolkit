@@ -33,8 +33,8 @@ MPSM_MatchCollection::MPSM_MatchCollection(MATCH_COLLECTION_T* spsm_matches) {
   free_match_iterator(match_iter);
   sorted_ = false;
 
-  cout <<"Num matches added:"<<matches_.size()<<endl;
-  cout <<"Matches total:"<<get_match_collection_match_total(spsm_matches)<<endl;
+  //cout <<"Num matches added:"<<matches_.size()<<endl;
+  //cout <<"Matches total:"<<get_match_collection_match_total(spsm_matches)<<endl;
 
 }
 

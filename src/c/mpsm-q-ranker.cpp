@@ -280,7 +280,7 @@ double* get_mpsm_features(DelimitedFileReader& matches) {
 
 void registerMatches(DelimitedFileReader& matches, SetType set_idx, FILE* feature_file) {
   double* features = NULL;
-  matches.reset();
+  //matches.reset();
   while (matches.hasNext()) {
     //carp(CARP_INFO,"Getting features:%d",set_idx);
     features = get_mpsm_features(matches);
@@ -291,7 +291,7 @@ void registerMatches(DelimitedFileReader& matches, SetType set_idx, FILE* featur
     }
   */
     if ((int)set_idx == 0) {
-       string id = matches.getString("scan")+"-"+matches.getString("charge"); //unique;
+       string id = matches.getString("scan")+"-"+matches.getString("charge")+"-"+matches.getString("xcorr rank"); //unique;
      
        qcRegisterPSM(set_idx, (char*)id.c_str(), features);
     } else {

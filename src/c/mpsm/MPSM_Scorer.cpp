@@ -15,7 +15,7 @@ MPSM_Scorer::MPSM_Scorer(SPECTRUM_T* spectrum, int max_charge) {
     carp(CARP_FATAL," Failed to produce observed intensity");
   }
   max_mz_ = (int)get_scorer_sp_max_mz(scorer_);
-  cout <<"Max mz_:"<<max_mz_<<endl;
+  //cout <<"Max mz_:"<<max_mz_<<endl;
   theoretical_ = (FLOAT_T*)mymalloc(max_mz_* sizeof(FLOAT_T));
 
   ion_constraints_ = new ION_CONSTRAINT_T*[max_charge_];
@@ -64,7 +64,7 @@ FLOAT_T MPSM_Scorer::scoreMPSM(MPSM_Match& mpsm_match, SCORER_TYPE_T match_mode)
     int max_charge = mpsm_match.getChargeIndex().max();
 
     if (spectrum != global_spectrum || global_charge != max_charge) {
-      cout <<"Creating new scorer:"<<endl;
+      //cout <<"Creating new scorer:"<<endl;
       if (global_scorer != NULL) {
         delete global_scorer;
       }

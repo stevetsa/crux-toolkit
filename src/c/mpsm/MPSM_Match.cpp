@@ -282,21 +282,21 @@ bool MPSM_Match::operator ==(MPSM_Match& match_obj) {
 
 ostream& operator <<(ostream& os, MPSM_Match& match_obj) {
 
-  cout <<"operator start"<<endl;
+  //cout <<"operator start"<<endl;
   int precision = get_int_parameter("precision");
   os << setprecision(precision);
 
-  cout <<"getting first_match"<<endl;
+  //cout <<"getting first_match"<<endl;
   MATCH_T* first_match = match_obj.getMatch(0);
-  cout <<"Getting parent"<<endl;
+  //cout <<"Getting parent"<<endl;
   MPSM_MatchCollection* parent = match_obj.getParent();
   if (parent == NULL) {
     carp(CARP_WARNING, "Match parent is null!FIX");
   }
 
-  cout <<"Getting spectrum"<<endl;
+  //cout <<"Getting spectrum"<<endl;
   SPECTRUM_T* spectrum = get_match_spectrum(first_match);
-  cout <<"getting scan"<<endl;
+  //cout <<"getting scan"<<endl;
   int scan = get_spectrum_first_scan(spectrum);
   
   vector<FLOAT_T> spectrum_neutral_masses;
@@ -316,7 +316,7 @@ ostream& operator <<(ostream& os, MPSM_Match& match_obj) {
   if (parent != NULL) {
     matches_spectrum = parent -> numMatches();
   }
-  cout<<"Nummatches:"<<matches_spectrum<<endl;
+  //cout<<"Nummatches:"<<matches_spectrum<<endl;
 
   vector<string> peptide_modified_sequences;
   match_obj.getPeptideModifiedSequences(peptide_modified_sequences);
@@ -358,7 +358,7 @@ ostream& operator <<(ostream& os, MPSM_Match& match_obj) {
      << match_obj.getRTimeMaxDiff() /*<< "TODO"*/; //corr
      ;
 
-  cout <<"operator done"<<endl;
+  //cout <<"operator done"<<endl;
   return os;
 }
 

@@ -325,7 +325,7 @@ MODIFIED_PEPTIDES_ITERATOR_T* new_modified_peptides_iterator_from_mz(
     carp(CARP_FATAL,"Invalid window type");
   }
 
-  carp(CARP_INFO,"min mass:%f max mass:%f",min_mass, max_mass); 
+  carp(CARP_DEBUG,"min mass:%f max mass:%f",min_mass, max_mass); 
   
   // create peptide_generator
     new_iterator->peptide_generator = 

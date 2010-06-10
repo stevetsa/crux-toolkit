@@ -175,7 +175,7 @@ int mpsm_search_main(int argc, char** argv){
   }
 
   /* Perform search: loop over spectra*/
-
+  wall_clock();
   // create spectrum iterator
   FILTERED_SPECTRUM_CHARGE_ITERATOR_T* spectrum_iterator = 
     new_filtered_spectrum_charge_iterator(spectra);
@@ -209,25 +209,21 @@ int mpsm_search_main(int argc, char** argv){
       current_spectrum = spectrum;
     }
 
-    carp(CARP_INFO,"processing spec %d charge:%d", get_spectrum_first_scan(spectrum), charge);
+    carp(CARP_DEBUG,"processing spec %d charge:%d", get_spectrum_first_scan(spectrum), charge);
     if (spectrum != current_spectrum) {
-      carp(CARP_INFO,"Processed all charges for spec %d",get_spectrum_first_scan(current_spectrum));
-      carp(CARP_INFO,"Searching for mpsms");
+      carp(CARP_DEBUG,"Processed all charges for spec %d",get_spectrum_first_scan(current_spectrum));
+      carp(CARP_DEBUG,"Searching for mpsms");
       search_for_mpsms(spsm_map, mpsm_map);
       if (get_boolean_parameter("mpsm-do-sort")) {
-        cout <<"calcDeltaCN spsm"<<endl;
         spsm_map.calcDeltaCN();
         spsm_map.calcZScores();
         spsm_map.sortMatches(XCORR);
-        cout <<"calcDeltaCN mpsm"<<endl;
         mpsm_map.calcDeltaCN();
-        cout <<"Sorting matches"<<endl;
         mpsm_map.calcZScores();
         mpsm_map.sortMatches(XCORR);
       }
       //print out map
       //output the spsms.
-      cout <<"Writing matches"<<endl;
       output_files.writeMatches(spsm_map);
       output_files.writeMatches(mpsm_map);
 
@@ -254,7 +250,6 @@ int mpsm_search_main(int argc, char** argv){
     progress.report(get_spectrum_first_scan(spectrum), charge);
  
     // with the target database decide how many peptide mods to use
-    carp(CARP_INFO,"Getting spsm targets");
     MATCH_COLLECTION_T* target_psms = new_empty_match_collection(is_decoy); 
     int max_pep_mods = mpsm_search_pep_mods( target_psms, 
                                         is_decoy,   
@@ -266,7 +261,6 @@ int mpsm_search_main(int argc, char** argv){
                                         num_peptide_mods,
                                         compute_pvalues); 
  
-    carp(CARP_INFO,"There are %i matches",get_match_collection_match_total(target_psms));
 
     // are there any matches?
     if( get_match_collection_match_total(target_psms) == 0 ){
@@ -281,7 +275,6 @@ int mpsm_search_main(int argc, char** argv){
     // now search decoys with the same number of mods
     is_decoy = TRUE;
     // create separate decoy match_collections
-    carp(CARP_INFO,"getting spsm decoys");
     int num_decoy_collections = get_int_parameter("num-decoys-per-target"); 
     MATCH_COLLECTION_T** decoy_collection_list = 
       (MATCH_COLLECTION_T**)mycalloc(sizeof(MATCH_COLLECTION_T*), 
@@ -289,7 +282,7 @@ int mpsm_search_main(int argc, char** argv){
 
     int decoy_idx = 0;
     for(decoy_idx = 0; decoy_idx < num_decoy_collections; decoy_idx++){
-      carp(CARP_INFO,"Getting spsm decoy-%d", decoy_idx);
+
       MATCH_COLLECTION_T* decoy_psms = new_empty_match_collection(is_decoy);
       decoy_collection_list[decoy_idx] = decoy_psms;
 
@@ -312,18 +305,15 @@ int mpsm_search_main(int argc, char** argv){
     
     vector<MPSM_MatchCollection> mpsm_collections;
 
-    carp(CARP_INFO, "Adding spsm_targets:%d", get_match_collection_match_total(target_psms));
 
     MPSM_MatchCollection spsm_targets(target_psms);
     mpsm_collections.push_back(spsm_targets);
     
-    carp(CARP_INFO, "Adding spsm_decoys");
     for (decoy_idx = 0; decoy_idx < num_decoy_collections; decoy_idx++) {
       MPSM_MatchCollection spsm_decoy(decoy_collection_list[decoy_idx]);
       mpsm_collections.push_back(spsm_decoy);
     }
     
-    carp(CARP_INFO, "Inserting into spsm_map");
     spsm_map.insert(mpsm_collections);
 
    
@@ -342,8 +332,6 @@ int mpsm_search_main(int argc, char** argv){
   }// next spectrum
 
   //process last spectrum.
-  carp(CARP_INFO, "Processing last spectrum");
-  carp(CARP_INFO, "Searching for mpsms");
   search_for_mpsms(spsm_map, mpsm_map);
   if (get_boolean_parameter("mpsm-do-sort")) { 
     mpsm_map.sortMatches(XCORR);
@@ -375,8 +363,8 @@ int mpsm_search_main(int argc, char** argv){
 
   // Finished Searching!
 
-
-  carp(CARP_INFO, "Finished crux-search-for-matches");
+  carp(CARP_INFO, "Elapsed time: %.3g s", wall_clock() / 1e6);
+  carp(CARP_INFO, "Finished crux-search-for-mpsms");
   free(spectrum_iterator);
   free_spectrum_collection(spectra);
   free_parameters();
@@ -514,7 +502,7 @@ int mpsm_search_pep_mods(
                              store_scores); 
   populate_match_rank_match_collection(match_collection, XCORR);
     
-    carp(CARP_INFO, "Added %i matches", added);
+
     
     free_modified_peptides_iterator(peptide_iterator);
     
@@ -698,7 +686,6 @@ void extendChargeMap(MPSM_ChargeMap& spsm_map,
   
 
     ChargeIndex charge_index = map_iter -> first;
-    cout <<"mpsm charge index:"<<charge_index<<endl;
 
     vector<MPSM_MatchCollection>& match_collections = map_iter -> second;
     vector<MPSM_MatchCollection> new_match_collections;
@@ -727,7 +714,6 @@ void extendChargeMap(MPSM_ChargeMap& spsm_map,
     }
 
     for (int current_index = 0;current_index < current_top_n; current_index++) {
-      cout <<"current index is :"<<current_index<<" of "<<current_top_n<<endl;
       MPSM_Match& current_mpsm_target = target_collection.getMatch(current_index);
     
       //Loop through spsms by charge, and extend the current mpsm target using targets.
@@ -736,7 +722,6 @@ void extendChargeMap(MPSM_ChargeMap& spsm_map,
         ++map_iter2) {
 
         ChargeIndex spsm_charge_index = map_iter2 -> first;
-        cout <<"Adding charge "<<spsm_charge_index<<" to "<<charge_index<<endl;
 
         vector<MPSM_MatchCollection>& spsm_match_collections = map_iter2 -> second;
         MPSM_MatchCollection& spsm_target_match_collection = spsm_match_collections[0];
@@ -747,8 +732,7 @@ void extendChargeMap(MPSM_ChargeMap& spsm_map,
           new_mpsm_target_collection,
           visited[0]);
 
-        cout <<"Added "<<new_mpsm_target_collection.numMatches()<<" matches"<<endl;
-        //if there are some matches found, then search the decoys.
+         //if there are some matches found, then search the decoys.
   
         if (new_mpsm_target_collection.numMatches() == 0) {
           continue; //search the next charge state extension.
@@ -778,7 +762,6 @@ void extendChargeMap(MPSM_ChargeMap& spsm_map,
             new_mpsm_decoy_match_collection,
             visited[idx+1]);
           
-          cout <<"Added "<<new_mpsm_decoy_match_collection.numMatches()<<" decoy matches"<<endl;
         }
         new_mpsm_match_collections.push_back(new_mpsm_decoy_match_collection);
           /*
@@ -804,7 +787,6 @@ void extendChargeMap(MPSM_ChargeMap& spsm_map,
   } /* map_iter++ */
   if (get_boolean_parameter("mpsm-do-sort"))
     new_mpsm_map.sortMatches(XCORR);
-  cout <<"Done extendChargeMap"<<endl;
 }
 
 
@@ -841,6 +823,5 @@ void search_for_mpsms(MPSM_ChargeMap& charge_spsm_map,
       break;
     }
   }
-  cout <<"Done search_for_mpsms"<<endl;
 }
 

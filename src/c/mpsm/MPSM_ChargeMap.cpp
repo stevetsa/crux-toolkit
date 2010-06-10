@@ -58,7 +58,7 @@ void MPSM_ChargeMap::sortMatches(SCORER_TYPE_T sort_type) {
     for (int collection_idx = 0; 
       collection_idx < match_collections.size();
       collection_idx++) {
-      cout <<"Sorting "<<current_charge<<" "<<collection_idx<<endl;
+      //cout <<"Sorting "<<current_charge<<" "<<collection_idx<<endl;
       match_collections[collection_idx].sortByScore(sort_type);
     }
      
