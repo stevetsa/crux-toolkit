@@ -31,7 +31,10 @@
 #include "PercolatorCInterface.h"
 #include "output-files.h"
 
-int percolator_main(int argc, char** argv);
+MATCH_COLLECTION_T* run_percolator(
+  char* psm_result_folder, 
+  char* fasta_file, 
+  OutputFiles& output);
 
 #endif //PERCOLATOR_CMD_H
 

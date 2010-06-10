@@ -35,73 +35,6 @@
 #include "QRankerCInterface.h"
 #include "output-files.h"
 
-/* 
- * Private function declarations.  Details below
- */
-
-MATCH_COLLECTION_T* run_q(
-  char* psm_result_folder, 
-  char* fasta_file, 
-  OutputFiles& output); 
-
-/**
- * \brief crux-analyze-matches: takes in a directory containing binary
- * psm files and a protein index and analyzes the psms.
- */
-int qranker_main(int argc, char** argv){
-
-
-  /* Define command line arguments */
-  const char* option_list[] = {
-    "verbosity",
-    "parameter-file",
-    "fileroot",
-    "feature-file",
-    "output-dir",
-    "overwrite",
-  };
-  int num_options = sizeof(option_list) / sizeof(char*);
-
-  const char* argument_list[] = {
-    "protein input",
-  };
-  int num_arguments = sizeof(argument_list) / sizeof(char*);
-
-  initialize_run(QRANKER_COMMAND, argument_list, num_arguments,
-                 option_list, num_options, argc, argv);
-
-  /* Get arguments */
-  char* psm_dir = get_string_parameter("output-dir");
-  char* protein_input_name = get_string_parameter("protein input");
-
-  OutputFiles output(QRANKER_COMMAND);
-  output.writeHeaders();
-
-  /* Perform the analysis */
-  MATCH_COLLECTION_T* match_collection = NULL;
-  match_collection = run_q(psm_dir,
-                           protein_input_name,
-                           output);
-    
-  carp(CARP_INFO, "Outputting matches.");
-  output.writeMatches(match_collection);
-
-  // MEMLEAK below causes seg fault (or used to)
-  // free_match_collection(match_collection);
-
-  // clean up
-  free(psm_dir);
-  free(protein_input_name);
-
-  carp(CARP_INFO, "Elapsed time: %.3g s", wall_clock() / 1e6);
-  carp(CARP_INFO, "Finished crux q-ranker.");
-
-  return(0);
-}
-
-
-/*  ****************** Subroutines ****************/
-
 /**
  * \brief Analyze matches using the q-ranker algorithm
  * 
@@ -112,7 +45,7 @@ int qranker_main(int argc, char** argv){
  * \returns a pointer to a MATCH_COLLECTION_T object
  * \callgraph
  */
-MATCH_COLLECTION_T* run_q(
+MATCH_COLLECTION_T* run_qranker(
   char* psm_result_folder, 
   char* fasta_file, 
   OutputFiles& output){ 
@@ -196,18 +129,18 @@ MATCH_COLLECTION_T* run_q(
       
       // result array that stores the algorithm scores
       results_q = (double*)mycalloc(
-				    get_match_collection_match_total(match_collection), sizeof(double));
+          get_match_collection_match_total(match_collection), sizeof(double));
       results_score = (double*)mycalloc(
-					get_match_collection_match_total(match_collection), sizeof(double));
+          get_match_collection_match_total(match_collection), sizeof(double));
           
       // Call that initiates q-ranker
       qcInitiate(
-		 (NSet)get_match_collection_iterator_number_collections(
-									match_collection_iterator), 
-		 number_features, 
-		 num_spectra, 
-		 feature_names, 
-		 pi0);
+          (NSet)get_match_collection_iterator_number_collections(
+                   match_collection_iterator), 
+          number_features, 
+          num_spectra, 
+          feature_names, 
+          pi0);
       
       free(num_spectra);
       
@@ -254,9 +187,7 @@ MATCH_COLLECTION_T* run_q(
 
   /***** Q-RANKER run *********/
 
-    carp(CARP_DETAILED_DEBUG, "got to here");
-    
-    // Start processing
+  // Start processing
   qcExecute(); 
   
   /* Retrieving target scores and qvalues after 
@@ -275,15 +206,12 @@ MATCH_COLLECTION_T* run_q(
   // Function that should be called after processing finished
   qcCleanUp();
   
-  // TODO put free back in. took out because claimed it was double free
   // free names
   unsigned int name_idx;
   for(name_idx=0; name_idx < number_features; ++name_idx){
     free(feature_names[name_idx]);
   }
   free(feature_names);
-  
-
   free(results_q);
   free(results_score);
   free_match_collection_iterator(match_collection_iterator);

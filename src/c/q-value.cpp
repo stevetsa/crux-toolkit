@@ -24,86 +24,10 @@
  * Private function declarations.  Details below
  */
 
-MATCH_COLLECTION_T* run_qvalue(
-  char* psm_result_folder, 
-  char* fasta_file 
-  ); 
-
 MATCH_COLLECTION_T* compute_bh_qvalues(
   double* pvalues, 
   int num_pvals,
   MATCH_COLLECTION_T* fasta_file);
-
-/**
- * \brief One of the commands for crux.  Takes in a directory
- * containing binary psm files and a protein source (index or fasta
- * file) and calculates q-values based on the p-values calculated in
- * the search.
- */
-int qvalue_main(int argc, char** argv){
-
-  /* Define command line options and arguments */
-  const char* option_list[] = {
-    "verbosity",
-    "parameter-file",
-    "overwrite",
-    "output-dir",
-    "fileroot"
-  };
-  int num_options = sizeof(option_list) / sizeof(char*);
-
-  const char* argument_list[] = {
-    "protein input"
-  };
-  int num_arguments = sizeof(argument_list) / sizeof(char*);
-
-  initialize_run(QVALUE_COMMAND, argument_list, num_arguments,
-                 option_list, num_options, argc, argv);
-
-  /* Get arguments */
-  char* psm_dir = get_string_parameter("output-dir");
-  char* protein_input_name = get_string_parameter("protein input");
-
-  /* Perform the analysis */
-  MATCH_COLLECTION_T* match_collection = NULL;
-  match_collection = run_qvalue(psm_dir, protein_input_name);
-
-  carp(CARP_INFO, "Outputting matches.");
-  OutputFiles output(QVALUE_COMMAND);
-  output.writeHeaders();
-  output.writeMatches(match_collection);
-
-  // MEMLEAK below causes seg fault (or used to)
-  // free_match_collection(match_collection);
-
-  // clean up
-  free(psm_dir);
-  free(protein_input_name);
-
-  carp(CARP_INFO, "Elapsed time: %.3g s", wall_clock() / 1e6);
-  carp(CARP_INFO, "Finished crux ccompute-q-values.");
-
-  return(0);
-}
-
-/*  ****************** Subroutines ****************/
-
-/**
- * Compare doubles
- */
-int compare_doubles_descending(
-    const void *a,
-    const void *b
-    ){
-  double temp = *((double *)a) - *((double *)b);
-  if (temp > 0){
-    return -1;
-  } else if (temp < 0){
-    return 1;
-  } else {
-    return 0;
-  }
-}
 
 
 /**
@@ -239,6 +163,26 @@ MATCH_COLLECTION_T* run_qvalue(
   free(pvalues);
 
   return all_matches;
+}
+
+
+/*  ****************** Subroutines ****************/
+
+/**
+ * Compare doubles
+ */
+int compare_doubles_descending(
+    const void *a,
+    const void *b
+    ){
+  double temp = *((double *)a) - *((double *)b);
+  if (temp > 0){
+    return -1;
+  } else if (temp < 0){
+    return 1;
+  } else {
+    return 0;
+  }
 }
 
 
