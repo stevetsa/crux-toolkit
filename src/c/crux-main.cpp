@@ -64,7 +64,7 @@ static MATCH_COLLECTION_T* run_percolator_or_qranker(
   double* features = NULL;    
   double* results_q = NULL;
   double* results_score = NULL;
-  double pi0 = get_double_parameter("pi0");
+  double pi0 = get_double_parameter("pi-zero");
   char** feature_names = generate_feature_name_array();
   MATCH_ITERATOR_T* match_iterator = NULL;
   MATCH_COLLECTION_T* match_collection = NULL;
@@ -274,14 +274,16 @@ static void analyze_matches_main(
 
   // Define optional command line arguments.
   const char* qvalue_option_list[] = {
+    "pi-zero",
     "verbosity",
     "parameter-file",
     "overwrite",
     "output-dir",
     "fileroot"
   };
-  int qvalue_num_options = 5;
+  int qvalue_num_options = 6;
   const char* percolator_option_list[] = {
+    "pi-zero",
     "verbosity",
     "parameter-file",
     "fileroot",
@@ -289,8 +291,9 @@ static void analyze_matches_main(
     "output-dir",
     "overwrite"
   };
-  int percolator_num_options = 6;
+  int percolator_num_options = 7;
   const char* qranker_option_list[] = {
+    "pi-zero",
     "verbosity",
     "parameter-file",
     "fileroot",
@@ -298,7 +301,7 @@ static void analyze_matches_main(
     "output-dir",
     "overwrite",
   };
-  int qranker_num_options = 6;
+  int qranker_num_options = 7;
 
   // Define required command line arguments.
   const char* argument_list[] = {

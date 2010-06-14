@@ -50,7 +50,6 @@ MATCH_COLLECTION_T* run_qvalue(
   char* fasta_file 
   ){
 
-  // double pi0 = get_double_parameter("pi0");
   MATCH_ITERATOR_T* match_iterator = NULL;
   MATCH_COLLECTION_T* match_collection = NULL;
   MATCH_T* match = NULL;
@@ -146,18 +145,11 @@ MATCH_COLLECTION_T* run_qvalue(
 
   free_match_collection_iterator(match_collection_iterator);
 
-  if( num_decoys > 0 ){
-    // compute decoy qvalues for xcorr
-    compute_decoy_q_values(all_matches, XCORR);
-
-    // compute decoy qvalues for pvals
-    if( num_pvals > 0 ){
-      compute_decoy_q_values(all_matches, LOGP_BONF_WEIBULL_XCORR);
-    }
-  }
-
+  // Compute q-values from p-values or from the XCorr decoy distribution.
   if( num_pvals > 0 ){
     compute_bh_qvalues(pvalues, num_pvals, all_matches);
+  } else {
+    compute_decoy_q_values(all_matches);
   }
 
   free(pvalues);
@@ -199,7 +191,7 @@ MATCH_COLLECTION_T* compute_bh_qvalues(
 
   // work in negative log space, since that is where p- and qvalues end up
   double log_num_psms = - log(num_pvals);
-  double log_pi_0 = - log(get_double_parameter("pi0"));
+  double log_pi_0 = - log(get_double_parameter("pi-zero"));
 
   // convert the p-values into FDRs using Benjamini-Hochberg
   int idx;
@@ -211,7 +203,7 @@ MATCH_COLLECTION_T* compute_bh_qvalues(
     double log_qvalue = 
       log_pvalue + log_num_psms - (-log(pvalue_idx)) + log_pi_0;
     qvalues[idx] = log_qvalue;
-    carp(CARP_DETAILED_DEBUG, "no max qvalue[%i] = %.10f", idx, qvalues[idx]);
+    carp(CARP_DETAILED_DEBUG, "FDR[%i] = %.10f", idx, qvalues[idx]);
   }
 
   // convert the FDRs into q-values
@@ -260,10 +252,13 @@ MATCH_COLLECTION_T* compute_bh_qvalues(
   
   set_match_collection_scored_type(all_matches, 
                                    LOGP_QVALUE_WEIBULL_XCORR, TRUE);
-  
+
   // free the match iterator
   free_match_iterator(match_iterator);
   free(qvalues);
+  
+  // Make sure the match collection is sorted.
+  sort_match_collection(all_matches, LOGP_QVALUE_WEIBULL_XCORR);
   
   return all_matches;
 }

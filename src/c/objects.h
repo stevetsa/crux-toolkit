@@ -386,18 +386,12 @@ typedef struct scorer SCORER_T;
  * reading and writing scores from the CSM we omit the last two scores
  * in the score type enum.
  */
-#define NUMBER_SCORER_TYPES 16 //BF added for consistant naming
-//enum _scorer_type { SP, XCORR, DOTP, LOGP_EXP_SP, LOGP_BONF_EXP_SP, LOGP_EVD_XCORR, LOGP_BONF_EVD_XCORR, LOGP_WEIBULL_SP, LOGP_BONF_WEIBULL_SP, LOGP_WEIBULL_XCORR, LOGP_BONF_WEIBULL_XCORR, Q_VALUE, PERCOLATOR_SCORE, LOGP_QVALUE_WEIBULL_XCORR};
 enum _scorer_type { 
   SP,                  ///< SEQUEST preliminary score
   XCORR,               ///< SEQUEST primary score
   DOTP,                ///< not yet implemented
-  LOGP_EXP_SP,                     // this spot hijacked for zscore
-  //ZSCORE,            ///< z-score (mean-max)/stdev
-  //LOGP_BONF_EXP_SP,              // this spot hijacked for decoy-x-qval
+  LOGP_EXP_SP,         ///< this spot hijacked for zscore
   DECOY_XCORR_QVALUE,  ///< Benjamini-Hochberg q-value from xcorrs
-  //LOGP_EVD_XCORR,               // this spot hijacked for decoy-p-qval
-  DECOY_PVALUE_QVALUE, ///< Benjamini-Hochberg q-value from Weibull p-vals
   LOGP_BONF_EVD_XCORR,
   LOGP_WEIBULL_SP,
   LOGP_BONF_WEIBULL_SP,
@@ -410,15 +404,8 @@ enum _scorer_type {
   QRANKER_Q_VALUE
 };
 
-/*
-
-enum _scorer_type { SP, XCORR, DOTP, 
-LOGP_BONF_WEIBULL_SP, sp-logp
-
-LOGP_BONF_WEIBULL_XCORR, xcorr-logp
-};
-*/
-#define _SCORE_TYPE_NUM 16 ///< the number of different score types
+#define _SCORE_TYPE_NUM 15 ///< the number of different score types
+#define NUMBER_SCORER_TYPES 15 //BF added for consistant naming
 
 /**
  * \typedef SCORER_TYPE_T
