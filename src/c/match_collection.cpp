@@ -1713,6 +1713,7 @@ void print_tab_header(FILE* output){
     return;
   }
 
+  // N.B. Compare to the corresponding list in MatchFileReader.cpp.
   fprintf(
     output, 
     "scan\t"
@@ -1726,8 +1727,9 @@ void print_tab_header(FILE* output){
     "xcorr score\t"
     "xcorr rank\t"
     "p-value\t"
-    "Weibull q-value\t"
-    "decoy q-value\t"
+    "Weibull est. q-value\t"
+    "decoy q-value (xcorr)\t"
+    "decoy q-value (p-value)\t" // To be deleted! --WSN 15 June 2010
     "percolator score\t"
     "percolator rank\t"
     "percolator q-value\t"
