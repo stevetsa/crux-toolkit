@@ -281,7 +281,7 @@ static void analyze_matches_main(
     "output-dir",
     "fileroot"
   };
-  int qvalue_num_options = 6;
+  int qvalue_num_options = sizeof(qvalue_option_list)/sizeof(char*);
   const char* percolator_option_list[] = {
     "pi-zero",
     "verbosity",
@@ -291,7 +291,7 @@ static void analyze_matches_main(
     "output-dir",
     "overwrite"
   };
-  int percolator_num_options = 7;
+  int percolator_num_options = sizeof(percolator_option_list)/sizeof(char*);
   const char* qranker_option_list[] = {
     "pi-zero",
     "verbosity",
@@ -301,7 +301,7 @@ static void analyze_matches_main(
     "output-dir",
     "overwrite",
   };
-  int qranker_num_options = 7;
+  int qranker_num_options = sizeof(qranker_option_list)/sizeof(char*);
 
   // Define required command line arguments.
   const char* argument_list[] = {
@@ -423,15 +423,9 @@ int main(int argc, char** argv){
     break;
 
   case QVALUE_COMMAND:
-    analyze_matches_main(QVALUE_COMMAND, argc-1, argv+1);
-    break;
-
   case QRANKER_COMMAND:
-    analyze_matches_main(QRANKER_COMMAND, argc-1, argv+1);
-    break;
-
   case PERCOLATOR_COMMAND:
-    analyze_matches_main(PERCOLATOR_COMMAND, argc-1, argv+1);
+    analyze_matches_main(command, argc-1, argv+1);
     break;
 
   case VERSION_COMMAND:

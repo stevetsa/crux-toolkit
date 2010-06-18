@@ -24,7 +24,6 @@ static const char* match_column_strings[NUMBER_MATCH_COLUMNS] = {
   "p-value",
   "Weibull est. q-value",
   "decoy q-value (xcorr)",
-  "decoy q-value (p-value)", // To be deleted! --WSN 15 June 2010
   "percolator score",
   "percolator rank",
   "percolator q-value",

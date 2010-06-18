@@ -1729,7 +1729,6 @@ void print_tab_header(FILE* output){
     "p-value\t"
     "Weibull est. q-value\t"
     "decoy q-value (xcorr)\t"
-    "decoy q-value (p-value)\t" // To be deleted! --WSN 15 June 2010
     "percolator score\t"
     "percolator rank\t"
     "percolator q-value\t"
