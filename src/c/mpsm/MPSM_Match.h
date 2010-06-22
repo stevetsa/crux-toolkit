@@ -17,8 +17,12 @@ class MPSM_Match {
 
     std::vector<MATCH_T*> matches_; //the matches that the multi-match is from.
 
+    
+
     FLOAT_T xcorr_score_;
     FLOAT_T xcorr_score_valid_;
+    
+
     /*
     FLOAT_T match_scores_[_SCORE_TYPE_NUM];
     bool match_scores_valid_[_SCORE_TYPE_NUM];
@@ -27,14 +31,17 @@ class MPSM_Match {
 
     ChargeIndex charge_index_;
 
+    
     FLOAT_T rtime_max_diff_;
 
     FLOAT_T delta_cn_;
     FLOAT_T zscore_;
+    
 
-
+    /*
     std::vector<bool> has_rtime;
     std::vector<FLOAT_T> rtimes;
+    */
     void invalidate();
 
   public:
@@ -77,6 +84,8 @@ class MPSM_Match {
 
     int numMatches();
 
+
+    std::string getString();
     
     FLOAT_T getScore(SCORER_TYPE_T match_mode);
     void setScore(SCORER_TYPE_T match_mode, FLOAT_T score);

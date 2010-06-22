@@ -18,10 +18,15 @@ ChargeIndex::ChargeIndex(string& charges, char delimiter) {
   vector<string> vcharges;
 
   DelimitedFile::tokenize(charges, vcharges, delimiter);
-
+  //cout <<"num charges:"<<vcharges.size()<<endl;
   for (int i=0;i<vcharges.size();i++) {
     unsigned char charge;
-    DelimitedFile::from_string<unsigned char>(charge, vcharges[i]);
+    
+    int int_charge;
+
+    DelimitedFile::from_string<int>(int_charge, vcharges[i]);
+    charge = (unsigned char)int_charge;
+    //cout<<vcharges[i]<<" "<<(int)charge<<endl;
     add(charge);
   }
 

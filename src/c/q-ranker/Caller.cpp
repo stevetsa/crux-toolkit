@@ -477,7 +477,9 @@ void Caller::fillFeatureSets() {
   }
 }
 
-
+double Caller::getQRankerScore(double* features) {
+  return net.classify(features);
+}
 
 
 int Caller::preIterationSetup() {

@@ -269,6 +269,10 @@ void initialize_parameters(void){
       "Fasta file of protein sequences or directory containing an index.",
       "Argument for generate, index, search, analyze.", "false");
 
+  set_string_parameter("search results directory", NULL, 
+      "Directory containing the results of one search.",
+      "Argument for q-ranker, percolator, compute-q-values.", "false");
+
   /* create_index arguments */
   set_string_parameter("protein fasta file", NULL,
                        "File containing protein sequences in fasta format.",
@@ -733,6 +737,15 @@ void initialize_parameters(void){
       "modifications. Default 0.",
       "Only available for crux-predict-peptide-ions.", "true");
 
+  set_double_parameter("subsample-percent",100,0,100,
+    "Percentage of subamples to use when training mpsm q-ranker",
+    "Availabele for crux mpsm-q-ranker", "true");
+
+  set_boolean_parameter("random-sample",TRUE,
+    "Naive subsampling",
+    "", "true");
+
+
   /* static mods */
   set_double_parameter("A", 0.0, -100, BILLION, 
       "Change the mass of all amino acids 'A' by the given amount.",
@@ -836,13 +849,8 @@ void initialize_parameters(void){
     "Available for crux search-for-mpsms",
     "true");
 
-  set_double_parameter("rtime-threshold-homogeneous", BILLION, 0, BILLION,
+  set_boolean_parameter("rtime-threshold", FALSE,
     "relative retention time threshold for mpsm candidates with homogeneous charge mixture",
-    "Available for crux search-for-mpsms",
-    "true");
-
-  set_double_parameter("rtime-threshold-inhomogeneous", BILLION, 0, BILLION,
-    "relative retention time threshold for mpsm candidates with inhomogeneous charge mixture",
     "Available for crux search-for-mpsms",
     "true");
 

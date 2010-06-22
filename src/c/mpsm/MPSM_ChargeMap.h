@@ -12,6 +12,8 @@ class MPSM_ChargeMap : public std::map<ChargeIndex, std::vector<MPSM_MatchCollec
 
     void insert(std::vector<MPSM_MatchCollection>& match_collections);
     void insert(MPSM_ChargeMap& mpsm_chargemap);
+    void insert(MPSM_MatchCollection& match_collection, int match_collection_idx);
+    void insert(MPSM_Match& new_match, int match_collection_idx);
 
     void sortMatches(SCORER_TYPE_T sort_type);
 

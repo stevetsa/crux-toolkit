@@ -22,22 +22,21 @@ FLOAT_T RetentionPredictor::predictRTime(MATCH_T* match) {
 double RetentionPredictor::calcMaxDiff(MPSM_Match& mpsm_match) {
   if (mpsm_match.numMatches() <= 1) return 0.0;
 
+  vector<FLOAT_T> rtimes;
+
   for (int match_idx=0;
     match_idx < mpsm_match.numMatches();
     match_idx++) {
-      if (!mpsm_match.hasRTime(match_idx)) {
-        mpsm_match.setRTime(match_idx, 
-          predictRTime(mpsm_match[match_idx]));
-      }
-  }
+      rtimes.push_back(predictRTime(mpsm_match[match_idx]));
+    }
+  
 
   double max_diff = 0;
   
-  for (int idx1 = 0;idx1 < mpsm_match.numMatches()-1;idx1++) {
-    for (int idx2 = idx1 + 1;idx2 < mpsm_match.numMatches();idx2++) {
+  for (int idx1 = 0;idx1 < rtimes.size()-1;idx1++) {
+    for (int idx2 = idx1 + 1;idx2 < rtimes.size();idx2++) {
 
-      double current_diff = (mpsm_match.getRTime(idx1) -
-        mpsm_match.getRTime(idx2));
+      double current_diff = rtimes[idx1] - rtimes[idx2];
 
       if (fabs(current_diff) > fabs(max_diff)) {
         max_diff = current_diff;

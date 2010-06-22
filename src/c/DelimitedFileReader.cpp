@@ -59,8 +59,6 @@ DelimitedFileReader::~DelimitedFileReader() {
  */
 unsigned int DelimitedFileReader::numRows() {
 
-  
-
   if (!num_rows_valid_) {
 
     num_rows_ = 0;
@@ -105,13 +103,14 @@ void DelimitedFileReader::loadData(
   ) {
 
   file_name_ = string(file_name);
+  cout <<"File name is :"<<file_name_<<endl;
   has_header_ = hasHeader;
   num_rows_valid_ = false;
   column_names_.clear();
-  file_ptr_ = new fstream(file_name, ios::in);
+  file_ptr_ = new fstream(file_name_.c_str(), ios::in);
 
   if (!file_ptr_ -> is_open()) {
-    carp(CARP_ERROR, "Opening %s or reading failed", file_name);
+    carp(CARP_FATAL, "Opening %s or reading failed", file_name);
     return;
   }
 
@@ -188,14 +187,22 @@ vector<string>& DelimitedFileReader::getColumnNames() {
   return column_names_;
 }
 
+static string EMPTY_STRING="";
+
 /**
  *\returns the string value of the cell
  */
 string& DelimitedFileReader::getString(
   unsigned int col_idx ///< the column index
   ) {
+  if (col_idx >= data_.size()) {
+    return EMPTY_STRING;
+  }
+  return data_.at(col_idx);
+}
 
-  return data_[col_idx];
+string& DelimitedFileReader::getDataString() {
+  return current_data_string_;
 }
 
 /** 

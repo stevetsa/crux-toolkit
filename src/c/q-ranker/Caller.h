@@ -67,6 +67,9 @@ public:
     void train_general_net(Scores &train, Scores &thresh, double qv);
     void train_target_net(Scores &train, Scores &thresh, double qv);
 
+    double getQRankerScore(double* features);
+
+
 protected:
     Normalizer * pNorm;
     SanityCheck * pCheck;

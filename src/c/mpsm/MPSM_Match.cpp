@@ -40,9 +40,9 @@ MPSM_Match::MPSM_Match() {
 MPSM_Match::MPSM_Match(MATCH_T* match) {
   parent_ = NULL;
   addMatch(match);
+  
   rtime_max_diff_ = 0;
-  delta_cn_ = 0;
-  zscore_ = 0;
+
 }
 
 /*
@@ -97,21 +97,22 @@ BOOLEAN_T MPSM_Match::isDecoy() {
 
 
 BOOLEAN_T MPSM_Match::hasRTime(int match_idx) {
-  return has_rtime[match_idx];
+  return FALSE;//return has_rtime[match_idx];
 }
 
 FLOAT_T MPSM_Match::getRTime(int match_idx) {
-  return rtimes[match_idx];
+  return 0;//return rtimes[match_idx];
 }
 
 void MPSM_Match::setRTime(int match_idx, FLOAT_T rtime) {
-  rtimes[match_idx] = rtime;
+  //rtimes[match_idx] = rtime;
 }
 
 void MPSM_Match::invalidate() {
 
   xcorr_score_valid_ = false;
   charge_valid_ = false;
+  /*
   for (int idx=0;idx < numMatches();idx++) {
     if (rtimes.size() <= idx) {
       rtimes.push_back(0);
@@ -120,7 +121,7 @@ void MPSM_Match::invalidate() {
       has_rtime[idx] = false;
     }
   }
-
+  */
 }
 
 
@@ -171,8 +172,10 @@ void MPSM_Match::setScore(SCORER_TYPE_T match_mode, FLOAT_T score) {
   if (match_mode != XCORR) {
     carp(CARP_FATAL,"Score type not implemented for mpsms!");
   }
+
   xcorr_score_ = score;
   xcorr_score_valid_ = true;
+
 }
 
 void MPSM_Match::getSpectrumNeutralMasses(vector<FLOAT_T>& neutral_masses) {
@@ -225,11 +228,30 @@ FLOAT_T MPSM_Match::getRTimeMaxDiff() {
 }
 
 void MPSM_Match::setDeltaCN(FLOAT_T delta_cn) {
-  delta_cn_ = delta_cn;
+  //delta_cn_ = delta_cn;
 }
 
 void MPSM_Match::setZScore(double zscore) {
-  zscore_ = zscore;
+  //zscore_ = zscore;
+}
+
+string MPSM_Match::getString() {
+  string ans;
+
+  MATCH_T* match = NULL;
+  for (int idx = 0; idx < numMatches(); idx++) {
+    MATCH_T* match = getMatch(idx);
+    PEPTIDE_T* peptide = get_match_peptide(match);
+    char* seq = get_peptide_modified_sequence_with_symbols(peptide);
+    string string_seq(seq);
+    if (idx == 0) 
+      ans += string_seq;
+    else
+      ans += "," + string_seq;
+    free(seq);
+  }
+  return ans;
+
 }
 
 bool MPSM_Match::operator < (const MPSM_Match& match_obj) const {
@@ -330,13 +352,13 @@ ostream& operator <<(ostream& os, MPSM_Match& match_obj) {
      << spectrum_precursor_mz << "\t"
      << DelimitedFile::splice(spectrum_neutral_masses, ',') << "\t" //spectrum neutral mass
      << DelimitedFile::splice(peptide_masses, ',') << "\t" //peptide mass
-     << match_obj.delta_cn_ << "\t" //delta_cn
+     << 0/*match_obj.delta_cn_*/ << "\t" //delta_cn
      /*<< "TODO"*/ << "\t" //sp score
      /*<< "TODO"*/ << "\t" //sp rank
      << xcorr_score << "\t" //xcorr score
      /*<< xcorr_rank*/ << "\t" //xcorr rank.
      /*<< "TODO"*/ << "\t" //p-value
-     << match_obj.zscore_ << "\t" //Weibull est. q-value
+     << 0 /*match_obj.zscore_*/ << "\t" //Weibull est. q-value
      /*<< "TODO"*/ << "\t" //decoy q-value (xcorr)
      /*<< "TODO"*/ << "\t" //decoy q-value (p-value)
      /*<< "TODO"*/ << "\t" //percolator score

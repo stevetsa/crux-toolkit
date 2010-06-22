@@ -35,6 +35,52 @@ void MPSM_ChargeMap::insert(vector<MPSM_MatchCollection>& match_collection) {
 }
 
 
+void MPSM_ChargeMap::insert(MPSM_MatchCollection& match_collection, int match_collection_idx) {
+  MPSM_ChargeMap::iterator cur_iter;
+  
+  ChargeIndex& charge_index = match_collection[0].getChargeIndex();
+  cur_iter = find(charge_index);
+
+  if (cur_iter == end()) {
+    vector<MPSM_MatchCollection> new_match_collections;
+    (*this)[charge_index] = new_match_collections;
+    cur_iter = find(charge_index);
+  }
+
+  if (cur_iter -> second.size() <= match_collection_idx) {
+    MPSM_MatchCollection new_collection;
+    cur_iter -> second.push_back(new_collection);
+  }
+
+  MPSM_MatchCollection& new_collection = cur_iter -> second[match_collection_idx];
+
+  for (int match_idx;match_idx < match_collection.numMatches();match_idx++) {
+    new_collection.addMatch(match_collection[match_idx]);
+  }
+
+}
+
+
+void MPSM_ChargeMap::insert(MPSM_Match& new_match, int match_collection_idx) {
+  ChargeIndex& charge_index = new_match.getChargeIndex();
+  
+  MPSM_ChargeMap::iterator cur_iter = find(charge_index);
+
+  if (cur_iter == end()) {
+    vector<MPSM_MatchCollection> new_match_collections;
+    (*this)[charge_index] = new_match_collections;
+    cur_iter = find(charge_index);
+  }
+
+  if (cur_iter -> second.size() <= match_collection_idx) {
+    MPSM_MatchCollection new_collection;
+    cur_iter -> second.push_back(new_collection);
+  }
+
+  cur_iter -> second[match_collection_idx].addMatch(new_match);
+
+}
+
 void MPSM_ChargeMap::insert(MPSM_ChargeMap& mpsm_chargemap) {
 
   MPSM_ChargeMap::iterator new_iter;

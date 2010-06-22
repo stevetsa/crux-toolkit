@@ -154,6 +154,8 @@ class DelimitedFileReader {
     unsigned int col_idx ///< the column index
   );
 
+  std::string& getDataString();
+
   template<typename TValue>
   TValue getValue(
     unsigned int col_idx ///< the column index

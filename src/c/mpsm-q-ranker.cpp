@@ -44,6 +44,8 @@
 #include "DelimitedFile.h"
 #include "DelimitedFileReader.h"
 
+#include "KrokhinRetentionPredictor.h"
+
 using namespace std;
 #include "./q-ranker/PSMDescription.h"
 #include "./q-ranker/DataSet.h"
@@ -61,28 +63,9 @@ using namespace std;
  * Private function declarations.  Details below
  */
 
-
-class QRankerResultRow {
-
-  public:
-    int index_;
-    double score_;
-    double fdr_;
-    double qvalue_;
-
-    //sort in descending order on score.
-    static bool compareScore(const QRankerResultRow& r1, const QRankerResultRow& r2) {
-      return r2.score_ < r1.score_;
-    }
-
-    //sort in ascending order on score.
-    static bool compareIndex(const QRankerResultRow& r1, const QRankerResultRow& r2) {
-      return r1.index_ < r2.index_;
-    }
-
-
-};
-
+void writeResults(DelimitedFileReader& input, const char* output_path);
+void writeSubsamples(DelimitedFileReader& matches, vector<unsigned int>& subsample_indices, const char* output_path);
+void collapseResults(const char* input_path, const char* output_path, const char* column_name);
 
 int argmax(vector<double>& a) {
   if (a.size() == 0) return -1;
@@ -130,11 +113,14 @@ int mpsm_qranker_main(int argc, char** argv){
     "feature-file",
     "output-dir",
     "overwrite",
+    "subsample-percent",
+    "random-sample"
   };
   int num_options = sizeof(option_list) / sizeof(char*);
 
   const char* argument_list[] = {
     "protein input",
+    "search results directory"
   };
   int num_arguments = sizeof(argument_list) / sizeof(char*);
   carp(CARP_INFO,"Initialize run");
@@ -142,10 +128,11 @@ int mpsm_qranker_main(int argc, char** argv){
                  option_list, num_options, argc, argv);
 
   /* Get arguments */
-  char* psm_dir = get_string_parameter("output-dir");
+  char* psm_dir = get_string_parameter("search results directory");
   char* protein_input_name = get_string_parameter("protein input");
+
   // TODO (BF oct-22-09): consider adding feature file to OutputFiles
-  char* feature_file = get_string_parameter("feature-file");
+  char* feature_file = "features.txt";
 
 
   if (feature_file != NULL) {
@@ -163,11 +150,13 @@ int mpsm_qranker_main(int argc, char** argv){
              protein_input_name,
              feature_file);
 
-
+  carp(CARP_INFO,"free psm_dir");
   // clean up
   free(psm_dir);
+  carp(CARP_INFO,"free protein input name");
   free(protein_input_name);
-  free(feature_file);
+  carp(CARP_INFO,"free feature_file");
+  //free(feature_file);
 
 
   carp(CARP_INFO, "crux q-ranker finished.");
@@ -177,38 +166,116 @@ int mpsm_qranker_main(int argc, char** argv){
 
 //const int number_features = 11;
 const char* feature_names[] = {
-  "xcorr",
-  "max_diff",
-  "abs_max_diff",
-  "neutral_mass",
-  "lnSM",
-  "max_pep_len",
-  "ncharge1",
-  "ncharge2",
-  "ncharge3",
-  "num_peptides",
-  "relative_rtime"
+  "XCorr",
+  "avedM",
+  "maxdM",
+  "theoryFrac",
+  "obsFrac",
+  "numTests",
+  "aveMissed",
+  "maxMissed",
+  "aveLength",
+  "maxLength",
+  "charge1",
+  "charge2",
+  "charge3",
+  "numPep",
+  "aveRT",
+  "maxRT"
 };
 
 const int number_features = sizeof(feature_names) / sizeof(char*);
 
 
-double getMaxDiff(double a, vector<double>& bs) {
+double getAveDiff(vector<double>& as, vector<double>& bs) {
+  double ans = 0;
 
-  double ans_max = 0;
-  double abs_max = 0;
   for (unsigned int i=0;i<bs.size();i++) {
-    double diff = a - bs[i];
-    double abs_diff = fabs(diff);
-    if (abs_diff > abs_max) {
-      abs_max = abs_diff;
-      ans_max = diff;
-    }
+    double abs_diff = fabs(as[i] - bs[i]);
+    ans += abs_diff;
   }
-  return ans_max;
+
+  return ans / (double)bs.size();
+
 }
 
-unsigned int getMaxLength(vector<string> sequences) {
+double getMaxDiff(vector<double>& as, vector<double>& bs) {
+
+  double ans = 0;
+
+  for (unsigned int i=0;i<bs.size();i++) {
+    double abs_diff = fabs(as[i] - bs[i]);
+
+    if (abs_diff > ans) {
+      ans = abs_diff;
+    }
+  }
+  return ans;
+}
+
+double getTheoryFrac() {
+  return 0.0;
+}
+
+double getObsFrac() {
+  return 0.0;
+}
+
+int get_missed_cleavage_sites(string& sequence) {
+  unsigned int aa_idx = 0;
+  int missed_count = 0;
+  for (;aa_idx < sequence.length()-1; ++aa_idx) {
+    if (sequence[aa_idx] == 'K' ||
+        sequence[aa_idx] == 'R'){
+
+      if (sequence[aa_idx+1] == 'P') {
+        continue;
+      } else {
+        ++missed_count;
+      }
+    }
+  }
+  return missed_count;
+}
+
+double getAveMissed(vector<string>& sequences) {
+  
+  double ans = 0;
+
+  for (unsigned int i=0;i<sequences.size();i++) {
+    ans += get_missed_cleavage_sites(sequences[i]);
+  }
+  
+  return ans / (double)sequences.size();
+}
+
+int getMaxMissed(vector<string>& sequences) {
+
+  int ans = 0;
+
+  for (unsigned int i=0;i<sequences.size();i++) {
+    int current = get_missed_cleavage_sites(sequences[i]);
+
+    if (current > ans) {
+      ans = current;
+    }
+  }
+  return ans;
+}
+
+
+double getAveLength(vector<string>& sequences) {
+
+  double ans = 0.0;
+  for (unsigned int idx=0;idx<sequences.size();idx++) {
+    ans += sequences[idx].length();
+  }
+
+  return ans / (double)sequences.size();
+
+}
+
+unsigned int getMaxLength(vector<string>& sequences) {
   
   unsigned int ans = 0;
   for (unsigned int i=0;i<sequences.size();i++) {
@@ -219,77 +286,203 @@ unsigned int getMaxLength(vector<string> sequences) {
   return ans;
 }
 
+void getRTimes(vector<string>& sequences, vector<double>& rtimes) {
+
+  KrokhinRetentionPredictor rt_predictor;
+
+  rtimes.clear();
+
+  for (unsigned int idx=0;idx < sequences.size();idx++) {
+    double rt = 
+      rt_predictor.predictRTimeS(sequences[idx].c_str());
+    rtimes.push_back(rt);
+  }
+}
+
+double getAveRT(vector<double>& rtimes) {
+
+  if (rtimes.size() <= 1) return 0.0;
+  double ans = 0.0;
+  int count = 0;
+  for (unsigned int idx1 = 0;idx1 < rtimes.size() - 1; idx1++) {
+    for (unsigned int idx2 = idx1 + 1;idx2 < rtimes.size() ;idx2++) {
+      count++;
+      ans += fabs(rtimes[idx1] - rtimes[idx2]);
+    }
+  }
+  
+
+  return ans / (double)count;
+}
+
+double getMaxRT(vector<double>& rtimes) {
+  if (rtimes.size() <= 1) return 0.0;
+  double ans = -1;
+  for (unsigned int idx1 = 0;idx1 < rtimes.size() - 1; idx1++) {
+    for (unsigned int idx2 = idx1 + 1;idx2 < rtimes.size() ;idx2++) {
+      double current = fabs(rtimes[idx1] - rtimes[idx2]);
+      if (current > ans) {
+        ans = current;
+      }
+    }
+  }
+  return ans;
+}
+
+
+
 
 double* get_mpsm_features(DelimitedFileReader& matches) {
 
-
   double* features = (double*)mycalloc(number_features, sizeof(double));
-  
-  double xcorr_score = matches.getDouble("xcorr score");
-  double neutral_mass = matches.getDouble("spectrum neutral mass");
+
+  vector<double> neutral_masses;
+  matches.getDoubleVectorFromCell("spectrum neutral mass", neutral_masses);
   vector<double> peptide_masses;
   matches.getDoubleVectorFromCell("peptide mass", peptide_masses);
-  double max_diff = getMaxDiff(neutral_mass, peptide_masses);
-  double abs_max_diff = fabs(max_diff);
-  
 
   int matches_spectrum = matches.getInteger("matches/spectrum");
-
-  
   double lnSM = 0;
-
   if (matches_spectrum > 0) {
     lnSM = log(matches_spectrum);
   }
-  //cout <<"Matches:"<<matches_spectrum<<" lnSM:"<<lnSM<<endl;
 
   vector<string> peptide_sequences;
   matches.getStringVectorFromCell("sequence", peptide_sequences);
-  int max_pep_len = getMaxLength(peptide_sequences); 
-    
-  int num_peptides = peptide_sequences.size();
-
   
+  vector<double> rtimes;
+  getRTimes(peptide_sequences, rtimes);
+
   string string_charge = matches.getString("charge");
   ChargeIndex charge(string_charge);
 
-  int ncharge1 = charge.numCharge(1);
-  int ncharge2 = charge.numCharge(2);
-  int ncharge3 = charge.numCharge(3);
-
-
-  
-
-  double relative_rtime = 0;//matches.getDouble("corr");
-
-  features[0] = xcorr_score;
-  features[1] = max_diff;//max_diff;
-  features[2] = abs_max_diff;//abs_max_diff;
-  features[3] = neutral_mass;//neutral_mass;
-  features[4] = lnSM;//lnSM;
-  features[5] = max_pep_len;//max_pep_len;
-  features[6] = ncharge1;
-  features[7] = ncharge2;
-  features[8] = ncharge3;
-  features[9] = num_peptides;
-  features[10] = relative_rtime;
+  features[0] = matches.getDouble("xcorr score");         //xcorr_score;
+  features[1] = getAveDiff(neutral_masses, peptide_masses); //abs_ave_diff;
+  features[2] = getMaxDiff(neutral_masses, peptide_masses); //abs_max_diff;
+  features[3] = getTheoryFrac();
+  features[4] = getObsFrac();
+  features[5] = lnSM;//lnSM;
+  features[6] = getAveMissed(peptide_sequences);
+  features[7] = getMaxMissed(peptide_sequences);
+  features[8] = getAveLength(peptide_sequences);//ave_pep_len
+  features[9] = getMaxLength(peptide_sequences);//max_pep_len;
+  features[10] = charge.numCharge(1); //ncharge1;
+  features[11] = charge.numCharge(2);//ncharge2;
+  features[12] = charge.numCharge(3);//ncharge3;
+  features[13] = peptide_sequences.size();//num_peptides;
+  features[14] = getAveRT(rtimes);
+  features[15] = getMaxRT(rtimes);
 
   return features;
 
 }
 
-void registerMatches(DelimitedFileReader& matches, SetType set_idx, FILE* feature_file) {
-  double* features = NULL;
-  //matches.reset();
+/**
+ * get a sorted list of subsamples from an 0..total_samples-1 indices.
+ */
+void get_random_indices(unsigned int total_samples, 
+  unsigned int num_subsamples, 
+  vector<unsigned int>& indices) {
+
+  indices.clear();
+
+  cout <<"Generating list:"<<total_samples<<endl;
+  //generate a list of 0..total_samples-1 indices.
+  for (unsigned int idx = 0;idx < total_samples; idx++) {
+    indices.push_back(idx);
+  }
+
+  cout <<"Shuffling"<<endl;
+  //shuffle the indices.
+  random_shuffle(indices.begin(), indices.end());
+
+  cout <<"Resizing to "<<num_subsamples<<endl;
+  //truncate to the num_subsamples
+  indices.resize(num_subsamples);
+
+  cout <<"Sorting"<<endl;
+  //sort the subsamples in ascending order.
+  sort(indices.begin(), indices.end());
+
+}
+
+void getTopIndices(DelimitedFileReader& matches, 
+  vector<unsigned int>& indices) {
+  
+  matches.reset();
+  indices.clear();
+
+  string last_charge = matches.getString("charge");
+  int current_index = 0;
+  indices.push_back(0);
   while (matches.hasNext()) {
-    //carp(CARP_INFO,"Getting features:%d",set_idx);
-    features = get_mpsm_features(matches);
-    //carp(CARP_INFO,"Registering features");
-    /*
-    for (int i=0;i<11;i++) {
-      carp(CARP_INFO,"feature[%d]=%lf",i,features[i]);
+
+    string current_charge = matches.getString("charge");
+    if (current_charge != last_charge) {
+      indices.push_back(current_index);
+      last_charge = current_charge;
     }
-  */
+    current_index++;
+    matches.next();
+  }
+
+}
+
+void getSubsampleIndices(DelimitedFileReader &matches,
+  vector<unsigned int>& subsample_indices,
+  double subsample_percent) {
+
+  subsample_indices.clear();
+  if (subsample_percent >= 100.0) {
+    for (unsigned int idx=0;idx<matches.numRows();idx++) {
+      subsample_indices.push_back(idx);
+    }
+    return;
+  }
+
+  if (get_boolean_parameter("random-sample")) {
+    cout <<"Generating random indices:"<<endl;
+    get_random_indices(matches.numRows(), 
+      (unsigned int)(matches.numRows()*subsample_percent/100.0), 
+      subsample_indices);
+  } else {
+
+    vector<unsigned int> top_indices;
+    getTopIndices(matches, top_indices);
+    cout <<"There are "<<top_indices.size()<<" of "<<matches.numRows()<<endl;
+    vector<unsigned int> temp_indices;
+    get_random_indices(top_indices.size(),
+      (unsigned int)(top_indices.size()*subsample_percent/100.0),
+      temp_indices);
+    for (unsigned int idx=0;idx<temp_indices.size();idx++) {
+      subsample_indices.push_back(top_indices[temp_indices[idx]]);
+    }
+  }  
+}
+
+
+void registerMatches(DelimitedFileReader& matches, 
+  SetType set_idx, 
+  vector<unsigned int>& subsample_indices,
+  FILE* feature_file) {
+
+  cout <<"Inside registerMatches"<<endl;
+  double* features = NULL;
+  unsigned int sample_count = 0;
+
+  matches.reset();
+  cout<<"Building feature set"<<endl;
+  for (unsigned int sub_iidx = 0; 
+    sub_iidx < subsample_indices.size(); 
+    sub_iidx++) {
+
+    unsigned int sub_idx = subsample_indices[sub_iidx];
+    //cout<<"going to :"<<sub_idx<<" "<<sample_count<<" "<<matches.numRows()<<endl;
+    for (;sample_count < sub_idx;sample_count++) {
+      matches.next();
+    }
+    features = get_mpsm_features(matches);
+
     if ((int)set_idx == 0) {
        string id = matches.getString("scan")+"-"+matches.getString("charge")+"-"+matches.getString("xcorr rank"); //unique;
      
@@ -300,18 +493,22 @@ void registerMatches(DelimitedFileReader& matches, SetType set_idx, FILE* featur
     
     if (feature_file != NULL) {
       fprintf(feature_file,"%d\t",matches.getInteger("scan"));
-      fprintf(feature_file,"%d\t",(int)set_idx);
-
-      fprintf(feature_file,"%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n",features[0],features[1],features[2],features[3],features[4],features[5],features[6],features[7],features[8],features[9],features[10]);
+      fprintf(feature_file,"%s\t",matches.getString("charge").c_str());
+      fprintf(feature_file,"%d",(int)set_idx);
+      for (int idx=0;idx < number_features;idx++) {
+        fprintf(feature_file,"\t%f",features[idx]);
+      }
+      fprintf(feature_file,"\n");
     }
     //carp(CARP_INFO,"freeing features");
     free(features);
-    matches.next();
   }
 }
 
 
 /*  ****************** Subroutines ****************/
+
+
 
 /**
  * \brief Analyze matches using the q-ranker algorithm
@@ -329,8 +526,16 @@ void run_mpsm_q(
   char* feature_file){ 
 
   DelimitedFileReader target_search_results;
-  vector<DelimitedFileReader> decoys_search_results;   
-  vector<unsigned int> counts;
+  vector<DelimitedFileReader> decoy_search_results;   
+  vector<unsigned int> num_matches;
+  vector<unsigned int> num_subsamples;
+  vector<vector<unsigned int> > subsample_indices_indices;
+    
+  char* output_dir = get_string_parameter("output-dir");
+
+  double subsample_percent = get_double_parameter("subsample-percent");
+
+  carp(CARP_INFO,"Subsample percent:%g",get_double_parameter("subsample-percent"));
 
   carp(CARP_INFO,"Fasta file:%s",fasta_file);
 
@@ -344,46 +549,60 @@ void run_mpsm_q(
       carp(CARP_FATAL, "Problem opening output file %s", feature_file);
       return;
     }
+    fprintf(feature_fh, "scan\tcharge\tset");
+    for (int idx=0;idx<number_features;idx++) {
+      fprintf(feature_fh,"\t%s", feature_names[idx]);
+    }
+    fprintf(feature_fh, "\n");
+
+
   }
 
   carp(CARP_DETAILED_DEBUG, "Created feature file");
 
   //load the results file.
   carp(CARP_INFO,"counting target");
+
+
+
   string target_path = psm_result_folder+string("/search.target.txt");
-  
-  target_search_results.loadData(target_path.c_str());
 
-  
+  vector<DelimitedFileReader> search_results;
+  search_results.push_back(target_search_results);
+  search_results.push_back(target_search_results);
+  search_results.push_back(target_search_results);
+  search_results[0].loadData(target_path.c_str());
 
+  //num_matches.push_back(search_results[0].numRows());
+  //num_subsamples.push_back((unsigned int)(search_results[0].numRows() * subsample_percent));
+  //carp(CARP_INFO,"Target count:%u",search_results[0].numRows());
 
-  counts.push_back(target_search_results.numRows());
-
-  carp(CARP_INFO,"Target count:%u",target_search_results.numRows());
-
-  for (int i=1;i<=2;i++) {
-    DelimitedFileReader decoy_search_results;
+  for (int idx=1;idx<=2;idx++) {
+    carp(CARP_INFO,"idx:%d",idx);
+    carp(CARP_INFO,"Building");
     string decoy_path = 
       psm_result_folder + 
       string("/search.decoy-") + 
-      DelimitedFile::to_string<int>(i) + 
+      DelimitedFile::to_string<int>(idx) + 
       string(".txt");
-    carp(CARP_INFO,"counting %s",decoy_path.c_str());
-
-    decoy_search_results.loadData(decoy_path);
-    counts.push_back(decoy_search_results.numRows());
-    carp(CARP_INFO,"count:%u",decoy_search_results.numRows());
-
-    //decoys_search_results.push_back(decoy_search_results);  
+    //carp(CARP_INFO,"reading %s",decoy_path.c_str());
+    search_results[idx].loadData(decoy_path);
+    //num_matches.push_back(search_results[idx].numRows());
+    //num_subsamples.push_back((unsigned int)(search_results[idx].numRows() * subsample_percent));
+    //carp(CARP_INFO,"count:%u", search_results[idx].numRows());
   }
 
-  unsigned int num_target_matches = target_search_results.numRows();
-
-  carp(CARP_INFO,"Num target matches:%d", num_target_matches);
+  for (int idx=0;idx<3;idx++) {
+    num_matches.push_back(search_results[idx].numRows());
+    vector<unsigned int> subsample_indices;
+    subsample_indices_indices.push_back(subsample_indices);
+    getSubsampleIndices(search_results[idx], subsample_indices_indices[idx], subsample_percent);
+    num_subsamples.push_back(subsample_indices_indices[idx].size());
+  }
 
   carp(CARP_INFO,"Calling qcInitiate");
   // Call that initiates q-ranker
-  qcInitiate2((NSet)3, number_features, counts, (char**)feature_names, pi0);
+  qcInitiate2((NSet)3, number_features, num_subsamples, (char**)feature_names, pi0);
   //carp(CARP_INFO,"%d",pi0);
   // Call that sets verbosity level
   // 0 is quiet, 2 is default, 5 is more than you want
@@ -399,25 +618,19 @@ void run_mpsm_q(
     
   // create iterator, to register each PSM feature to q-ranker.
 
-  carp(CARP_INFO,"Registering targets");
-  registerMatches(target_search_results, SetType(0), feature_fh);
+  for (int i=0;i<3;i++) {
+    carp(CARP_INFO,"Registering :%i %d of %d", i, num_subsamples[i], num_matches[i]);
+    string output_path = string(output_dir) + string("/subsample.") + DelimitedFile::to_string<int>(i) + string(".txt");
+    writeSubsamples(search_results[i], subsample_indices_indices[i], output_path.c_str());
 
-  for (int i=1;i<=2;i++) {
-    DelimitedFileReader decoy_search_results;
-    string decoy_path = 
-      psm_result_folder + 
-      string("/search.decoy-") + 
-      DelimitedFile::to_string<int>(i) + 
-      string(".txt");
-    carp(CARP_INFO,"registering %s",decoy_path.c_str());
-
-    decoy_search_results.loadData(decoy_path);
-    carp(CARP_INFO,"Number of decoy features:%d", decoy_search_results.numRows());
-    registerMatches(decoy_search_results, SetType(i), feature_fh);  
+    registerMatches(search_results[i], SetType(i), subsample_indices_indices[i], feature_fh);  
   }
 
   /***** Q-RANKER run *********/
 
+  if (feature_fh != NULL) {
+    fclose(feature_fh);
+  }
     carp(CARP_INFO, "got to here");
     
     // Start processing
@@ -428,116 +641,155 @@ void run_mpsm_q(
    * the same order as the features were inserted */
   carp(CARP_INFO," Getting results");
 
+  string output_path = string(output_dir) + string("/qranker.target.txt");
+  writeResults(search_results[0], output_path.c_str()); 
+
+  output_path = string(output_dir) + string("/qranker.decoy-1.txt");
+  writeResults(search_results[1], output_path.c_str());
+  
+  output_path = string(output_dir) + string("/qranker.decoy-2.txt");
+  writeResults(search_results[2], output_path.c_str());
+
+  string in_path = string(output_dir) + string("/qranker.target.txt");
+  output_path = string(output_dir) + string("/qranker.target.collapsed.txt");
+  collapseResults(in_path.c_str(), output_path.c_str(), "q-ranker score");
+
+  in_path = string(output_dir) + string("/qranker.decoy-1.txt");
+  output_path = string(output_dir) + string("/qranker.decoy-1.collapsed.txt");
+  collapseResults(in_path.c_str(), output_path.c_str(), "q-ranker score");
+
+  in_path = string(output_dir) + string("/qranker.decoy-2.txt");
+  output_path = string(output_dir) + string("/qranker.decoy-2.collapsed.txt");
+  collapseResults(in_path.c_str(), output_path.c_str(), "q-ranker score");
+
+  carp(CARP_INFO, "mpsm-q-ranker: done.");
+}
+
+void writeSubsamples(DelimitedFileReader& matches, vector<unsigned int>& subsample_indices, const char* output_path) {
+  matches.reset();
+
+  ofstream fout(output_path);
+
+  for (unsigned int idx = 0; idx < matches.numCols() ; idx++) {
+    if (idx != 0) {
+      fout << "\t";
+    }
+    fout << matches.getColumnName(idx);
+  }
+  fout << endl;
+
+  unsigned int sample_count = 0;
+  for (unsigned int sub_iidx = 0; 
+    sub_iidx < subsample_indices.size(); 
+    sub_iidx++) {
+
+    unsigned int sub_idx = subsample_indices[sub_iidx];
+    //cout<<"going to :"<<sub_idx<<" "<<sample_count<<" "<<matches.numRows()<<endl;
+    for (;sample_count < sub_idx;sample_count++) {
+      matches.next();
+    }
+
+    fout << matches.getDataString() << endl;
+  }  
+
+  fout.close();
+
+}
+
+void writeResults(DelimitedFileReader& input, const char* output_path) {
+  input.reset();
+  ofstream fout(output_path);
+  
+  for (unsigned int idx = 0; idx < input.numCols() ; idx++) {
+    if (idx != 0) {
+      fout << "\t";
+    }
+    fout << input.getColumnName(idx);
+  }
+  fout << endl;
+  
+  int qranker_score_col = input.findColumn("q-ranker score");
+  if (qranker_score_col == -1) {
+    carp(CARP_FATAL,"Couldn't find q-ranker score in input");
+  }
 
   Caller* pCaller = getCallerQR();
 
 
-  ofstream fout_target("qranker.target.txt");
-  fout_target << target_search_results.getColumnName(0);
-  
-  for (unsigned int idx = 1; idx < target_search_results.numCols() ; idx++) {
-      fout_target << "\t" << target_search_results.getColumnName(idx);
-  }
-  fout_target << endl;
+  while (input.hasNext()) {
+    //create feature vector.
+    //calculate q-ranker score.
+    //carp(CARP_INFO,"get_mpsm_features");
+    double* features = get_mpsm_features(input);
+    //carp(CARP_INFO,"getQRankerScore");
+    double qranker_score = pCaller -> getQRankerScore(features);
 
-  target_search_results.reset();
-  
-  int qranker_score_col = target_search_results.findColumn("q-ranker score");
-  
- 
-  cout <<"TARGETS"<<endl;
-  SetHandler::Iterator iter(pCaller->getSetHandler(Caller::NORMAL));
-  while(PSMDescription * pPSM = iter.getNext()) {
-    target_search_results.next();
-  
-    fout_target << target_search_results.getString((unsigned int)0);
-    for (unsigned int idx=1;idx < target_search_results.numCols();idx++) {
-      if ((int)idx != qranker_score_col) {
-        fout_target << "\t" << target_search_results.getString(idx);
+    //carp(CARP_INFO,"free features");
+    free(features);
+    //write everything out.
+    //carp(CARP_INFO, "write out");
+    for (unsigned int idx=0;idx<input.numCols();idx++) {
+      //carp(CARP_INFO,"col %u",idx);
+      if (idx != 0) {
+        fout << "\t";
+      }
+      if (idx == (unsigned int)qranker_score_col) {
+        //carp(CARP_INFO,"outputting qranker score:%lf",qranker_score);
+        fout << qranker_score;
       } else {
-        fout_target << "\t" << pPSM-> sc;
+        fout << input.getString(idx);
       }
     }
-    fout_target << endl;
+    fout << endl;
+    //carp(CARP_INFO,"getting next record");
+    input.next();
   }
-
-  fout_target.close();
-
-
-  cout <<"DECOYS (1)"<<endl;
-  iter = SetHandler::Iterator(pCaller->getSetHandler(Caller::SHUFFLED1));
-
-  while(PSMDescription * pPSM = iter.getNext()) {
-    cerr << pPSM -> peptide << "\t" << pPSM -> sc << "\t" << pPSM -> q<<endl;
-    //scoreArr[ix] = pPSM->sc;
-    //qArr[ix++] =  pPSM->q;
-  }
-
-    
-
-
+  fout.close();
 }
 
+void collapseResults(const char* input_path, const char* output_path, const char* column_name) {
+  DelimitedFileReader input(input_path, true);
 
-void getBestScore(DelimitedFile& matches_in, int start_row, int last_row, 
-                  const string& column_name, int& best_row, FLOAT_T& best_score) {
+  ofstream fout(output_path);
+
+  //print the header.
   
-  best_row = start_row;
-  best_score = matches_in.getFloat(column_name.c_str(), best_row);
+  for (unsigned int idx = 0; idx < input.numCols() ; idx++) {
+    if (idx != 0) {
+      fout << "\t";
+    }
+    fout << input.getColumnName(idx);
+  }
+  fout << endl;
 
-  for (int idx=start_row+1;idx<=last_row;idx++) {
-    FLOAT_T current_score = matches_in.getFloat(column_name.c_str(), idx);
-    if (current_score < best_score) {
-      best_row = idx;
+  vector<int> best_indices;
+
+  double best_score = input.getFloat(column_name);
+  string best_row = input.getDataString();
+  
+  int last_scan = input.getInteger("scan");
+
+  while(input.hasNext()) {
+    int current_scan = input.getInteger("scan");
+    double current_score = input.getFloat(column_name);
+    if (current_scan != last_scan) {
+      //output best_row.
+      fout << best_row << endl;
+      best_row = input.getDataString();
       best_score = current_score;
-    }
-  }
-}
-
-void collapseScans(DelimitedFile& matches_in, DelimitedFile& matches_out, const string& column_name) {
-  //TODO: figure out what to do with duplicates. (Take the least complex?)
-  matches_out.clear();
-  //matches_out.addColumns(matches_in.getColumnNames());
-  vector<string>& column_names = matches_in.getColumnNames();
-  for (unsigned int idx=0;idx<column_names.size();idx++) {
-    matches_out.addColumn(column_names[idx]);
-  }
-  
-  //make sure scans are together.
-  matches_in.sortByIntegerColumn("scan");
-
-  int last_scan = matches_in.getInteger("scan", 0);
-  int first_row = 0;
-  int best_row = 0;
-  FLOAT_T best_score = 0;
-  
-
-  for (unsigned int match_idx = 0;match_idx < matches_in.numRows(); match_idx++) {
-    int current_scan = matches_in.getInteger("scan", match_idx);
-    if (last_scan != current_scan) {
-      //process the scans between the first and match_idx-1.
-      //find the best row and calculate the bonferroni corrected p-value.
-      carp(CARP_DEBUG,"Collaping %d %d %d",last_scan, first_row, match_idx-1);
-      getBestScore(matches_in, first_row, match_idx-1, column_name, best_row, best_score);  
-      carp(CARP_DEBUG,"Copying row best: %d %lf", best_row, best_score);
-      //update matches out
-      int new_row = matches_out.addRow();
-      matches_in.copyToRow(matches_out, best_row, new_row);
-
-      //update first_row and last scan.
-      first_row = match_idx;
       last_scan = current_scan;
+    } else {
+      if (current_score > best_score) {
+        best_row = input.getDataString();
+        best_score = current_score;
+      }
     }
+    input.next();
   }
-
-  carp(CARP_DEBUG,"Doing last entry");
-  //finish the last entry
-  getBestScore(matches_in, first_row, matches_in.numRows() - 1, column_name, best_row, best_score);
-  carp(CARP_DEBUG,"best: %d %lf", best_row, best_score);
-  int new_row = matches_out.addRow();
-  matches_in.copyToRow(matches_out, best_row, new_row);
+  //output the last best row.
+  fout << best_row << endl;
+  fout.close();
 }
-
 
 
 /*

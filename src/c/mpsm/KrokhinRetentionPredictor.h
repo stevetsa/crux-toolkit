@@ -19,7 +19,7 @@ class KrokhinRetentionPredictor: public RetentionPredictor {
     virtual ~KrokhinRetentionPredictor();
 
     virtual FLOAT_T predictRTime(MATCH_T* match);
-
+    FLOAT_T predictRTimeS(const char* sequence);
 };
 
 
