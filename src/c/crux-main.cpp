@@ -371,20 +371,8 @@ static void analyze_matches_main(
   free(protein_input_name);
 
   carp(CARP_INFO, "Elapsed time: %.3g s", wall_clock() / 1e6);
-  switch(command) {
-  case QVALUE_COMMAND:
-    carp(CARP_INFO, "Finished crux compute-q-values.");
-    break;
-  case PERCOLATOR_COMMAND:
-    carp(CARP_INFO, "Finished crux percolator.");
-    break;
-  case QRANKER_COMMAND:
-    carp(CARP_INFO, "Finished crux q-ranker.");
-    break;
-  default:
-    carp(CARP_FATAL, "Unknown command type.");
-    break;
-  }
+  char* name = command_type_to_command_line_string(command);
+  carp(CARP_INFO, "Finished crux %s.", name);
 }
 
 
