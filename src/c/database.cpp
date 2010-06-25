@@ -22,7 +22,18 @@
 #include "sorter.h"
 #include "protein_index.h"
 
-#define MAX_PROTEINS 3300000 ///< The maximum number of proteins in a database.
+#include <map>
+#include <vector>
+
+using namespace std;
+
+//Comparator function for c type strings.
+struct cmp_str {
+
+  bool operator()(char const *a, char const *b) {
+    return strcmp(a, b) < 0;
+  }
+};
 
 /**
  * \struct database
@@ -32,9 +43,10 @@ struct database{
   char*        filename; ///< Original database filename.
   FILE*        file;     ///< Open filehandle for this database.
                          ///  A database has only one associated file.
-  unsigned int num_proteins; ///< Number of proteins in this database.
   BOOLEAN_T is_parsed;  ///< Has this database been parsed yet.
-  PROTEIN_T* proteins[MAX_PROTEINS]; ///< Proteins in this database 
+  std::vector<PROTEIN_T*> proteins; ///< Proteins in this database.
+  map<char*, PROTEIN_T*, cmp_str> protein_map; //map for proteins 
+  BOOLEAN_T is_hashed; //Indicator of whether the database has been hashed/mapped.
   unsigned long int size; ///< The size of the database in bytes (convenience)
   BOOLEAN_T use_light_protein; ///< should I use the light/heavy protein option
   BOOLEAN_T is_memmap; ///< Are we using a memory mapped fasta file? 
@@ -98,7 +110,6 @@ DATABASE_T* allocate_database(void){
   DATABASE_T* database = (DATABASE_T*)mycalloc(1,sizeof(DATABASE_T));
   database->filename = NULL;
   database->file = NULL;
-  database->num_proteins = 0; 
   database->is_parsed = FALSE;
   database->size = 0; 
   database->use_light_protein = FALSE; 
@@ -106,6 +117,8 @@ DATABASE_T* allocate_database(void){
   database->data_address = NULL;
   database->pointer_count = 1;
   database->file_size = 0;
+  database->is_hashed = FALSE;
+  database->protein_map =  map<char*, PROTEIN_T*, cmp_str>();
   // fprintf(stderr, "Free: Allocation: %i\n", database->pointer_count);
   return database;
 }
@@ -124,7 +137,6 @@ DATABASE_T* new_database(
   DATABASE_T* database = allocate_database();
   set_database_filename(database, filename);
   database->is_memmap = is_memmap;
-  database->num_proteins = 0;
 
   return database;
 }  
@@ -160,7 +172,7 @@ void free_database(
     
     // free each protein in the array
     unsigned int protein_idx;
-    for(protein_idx=0; protein_idx < database->num_proteins; ++protein_idx){
+    for(protein_idx=0; protein_idx < database->proteins.size(); ++protein_idx){
       free_protein(database->proteins[protein_idx]);
     }
     // free(database->proteins);
@@ -273,18 +285,11 @@ BOOLEAN_T parse_database_text_fasta(
     // iterate over all proteins in protein index
     while(protein_index_iterator_has_next(protein_index_iterator)){
       // check if there's space for more proteins
-      if(database->num_proteins == MAX_PROTEINS){
-        free_protein_index_iterator(protein_index_iterator);
-        carp(CARP_ERROR, "exceeds protein index array size");
-        return FALSE;
-      }
-      
       new_protein = protein_index_iterator_next(protein_index_iterator);
       set_protein_database(new_protein, database);
       
       // add protein to database
-      database->proteins[database->num_proteins] = new_protein;
-      ++database->num_proteins;
+      database->proteins.push_back(new_protein);
     }
     // job well done..free iterator
     free_protein_index_iterator(protein_index_iterator);
@@ -294,12 +299,6 @@ BOOLEAN_T parse_database_text_fasta(
     // check each line until reach '>' line
     while((line_length =  getline(&new_line, &buf_length, file)) != -1){
       if(new_line[0] == '>'){
-        if(database->num_proteins == MAX_PROTEINS){
-          fclose(file);
-          free(new_line);
-          carp(CARP_ERROR, "exceeds protein index array size");
-          return FALSE;
-        }
         // the new protein to be added
         new_protein = allocate_protein();
         
@@ -318,10 +317,10 @@ BOOLEAN_T parse_database_text_fasta(
           if(!parse_protein_fasta_file(new_protein ,file)){
             fclose(file);
             free_protein(new_protein);
-            for(protein_idx=0;protein_idx<database->num_proteins;protein_idx++){
+            for(protein_idx=0;protein_idx<database->proteins.size();protein_idx++){
               free_protein(database->proteins[protein_idx]);
             }
-            database->num_proteins = 0;
+            database->proteins.clear();
             carp(CARP_ERROR, "failed to parse fasta file");
             return FALSE;
           }
@@ -329,11 +328,10 @@ BOOLEAN_T parse_database_text_fasta(
         }
         
         // add protein to database
-        database->proteins[database->num_proteins] = new_protein;
+        database->proteins.push_back(new_protein);
         // set protein index, database
-        set_protein_protein_idx(new_protein, database->num_proteins);
+        set_protein_protein_idx(new_protein, database->proteins.size()-1);
         set_protein_database(new_protein, database);
-        ++database->num_proteins;
       }
       working_index = ftell(file);
     }
@@ -395,16 +393,6 @@ BOOLEAN_T populate_proteins_from_memmap(
   
   // parse proteins until the end of list
   while((int)data[0] != 1){
-    // check if anymore space for protein
-    if(database->num_proteins == MAX_PROTEINS){
-      carp(CARP_ERROR, "exceeds protein index array size");
-      // free all proteins before return
-      for(protein_idx = 0; protein_idx < database->num_proteins; ++protein_idx){
-        free_protein(database->proteins[protein_idx]);
-      }
-      database->num_proteins = 0;
-      return FALSE;
-    }
     
     // the new protein to be added
     new_protein = allocate_protein();
@@ -414,21 +402,20 @@ BOOLEAN_T populate_proteins_from_memmap(
       // failed to parse the protein from memmap
       // free all proteins, and return FALSE
       free_protein(new_protein);
-      for(; protein_idx < database->num_proteins; ++protein_idx){
+      for(; protein_idx < database->proteins.size(); ++protein_idx){
         free_protein(database->proteins[protein_idx]);
       }
-      database->num_proteins = 0;
+      database->proteins.clear();
       carp(CARP_ERROR, "failed to parse fasta file");
       return FALSE;
     }
     set_protein_is_light(new_protein, FALSE);
     
     // add protein to database
-    database->proteins[database->num_proteins] = new_protein;
+    database->proteins.push_back(new_protein);
     // set protein index, database
-    set_protein_protein_idx(new_protein, database->num_proteins);
+    set_protein_protein_idx(new_protein, database->proteins.size()-1);
     set_protein_database(new_protein, database);
-    ++database->num_proteins;
   }
 
   return TRUE;
@@ -675,7 +662,7 @@ unsigned int get_database_num_proteins(
   DATABASE_T* database ///< the query database -in 
   )
 {
-  return database->num_proteins;
+  return database->proteins.size();
 }
 
 /**
@@ -709,11 +696,11 @@ PROTEIN_T* get_database_protein_at_idx(
   )
 {
   //carp(CARP_DETAILED_DEBUG, "Getting db protein idx = %i, num proteins %i", 
-  //     protein_idx, database->num_proteins);
-  if( protein_idx >= database->num_proteins ){
+  //     protein_idx, database->proteins.size());
+  if( protein_idx >= database->proteins.size()){
     carp(CARP_FATAL, 
          "Protein index %i out of bounds.  %i proteins in the database",
-         protein_idx, database->num_proteins);
+         protein_idx, database->proteins.size());
   }
 
   return database->proteins[protein_idx];
@@ -726,19 +713,33 @@ PROTEIN_T* get_database_protein_by_id_string(
   DATABASE_T* database, ///< the query database -in
   const char* protein_id ///< The id string for this protein -in
   ) {
-  //TODO: we can speed this up using a map on string -> protein ids
-  PROTEIN_T* protein = NULL;
-  unsigned int protein_idx;
-  for (protein_idx = 0; 
-    protein_idx <= database -> num_proteins;
-    protein_idx++) {
 
-    PROTEIN_T* current_protein = database -> proteins[protein_idx];
-    if (strcmp(get_protein_id_pointer(current_protein), protein_id)==0) {
-      protein = current_protein;
-      carp(CARP_DETAILED_DEBUG, "found protein %s", protein_id);
-      break;
+  //TODO - Implement as a hashtable rather than a map to make 
+  //this even faster if needed.
+  PROTEIN_T* protein = NULL;
+  if (database->is_hashed) {
+    map<char*, PROTEIN_T*>::iterator find_iter;
+    find_iter = database->protein_map.find((char*)protein_id);
+
+    if (find_iter != database->protein_map.end()) {
+      protein = find_iter->second;
     }
+  } else {
+    //create the hashtable of protein ids
+    for (unsigned int protein_idx = 0;
+      protein_idx < database->proteins.size();
+      protein_idx++) {
+
+      PROTEIN_T* current_protein = database->proteins[protein_idx];
+      char* current_id = get_protein_id_pointer(current_protein);
+      database->protein_map[current_id] = current_protein;
+
+      if (strcmp(current_id, protein_id)==0) {
+        protein = current_protein;
+      }
+        
+    }
+    database->is_hashed = TRUE;
   }
   return protein;
 }
@@ -836,7 +837,7 @@ PROTEIN_T* database_protein_iterator_next(
   if(database_protein_iterator->cur_protein % 500 == 0){
     carp(CARP_DETAILED_DEBUG, "Reached protein %d out of %d", 
          database_protein_iterator->cur_protein,
-         database_protein_iterator->database->num_proteins);
+         database_protein_iterator->database->proteins.size());
   }
   
   return database_protein_iterator->database->proteins[database_protein_iterator->cur_protein-1];
