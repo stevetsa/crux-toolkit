@@ -12,7 +12,7 @@
 using namespace std;
 
 
-typedef map<string, int> ProteinToSpc;                /* maps protein to 
+typedef map<string, int> MappingToSpc;                /* maps protein or peptide to 
 							 thier spectrum count */
 typedef map<string, int> ProteinToPepc;               /* maps protein to thier
 							 peptide count */
@@ -20,59 +20,66 @@ typedef map<string, int> ProteinToLength;             /* maps protein to thier
 							 length */
 typedef map<string, set<string> > ProteinToPeptides;  /* maps protein to the set
 							 of peptides matched */
-typedef map<string, FLOAT_T> ProteinToScore;          /* maps protein to thier 
-							 score (nsaf or sin)*/
+typedef map<string, FLOAT_T> MappingToScore;          /* maps protein or peptide
+							 to thier score 
+							 (nsaf or sin)*/
 typedef map<string, FLOAT_T> PeptideToIntensity;      /* maps peptide thier ion 
 							 intensity */
-typedef vector<pair<double, string> > ScoreToProtein; /* vector of nsaf score to
-							 protein*/
+typedef vector<pair<double, string> > ScoreToMapping; /* vector of score to
+							 protein or peptide*/
 typedef map<pair<int, int>, string> ScanChargeToPeptides; /* maps scan/charge to
 							     peptide */
 
 // for nsaf, prints tab-delimited file of proteins and thier nsaf
 // scores in sorted order from biggest to smallest
 bool print_nsaf_scores(
-		       ScoreToProtein& scoreToProtein,
+		       ScoreToMapping& scoreToMapping,
 		       string full_output_file,
-		       string measure
+		       string measure,
+		       BOOLEAN_T use_prot_level
 		       );
 
 // gets the indices of all the values based off of header 
-void getIndices(int *score_index, 
+void getIndices(
+		int *score_index, 
 		int *proteins_index, 
 		int *peptide_index, 
 		int *rank_index, 
 		int *scan_index, 
 		int *charge_index,
 		bool isPerc,
-		string header);
+		string header
+		);
 
 
 // for sin, prints tab-delimited file of proteins and thier nsaf
 // scores in sorted order from biggest to smallest
 bool print_scores(
-		  ScoreToProtein& scoreToProtein,
+		  ScoreToMapping& scoreToMapping,
 		  string full_output_file,
 		  string measure,
-		  ProteinToScore proteinToScore,
+		  MappingToScore mappingToScore,
 		  ProteinToLength proteinToLength,
 		  double score_summation,
 		  map<string, int>& proteinToNumSpectra,
-		  map<string, int>& proteinToPn
+		  map<string, int>& proteinToPn,
+		  BOOLEAN_T use_prot_level
 		 );
 
 
 
 // gets the Spc / L for each protein
 bool get_nsaf_scores(
-		     ProteinToScore& proteinToScore,
-		     ProteinToSpc& proteinToSpc,
+		     MappingToScore& mappingToScore,
+		     MappingToSpc& mappingToSpc,
 		     ProteinToLength& proteinToLength,
-		     double * score_summation
+		     double * score_summation,
+		     BOOLEAN_T use_prot_level
 		     );
+
 // gets the total ion intensity for the protein
 bool get_sin_scores(
-		     ProteinToScore& proteinToScore,
+		     MappingToScore& mappingToScore,
 		     ProteinToPeptides& proteinToPeptides,
 		     PeptideToIntensity& peptideToIntensity,
 		     double * score_summation,
@@ -95,11 +102,12 @@ bool get_ion_intensity_scores(
 // find the normalized score by dividing all the scores by the 
 // summation (and by length of the protein if its for sin score)
 bool get_normalized_score(
-			  ProteinToScore& proteinToScore,
-			  ScoreToProtein& normScoreToProtein,
+			  MappingToScore& mappingToScore,
+			  ScoreToMapping& normScoreToMapping,
 			  ProteinToLength& proteinToLength,
 			  string measure,
-			  double summation
+			  double summation,
+			  BOOLEAN_T use_prot_level
 			  );
 
 // creates and returns a match_collection from an sqt file
@@ -107,12 +115,13 @@ bool get_matches_from_txt(
 			  char* txt_file,
 			  char* database,
 			  ProteinToLength& proteinToData,
-			  ProteinToSpc& proteinToSpc,
+			  MappingToSpc& mappingToSpc,
 			  ProteinToPepc& proteinToPepc,
 			  ProteinToPeptides& proteinToPeptides,
 			  ScanChargeToPeptides& scanChargeToPeptides,
 			  float threshold,
-			  BOOLEAN_T only_unique
+			  BOOLEAN_T only_unique,
+			  BOOLEAN_T use_prot_level
 			  );
 
 /* 
@@ -183,17 +192,28 @@ int quantify_main(int argc, char** argv){
   char* output_dir = get_string_parameter("output-dir");
   char *  ms2 = get_string_parameter("input-ms2");
   char * bullseye = get_string_parameter("input-bullseye");
+  string quant_level = get_string_parameter("quant-level");
   BOOLEAN_T overwrite = get_boolean_parameter("overwrite");
   BOOLEAN_T only_unique = get_boolean_parameter("unique-mapping");
 
+  
+  // check validity of parameters
   transform(measure.begin(), measure.end(), measure.begin(), ::toupper); 
+  transform(quant_level.begin(), quant_level.end(), quant_level.begin(), ::toupper); 
+
   if (!(measure.compare("NSAF") || measure.compare("SIN"))){
     carp(CARP_FATAL, "Must pick NSAF or SIN for measure option");
   } 
   if (!measure.compare("SIN") && ms2==NULL){
     carp(CARP_FATAL, "Must use input-ms2 option if you want to find SIN");
   }
+  if (!(quant_level=="PROTEIN" || quant_level=="PEPTIDE")){
+    carp(CARP_FATAL, "Must pick PROTEIN or PEPTIDE for quant-level option");
+  }
 
+
+
+  BOOLEAN_T use_prot_level = (quant_level=="PROTEIN");
   string input_ms2 = ms2;
   char* output_file = (char*)malloc(sizeof(char)*20);
   strcpy(output_file, "quantify.target.txt");
@@ -227,9 +247,9 @@ int quantify_main(int argc, char** argv){
   carp(CARP_DETAILED_DEBUG, "database: %s", database);
 
   // initialize variables
-  ProteinToScore proteinToScore;         /* maps protein to thier score 
+  MappingToScore mappingToScore;         /* maps protein to thier score 
 					   (nsaf or sin) */
-  ProteinToSpc proteinToSpc;             /* maps proteins to spectrum count */
+  MappingToSpc mappingToSpc;             /* maps proteins to spectrum count */
   ProteinToPepc proteinToPepc;           /* maps proteins to peptide count */
   ProteinToLength proteinToLength;       /* maps proteins to length (number of 
 					    amino acids). Contains all proteins
@@ -239,23 +259,28 @@ int quantify_main(int argc, char** argv){
   PeptideToIntensity peptideToIntensity; /* maps peptides to sum of ion 
 					    intensities for all matched 
 					    spectra */
-  ScoreToProtein normScoreToProtein;     /* maps normalized score to protein */
+  ScoreToMapping normScoreToMapping;     /* maps normalized score to protein */
   ScanChargeToPeptides scanChargeToPeptides; /* maps scan/charge to peptide */
   double score_summation;                /* sums up the scores for all proteins 
 					    to use for normalization */
-
   map<string, int> pepToNumSpectra;      /* number of spectra with ion 
 					    intensity for each peptide */
   map<string, int> proteinToNumSpectra;  /* number of spectra with ion 
 					    intensity for each protein */
-
   map<string, int> proteinToPn;           /* number of peptides used with 
 					     ion intensity for the protein */
 
   /* read from the database and target.txt file */
-  if (!get_matches_from_txt(psm_dir, database, proteinToLength, 
-			    proteinToSpc, proteinToPepc, proteinToPeptides, 
-			    scanChargeToPeptides,threshold, only_unique)){
+  if (!get_matches_from_txt(psm_dir, 
+			    database, 
+			    proteinToLength, 
+			    mappingToSpc, 
+			    proteinToPepc, 
+			    proteinToPeptides, 
+			    scanChargeToPeptides,
+			    threshold, 
+			    only_unique, 
+			    use_prot_level)){
     carp(CARP_ERROR, "error retrieving matches");
     exit(1);
   }
@@ -263,13 +288,17 @@ int quantify_main(int argc, char** argv){
   /* This part gets the (un)normalized scores depending on whether the user 
      asked for nsaf or sin score */
   if (!measure.compare("NSAF")){
-    if (!get_nsaf_scores(proteinToScore, proteinToSpc, proteinToLength, 
-			 &score_summation)){
+    if (!get_nsaf_scores(mappingToScore, 
+			 mappingToSpc, 
+			 proteinToLength, 
+			 &score_summation, 
+			 use_prot_level
+			 )){
       carp(CARP_ERROR, "error finding nsaf scores"); 
       exit(1);
     }
-    carp(CARP_INFO, "%i", proteinToScore.size());
-    carp(CARP_INFO, "%i", proteinToSpc.size());
+    carp(CARP_INFO, "%i", mappingToScore.size());
+    carp(CARP_INFO, "%i", mappingToSpc.size());
   } else {
 
     /* if bullseye parameter was passed, then use bullseye */
@@ -286,25 +315,42 @@ int quantify_main(int argc, char** argv){
 
     } else {
       /* calculate the ion intensity scores for each protein */
-      if (!get_ion_intensity_scores(peptideToIntensity, threshold ,
-				    psm_dir, output_dir, input_ms2, 
+      if (!get_ion_intensity_scores(peptideToIntensity, 
+				    threshold ,
+				    psm_dir, 
+				    output_dir, 
+				    input_ms2, 
 				    pepToNumSpectra)){
 	carp(CARP_ERROR, "error finding ion intensities");
 	exit(1);
       }
     }
+    
     /* using the ion intensities, find the sin scores */
-    if (!get_sin_scores(proteinToScore, proteinToPeptides, 
-			peptideToIntensity, &score_summation, 
-			proteinToNumSpectra, pepToNumSpectra, proteinToPn)){
-      carp(CARP_ERROR, "error finding sin scores");
-      exit(1);
-    }  
+    if (!use_prot_level) {
+      mappingToScore = peptideToIntensity;
+    } else {
+      if (!get_sin_scores(mappingToScore, 
+			  proteinToPeptides, 
+			  peptideToIntensity, 
+			  &score_summation, 
+			  proteinToNumSpectra, 
+			  pepToNumSpectra, 
+			  proteinToPn)){
+	carp(CARP_ERROR, "error finding sin scores");
+	exit(1);
+      }  
+    }
   }
   
   /* find the normalized scores */
-  if (!get_normalized_score(proteinToScore ,normScoreToProtein, 
-			    proteinToLength , measure ,score_summation )){
+  if (!get_normalized_score(mappingToScore ,
+			    normScoreToMapping, 
+			    proteinToLength , 
+			    measure ,
+			    score_summation,
+			    use_prot_level
+			    )){
     carp(CARP_ERROR, "error finding the normalized scores");
     exit(1);
   }
@@ -313,15 +359,26 @@ int quantify_main(int argc, char** argv){
   
   /* print the results */
   if (!measure.compare("NSAF")){
-    if (!print_nsaf_scores(normScoreToProtein, full_output_file, measure)){
+    if (!print_nsaf_scores(normScoreToMapping, 
+			   full_output_file, 
+			   measure,
+			   use_prot_level
+			   )){
       carp(CARP_ERROR, "error printing scores");
       exit(1);
     }
   } else{
     /* SIN has more data to print */
-    if (!print_scores(normScoreToProtein, full_output_file, measure, 
-		      proteinToScore, proteinToLength, score_summation, 
-		      proteinToNumSpectra, proteinToPn)){
+    if (!print_scores(normScoreToMapping, 
+		      full_output_file, 
+		      measure, 
+		      mappingToScore, 
+		      proteinToLength, 
+		      score_summation, 
+		      proteinToNumSpectra, 
+		      proteinToPn,
+		      use_prot_level
+		      )){
       carp(CARP_ERROR, "error printing scores");
       exit(1);
     }
@@ -337,37 +394,52 @@ int quantify_main(int argc, char** argv){
 // (just for nsaf) Iterate through all the proteins and output its id and nsaf scores 
 // into a file. Sorted by scores and delimited by tab
 bool print_nsaf_scores(
-		       ScoreToProtein& scoreToProtein,
+		       ScoreToMapping& scoreToMapping,
 		       string full_output_file,
-		       string measure
+		       string measure,
+		       BOOLEAN_T use_prot_level
 		       ){
   carp(CARP_INFO, "Outputting matches");
   ofstream output_stream(full_output_file.c_str());
+  string prot_level;
+  if (use_prot_level){
+    prot_level = "Protein id";
+  } else {
+    prot_level = "Peptide seq";
+  }
+  
   if (!output_stream.is_open()){
     carp(CARP_ERROR, "error opening output file");
     return false;
   }
-  // print header 
-  output_stream<< "Protein id \t "+measure+" score" <<endl;
+  
+  
+  /* print header */
+  output_stream<< prot_level+"\t "+measure+" score" <<endl;
   // for each protein, print out its id and score
-  for (ScoreToProtein::const_iterator score_pair = scoreToProtein.begin();
-       score_pair != scoreToProtein.end(); ++score_pair){
+  for (ScoreToMapping::const_iterator score_pair = scoreToMapping.begin();
+	 score_pair != scoreToMapping.end(); ++score_pair){
     output_stream << score_pair->second << "\t" << score_pair->first << endl;
   }
+  
+  
+  
+
   return true;
 }
 
 /* Iterate through all the proteins and output its id and nsaf scores 
    into a file. Sorted by scores and delimited by tab */
 bool print_scores(
-		  ScoreToProtein& scoreToProtein,
+		  ScoreToMapping& scoreToMapping,
 		  string full_output_file,
 		  string measure,
-		  ProteinToScore proteinToScore,
+		  MappingToScore mappingToScore,
 		  ProteinToLength proteinToLength,
 		  double score_summation,
 		  map<string, int>& proteinToNumSpectra,
-		  map<string, int>& proteinToPn
+		  map<string, int>& proteinToPn,
+		  BOOLEAN_T use_prot_level
 		  ){
   /* create a stream to the output file */
   carp(CARP_INFO, "Outputting matches");
@@ -377,19 +449,47 @@ bool print_scores(
     return false;
   }
   /* print header */
-  output_stream<< "Protein id \t "+measure+" score" 
-	       <<  "\ttotal_intensity_of_protein" << "\tlength" 
-	       << "\tnum_spectra"<<"\tnum_peptides"
-	       <<"\tsum_protein_intensities=" << score_summation <<endl;
-  /* for each protein, print out its id and score */
-  for (ScoreToProtein::const_iterator score_pair = scoreToProtein.begin();
-       score_pair != scoreToProtein.end(); ++score_pair){
-    output_stream << score_pair->second << "\t" << score_pair->first 
-		  << "\t" << proteinToScore[score_pair->second] << "\t" 
-		  << proteinToLength[score_pair->second] <<"\t" 
-		  << proteinToNumSpectra[score_pair->second] << "\t" 
-		  << proteinToPn[score_pair->second]<< endl;
+  if (use_prot_level){
+    /* For Protein level quantification */
+    output_stream<< "Protein id \t "+measure+" score" 
+		 << "\ttotal_intensity" 
+		 << "\tlength" 
+		 << "\tnum_spectra"
+		 << "\tnum_peptides"
+		 << "\tsum_intensities=" 
+		 << score_summation 
+		 << endl;
+    /* for each protein, print out its id and score */
+    for (ScoreToMapping::const_iterator score_pair = scoreToMapping.begin();
+	 score_pair != scoreToMapping.end(); ++score_pair){
+      output_stream << score_pair->second << "\t" 
+		    << score_pair->first  << "\t" 
+		    << mappingToScore[score_pair->second] << "\t" 
+		    << proteinToLength[score_pair->second] <<"\t" 
+		    << proteinToNumSpectra[score_pair->second] << "\t" 
+		    << proteinToPn[score_pair->second]
+		    << endl;
+    }
+  } else {
+    /* For Peptide level quantification */
+    output_stream<< "Peptide seq \t "+measure+" score" 
+		 << "\ttotal_intensity" 
+		 << "\tnum_spectra"
+		 << "\tsum_intensities=" 
+		 << score_summation 
+		 << endl;
+    /* for each protein, print out its id and score */
+    for (ScoreToMapping::const_iterator score_pair = scoreToMapping.begin();
+	 score_pair != scoreToMapping.end(); ++score_pair){
+      output_stream << score_pair->second << "\t" 
+		    << score_pair->first  << "\t" 
+		    << mappingToScore[score_pair->second] << "\t" 
+		      << proteinToNumSpectra[score_pair->second] << "\t" 
+		    << endl;
+    }
   }
+  
+  
   return true;
 }
 
@@ -397,11 +497,12 @@ bool print_scores(
  *  protein 
  */
 bool get_normalized_score(
-		     ProteinToScore& proteinToScore,
-		     ScoreToProtein& normScoreToProtein,
+		     MappingToScore& mappingToScore,
+		     ScoreToMapping& normScoreToMapping,
 		     ProteinToLength& proteinToLength,
 		     string measure,
-		     double summation
+		     double summation,
+		     BOOLEAN_T use_prot_level
 		     ){
   /* initialize variables */
   string protein_id;
@@ -410,35 +511,33 @@ bool get_normalized_score(
 
   carp(CARP_INFO, "Finding normalized scores");
   /* for each protein */
-  for (ProteinToScore::const_iterator score_pair = proteinToScore.begin();
-       score_pair != proteinToScore.end(); ++score_pair){
+  for (MappingToScore::const_iterator score_pair = mappingToScore.begin();
+       score_pair != mappingToScore.end(); ++score_pair){
     /* get nessasary variables from maps */
     protein_id = (*score_pair).first;
     normalized_score = (*score_pair).second / summation;
-    if (!measure.compare("SIN")){
+    if (!measure.compare("SIN") && use_prot_level){
       length = proteinToLength[protein_id];
-      if (length == 0){
-	carp(CARP_INFO, "Length is zero for this protein");
-      }
       normalized_score = normalized_score / (FLOAT_T)length;
     }
     /* record score into vector */
-    normScoreToProtein.push_back(make_pair(normalized_score, protein_id));
+    normScoreToMapping.push_back(make_pair(normalized_score, protein_id));
   }
   /* sort the vector and reverse to order them from biggest to largest */
-  sort(normScoreToProtein.begin(), normScoreToProtein.end());
-  reverse(normScoreToProtein.begin(), normScoreToProtein.end());
+  sort(normScoreToMapping.begin(), normScoreToMapping.end());
+  reverse(normScoreToMapping.begin(), normScoreToMapping.end());
   return true;
 }
 
 
 
-/* Gets the sin scores and enters them into proteinToScore map */
+/* Gets the sin scores and enters them into mappingToScore map */
 bool get_nsaf_scores(
-		     ProteinToScore& proteinToScore,
-		     ProteinToSpc& proteinToSpc,
+		     MappingToScore& mappingToScore,
+		     MappingToSpc& mappingToSpc,
 		     ProteinToLength& proteinToLength,
-		     double * score_summation
+		     double * score_summation,
+		     BOOLEAN_T use_prot_level
 		     ){
   /* initialize variables */
   string protein_id;
@@ -449,23 +548,30 @@ bool get_nsaf_scores(
   /* start summation at zero */
   (*score_summation) = 0;
   /* for each protein */
-  for (map<string,int>::const_iterator score_pair = proteinToSpc.begin();
-       score_pair != proteinToSpc.end(); ++score_pair){
+  for (map<string,int>::const_iterator score_pair = mappingToSpc.begin();
+       score_pair != mappingToSpc.end(); ++score_pair){
     /* get nessasary varaibles for maps */
     protein_id = (*score_pair).first;
     count = (*score_pair).second;
     length = proteinToLength[protein_id];
-    proteinToScore.insert(make_pair(protein_id , (float)count / (float)length));
-    /* add the current proteins spc/data value to the summation */
-    (*score_summation) += (float)count / (float)length;
+
+    /* add score to mapping and incremement normalization constant */
+    if (use_prot_level){
+      mappingToScore.insert(make_pair(protein_id , (float)count / (float)length));
+      (*score_summation) += (float)count / (float)length;
+    } else {
+      mappingToScore.insert(make_pair(protein_id , (float)count));
+      (*score_summation) += (float)count;
+    }
+
   }
   return true;
 }
 
-/* Gets the sin scores and enters them into proteinToScore map. Assumes 
+/* Gets the sin scores and enters them into mappingToScore map. Assumes 
    that peptideToIntensity is filled out */
 bool get_sin_scores(
-		     ProteinToScore& proteinToScore,
+		     MappingToScore& mappingToScore,
 		     ProteinToPeptides& proteinToPeptides,
 		     PeptideToIntensity& peptideToIntensity,
 		     double * score_summation,
@@ -507,7 +613,7 @@ bool get_sin_scores(
     }
     /* extra test since bullseye scores do not match up perfectly */
     if (total_intensity != 0){
-      proteinToScore.insert(make_pair(protein_id, total_intensity));
+      mappingToScore.insert(make_pair(protein_id, total_intensity));
       proteinToNumSpectra.insert(make_pair(protein_id, total_spectra));
       proteinToPn.insert(make_pair(protein_id, total_peptide));
       (*score_summation) += total_intensity;
@@ -536,12 +642,13 @@ bool  get_matches_from_txt(
 			   char* txt_file,
 			   char* database_file,
 			   ProteinToLength& proteinToData,
-			   ProteinToSpc& proteinToSpc,
+			   MappingToSpc& mappingToSpc,
 			   ProteinToPepc& proteinToPepc,
 			   ProteinToPeptides& proteinToPeptides,
 			   ScanChargeToPeptides& scanChargeToPeptides,
 			   float threshold,
-			   BOOLEAN_T only_unique
+			   BOOLEAN_T only_unique,
+			   BOOLEAN_T use_prot_level
 			   ){
   DATABASE_T* database = NULL;
   BOOLEAN_T use_index = is_directory(database_file);
@@ -549,7 +656,7 @@ bool  get_matches_from_txt(
   /* TODO check the validity of files */
  
   /* create new database object */
-  if (use_index == TRUE){ 
+  if (use_index){ 
     binary_fasta = get_index_binary_fasta_name(database_file);
   } else {
     binary_fasta = get_binary_fasta_name(database_file);
@@ -619,33 +726,44 @@ bool  get_matches_from_txt(
 					    peptide_sequence));
       tokenize(match_fields.at(proteins_index), matched_proteins, ",");
       carp(CARP_INFO, "scan %i charge %i %s", scan, charge, peptide_sequence.c_str());
+      
       /* for each match: */
-      if (matched_proteins.size() == 1 || !only_unique){
-	for (vector<string>::iterator it = matched_proteins.begin(); 
-	     it != matched_proteins.end(); ++it){
-	  protein_id = *it;
-	  carp(CARP_INFO, "protein %s", protein_id.c_str());
-	  /* check if peptide has already been counted */
-	  if (proteinToPeptides[protein_id].find(peptide_sequence) == 
-	      proteinToPeptides[protein_id].end()){
-	    proteinToPeptides[protein_id].insert(peptide_sequence);
-	    if (proteinToPepc.find(protein_id) == proteinToPepc.end()){
-	      proteinToPepc.insert(make_pair(protein_id, 0));
-	      proteinToSpc.insert(make_pair(protein_id, 0));
+      if (use_prot_level){
+	/* increment spectra/peptide counts for protein level */
+	if (matched_proteins.size() == 1 || !only_unique){
+	  for (vector<string>::iterator it = matched_proteins.begin(); 
+	       it != matched_proteins.end(); ++it){
+	    protein_id = *it;
+	    carp(CARP_INFO, "protein %s", protein_id.c_str());
+	    /* check if peptide has already been counted */
+	    if (proteinToPeptides[protein_id].find(peptide_sequence) == 
+		proteinToPeptides[protein_id].end()){
+	      proteinToPeptides[protein_id].insert(peptide_sequence);
+	      if (proteinToPepc.find(protein_id) == proteinToPepc.end()){
+		proteinToPepc.insert(make_pair(protein_id, 0));
+		mappingToSpc.insert(make_pair(protein_id, 0));
+	      }
+	      proteinToPepc[protein_id]++;
 	    }
-	    proteinToPepc[protein_id]++;
-	    }
-	  proteinToSpc[protein_id]++;
+	    mappingToSpc[protein_id]++;
+	  }
 	}
+      }else {
+	/*incrememt spectra counts for peptide level*/
+	if (mappingToSpc.find(peptide_sequence) == mappingToSpc.end()){
+	  mappingToSpc.insert(make_pair(peptide_sequence, 0));
+	}
+	mappingToSpc[peptide_sequence]++;
       }
+      
     }
     matched_proteins.clear();
     match_fields.clear();
   }
   myfile.close();
   /*
-  for (ProteinToSpc::const_iterator it = proteinToSpc.begin();
-       it != proteinToSpc.end(); ++it){
+  for (MappingToSpc::const_iterator it = mappingToSpc.begin();
+       it != mappingToSpc.end(); ++it){
     protein_id = (*it).first;
     carp(CARP_INFO, "%s  %d", protein_id.c_str(), (*it).second);
   }
@@ -908,7 +1026,8 @@ void tokenize(const string& str,
   string::size_type pos     = str.find_first_of(delimiters, lastPos);
   while (string::npos != pos || string::npos != lastPos){
     tokens.push_back(str.substr(lastPos, pos - lastPos));
-    lastPos = str.find_first_not_of(" ", str.find_first_not_of(delimiters, pos));
+    lastPos = str.find_first_not_of(" ", 
+				    str.find_first_not_of(delimiters, pos));
     pos = str.find_first_of(delimiters, lastPos);
   }
 }
@@ -925,7 +1044,8 @@ void getIndices(int *score_index,
   vector<string> elements;
   split(header, elements, "\t");
   
-  for (vector<string>::iterator iter = elements.begin(); iter != elements.end(); ++iter){
+  for (vector<string>::iterator iter = elements.begin(); 
+       iter != elements.end(); ++iter){
     if ("scan"==*iter){
       (*scan_index)=i;
     } else if ("charge"==*iter){

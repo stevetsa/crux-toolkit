@@ -798,6 +798,13 @@ void initialize_parameters(void){
        " file",
        "For SIN to use areas under peaks instead of total ion intensity",
        "false");
+  set_string_parameter("quant-level", "PROTEIN",
+        "Quantification at protein or peptide level (PROTEIN|PEPTIDE) "
+	"Default (PROTEIN)",
+        "For NSAF and SIN to know which level of quantification should be done",
+	"false"); 
+		       
+		       
   
   // now we have initialized the parameters
   parameter_initialized = TRUE;

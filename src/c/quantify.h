@@ -11,6 +11,7 @@
 #include <set>
 #include <math.h>
 #include <sstream>
+#include <algorithm>
 #include "match_collection.h"
 #include "utils.h"
 #include "match.h"
