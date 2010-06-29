@@ -663,6 +663,7 @@ BOOLEAN_T sort_match_collection(
         (QSORT_COMPARE_METHOD)compare_match_qranker_score);
     match_collection->last_sorted = QRANKER_SCORE;
     return TRUE;
+
   case DOTP:
     return FALSE;
 
@@ -759,7 +760,7 @@ BOOLEAN_T spectrum_sort_match_collection(
     carp(CARP_WARNING, "Unknown sort type.");
     return FALSE;
 
-  }
+ }
 
   return success;
 }
@@ -2292,6 +2293,11 @@ BOOLEAN_T extend_match_collection_tab_delimited(
       scored_type[DECOY_XCORR_QVALUE] = 
       !result_file.getString(DECOY_XCORR_QVALUE_COL).empty();
 
+/* TODO
+    match_collection -> 
+      scored_type[LOGP_WEIBULL_XCORR] = 
+      result_file.getString("logp weibull xcorr") != "";
+*/
     match_collection -> 
       scored_type[LOGP_BONF_WEIBULL_XCORR] = 
       !result_file.getString(PVALUE_COL).empty();

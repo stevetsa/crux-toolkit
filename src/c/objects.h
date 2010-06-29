@@ -395,9 +395,6 @@ enum _scorer_type {
   NUMBER_SCORER_TYPES 
 };
 
-#define _SCORE_TYPE_NUM 15 ///< the number of different score types
-#define NUMBER_SCORER_TYPES 15 //BF added for consistant naming
-
 /**
  * \typedef SCORER_TYPE_T
  * \brief The typedef for scorer type (SP, XCORR, DOTP)
