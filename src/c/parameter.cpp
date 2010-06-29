@@ -14,7 +14,7 @@
 /**
  * Starting location for zeroth m/z bin.
  */
-#define SMART_MZ_OFFSET 0.68
+static const FLOAT_T SMART_MZ_OFFSET = 0.68;
 
 /*
  * Global variables
@@ -216,13 +216,13 @@ void read_mods_from_file(char* param_file);
  * The size of the bins for discretizing the m/z axis of the
  * observed spectrum.  For use with monoisotopic mass.
  */
-#define BIN_WIDTH_MONO 1.0005079
+static const FLOAT_T BIN_WIDTH_MONO = 1.0005079;
 
 /**
  * The size of the bins for discretizing the m/z axis of the
  * observed spectrum.  For use with average mass.
  */
-#define BIN_WIDTH_AVERAGE 1.0011413
+static const FLOAT_T  BIN_WIDTH_AVERAGE = 1.0011413;
 
 /**
  * initialize parameters
@@ -358,6 +358,10 @@ void initialize_parameters(void){
       "Used from command line or parameter file by crux-create-index and "
       "crux-generate-peptides.  Parameter file only for "
       "crux-search-for-matches.", "true");
+  set_int_parameter("min-peaks", 20, 0, BILLION,
+      "The minimum number of peaks a spectrum must have for it to be searched."
+      " Default=20.", 
+      "Parameter file only for search-for-matches and sequest-search.", "true");
   set_digest_type_parameter("digestion", FULL_DIGEST,
       "Degree of digestion used to generate peptides. "
       "<string>=full-digest|partial-digest. Either both ends or one end "
@@ -460,6 +464,10 @@ void initialize_parameters(void){
       "Search only select spectra specified as a single "
       "scan number or as a range as in x-y.  Default=search all.",
       "The search range x-y is inclusive of x and y.", "true");
+  set_boolean_parameter("xcorr-var-bin", FALSE,
+    "Use variable binning for XCORR.  If set to true, mz-bin-width, " 
+    "and mz-bin-offset parameters are utilized",
+    "Available for crux-search-for-matches.","true");
   /* N.B. Use NaN to indicate that no user preference was specified.
    * In this case, the default value depends on the mass type. */
   set_double_parameter("mz-bin-width", NaN(), 0.0, BILLION,
@@ -1091,20 +1099,20 @@ static void set_mz_bin_width()
 }
 
 /**
- * Get the m/z bin width parameter. If NEW_BINNING is defined, then 
+ * Get the m/z bin width parameter. If xcorr-var-bin is TRUE, then 
  * return the mz-bin-width parameter, otherwise return based upon the 
  * fragment-mass parameter.
  */
 double get_mz_bin_width() {
-  #ifdef NEW_BINNING
-  return get_double_parameter("mz-bin-width");
-  #else
-  if (get_mass_type_parameter("fragment-mass") == MONO) {
-    return BIN_WIDTH_MONO;
+  if (get_boolean_parameter("xcorr-var-bin")) {
+    return get_double_parameter("mz-bin-width");
   } else {
-    return BIN_WIDTH_AVERAGE;
+    if (get_mass_type_parameter("fragment-mass") == MONO) {
+      return BIN_WIDTH_MONO;
+    } else {
+      return BIN_WIDTH_AVERAGE;
+    }
   }
-  #endif
 }
 
 /** 
@@ -1112,11 +1120,11 @@ double get_mz_bin_width() {
  * return the mz-bin-offset parameter, otherwise return 0.
  */ 
 double get_mz_bin_offset() {
-  #ifdef NEW_BINNING
-  return get_double_parameter("mz-bin-offset");
-  #else
-  return 0;
-  #endif
+  if (get_boolean_parameter("xcorr-var-bin")) {
+    return get_double_parameter("mz-bin-offset");
+  } else {
+    return 0;
+  }
 }
 
 /**
@@ -1540,7 +1548,7 @@ BOOLEAN_T check_option_type_and_bounds(const char* name){
 /**
  * Maximum size of the description of a parameter.
  */
-#define PARAMETER_BUFFER 10000
+static const int PARAMETER_BUFFER = 10000;
 
 /**
  * \brief Creates a file containing all parameters and their current

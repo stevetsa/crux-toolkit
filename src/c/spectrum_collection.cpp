@@ -25,8 +25,8 @@
 #include "MSReader.h"
 using namespace MSToolkit;
 
-#define MAX_SPECTRA 40000 ///< max number of spectrums
-#define MAX_COMMENT 1000 ///< max length of comment
+static const int MAX_SPECTRA = 40000; ///< max number of spectrums
+static const int MAX_COMMENT = 1000; ///< max length of comment
 
 
 /* Private functions */
@@ -70,12 +70,13 @@ struct filtered_spectrum_charge_iterator {
   SPECTRUM_COLLECTION_T* spectrum_collection;///< spectra to iterate over
   BOOLEAN_T has_next;  ///< is there a spec that passes criteria
   int  spectrum_index; ///< The index of the current spectrum
-  int* charges;        ///< Array of possible charges to search
+  vector<int> charges;        ///< Array of possible charges to search
   int num_charges;     ///< how many charges does the cur spec have
   int charge_index;    ///< The index of the charge of the current spectrum
   double min_mz;       ///< return only spec above this mz
   double max_mz;      ///< return only spec below this mz
   int search_charge;   ///< which z to search, 0 for all
+  int min_peaks;       ///< minimum number of peaks a spec must have
 };
 
 
@@ -772,7 +773,7 @@ void set_spectrum_collection_comment(
   )
 {
   // is there enough memory for new comments?
-  if(strlen(new_comment) + strlen(spectrum_collection->comment) +1 < MAX_COMMENT){
+  if(strlen(new_comment) + strlen(spectrum_collection->comment) +1 < (size_t)MAX_COMMENT){
     strncat(spectrum_collection->comment, new_comment, MAX_COMMENT); 
   }
   else{
@@ -918,7 +919,8 @@ SPECTRUM_ITERATOR_T* new_spectrum_iterator(
  * as +2 and once as +3).  The charge is returned by setting the int
  * pointer in the argument list.  The iterator also filters spectra by
  * mass so that none outside the spectrum-min-mass--spectrum-max-mass
- * range (as defined in parameter.c).
+ * range (as defined in parameter.c).  The iterator also filters by
+ * minimum number of peaks.
  * \returns a SPECTRUM_ITERATOR_T object.
  */
 FILTERED_SPECTRUM_CHARGE_ITERATOR_T* new_filtered_spectrum_charge_iterator(
@@ -930,11 +932,12 @@ FILTERED_SPECTRUM_CHARGE_ITERATOR_T* new_filtered_spectrum_charge_iterator(
   iterator->spectrum_collection = spectrum_collection;
   iterator->has_next = FALSE;
   iterator->spectrum_index = -1;
-  iterator->charges = NULL;
   iterator->num_charges = 0;
   iterator->charge_index = -1;
   iterator->min_mz = get_double_parameter("spectrum-min-mass");
   iterator->max_mz = get_double_parameter("spectrum-max-mass");
+  iterator->min_peaks = get_int_parameter("min-peaks");
+
   const char* charge_str = get_string_parameter_pointer("spectrum-charge");
   if( strcmp( charge_str, "all") == 0){
     iterator->search_charge = 0;
@@ -1046,10 +1049,11 @@ void queue_next_spectrum(FILTERED_SPECTRUM_CHARGE_ITERATOR_T* iterator){
     iterator->spectrum_index++;
     spec = iterator->spectrum_collection->spectra[iterator->spectrum_index];
     // first free any existing charges in the iterator
-    if( iterator->charges ){
-      free(iterator->charges);
+    if( ! iterator->charges.empty() ){
+      iterator->charges.clear();
     }
-    iterator->num_charges = get_charges_to_search(spec, &(iterator->charges));
+    iterator->charges = get_charges_to_search(spec);
+    iterator->num_charges = (int)iterator->charges.size();
     iterator->charge_index = 0;
   }else{ // none left
     iterator->has_next = FALSE;
@@ -1063,10 +1067,12 @@ void queue_next_spectrum(FILTERED_SPECTRUM_CHARGE_ITERATOR_T* iterator){
     this_charge = iterator->charges[iterator->charge_index];
   }
   double mz = get_spectrum_precursor_mz(spec);
+  int num_peaks = get_spectrum_num_peaks(spec);
 
   if( iterator->search_charge == 0 || iterator->search_charge == this_charge ){
-    if( mz >= iterator->min_mz && mz <= iterator->max_mz ){
-      // passes both tests
+    if( mz >= iterator->min_mz && mz <= iterator->max_mz
+        && num_peaks >= iterator->min_peaks ){
+      // passes all tests
       iterator->has_next = TRUE;
       return;
     }

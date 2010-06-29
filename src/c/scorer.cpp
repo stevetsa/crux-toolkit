@@ -26,7 +26,7 @@
 /**
  * Maximum range for cross correlation offset.
  */
-#define MAX_XCORR_OFFSET 75
+static const int MAX_XCORR_OFFSET = 75;
 
 // The following two constants are hardware dependent.
 // These values should be good for double precision floating point
@@ -35,51 +35,53 @@
 /**
 * Constant for EVD p_value calculation
 */
-#define DBL_EPSILON  2.2204460492503131e-16
+static const FLOAT_T DBL_EPSILON = 2.2204460492503131e-16;
 /**
 * Constant for EVD p_value calculation
 */
-#define DBL_MAX_10_EXP 308
+static const int DBL_MAX_10_EXP = 308;
 
 /**
  * Cut-off below which the simple Bonferroni calculation can be used.
  */
-#define BONFERRONI_CUT_OFF_P 0.0001
+static const FLOAT_T BONFERRONI_CUT_OFF_P = 0.0001;
 /**
  * Cut-off below which the simple Bonferroni calculation can be used.
  */
-#define BONFERRONI_CUT_OFF_NP 0.01
+static const FLOAT_T BONFERRONI_CUT_OFF_NP = 0.01;
 
-#define GMTK_MAX_ION_FILES 50
-#define GMTK_NUM_CHARGES 2
-#define GMTK_NUM_BASE_IONS 3
-#define GMTK_NUM_NEUTRAL_LOSS 2
-#define GMTK_NUM_ION_SERIES \
-  GMTK_NUM_BASE_IONS * GMTK_NUM_CHARGES * (GMTK_NUM_NEUTRAL_LOSS + 1)
-#define GMTK_NUM_PAIRED_ION_SERIES 15
+static const int GMTK_MAX_ION_FILES = 50;
+static const int GMTK_NUM_CHARGES = 2;
+static const int GMTK_NUM_BASE_IONS = 3;
+static const int GMTK_NUM_NEUTRAL_LOSS = 2;
+//#define GMTK_NUM_ION_SERIES                                           
+//  GMTK_NUM_BASE_IONS * GMTK_NUM_CHARGES * (GMTK_NUM_NEUTRAL_LOSS + 1)
+static const FLOAT_T  GMTK_NUM_ION_SERIES =
+  (FLOAT_T)GMTK_NUM_BASE_IONS * (FLOAT_T)GMTK_NUM_CHARGES * (FLOAT_T)(GMTK_NUM_NEUTRAL_LOSS + 1);
+static const int GMTK_NUM_PAIRED_ION_SERIES = 15;
 
 /**
  * Relative peak height of b- and y-ions.
  */
-#define B_Y_HEIGHT 50
+static const int B_Y_HEIGHT = 50;
 /**
  * Relative height of flanking peaks.
  */
-#define FLANK_HEIGHT 25
+static const int FLANK_HEIGHT = 25;
 /**
  * Relative height of neutral loss peaks.
  */
-#define LOSS_HEIGHT 10
+static const int LOSS_HEIGHT = 10;
 
 /**
  * Number of regions into which the spectrum is divided for normalization.
  */
-#define NUM_REGIONS 10
+static const int NUM_REGIONS = 10;
 
 /**
  * Maximum peak height within each region of the spectrum after normalizing.
  */ 
-#define MAX_PER_REGION 50
+static const int MAX_PER_REGION = 50;
 
 /**
  * Macro for converting floating point to integers.
@@ -106,6 +108,7 @@ struct scorer {
   BOOLEAN_T initialized; ///< has the scorer been initialized?
   int last_idx; ///< the last index in the array, the data size of the array
 
+  BOOLEAN_T xcorr_var_bin; ///<Use the variable binning code or not
   FLOAT_T bin_width; ///< width of the bins to use for arrays
   FLOAT_T bin_offset; ///< m/z offset for the bins.
 
@@ -146,6 +149,8 @@ SCORER_T* new_scorer(
   // set score type
   scorer->type = type;
   
+  scorer->xcorr_var_bin = get_boolean_parameter("xcorr-var-bin");
+
   // set bin_width and bin_offset.
   scorer->bin_width = get_mz_bin_width();
   scorer->bin_offset = get_mz_bin_offset();
@@ -886,12 +891,12 @@ BOOLEAN_T create_intensity_array_observed(
       max_peak = peak_location;
     }
   }
-  #ifdef NEW_BINNING
-  // TODO - Check to see if this is the correct thing to do.
-  region_selector = INTEGERIZE(max_peak, bin_width, bin_offset) / 10;
-  #else
-  region_selector = (int) (max_peak / NUM_REGIONS);
-  #endif
+  if (scorer->xcorr_var_bin) {
+    // TODO - Check to see if this is the correct thing to do.
+    region_selector = INTEGERIZE(max_peak, bin_width, bin_offset) / NUM_REGIONS;
+  } else {
+    region_selector = (int) (max_peak / NUM_REGIONS);
+  }
   // reset peak iterator
   peak_iterator_reset(peak_iterator);
 
@@ -1736,11 +1741,11 @@ void set_scorer_sp_max_mz(
  *\returns the max bin index of the scorer array(s).
  */
 int get_scorer_max_bin(SCORER_T* scorer) {
-#ifdef NEW_BINNING
-  return INTEGERIZE(scorer->sp_max_mz, scorer->bin_width, scorer->bin_offset);
-#else
-  return (int)(scorer->sp_max_mz);
-#endif
+  if (scorer->xcorr_var_bin) {
+    return INTEGERIZE(scorer->sp_max_mz, scorer->bin_width, scorer->bin_offset);
+  } else {
+    return (int)(scorer->sp_max_mz);
+  }
 }
 
 /**
