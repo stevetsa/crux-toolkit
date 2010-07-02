@@ -83,7 +83,7 @@
 0 = decoys_one_file = good_results/decoys_one_file.decoy.txt = rm -rf one-decoy-file; crux search-for-matches --parameter-file params/one-decoy-file test.ms2 test.fasta; cat one-decoy-file/search.decoy.txt = 'Time'
 
 # Confirm that no decoy files were created for tdc and that only one decoy file created for one-decoy-file
-1 = list_files = good_results/list-files-tdc-one-decoy-file = ls one-decoy-file tdc  
+0 = list_files = good_results/list-files-tdc-one-decoy-file = ls one-decoy-file tdc  
 
 # TESTS WITH INDEX
 
