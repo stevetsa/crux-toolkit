@@ -675,8 +675,7 @@ static void print_one_match_field(
     break;
   case PERCOLATOR_RANK_COL:
     if (scores_computed[PERCOLATOR_SCORE] == TRUE)  {
-      fprintf(output_file, float_format,
-	      get_match_rank(match, PERCOLATOR_SCORE));
+      fprintf(output_file, "%d", get_match_rank(match, PERCOLATOR_SCORE));
     }
     break;
   case PERCOLATOR_QVALUE_COL:
