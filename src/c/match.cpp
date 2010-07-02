@@ -768,10 +768,12 @@ static void print_one_match_field(
     if (scores_computed[LOGP_BONF_WEIBULL_XCORR]) {
       fprintf(output_file, "%g", get_calibration_beta(collection));
     }
+    break;
   case SHIFT_COL:
     if (scores_computed[LOGP_BONF_WEIBULL_XCORR]) {
       fprintf(output_file, "%g", get_calibration_shift(collection));
     }
+    break;
   case CORR_COL:
     if (scores_computed[LOGP_BONF_WEIBULL_XCORR]) {
       fprintf(output_file, "%g", get_calibration_corr(collection));
