@@ -226,7 +226,7 @@ static MATCH_COLLECTION_T* run_percolator_or_qranker(
     pcExecute(); 
     pcGetScores(results_score, results_q); 
     fill_result_to_match_collection(
-        target_match_collection, results_q, Q_VALUE, TRUE);
+        target_match_collection, results_q, PERCOLATOR_QVALUE, TRUE);
     fill_result_to_match_collection(
         target_match_collection, results_score, PERCOLATOR_SCORE, FALSE);
     pcCleanUp();
@@ -235,7 +235,9 @@ static MATCH_COLLECTION_T* run_percolator_or_qranker(
     qcExecute(); 
     qcGetScores(results_score, results_q); 
     fill_result_to_match_collection(
-        target_match_collection, results_q, QRANKER_Q_VALUE, TRUE);
+        target_match_collection, results_q, QRANKER_QVALUE, TRUE);
+    fill_result_to_match_collection(
+        target_match_collection, results_score, QRANKER_PEPTIDE_QVALUE, FALSE);
     fill_result_to_match_collection(
         target_match_collection, results_score, QRANKER_SCORE, FALSE);
     qcCleanUp();
