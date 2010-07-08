@@ -44,7 +44,6 @@ standard out.
 
 use strict;
 use Getopt::Std;
-use File::Temp qw/ tempfile tempdir /;
 
 # Get the name of the architecture.
 my $arch = `uname`;

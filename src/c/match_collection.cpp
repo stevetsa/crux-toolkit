@@ -643,7 +643,7 @@ void sort_match_collection(
   case PERCOLATOR_SCORE:
   case PERCOLATOR_QVALUE:
   case PERCOLATOR_PEPTIDE_QVALUE:
-    carp(CARP_DEBUG, "Sorting match collection by Percolator score.");
+    carp(CARP_INFO, "Sorting match collection by Percolator score.");
     sort_by = PERCOLATOR_SCORE;
     break;
 
@@ -674,9 +674,10 @@ void sort_match_collection(
      But I don't know what type to declare "sort_by" as.
 
      Note that, once I figure out how to do this, the per-spectrum
-     sorting code below should be fixed to avoid re-sorting if the
-     list is already sorted.  I just don't want to stick in another
-     instance of this double switch statement right now.
+     sorting code in the function below should be fixed to avoid
+     re-sorting if the list is already sorted.  I just don't want to
+     stick in another instance of this double switch statement right
+     now.
 
      -- WSN 2 July 2010
   */
@@ -2557,6 +2558,7 @@ BOOLEAN_T calculate_delta_cn( MATCH_COLLECTION_T* match_collection,
   }
 
   // sort, if not already
+  // N.B. Can't use sort_match_collection because iterator already exists!
   MATCH_T** matches = match_collection->match;
   int num_matches = match_collection->match_total;
   if( match_collection->last_sorted != XCORR ){
