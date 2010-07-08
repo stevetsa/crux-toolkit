@@ -2,13 +2,9 @@
 #define QVALUE_CMD_H
 
 /**
- * \file match_analysis.c
- */
-/*
+ * \file q-value.h
  * AUTHOR: Barbara Frewen
  * CREATE DATE: November 24, 2008
- * DESCRIPTION: Header file for compute-q-values crux command
- * $Revision: 1.2 $
  ****************************************************************************/
 #include <stdlib.h>
 #include <stdio.h>
@@ -27,7 +23,9 @@
 #include "match_collection.h"
 #include "output-files.h"
 
-int qvalue_main(int argc, char** argv);
+MATCH_COLLECTION_T* run_qvalue(
+  char* psm_result_folder, 
+  char* fasta_file );
 
 #endif //QVALUE_CMD_H
 

@@ -1,29 +1,19 @@
 /**
  * \file search-progress.h
+ * AUTHOR: Barbara Frewen
+ *  CREATE DATE: October 5, 2009
+ * \brief A class to keep track of how many searches have been
+ * attempted and how many have been successfull.  Reports progress at
+ * appropriate intervals
  */
-
-/*
- AUTHOR: Barbara Frewen
- CREATE DATE: October 5, 2009
- DESCRIPTION: A class to keep track of how many searches have been
- attempted and how many have been successfull.  Reports progress at
- appropriate intervals     
- REVISION: $Revision: 1.0 $
-
- */
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 #include "carp.h"
 #include "parameter.h"
 
-#ifdef __cplusplus
-}
-#endif
 
 using namespace std;
 
+// FIXME: Missing documentation!
 class SearchProgress{
 
  public:
@@ -52,7 +42,7 @@ class SearchProgress{
 
  private:
   int searches_attempted_; ///< number of spec/charge's searched 
-  int searches_with_matches_; ///< number of spec with results in .csm file
+  int searches_with_matches_; ///< number of spec with results in .txt file
   int progress_increment_;  ///< how often to print progress
 
 };

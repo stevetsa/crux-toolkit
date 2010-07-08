@@ -1,6 +1,6 @@
 distdir = $(PACKAGE)_$(VERSION)
 
-SUBDIRS = ArrayLibrary MSToolkit percolator q-ranker mpsm .
+SUBDIRS = ArrayLibrary MSToolkit percolator q-ranker xlink .
 
 # Crux can use either single or double precision floating poinnt.
 if USEDOUBLES
@@ -25,15 +25,13 @@ else
 endif
 
 AM_CFLAGS = -Wall -W -Werror $(USEDOUBLES) $(USEDARWIN) $(SEARCH_ENABLED) \
-            -D_LARGEFILE_SOURCE=1 -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE 
+            -D_LARGEFILE_SOURCE=1 -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE
 AM_CXXFLAGS = -Wall -W -Werror  $(USEDOUBLES) $(USEDARWIN) $(SEARCH_ENABLED) \
             -D_LARGEFILE_SOURCE=1 -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE
 
 LIBFILES= \
   alphabet.cpp \
   alphabet.h \
-  array.cpp \
-  array.h \
   carp.cpp \
   carp.h \
   create_index.cpp \
@@ -46,6 +44,8 @@ LIBFILES= \
   DelimitedFile.h \
   DelimitedFileReader.cpp \
   DelimitedFileReader.h \
+  MatchFileReader.cpp \
+  MatchFileReader.h \
   generate_peptides_iterator.cpp \
   generate_peptides_iterator.h \
   hash.cpp \
@@ -69,7 +69,6 @@ LIBFILES= \
   modifications.h \
   modified_peptides_iterator.cpp \
   modified_peptides_iterator.h \
-  mpsm-q-ranker.cpp \
   search.h \
   objects.h \
   output-files.cpp \
@@ -88,20 +87,15 @@ LIBFILES= \
   peptide_modifications.h \
   peptide_src.cpp \
   peptide_src.h \
-  percolator.cpp \
-  percolator.h \
   print-processed-spectra.cpp \
   print-processed-spectra.h \
   protein.cpp \
   protein.h \
   protein_index.cpp \
   protein_index.h \
-  q-ranker.cpp \
-  q-ranker.h \
-  mpsm-q-ranker.cpp \
-  mpsm-q-ranker.h \
   q-value.cpp \
   q-value.h \
+  search-progress.h \
   sequest-search.cpp \
   sequest-search.h \
   scorer.cpp \
@@ -115,7 +109,8 @@ LIBFILES= \
   utils.cpp \
   utils.h \
   version.h \
-  mpsm_search.h
+  xlink_search.h \
+  xlink_compute_qvalues.h
 
 noinst_LTLIBRARIES = libcrux.la
 libcrux_la_CFLAGS = \
@@ -126,7 +121,6 @@ libcrux_la_CFLAGS = \
 
 libcrux_la_CXXFLAGS = \
   $(AM_CXXFLAGS) \
-  -I$(top_builddir)/src/c/mpsm \
   -I$(top_srcdir)/src/c/MSToolkit \
   -I$(top_srcdir)/src/c/MSToolkit/RAMP \
   -I$(top_srcdir)/src/c/percolator/ \
@@ -139,7 +133,9 @@ PROGRAM_FILES = \
   crux-get-ms2-spectrum \
   crux-generate-peptides \
   crux-predict-peptide-ions \
-  CountCandidates
+  xlink-predict-peptide-ions \
+  xlink-score-spectrum \
+  xlink-assign-ions
 
 bin_PROGRAMS = $(PROGRAM_FILES)
 
@@ -159,19 +155,6 @@ crux_predict_peptide_ions_LDADD = \
   $(AM_LDFLAGS) \
   libcrux.la -L$(top_builddir)/src/c/MSToolkit -lm -lmstoolkit
 
-
-CountCandidates_SOURCES=./mpsm/CountCandidates.cpp
-CountCandidates_CXXFLAGS= \
-  $(AM_CFLAGS) \
-  -DMAIN \
-  -I$(top_srcdir)/src/c/mpsm
-
-CountCandidates_LDADD = \
-  -L$(top_builddir)/src/c/mpsm \
-  -lmpsm \
-  libcrux.la
-
-
 crux_SOURCES = crux-main.cpp crux-main.h
 crux_CXXFLAGS = \
   $(AM_CXXFLAGS) \
@@ -179,12 +162,11 @@ crux_CXXFLAGS = \
   -I$(top_srcdir)/src/c/MSToolkit \
   -I$(top_srcdir)/src/c/percolator \
   -I$(top_srcdir)/src/c/q-ranker \
-  -I$(top_srcdir)/src/c/mpsm
-
+  -I$(top_srcdir)/src/c/xlink
 crux_LDADD = \
   $(AM_LDFLAGS) \
-  -L$(top_builddir)/src/c/mpsm \
-  -lmpsm \
+  -L$(top_builddir)/src/c/xlink \
+  -lxlink \
   libcrux.la \
   -lstdc++ \
   -L$(top_builddir)/src/c/ArrayLibrary \
@@ -196,6 +178,52 @@ crux_LDADD = \
   -lqranker \
   -lmstoolkit \
   -lArrayLibrary
+
+xlink_predict_peptide_ions_SOURCES=./xlink/xhhc_predict_peptide_ions.cpp
+xlink_predict_peptide_ions_CXXFLAGS= \
+  $(AM_CFLAGS) \
+  -DMAIN \
+  -I$(top_srcdir)/src/c/xlink
+
+xlink_predict_peptide_ions_LDADD = \
+  $(AM_LDFLAGS) \
+  -L$(top_builddir)/src/c/MSToolkit \
+  -L$(top_builddir)/src/c/xlink \
+  -lm \
+  -lxlink \
+  libcrux.la \
+  -lmstoolkit
+
+xlink_score_spectrum_SOURCES=./xlink/xhhc_score_peptide_spectrum.cpp
+xlink_score_spectrum_CXXFLAGS= \
+  $(AM_CFLAGS) \
+  -DMAIN \
+  -I$(top_srcdir)/src/c/xlink
+
+xlink_score_spectrum_LDADD = \
+  $(AM_LDFLAGS) \
+  -L$(top_builddir)/src/c/MSToolkit \
+  -L$(top_builddir)/src/c/xlink \
+  -lm \
+  -lxlink \
+  libcrux.la \
+  -lmstoolkit
+
+xlink_assign_ions_SOURCES=./xlink/xlink_assign_ions.cpp
+xlink_assign_ions_CXXFLAGS= \
+  $(AM_CFLAGS) \
+  -DMAIN \
+  -I$(top_srcdir)/src/c/xlink
+
+xlink_assign_ions_LDADD = \
+  $(AM_LDFLAGS) \
+  -L$(top_builddir)/src/c/MSToolkit \
+  -L$(top_builddir)/src/c/xlink \
+  -lm \
+  -lxlink \
+  libcrux.la \
+  -lmstoolkit
+
 
 paramdir = $(prefix)/doc
 param_DATA = default.params
@@ -218,4 +246,7 @@ dist-hook:
 	if test -z "$(SEARCH_ENABLED)"; then \
     sed -e '/#ifdef SEARCH_ENABLED/,/#else/d' \
         -e '/#endif \/\/ SEARCH_ENABLED/d' \
-        < match_search.cpp > $(distdir)/match_search.cpp; fi
+        < match_search.cpp > $(distdir)/match_search.cpp; \
+    sed -e '/#ifdef SEARCH_ENABLED/,/#else/d' \
+        -e '/#endif \/\/ SEARCH_ENABLED/d' \
+        < sequest-search.cpp > $(distdir)/sequest-search.cpp; fi

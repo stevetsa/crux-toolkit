@@ -5,11 +5,13 @@
 
 <h1>Coding standards</h1>
 
-<h3>Object-oriented philosophy</h3>
+
+<h3>Objects in C</h3>
 
 <p>
-Although Crux is written in C, we aim to produce modularized code,
-with each module acting like a C++ object.  In particular, a
+Crux is currently undergoing a transition from C to C++.  For the
+remaining C code, we aim to produce modularized code, with each module
+acting like a C++ object.  In particular, a
 <code>struct</code> object should be encapsulated in a pair of
 <code>.c</code> and <code>.h</code> files.  The fields of the struct
 should only appear in the <code>.c</code> file, and the
@@ -20,6 +22,12 @@ also provide <code>new_&lt;object&gt;</code>,
 <code>free_&lt;object&gt;</code> and <code>print_&lt;object&gt;</code>
 functions.
 </p>
+<p>
+For the portion of crux written in C++, classes should be split
+between .h and .cpp files with declarations in the .h files and the 
+definitions in the .cpp files.  Member variables should be declared as
+private or protected with get and set functions as necessary.
+</p>
 
 
 <h3>Syntactic standards</h3>
@@ -28,6 +36,13 @@ functions.
 
 <li>
 Insert a space after every comma.
+
+<li>
+Insert a space around arithemtic operators.
+
+<li>
+Do not separate vairable names and the arrow operator (<code>-&gt;</code>)
+with a space.
 
 <li>
 Use no more than eight parameters per function.
@@ -53,7 +68,10 @@ name.
 
 <li>
 Use underscores, rather than internal capitalization, to separate
-multi-word variable and function names.
+multi-word variable and (non-class-member) function names.
+
+<li>
+Use a single trailing underscore for class member variables.
 
 <li>
 Indent two characters per level.  Note that, within emacs, this
@@ -69,8 +87,8 @@ comment at the end of the file:
  */
 </pre>
 
-This comment should be included in every <code>.c</code> and
-<code>.h</code> file. 
+This comment should be included in every <code>.c</code>, <code>.cpp
+</code> and <code>.h</code> file. 
 <P>
 In vim this is set by including the line 
 
@@ -126,7 +144,7 @@ For example:
 
 <li>
 When a fixed string assignment continues over more then one line,
-take advantage of ANSI C's implicit concatentation:
+take advantage of ANSI C's implicit concatenation:
 
 <pre>
   string = "this is a really long string"
@@ -138,6 +156,9 @@ Do not use single-letter variable names.
 
 <li>
 Name loop indices using <code>&lt;name&gt;_idx</code>.
+
+<li>
+Name loop iterators using <code>&lt;name&gt;_itr</code>.
 
 <li>
 Use only the following allowed abbreviations:
@@ -175,10 +196,15 @@ Define variables anywhere within a block.
 <li>
 Use all lowercase characters.  The only exceptions are constants,
 enumerated types (see below) and macros, which are written in all
-uppercase.
+uppercase.  Class methods should begin with a lowercase letter and 
+capitalize multiple words (i.e. camel case).
 
 <li>
-Name files using hyphens rather than underscores.
+Use <code>static const &lt;type&gt;</code> to define constants rather
+than <code>#define</code>.
+
+<li>
+Name files with the class name as it is written (e.g. PeptideIterator.h).
 
 <li>
 Usage statements should conform to the following:
@@ -189,7 +215,8 @@ Usage statements should conform to the following:
   </ul>
 
 <li>
-Routines should with zero status to indicate success. Non-zero value indicates failure of some kind.
+Routines that return a status indicator should use zero to indicate success and
+a non-zero value to indicate failure of some kind.
 
 <li>
 Use <code>/*  */</code> comment style only for multi-line comments.
@@ -199,10 +226,18 @@ after the <code>//</code>.
 <li>
 Enumerated types should be defined in all caps as
 <code>&lt;type&gt;_T</code>. Values of the type should also be in all
-caps, with names like <code>&lt;name&gt;_&lt;type&gt;</code>.  One
-value should be <code>INVALID_&lt;type&gt;</code>.  All
-<code>if</code> statements that handle the type should handle all
-possible values.
+caps, with names like <code>&lt;name&gt;_&lt;type&gt;</code>.  Following all of 
+the legal values should be <code>NUM_&lt;name&gt;_TYPES</code>, which can be
+used to enumerate through all of the types.  The last value should be
+<code>INVALID_&lt;type&gt;</code>.  All <code>if</code> 
+and <code>case</code> statements that handle the type should handle all
+legal values.  <code>case</code> statments may use <code>default</code> for the
+last two invalid types.
+
+<li>
+C class-like structs should be named in all caps as 
+<code>&lt;name&gt;_T</code>.  C++ classes should be named with internal 
+capitalization as in <code>ClassName</code>.
 
 <li>
 Known deviations from the coding standards and other bugs should be
@@ -228,6 +263,13 @@ to report information, warnings, and errors.
 Do not call <code>exit()</code> directly for fatal errors. 
 Use <code>carp(CARP_FATAL, ...)</code>.
 This will report a fatal error and call <code>exit(1)</code>.
+
+<li>
+If you find yourself making small changes in a file that doesn't meet these
+coding standards, write your changes in the existing style of the file.
+If you are making a substantial revision to the file, take the time
+to bring the entire file into conformance with these standards.
+
 </ul>
 
 <h3>Structured comments</h3>
@@ -237,12 +279,12 @@ Crux uses <a
 href='http://www.stack.nl/~dimitri/doxygen/manual.html'>doxygen</a> to
 produce documentation directly from structured comments in the source
 code.  Unstructured comments are still allowed, and do not show up in
-the generated documentation.  Because Doxygen is able to parse 'C,'
-only a few additional markup tags are required to generate
+the generated documentation.  Because Doxygen is able to parse C and
+C++ files, only a few additional markup tags are required to generate
 documentation from the structured comments.  Following is an
 abbreviated description of how to use doxygen-style structured
 comments.  See the <a
-href='http://www.stack.nl/~dimitri/doxygen/manual.html'> doxygen
+href='http://www.stack.nl/~dimitri/doxygen/manual.html'>doxygen
 documentation</a> for a full description:</p>
 
 <p>
@@ -312,41 +354,11 @@ Here are some coding standards related to structured comments:</p>
 Begin each file with a header of the following form:
 <PRE>
 /**
- * @file foo.c
+ * \file foo.c
+ * AUTHOR: Elmer Fudd
+ * CREATE DATE: December 31, 1999
+ * \brief Insert brief description of file contents here.
  *
- * Insert brief description of file contents here.
- *
- * $Id: crux-coding-standards.html,v 1.2 2009-05-23 01:34:59 cegrant Exp $
- * $Log: not supported by cvs2svn $
- * Revision 1.1  2007/10/03 21:58:16  aklammer
- * *** empty log message ***
- *
- * Revision 1.1  2007/10/03 21:41:29  aklammer
- * *** empty log message ***
- *
- * Revision 1.6  2007/10/03 19:29:28  aklammer
- * *** empty log message ***
- *
- * Revision 1.5  2006/07/05 22:28:01  aklammer
- * *** empty log message ***
- *
- * Revision 1.4  2006/06/29 21:51:20  aklammer
- * *** empty log message ***
- *
- * Revision 1.2  2006/06/27 20:42:00  aklammer
- * *** empty log message ***
- *
- * Revision 1.1  2006/03/10 00:53:29  noble
- * *** empty log message ***
- *
- * Revision 1.8  2005/12/24 14:52:17  noble
- * *** empty log message ***
- *
- * Revision 1.7  2005/12/23 21:20:52  cegrant
- * Updated section on coding standards
- *
- * Revision 1.6  2005/12/22 19:26:32  noble
- * *** empty log message ***
  **/
 </PRE>
 
@@ -363,7 +375,6 @@ explanatory comment.
 
 </ul>
 
-
 <h3>Command line standards</h3>
 
 <ul>
@@ -372,16 +383,12 @@ explanatory comment.
 All command lines should be of the following form:
 
 <pre>
-     command [options] arg1 arg2
+     crux command [options] arg1 arg2
 </pre>
 
 where <code>arg1 arg2</code> are required arguments.  Obviously, the
 number of required arguments will differ by program, but every program
 will have at least one required argument.
-
-<li>
-Every program should send its primary output to standard output, and
-should produce informative status messages on standard error.
 
 <li>
 Command line option names should be verbose, and should be preceded
@@ -396,24 +403,16 @@ name should be interpreted to mean "read from standard input."  Where
 this is possible, it should be documented.
 
 <li>
-Every program should provide a <code>--verbose [0|1|2|3|4]</code>
-option that controls the verbosity of messages to standard error.
+Every program should provide a <code>--verbose</code>
+option that controls the verbosity of messages to standard error and a
+<code>--parameter-file</code> option that allows additional parameters
+to be specified via a file.
 
 <li>
 The usage message should list the default value for every option.
 
-<li>
-If you find yourself making small changes in a file that doesn't meet these
-coding standards, write your changes in the existing style of the file.
-If you are making a substantial revision to the file, take the time
-to bring the entire file into conformance with these standards.
-
 </ul>
 
-<h3>Compilation and makefile standards</h3>
-
-Write code to the ANSI C standard. Default GNU extensions are allowed.
-Compile with <code>-Wall</code>.
 </blockquote>
 </body>
 </html>

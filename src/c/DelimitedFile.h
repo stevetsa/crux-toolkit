@@ -1,9 +1,9 @@
 /**
  * \file DelimitedFile.h
- * $Revision: 1.00 $ 
  * DATE: Jan 7, 2010
  * AUTHOR: Sean McIlwain
  * \brief Object for reading tab-delimited files.
+ * 
  * This class generates a table of values. The default delimiter is tab.
  * This class is capable of reading string, integers, and floating point
  * Types from each cell of the table.  This class also provides function
@@ -499,6 +499,11 @@ class DelimitedFile {
     std::istringstream iss(s);
     return !(iss >> std::dec >> value).fail();
   }   
+  
+  /**
+   * Allows object to be printed to a stream
+   */
+  friend std::ostream &operator<< (std::ostream& os, DelimitedFile& delimited_file); 
 
   template<typename TValue>
   static std::string to_string(
@@ -510,13 +515,6 @@ class DelimitedFile {
     std::string out_string = oss.str();
     return out_string;
   }
-
-
-  
-  /**
-   * Allows object to be printed to a stream
-   */
-  friend std::ostream &operator<< (std::ostream& os, DelimitedFile& delimited_file); 
 
 };
 

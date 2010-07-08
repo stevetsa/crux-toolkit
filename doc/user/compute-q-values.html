@@ -12,8 +12,8 @@
 <B>Usage:</B></p>
 
 <blockquote>
-<code>crux compute-qvalues [options] &lt;protein&nbsp;input&gt; 
-</code>
+<code>crux compute-qvalues [options] &lt;protein&nbsp;database&gt;
+  &lt;search results directory&gt;</code>
 </blockquote>
 
 <p>
@@ -33,47 +33,39 @@ of spectra.</p>
 <p>
 <code>Compute-q-values</code> requires that 
 <code>search-for-matches</code> produced decoy PSMs or that it
-computed p-values.  Up to three different types of q-values may be
-computed, depending on how <code>search-for-matches</code> was
-executed.  Each of the three types of q-value calculation is based
-upon a different method for calculating the false discovery rate, as
-follows:</p>
+computed p-values.  Two different types of q-values may be computed,
+depending on how <code>search-for-matches</code> was executed:</p>
 
 <ol>
 
 <li>
 If the collection of PSMs has p-values assigned
-by <code>search-for-matches</code> by using the  
+by <code>search-for-matches</code> by using the
 <code>--compute-p-values</code> option, then the false discovery rate
-associated with a given score is computed using the standard
-Benjamini-Hochberg algorithm (<i>Journal of the Royal Statistical
-Society B</i>, 57:289-300, 1995).  Briefly, the algorithm is as
-follows: (1) rank all <i>m</i> PSMs by p-value; (2) for a
-p-value <i>p<sub>j</sub></i> that appears at position <i>j</i> in the
-ranked list, the FDR is estimated as <i>p<sub>j</sub> *
-(m/j)</i>.</li>
+associated with a given score is computed using the Benjamini-Hochberg
+algorithm (<i>Journal of the Royal Statistical Society B</i>,
+57:289-300, 1995).  Briefly, the algorithm is as follows: (1) rank
+all <i>m</i> PSMs by p-value; (2) for a p-value <i>p<sub>j</sub></i>
+that appears at position <i>j</i> in the ranked list, the FDR is
+estimated as <i>p<sub>j</sub> * (m/j)</i>.</li>
 
 <li>
-If the collection of PSMs contains both targets and decoys, then the
+Alternatively, if the collection of PSMs does not have p-values
+assigned, then <code>compute-q-values</code> searches the input
+directory for a corresponding set of decoy PSMs.  The
 false discovery rate associated with a given xcorr score is estimated
 as the number of decoy scores above the threshold divided by the
 number of target scores above the threshold, multiplied by the ratio
 of the total number of targets to total number of decoys.</li>
 
-<li>
-If the collection has decoys and p-values, then a third false
-discovery rate estimate is computed using the decoys, but the ranking
-is based on p-values instead of xcorr.</li>
-
 </ol>
 
 <p>
 In each case, the estimated FDRs are converted to q-values by ranking
-the PSMs by score and then taking, for each PSM, 
-the minimum of the current FDR and all of the FDRs below it in the
-ranked list.  The three types of q-values are reported, respectively,
-in columns with headers "Weibull est. q-value," "decoy q-value
-(xcorr)" and "decoy q-value (p-value)".</p>
+the PSMs by score and then taking, for each PSM, the minimum of the
+current FDR and all of the FDRs below it in the ranked list.  The two
+types of q-values are reported, respectively, in columns with headers
+"Weibull q-value" or "decoy q-value".</p>
 
 <p>
 Additional background information on q-values and statistical
@@ -100,20 +92,22 @@ method implemented here as "decoy q-values" is analogous to the
 
 <UL>
 
-<li>
-&lt;psm folder&gt; &ndash; the folder in which all the PSM
-result files are located.  This is assumed to be <code>crux-output</code>,
-but it can be set by the user using the <code>--output-dir</code> option.
-The program looks for files ending in
-<code>.csm</code>, which are produced by
-<code>crux&nbsp;search-for-matches</code>.  All such files in the
-given directory are analyzed jointly.</li>
-
-
 <LI>
-&lt;protein input &gt; &ndash; The name of the file in fasta format or
-the directory containing the protein index from which to retrieve
-proteins and peptides.</li>
+&lt;protein database&gt; &ndash; 
+The name of the file in fasta format or the directory containing the
+protein index from which to retrieve proteins and peptides.</li>
+
+<li>
+&lt;search results directory&gt; &ndash; A folder in which all the PSM
+result files are located.  The program looks for files with names like
+'<code>&lt;fileroot&gt;.&lt;search&gt;.target.txt</code>' or
+'<code>&lt;fileroot&gt;.&lt;search&gt;.decoy.txt</code>', where
+'<code>&lt;search&gt;</code>' is either '<code>search</code>'
+(produced by <code>crux search-for-matches</code>) or
+'<code>sequest</code>' (produced by <code>crux sequest-search</code>).
+The search results should be from only one of the two search
+algorithms.  All such files in the given directory are analyzed
+jointly.</li>
 
 </UL>
 
@@ -127,8 +121,7 @@ The following files will be created:</p>
 
 <li>
 <b>qvalues.target.txt</b>: a tab-delimited text file containing the PSMs.
-</li>
-See <a href="txt-format.html">txt file format</a> for a list of the fields.
+See <a href="txt-format.html">txt file format</a> for a list of the fields.</li>
 <li>
 <b>qvalues.log.txt</b>: a log file containing a copy of all messages that were
 printed to stderr.
@@ -149,6 +142,11 @@ option for other crux programs.
 <UL>
 
 <li>
+<code>-pi-zero &lt;value&gt;</code> &ndash;
+The estimated proportion of target scores that are drawn according to
+the null distribution.  Default=1.0.</li>
+
+<li>
 <code>--fileroot &lt;string&gt;</code> &ndash; 
 The <code>fileroot</code> string will be added as a prefix to all
 output file names. Default = none.</li>
@@ -156,11 +154,12 @@ output file names. Default = none.</li>
 <li>
 <code>--output-dir &lt;filename&gt;</code> &ndash; 
 The name of the directory where output files will be created.
-Default = crux-out.</li>
+Default = crux-output.</li>
 
 <li>
-<code>--overwrite &lt;T|F&gt;</code> Replace existing files if true (T) or
-fail when trying to overwrite a file if false (F). Default =  F.
+<code>--overwrite &lt;T|F&gt;</code> &ndash;
+Replace existing files if true (T) or fail when trying to overwrite a
+file if false (F). Default =  F.
 
 <li>
 <code>--parameter-file &lt;filename&gt;</code> &ndash; 
@@ -168,17 +167,12 @@ A file containing command-line or additional parameters.  See the <a
 href=parameter-file.html>parameter documentation</a> page for details.</li>
 
 <LI>
-<code>--verbosity &lt;0-100&gt;</code> &ndash; Specify the verbosity of the
-current processes. Each level prints the following messages, including
-all those at lower verbosity levels: 0-fatal errors, 10-non-fatal
-errors, 20-warnings, 30-information on the progress of execution,
-40-more progress information, 50-debug info, 60-detailed debug info.
-Default = 30.
-
-<li>
-<code>--version T</code> &ndash;
-Print the version number and quit.  Please note that you must include
-the 'T' after --version.
+<code>--verbosity &lt;0-100&gt;</code> &ndash; 
+Specify the verbosity of the current processes. Each level prints the
+following messages, including all those at lower verbosity levels:
+0-fatal errors, 10-non-fatal errors, 20-warnings, 30-information on
+the progress of execution, 40-more progress information, 50-debug
+info, 60-detailed debug info. Default = 30.
 
 </UL>
 

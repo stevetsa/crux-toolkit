@@ -3,14 +3,14 @@
  * BASED ON: original_match_search.c
  * DATE: Aug 19, 2008
  * AUTHOR: Barbara Frewen
- * DESCRIPTION: Main file for crux-search-for-matches.  Given an ms2
- * file and a fasta file or index, compare all spectra to peptides in
- * the fasta file/index and return high scoring matches.  Peptides are
- * determined by parameters for length, mass, mass tolerance, cleavages,
- * modifications. Score first by a preliminary method, keep only the
- * top ranking matches, score those with a second method and re-rank
- * by second score.  Output in binary csm file format or text sqt file
- * format. 
+ * \brief Main file for crux-search-for-matches.
+ *
+ * Given an ms2 file and a fasta file or index, compare all spectra to
+ * peptides in the fasta file/index and return high scoring matches.
+ * Peptides are determined by parameters for length, mass, mass
+ * tolerance, cleavages, modifications. Score each spectrum with
+ * respect to all candidates, and rank by score. Output in binary csm
+ * file format or text sqt file format.
  */
 /*
  * Here is the outline for how the new search should work
@@ -71,24 +71,26 @@ int search_main(int argc, char** argv){
 
   /* Define optional command line arguments */
   const char* option_list[] = {
-    "verbosity",
-    "version",
-    "parameter-file",
+    "fileroot",
+    "output-dir",
     "overwrite",
+    "num-decoys-per-target",
+    "decoy-location",
     "compute-p-values",
     "spectrum-min-mass",
     "spectrum-max-mass",
     "spectrum-charge",
     "scan-number",
-    "output-dir",
-    "fileroot",
-    "num-decoys-per-target",
-    "decoy-location"
+    "xcorr-var-bin",
+    "mz-bin-width",
+    "mz-bin-offset",
+    "parameter-file",
+    "verbosity"
   };
   int num_options = sizeof(option_list) / sizeof(char*);
 
   /* Define required command line arguments */
-  const char* argument_list[] = {"ms2 file", "protein input"};
+  const char* argument_list[] = {"ms2 file", "protein database"};
   int num_arguments = sizeof(argument_list) / sizeof(char*);
 
   initialize_run(SEARCH_COMMAND, argument_list, num_arguments,
@@ -110,7 +112,7 @@ int search_main(int argc, char** argv){
        get_spectrum_collection_num_spectra(spectra));
 
   /* Get input: protein file */
-  char* input_file = get_string_parameter("protein input");
+  char* input_file = get_string_parameter("protein database");
 
   /* Prepare input, fasta or index */
   INDEX_T* index = NULL;
@@ -259,22 +261,16 @@ int search_main(int argc, char** argv){
     for(decoy_idx = 0; decoy_idx < num_decoy_collections; decoy_idx++){
       free_match_collection(decoy_collection_list[decoy_idx]);
     }
+    free(decoy_collection_list);
 
   }// next spectrum
 
-  // finished searching!
-
-  // fix headers in csm files
-  int file_idx;
-  for(file_idx=0; file_idx < num_decoy_files + 1; file_idx++){
-    carp(CARP_DEBUG, "Changing csm header to have %i spectrum searches",
-         progress.getNumSearchesWithMatches());
-    output_files.updateHeaders(progress.getNumSearchesWithMatches());
-  }
-
+  carp(CARP_INFO, "Elapsed time: %.3g s", wall_clock() / 1e6);
   carp(CARP_INFO, "Finished crux-search-for-matches");
-  exit(0);
+
+  return(0);
 }// end main
+
 #else // SEARCH_ENABLED not defined
 int search_main(int argc, char **argv){
   (void) argc;
@@ -513,6 +509,8 @@ void add_decoy_scores(
                                       spectrum, 
                                       charge, 
                                       peptide_iterator);  
+
+    free_modified_peptides_iterator(peptide_iterator);
   }
 
 

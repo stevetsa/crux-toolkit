@@ -11,7 +11,7 @@
 #include <stdarg.h>
 #include <string.h>
 #include <sys/time.h>
-// #include <sys/resource.h>
+#include <unistd.h> 
 #include <math.h>
 #include <assert.h>
 #include <errno.h>
@@ -241,7 +241,7 @@ BOOLEAN_T myfwrite
 }
 
 #ifdef MYRAND
-#define MY_RAND_MAX 4096
+static const int MY_RAND_MAX = 4096;
 
 
 /********************************************************************
@@ -313,7 +313,7 @@ PROB_T my_log
 }
 
 /* The lookup table. */
-#define LOG_PRECISION 1.0e5
+static const int LOG_PRECISION = 100000;
 static PROB_T log_table[(int) LOG_PRECISION + 2];
 
 /**********************************************************************
@@ -487,41 +487,35 @@ int convert_enum_type_str
   return( default_value ); 
 }
 
-/****************************************************************************
- * Get the name of the CPU.
+/************************************************************************//**
+ * \brief Get the name of the CPU.
  ****************************************************************************/
-#define HOST_LENGTH 100
+static const int MAX_HOST_NAME = 100;
 const char* hostname
-  ()
+ ()
 {
-  FILE *           hostname_stream;
-  static char      the_hostname[HOST_LENGTH];
-  static BOOLEAN_T first_time = TRUE;
-  int              num_scanned;
+   static char the_hostname[MAX_HOST_NAME];
+   int result = gethostname(the_hostname, MAX_HOST_NAME);
+   if (result != 0) {
+     snprintf(the_hostname, MAX_HOST_NAME, "unknown");
+   }
 
-  if (first_time) {
-    hostname_stream = (FILE *)popen("hostname", "r"); /* SGI needs cast. */
-    num_scanned = fscanf(hostname_stream, "%s", the_hostname);
-    assert(num_scanned == 1);
-    num_scanned = pclose(hostname_stream);
-    assert(num_scanned == 0);
-  }
-  return(the_hostname);
+   return(the_hostname);
 }
 
-/****************************************************************************
- * Get the current date and time.
+/************************************************************************//**
+ * \brief Get the current date and time.
  ****************************************************************************/
 const char* date_and_time
   ()
 {
   FILE *           date_stream;
-  static char      the_date[HOST_LENGTH];
+  static char      the_date[MAX_HOST_NAME];
   static BOOLEAN_T first_time = TRUE;
 
   if (first_time) {
-    date_stream = (FILE *)popen("date", "r"); /* SGI needs cast. */
-    if( fgets(the_date, HOST_LENGTH, date_stream) == NULL ){ return NULL; }
+    date_stream = (FILE *)popen("date", "r");
+    if( fgets(the_date, MAX_HOST_NAME, date_stream) == NULL ){ return NULL; }
     pclose(date_stream);
   }
 
@@ -529,6 +523,7 @@ const char* date_and_time
   assert(the_date[strlen(the_date)-1] == '\n');
   the_date[strlen(the_date)-1] = '\0';
 
+  first_time = FALSE;
   return(the_date);
 }
 

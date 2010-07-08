@@ -40,10 +40,6 @@ class OutputFiles{
   void writeMatchFeatures(MATCH_T* match, 
                           double* features,
                           int num_features);
-  void updateHeaders(int spectrum_count);
-
-  FILE* getFilePtr(int idx);
-  int getMatchesPerSpec();
 
  private:
   BOOLEAN_T createFiles(FILE*** file_array_ptr,
@@ -65,11 +61,6 @@ class OutputFiles{
     SCORER_TYPE_T rank_type,
     SPECTRUM_T* spectrum = NULL);
 
-  void printMatchesPsm(
-    MATCH_COLLECTION_T*  target_matches, ///< from real peptides
-    MATCH_COLLECTION_T** decoy_matches_array);  
-                           ///< array of collections from shuffled peptides
-                       
   void printMatchesSqt(
     MATCH_COLLECTION_T*  target_matches, ///< from real peptides
     MATCH_COLLECTION_T** decoy_matches_array,  
@@ -77,16 +68,10 @@ class OutputFiles{
   SPECTRUM_T* spectrum = NULL);
 
   int num_files_;         ///< num files in each array
-  FILE** psm_file_array_; ///< array of .csm files
   FILE** tab_file_array_; ///< array of .txt files
   FILE** sqt_file_array_; ///< array of .sqt files
   FILE*  feature_file_;   ///< file for percolator/q-ranker to write features to
   int matches_per_spec_;  ///< print this many matches per spec
-
-
- 
-
-
 };
 
 

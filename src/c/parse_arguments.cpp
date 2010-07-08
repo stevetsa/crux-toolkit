@@ -18,16 +18,16 @@
 
 
 /* Limits on the number of arguments */
-#define MAX_OPT_ARGS 25
-#define MAX_REQ_ARGS 25
+static const int MAX_OPT_ARGS = 25;
+static const int MAX_REQ_ARGS = 25;
 
 /* Make the error message bufer large enough
  * to accomodate the longest allowed argument
  * and the longest allowed error message, and 
  * a little slack for nulls and conjucntion text */
-#define MAX_VALUE_STRLEN 50 
-#define MAX_ARG_LENGTH 250
-#define MAX_MESSAGE_BUFFER 510
+static const int MAX_VALUE_STRLEN = 50; 
+static const int MAX_ARG_LENGTH = 250;
+static const int MAX_MESSAGE_BUFFER = 510;
 
 
 
@@ -926,15 +926,16 @@ int sprintf_option_default_value(argument * o) {
 char * parse_arguments_get_usage(const char * name) {
 
   int i = 0;
-  /* Caclulate the size of the buffer we'll need                     */
-  /* This should protect strcat and sprintf against buffer overflows */
+  /* Calculate the size of the buffer we'll need.                     */
+  /* This should protect strcat and sprintf against buffer overflows. */
   size_t usage_size = get_usage_size(name);
   usage = (char *) malloc(usage_size);
   if (usage) {
 
     /* Add the command line summary */
     *usage = 0;
-    strcat(usage, "Usage: ");
+    strcat(usage, "\nUSAGE:\n\n");
+    strcat(usage, "   crux ");
     strcat(usage, name);
     if (optional_count > 0) {
       strcat(usage, " [options]");
@@ -945,34 +946,10 @@ char * parse_arguments_get_usage(const char * name) {
       strcat(usage, required[i].name);
       strcat(usage, "> ");
     }
-
-    /* Add the optional argument usage comments */
-    strcat(usage, "\nOptional Arguments:\n");
-    for (i = 0; i < optional_count; i++) {
-      strcat(usage, "  [--");
-      /*
-      if (optional[i].type != FLAG_ARG) {
-        strcat(usage, "  [--");
-      }
-      else{
-        strcat(usage, "  [-");
-      }
-      */
-      strcat(usage, optional[i].name);
-      if (optional[i].type != FLAG_ARG) {
-        strcat(usage, " <");
-        strcat(usage, get_option_value_type(&optional[i]));
-        strcat(usage, ">");
-      }
-      strcat(usage, "] ");
-      strcat(usage, optional[i].usage);
-      strcat(usage, " ");
-      //sprintf_option_default_value(&optional[i]);
-      strcat(usage, "\n");
-    }
+    strcat(usage, "\n\n");
 
     /* Add the required argument usage comments */
-    strcat(usage, "Required Arguments:\n");
+    strcat(usage, "REQUIRED ARGUMENTS:\n\n");
     for (i = 0; i < required_count; i++) {
       strcat(usage, "  <");
       strcat(usage, required[i].name);
@@ -980,6 +957,23 @@ char * parse_arguments_get_usage(const char * name) {
       strcat(usage, required[i].usage);
       strcat(usage, "\n");
     }
+    strcat(usage, "\n");
+
+    /* Add the optional argument usage comments */
+    strcat(usage, "OPTIONAL ARGUMENTS:\n\n");
+    for (i = 0; i < optional_count; i++) {
+      strcat(usage, "  [--");
+      strcat(usage, optional[i].name);
+      if (optional[i].type != FLAG_ARG) {
+        strcat(usage, " <");
+        strcat(usage, get_option_value_type(&optional[i]));
+        strcat(usage, ">");
+      }
+      strcat(usage, "]\n");
+      strcat_formatted(usage, "     ", optional[i].usage);
+    }
+    strcat(usage, "\n");
+
   }
 
   return usage;
@@ -1008,22 +1002,24 @@ void build_message(const char * arg) {
   /* argument_error enumeration                            */
 
   const char * error_messages[] = {
-    "no error.",
-    "%s is not a valid option.",
-    "the option %s is missing its value.",
-    "the value for the option %s should be numeric.",
-    "the argument %s was not expected.",
-    "the required argument <%s> is missing.",
-    "too many required arguments defined. Only %d allowed.",
-    "too many optional arguments defined. Only %d allowed."
+    "No error.",
+    "Invalid option (%s).",
+    "The option %s is missing its value.",
+    "The value for the option %s should be numeric.",
+    "The argument %s was not expected.",
+    "The required argument <%s> is missing.",
+    "Too many required arguments defined. Only %d allowed.",
+    "Too many optional arguments defined. Only %d allowed."
   };
       
   switch (error) {
     case TOO_MANY_REQ_ARGS:
-      snprintf(message, MAX_MESSAGE_BUFFER - 1, error_messages[error], MAX_REQ_ARGS);
+      snprintf(message, MAX_MESSAGE_BUFFER - 1, error_messages[error],
+	       MAX_REQ_ARGS);
       break;
     case TOO_MANY_OPT_ARGS:
-      snprintf(message, MAX_MESSAGE_BUFFER - 1, error_messages[error], MAX_OPT_ARGS);
+      snprintf(message, MAX_MESSAGE_BUFFER - 1, error_messages[error],
+	       MAX_OPT_ARGS);
       break;
     default:
       snprintf(message, MAX_MESSAGE_BUFFER - 1, error_messages[error], arg);

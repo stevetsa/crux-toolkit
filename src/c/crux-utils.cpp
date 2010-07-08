@@ -10,11 +10,13 @@
 #include "crux-utils.h"
 #include "parameter.h"
 
+using namespace std;
+
 /**
  * PRECISION, determines the precision of the compare float, users
  * should lower the number if need more precision
  */
-#define PRECISION 0.000000005 
+static const FLOAT_T PRECISION = 0.000000005; 
 
 /**
  * the maximum error in terms of Units in the Last Place. 
@@ -23,7 +25,7 @@
  * MAX_ULPS can also be interpreted in terms of how many representable floats 
  * we are willing to accept between A and B. This function will allow MAX_ULPS-1 floats between A and B.
  */
-#define MAX_ULPS 2
+static const int MAX_ULPS = 2;
 
 /* Functions for converting custom types to and from strings */
 
@@ -143,34 +145,6 @@ char* window_type_to_string(WINDOW_TYPE_T type){
   char* type_str = my_copy_string(window_type_strings[type]);
 
   return type_str;
-}
-
-
-/** 
- * The string version of retention time predictor types
- */
-static const char* rtp_type_strings[NUMBER_RTP_TYPES] =
-  {"invalid", "krokhin", "palmbald"};
-
-RTP_TYPE_T string_to_rtp_type(char* name) {
-  int rtp_int = convert_enum_type_str(name, -10,
-                                    rtp_type_strings,
-                                    NUMBER_RTP_TYPES);
-  if (rtp_int < 0) {
-    rtp_int = 0;
-  }
-  return (RTP_TYPE_T)rtp_int;
-}
-
-char* rtp_type_to_string(RTP_TYPE_T type) {
-  if ( (int)type > NUMBER_RTP_TYPES) {
-    return NULL;
-  }
-
-  char* type_str = my_copy_string(rtp_type_strings[type]);
-
-  return type_str;
-
 }
 
 
@@ -304,7 +278,7 @@ BOOLEAN_T algorithm_type_to_string(ALGORITHM_TYPE_T type, char* type_str){
 
 static const char* command_type_file_strings[NUMBER_COMMAND_TYPES] =
   { "invalid", "index", "search", "sequest", "qvalues", "percolator", 
-    "qranker", "processed-spectra", "mpsm-search", "q-ranker-mpsm" 
+    "qranker", "processed-spectra", "search-for-xlinks", "version"
   };
 /**
  * Conversion of COMMAND_T to the base filename used for that
@@ -335,7 +309,7 @@ const char* command_type_to_file_string_ptr(COMMAND_T type){
 static const char* command_type_command_line_strings[NUMBER_COMMAND_TYPES] =
   { "invalid", "create-index", "search-for-matches", "sequest-search",
     "compute-q-values", "percolator", "q-ranker", "print-processed-spectra",
-    "search-for-mpsms","q-ranker-mpsm"
+    "search-for-xlinks", "version"
   };
 /**
  * Conversion of COMMAND_T to the string used on the command line.
@@ -391,13 +365,22 @@ COMMAND_T string_to_command_type(char* str){
  * The string version of SCORER_TYPE_T
  */
 static const char* scorer_type_strings[NUMBER_SCORER_TYPES] = 
-  {"sp", "xcorr", "dotp", "logp_exp_sp", "logp_bonf_exp_sp", 
-   "logp_evd_xcorr", "logp_bonf_evd_xcorr", "logp_weibull_sp", 
-   "sp-pvalue",  //"sp-logp", 
-   "logp_weibull_xcorr", 
-   "xcorr-pvalue", //"xcorr-logp", 
-   "q_value", "percolator_score", 
-   "qvalue", "qranker", "qranker_qvalue"};//"logp_qvalue_weibull_xcorr" };
+  {"sp",
+   "xcorr",
+   "dotp", 
+   "logp_exp_sp",
+   "logp_bonf_exp_sp", 
+   "logp_evd_xcorr",
+   "logp_bonf_evd_xcorr", 
+   "logp_weibull_sp", 
+   "sp-pvalue",  
+   "xcorr-pvalue", 
+   "q_value",
+   "percolator_score", 
+   "qvalue", 
+   "qranker", 
+   "qranker_qvalue"
+  };
 //TODO: this should probably be changed, these strings are the option args
 //Instead could have an if block in string_to_type
 
@@ -439,9 +422,9 @@ char* my_copy_string(const char* src){
 }
 
 /**
- * returns copy of the src string upto the specified length
- * includes a null terminating \\0 character
- * the string is heap allocated thus, user must free
+ * Returns copy of the src string upto the specified length.
+ * Includes a null terminating character.
+ * The string is heap allocated; thus, user must free.
  */
 char* copy_string_part(const char* src, int length){
   char* copy = (char*)mycalloc(length+1, sizeof(char));
@@ -714,13 +697,18 @@ void prefix_fileroot_to_name(char** name) {
 
 /**
  * \brief Check if the string has the correct prefix
- * \returns TRUE if the string starts with the given prefix, else FALSE
+ * \returns TRUE if the string starts with the given prefix or if the
+ * prefix is NULL, else FALSE.
  */
 BOOLEAN_T prefix_compare(
-  char* string, ///< The string to check
-  char* prefix  ///< The prefix to find in the string
+  const char* string, ///< The string to check
+  const char* prefix  ///< The prefix to find in the string
   )
 {
+  if( prefix == NULL ){
+    return TRUE;
+  }
+
   int len = strlen(string);
   int len_prefix = strlen(prefix);
 
@@ -1067,31 +1055,6 @@ char* generate_name(
 }
 
 /**
- * \brief Create the correct filename for a binary psm file, 
- * search.target.csm for target search and search.decoy-#.csm for 
- * decoy searches.
- *
- * Adds the appropriate
- * extension depending on the file index (0=target, 1=first decoy,
- * 2=second decoy, etc).
- * \returns A heap allocated char* with the new filename.
- */
-char* generate_psm_filename(int file_index) {///< target/decoy index -in
-  carp(CARP_DEBUG, "Given index %d", file_index);
-
-  char* fullname = (char*)mymalloc(sizeof(char) * 30);
-  if( file_index == 0 ){
-    sprintf(fullname, "search.target.csm");
-  }else{
-    sprintf(fullname, "search.decoy-%i.csm", file_index);
-  }
-  prefix_fileroot_to_name(&fullname);
-
-  return fullname;
-
-}
-
-/**
  * checks if each AA is an AA
  *\returns TRUE if sequence is valid else, FALSE
  */
@@ -1164,7 +1127,7 @@ char** generate_feature_name_array()
 {
   char** name_array = NULL;
 
-  name_array = (char**)mycalloc(20, sizeof(char *));
+  name_array = (char**)mycalloc(NUM_FEATURES, sizeof(char *));
   name_array[0] =  my_copy_string("XCorr");
   name_array[1] =  my_copy_string("DeltCN");
   name_array[2] =  my_copy_string("DeltLCN");
@@ -1485,13 +1448,12 @@ int prepare_protein_input(
     } 
 
     if(!parse_database(*database)){
-      carp(CARP_FATAL, "Error with protein input");
+      carp(CARP_FATAL, "Error with protein database.");
     } 
     num_proteins = get_database_num_proteins(*database);
   }
   return num_proteins;
 }
-
 
 /**
  * \brief Perform the set-up steps common to all crux commands:
@@ -1552,6 +1514,7 @@ void initialize_run(
   if( result == -1 ){
     carp(CARP_FATAL, "Unable to create output directory %s.", output_folder);
   }
+  free(output_folder);
 
   char* cmd_file_name = command_type_to_file_string(cmd);
 
@@ -1559,7 +1522,14 @@ void initialize_run(
   char* log_file_name = cat_string(cmd_file_name, ".log.txt");
   open_log_file(&log_file_name);
   free(log_file_name);
+
+  // Store the host name, start date and time, and command line.
+  carp(CARP_INFO, "CPU: %s", hostname());
+  carp(CARP_INFO, date_and_time());
   log_command_line(argc, argv);
+
+  // Start the timer.
+  wall_clock();
 
   // Write the parameter file
   char* param_file_name = cat_string(cmd_file_name, ".params.txt");
@@ -1569,10 +1539,10 @@ void initialize_run(
 }
 
 /**
- *  Read the given string of the form <first>-<last> and return <first>
- *  or -1 if the range is invalid.  In a valid range, <first> and <last> 
+ *  Read the given string of the form [first]-[last] and return [first]
+ *  or -1 if the range is invalid.  In a valid range, [first] and [last]
  *  are non-negative integers and there is exactly one '-' separating
- *  them.  No check that first < last.
+ *  them.  No check that first is less than last.
  */
 int get_first_in_range_string(const char* const_range_string){
   int number = 0;
@@ -1603,10 +1573,10 @@ int get_first_in_range_string(const char* const_range_string){
 }
  
 /**
- *  Read the given string of the form <first>-<last> and return <last>
- *  or -1 if the range is invalid.  In a valid range, <first> and <last> 
+ *  Read the given string of the form [first]-[last] and return [last]
+ *  or -1 if the range is invalid.  In a valid range, [first] and [last] 
  *  are non-negative integers and there is exactly one '-' separating
- *  them.  No check that first < last.
+ *  them.  No check that first is less than last.
  */
 int get_last_in_range_string(const char* range_string){
   int number = BILLION;
@@ -1638,27 +1608,26 @@ int get_last_in_range_string(const char* range_string){
  * \returns 1 if spectrum precursor is singly charged or 0 if multiply
  * charged or -1 on error.
  */
-int choose_charge(FLOAT_T precursor_mz, ///< m/z of spectrum precursor ion
-                  PEAK_T* peaks,        ///< array of spectrum peaks
-                  int num_peaks)        ///< size of peaks array
+int choose_charge(FLOAT_T precursor_mz,    ///< m/z of spectrum precursor ion
+                  vector<PEAK_T*>& peaks)  ///< array of spectrum peaks
 {
-  if( num_peaks == 0 || peaks == NULL ){
+  if(peaks.empty()){
     carp(CARP_ERROR, "Cannot determine charge state of empty peak array.");
     return -1;
   }
 
-  FLOAT_T max_peak_mz = get_peak_location(find_peak(peaks, num_peaks - 1));
+  FLOAT_T max_peak_mz = get_peak_location(peaks.back());
   
   // sum peaks below and above the precursor m/z window separately
   FLOAT_T left_sum = 0.00001;
   FLOAT_T right_sum= 0.00001;
-  for(int peak_idx = 0; peak_idx < num_peaks; peak_idx++){
-    if(get_peak_location(find_peak(peaks, peak_idx)) < precursor_mz - 20){
-      left_sum += get_peak_intensity(find_peak(peaks, peak_idx));
+  for(unsigned int peak_idx = 0; peak_idx < peaks.size(); peak_idx++){
+    if(get_peak_location(peaks[peak_idx]) < precursor_mz - 20){
+      left_sum += get_peak_intensity(peaks[peak_idx]);
 
-    } else if(get_peak_location(find_peak(peaks, peak_idx)) 
+    } else if(get_peak_location(peaks[peak_idx]) 
               > precursor_mz + 20){
-      right_sum += get_peak_intensity(find_peak(peaks, peak_idx));
+      right_sum += get_peak_intensity(peaks[peak_idx]);
 
     } // else, skip peaks around precursor
   }
@@ -1683,6 +1652,48 @@ int choose_charge(FLOAT_T precursor_mz, ///< m/z of spectrum precursor ion
 
   // shouldn't get to here
   return -1;
+}
+
+/**
+ * Maximum characters per line when printing formatted text.
+ */
+static const int MAX_CHARS_PER_LINE = 70;
+
+
+/**
+ *\brief Extend a given string with lines not exceeding a specified width, 
+ * breaking on spaces.
+ */
+void strcat_formatted
+(
+ char*       string_to_extend,
+ const char* lead_string,        // Appears at the start of each line.
+ const char* extension           // Text to add.
+ )
+{
+  int i_string = 0;
+  int string_length = strlen(extension);
+  char buffer[MAX_CHARS_PER_LINE + 1];
+
+  while (string_length - i_string > MAX_CHARS_PER_LINE) {
+
+    // Be sure to break on a space.
+    int index_of_last_space = MAX_CHARS_PER_LINE;
+    while (extension[i_string + index_of_last_space] != ' ') {
+      index_of_last_space--;
+    }
+
+    sprintf(buffer, "%.*s", index_of_last_space, &(extension[i_string]));
+
+    strcat(string_to_extend, lead_string);
+    strcat(string_to_extend, buffer);
+    strcat(string_to_extend, "\n");
+
+    i_string += index_of_last_space + 1;
+  }
+  strcat(string_to_extend, lead_string);
+  strcat(string_to_extend, &(extension[i_string]));
+  strcat(string_to_extend, "\n");
 }
 
 

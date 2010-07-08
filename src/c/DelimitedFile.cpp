@@ -1,3 +1,15 @@
+/**
+ * \file DelimitedFile.cpp
+ * DATE: Jan 7, 2010
+ * AUTHOR: Sean McIlwain
+ * \brief Object for reading tab-delimited files.
+ * 
+ * This class generates a table of values. The default delimiter is tab.
+ * This class is capable of reading string, integers, and floating point
+ * Types from each cell of the table.  This class also provides function
+ * for reading a list of integers or string from a cell using a delimiter
+ * that is different from the column delimiter (default is comma ',').
+ ****************************************************************************/
 #include "DelimitedFile.h"
 
 #include <fstream>
@@ -701,43 +713,6 @@ void DelimitedFile::getIntegerVectorFromCell(
     int_vector.push_back(int_ans);
   }
 }
-
-
-/**
- * gets an vector of doubles from cell where the
- * string in the cell are integers which are separated
- * by a delimiter which is differnt than the column
- * delimiter.  The default delimiter is a comma
- * uses the current_row_ as the row index.
- * clears the double vector before 
- * populating it.
- */
-void DelimitedFile::getDoubleVectorFromCell(
-  const char* column_name, ///< the column name
-  std::vector<double>& double_vector, ///<the vector of integers
-  char delimiter ///<the delimiter to use
-) {
-  
-  //get the list of strings separated by delimiter
-  vector<string> string_vector_ans;
-
-  getStringVectorFromCell(column_name, string_vector_ans, delimiter);
-
-  //convert each string into an integer.
-  double_vector.clear();
-
-  for (vector<string>::iterator string_iter = string_vector_ans.begin();
-    string_iter != string_vector_ans.end();
-    ++string_iter) {
-
-    double double_ans;
-    from_string<double>(double_ans, *string_iter);
-    double_vector.push_back(double_ans);
-  }
-}
-
-
-
 
 template <typename T>
 void DelimitedFile::reorderRows(multimap<T, unsigned int>& sort_indices, BOOLEAN_T ascending) {

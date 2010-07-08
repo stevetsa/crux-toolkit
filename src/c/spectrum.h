@@ -7,12 +7,12 @@
 #define SPECTRUM_H
 
 #include <stdio.h>
+#include <vector>
 #include "utils.h"
 #include "objects.h"
 #include "peak.h"
 
 
-#ifdef __cplusplus
 //I don't know why including Spectrum here causes a compilation error,
 //for now just pass it in as a void pointer.  Fix this after most of
 //the files get changed to C++.
@@ -21,9 +21,6 @@ BOOLEAN_T parse_spectrum_spectrum(
   void* mst_spectrum, ///< the input MSToolkit spectrum -in
   char* filename ///< filename of the spectrum, should not free -in
 );
-
-extern "C" {
-#endif
 
 /**
  * \returns An (empty) spectrum object.
@@ -37,9 +34,8 @@ SPECTRUM_T* new_spectrum(
   int               first_scan,         ///< The number of the first scan -in
   int               last_scan,          ///< The number of the last scan -in
   SPECTRUM_TYPE_T   spectrum_type,      ///< The type of spectrum. -in
-  FLOAT_T             precursor_mz,       ///< The m/z of the precursor (for MS-MS spectra) -in
-  int*              possible_z,         ///< The possible charge states of this spectrum  -in
-  int               num_possible_z,     ///< The number of possible charge states of this spectrum  -in  
+  FLOAT_T           precursor_mz,       ///< The m/z of the precursor (for MS-MS spectra) -in
+  const std::vector<int>& possible_z,         ///< The possible charge states of this spectrum  -in
   char*             filename);          ///< Optional filename  -in
 
 /**
@@ -105,22 +101,12 @@ BOOLEAN_T parse_spectrum(
   char*      filename ///< the file to parse -in
   );
 
-#ifdef __cplusplus
 /**
  * Parse the spectrum from the tab-delimited result file
  *\returns the parsed spectrum , else returns NULL for failed parse
  */
 SPECTRUM_T* parse_spectrum_tab_delimited(
-  DelimitedFile& file ///< output stream -out
-  );
-#endif
-
-/**
- * Parse the spectrum from the serialized spectrum
- *\returns the parsed spectrum , else returns NULL for failed parse
- */
-SPECTRUM_T* parse_spectrum_binary(
-  FILE* file ///< output stream -out
+  MatchFileReader& file ///< output stream -out
   );
 
 /***********************************************************************
@@ -227,28 +213,11 @@ void set_spectrum_precursor_mz(
  * number of possible charge states can be gained by 
  * the get_num_possible_z function.
  */
-int* get_spectrum_possible_z(
+const std::vector<int>& get_spectrum_possible_z(
   SPECTRUM_T* spectrum  ///< the spectrum to query possible z -in
   );
 
-/**
- * \returns the number of possible charge states of this spectrum
- */
-int get_num_possible_z(
-  SPECTRUM_T* spectrum  ///< the spectrum to query possible z -in
-  );
-
-/**
- * \returns a pointer to an array of the possible charge states of this spectrum
- * User must NOT free this or alter, not a copy
- * number of possible charge states can be gained by 
- * the get_num_possible_z function.
- */
-int* get_spectrum_possible_z_pointer(
-  SPECTRUM_T* spectrum  ///< the spectrum to query possible z -in
-  );
- 
-int get_charges_to_search(SPECTRUM_T*, int**);
+std::vector<int> get_charges_to_search(SPECTRUM_T*);
 /**
  * \sets the possible charge states of this spectrum
  * the function copies the possible_z into a heap allocated memory
@@ -258,23 +227,7 @@ int get_charges_to_search(SPECTRUM_T*, int**);
  */
 void set_spectrum_possible_z(
   SPECTRUM_T* spectrum,  ///< the spectrum to set the new_possible_z -out
-  int* possible_z, ///< possible z array -in
-  int num_possible_z ///< possible z array size -in
-  );
-
-
-/**
- * \sets the possible charge states of this spectrum
- * this function should only be used when possible_z is set to NULL
- * to change existing possible_z use set_spectrum_possible_z()
- * the function copies the possible_z into a heap allocated memory
- * num_possible_z must match the array size of possible_z 
- * updates the number of possible charge states field
- */
-void set_spectrum_new_possible_z(
-  SPECTRUM_T* spectrum,  ///< the spectrum to set the new_possible_z -out
-  int* possible_z, ///< possible z array -in
-  int num_possible_z ///< possible z array size -in
+  const std::vector<int>& possible_z ///< possible z array -in
   );
 
 /**
@@ -439,17 +392,6 @@ SPECTRUM_T* process_spectrum(
   SCORER_TYPE_T score_type ///< the score type to which the spectrum should be sorted -in
   );
 
-/**
- * serialize the spectrum in binary
- * Form,
- * <int: first_scan><int: last_scan><int: id><SPECTRUM_TYPE_T: spectrum_type>
- * <float: precursor_mz><float: retention_time>
- */
-void serialize_spectrum(
-  SPECTRUM_T* spectrum, ///< the spectrum to serialize -in
-  FILE* file ///< output stream -out
-  );
-
 /***********************************************************************
  * Normalize peak intensities so that they sum to unity.
  ***********************************************************************/
@@ -515,9 +457,6 @@ void print_spectrum_processed_peaks(
   int max_mz_bin,       ///< num_bins in intensities
   FILE* file);          ///< print to this file
 
-#ifdef __cplusplus
-}
-#endif
 
 /**
  * Local Variables:

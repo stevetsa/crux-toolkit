@@ -1,9 +1,8 @@
 /*************************************************************************//**
- * \file spectrum_collection.c
+ * \file spectrum_collection.cpp
  * AUTHOR: Chris Park
  * CREATE DATE: 28 June 2006
- * DESCRIPTION: code to support working with collection of multiple spectra
- * REVISION: $Revision: 1.43 $
+ * \brief code to support working with collection of multiple spectra
  ****************************************************************************/
 #include <math.h>
 #include <stdio.h>
@@ -26,8 +25,7 @@
 #include "MSReader.h"
 using namespace MSToolkit;
 
-#define MAX_SPECTRA 40000 ///< max number of spectrums
-#define MAX_COMMENT 1000 ///< max length of comment
+static const unsigned int MAX_COMMENT = 1000; ///< max length of comment
 
 
 /* Private functions */
@@ -46,8 +44,7 @@ void queue_next_spectrum(FILTERED_SPECTRUM_CHARGE_ITERATOR_T* it);
  * \brief A object to group together one or more spectrum objects.
  */
 struct spectrum_collection {
-  SPECTRUM_T* spectra[MAX_SPECTRA];  ///< The spectrum peaks
-  int  num_spectra;     ///< The number of spectra
+  vector<SPECTRUM_T*> spectra;  ///< The spectrum peaks
   int  num_charged_spectra; ///< The number of spectra assuming differnt charge(i.e. one spectrum with two charge states are counted as two spectra)
   char* filename;     ///< Optional filename
   char comment[MAX_COMMENT];    ///< The spectrum_collection header lines
@@ -71,12 +68,13 @@ struct filtered_spectrum_charge_iterator {
   SPECTRUM_COLLECTION_T* spectrum_collection;///< spectra to iterate over
   BOOLEAN_T has_next;  ///< is there a spec that passes criteria
   int  spectrum_index; ///< The index of the current spectrum
-  int* charges;        ///< Array of possible charges to search
+  vector<int> charges;        ///< Array of possible charges to search
   int num_charges;     ///< how many charges does the cur spec have
   int charge_index;    ///< The index of the charge of the current spectrum
   double min_mz;       ///< return only spec above this mz
   double max_mz;      ///< return only spec below this mz
   int search_charge;   ///< which z to search, 0 for all
+  int min_peaks;       ///< minimum number of peaks a spec must have
 };
 
 
@@ -137,10 +135,11 @@ void free_spectrum_collection(
   SPECTRUM_COLLECTION_T* spectrum_collection ///< the spectrum collection to free - in
 )
 {
-  int spectrum_index = 0;
-  for(;spectrum_index < spectrum_collection->num_spectra; ++spectrum_index){
+  unsigned int spectrum_index = 0;
+  for(;spectrum_index < spectrum_collection->spectra.size(); ++spectrum_index){
     free_spectrum(spectrum_collection->spectra[spectrum_index]);
   }
+  spectrum_collection->spectra.clear();
   free(spectrum_collection->filename);
   free(spectrum_collection);
 }
@@ -203,8 +202,8 @@ void parse_header_line(SPECTRUM_COLLECTION_T* spectrum_collection, FILE* file){
   char* new_line = NULL;
   int line_length;
   size_t buf_length = 0; // TODO maybe should be more sensible length?
-  int new_line_length;
-  int comment_field_length;
+  unsigned int new_line_length;
+  unsigned int comment_field_length;
 
   while( (line_length =  getline(&new_line, &buf_length, file)) != -1){
     if(new_line[0] == 'H'){
@@ -354,15 +353,8 @@ BOOLEAN_T add_spectrum_to_end(
   SPECTRUM_T* spectrum ///< spectrum to add to spectrum_collection -in
   )
 {
-  // FIXME eventually might want it to grow dynamically
-  // check if spectrum capacity is full
-  if(get_spectrum_collection_num_spectra(spectrum_collection) == MAX_SPECTRA){
-    carp(CARP_ERROR,"ERROR: cannot add spectrum, capacity full\n"); 
-    return FALSE;
-  }
   // set spectrum
-  spectrum_collection->spectra[spectrum_collection->num_spectra] = spectrum;
-  ++spectrum_collection->num_spectra;
+  spectrum_collection->spectra.push_back(spectrum);
   spectrum_collection->num_charged_spectra += get_spectrum_num_possible_z(spectrum);
   return TRUE;
 }
@@ -377,35 +369,20 @@ BOOLEAN_T add_spectrum(
   SPECTRUM_T* spectrum ///< spectrum to add to spectrum_collection -in
   )
 {
-  // FIXME eventually might want it to grow dynamically
-  int add_index = 0;
-  int spectrum_index;
-  
-  // check if spectrum capacity is full
-  if(get_spectrum_collection_num_spectra(spectrum_collection) == MAX_SPECTRA){
-    carp(CARP_ERROR,"ERROR: cannot add spectrum, capacity full\n"); 
-    return FALSE;
-  }
+  unsigned int add_index = 0;
+
   // find correct location
-  for(; add_index < spectrum_collection->num_spectra; ++add_index){
+  // TODO -- replace with binary search if necessary.
+  for(; add_index < spectrum_collection->spectra.size(); ++add_index){
     if(get_spectrum_first_scan(spectrum_collection->spectra[add_index])>
        get_spectrum_first_scan(spectrum)){
       break;
     }
   }
-  // do we add to end?
-  if(add_index != spectrum_collection->num_spectra +1){
-    spectrum_index = spectrum_collection->num_spectra;
-    // shift all spectrum that have greater or equal index to add_index to right  
-    for(; spectrum_index >= add_index; --spectrum_index){
-      spectrum_collection->spectra[spectrum_index+1] = 
-        spectrum_collection->spectra[spectrum_index];
-    }
-  }
-  
-  // set spectrum
-  spectrum_collection->spectra[add_index] = spectrum;
-  ++spectrum_collection->num_spectra;
+
+  spectrum_collection->
+    spectra.insert(spectrum_collection->spectra.begin()+add_index, spectrum);
+
   spectrum_collection->num_charged_spectra += get_spectrum_num_possible_z(spectrum);
   return TRUE;
 }
@@ -421,26 +398,22 @@ void remove_spectrum(
   )
 {
   int scan_num = get_spectrum_first_scan(spectrum);
-  int spectrum_index = 0;
+  unsigned int spectrum_index = 0;
   
   // find where the spectrum is located in the spectrum array
-  for(; spectrum_index < spectrum_collection->num_spectra; ++spectrum_index){
+  for(; spectrum_index < spectrum_collection->spectra.size(); ++spectrum_index){
     if(scan_num ==
        get_spectrum_first_scan(spectrum_collection->spectra[spectrum_index])){
       break;
     }
   }
   
-  free_spectrum(spectrum_collection->spectra[spectrum_index]);
-  
-  // shift all the spectra to the left to fill in the gap
-  for(; spectrum_index < spectrum_collection->num_spectra; ++spectrum_index){
-    spectrum_collection->spectra[spectrum_index] =
-      spectrum_collection->spectra[spectrum_index+1];
-  }
-  
-  --spectrum_collection->num_spectra;
   spectrum_collection->num_charged_spectra -= get_spectrum_num_possible_z(spectrum);
+
+  free_spectrum(spectrum_collection->spectra[spectrum_index]);
+  spectrum_collection->
+    spectra.erase(spectrum_collection->spectra.begin() + spectrum_index);
+
 } 
 
 
@@ -679,11 +652,11 @@ int match_first_scan_line(
 
 /******************************************************************************/
 
-/**  ////// TESTME////
- * sets the filename of the ms2 file the spectra were parsed
- * this function should be used only the first time the filename is set
- * to change existing filename use set_spectrum_collection_filename
- * copies the value from arguement char* filename into a heap allocated memory
+/**
+ * Sets the filename of the ms2 file the spectra were parsed.
+ * This function should be used only the first time the filename is set.
+ * To change existing filename use set_spectrum_collection_filename.
+ * Copies the value from arguement char* filename into a heap allocated memory.
  */
 void set_spectrum_collection_new_filename(
   SPECTRUM_COLLECTION_T* spectrum_collection, ///< the spectrum_collection save filename -out
@@ -734,7 +707,7 @@ int get_spectrum_collection_num_spectra(
   SPECTRUM_COLLECTION_T* spectrum_collection ///< the spectrum_collection save filename -in                                         
   )
 {
-  return spectrum_collection->num_spectra;
+  return spectrum_collection->spectra.size();
 }
 
 /**
@@ -795,7 +768,7 @@ BOOLEAN_T get_spectrum_collection_is_parsed(
 /**
  * Takes the spectrum file name and creates a file with unique filenames.
  * The method will create one file for PSM result serializations for the 
- * target sequence and #number_decoy_set number of files for decoy PSM 
+ * target sequence and number_decoy_set number of files for decoy PSM 
  * result serialization.  Thus, the FILE* array will contain,
  * at index 0, the target file and the allowed indices the decoy files.
  *
@@ -895,80 +868,6 @@ FILE** get_spectrum_collection_psm_result_filenames(
   return file_handle_array;
 }
 
-/**
- * <int: number spectra> <--this will be over written by serialize_total_number_of_spectra method
- * <int: number of spectrum features>
- * <int: number of top ranked peptides serialized per spectra>
- *
- * 
- * // FIXME <int: ms2 file length><char*: ms2 filename>
- * // FIXME <int: fasta file length><char*: fasta filename>
- *
- * Serializes the header information for the binary PSM serialized files
- * Must run in pair with serialize_total_number_of_spectra.
- *
- * General order is, 
- * serialize_header -> serialize_psm_features -> serialize_total_number_of_spectra
- *\returns TRUE if serialized header successfully, else FALSE
- */
-BOOLEAN_T serialize_header(
-  SPECTRUM_COLLECTION_T* spectrum_collection, ///< the spectrum_collection -in
-  char* fasta_file, ///< the fasta file 
-  FILE* psm_file ///< the file to serialize the header information -out
-  )
-{
-  int num_spectrum_features = 0;
-  // set max number of matches to be serialized per spectrum
-  int number_top_rank_peptide = get_int_parameter("top-match");
-  char* file_fasta = parse_filename(fasta_file);
-  // int file_fasta_length = strlen(file_fasta);
-  char* file_ms2 = parse_filename(spectrum_collection->filename);
-  // int file_ms2_length = strlen(file_ms2);
-  
-  // FIXME later if you want to be selective on charge to run
-  // must refine the current serialize methods
-  
-  // num_charged_spectra will be over written by serialize_total_number_of_spectra method
-  fwrite(&(spectrum_collection->num_charged_spectra), sizeof(int), 1, psm_file);
-  fwrite(&(num_spectrum_features), sizeof(int), 1, psm_file);
-  fwrite(&(number_top_rank_peptide), sizeof(int), 1, psm_file);
-  
-  carp(CARP_DETAILED_DEBUG, "Serialize header wrote %i top matches", 
-       number_top_rank_peptide);
-  // free up files
-  free(file_ms2);
-  free(file_fasta);
-  
-  return TRUE;
-}
-
-/**
- * Modifies the serialized header information for the binary PSM serialized files
- * Sets the total number of spectra serialized in the file
- * Assumes the first field in the file is the number total spectra serialized
- * Must be run after serialize_header
- *
- * General order is, 
- * serialize_header -> serialize_psm_features -> serialize_total_number_of_spectra
- *
- *\returns TRUE if total number of spectra seerialized in the file, else FALSE
- */
-BOOLEAN_T serialize_total_number_of_spectra(
-  int spectra_idx, ///< the number of spectra serialized in PSM file -in 
-  FILE* psm_file ///< the file to serialize the header information -out
-  )
-{
-  if( psm_file == NULL ){
-    return FALSE;
-  }
-  // set to begining of file
-  rewind(psm_file);
-
-  // serialize the total number of spectra seerialized in the file
-  fwrite(&(spectra_idx), sizeof(int), 1, psm_file);
-
-  return TRUE;
-}
 /******************************************************************************/
 
 /**
@@ -993,7 +892,8 @@ SPECTRUM_ITERATOR_T* new_spectrum_iterator(
  * as +2 and once as +3).  The charge is returned by setting the int
  * pointer in the argument list.  The iterator also filters spectra by
  * mass so that none outside the spectrum-min-mass--spectrum-max-mass
- * range (as defined in parameter.c).
+ * range (as defined in parameter.c).  The iterator also filters by
+ * minimum number of peaks.
  * \returns a SPECTRUM_ITERATOR_T object.
  */
 FILTERED_SPECTRUM_CHARGE_ITERATOR_T* new_filtered_spectrum_charge_iterator(
@@ -1005,11 +905,12 @@ FILTERED_SPECTRUM_CHARGE_ITERATOR_T* new_filtered_spectrum_charge_iterator(
   iterator->spectrum_collection = spectrum_collection;
   iterator->has_next = FALSE;
   iterator->spectrum_index = -1;
-  iterator->charges = NULL;
   iterator->num_charges = 0;
   iterator->charge_index = -1;
   iterator->min_mz = get_double_parameter("spectrum-min-mass");
   iterator->max_mz = get_double_parameter("spectrum-max-mass");
+  iterator->min_peaks = get_int_parameter("min-peaks");
+
   const char* charge_str = get_string_parameter_pointer("spectrum-charge");
   if( strcmp( charge_str, "all") == 0){
     iterator->search_charge = 0;
@@ -1121,10 +1022,11 @@ void queue_next_spectrum(FILTERED_SPECTRUM_CHARGE_ITERATOR_T* iterator){
     iterator->spectrum_index++;
     spec = iterator->spectrum_collection->spectra[iterator->spectrum_index];
     // first free any existing charges in the iterator
-    if( iterator->charges ){
-      free(iterator->charges);
+    if( ! iterator->charges.empty() ){
+      iterator->charges.clear();
     }
-    iterator->num_charges = get_charges_to_search(spec, &(iterator->charges));
+    iterator->charges = get_charges_to_search(spec);
+    iterator->num_charges = (int)iterator->charges.size();
     iterator->charge_index = 0;
   }else{ // none left
     iterator->has_next = FALSE;
@@ -1138,10 +1040,12 @@ void queue_next_spectrum(FILTERED_SPECTRUM_CHARGE_ITERATOR_T* iterator){
     this_charge = iterator->charges[iterator->charge_index];
   }
   double mz = get_spectrum_precursor_mz(spec);
+  int num_peaks = get_spectrum_num_peaks(spec);
 
   if( iterator->search_charge == 0 || iterator->search_charge == this_charge ){
-    if( mz >= iterator->min_mz && mz <= iterator->max_mz ){
-      // passes both tests
+    if( mz >= iterator->min_mz && mz <= iterator->max_mz
+        && num_peaks >= iterator->min_peaks ){
+      // passes all tests
       iterator->has_next = TRUE;
       return;
     }

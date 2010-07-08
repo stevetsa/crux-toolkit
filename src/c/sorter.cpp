@@ -1,7 +1,6 @@
 /*************************************************************************//**
  * \file sorter.cpp
- * $Revision: 1.15 $
- * \brief: Object to sort objects
+ * \brief Object to sort objects
  ****************************************************************************/
 #include <stdio.h>
 #include <stdlib.h>
@@ -562,6 +561,8 @@ PEPTIDE_T** sort_peptide_array(
     break;
   case SORT_NONE:
     break;
+  default:
+    carp(CARP_FATAL, "Invalid sort type;");
   }
   
   // merge peptides if unique

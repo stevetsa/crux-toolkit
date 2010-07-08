@@ -2,8 +2,7 @@
  * \file ion_series.cpp
  * AUTHOR: Chris Park
  * CREATE DATE: 21 Sep 2006
- * DESCRIPTION: code to support working with a series of ions
- * REVISION: $Revision: 1.52 $
+ * \brief code to support working with a series of ions
  ****************************************************************************/
 #include <math.h>
 #include <stdio.h>
@@ -21,11 +20,11 @@
 #include "mass.h"
 #include "spectrum.h"
 
-#define BINARY_GMTK 1
-#define PRINT_NULL_IONS 1
-#define MIN_FRAMES 3
-#define MAX_IONS 10000
-#define MAX_NUM_ION_TYPE 8 // number of different ion_types
+static const int BINARY_GMTK = 1;
+static const int PRINT_NULL_IONS = 1;
+static const int MIN_FRAMES = 3;
+static const int MAX_IONS = 10000;
+static const int MAX_NUM_ION_TYPE = 8; // number of different ion_types
 
 /**
  * \struct ion_series
@@ -1030,26 +1029,6 @@ void predict_ions(
 
   // free mass matrix
   free(mass_matrix);
-}
-/**
- * Assign peaks to the nearest ions, within a tolerance (set in param file)
- */
-void ion_series_assign_nearest_peaks(
-    ION_SERIES_T* ion_series, 
-    SPECTRUM_T* spectrum){
-
-  //  FLOAT_T max = 0.5; // TODO set in param file 
-  FLOAT_T max = get_double_parameter("ion-tolerance"); 
-  ION_T* ion = NULL;
-  ION_ITERATOR_T* iterator = new_ion_iterator(ion_series);
-  PEAK_T* peak = NULL;
-  while(ion_iterator_has_next(iterator)){
-    ion = ion_iterator_next(iterator);
-    FLOAT_T mz = get_ion_mass_z(ion); // TODO change to mz, not mass_z
-    peak = get_nearest_peak(spectrum, mz, max);
-    set_ion_peak(ion, peak);
-  }
-  free_ion_iterator(iterator);
 }
 
 /**

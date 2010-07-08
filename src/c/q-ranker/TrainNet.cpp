@@ -215,8 +215,14 @@ void Caller :: train_target_net(Scores &train, Scores &thresh, double qv)
 }
 
  
-
-void Caller :: xvalidate_net(double qv)
+/**
+ * Do cross-validation to select two hyperparameters: the learning
+ * rate and the weight decay.  The optimization criterion is the
+ * number of target scores below a specified q-value threshold.
+ */
+void Caller :: xvalidate_net(
+  double qv ////< The q-value threshold -in
+)
 {
   
   vector <double> xv_wt;
@@ -468,7 +474,9 @@ void Caller :: train_many_target_nets_ave()
 }
 
 
-void Caller::train_many_nets() 
+void Caller::train_many_nets(
+  bool do_xval ////< Select hyperparameters via cross-validation. -in
+  ) 
 {
   
   switch_iter =100;
@@ -510,11 +518,16 @@ void Caller::train_many_nets()
   //cost linear flag indicating whether to use the sigmoid(0) or linear loss(1)
   int clf = 0;
 
-  xvalidate_net(selectionfdr);
+  if (do_xval) {
+    xvalidate_net(selectionfdr);
+  }
 
   net.initialize(FeatureNames::getNumFeatures(),num_hu,mu,clf,lf,bs);
   net.set_weightDecay(weightDecay);
-
+  for(int count = 0; count < num_qvals; count++){
+    max_net_gen[count] = net;
+  }
+  
   cerr << "Before iterating\n";
   cerr << "trainset: ";
   getMultiFDR(trainset,net,qvals);
@@ -530,11 +543,12 @@ void Caller::train_many_nets()
   
 
   //write out the results of the general net
-  //cerr << "general net results: ";
-  //ostringstream filename;
-  //filename << res_prefix << "_hu" << num_hu;
-  //write_max_nets(filename.str(), max_net_gen);
-  
+  if (0){
+    cerr << "general net results: ";
+    ostringstream filename;
+    filename << res_prefix << "_hu" << num_hu;
+    write_max_nets(filename.str(), max_net_gen);
+  }
   //copy the general net into target nets;
   for(int count = 0; count < num_qvals; count++)
     max_net_targ[count] = max_net_gen[count];

@@ -8,6 +8,10 @@
 
 <H1 ALIGN=CENTER>Crux tandem mass spectrometry analysis software</H1>
 
+<center>
+<img src="schematic.png">
+</center>
+
 <p>
 Crux is a software toolkit for tandem mass spectrometry analysis, with
 a focus on peptide identification.  If you use Crux in your research,
@@ -20,10 +24,6 @@ Noble.  <a href="http://noble.gs.washington.edu/papers/park2008rapid.html">"Rapi
 and accurate peptide identification from tandem mass spectra."</a>
 <i>Journal of Proteome Research.</i> 7(7):3022--3027, 2008.</li>
 </blockquote>
-
-<center>
-<img src="schematic.png">
-</center>
 
 <p>
 Crux is provided as a single executable that supports the following
@@ -53,6 +53,15 @@ a collection of peptide-spectrum matches (PSMs).</td>
 
 <tr>
 <td>
+<a href="crux-sequest-search.html">sequest-search</a></td>
+<td>
+Search a collection of spectra against a sequence database, similar to
+search-for-matches, but more closely mimicking the SEQUEST
+algorithm.</td>
+</tr>
+
+<tr>
+<td>
 <a href="compute-q-values.html">compute-q-values</a></td>
 <td>
 Assign a q-value, which is a statistical confidence measure that
@@ -71,12 +80,10 @@ Re-rank a collection of PSMs using the Percolator algorithm.</td></tr>
 Re-rank a collection of PSMs using the Q-ranker algorithm.</td></tr>
 
 <tr>
-
-<tr>
 <td>
-<a href="crux-print-processed-spectra.html">print-processed-spectra</a></td>
+<a href="crux-search-for-xlinks.html">search-for-xlinks</a></td>
 <td>
-Process spectra as for scoring xcorr and print results to file.</td></tr>
+Search a collection of spectra against a sequence database, finding cross-linked peptide matches</td></tr>
 
 <tr>
 <td colspan="2"><b>Utilities</b></td>
@@ -89,6 +96,12 @@ Process spectra as for scoring xcorr and print results to file.</td></tr>
 Given a peptide and a charge state, predict the ions according to the
 provided options.</td>
 </tr>
+
+<tr>
+<td>
+<a href="crux-print-processed-spectra.html">print-processed-spectra</a></td>
+<td>
+Process spectra as for scoring xcorr and print results to file.</td></tr>
 
 <tr>
 <td>
@@ -106,16 +119,35 @@ Extract an MS-MS spectrum with a specified scan number from a
 <code>.ms2</code> file.</td>
 </tr>
 
+<tr>
+<td>
+version</td>
+<td>
+Print the Crux version number to standard output, then exit.</td>
+</tr>
+
 </table>
 
 <br></br>
+
+<b>Tide</b>
+
+<p>
+This version of Crux is released with a demo version of a new search
+engine, <a href="../tide/index.html">Tide</a>.  Tide is an independent
+reimplementation of the SEQUEST algorithm. The immediate ancestor of
+Tide is the Crux <code>search-for-matches</code> command, but Tide has
+been completely re-engineered to achieve a thousandfold improvement in
+speed while exactly replicating Crux XCorr scores.  Currently, Tide is
+not fully integrated with Crux, and is available only in binary
+executable format.</p>
 
 <b>File formats</b>
 
 <ul>
 
 <li>
-<a href="ms2-format.html">MS2 spectrum files</a> (<a href="demo.ms2">sample</a>)</li>
+<a href="ms2-format.html">MS2 spectrum files</a> (<a href="data/demo.ms2">sample</a>)</li>
 
 <li>
 <a href="fasta-format.html">FASTA sequence files</a>
@@ -129,7 +161,7 @@ Extract an MS-MS spectrum with a specified scan number from a
 
 <li>
 <a href="sqt-format.html">Text SQT files for representing PSMs.</a>
-(<a href="target.sqt">sample</a>)</li>
+(<a href="data/target.sqt">sample</a>)</li>
 
 <li>
 <a href="broken-link.html">Text feature files for representing PSMs.</a>
@@ -205,8 +237,8 @@ sign up for the Crux users
 
 <center>
 <p>
-Crux is written in C by Chris Park, Aaron Klammer, Barbara Frewen and
-Charles Grant under the supervision
+Crux is written in C by Chris Park, Aaron Klammer, Barbara Frewen,
+Sean McIlwain and Charles Grant under the supervision
 of <a href="http://www.gs.washington.edu/faculty/maccoss.htm">Prof. Michael
 MacCoss</a>
 and <a href="http://noble.gs.washington.edu/~noble">Prof. William

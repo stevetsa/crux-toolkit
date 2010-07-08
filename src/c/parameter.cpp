@@ -2,8 +2,7 @@
  * \file parameter.cpp
  * FILE: parameter.cpp
  * AUTHOR: written by Tobias Mann, CRUXified by Chris Park
- * CREATE DATE: 2006 Oct 09
- * DESCRIPTION: General parameter handling utilities. MUST declare ALL
+ * \brief General parameter handling utilities. MUST declare ALL
  * optional command parameters here inside initalialize_parameters.
  ****************************************************************************/
 
@@ -11,6 +10,11 @@
 #include "parameter.h"
 
 //TODO:  in all set, change result=add_... to result= result && add_...
+
+/**
+ * Starting location for zeroth m/z bin.
+ */
+static const FLOAT_T SMART_MZ_OFFSET = 0.68;
 
 /*
  * Global variables
@@ -20,7 +24,7 @@ static const char* parameter_type_strings[NUMBER_PARAMETER_TYPES] = {
   "INT_ARG", "DOUBLE_ARG", "STRING_ARG", "MASS_TYPE_T", "DIGEST_T", 
   "ENZYME_T", //"PEPTIDE_TYPE_T", 
   "BOOLEAN_T", "SORT_TYPE_T", "SCORER_TYPE_T", "ION_TYPE_T",
-  "ALGORITHM_TYPE_T", "WINDOW_TYPE_T", "RTP_TYPE_T"};
+  "ALGORITHM_TYPE_T", "WINDOW_TYPE_T"};
 
 //one hash for parameter values, one for usage statements, one for types
 // all hashes keyed on parameter/option name
@@ -82,11 +86,11 @@ void parse_custom_enzyme(const char* rule_str);
 BOOLEAN_T string_to_param_type(const char*, PARAMETER_TYPE_T* );
 
 BOOLEAN_T set_boolean_parameter(
- const char*     name,  ///< the name of the parameter looking for -in
- BOOLEAN_T set_value,  ///< the value to be set -in
- const char* usage,          ///< message for the usage statement
- const char* filenotes,      ///< additional information for the params file
- const char* foruser         ///< "true" if should be revealed to user
+ const char* name,       ///< the name of the parameter looking for -in
+ BOOLEAN_T   set_value,  ///< the value to be set -in
+ const char* usage,      ///< message for the usage statement
+ const char* filenotes,  ///< additional information for the params file
+ const char* foruser     ///< "true" if should be revealed to user
  );
 
 BOOLEAN_T set_int_parameter(
@@ -165,15 +169,6 @@ BOOLEAN_T set_window_type_parameter(
  const char* foruser
   );
 
-BOOLEAN_T set_rtp_type_parameter(
- const char*     name,  ///< the name of the parameter looking for -in
- RTP_TYPE_T set_value,  ///< the value to be set -in
- const char* usage,      ///< string to print in usage statement
- const char* filenotes,   ///< additional info for param file
- const char* foruser
-  );
-
-
 BOOLEAN_T set_sort_type_parameter(
  const char* name,
  SORT_TYPE_T set_value,
@@ -216,6 +211,18 @@ void read_mods_from_file(char* param_file);
  ************************************
  */
 
+
+/**
+ * The size of the bins for discretizing the m/z axis of the
+ * observed spectrum.  For use with monoisotopic mass.
+ */
+static const FLOAT_T BIN_WIDTH_MONO = 1.0005079;
+
+/**
+ * The size of the bins for discretizing the m/z axis of the
+ * observed spectrum.  For use with average mass.
+ */
+static const FLOAT_T  BIN_WIDTH_AVERAGE = 1.0011413;
 
 /**
  * initialize parameters
@@ -265,8 +272,8 @@ void initialize_parameters(void){
   // all arguments are left out of param file
 
   /* generate_peptide arguments */
-  set_string_parameter("protein input", NULL, 
-      "Fasta file of protein sequences or directory containing an index.",
+  set_string_parameter("protein database", NULL, 
+      "Fasta file of proteins or directory containing an index.",
       "Argument for generate, index, search, analyze.", "false");
 
   set_string_parameter("search results directory", NULL, 
@@ -286,20 +293,11 @@ void initialize_parameters(void){
                        "File containing spectra to be searched.",
     "Argument, not option, for create-psm-files, get-ms2-spec, and search",
     "false");
-  //and uses 'protein input'
-
-  /* analyze-matches arguments */
-  set_string_parameter("psm-folder", NULL, 
-     "Directory containing the binary psm files created by "
-     "crux-search-for-matches.",
-     "Argument for analyze-matches.", "false");
-  //and uses protein input
 
   /* get-ms2-spectrum */
   set_int_parameter("scan number", 0, 1, BILLION, 
                     "Scan number identifying the spectrum.",
                     "Argument for get-ms2-spectrum", "false");
-  //uses ms2 file
   set_string_parameter("output file", NULL, 
                        "File where spectrum will be written.",
                        "Argument for get-ms2-spectrum.", "false");
@@ -312,17 +310,6 @@ void initialize_parameters(void){
       "The charge state of the peptide.",
       "Argument for predict-peptide-ions", "false");
 
-  /* create-psm-files */
-  set_string_parameter("peptide-file-name", NULL,
-      "A file containing peptides for which to create ion files",
-      "Only for create-psm-files, which is not being distributed", "false"); 
-  set_string_parameter("output-dir", NULL,
-      "A directory in which to place the ion files",
-      "Argument for create-psm-files", "false");
-  set_string_parameter("model-type", NULL,
-      "The kind of model (paired or single)",
-      "Argument for create-psm-files", "false");
-
   /* *** Initialize Options (command line and param file) *** */
 
   /* options for all executables */
@@ -330,63 +317,58 @@ void initialize_parameters(void){
       "Available for all crux programs.  On command line use '--version T'.",
       "true");
   set_int_parameter("verbosity", CARP_INFO, CARP_FATAL, CARP_MAX,
-      "Set level of output to stderr (0-100).  Default 30.",
+      "Set level of output to stderr (0-100).  Default=30.",
       "Available for all crux programs.  Each level prints the following "
       "messages, including all those at lower verbosity levels: 0-fatal "
       "errors, 10-non-fatal errors, 20-warnings, 30-information on the "
       "progress of execution, 40-more progress information, 50-debug info, "
       "60-detailed debug info.", "true");
   set_string_parameter("parameter-file", NULL, 
-      "Set additional options with values in the given file. Default "
-      "to use only command line options and default values.",
+      "Set additional options with values in the given file.",
       "Available for all crux programs. Any options specified on the "
       "command line will override values in the parameter file.", "true");
   set_boolean_parameter("overwrite", FALSE, 
-      "Replace existing files (T) or exit if attempting to overwrite "
-      "(F). Default F.",
+      "Replace existing files (T) or exit if attempting to "
+      "overwrite (F). Default=F.",
       "Available for all crux programs.  Applies to parameter file "
       "as well as index, search, and analysis output files.", "true");
     
-  /* create-psm-files */
-  set_int_parameter("starting-sentence-idx", 0, 0, BILLION, 
-      "Starting sentence idx",
-      "Only for create-psm-file, not distributed", "false"); 
-  set_int_parameter("charge", 2, 1, 4,
-      "Charge for peptide for which to predict ions.",
-      "for create-psm-files and score-peptide-spectrum (neither in distro",
-      "false"); 
-
   /* generate_peptide, create_index parameters  */
   set_int_parameter("min-length", 6, 1, MAX_PEPTIDE_LENGTH,
-      "The minimum length of peptides to consider. Default 6.",
+      "The minimum length of peptides to consider. Default=6.",
       "Used from the command line or parameter file by "
       "crux-create-index and crux-generate-peptides.  Parameter file "
       "only for crux-search-for-matches.", "true");
   set_int_parameter("max-length", 50, 1, MAX_PEPTIDE_LENGTH,
-      "The maximum length of peptides to consider. Default 50.",
+      "The maximum length of peptides to consider. Default=50.",
       "Available from command line or parameter file for crux-create-index "
       " and crux-generate-peptides. Parameter file only for crux-search-"
       "for-matches.", "true");
   set_double_parameter("min-mass", 200, 0, BILLION,
-      "The minimum mass of peptides to consider. Default 200.",
+      "The minimum mass of peptides to consider. Default=200.",
       "Available from command line or parameter file for crux-create-index "
       "and crux-generate-peptides. Parameter file only for crux-search-"
       "for-matches.", "true");
   set_double_parameter("max-mass", 7200, 1, BILLION, 
-      "The maximum mass of peptides to consider. Default 7200.",
+      "The maximum mass of peptides to consider. Default=7200.",
       "Available from command line or parameter file for crux-create-index "
       "and crux-generate-peptides. Parameter file only for crux-search-"
       "for-matches.", "true");
   set_mass_type_parameter("isotopic-mass", AVERAGE, 
-      "Which isotopes to use in calcuating peptide mass (average, mono). "
-      "Default average.", 
+      "Which isotopes to use in calcuating peptide mass. "
+      "<string>=average|mono. Default=average.", 
       "Used from command line or parameter file by crux-create-index and "
       "crux-generate-peptides.  Parameter file only for "
       "crux-search-for-matches.", "true");
+  set_int_parameter("min-peaks", 20, 0, BILLION,
+      "The minimum number of peaks a spectrum must have for it to be searched."
+      " Default=20.", 
+      "Parameter file only for search-for-matches and sequest-search.", "true");
   set_digest_type_parameter("digestion", FULL_DIGEST,
-      "Degree of digestion used to generate peptides (full-digest, "
-      "partial-digest). Either both ends or one end of a peptide "
-      "must conform to enzyme specificity rules. Default full-digest.",
+      "Degree of digestion used to generate peptides. "
+      "<string>=full-digest|partial-digest. Either both ends or one end "
+      "of a peptide must conform to enzyme specificity rules. "
+      "Default=full-digest.",
       "Used in conjunction with enzyme option when enzyme is not set to "
       "to 'no-enzyme'.  Available from command line or parameter file for "
       "crux-generate-peptides and crux create-index.  Available from parameter"
@@ -396,10 +378,11 @@ void initialize_parameters(void){
       "chymotrypsin [FWY][P].",
       "true");
   set_enzyme_type_parameter("enzyme", TRYPSIN,
-      "Enzyme to use for in silico digestion of protein sequences "
-      "(trypsin, chymotrypsin, elastase, clostripain, cyanogen-bromide, "
-      "iodosobenzoate, proline-endopeptidase, staph-protease, aspn, "
-      "modified-chymotrypsin, no-enzyme).  Default trypsin.", 
+      "Enzyme to use for in silico digestion of proteins. "
+      "<string>=trypsin|chymotrypsin|elastase|clostripain| "
+      "cyanogen-bromide|iodosobenzoate|proline-endopeptidase| "
+      "staph-protease|aspn|modified-chymotrypsin|no-enzyme. "
+      "Default=trypsin.", 
       "Used in conjunction with the options digestion and missed-cleavages. "
       "Use 'no-enzyme' for non-specific digestion.  Available "
       "from command line or parameter file for crux-generate-peptides "
@@ -414,21 +397,14 @@ void initialize_parameters(void){
       "true");
 
   set_window_type_parameter("precursor-window-type", WINDOW_MASS,
-      "Window type to use for selecting peptides from precursor mz."
-      "(mass, mz, ppm) Default: mass.",
-      "Available for crux search-for-matches",
+      "Window type to use for selecting candidate "
+      "peptides.  <string>=mass|mz|ppm. Default=mass.",
+      "Available for search-for-matches, search-for-xlinks.",
       "true");
-
-  set_rtp_type_parameter("rtime-predictor", RTP_KROKHIN,
-      "Retention predictor to use for mpsm-search (krokhin, palmbald)"
-      " Default: krokhin.",
-      "Available for crux search-for-mpsms",
-      "true");
-
 
   set_string_parameter("custom-enzyme", NULL, 
-      "Specify rules for in silico digestion of protein sequences. See html "
-      "docs for syntax. Default to use pre-defined enzyme trypsin.",
+      "Specify rules for in silico digestion of proteins. "
+      "See HTML documentation for syntax. Default is trypsin.",
       "Overrides the enzyme option.  Two lists of residues are given enclosed "
       "in square brackets or curly braces and separated by a |. The first list "
       "contains residues required/prohibited before the cleavage site and the "
@@ -441,7 +417,7 @@ void initialize_parameters(void){
       "represented as [X]|[D].",
                        "true");
   set_boolean_parameter("missed-cleavages", FALSE, 
-      "Include peptides with missed cleavage sites (T,F). Default FALSE.",
+      "Include peptides with missed cleavage sites. Default=F.",
       "Available from command line or parameter file for crux-create-index "
       "and crux-generate-peptides.  Parameter file only for crux-search-"
       "for-matches.  When used with enzyme=<trypsin|elastase|chymotrpysin> "
@@ -450,7 +426,7 @@ void initialize_parameters(void){
   //  set_boolean_parameter("unique-peptides", FALSE,
   set_boolean_parameter("unique-peptides", TRUE,
       "Generate peptides only once, even if they appear in more "
-      "than one protein (T,F).  Default FALSE.",
+      "than one protein (T,F).  Default=F.",
       "Available from command line or parameter file for "
       "crux-genereate-peptides. Returns one line per peptide "
       "when true or one line per peptide per protein occurence when false.  ",
@@ -458,79 +434,93 @@ void initialize_parameters(void){
   
   /* more generate_peptide parameters */
   set_boolean_parameter("output-sequence", FALSE, 
-      "Print peptide sequence (T,F). Default FALSE.",
+      "Print peptide sequence (T,F). Default=F.",
       "Available only for crux-generate-peptides.", "true");
   set_sort_type_parameter("sort", SORT_NONE, 
       "Sort peptides according to which property "
-      "(mass, length, lexical, none).  Default none.",
+      "(mass, length, lexical, none).  Default=none.",
       "Only available for crux-generate-peptides.", "true");
 
   /* search-for-matches command line options */
   set_scorer_type_parameter("prelim-score-type", SP, 
-      "Initial scoring (sp, xcorr). Default sp,", 
+      "Initial scoring (sp, xcorr). Default=sp,", 
       "Available for crux-search-for-matches.  The score applied to all "
       "possible psms for a given spectrum.  Typically used to filter out "
       "the most plausible for further scoring. See max-rank-preliminary and "
       "score-type.", "false");
   set_scorer_type_parameter("score-type", XCORR, 
       "The primary scoring method to use (xcorr, sp, xcorr-pvalue, sp-pvalue)."
-      " Default xcorr.", 
+      " Default=xcorr.", 
       "Only available for crux-search-for-matches.  Primary scoring is "
       "typically done on a subset (see max-rank-preliminary) of all "
       "possible psms for each spectrum. Default is the SEQUEST-style xcorr."
       " Crux also offers a p-value calculation for each psm based on xcorr "
       "or sp (xcorr-pvalue, sp-pvalue).", "false"); 
   set_boolean_parameter("compute-p-values", FALSE, 
-      "Compute p-values for the main score type. Default F.",
+      "Compute p-values for the main score type. Default=F.",
       "Currently only implemented for XCORR.", "true");
-  set_boolean_parameter("use-mz-window", FALSE,
-      "Use mass-to-charge rather than mass for finding the window of peptides. Default F.",
-      "Available for crux-search-for-matches", "true");
-
   set_boolean_parameter("use-mstoolkit", FALSE,
-      "Use MSToolkit to parse spectra. Default F.",
-      "Available for crux-search-for-matches", "false");
+      "Use MSToolkit to parse spectra. Default=F.",
+      "Available for crux-search-for-matches", "true");
   set_string_parameter("scan-number", NULL,
-      "Search only select spectra specified as a single scan "
-      "number or as a range as in x-y.  Default search all.",
+      "Search only select spectra specified as a single "
+      "scan number or as a range as in x-y.  Default=search all.",
       "The search range x-y is inclusive of x and y.", "true");
-
+  set_boolean_parameter("xcorr-var-bin", FALSE,
+    "Use variable binning for XCORR.  If set to true, mz-bin-width, " 
+    "and mz-bin-offset parameters are utilized",
+    "Available for crux-search-for-matches.","true");
+  /* N.B. Use NaN to indicate that no user preference was specified.
+   * In this case, the default value depends on the mass type. */
+  set_double_parameter("mz-bin-width", NaN(), 0.0, BILLION,
+      "Specify the width of the bins used to "
+      "discretize the m/z axis.  Default=1.0005079 for monoisotopic mass "
+      "or 1.0011413 for average mass.",
+      "Available for crux-search-for-matches.", "true");
+  set_double_parameter("mz-bin-offset", SMART_MZ_OFFSET, -1.0, 1.0,
+      "Specify the location of the left edge of the "
+      "first bin used to discretize the m/z axis. Default=0.68",
+      "Available for crux-search-for-matches.", "true");
   set_double_parameter("spectrum-min-mass", 0.0, 0, BILLION, 
-      "Minimum mass of spectra to be searched.  Default 0.",
+      "Minimum mass of spectra to be searched. Default=0.",
       "Available for crux-search-for-matches.", "true");
   set_double_parameter("spectrum-max-mass", BILLION, 1, BILLION, 
-      "Maximum mass of spectra to search.  Default no maximum.",
+      "Maximum mass of spectra to search. Default no maximum.",
       "Available for crux-search-for-matches.", "true");
   set_string_parameter("spectrum-charge", "all", 
-      "Spectrum charge states to search (1,2,3,all). Default all.",
+      "Spectrum charge states to search. "
+      "<string>=1|2|3|all. Default=all.",
       "Used by crux-search-for-matches to limit the charge states "
       "considered in the search.  With 'all' every spectrum will be "
       "searched and spectra with multiple charge states will be searched "
       "once at each charge state.  With 1, 2 ,or 3 only spectra with that "
       "that charge will be searched.", "true");
   set_string_parameter("fileroot", NULL, 
-      "Prefix added to output file names. Default None. ",
+      "Prefix added to output file names. Default=none. ",
       "Used by crux create-index, crux search-for-matches, "
       "crux compute-q-values, and crux percolator.", "true");
   set_string_parameter("output-dir", "crux-output", 
-      "Folder to which results will be written. Default 'crux-output'. ",
+      "Folder to which results will be written. "
+      "Default='crux-output'.",
       "Used by crux create-index, crux search-for-matches, "
       "crux compute-q-values, and crux percolator.", "true");
   set_string_parameter("search-decoy-pvalue-file", "search.decoy.p.txt", 
-      "Output filename for complete list of decoy p-values.  Default "
+      "Output filename for complete list of decoy p-values.  Default="
       "'search.decoy.p.txt'",
       "Only available for crux search-for-matches. The location of this "
       "file is controlled by --output-dir.", "true");
+
   // user options regarding decoys
   set_int_parameter("num-decoys-per-target", 2, 0, 10,
-      "Number of decoy peptides to search for every target peptide searched."
-      "  Default 2.",
+      "Number of decoy peptides to search for every "
+      "target peptide searched. Default=2.",
       "Use --decoy-location to control where they are returned (which "
-      "file(s)).  Available only from the command line for search-for-matches.",
+      "file(s)).  Available only from the command line for search-for-matches. ",
       "true");
   set_string_parameter("decoy-location", "separate-decoy-files",
-      "Where the decoy search results are returned.  (target-file|"
-      "one-decoy-file|separate-decoy-files'. Default separate-decoy-files.",
+      "Specify location of decoy search results. "
+      "<string>=target-file|one-decoy-file|separate-decoy-files. "
+      "Default=separate-decoy-files.",
       "Applies when num-decoys-per-target > 0.  Use 'target-file' to mix "
       "target and decoy search results in one file. 'one-decoy-file' will "
       "return target results in one file and all decoys in another. "
@@ -552,7 +542,7 @@ void initialize_parameters(void){
 
   set_boolean_parameter("reverse-sequence", FALSE,
       "Generate decoys by reversing the peptide string rather than shuffling."
-      " Default F.",
+      " Default=F.",
       "The first and last residues of the sequence are not changed.  If the "
       "reversed decoy sequence is the same as the target then the decoy is "
       "generated by shuffling.",
@@ -560,50 +550,44 @@ void initialize_parameters(void){
   set_int_parameter("max-rank-preliminary", 500, 0, BILLION, 
       "Number of psms per spectrum to score with xcorr after preliminary "
       "scoring with Sp. "
-      "Set to 0 to score all psms with xcorr. Default 500.",
+      "Set to 0 to score all psms with xcorr. Default=500.",
       "Used by crux-search-for-matches.  For positive values, the Sp "
       "(preliminary) score acts as a filter; only high scoring psms go "
       "on to be scored with xcorr.  This saves some time.  If set to 0, "
       "all psms are scored with both scores. ", "true");
   set_int_parameter("top-match", 5, 1, BILLION, 
-      "The number of psms per spectrum writen to the output file(s)." 
-      "Default 5.",
+      "The number of PSMs per spectrum writen to the output " 
+      " file(s).  Default=5.",
       "Available from parameter file for crux-search-for-matches.",
       "true");
   set_int_parameter("psms-per-spectrum-reported", 0, 0, BILLION,
                    "place holder", "this may be replaced by top-match","false");
-  set_double_parameter("mass-offset", 0.0, 0, 0, "obsolete",
-      "Was used in search.", "false");
   set_string_parameter("seed", "time", "HIDE ME FROM USER",
       "Given a real-number value, will always produce the same decoy seqs",
       "false");
   set_double_parameter("precursor-window", 3.0, 0, 100, 
-      "Search peptides within +/- 'precursor-window' of the "
-      "spectrum mass.  Definition of precursor window depends "
-      "upon precursor-window-type. Default 3.0.",
+      "Search peptides within +/- 'precursor-window' "
+      "of the spectrum mass.  Definition of precursor window depends "
+      "upon precursor-window-type. Default=3.0.",
       "Available from the parameter file only for crux-search-for-matches, "
       "crux-create-index, and crux-generate-peptides.",
       "true");
   set_mass_type_parameter("fragment-mass", MONO, 
-      "Which isotopes to use in calcuating fragment ion mass "
-      "(average, mono). Default mono.", 
+      "Which isotopes to use in calculating fragment ion mass. "
+      "<string>=average|mono. Default=mono.", 
       "Parameter file only.  "
       "Used by crux-search-for-matches and crux-predict-peptide-ions.",
                           "true");
-  set_double_parameter("ion-tolerance", 0.5, 0, BILLION,
-      "Tolerance used for matching observed peaks to predicted "
-      "fragment ions.  Default 0.5.",
-      "Available from parameter-file for crux-search-for-matches.", "true");
   set_string_parameter("mod", "NO MODS",
       "Specify a variable modification to apply to peptides.  " 
-      "<mass change>:<aa list>:<max per peptide>. Default no mods.",
+      "<mass change>:<aa list>:<max per peptide>. Default=no mods.",
       "Available from parameter file for crux-generate-peptides and "
       "crux-search-for-matches and the "
       "the same must be used for crux compute-q-value.", "true");
   set_string_parameter("cmod", "NO MODS",
       "Specify a variable modification to apply to C-terminus of peptides. " 
       "<mass change>:<max distance from protein c-term (-1 for no max)>. " 
-      "Default no mods.",       
+      "Default=no mods.",       
       "Available from parameter file for crux-generate-peptides and "
       "crux-search-for-matches and the "
       "the same must be used for crux compute-q-value.", "true");
@@ -615,63 +599,48 @@ void initialize_parameters(void){
       "the same must be used for crux compute-q-value.", "true");
   set_int_parameter("max-mods", MAX_PEPTIDE_LENGTH, 0, MAX_PEPTIDE_LENGTH,
       "The maximum number of modifications that can be applied to a single " 
-      "peptide.  Default no limit.",
+      "peptide.  Default=no limit.",
       "Available from parameter file for crux-search-for-matches.", "true");
   set_int_parameter("max-aas-modified", MAX_PEPTIDE_LENGTH, 0,
       MAX_PEPTIDE_LENGTH,
       "The maximum number of modified amino acids that can appear in one "
-      "peptide.  Each aa can be modified multiple times.  Default no limit.",
+      "peptide.  Each aa can be modified multiple times.  Default=no limit.",
       "Available from parameter file for search-for-matches.", "true");
   set_boolean_parameter("display-summed-mod-masses", TRUE,
       "When a residue has multiple modifications, print the sum of those "
       "modifications rather than listing each in a comma-separated list.  "
-      "Default T.",
+      "Default=T.",
       "Available in the parameter file for any command that prints peptides "
       "sequences.  Example: TRUE is SE[12.40]Q and FALSE is SE[10.00,2.40]Q",
       "true" );
   set_int_parameter("precision", 8, 1, 100, //max is arbitrary
       "Set the precision for masses and scores written to sqt and text files. "
-      "Default 8.",
+      "Default=8.",
       "Available from parameter file for crux search-for-matches, percolator, "
       "and compute-q-values.", "true");
   set_int_parameter("print-search-progress", 10, 0, BILLION,
-      "Show search progress by printing every n spectra searched.  Default "
+      "Show search progress by printing every n spectra searched.  Default="
       "10.", "Set to 0 to show no search progress.  Available for crux "
       "search-for-matches from parameter file.",
       "true");
 
-    // Sp scoring params
+  // Sp scoring params
   set_double_parameter("beta", 0.075, 0, 1, "Not for general users.",
       "Only used to set scorer->sp_beta which is used to score sp.", 
       "false"); 
   set_double_parameter("max-mz", 4000, 0, BILLION, 
       "Used in scoring sp.",
       "Hide from users", "false");
-  set_int_parameter("top-fit-sp", 1000, 1, BILLION, 
-       "Hide from user",
-       "used in estimating parameters for exp sp", "false");
-  // how many peptides to sample for EVD parameter estimation
-  set_int_parameter("sample-count", 500, 0, BILLION, "NOT FOR USER",
-       "Number of psms to use for weibul estimation.", "false");
-
-  //in estimate_weibull_parameters
-  // no longer used
-  set_int_parameter("number-top-scores-to-fit", -1, -10, BILLION, 
-      "Not for general users", 
-      "The number of psms per spectrum to use for estimating the "
-      "score distribution for calculating p-values. 0 to use all. "
-      "Not compatible with 'fraction-top-scores-to-fit'. Default 0 (all).",
-      "false");
   set_double_parameter("fraction-top-scores-to-fit", 0.55, 0, 1, 
       "The fraction of psms per spectrum to use for estimating the "
       "score distribution for calculating p-values. "
-      "Not compatible with 'number-top-scores-to-fig'. Default 0.55.",
+      "Not compatible with 'number-top-scores-to-fig'. Default=0.55.",
       "For developers/research only.", "false");
 
   /* analyze-matches options */
   set_algorithm_type_parameter("algorithm", PERCOLATOR_ALGORITHM, 
       "The analysis algorithm to use (percolator, curve-fit, none)."
-      " Default percolator.",
+      " Default=percolator.",
       "Available only for crux-analyze-matches.  Using 'percolator' will "
       "assign a q-value to the top-ranking psm for each spectrum based on "
       "the decoy searches.  Using 'curve-fit' will assign a q-value to same "
@@ -679,152 +648,142 @@ void initialize_parameters(void){
       "sq-pvalue>.  Incorrect combinations of score-type and algorithm cause"
       " undefined behavior. Using 'none' will turn the binary .csm files "
       "into text.", "false");
+
+  // **** percolator options. ****
   set_boolean_parameter("feature-file", FALSE,
      "Optional file into which psm features are printed.",
-     "Available only for percolator and q-ranker.  File will be named "
+     "Available for percolator and q-ranker.  File will be named "
      "<fileroot>.percolator.features.txt or <fileroot>.qranker.features.txt.",
      "true");
 
+  // **** q-ranker options. ****
+  set_boolean_parameter("no-xval", FALSE, 
+      "Turn off cross-validation to select hyperparameters.",
+      "Available for q-ranker.", "true");
+
   /* analyze-matches parameter options */
-  set_double_parameter("pi0", 0.9, 0, 1, "Hide from user",
-      "Used in curve fitting for assigning q-values from p-values and "
-      "used by percolator", "false");
+  set_double_parameter("pi-zero", 0.9, 0, 1, 
+      "The estimated percent of target scores that are drawn from the "
+      "null distribution.",
+      "Used by compute-q-values, percolator and q-ranker", "true");
   set_string_parameter("percolator-intraset-features", "F",
       "Set a feature for percolator that in later versions is not an option.",
       "Shouldn't be variable; hide from user.", "false");
 
-  //parameter to parse the tab-delimited result files rather than
-  //the binary csm files when analyzing matches.
-  set_boolean_parameter("parse-tab-files", FALSE,
-    "Parse the tab delimited .txt result files rather "
-    "than the .csm files. Default F.",
-    "Available for compute-q-values, percolator, and q-ranker.",
-    "false");
-
-
-  /* predict-peptide-ions */
+  // **** predict-peptide-ions options. ****
   set_ion_type_parameter("primary-ions", BY_ION,
-      "The ion series to predict (b,y,by). Default 'by' (both b and y ions).",
+      "The ion series to predict (b,y,by). Default='by' (both b and y ions).",
       "Only available for crux-predict-peptide-ions.  Set automatically to "
-                         "'by' for searching.", "true");
+      "'by' for searching.", "true");
   set_boolean_parameter("precursor-ions", FALSE,
       "Predict the precursor ions, and all associated ions "
       "(neutral-losses, multiple charge states) consistent with the "
-      "other specified options. (T,F) Default F.",
+      "other specified options. (T,F) Default=F.",
       "Only available for crux-predict-peptide-ions.", "true");
   set_string_parameter("neutral-losses", "all", 
-      "Predict neutral loss ions (none, h20, nh3, all). Default 'all'.",
+      "Predict neutral loss ions (none, h20, nh3, all). Default='all'.",
       "Only available for crux-predict-peptide-ions. Set to 'all' for "
       "sp and xcorr scoring.", "true");
   set_int_parameter("isotope", 0, 0, 2,
-      "Predict the given number of isotope peaks (0|1|2). Default 0.",
+      "Predict the given number of isotope peaks (0|1|2). Default=0.",
       "Only available for crux-predict-peptide-ion.  Automatically set to "
       "0 for Sp scoring and 1 for xcorr scoring.", "true");
   set_boolean_parameter("flanking", FALSE, 
-      "Predict flanking peaks for b and y ions (T,F). Default F.",
+      "Predict flanking peaks for b and y ions (T,F). Default=F.",
       "Only available for crux-predict-peptide-ion.", "true");
   set_string_parameter("max-ion-charge", "peptide",
       "Predict ions up to this charge state (1,2,3) or to the charge state "
-      "of the peptide (peptide).  Default 'peptide'.",
+      "of the peptide (peptide).  Default='peptide'.",
       "Available only for predict-peptide-ions.  Set to 'peptide' for search.",
       "true");
   set_int_parameter("nh3",0, -100, BILLION, 
       "Predict peaks with the given maximum number of nh3 neutral loss "
-      "modifications. Default 0.",
+      "modifications. Default=0.",
       "Only available for crux-predict-peptide-ions.", "true");
   set_int_parameter("h2o",0, -100, BILLION,
       "Predict peaks with the given maximum number of h2o neutral loss "
-      "modifications. Default 0.",
+      "modifications. Default=0.",
       "Only available for crux-predict-peptide-ions.", "true");
 
-  set_double_parameter("subsample-percent",100,0,100,
-    "Percentage of subamples to use when training mpsm q-ranker",
-    "Availabele for crux mpsm-q-ranker", "true");
-
-  set_boolean_parameter("random-sample",TRUE,
-    "Naive subsampling",
-    "", "true");
-
-
-  /* static mods */
+  // ***** static mods *****
   set_double_parameter("A", 0.0, -100, BILLION, 
       "Change the mass of all amino acids 'A' by the given amount.",
-      "For parameter file only.  Default no mass change.", "true");
+      "For parameter file only.  Default=no mass change.", "true");
   set_double_parameter("B", 0.0, -100, BILLION,
       "Change the mass of all amino acids 'B' by the given amount.",
-      "For parameter file only.  Default no mass change.", "false");
+      "For parameter file only.  Default=no mass change.", "false");
   set_double_parameter("C", 57.0214637206, -100, BILLION,
       "Change the mass of all amino acids 'C' by the given amount.",
-      "For parameter file only.  Default +57.0214637206.", "true");
+      "For parameter file only.  Default=+57.0214637206.", "true");
   set_double_parameter("D", 0.0, -100, BILLION,
       "Change the mass of all amino acids 'D' by the given amount.",
-      "For parameter file only.  Default no mass change.", "true");
+      "For parameter file only.  Default=no mass change.", "true");
   set_double_parameter("E", 0.0, -100, BILLION,
       "Change the mass of all amino acids 'E' by the given amount.",
-      "For parameter file only.  Default no mass change.", "true");
+      "For parameter file only.  Default=no mass change.", "true");
   set_double_parameter("F", 0.0, -100, BILLION,
       "Change the mass of all amino acids 'F' by the given amount.",
-      "For parameter file only.  Default no mass change.", "true");
+      "For parameter file only.  Default=no mass change.", "true");
   set_double_parameter("G", 0.0, -100, BILLION,
       "Change the mass of all amino acids 'G' by the given amount.",
-      "For parameter file only.  Default no mass change.", "true");
+      "For parameter file only.  Default=no mass change.", "true");
   set_double_parameter("H", 0.0, -100, BILLION,
       "Change the mass of all amino acids 'H' by the given amount.",
-      "For parameter file only.  Default no mass change.", "true");
+      "For parameter file only.  Default=no mass change.", "true");
   set_double_parameter("I", 0.0, -100, BILLION,
       "Change the mass of all amino acids 'I' by the given amount.",
-      "For parameter file only.  Default no mass change.", "true");
+      "For parameter file only.  Default=no mass change.", "true");
   set_double_parameter("J", 0.0, -100, BILLION,
       "Change the mass of all amino acids 'J' by the given amount.",
-      "For parameter file only.  Default no mass change.", "false");
+      "For parameter file only.  Default=no mass change.", "false");
   set_double_parameter("K", 0.0, -100, BILLION,
       "Change the mass of all amino acids 'K' by the given amount.",
-      "For parameter file only.  Default no mass change.", "true");
+      "For parameter file only.  Default=no mass change.", "true");
   set_double_parameter("L", 0.0, -100, BILLION,
       "Change the mass of all amino acids 'L' by the given amount.",
-      "For parameter file only.  Default no mass change.", "true");
+      "For parameter file only.  Default=no mass change.", "true");
   set_double_parameter("M", 0.0, -100, BILLION,
       "Change the mass of all amino acids 'M' by the given amount.",
-      "For parameter file only.  Default no mass change.", "true");
+      "For parameter file only.  Default=no mass change.", "true");
   set_double_parameter("N", 0.0, -100, BILLION,
       "Change the mass of all amino acids 'N' by the given amount.",
-      "For parameter file only.  Default no mass change.", "true");
+      "For parameter file only.  Default=no mass change.", "true");
   set_double_parameter("O", 0.0, -100, BILLION,
       "Change the mass of all amino acids 'O' by the given amount.",
-      "For parameter file only.  Default no mass change.", "false");
+      "For parameter file only.  Default=no mass change.", "false");
   set_double_parameter("P", 0.0, -100, BILLION,
       "Change the mass of all amino acids 'P' by the given amount.",
-      "For parameter file only.  Default no mass change.", "true");
+      "For parameter file only.  Default=no mass change.", "true");
   set_double_parameter("Q", 0.0, -100, BILLION,
       "Change the mass of all amino acids 'Q' by the given amount.",
-      "For parameter file only.  Default no mass change.", "true");
+      "For parameter file only.  Default=no mass change.", "true");
   set_double_parameter("R", 0.0, -100, BILLION,
       "Change the mass of all amino acids 'R' by the given amount.",
-      "For parameter file only.  Default no mass change.", "true");
+      "For parameter file only.  Default=no mass change.", "true");
   set_double_parameter("S", 0.0, -100, BILLION,
       "Change the mass of all amino acids 'S' by the given amount.",
-      "For parameter file only.  Default no mass change.", "true");
+      "For parameter file only.  Default=no mass change.", "true");
   set_double_parameter("T", 0.0, -100, BILLION,
       "Change the mass of all amino acids 'T' by the given amount.",
-      "For parameter file only.  Default no mass change.", "true");
+      "For parameter file only.  Default=no mass change.", "true");
   set_double_parameter("U", 0.0, -100, BILLION,
       "Change the mass of all amino acids 'U' by the given amount.",
-      "For parameter file only.  Default no mass change.", "false");
+      "For parameter file only.  Default=no mass change.", "false");
   set_double_parameter("V", 0.0, -100, BILLION,
       "Change the mass of all amino acids 'V' by the given amount.",
-      "For parameter file only.  Default no mass change.", "true");
+      "For parameter file only.  Default=no mass change.", "true");
   set_double_parameter("W", 0.0, -100, BILLION,
       "Change the mass of all amino acids 'W' by the given amount.",
-      "For parameter file only.  Default no mass change.", "true");
+      "For parameter file only.  Default=no mass change.", "true");
   set_double_parameter("X", 0.0, -100, BILLION,
       "Change the mass of all amino acids 'X' by the given amount.",
-      "For parameter file only.  Default no mass change.", "false");
+      "For parameter file only.  Default=no mass change.", "false");
   set_double_parameter("Y", 0.0, -100, BILLION,
       "Change the mass of all amino acids 'Y' by the given amount.",
-      "For parameter file only.  Default no mass change.", "true");
+      "For parameter file only.  Default=no mass change.", "true");
   set_double_parameter("Z", 0.0, -100, BILLION,
       "Change the mass of all amino acids 'Z' by the given amount.",
-      "For parameter file only.  Default no mass change.", "false");
+      "For parameter file only.  Default=no mass change.", "false");
 
   /* get-ms2-spectrum options */
   set_boolean_parameter("stats", FALSE, 
@@ -832,31 +791,86 @@ void initialize_parameters(void){
       "Avaliable only for crux-get-ms2-spectrum.  Does not affect contents "
       "of the output file.", "true");
 
+  // **** xlink-predict-peptide-ions options ****
+  set_string_parameter("peptide A", NULL, 
+      "The sequence of peptide A.",
+      "Argument for xlink-predict-peptide-ions.", "false");
+
+  set_string_parameter("peptide B", NULL, 
+      "The sequence of peptide B.",
+      "Argument for xlink-predict-peptide-ions.", "false");
+  
+  set_int_parameter("pos A", 0 , 0, BILLION, 
+      "Position of xlink on peptide A",
+      "Available for xlink-predict-peptide-ions.", "false");
+
+  set_int_parameter("pos B", 0 , 0, BILLION, 
+      "Position of xlink on peptide B",
+      "Available for xlink-predict-peptide-ions.", "false");
+
+  set_boolean_parameter("print-theoretical-spectrum", FALSE,
+      "Print the theoretical spectrum",
+      "Available for xlink-predict-peptide-ions (Default=F).",
+      "true");
 
   set_boolean_parameter("use-mgf", FALSE,
       "Use MGF file format for parsing files",
-      "Available for search-for-xlinks program (Default FALSE).",
-      "true");
-  /* mpsm options */
-    
-  set_int_parameter("mpsm-max-peptides", 2, 1, 10,
-      "maximum number of peptides to consider (1-10). Default 1.",
-      "Available for crux search-for-mpsms ",
+      "Available for search-for-xlinks program (Default=F).",
       "true");
 
-  set_int_parameter("mpsm-top-n", 1, -1, BILLION,
-    "number of k-peptides to consider when searching for mpsms",
-    "Available for crux search-for-mpsms",
-    "true");
 
-  set_boolean_parameter("rtime-threshold", FALSE,
-    "relative retention time threshold for mpsm candidates with homogeneous charge mixture",
-    "Available for crux search-for-mpsms",
-    "true");
+  // **** xlink-score-spectrum options ****
+  set_string_parameter("xlink-score-method", "composite", 
+      "Score method for xlink {composite, modification, concatenated}. Default=composite.",
+      "Argument for xlink-score-spectrum.", "false");
 
-  set_boolean_parameter("mpsm-do-sort",TRUE,
-    "Sort the mpsms.",
-    "Available for crux search-for-mpsms. Default true.","true");
+  // **** search-xlink options ****
+  set_boolean_parameter("xcorr-use-flanks", TRUE,
+      "Use flank peaks in xcorr theoretical spectrum",
+      "Available for crux search-for-xlinks program (Default=T).",
+      "true");
+
+  set_boolean_parameter("xlink-include-linears", TRUE, 
+      "Include linear peptides in the "
+      "database.  Default=T.",
+      "Available for crux search-for-xlinks program (Default=T).",
+      "true");
+  set_boolean_parameter("xlink-include-deadends", TRUE, 
+      "Include dead-end peptides in the "
+      "database.  Default=T.",
+      "Available for crux search-for-xlinks program.",
+      "true");
+  set_boolean_parameter("xlink-include-selfloops", TRUE, 
+      "Include self-loop peptides in the "
+      "database.  Default=T.",
+      "Available for crux search-for-xlinks program.",
+      "true");
+
+  set_double_parameter("precursor-window-decoy", 20.0, 0, 1e6, 
+      "Search decoy-peptides within +/- "
+      " 'mass-window-decoy' of the spectrum mass.  Default=20.0.",
+      "Available for crux search-for-xlinks. ",
+      "true");
+
+  set_window_type_parameter("precursor-window-type-decoy", WINDOW_MASS,
+      "Window type to use for selecting "
+      "decoy peptides from precursor mz. <string>=mass|mz|ppm. "
+      "Default=mass.",
+      "Available for crux search-for-matches",
+      "true");
+
+  set_string_parameter("link sites", NULL, 
+      "Comma delimited pair of amino acid link sites, e.g., A:K,A:D.",
+      "Argument for crux search-for-xlinks.", "false");
+
+  set_double_parameter("link mass", 0.0, -100, BILLION,
+      "Mass modification of a cross link between two amino acids.",
+      "Argument for crux search-for-xlinks.","false");
+
+  set_int_parameter("min-weibull-points", 4000, 1, BILLION, 
+      "Minimum number of points for estimating the "
+      "Weibull parameters.  Default=4000.",
+      "Available for crux search-for-xlinks", "true");
 
   // now we have initialized the parameters
   parameter_initialized = TRUE;
@@ -926,7 +940,7 @@ BOOLEAN_T select_cmd_line(  //remove options from name
     /* check that the option is in the params hash */
     if( value_ptr == NULL || usage_ptr == NULL || type_ptr == NULL ){
       carp(CARP_FATAL, 
-           "Cannot select parameter '%s'. Value, usage or type not found.\n"
+           "Cannot select parameter '%s'. Value, usage or type not found. "
            "Found value: %s, usage: %s, type: %s", 
            option_names[i],
            value_ptr,
@@ -1063,6 +1077,60 @@ void translate_decoy_options(){
 }
 
 /**
+ * Set the m/z bin width.  If the user does not request a specific
+ * width, then use pre-defined values depending on the fragment mass
+ * type.
+ */
+static void set_mz_bin_width()
+{
+  double new_value = get_double_parameter("mz-bin-width");
+
+  if (isnan(new_value)) {
+
+    // If no width specified, choose based on mass type.
+    if (get_mass_type_parameter("fragment-mass") == MONO) {
+      new_value = BIN_WIDTH_MONO;
+    } else {
+      new_value = BIN_WIDTH_AVERAGE;
+    }
+
+    // Update the parameter hash.
+    char buffer[PARAMETER_LENGTH];
+    snprintf(buffer, PARAMETER_LENGTH, "%f", new_value);
+    add_or_update_hash(parameters, "mz-bin-width", buffer);
+  }
+}
+
+/**
+ * Get the m/z bin width parameter. If xcorr-var-bin is TRUE, then 
+ * return the mz-bin-width parameter, otherwise return based upon the 
+ * fragment-mass parameter.
+ */
+double get_mz_bin_width() {
+  if (get_boolean_parameter("xcorr-var-bin")) {
+    return get_double_parameter("mz-bin-width");
+  } else {
+    if (get_mass_type_parameter("fragment-mass") == MONO) {
+      return BIN_WIDTH_MONO;
+    } else {
+      return BIN_WIDTH_AVERAGE;
+    }
+  }
+}
+
+/** 
+ * Get the m/z bin offset parameter. If NEW_BINNING is defined, then
+ * return the mz-bin-offset parameter, otherwise return 0.
+ */ 
+double get_mz_bin_offset() {
+  if (get_boolean_parameter("xcorr-var-bin")) {
+    return get_double_parameter("mz-bin-offset");
+  } else {
+    return 0;
+  }
+}
+
+/**
  * Take the command line string from main, find the parameter file 
  * option (if present), parse it's values into the hash, and parse
  * the command line options and arguments into the hash.
@@ -1094,12 +1162,6 @@ BOOLEAN_T parse_cmd_line_into_params_hash(int argc,
      overwriting file parameters */ 
 
   success = parse_arguments_into_hash(argc, argv, parameters, 0); 
-
-  // For version option, print version and quit
-  if( get_boolean_parameter("version") ){
-    printf("Crux version %s\n", VERSION);
-    exit(0);
-  }
 
   if( success ){
     // check each option value
@@ -1184,18 +1246,20 @@ BOOLEAN_T parse_cmd_line_into_params_hash(int argc,
 
   parameter_plasticity = FALSE;
 
+  // Set m/z bin width based on mass type.
+  set_mz_bin_width();
+
   return success;
 }
 
 /**
  * Read the value given for custom-enzyme and enter values into global
- * params.   Correct syntax is <brace>A-Z<brace>|<brace>A-Z<brace> 
- * where <brace> can be [] or {}.  An X indicates that any residue is
- * legal. Sets pre/post_list size and allocates memory for
- * pre/post_cleavage_list.  Sets pre/post_for_inclusion as true if []
- * encloses list or false if {} encloses list. 
- * For special case of [X], set p_cleavage_list as empty and inclusion
- * as false.
+ * params.  Correct syntax is [A-Z]|[A-Z] or {A-Z}|{A-Z}.  An X
+ * indicates that any residue is legal. Sets pre/post_list size and
+ * allocates memory for pre/post_cleavage_list.  Sets
+ * pre/post_for_inclusion as true if [] encloses list or false if {}
+ * encloses list.  For special case of [X], set p_cleavage_list as
+ * empty and inclusion as false.
  */
 // NOTE (BF mar-11-09): for testing would be nice if this returned
 // error code instead of dying
@@ -1379,11 +1443,11 @@ BOOLEAN_T check_option_type_and_bounds(const char* name){
     }
     break;
   case STRING_P:
-    carp(CARP_DETAILED_DEBUG, "found string opt with value %s\n", value_str);
+    carp(CARP_DETAILED_DEBUG, "found string opt with value %s ", value_str);
     //check list of legal values?
     break;
   case MASS_TYPE_P:
-    carp(CARP_DETAILED_DEBUG, "found mass_type opt with value %s\n", 
+    carp(CARP_DETAILED_DEBUG, "found mass_type opt with value %s ", 
          value_str);
     if( ! string_to_mass_type( value_str, &mass_type )){
       success = FALSE;
@@ -1391,7 +1455,7 @@ BOOLEAN_T check_option_type_and_bounds(const char* name){
     }
     break;
   case DIGEST_TYPE_P:
-      carp(CARP_DETAILED_DEBUG, "found digest_type param, value '%s'\n", 
+      carp(CARP_DETAILED_DEBUG, "found digest_type param, value '%s' ", 
            value_str);
     if( string_to_digest_type(value_str) == INVALID_DIGEST){
       success = FALSE;
@@ -1400,7 +1464,7 @@ BOOLEAN_T check_option_type_and_bounds(const char* name){
     }
     break;
   case ENZYME_TYPE_P:
-      carp(CARP_DETAILED_DEBUG, "found enzyme_type param, value '%s'\n", 
+      carp(CARP_DETAILED_DEBUG, "found enzyme_type param, value '%s' ", 
            value_str);
     if( string_to_enzyme_type(value_str) == INVALID_ENZYME){
       success = FALSE;
@@ -1473,17 +1537,6 @@ BOOLEAN_T check_option_type_and_bounds(const char* name){
               "Must be (mass, mz, ppm)", value_str, name);
     }
     break;
-
-  case RTP_TYPE_P:
-    carp(CARP_DETAILED_DEBUG, "found rtp type param, value '%s'",
-         value_str);
-    if(string_to_rtp_type(value_str) == RTP_INVALID) {
-      success = FALSE;
-      sprintf(die_str, "Illegal rtime predictor type '%s' for option '%s'.  "
-              "Must be (krokhin,palmbald)", value_str, name);
-    }
-    break;
-
   default:
     carp(CARP_FATAL, "Your param type '%s' wasn't found (code %i)", 
         type_str, (int)param_type);
@@ -1494,6 +1547,11 @@ BOOLEAN_T check_option_type_and_bounds(const char* name){
   }
   return success;
 }
+
+/**
+ * Maximum size of the description of a parameter.
+ */
+static const int PARAMETER_BUFFER = 10000;
 
 /**
  * \brief Creates a file containing all parameters and their current
@@ -1518,11 +1576,11 @@ void print_parameter_file(char** filename){
     char* key = hash_iterator_next(iterator);
     char* show_users = (char*)get_hash_value(for_users, key);
     if( strcmp(show_users, "true") == 0 ){
-      fprintf(param_file, "# %s\n# %s\n%s=%s\n\n",
-              (char*)get_hash_value(usages, key),
-              (char*)get_hash_value(file_notes, key),
-              key,
-              (char*)get_hash_value(parameters, key));
+      char buffer[PARAMETER_BUFFER] = "";
+      strcat_formatted(buffer, "# ", (char*)get_hash_value(usages, key));
+      strcat_formatted(buffer, "# ", (char*)get_hash_value(file_notes, key));
+      fprintf(param_file, "%s%s=%s\n\n", buffer, key, 
+	      (char*)get_hash_value(parameters, key));
     }
   }
 
@@ -1611,8 +1669,8 @@ void parse_parameter_file(
         idx++;
       }
       if(idx == 0 || idx >= (int)(strlen(line)-1)){
-        carp(CARP_FATAL, "Lines in a parameter file must have the form:\n"
-             "\n\tname=value\n\n"
+        carp(CARP_FATAL, "Lines in a parameter file must have the form: "
+             "\n\tname=value\n "
              "In file %s, the line '%s' does not have this format",
              parameter_filename, line);
       }
@@ -1674,7 +1732,7 @@ BOOLEAN_T get_boolean_parameter(
  // make sure that there is enough storage allocated in the string
   if((int)strlen(value) 
      > PARAMETER_LENGTH) {
-    carp(CARP_FATAL, "parameter %s with value %s was too long to copy to string\n",
+    carp(CARP_FATAL, "parameter %s with value %s was too long to copy to string ",
         name,
         value);
   }
@@ -1689,7 +1747,7 @@ BOOLEAN_T get_boolean_parameter(
     return(FALSE);
   } 
   else {
-    carp(CARP_FATAL, "Invalid Boolean parameter %s.\n", buffer);
+    carp(CARP_FATAL, "Invalid Boolean parameter %s. ", buffer);
   }
   
   carp(CARP_FATAL, "parameter name: %s, doesn't exist", name);
@@ -1736,7 +1794,7 @@ int get_int_parameter(
   if ((value == LONG_MIN) || 
       (value == LONG_MAX) || 
       (endptr == int_value)) {
-    carp(CARP_FATAL, "Conversion error when trying to convert parameter %s with value %s to an int\n",
+    carp(CARP_FATAL, "Conversion error when trying to convert parameter %s with value %s to an int ",
         name, 
         int_value);
         exit(1);
@@ -1789,7 +1847,7 @@ double get_double_parameter(
   /*if((value == HUGE_VALF) ||  // AAK removed //BF: why?
     (value == -HUGE_VALF) || 
     (endptr == double_value)) {
-    capr(CARP_FATAL, "Conversion error when trying to convert parameter %s with value %s to an double\n",
+    capr(CARP_FATAL, "Conversion error when trying to convert parameter %s with value %s to an double ",
     name,
     double_value);
     exit(1); */
@@ -1883,7 +1941,7 @@ DIGEST_T get_digest_type_parameter( const char* name ){
   DIGEST_T digest_type = string_to_digest_type(param);
   if( digest_type == INVALID_DIGEST ){
     carp(CARP_FATAL, "Digest_type parameter %s has the value %s " 
-         "which is not of the correct type\n", name, param);
+         "which is not of the correct type.", name, param);
   }
   return digest_type;
 }
@@ -1895,7 +1953,7 @@ ENZYME_T get_enzyme_type_parameter( const char* name ){
   ENZYME_T enzyme_type = string_to_enzyme_type(param);
   if( enzyme_type == INVALID_ENZYME ){
     carp(CARP_FATAL, "Enzyme_type parameter %s has the value %s " 
-         "which is not of the correct type\n", name, param);
+         "which is not of the correct type.", name, param);
   }
   return enzyme_type;
 }
@@ -1924,17 +1982,6 @@ WINDOW_TYPE_T get_window_type_parameter(
 
   return param_value;
 }
-
-RTP_TYPE_T get_rtp_type_parameter(
-  const char* name
-  ) {
-  char* param_value_str = (char*)get_hash_value(parameters, name);
-  RTP_TYPE_T param_value =  
-    string_to_rtp_type(param_value_str);
-
-  return param_value;
-}
-
 
 SORT_TYPE_T get_sort_type_parameter(const char* name){
   char* param_value_str = (char*)get_hash_value(parameters, name);
@@ -1991,16 +2038,16 @@ ION_TYPE_T get_ion_type_parameter(const char* name){
  */
 
 BOOLEAN_T set_boolean_parameter(
- const char*     name,  ///< the name of the parameter looking for -in
- BOOLEAN_T set_value,  ///< the value to be set -in
- const char* usage,          ///< message for the usage statement
- const char* filenotes,      ///< additional informatino for the params file
- const char* foruser
-  )
+ const char* name,       ///< the name of the parameter looking for -in
+ BOOLEAN_T   set_value,  ///< the value to be set -in
+ const char* usage,      ///< message for the usage statement
+ const char* filenotes,  ///< additional information for the params file
+ const char* foruser     ///< "true" if should be revealed to user
+)
 {
   BOOLEAN_T result;
     
-  // check if parameters cah be changed
+  // check if parameters can be changed
   if(!parameter_plasticity){
     carp(CARP_ERROR, "can't change parameters once they are confirmed");
     return FALSE;
@@ -2241,36 +2288,6 @@ BOOLEAN_T set_window_type_parameter(
   return result;
 
 }
-
-BOOLEAN_T set_rtp_type_parameter(
- const char*     name,  ///< the name of the parameter looking for -in
- RTP_TYPE_T set_value,  ///< the value to be set -in
- const char* usage,      ///< string to print in usage statement
- const char* filenotes,   ///< additional info for param file
- const char* foruser
-  ) {
-  BOOLEAN_T result = TRUE;
-  
-  // check if parameters can be changed
-  if(!parameter_plasticity){
-    carp(CARP_ERROR, "can't change parameters once they are confirmed");
-    return FALSE;
-  }
-  
-  /* stringify the value */
-  char* value_str = rtp_type_to_string(set_value);
-
-  result = add_or_update_hash(parameters, name, value_str);
-  result = add_or_update_hash(usages, name, usage);
-  result = add_or_update_hash(file_notes, name, filenotes);
-  result = add_or_update_hash(for_users, name, foruser);
-  result = add_or_update_hash(types, name, "RTP_TYPE_T");
-  free(value_str);
-  return result;
-
-}
-
-
 
 BOOLEAN_T set_sort_type_parameter(
   const char* name,

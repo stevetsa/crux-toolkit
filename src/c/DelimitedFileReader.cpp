@@ -1,3 +1,8 @@
+/*************************************************************************//**
+ * \file DelimitedFileReader.cpp
+ * \brief Object for parsing the tab-delimited files
+ ****************************************************************************/
+
 #include "DelimitedFileReader.h"
 
 #include <fstream>
@@ -55,7 +60,7 @@ DelimitedFileReader::~DelimitedFileReader() {
 }
 
 /**
- *\returns the number of rows, assuming a square matrix
+ * \returns the number of rows, assuming a square matrix
  */
 unsigned int DelimitedFileReader::numRows() {
 
@@ -103,14 +108,15 @@ void DelimitedFileReader::loadData(
   ) {
 
   file_name_ = string(file_name);
-  cout <<"File name is :"<<file_name_<<endl;
   has_header_ = hasHeader;
   num_rows_valid_ = false;
   column_names_.clear();
-  file_ptr_ = new fstream(file_name_.c_str(), ios::in);
+  file_ptr_ = new fstream(file_name, ios::in);
+  current_row_ = 0;
+  column_mismatch_warned_ = false;
 
   if (!file_ptr_ -> is_open()) {
-    carp(CARP_FATAL, "Opening %s or reading failed", file_name);
+    carp(CARP_ERROR, "Opening %s or reading failed", file_name);
     return;
   }
 
@@ -187,22 +193,14 @@ vector<string>& DelimitedFileReader::getColumnNames() {
   return column_names_;
 }
 
-static string EMPTY_STRING="";
-
 /**
  *\returns the string value of the cell
  */
 string& DelimitedFileReader::getString(
   unsigned int col_idx ///< the column index
   ) {
-  if (col_idx >= data_.size()) {
-    return EMPTY_STRING;
-  }
-  return data_.at(col_idx);
-}
 
-string& DelimitedFileReader::getDataString() {
-  return current_data_string_;
+  return data_.at(col_idx);
 }
 
 /** 
@@ -218,6 +216,7 @@ string& DelimitedFileReader::getString(
   return getString(col_idx);
 }
 
+
 template<typename TValue>
 TValue DelimitedFileReader::getValue(
   unsigned int col_idx ///< the column index 
@@ -229,11 +228,11 @@ TValue DelimitedFileReader::getValue(
 }
 
 /**
- * gets a double type from cell, checks for infinity. 
+ * \returns the FLOAT_T value of a cell, checks for infinity
  */
 FLOAT_T DelimitedFileReader::getFloat(
-    unsigned int col_idx ///< the column index
-) {
+  unsigned int col_idx ///< the column index
+  ) {
   
   string& string_ans = getString(col_idx);
   if (string_ans == "Inf") {
@@ -249,7 +248,7 @@ FLOAT_T DelimitedFileReader::getFloat(
 }
 
 /** 
- * gets a double type from cell, checks for infinity.
+ * \returns the FLOAT_T value of a cell, checks for infinity.
  */
 FLOAT_T DelimitedFileReader::getFloat(
     const char* column_name ///<the column name
@@ -263,7 +262,7 @@ FLOAT_T DelimitedFileReader::getFloat(
 }
 
 /**
- * gets a double type from cell, checks for infinity. 
+ * \returns the double value of a cell, checks for infinity. 
  */
 double DelimitedFileReader::getDouble(
   unsigned int col_idx ///< the column index 
@@ -287,11 +286,11 @@ double DelimitedFileReader::getDouble(
 }
 
 /** 
- * gets a double type from cell, checks for infinity.
+ * \returns the double value of a cell, checks for infinity.
  */
 double DelimitedFileReader::getDouble(
   const char* column_name ///<the column name
-) {
+  ) {
 
   int col_idx = findColumn(column_name);
   if (col_idx == -1) {
@@ -301,7 +300,7 @@ double DelimitedFileReader::getDouble(
 }
 
 /**
- * gets an integer type from cell. 
+ * \returns the integer value of a cell. 
  */
 int DelimitedFileReader::getInteger(
   unsigned int col_idx ///< the column index 
@@ -311,7 +310,7 @@ int DelimitedFileReader::getInteger(
 }
 
 /**
- * get an integer type from cell, checks for infintiy.
+ * \returns the integer value of a cell, checks for infintiy.
  */
 int DelimitedFileReader::getInteger(
   const char* column_name ///< the column name
@@ -415,7 +414,7 @@ void DelimitedFileReader::getDoubleVectorFromCell(
 
 /*Iterator functions.*/
 /**
- * resets the current_row_ index to 0.
+ * resets the file pointer to the beginning of the file.
  */
 void DelimitedFileReader::reset() {
 
@@ -428,18 +427,33 @@ void DelimitedFileReader::reset() {
 }
 
 /**
- * increments the current_row_, 
+ * parses the next line in the file. 
  */
 void DelimitedFileReader::next() {
 
-  //cout <<"current_data_string_:"<<current_data_string_<<endl;
-  //cout <<"next_data_string_:"<<next_data_string_<<endl;
-  //cout <<"has_next_"<<has_next_<<endl;
-
   if (has_next_) {
+    current_row_++;
     current_data_string_ = next_data_string_;
     //parse next_data_string_ into data_
     DelimitedFile::tokenize(next_data_string_, data_, '\t');
+
+    //make sure data has the right number of columns for the header.
+    if (data_.size() < column_names_.size()) {
+      if (!column_mismatch_warned_) {
+        carp(CARP_WARNING,
+          "Column count %d for line %d is less than header %d",
+          data_.size(), current_row_, column_names_.size());
+        carp(CARP_WARNING,
+          "%s", current_data_string_.c_str());
+        carp(CARP_WARNING,
+          "Suppressing warnings, other mismatches may exist!");
+        column_mismatch_warned_ = true;
+      }
+      while (data_.size() < column_names_.size()) {
+        data_.push_back(string(""));
+      }
+    }
+
     //read next line
     has_next_ = getline(*file_ptr_, next_data_string_) != NULL;
     has_current_ = true;
@@ -447,7 +461,6 @@ void DelimitedFileReader::next() {
     has_current_ = false;
   }
 }
-
 
 /**
  * \returns whether there are more rows to 

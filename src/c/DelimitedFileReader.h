@@ -9,6 +9,7 @@
  * Types from each cell of the table.  This class also provides function
  * for reading a list of integers or string from a cell using a delimiter
  * that is different from the column delimiter (default is comma ',').
+ * This class reads the data in line by line
  ****************************************************************************/
 #ifndef DELIMITEDFILEREADER_H
 #define DELIMITEDFILEREADER_H
@@ -49,6 +50,7 @@ class DelimitedFileReader {
   bool num_rows_valid_;
   unsigned int num_rows_;
 
+  bool column_mismatch_warned_;
 
 
  public:
@@ -154,8 +156,6 @@ class DelimitedFileReader {
     unsigned int col_idx ///< the column index
   );
 
-  std::string& getDataString();
-
   template<typename TValue>
   TValue getValue(
     unsigned int col_idx ///< the column index
@@ -245,12 +245,12 @@ class DelimitedFileReader {
 
   /*Iterator functions.*/
   /**
-   * resets the current_row_ index to 0.
+   * resets the file pointer to the beginning of the file.
    */
   void reset();
 
   /**
-   * increments the current_row_, 
+   * parses the next line in the file. 
    */
   void next();
 

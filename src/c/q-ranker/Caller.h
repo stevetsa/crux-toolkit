@@ -24,7 +24,7 @@ public:
 	virtual ~Caller();
     void readRetentionTime(string filename);
     void step(Scores& train, vector<double>& w, double Cpos, double Cneg, double fdr);
-    void train();
+    void train(bool do_xval);
     void trainEm(vector<vector<double> >& w);
     int xvalidate_step(vector<vector<double> >& w);
     int xv_step(vector<vector<double> >& w);
@@ -35,13 +35,11 @@ public:
     void printWeights(ostream & weightStream, vector<double>& w);
     void readWeights(istream & weightStream, vector<double>& w);
     void readFiles(bool &doSingleFile);
-
-    void filelessSetup(unsigned int nsets,const unsigned int numFeatures, vector<unsigned int>& numSpectra, char** featureNames, double pi0);
-    void filelessSetup(unsigned int nsets,const unsigned int numFeatures, const unsigned int numSpectra, char ** fetureNames, double pi0);
+    void filelessSetup(unsigned int nsets,const unsigned int numFeatures, int* numSpectra, char ** fetureNames, double pi0);
     void fillFeatureSets();    
     int preIterationSetup();
     Scores* getFullSet() {return &fullset;}    
-    int run();
+    int run(bool do_xval);
     SetHandler * getSetHandler(SetHandlerType sh) {
         switch(sh) {
            case NORMAL: return &normal;
@@ -55,7 +53,7 @@ public:
     void train_net_two(Scores &set);
     void train_many_general_nets();
     void train_many_target_nets_ave();
-    void train_many_nets();
+    void train_many_nets(bool do_xval);
     void three_plot(double qv);
     
     int getOverFDR(Scores &set, NeuralNet &n, double fdr);
@@ -66,9 +64,6 @@ public:
     void xvalidate_net(double qv);
     void train_general_net(Scores &train, Scores &thresh, double qv);
     void train_target_net(Scores &train, Scores &thresh, double qv);
-
-    double getQRankerScore(double* features);
-
 
 protected:
     Normalizer * pNorm;

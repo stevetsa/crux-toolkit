@@ -1,24 +1,22 @@
 /**
  * \file print-processed-spectra.cpp
- *
  * AUTHOR: Barbara Frewen
  * CREATE DATE: September 18, 2009
- * DESCRIPTION: Main method for the print-processed-spectra command.
- *              For every spectrum in an ms2 file, process as for
- *              xcorr and print peaks in ms2 format to new file.
- * REVISION:
+ * \brief Main method for the print-processed-spectra command.
+ *
+ * For every spectrum in an ms2 file, process as for xcorr and print
+ * peaks in ms2 format to new file.
  */
 
 #include "print-processed-spectra.h"
-#define NUM_PPS_OPTIONS 4
-#define NUM_PPS_ARGS 2
+static const int NUM_PPS_OPTIONS = 3;
+static const int NUM_PPS_ARGS = 2;
 
 int print_processed_spectra_main(int argc, char** argv){
 
   // Define optional command line arguments
   int num_options = NUM_PPS_OPTIONS;
   const char* option_list[NUM_PPS_OPTIONS] = { 
-    "version",
     "verbosity",
     "parameter-file", 
     "overwrite"
@@ -102,9 +100,10 @@ int print_processed_spectra_main(int argc, char** argv){
   free_spectrum_collection(spectra);
   fclose(output_ms2);
 
-  carp(CARP_INFO, "Finished processing spectra.");
-  
-  return 0;
+  carp(CARP_INFO, "Elapsed time: %.3g s", wall_clock() / 1e6);
+  carp(CARP_INFO, "Finished crux print-processed-spectra.");
+
+  return(0);
 }
 
 

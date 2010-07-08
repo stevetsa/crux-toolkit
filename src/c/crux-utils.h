@@ -24,10 +24,11 @@
 #include "objects.h"
 #include "peak.h"
 
-#ifdef __cplusplus
-  extern "C" {
-#endif
-
+#include<vector>
+/**
+ * The number of features used to represent a PSM for Percolator or q-ranker.
+ */
+const unsigned int NUM_FEATURES = 20;
 
 /**
  *\returns a heap copy of the given string
@@ -198,18 +199,6 @@ char* generate_name_path(
   );
 
 /**
- * \brief Create the correct filename for a binary psm file, 
- * search.target.csm for target search and search.decoy-#.csm for 
- * decoy searches.
- *
- * Adds the appropriate
- * extension depending on the file index (0=target, 1=first decoy,
- * 2=second decoy, etc).
- * \returns A heap allocated char* with the new filename.
- */
-char* generate_psm_filename(int file_index);
-
-/**
  * \brief Open and create a file of the given name in the given
  * directory.
  *
@@ -228,8 +217,8 @@ FILE* create_file_in_path(
  * \returns TRUE, if the string starts with the suffix, else FALSE
  */
 BOOLEAN_T prefix_compare(
-  char* string, ///< The string to compare -in
-  char* prefix  ///< The prefix to find in the string -in
+  const char* string, ///< The string to compare -in
+  const char* prefix  ///< The prefix to find in the string -in
   );
 
 /**
@@ -348,8 +337,7 @@ ENZYME_T string_to_enzyme_type(char*);
 char* enzyme_type_to_string(ENZYME_T);
 WINDOW_TYPE_T string_to_window_type(char*);
 char* window_type_to_string(WINDOW_TYPE_T);
-RTP_TYPE_T string_to_rtp_type(char*);
-char* rtp_type_to_string(RTP_TYPE_T);
+
 
 /**
  * \brief Open either the index or fasta file and prepare it for
@@ -396,12 +384,19 @@ int get_last_in_range_string(const char* range_string);
  * \returns 1 if spectrum precursor is singly charged or 0 if multiply
  * charged.
  */
-int choose_charge(FLOAT_T precursor_mz, ///< m/z of spectrum precursor ion
-                  PEAK_T* peaks,        ///< array of spectrum peaks
-                  int num_peaks);       ///< size of peaks array
+int choose_charge(FLOAT_T precursor_mz,         ///< m/z of spectrum precursor ion
+                  std::vector<PEAK_T*>& peaks); ///< array of spectrum peaks
 
-#ifdef __cplusplus
-}
-#endif
+/**
+ *\brief Extend a given string with lines not exceeding a specified width, 
+ * breaking on spaces.
+ */
+void strcat_formatted
+(
+ char*       string_to_extend,
+ const char* lead_string,        // Appears at the start of each line.
+ const char* extension           // Text to add.
+ );
+
 
 #endif

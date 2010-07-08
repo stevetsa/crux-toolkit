@@ -1,9 +1,9 @@
 
-#schematic.eps: schematic.fig
-#	fig2dev -L eps schematic.fig schematic.eps
+#schematic.pdf: schematic.fig
+#	fig2dev -L pdf schematic.fig schematic.pdf
 
-schematic.png: schematic.eps
-	convert -density 144 -resize 40%x40% schematic.eps schematic.png
+#schematic.png: schematic.pdf
+#	convert -density 144 -resize 40%x40% schematic.pdf schematic.png
 
 htmldir = $(prefix)/doc
 cruximgdir = $(prefix)/doc
@@ -28,6 +28,8 @@ dist_html_DATA  =  \
 	crux.html \
 	crux-predict-peptide-ions.html \
 	crux-search-for-matches.html \
+	crux-sequest-search.html \
+        crux-search-for-xlinks.html \
 	default.params \
 	customize-tutorial.html \
 	fasta-format.html \
@@ -45,6 +47,7 @@ dist_html_DATA  =  \
 	sqt-format.html \
 	start-tutorial.html \
 	txt-format.html \
+	xlink-txt-format.html \
 	UWlogo150p.gif \
 	data/demo.ms2 \
 	data/small-yeast.fasta \

@@ -1,17 +1,15 @@
 /**
  * \file sequest-search.cpp
- */
-/*
- * FILE: sequest-search.cpp
  * AUTHOR: Barbara Frewen
  * CREATE DATE: Oct 2, 2009
  * PROJECT: crux
- * DESCRIPTION: The crux search routine that emulates SEQUEST.  Scores
- * all candidate peptides with Sp, deletes all but the 500 top-scoring
- * candidates, scores remaining 500 with xcorr, sorts results by xcorr
- * and returns the top 5 plus the match with the best Sp score.
- * Writes results to .sqt, .txt, and .csm files.  Does not compute
- * p-values. 
+ * \brief The crux search routine that emulates SEQUEST.
+ *
+ * Scores all candidate peptides with Sp, deletes all but the 500
+ * top-scoring candidates, scores remaining 500 with xcorr, sorts
+ * results by xcorr and returns the top 5 plus the match with the best
+ * Sp score.  Writes results to .sqt, .txt, and .csm files.  Does not
+ * compute p-values.
  */
 
 #include "sequest-search.h"
@@ -46,7 +44,6 @@ int sequest_search_main(int argc,   ///< number of cmd line tokens
 {
   const char* option_list[] = {
     "verbosity",
-    "version",
     "parameter-file",
     "overwrite",
     "spectrum-min-mass",
@@ -61,14 +58,14 @@ int sequest_search_main(int argc,   ///< number of cmd line tokens
   int num_options = sizeof(option_list) / sizeof(char*);
 
   // Define required command line arguments 
-  const char* argument_list[] = {"ms2 file", "protein input"};
+  const char* argument_list[] = {"ms2 file", "protein database"};
   int num_arguments = sizeof(argument_list) / sizeof(char*);
 
   initialize_run(SEQUEST_COMMAND, argument_list, num_arguments,
                  option_list, num_options, argc, argv);
 
   // Get input: protein file
-  char* input_file = get_string_parameter("protein input");
+  char* input_file = get_string_parameter("protein database");
 
   // Prepare input, fasta or index 
   INDEX_T* index = NULL;
@@ -215,13 +212,12 @@ int sequest_search_main(int argc,   ///< number of cmd line tokens
 
   } // next spectrum
 
-  // update headers of .csm files
-  output_files.updateHeaders(progress.getNumSearchesWithMatches());
-
-  // clean up
+  carp(CARP_INFO, "Elapsed time: %.3g s", wall_clock() / 1e6);
+  carp(CARP_INFO, "Finished crux sequest-search");
   
   return 0;
 }// end main
+
 #else // SEARCH_ENABLED not defined
 int sequest_search_main(int argc, char **argv){
   (void) argc;

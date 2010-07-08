@@ -1,3 +1,14 @@
+# To set up debugging:
+#
+#   make clean
+#   make CXXFLAGS=" -ggdb -O0 -DDEBUG " CFLAGS=" -ggdb -O0 -DDEBUG "
+# 
+# CXXFLAGS contains the options for the C++ compiler. The CFLAGS
+# argument is for the C compiler, and is only needed if you are going
+# to debug down into the MSTOOLKIT routines.  The -DDEBUG will cause
+# the program to abort and dump core, rather than simply exit, when an
+# error is encountered.
+
 SUBDIRS = src doc
 
 if SEARCH
@@ -60,13 +71,33 @@ bdist:
 		src/c/crux-generate-peptides \
 		src/c/crux-predict-peptide-ions \
 		bdist/bin/
+	if [ "$(SEARCH_ENABLED)" = 'true' ] ; then \
+		mkdir bdist/tide; \
+		mkdir bdist/tide/images; \
+		cp tide/images/nibib.gif bdist/tide/images; \
+		cp tide/images/UWlogo150p.gif bdist/tide/images; \
+		cp tide/images/tide-performance.png bdist/tide/images; \
+		cp tide/*.html bdist/tide; \
+		cp tide/*.css bdist/tide; \
+		cp tide/worm-demo*.sh bdist/tide; \
+		cp tide/README bdist/tide; \
+		cp tide/yeast-demo*.sh bdist/tide; \
+		cp tide/$(ar)/tide-index bdist/tide; \
+		cp tide/$(ar)/tide-search bdist/tide; \
+		cp tide/$(ar)/msconvert bdist/tide; \
+		cp tide/$(ar)/read-spectrumrecords bdist/tide; \
+		scp nexus.gs.washington.edu:/net/noble/vol1/data/crux-datasets/yeast/yeast-02-10000.spectrumrecords bdist/tide; \
+		scp nexus.gs.washington.edu:/net/noble/vol1/data/crux-datasets/yeast/yeast.fasta bdist/tide; \
+		scp nexus.gs.washington.edu:/net/noble/vol1/data/crux-datasets/worm/worm-06-10000.spectrumrecords bdist/tide; \
+		scp nexus.gs.washington.edu:/net/noble/vol1/data/crux-datasets/worm/worm.fasta bdist/tide;\
+	fi
 	zip -r $(distdir)-$(ar)-$(name).zip bdist
 	rm -fr bdist/
 
 checksum:
 	md5sum $(distdir)-$(ar)-$(name).zip > $(distdir)-$(ar)-$(name).zip.md5sum.txt
 	md5sum $(distdir).tar.gz > $(distdir).tar.gz.md5sum.txt
-	
+
 ignore-files:
 	svn update .svnignore
 	svn propset svn:ignore -F .svnignore .

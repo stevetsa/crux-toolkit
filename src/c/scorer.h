@@ -17,10 +17,6 @@
 #include "peptide.h"
 #include "ion.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /**
  * \returns An (empty) scorer object.
  */
@@ -63,36 +59,6 @@ void free_single_ion_constraints(
  */
 ION_CONSTRAINT_T** single_ion_constraints(
     void
-);
-
-/**
- * Create ion files (for the single-ion GMTK model) 
- * in the output directory for all psms for a
- * single spectrum. Appends to existing files.
- * \returns TRUE for success
- */
-BOOLEAN_T output_psm_files_single(
-  char* output_directory,  ///< name of directory to place the ion files
-  SPECTRUM_T* spectrum,    ///< input spectrum
-  char** peptides, ///< the peptide sequences
-  int num_peptides, ///< the number of peptides sequences
-  int charge, ///< the charge of the peptides
-  int starting_sentence_idx ///< used to append to existing pfile
-);
-
-/**
- * Create ion files (for the paired-ion GMTK model) 
- * in the output directory for all psms for a
- * single spectrum. Appends to existing files.
- * \returns TRUE for success
- */
-BOOLEAN_T output_psm_files_paired(
-  char* output_directory,  ///< name of directory to place the ion files
-  SPECTRUM_T* spectrum,    ///< input spectrum
-  char** peptides, ///< the peptide sequences
-  int num_peptides, ///< the number of peptides sequences
-  int charge, ///< the charge of the peptides
-  int starting_sentence_idx ///< used to append to existing pfile
 );
 
 /**
@@ -262,6 +228,10 @@ void set_scorer_sp_max_mz(
   FLOAT_T sp_max_mz ///< used for Sp: the max_mz variable -in
   );
 
+/**
+ *\returns the max bin index of the scorer array(s).
+ */
+int get_scorer_max_bin(SCORER_T* scorer);
 
 /**
  *\returns the sp_array_resolution value of the scorer
@@ -354,18 +324,6 @@ BOOLEAN_T create_intensity_array_xcorr(
   );
 
 /**
- * create the intensity arrays for theoretical spectrum
- * SCORER must have been created for XCORR type
- * \returns TRUE if successful, else FLASE
- */
-BOOLEAN_T create_intensity_array_theoretical(
-  SCORER_T* scorer,        ///< the scorer object -in/out
-  ION_SERIES_T* ion_series, ///< the ion series to score against the spectrum(theoretical) -in
-  FLOAT_T* theoretical       ///< the empty theoretical spectrum -out
-  );
-
-
-/**
  * Uses an iterative cross correlation
  *
  *\return the final cross correlation score between the observed and the
@@ -395,10 +353,6 @@ void add_intensity(
   FLOAT_T intensity         ///< the intensity to add -in
   );
 
-
-#ifdef __cplusplus
-}
-#endif
 
 
 

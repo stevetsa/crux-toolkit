@@ -1,7 +1,6 @@
 /*************************************************************************//**
  * \file carp.cpp
- * $Revision: 1.6 $
- * \brief: Object for representing a single protein.
+ * \brief Object for representing a single protein.
  ****************************************************************************/
 #include <stdio.h>
 #include <stdlib.h>
@@ -119,7 +118,11 @@ void carp( int verbosity, const char* format, ...) {
   } 
   if (verbosity == CARP_FATAL) {
     // Fatal carps cause the program to exit
+#ifdef DEBUG
+    abort(); // Dump core in DEBUG mode.  Use 'make CXXFLAGS=-DDEBUG"'
+#else
     exit(1);
+#endif
   }
 }
 

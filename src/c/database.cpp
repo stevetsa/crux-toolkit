@@ -1,7 +1,6 @@
 /*************************************************************************//**
  * \file database.cpp
- * $Revision: 1.68 $
- * \brief: Object for representing a database of protein sequences.
+ * \brief Object for representing a database of protein sequences.
  ****************************************************************************/
 #include <stdio.h>
 #include <stdlib.h>
@@ -16,6 +15,7 @@
 #include "peptide.h"
 #include "protein.h"
 #include "database.h"
+#include "hash.h"
 #include "carp.h"
 #include "objects.h"
 #include "peptide_constraint.h"

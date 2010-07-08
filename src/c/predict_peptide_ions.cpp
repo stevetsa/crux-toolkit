@@ -2,10 +2,8 @@
  * \file predict_peptide_ions.cpp
  * AUTHOR: Chris Park
  * CREATE DATE: 10/05 2006
- * DESCRIPTION: Object for given a peptide and a charge state, predict
+ * \brief Object for given a peptide and a charge state, predict
  * the ions 
- *
- * REVISION: $ $ 
  ****************************************************************************/
 #include <math.h>
 #include <stdlib.h>
@@ -21,8 +19,8 @@
 #include "ion.h"
 #include "ion_series.h"
 
-#define NUM_PREDICT_OPTIONS 9
-#define NUM_PREDICT_ARGUMENTS 2
+static const int NUM_PREDICT_OPTIONS = 9;
+static const int NUM_PREDICT_ARGUMENTS = 2;
 
 int main(int argc, char** argv){
 

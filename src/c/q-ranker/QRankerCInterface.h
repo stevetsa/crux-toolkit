@@ -11,22 +11,14 @@
 
 #include "PercolatorCommon.h"
 
-
-/** Call that initiates percolator */
-#include <vector>
-void qcInitiate2(NSet sets, unsigned int numFeatures, 
-  std::vector<unsigned int>& numSpectra, char ** featureNames, double pi0);
-
-Caller * getCallerQR();
-
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+
 /** Call that initiates percolator */
-void qcInitiate(NSet sets, unsigned int numFeatures, unsigned int numSpectra, char ** featureNames, double pi0);
- 
+void qcInitiate(int sets, unsigned int numFeatures, int* numSpectra, char ** featureNames, double pi0);
+
 /** Call that sets verbosity level
  *  0 is quiet, 2 is default, 5 is more than you want */
 void qcSetVerbosity(int verbosity);
@@ -36,7 +28,7 @@ void qcSetVerbosity(int verbosity);
 void qcRegisterPSM(SetType set, char * identifier, double * features);
 
 /** Function called when we want to start processing */
-void qcExecute(); 
+void qcExecute(bool do_xval); 
 
 /**
  * Given the set enum and features, return the Percolator score for the PSM
@@ -54,7 +46,6 @@ void qcGetScores(double *scoreArr, double *qArr);
 
 /** Function that should be called after processing finished */
 void qcCleanUp(); 
-
 
 #ifdef __cplusplus
 }

@@ -1,13 +1,10 @@
 /*************************************************************************//**
- * \file create_index
+ * \file create_index.cpp
  * AUTHOR: Chris Park
  * CREATE DATE: August 10 2006
- * DESCRIPTION: Given a protein fasta sequence database as input,
- * generate crux_index files 
- *              that contain list of peptides in 
- *              the database that meet certain criteria (e.g. mass,
- *              length, trypticity) as output. 
- * REVISION: 
+ * \brief Given a protein fasta sequence database as input, generate
+ * crux_index files that contain list of peptides in the database that
+ * meet certain criteria (e.g. mass, length, trypticity) as output.
  ****************************************************************************/
 
 #include "create_index.h"
@@ -34,7 +31,6 @@ int create_index_main(int argc, char** argv){
   /* Define optional command line arguments */ 
   int num_options = NUM_INDEX_OPTIONS;
   const char* option_list[NUM_INDEX_OPTIONS] = { 
-    "version",
     "verbosity",
     "parameter-file", 
     "overwrite",

@@ -2,9 +2,8 @@
  * \file modified_peptides_iterator.cpp
  * AUTHOR: Barbara Frewen
  * DATE: April 15, 2008
- * DESCRIPTION: An iterator that can be used by
+ * \brief An iterator that can be used by
  * generate_peptides_iterator to include modified peptides.
- * $Revision: 1.6 $
  */
 #include "modified_peptides_iterator.h"
 
@@ -324,8 +323,6 @@ MODIFIED_PEPTIDES_ITERATOR_T* new_modified_peptides_iterator_from_mz(
   } else {
     carp(CARP_FATAL,"Invalid window type");
   }
-
-  carp(CARP_DEBUG,"min mass:%f max mass:%f",min_mass, max_mass); 
   
   // create peptide_generator
     new_iterator->peptide_generator = 

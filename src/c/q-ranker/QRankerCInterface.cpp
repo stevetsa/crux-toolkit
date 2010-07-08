@@ -39,43 +39,22 @@ static Caller * getCaller() {
     return pCaller;
 } 
 
-Caller* getCallerQR() {
-  return getCaller();
-}
 
 /** Call that initiates percolator */
-void qcInitiate(NSet sets, unsigned int numFeat, unsigned int numSpectra, char ** featureNames, double pi0) {
-    pCaller=new Caller();
-    nset=sets;
-    numFeatures = numFeat;
-    pCaller->filelessSetup((int)sets,numFeatures, numSpectra, featureNames, pi0);
-    normal = new SetHandler::Iterator(pCaller->getSetHandler(Caller::NORMAL));
-    decoy1 = new SetHandler::Iterator(pCaller->getSetHandler(Caller::SHUFFLED));
-    if ((int)sets > 2)
-      decoy2 = new SetHandler::Iterator(pCaller->getSetHandler(Caller::SHUFFLED1));
-    if ((int)sets > 3)
+void qcInitiate(int sets, unsigned int numFeat, int* numSpectra, char ** featureNames, double pi0) {
+  pCaller=new Caller();
+  nset=(NSet)sets;
+  numFeatures = numFeat;
+  pCaller->filelessSetup((int)sets,numFeatures, numSpectra, featureNames, pi0);
+  normal = new SetHandler::Iterator(pCaller->getSetHandler(Caller::NORMAL));
+  decoy1 = new SetHandler::Iterator(pCaller->getSetHandler(Caller::SHUFFLED));
+  if ((int)sets > 2)
+    decoy2 = new SetHandler::Iterator(pCaller->getSetHandler(Caller::SHUFFLED1));
+  if ((int)sets > 3)
       decoy3 = new SetHandler::Iterator(pCaller->getSetHandler(Caller::SHUFFLED2));
-    if (nset>4)
-      cerr << "This version of percolator only suports 3 decoy sets. Pecolator was called with nset=" << nset << endl;
+  if (nset>4)
+    cerr << "This version of percolator only suports 3 decoy sets. Pecolator was called with nset=" << nset << endl;
 }
-
-/** Call that initiates percolator */
-void qcInitiate2(NSet sets, unsigned int numFeat, vector<unsigned int>& numSpectra, char ** featureNames, double pi0) {
-    pCaller=new Caller();
-    nset=sets;
-    numFeatures = numFeat;
-    pCaller->filelessSetup((int)sets,numFeatures, numSpectra, featureNames, pi0);
-    normal = new SetHandler::Iterator(pCaller->getSetHandler(Caller::NORMAL));
-    decoy1 = new SetHandler::Iterator(pCaller->getSetHandler(Caller::SHUFFLED));
-    if ((int)sets > 2)
-      decoy2 = new SetHandler::Iterator(pCaller->getSetHandler(Caller::SHUFFLED1));
-    if ((int)sets > 3)
-      decoy3 = new SetHandler::Iterator(pCaller->getSetHandler(Caller::SHUFFLED2));
-    if (nset>4)
-      cerr << "This version of percolator only suports 3 decoy sets. Pecolator was called with nset=" << nset << endl;
-}
-
-
 
 /** Call that sets verbosity level
  *  0 is quiet, 2 is default, 6 is more than you want */
@@ -98,27 +77,22 @@ void qcRegisterPSM(SetType set, char * identifier, double * features) {
   double * vec = NULL;
   switch(set) {
     case TARGET:
-      //cout <<"Registering target:"<<identifier<<endl;
-      //vec = normal->getNext()->features;
       pPSM = normal->getNext();
       pPSM->peptide = identifier;
       break;
     case DECOY1:
-      //vec = decoy1->getNext()->features;
       pPSM = decoy1->getNext();
       break;
     case DECOY2:
-      //vec = decoy2->getNext()->features;
       pPSM = decoy2->getNext();
       break;
     case DECOY3:
-      //vec = decoy3->getNext()->features;
       pPSM = decoy3->getNext();
       break;
   }
   if (pPSM==NULL) {
-     cerr << "Pointer out of bound" << endl;
-     exit(-1);
+    cerr << "Pointer out of bound" << endl;
+    exit(-1);
   }
 
   vec = pPSM->features;
@@ -129,11 +103,14 @@ void qcRegisterPSM(SetType set, char * identifier, double * features) {
 }
 
 /** Function called when we want to start processing */
-void qcExecute() {
+void qcExecute(
+  bool do_xval ////< Select hyperparameters via cross-validation? -in
+) {
+
   
   pCaller->fillFeatureSets();
   pCaller->preIterationSetup();
-  pCaller->train();  
+  pCaller->train(do_xval);
 } 
 
 /** Function called when retrieving target scores and q-values after processing,
@@ -143,7 +120,6 @@ void qcGetScores(double *scoreArr,double *qArr) {
   int ix=0;
   SetHandler::Iterator iter(pCaller->getSetHandler(Caller::NORMAL));
   while(PSMDescription * pPSM = iter.getNext()) {
-    cerr << pPSM -> peptide << "\t" << pPSM -> sc << "\t" << pPSM -> q<<endl;
     scoreArr[ix] = pPSM->sc;
     qArr[ix++] =  pPSM->q;
   }
@@ -162,4 +138,3 @@ void qcCleanUp() {
     
     Globals::clean();
 }
-

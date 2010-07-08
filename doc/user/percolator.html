@@ -11,10 +11,8 @@
 <b>Usage:</b></p>
 
 <blockquote>
-<code>crux percolator [options]  &lt;protein&nbsp;input&gt; 
-   [--output-dir &lt;psm folder&gt;]
-
-</code>
+<code>crux percolator [options] &lt;protein&nbsp;input&gt; 
+   &lt;search results directory&gt;</code>
 </blockquote>
 
 <p>
@@ -63,12 +61,16 @@ the directory containing the protein index from which to retrieve
 proteins and peptides.</li>
 
 <li>
-&lt;psm folder&gt; &ndash; [optional] A folder in which all the PSM
-result files are located.  This is assumed to be <code>crux-output</code>,
-but it can be set by the user using the <code>--output-dir</code> option.
-The program looks for files ending in <code>.csm</code>, which are produced by
-<code>crux&nbsp;search-for-matches</code>.  All such files in the
-given directory are analyzed jointly.</li>
+&lt;search results directory&gt; &ndash; A folder in which all the PSM
+result files are located.  The program looks for files with names like
+'<code>&lt;fileroot&gt;.&lt;search&gt;.target.txt</code>' or
+'<code>&lt;fileroot&gt;.&lt;search&gt;.decoy.txt</code>', where
+'<code>&lt;search&gt;</code>' is either '<code>search</code>'
+(produced by <code>crux search-for-matches</code>) or
+'<code>sequest</code>' (produced by <code>crux sequest-search</code>).
+The search results should be from only one of the two search
+algorithms.  All such files in the given directory are analyzed
+jointly.</li>
 
 </ul>
 
@@ -89,11 +91,9 @@ option for other crux programs.
 </li>
 
 <li>
-<b>percolator.target.sqt</b>: an <a href="sqt-format.html">SQT</a> file containing the PSMs
-
-<li>
 <b>percolator.target.txt</b>: a tab-delimited text file containing the PSMs.
-See <a href="txt-format.html">txt file format</a> for a list of the fields.
+See <a href="txt-format.html">txt file format</a> for a list of the
+fields.</li>
 <li>
 <b>percolator.log.txt</b>: a log file containing a copy of all messages that were
 printed to stderr.
@@ -103,6 +103,11 @@ printed to stderr.
 <b>Options:</b>
 
 <ul>
+
+<li>
+<code>-pi-zero &lt;value&gt;</code> &ndash;
+The estimated proportion of target scores that are drawn according to
+the null distribution.  Default=1.0.</li>
 
 <li>
 <code>--fileroot &lt;string&gt;</code> &ndash; 

@@ -28,10 +28,10 @@
 #include "parameter.h"
 
 /* Public constants */
-enum {MAX_AA_MODS = 11};
-enum {MAX_PROTEIN_SEQ_LENGTH = 40000};
-enum {AA_LIST_LENGTH = 26}; // A-Z
-#define MOD_MASS_PRECISION 2  // printed as X[1.23]X
+static const int MAX_AA_MODS = 11;
+static const int MAX_PROTEIN_SEQ_LENGTH = 40000;
+static const int AA_LIST_LENGTH = 26; // A-Z
+static const int MOD_MASS_PRECISION = 2;  // printed as X[1.23]X
 #define GET_AA_MASK  0x001F   // 0000 0000 0001 1111
 #define GET_MOD_MASK 0xFFE0   // 1111 1111 1110 0000
 
@@ -57,10 +57,6 @@ enum {AA_LIST_LENGTH = 26}; // A-Z
  (i.e. !(mod2 || aa) )  now aa == 0100_0000_0001_0011
    If we ask again, answer == 0100_0000_0000_0000 
  */
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /**
  * \brief Allocate an AA_MOD, including space for the aa_list and
@@ -238,46 +234,6 @@ const AA_MOD_T* get_aa_mod_from_symbol(const char symbol);
 const AA_MOD_T* get_aa_mod_from_mass(FLOAT_T mass);
 
 /**
- * \brief Read the paramter file and populate the static parameter
- * list of AA_MODS, inlcuding the list of position mods.
- *
- * Also updates the array of amino_masses.  Dies with an error if the
- * number of mods in the parameter file is greater than MAX_AA_MODS.
- * \returns void
- */
-void read_mods_from_file(char* param_file);
-
-/**
- * \brief Write the given aa mod to file in binary format.  Used for
- * serializing csm file headers.
- *
- * \return TRUE if written to file without error, else false.
- */
-BOOLEAN_T serialize_aa_mod(AA_MOD_T* a_mod,
-                           FILE* file
-);
-
-/**
- * \brief Read an aa mod from file in binary format as written by
- * serialize_aa_mod().  Overwrites any data in the passed aa_mod.
- * Used for reading in csm files. If FALSE is returned, the passed
- * a_mod will contain unpredictable values.
- *
- * \returns TRUE if aa_mod successfully read, else FALSE.  
- */
-BOOLEAN_T parse_aa_mod(AA_MOD_T* a_mod,
-                       FILE* file
-);
-
-
-/**
- * \brief Get the pointer to the list of AA_MODs requested by the
- * user.
- * \returns The number of mods pointed to by mods
- */
-//int get_aa_mod_list(AA_MOD_T*** mods);
-
-/**
  * \brief Check that the list of peptide_modifications from the file of
  * serialized PSMs matches those in the paramter file.
  *
@@ -297,16 +253,6 @@ BOOLEAN_T compare_mods(AA_MOD_T** psm_file_mod_list, int num_mods);
  * change, unique identifier, position
  */
 BOOLEAN_T compare_two_mods(AA_MOD_T* mod1, AA_MOD_T* mod2);
-
-// in mass.c;
-/**
- * \brief Extends the amino_masses table to include all possible
- * modifications.  
- *
- * Gets list of mods from parameter.c.  Should this fill in values for
- * both average and monoisotopic masses? 
- */
-void extend_amino_masses(void);
 
 /**
  * print all fields in mod.  For debugging
@@ -408,10 +354,6 @@ char* aa_mod_get_aa_list_string(AA_MOD_T* mod);
  * Count the number of modified aas in the string.
  */
 int count_modified_aas(MODIFIED_AA_T* seq);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif //MODIFICATION_FILE_H
 

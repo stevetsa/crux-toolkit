@@ -2,7 +2,6 @@
  * \file ion_series.h 
  * AUTHOR: Chris Park
  * CREATE DATE: 28 June 2006
- * $Revision: 1.23 $
  * \brief Object for a series of ions.
  *****************************************************************************/
 #ifndef ION_SERIES_H
@@ -14,9 +13,6 @@
 #include "ion.h"
 #include "ion_series.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /**
  * \returns An (empty) ion_series object.
@@ -149,13 +145,6 @@ BOOLEAN_T generate_ions_flank(
 void predict_ions(
   ION_SERIES_T* ion_series ///< the ion series to predict ions for
 );
-
-/**
- * Assign peaks to the nearest ions, within a tolerance (set in param file)
- */
-void ion_series_assign_nearest_peaks(
-    ION_SERIES_T* ion_series, 
-    SPECTRUM_T* spectrum);
 
 /**
  * Copies ion_series object from src to dest.
@@ -492,9 +481,6 @@ ION_T* ion_filtered_iterator_next(
   ION_FILTERED_ITERATOR_T* ion_iterator///< return the next ion -in
 );
 
-#ifdef __cplusplus
-}
-#endif
 
 /*
  * Local Variables:
