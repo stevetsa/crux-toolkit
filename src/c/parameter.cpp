@@ -661,6 +661,9 @@ void initialize_parameters(void){
       "Turn off cross-validation to select hyperparameters.",
       "Available for q-ranker.", "true");
 
+  set_boolean_parameter("do-max-psm", FALSE, 
+       "Only calculate q-values for the maximum scoring psm/scan.",
+       "Available for q-ranker.", "true");
   /* analyze-matches parameter options */
   set_double_parameter("pi-zero", 0.9, 0, 1, 
       "The estimated percent of target scores that are drawn from the "

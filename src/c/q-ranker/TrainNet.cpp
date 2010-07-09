@@ -54,6 +54,24 @@ int Caller :: getOverFDR(Scores &set, NeuralNet &n, double fdr)
     }
   return set.calcOverFDR(fdr);
 }
+
+void Caller :: calcQValues(Scores &set, NeuralNet &n)
+{
+  double r = 0.0;
+  const double* featVec;
+  int label = 0;
+  loss = 0;
+  for(unsigned int i = 0; i < set.size(); i++)
+    {
+      featVec = set[i].pPSM->features;
+      label = set[i].label;
+      r = n.classify(featVec);
+      set[i].score = r;
+      set[i].pPSM->sc=r;
+      loss += n.get_err(label);
+    }
+  set.calcQValues();
+}
  
 
 void Caller :: getMultiFDR(Scores &set, NeuralNet &n, vector<double> &qvalues)
@@ -475,8 +493,8 @@ void Caller :: train_many_target_nets_ave()
 
 
 void Caller::train_many_nets(
-  bool do_xval ////< Select hyperparameters via cross-validation. -in
-  ) 
+  bool do_xval, ////< Select hyperparameters via cross-validation. -in
+  bool do_max_psm) 
 {
   
   switch_iter =100;
@@ -596,6 +614,12 @@ void Caller::train_many_nets(
   
   cerr << " Found " << getOverFDR(fullset, net, selectionfdr) << " over q<" << selectionfdr << "\n";
   
+  if (do_max_psm) {
+    cerr << "Calculating q-values using max_psm" << endl;
+    calcQValues(fullset, net);
+  }
+
+
   delete [] max_net_gen;
   delete [] max_net_targ;
 

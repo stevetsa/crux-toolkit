@@ -68,7 +68,7 @@ void qcSetVerbosity(int verbosity) {
 
 
 /** Register a PSM */
-void qcRegisterPSM(SetType set, char * identifier, double * features) {
+void qcRegisterPSM(SetType set, unsigned int scan, char * identifier, double * features) {
   if ((int)set>(int)nset) {
      cerr << "Tried to access undefined set" << endl;
      exit(-1);
@@ -94,6 +94,8 @@ void qcRegisterPSM(SetType set, char * identifier, double * features) {
     cerr << "Pointer out of bound" << endl;
     exit(-1);
   }
+  
+  pPSM -> scan = scan;
 
   vec = pPSM->features;
   for (unsigned int ix=0;ix<numFeatures;ix++) {
@@ -104,13 +106,14 @@ void qcRegisterPSM(SetType set, char * identifier, double * features) {
 
 /** Function called when we want to start processing */
 void qcExecute(
-  bool do_xval ////< Select hyperparameters via cross-validation? -in
+  bool do_xval, ////< Select hyperparameters via cross-validation? -in
+  bool do_max_psm ///< Calculate q-values based upon the max scoring psm/scan
 ) {
 
   
   pCaller->fillFeatureSets();
   pCaller->preIterationSetup();
-  pCaller->train(do_xval);
+  pCaller->train(do_xval, do_max_psm);
 } 
 
 /** Function called when retrieving target scores and q-values after processing,
@@ -120,6 +123,7 @@ void qcGetScores(double *scoreArr,double *qArr) {
   int ix=0;
   SetHandler::Iterator iter(pCaller->getSetHandler(Caller::NORMAL));
   while(PSMDescription * pPSM = iter.getNext()) {
+    cerr << pPSM -> peptide << "\t" << pPSM -> sc << "\t" << pPSM -> q<<endl;
     scoreArr[ix] = pPSM->sc;
     qArr[ix++] =  pPSM->q;
   }

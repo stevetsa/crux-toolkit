@@ -11,6 +11,7 @@
 #include <fstream>
 #include <utility>
 #include <algorithm>
+#include <map>
 #include <set>
 #include <vector>
 #include <string>
@@ -350,6 +351,104 @@ void Scores::calcPep() {
 }
 
 
+void Scores::calcQValues() {
+
+  cerr << "Scores::calcQValues(): Start"<<endl;
+  vector<ScoreHolder>::iterator it;
+
+  sort(scores.begin(),scores.end());
+  reverse(scores.begin(), scores.end());
+
+  std::map<int,ScoreHolder> best_target_per_scan_map;
+  std::map<int,ScoreHolder> best_decoy_per_scan_map;
+  std::map<int,ScoreHolder>::iterator find_iter;
+
+  cerr << "Building Maps"<<endl;
+  for (it=scores.begin();it!=scores.end();it++) {
+    unsigned int current_scan = it->pPSM->scan;
+    cerr << "scan:"<<current_scan<<endl;
+    if (it->label!=-1) {
+      find_iter = best_target_per_scan_map.find(current_scan);
+      if (find_iter == best_target_per_scan_map.end() ||
+          it->score > find_iter ->second.score ) {
+        best_target_per_scan_map[current_scan] = *it;
+      }
+    } 
+    if (it->label==-1) {
+      find_iter = best_decoy_per_scan_map.find(current_scan);
+      if (find_iter == best_decoy_per_scan_map.end() ||
+          it->score > find_iter ->second.score ) {
+        best_decoy_per_scan_map[current_scan] = *it;
+      }
+    }
+  }
+  cerr << "max target:" << best_target_per_scan_map.size() << endl;
+  cerr << "max decoy:"  << best_decoy_per_scan_map.size()  << endl;
+  vector<ScoreHolder> max_scores;
+
+  for (find_iter = best_target_per_scan_map.begin();
+    find_iter != best_target_per_scan_map.end();
+    ++find_iter) {
+
+    max_scores.push_back(find_iter -> second);
+  }
+  
+  for (find_iter = best_decoy_per_scan_map.begin();
+    find_iter != best_decoy_per_scan_map.end();
+    ++find_iter) {
+
+    max_scores.push_back(find_iter -> second);
+  }
+
+
+  cerr << "Initialization to pi0" << endl;
+  //initialize everything to pi0
+  for (it=scores.begin();it!=scores.end();it++) {
+    it -> pPSM->q=pi0;
+  }
+
+  cerr << "Calculating FDR"<<endl;
+  //calculate fdr for the max_scores.
+  sort(max_scores.begin(), max_scores.end());
+  reverse(max_scores.begin(),max_scores.end());
+  
+  int positives=0,nulls=0;
+  double efp=0.0,q;
+  register unsigned int ix=0;
+  for(it=max_scores.begin();it!=max_scores.end();it++) {
+    if (it->label!=-1)
+      positives++;
+    if (it->label==-1) {
+      nulls++;
+      efp=pi0*nulls*factor;
+    }
+    if (positives)
+      q=efp/(double)positives;
+    else
+      q=pi0;
+    if (q>pi0)
+      q=pi0;
+    it->pPSM->q=q;
+
+    cerr<<it->pPSM->scan<<" "<<it->pPSM->q<<endl;
+  }
+
+  //the q-value is actually fdr
+  //calculate the actual q-values.       
+  cerr <<"Calculating q-values"<<endl;
+  
+  double min_fdr = pi0;
+  for (int idx=max_scores.size()-1;idx>=0;idx--) {
+    double current_fdr = max_scores[idx].pPSM->q;
+    if (current_fdr < min_fdr) {
+      min_fdr = current_fdr;
+    } else {
+      max_scores[idx].pPSM->q=min_fdr;
+    }
+  }
+  
+  cerr << "Scores::calcQValues(): done." << endl;
+}
 
 /**
  * Calculate the number of targets that score above a specified FDR.

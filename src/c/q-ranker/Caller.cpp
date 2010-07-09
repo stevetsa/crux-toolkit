@@ -418,9 +418,11 @@ void Caller::readFiles(bool &doSingleFile) {
 
 
 void Caller::train(
-  bool do_xval ////< Select hyperparameters via cross-validation? -in
-  ) {
-  train_many_nets(do_xval);
+  bool do_xval, ////< Select hyperparameters via cross-validation? -in
+  bool do_max_psm) {
+
+  cerr << "do_xval:"<<do_xval<<" do_max_psm:"<<do_max_psm<<endl;
+  train_many_nets(do_xval, do_max_psm);
 }
 
 
@@ -467,7 +469,8 @@ int Caller::preIterationSetup() {
 }    
 
 int Caller::run(
-  bool do_xval ////< Select hyperparameters via cross-validation? -in
+  bool do_xval, ////< Select hyperparameters via cross-validation? -in
+  bool do_max_psm ////< Get q-values for max scoreing psm/scan
   ) {
   srand(seed);
   if(VERB>0)  cerr << extendedGreeter();
@@ -476,7 +479,7 @@ int Caller::run(
   readFiles(doSingleFile);
   fillFeatureSets();
   preIterationSetup();
-  train(do_xval);
+  train(do_xval, do_max_psm);
   
   cerr << " Found " << getOverFDR(fullset, net, selectionfdr) << " over q<" << selectionfdr << "\n";
   normal.print(fullset);

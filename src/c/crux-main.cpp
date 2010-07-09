@@ -193,6 +193,7 @@ static MATCH_COLLECTION_T* run_percolator_or_qranker(
 	break;
       case QRANKER_COMMAND:
 	qcRegisterPSM((SetType)set_idx,
+                      get_spectrum_first_scan(get_match_spectrum(match)),
 		      get_match_sequence_sqt(match),
 		      features);
 	break;
@@ -228,12 +229,14 @@ static MATCH_COLLECTION_T* run_percolator_or_qranker(
     pcCleanUp();
     break;
   case QRANKER_COMMAND:
-    qcExecute(!get_boolean_parameter("no-xval")); 
+    qcExecute(!get_boolean_parameter("no-xval"),
+      get_boolean_parameter("do-max-psm")); 
     qcGetScores(results_score, results_q); 
     fill_result_to_match_collection(
         target_match_collection, results_q, QRANKER_Q_VALUE, TRUE);
     fill_result_to_match_collection(
         target_match_collection, results_score, QRANKER_SCORE, FALSE);
+    sort_match_collection(target_match_collection, QRANKER_Q_VALUE);
     qcCleanUp();
     break;
   default:

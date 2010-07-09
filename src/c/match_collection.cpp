@@ -657,6 +657,11 @@ BOOLEAN_T sort_match_collection(
     return TRUE;
 
   case QRANKER_Q_VALUE:
+    carp(CARP_DEBUG, "Sorting match collection by Q-ranker q-value.");
+    qsort_match(match_collection->match, match_collection->match_total,
+        (QSORT_COMPARE_METHOD)compare_match_qranker_q_value);
+    match_collection->last_sorted = QRANKER_Q_VALUE;
+    return TRUE;
   case QRANKER_SCORE:
     carp(CARP_DEBUG, "Sorting match collection by Q-ranker score.");
     qsort_match(match_collection->match, match_collection->match_total, 

@@ -122,6 +122,22 @@ for searchtool in sequest-search search-for-matches; do
   else
     echo replot \"$shortname/qranker.target.txt\" using 11:0 title \"$shortname q-ranker\" with lines >> $gnuplot
   fi
+
+  if [[ -e $shortname.do_max_psm/qranker.target.txt ]]; then
+    echo Skipping q-ranker with do-max-psm
+  else
+    $CRUX q-ranker \
+      --parameter-file do_max_psm.param \
+      --output-dir $shortname.do_max_psm \
+      $db $shortname
+  fi
+  if [[ $searchtool == "sequest-search" ]]; then
+    echo replot \"$shortname.do_max_psm/qranker.target.txt\" using 12:0 title \"$shortname.do_max_psm q-ranker\" with lines >> $gnuplot
+  else
+    echo replot \"$shortname.do_max_psm/qranker.target.txt\" using 11:0 title \"$shortname.do_max_psm q-ranker\" with lines >> $gnuplot
+  fi
+
+    
   
 done
 

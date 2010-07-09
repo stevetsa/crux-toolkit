@@ -66,6 +66,7 @@ public:
     double factor;
 
     int calcOverFDR(double fdr);
+    void calcQValues();
     void calcMultiOverFDR(vector<double> &fdr, vector<int> &overFDR);
     inline ScoreHolder& operator[](int ix){return scores[ix];}
     void static fillFeaturesSplit(Scores& train,Scores& test,SetHandler& norm,SetHandler& shuff, const double ratio);
