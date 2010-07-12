@@ -148,6 +148,34 @@ char* window_type_to_string(WINDOW_TYPE_T type){
 }
 
 
+/** 
+ * The string version of retention time predictor types
+ */
+static const char* rtp_type_strings[NUMBER_RTP_TYPES] =
+  {"invalid", "krokhin", "palmbald"};
+
+RTP_TYPE_T string_to_rtp_type(char* name) {
+  int rtp_int = convert_enum_type_str(name, -10,
+                                    rtp_type_strings,
+                                    NUMBER_RTP_TYPES);
+  if (rtp_int < 0) {
+    rtp_int = 0;
+  }
+  return (RTP_TYPE_T)rtp_int;
+}
+
+char* rtp_type_to_string(RTP_TYPE_T type) {
+  if ( (int)type > NUMBER_RTP_TYPES) {
+    return NULL;
+  }
+
+  char* type_str = my_copy_string(rtp_type_strings[type]);
+
+  return type_str;
+
+}
+
+
 
 
 /**
@@ -278,7 +306,7 @@ BOOLEAN_T algorithm_type_to_string(ALGORITHM_TYPE_T type, char* type_str){
 
 static const char* command_type_file_strings[NUMBER_COMMAND_TYPES] =
   { "invalid", "index", "search", "sequest", "qvalues", "percolator", 
-    "qranker", "processed-spectra", "search-for-xlinks", "version"
+    "qranker", "processed-spectra", "search-for-xlinks", "mpsm-search", "q-ranker-mpsm", "version"
   };
 /**
  * Conversion of COMMAND_T to the base filename used for that
@@ -309,7 +337,7 @@ const char* command_type_to_file_string_ptr(COMMAND_T type){
 static const char* command_type_command_line_strings[NUMBER_COMMAND_TYPES] =
   { "invalid", "create-index", "search-for-matches", "sequest-search",
     "compute-q-values", "percolator", "q-ranker", "print-processed-spectra",
-    "search-for-xlinks", "version"
+    "search-for-xlinks", "search-for-mpsms", "mpsm-q-ranker", "version"
   };
 /**
  * Conversion of COMMAND_T to the string used on the command line.

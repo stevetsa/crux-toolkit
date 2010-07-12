@@ -15,6 +15,8 @@ class DelimitedFile;
 class DelimitedFileReader;
 class MatchFileReader;
 
+class MPSM_MatchCollection;
+
 /**
  * \typedef PEAK_T 
  * A peak in a spectrum
@@ -158,7 +160,17 @@ enum _mass_type {AVERAGE, MONO, NUMBER_MASS_TYPES };
  */
 typedef enum _mass_type MASS_TYPE_T;
 
+/**
+ * The enum for retention time predictor
+ */
+enum _rtime_predictor_type {
+  RTP_INVALID,
+  RTP_KROKHIN,
+  RTP_PALMBALD,
+  NUMBER_RTP_TYPES
+};  
 
+typedef enum _rtime_predictor_type RTP_TYPE_T;
 /**
  * The enum for window type for selecting peptides or assigning ions.
  */
@@ -493,6 +505,8 @@ enum _command {
   QRANKER_COMMAND,      ///< q-ranker
   PROCESS_SPEC_COMMAND, ///< print-processed-spectra
   XLINK_SEARCH_COMMAND, ///< search-for-xlinks	
+  SEARCH_MPSMS_COMMAND,  ///< search-for-mpsms  
+  MPSM_QRANKER_COMMAND,  ///< mpsm-q-ranker
   VERSION_COMMAND,      ///< just print the version number
 
   NUMBER_COMMAND_TYPES  ///< always keep this last so the value

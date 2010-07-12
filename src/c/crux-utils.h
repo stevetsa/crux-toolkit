@@ -337,7 +337,8 @@ ENZYME_T string_to_enzyme_type(char*);
 char* enzyme_type_to_string(ENZYME_T);
 WINDOW_TYPE_T string_to_window_type(char*);
 char* window_type_to_string(WINDOW_TYPE_T);
-
+RTP_TYPE_T string_to_rtp_type(char*);
+char* rtp_type_to_string(RTP_TYPE_T);
 
 /**
  * \brief Open either the index or fasta file and prepare it for

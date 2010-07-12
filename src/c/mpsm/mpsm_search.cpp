@@ -497,13 +497,14 @@ int mpsm_search_pep_mods(
     
     
     // score peptides
-
-
+  //FIX
+  /*
   int added = add_unscored_peptides(match_collection, spectrum, charge,
                                     peptide_iterator, is_decoy);
-
+  
   score_matches_one_spectrum(XCORR, match_collection, spectrum, charge, 
                              store_scores); 
+  */
   populate_match_rank_match_collection(match_collection, XCORR);
     
 

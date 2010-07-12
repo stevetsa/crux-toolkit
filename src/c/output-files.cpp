@@ -364,10 +364,16 @@ void OutputFiles::writeMatchFeatures(
 
 }
 
+FILE* OutputFiles::getFilePtr(int idx) {
 
+  return (tab_file_array_[idx]);
 
+}
 
+int OutputFiles::getMatchesPerSpec() {
 
+  return matches_per_spec_;
+}
 
 
 

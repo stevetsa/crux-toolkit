@@ -34,6 +34,9 @@ const char* usage_str = "Usage: crux <command> [options] <argument>\n"
 "                      database, returning a collection of matches\n"
 "                      corresponding to linear and cross-linked peptides\n"
 "                      scored by XCorr.\n"
+"  search-for-mpsms    Search a collection of spectra against a sequence\n"
+"                      database, returning a collection of multiple peptide\n"
+"                      perspectrum matches (mPSMs) scored by XCorr.\n"
 "  version             Print the Crux version number to standard output,\n"
 "                      then exit.\n"
 "\n"
@@ -393,6 +396,9 @@ int main(int argc, char** argv){
     search_main(argc-1, argv+1);
     break;
 
+  case SEARCH_MPSMS_COMMAND:
+    mpsm_search_main(argc-1, argv+1);
+
   case SEQUEST_COMMAND:
     sequest_search_main(argc-1, argv+1);
     break;
@@ -403,6 +409,10 @@ int main(int argc, char** argv){
   
   case XLINK_SEARCH_COMMAND:
     xlink_search_main(argc-1, argv+1);
+    break;
+
+  case MPSM_QRANKER_COMMAND:
+    mpsm_qranker_main(argc-1, argv+1);
     break;
 
   case QVALUE_COMMAND:

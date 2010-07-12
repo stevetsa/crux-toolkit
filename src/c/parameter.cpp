@@ -24,7 +24,7 @@ static const char* parameter_type_strings[NUMBER_PARAMETER_TYPES] = {
   "INT_ARG", "DOUBLE_ARG", "STRING_ARG", "MASS_TYPE_T", "DIGEST_T", 
   "ENZYME_T", //"PEPTIDE_TYPE_T", 
   "BOOLEAN_T", "SORT_TYPE_T", "SCORER_TYPE_T", "ION_TYPE_T",
-  "ALGORITHM_TYPE_T", "WINDOW_TYPE_T"};
+  "ALGORITHM_TYPE_T", "WINDOW_TYPE_T", "RTP_TYPE_T"};
 
 //one hash for parameter values, one for usage statements, one for types
 // all hashes keyed on parameter/option name
@@ -168,6 +168,15 @@ BOOLEAN_T set_window_type_parameter(
  const char* filenotes,   ///< additional info for param file
  const char* foruser
   );
+
+BOOLEAN_T set_rtp_type_parameter(
+ const char*     name,  ///< the name of the parameter looking for -in
+ RTP_TYPE_T set_value,  ///< the value to be set -in
+ const char* usage,      ///< string to print in usage statement
+ const char* filenotes,   ///< additional info for param file
+ const char* foruser
+  );
+
 
 BOOLEAN_T set_sort_type_parameter(
  const char* name,
@@ -1540,6 +1549,17 @@ BOOLEAN_T check_option_type_and_bounds(const char* name){
               "Must be (mass, mz, ppm)", value_str, name);
     }
     break;
+
+  case RTP_TYPE_P:
+    carp(CARP_DETAILED_DEBUG, "found rtp type param, value '%s'",
+         value_str);
+    if(string_to_rtp_type(value_str) == RTP_INVALID) {
+      success = FALSE;
+      sprintf(die_str, "Illegal rtime predictor type '%s' for option '%s'.  "
+              "Must be (krokhin,palmbald)", value_str, name);
+    }
+    break;
+
   default:
     carp(CARP_FATAL, "Your param type '%s' wasn't found (code %i)", 
         type_str, (int)param_type);
@@ -1986,6 +2006,17 @@ WINDOW_TYPE_T get_window_type_parameter(
   return param_value;
 }
 
+RTP_TYPE_T get_rtp_type_parameter(
+  const char* name
+  ) {
+  char* param_value_str = (char*)get_hash_value(parameters, name);
+  RTP_TYPE_T param_value =  
+    string_to_rtp_type(param_value_str);
+
+  return param_value;
+}
+
+
 SORT_TYPE_T get_sort_type_parameter(const char* name){
   char* param_value_str = (char*)get_hash_value(parameters, name);
   SORT_TYPE_T param_value;
@@ -2291,6 +2322,36 @@ BOOLEAN_T set_window_type_parameter(
   return result;
 
 }
+
+BOOLEAN_T set_rtp_type_parameter(
+ const char*     name,  ///< the name of the parameter looking for -in
+ RTP_TYPE_T set_value,  ///< the value to be set -in
+ const char* usage,      ///< string to print in usage statement
+ const char* filenotes,   ///< additional info for param file
+ const char* foruser
+  ) {
+  BOOLEAN_T result = TRUE;
+  
+  // check if parameters can be changed
+  if(!parameter_plasticity){
+    carp(CARP_ERROR, "can't change parameters once they are confirmed");
+    return FALSE;
+  }
+  
+  /* stringify the value */
+  char* value_str = rtp_type_to_string(set_value);
+
+  result = add_or_update_hash(parameters, name, value_str);
+  result = add_or_update_hash(usages, name, usage);
+  result = add_or_update_hash(file_notes, name, filenotes);
+  result = add_or_update_hash(for_users, name, foruser);
+  result = add_or_update_hash(types, name, "RTP_TYPE_T");
+  free(value_str);
+  return result;
+
+}
+
+
 
 BOOLEAN_T set_sort_type_parameter(
   const char* name,

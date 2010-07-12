@@ -78,7 +78,7 @@ enum parameter_type {
   ION_TYPE_P,        ///< parameters of type ION_TYPE_T
   ALGORITHM_TYPE_P,  ///< parameters of type ALGORITHM_TYPE_T
   WINDOW_TYPE_P,     ///< parameters of type WINDOW_TYPE_T
-
+  RTP_TYPE_P,     ///< parameters of type RTP_TYPE_T
   NUMBER_PARAMETER_TYPES  ///< leave this last, number of types
 };
 typedef enum parameter_type PARAMETER_TYPE_T;
@@ -215,6 +215,10 @@ ENZYME_T get_enzyme_type_parameter(
   );
 
 WINDOW_TYPE_T get_window_type_parameter(
+  const char* name
+  );
+
+RTP_TYPE_T get_rtp_type_parameter(
   const char* name
   );
 

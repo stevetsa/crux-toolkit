@@ -40,6 +40,8 @@ class OutputFiles{
   void writeMatchFeatures(MATCH_T* match, 
                           double* features,
                           int num_features);
+  FILE* getFilePtr(int idx);
+  int getMatchesPerSpec();
 
  private:
   BOOLEAN_T createFiles(FILE*** file_array_ptr,
