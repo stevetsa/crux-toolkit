@@ -98,6 +98,39 @@ int add_matches(
   BOOLEAN_T do_prelim_score///< TRUE means do Sp before xcorr
 );
 
+// TODO (BF 16-mar-09): use this instead of score_peptides
+/**
+ * \brief Add all peptides from iterator to match collection.
+ * Additional matches will not be scored for any type.
+ * \returns The number of peptides added.
+ */
+int add_unscored_peptides(
+  MATCH_COLLECTION_T* match_collection, 
+  SPECTRUM_T* spectrum, 
+  int charge, 
+  MODIFIED_PEPTIDES_ITERATOR_T* peptide_iterator,
+  BOOLEAN_T is_decoy
+);
+
+/**
+ * \brief Use the score type to compare the spectrum and peptide in
+ * the matches in match collection.  
+ *
+ * If the match has already been scored for this type, it is not
+ * scored at again.  Requires that the given spectrum  and charge
+ * state are the same as the spectrum and charge state in each of the
+ * matches.  
+ *
+ * \returns TRUE, if matches are successfully scored.
+ */
+BOOLEAN_T score_matches_one_spectrum(
+  SCORER_TYPE_T score_type, 
+  MATCH_COLLECTION_T* match_collection,
+  SPECTRUM_T* spectrum,
+  int charge,
+  BOOLEAN_T store_scores
+  );
+
 /**
  * sort the match collection by score_type(SP, XCORR, ... )
  *\returns TRUE, if successfully sorts the match_collection

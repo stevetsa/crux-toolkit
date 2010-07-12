@@ -117,7 +117,7 @@ int mpsm_search_main(int argc, char** argv){
   
 
   /* Define required command line arguments */
-  const char* argument_list[] = {"ms2 file", "protein input"};
+  const char* argument_list[] = {"ms2 file", "protein database"};
   int num_arguments = sizeof(argument_list) / sizeof(char*);
 
   initialize_run(SEARCH_MPSMS_COMMAND, argument_list, num_arguments,
@@ -141,7 +141,7 @@ int mpsm_search_main(int argc, char** argv){
        get_spectrum_collection_num_spectra(spectra));
 
   /* Get input: protein file */
-  char* input_file = get_string_parameter("protein input");
+  char* input_file = get_string_parameter("protein database");
 
   /* Prepare input, fasta or index */
   INDEX_T* index = NULL;
@@ -347,7 +347,7 @@ int mpsm_search_main(int argc, char** argv){
     mpsm_map.calcDeltaCN();
     mpsm_map.calcZScores();
   }
-  output_files.writeMatches(spsm_map);
+  //output_files.writeMatches(spsm_map);
   output_files.writeMatches(mpsm_map);
 
   //clear map and clean up match collections.
@@ -498,17 +498,15 @@ int mpsm_search_pep_mods(
     
     // score peptides
   //FIX
-  /*
-  int added = add_unscored_peptides(match_collection, spectrum, charge,
-                                    peptide_iterator, is_decoy);
-  
+
+ int num_matches_added = add_unscored_peptides(match_collection, spectrum, charge,
+                                                peptide_iterator, is_decoy);
+
+  // main scoring
   score_matches_one_spectrum(XCORR, match_collection, spectrum, charge, 
                              store_scores); 
-  */
   populate_match_rank_match_collection(match_collection, XCORR);
-    
 
-    
     free_modified_peptides_iterator(peptide_iterator);
     
   }//next peptide mod

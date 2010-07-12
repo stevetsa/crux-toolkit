@@ -411,6 +411,13 @@ void initialize_parameters(void){
       "Available for search-for-matches, search-for-xlinks.",
       "true");
 
+  set_rtp_type_parameter("rtime-predictor", RTP_KROKHIN,
+      "Retention predictor to use for mpsm-search (krokhin, palmbald)"
+      " Default: krokhin.",
+      "Available for crux search-for-mpsms",
+      "true");
+
+
   set_string_parameter("custom-enzyme", NULL, 
       "Specify rules for in silico digestion of proteins. "
       "See HTML documentation for syntax. Default is trypsin.",
@@ -883,6 +890,27 @@ void initialize_parameters(void){
       "Minimum number of points for estimating the "
       "Weibull parameters.  Default=4000.",
       "Available for crux search-for-xlinks", "true");
+
+  /* mpsm options */
+    
+  set_int_parameter("mpsm-max-peptides", 2, 1, 10,
+      "maximum number of peptides to consider (1-10). Default 1.",
+      "Available for crux search-for-mpsms ",
+      "true");
+
+  set_int_parameter("mpsm-top-n", 1, -1, BILLION,
+    "number of k-peptides to consider when searching for mpsms",
+    "Available for crux search-for-mpsms",
+    "true");
+
+  set_boolean_parameter("rtime-threshold", FALSE,
+    "relative retention time threshold for mpsm candidates with homogeneous charge mixture",
+    "Available for crux search-for-mpsms",
+    "true");
+
+  set_boolean_parameter("mpsm-do-sort",TRUE,
+    "Sort the mpsms.",
+    "Available for crux search-for-mpsms. Default true.","true");
 
   // now we have initialized the parameters
   parameter_initialized = TRUE;

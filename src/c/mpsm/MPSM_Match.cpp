@@ -360,7 +360,6 @@ ostream& operator <<(ostream& os, MPSM_Match& match_obj) {
      /*<< "TODO"*/ << "\t" //p-value
      << 0 /*match_obj.zscore_*/ << "\t" //Weibull est. q-value
      /*<< "TODO"*/ << "\t" //decoy q-value (xcorr)
-     /*<< "TODO"*/ << "\t" //decoy q-value (p-value)
      /*<< "TODO"*/ << "\t" //percolator score
      /*<< "TODO"*/ << "\t" //percolator rank
      /*<< "TODO"*/ << "\t" //percolator q-value

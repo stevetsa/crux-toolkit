@@ -550,13 +550,16 @@ void run_mpsm_q(
   //num_subsamples.push_back((unsigned int)(search_results[0].numRows() * subsample_percent));
   //carp(CARP_INFO,"Target count:%u",search_results[0].numRows());
 
-  for (int idx=1;idx<=1;idx++) {
+  int num_decoys_per_target = get_int_parameter("num-decoys-per-target");
+  int nsets = num_decoys_per_target + 1;
+
+  for (int idx=1;idx<=num_decoys_per_target;idx++) {
     carp(CARP_INFO,"idx:%d",idx);
     carp(CARP_INFO,"Building");
     string decoy_path = 
       psm_result_folder + 
-      string("/search.decoy-1") + 
-      //DelimitedFile::to_string<int>(idx) + 
+      string("/search.decoy-") + 
+      DelimitedFile::to_string<int>(idx) + 
       string(".txt");
     //carp(CARP_INFO,"reading %s",decoy_path.c_str());
     search_results[idx].loadData(decoy_path);
@@ -573,7 +576,12 @@ void run_mpsm_q(
 
   carp(CARP_INFO,"Calling qcInitiate");
   // Call that initiates q-ranker
-  qcInitiate((NSet)2, number_features, num_matches, (char**)feature_names, pi0);
+  qcInitiate((NSet)nsets, 
+    number_features, 
+    num_matches, 
+    (char**)feature_names, 
+    pi0);
+
   //carp(CARP_INFO,"%d",pi0);
   // Call that sets verbosity level
   // 0 is quiet, 2 is default, 5 is more than you want
@@ -589,7 +597,7 @@ void run_mpsm_q(
     
   // create iterator, to register each PSM feature to q-ranker.
 
-  for (int i=0;i<2;i++) {
+  for (int i=0;i<nsets;i++) {
     registerMatches(search_results[i], SetType(i), feature_fh);  
   }
 
@@ -601,7 +609,9 @@ void run_mpsm_q(
     carp(CARP_INFO, "got to here");
     
     // Start processing
-  qcExecute(!get_boolean_parameter("no-xval"), true);  
+  qcExecute(!get_boolean_parameter("no-xval"), 
+    get_boolean_parameter("do-max-psm"));
+  
   carp(CARP_INFO," Done executing q-ranker");  
   /* Retrieving target scores and qvalues after 
    * processing, the array should be numSpectra long and will be filled in 
