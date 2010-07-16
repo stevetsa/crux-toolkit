@@ -111,7 +111,7 @@ void qcExecute(
 ) {
 
   
-  pCaller->fillFeatureSets();
+  pCaller->fillFeatureSets(do_max_psm);
   pCaller->preIterationSetup();
   pCaller->train(do_xval, do_max_psm);
 } 

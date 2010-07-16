@@ -683,6 +683,176 @@ void Scores::fillFeaturesSplit(Scores& train,Scores& test,SetHandler& norm,SetHa
 }
 
 
+void Scores::fillFeaturesSplitPSM(Scores& train,Scores& test,SetHandler& norm,SetHandler& shuff,SetHandler& shuff1, const double ratio) {
+  PSMDescription * pPSM;
+  SetHandler::Iterator shuffIter(&shuff),shuffIter1(&shuff1), normIter(&norm);
+ 
+  set<unsigned int> scans_train;
+  set<unsigned int> scans_test;
+
+  assert(ratio>0 && ratio < 1);
+  //shuffled
+  int n = shuff.getSize();
+  int k = (int)(shuff.getSize()*ratio);
+  int l = shuff.getSize() - k;
+  //shuffled1
+  int nt = shuff1.getSize();
+  int kkk = (int)(shuff1.getSize()*ratio);
+  int lll = shuff1.getSize() - kkk;
+  //normal
+  int nz  = norm.getSize();
+  
+  ScoreHolder s;
+  
+  int i=0;
+  //collect everybody positive
+  vector<ScoreHolder> all_pos_examples;
+  all_pos_examples.resize(nz,s);
+  while((pPSM=normIter.getNext())!=NULL) {
+    all_pos_examples[i].label=1;
+    all_pos_examples[i].pPSM=pPSM;
+    ++i;
+  }
+  assert(i == nz);
+  //mix up the examples
+
+  random_shuffle(all_pos_examples.begin(), all_pos_examples.end());
+
+
+  //assign positive assignments, keeping PSMS from the same scan together. 
+  cerr<<"Assigning positive examples"<<endl;
+  vector<int> pos_assignments(nz,0);
+  int num_pos_train = 0;
+  int num_pos_test = 0;
+  for (int count = 0; count < nz; count++)
+    {
+      if (num_pos_train < num_pos_test)
+	{
+	  //want to add to the trainset
+          unsigned int scan = all_pos_examples[count].pPSM->scan;
+	  //but make sure the pep is not already in the testset
+	  if (scans_test.count(scan) == 0)
+	    {
+	      pos_assignments[count] = 1;
+	      scans_train.insert(scan);
+	      num_pos_train++;
+	    }
+	  else
+	    {
+	      pos_assignments[count] = 2;
+	      num_pos_test++;
+	    }
+	}
+      else
+	{
+	  //want to add to the testset
+	  unsigned int scan = all_pos_examples[count].pPSM->scan;
+	  //but make sure it's not already in the trainset
+	  if(scans_train.count(scan) == 0)
+	    {
+	      pos_assignments[count] = 2;
+	      scans_test.insert(scan);
+	      num_pos_test++;
+	    }
+	  else
+	    {
+	      pos_assignments[count] = 1;
+	      num_pos_train++;
+	    }
+	}
+    }
+  
+  
+  //collect everybody negative
+  i = 0;
+  vector<ScoreHolder> all_neg_examples;
+  all_neg_examples.resize(n+nt,s);
+  while((pPSM=shuffIter.getNext())!=NULL) {
+    all_neg_examples[i].label=-1;
+    all_neg_examples[i].pPSM=pPSM;
+    ++i;
+   }
+  while((pPSM=shuffIter1.getNext())!=NULL) {
+    all_neg_examples[i].label=-1;
+    all_neg_examples[i].pPSM=pPSM;
+    ++i;
+   }
+   assert(i == n+nt);
+  //mix up the examples
+  //assign negative assignments, keeping PSMS from the same scan together. 
+
+  vector<int> neg_assignments(n+nt,0);  
+
+  cerr << "Assigning negative examples"<<endl;
+  int num_neg_train = 0;
+  int num_neg_test = 0;
+
+  cerr <<"k+kkk:"<<(k+kkk)<<endl;
+
+  for (int count = 0; count < n+nt; count++)
+    {
+      unsigned int scan = all_neg_examples[count].pPSM->scan;
+      if (scans_train.count(scan) == 1)
+      {
+        neg_assignments[count] = 1;
+	num_neg_train++;
+      } else {
+        neg_assignments[count] = 2;
+	num_neg_test++;
+      }
+    }
+
+  train.scores.resize(num_pos_train+num_neg_train,s);
+  test.scores.resize(num_pos_test+num_neg_test,s);
+  
+  cerr <<"Fill positives"<<endl;
+  //distribute the normal set between train and test
+  int ix1=0;
+  int ix2=0;
+  for (int count = 0; count < nz; count++)
+    {
+      if (pos_assignments[count] == 1 )
+	{
+	  train.scores[ix1] = all_pos_examples[count];
+	  ++ix1;
+      }
+      else if (pos_assignments[count] == 2)
+	{
+	  test.scores[ix2] = all_pos_examples[count];
+	  ++ix2;
+	}
+      else
+	cerr << "invalid pos_assignments_value " << pos_assignments[count] << "\n";
+    }
+  
+
+  cerr << "Fill negatives"<<endl;
+  //distribute the shuffled set between train and test
+  int count = 0;
+  while(count < n+nt)
+    {
+
+      if (neg_assignments[count] == 1)
+        {
+          train.scores[ix1] = all_neg_examples[count];
+          ++ix1;
+        }
+      else if (neg_assignments[count] == 2)
+        {
+          test.scores[ix2] = all_neg_examples[count];
+          ++ix2;
+        }
+      ++count;
+    }
+        
+  train.pos=num_pos_train;
+  test.pos=num_pos_test;
+  train.neg=num_neg_train;
+  test.neg=num_neg_test;
+  train.factor = train.pos/(double)train.neg;
+  test.factor = train.pos/(double)train.neg;
+}
+
 
 void Scores::fillFeaturesSplit(Scores& train,Scores& test,SetHandler& norm,SetHandler& shuff,SetHandler& shuff1, const double ratio) {
   PSMDescription * pPSM;

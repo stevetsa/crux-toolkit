@@ -62,7 +62,7 @@ public:
     inline unsigned int posSize() {return (pos);} 
     inline unsigned int posNowSize() {return (posNow);} 
     inline unsigned int negSize() {return (neg);} 
-    static double pi0;
+    static double pi0; 
     double factor;
 
     int calcOverFDR(double fdr);
@@ -71,6 +71,8 @@ public:
     inline ScoreHolder& operator[](int ix){return scores[ix];}
     void static fillFeaturesSplit(Scores& train,Scores& test,SetHandler& norm,SetHandler& shuff, const double ratio);
     void static fillFeaturesSplit(Scores& train,Scores& test,SetHandler& norm,SetHandler& shuff, SetHandler& shuff1, const double ratio);
+    void static fillFeaturesSplitPSM(Scores& train,Scores& test,SetHandler& norm,SetHandler& shuff,SetHandler& shuff1, const double ratio);
+
     void static fillFeaturesSplit(Scores& train,Scores& test,SetHandler& norm,SetHandler& shuff, SetHandler& shuff1,SetHandler& shuff2, const double ratio);
 
 

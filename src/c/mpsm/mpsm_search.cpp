@@ -213,10 +213,10 @@ int mpsm_search_main(int argc, char** argv){
       current_spectrum = spectrum;
     }
 
-    carp(CARP_DEBUG,"processing spec %d charge:%d", get_spectrum_first_scan(spectrum), charge);
+    carp(CARP_DEBUG, "processing spec %d charge:%d", get_spectrum_first_scan(spectrum), charge);
     if (spectrum != current_spectrum) {
-      carp(CARP_DEBUG,"Processed all charges for spec %d",get_spectrum_first_scan(current_spectrum));
-      carp(CARP_DEBUG,"Searching for mpsms");
+      carp(CARP_DEBUG, "Processed all charges for spec %d", get_spectrum_first_scan(current_spectrum));
+      carp(CARP_DEBUG, "Searching for mpsms");
       search_for_mpsms(spsm_map, mpsm_map);
       if (get_boolean_parameter("mpsm-do-sort")) {
         //spsm_map.calcDeltaCN();
@@ -229,6 +229,7 @@ int mpsm_search_main(int argc, char** argv){
       //print out map
       //output the spsms.
       //output_files.writeMatches(spsm_map);
+      carp(CARP_INFO, "writing matches");
       output_files.writeMatches(mpsm_map);
 
       //clear map and clean up match collections.
@@ -402,7 +403,6 @@ int mpsm_search_main(int argc, char **argv){
  * In the future, implement and option and test for a minimum score.
  * \returns TRUE if no more PSMs need be searched.
  */
-
 BOOLEAN_T mpsm_is_search_complete(MATCH_COLLECTION_T* matches, 
                              int mods_per_peptide){
 
@@ -437,8 +437,6 @@ BOOLEAN_T mpsm_is_search_complete(MATCH_COLLECTION_T* matches,
  * number of peptide mods that were searched.
  * \return The number of peptide mods searched.
  */
-
-
 int mpsm_search_pep_mods(
   MATCH_COLLECTION_T* match_collection, ///< store PSMs here
   BOOLEAN_T is_decoy,   ///< generate decoy peptides from index/db

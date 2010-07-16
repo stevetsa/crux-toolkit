@@ -36,7 +36,7 @@ public:
     void readWeights(istream & weightStream, vector<double>& w);
     void readFiles(bool &doSingleFile);
     void filelessSetup(unsigned int nsets,const unsigned int numFeatures, int* numSpectra, char ** fetureNames, double pi0);
-    void fillFeatureSets();    
+    void fillFeatureSets(bool do_max_psm);    
     int preIterationSetup();
     Scores* getFullSet() {return &fullset;}    
     int run(bool do_xval, bool do_max_psm);

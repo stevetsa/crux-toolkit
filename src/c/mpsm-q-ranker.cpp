@@ -570,7 +570,7 @@ void run_mpsm_q(
 
   int* num_matches = new int[2];
 
-  for (int idx=0;idx<2;idx++) {
+  for (int idx=0;idx<nsets;idx++) {
     num_matches[idx] = search_results[idx].numRows();
   }
 
@@ -598,6 +598,7 @@ void run_mpsm_q(
   // create iterator, to register each PSM feature to q-ranker.
 
   for (int i=0;i<nsets;i++) {
+    carp(CARP_INFO,"Registering set:%d",i);
     registerMatches(search_results[i], SetType(i), feature_fh);  
   }
 

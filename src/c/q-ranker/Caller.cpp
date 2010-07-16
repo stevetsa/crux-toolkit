@@ -426,12 +426,18 @@ void Caller::train(
 }
 
 
-void Caller::fillFeatureSets() {
+void Caller::fillFeatureSets(bool do_max_psm) {
 
     if(shuffled2_present)
       Scores::fillFeaturesSplit(trainset,testset,normal,shuffled,shuffled1,shuffled2,trainRatio);
-    else if( shuffled1_present)
-      Scores::fillFeaturesSplit(trainset,testset,normal,shuffled,shuffled1,trainRatio);     
+    else if( shuffled1_present) {
+      if (do_max_psm) {
+        cerr <<"Calling fillFeaturesSplitPSM"<<endl;
+        Scores::fillFeaturesSplitPSM(trainset,testset,normal,shuffled,shuffled1,trainRatio);
+      } 
+      else
+        Scores::fillFeaturesSplit(trainset,testset,normal,shuffled,shuffled1,trainRatio);
+    }
     else
     Scores::fillFeaturesSplit(trainset,testset,normal,shuffled,trainRatio);     
   thresholdset=trainset;
@@ -477,7 +483,7 @@ int Caller::run(
   //File reading
   bool doSingleFile = !decoyWC.empty();
   readFiles(doSingleFile);
-  fillFeatureSets();
+  fillFeatureSets(do_max_psm);
   preIterationSetup();
   train(do_xval, do_max_psm);
   
