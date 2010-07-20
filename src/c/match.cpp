@@ -781,6 +781,7 @@ static void print_one_match_field(
     }
     break;
   case NUMBER_MATCH_COLUMNS:
+  case INVALID_COL:
     carp(CARP_FATAL, "Error in printing code (match.cpp).");
     break;
   }
