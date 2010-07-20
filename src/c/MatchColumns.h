@@ -8,7 +8,7 @@
 
 //#define NEW_COLUMNS 1
 
-enum _match_columns {
+enum MATCH_COLUMNS_T {
   SCAN_COL,
   CHARGE_COL,
   SPECTRUM_PRECURSOR_MZ_COL,
@@ -55,8 +55,6 @@ enum _match_columns {
   CORR_COL,
   NUMBER_MATCH_COLUMNS
 };
-
-typedef enum _match_columns MATCH_COLUMNS_T;
 
 /**
  * Get the name of a given column, by index.

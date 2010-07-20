@@ -619,10 +619,13 @@ void sort_match_collection(
 
   // Switch to the equivalent sort key.
   SCORER_TYPE_T sort_by = NUMBER_SCORER_TYPES; // Initialize to nonsense.
+  int (*compare_match_function)(const void*, const void*) 
+    = (QSORT_COMPARE_METHOD)compare_match_sp;
   switch (score_type) {
   case SP: 
     carp(CARP_DEBUG, "Sorting match collection by Sp.");
     sort_by = SP;
+    compare_match_function = (QSORT_COMPARE_METHOD)compare_match_sp;
     break;
 
   case XCORR:
@@ -631,6 +634,7 @@ void sort_match_collection(
   case DECOY_XCORR_PEPTIDE_QVALUE:
     carp(CARP_DEBUG, "Sorting match collection by XCorr.");
     sort_by = XCORR;
+    compare_match_function = (QSORT_COMPARE_METHOD)compare_match_xcorr;
     break;
 
   case LOGP_BONF_WEIBULL_XCORR: 
@@ -638,27 +642,32 @@ void sort_match_collection(
   case LOGP_PEPTIDE_QVALUE_WEIBULL:
     carp(CARP_DEBUG, "Sorting match collection by p-value.");
     sort_by = LOGP_BONF_WEIBULL_XCORR;
+    compare_match_function = (QSORT_COMPARE_METHOD)compare_match_p_value;
     break;
 
   case PERCOLATOR_SCORE:
     carp(CARP_INFO, "Sorting match collection by Percolator score.");
     sort_by = PERCOLATOR_SCORE;
+    compare_match_function = (QSORT_COMPARE_METHOD)compare_match_percolator_score;
     break;
 
   case PERCOLATOR_QVALUE:
   case PERCOLATOR_PEPTIDE_QVALUE:
     carp(CARP_DEBUG, "Sorting match collection by Percolator q-value.");
     sort_by = PERCOLATOR_QVALUE;
+    compare_match_function = (QSORT_COMPARE_METHOD)compare_match_percolator_qvalue;
     break;
 
   case QRANKER_SCORE:
     carp(CARP_DEBUG, "Sorting match collection by Q-ranker score.");
     sort_by = QRANKER_SCORE;
+    compare_match_function = (QSORT_COMPARE_METHOD)compare_match_qranker_score;
     break;
 
   case QRANKER_QVALUE:
   case QRANKER_PEPTIDE_QVALUE:
     carp(CARP_DEBUG, "Sorting match collection by Q-ranker q-value.");
+    compare_match_function = (QSORT_COMPARE_METHOD)compare_match_qranker_qvalue;
     sort_by = QRANKER_QVALUE;
     break;
 
@@ -673,70 +682,9 @@ void sort_match_collection(
   }
 
   // Do the sort.
-  /* N.B.  This switch statement could be eliminated if I could figure
-     out the syntax, in the previous switch statement, for storing the
-     name of the sort routine in a variable.  I was thinking of
-     something along the lines of 
-
-     sort_by = (QSORT_COMPARE_METHOD)compare_match_sp
-
-     But I don't know what type to declare "sort_by" as.
-
-     Note that, once I figure out how to do this, the per-spectrum
-     sorting code in the function below should be fixed to avoid
-     re-sorting if the list is already sorted.  I just don't want to
-     stick in another instance of this double switch statement right
-     now.
-
-     -- WSN 2 July 2010
-  */
-  switch (sort_by) {
-  case SP: 
-    qsort_match(match_collection->match, 
-		match_collection->match_total, 
-		(QSORT_COMPARE_METHOD)compare_match_sp);
-    break;
-
-  case XCORR:
-    qsort_match(match_collection->match, 
-		match_collection->match_total, 
-		(QSORT_COMPARE_METHOD)compare_match_xcorr);
-    break;
-
-  case LOGP_BONF_WEIBULL_XCORR: 
-    qsort_match(match_collection->match, 
-		match_collection->match_total, 
-		(QSORT_COMPARE_METHOD)compare_match_p_value);
-    break;
-
-  case PERCOLATOR_SCORE:
-    qsort_match(match_collection->match, 
-		match_collection->match_total, 
-		(QSORT_COMPARE_METHOD)compare_match_percolator_score);
-    break;
-
-  case PERCOLATOR_QVALUE:
-    qsort_match(match_collection->match, 
-		match_collection->match_total, 
-		(QSORT_COMPARE_METHOD)compare_match_percolator_qvalue);
-    break;
-
-  case QRANKER_SCORE:
-    qsort_match(match_collection->match, 
-		match_collection->match_total, 
-		(QSORT_COMPARE_METHOD)compare_match_qranker_score);
-
-  case QRANKER_QVALUE:
-    qsort_match(match_collection->match, 
-		match_collection->match_total, 
-		(QSORT_COMPARE_METHOD)compare_match_qranker_qvalue);
-
-    break;
-  // Should never reach this point.
-  default:
-    carp(CARP_FATAL, "There is a problem in the sorting code.");
-  }
-
+  qsort_match(match_collection->match,
+	      match_collection->match_total,
+	      compare_match_function);
   match_collection->last_sorted = sort_by;
 }
 
@@ -1926,7 +1874,7 @@ FLOAT_T get_calibration_eta (
 }
 
 /**
- * Retrieve the calibration parameter eta.
+ * Retrieve the calibration parameter beta.
  */
 FLOAT_T get_calibration_beta (
   MATCH_COLLECTION_T* my_collection ///< The collection -in
@@ -1936,7 +1884,7 @@ FLOAT_T get_calibration_beta (
 }
 
 /**
- * Retrieve the calibration parameter eta.
+ * Retrieve the calibration parameter shift.
  */
 FLOAT_T get_calibration_shift (
   MATCH_COLLECTION_T* my_collection ///< The collection -in
@@ -1946,7 +1894,7 @@ FLOAT_T get_calibration_shift (
 }
 
 /**
- * Retrieve the calibration parameter eta.
+ * Retrieve the calibration correlation.
  */
 FLOAT_T get_calibration_corr (
   MATCH_COLLECTION_T* my_collection ///< The collection -in

@@ -4,6 +4,7 @@
  ****************************************************************************/
 
 #include "MatchColumns.h"
+#include "carp.h"
 
 static const char* match_column_strings[NUMBER_MATCH_COLUMNS] = {
   "scan",
@@ -58,5 +59,8 @@ static const char* match_column_strings[NUMBER_MATCH_COLUMNS] = {
 const char* get_column_header(
   int columnIndex
 ) {
+  if ((columnIndex < 0) || (columnIndex >= NUMBER_MATCH_COLUMNS)) {
+    carp(CARP_FATAL, "Cannot access output column %d.\n", columnIndex);
+  }
   return(match_column_strings[columnIndex]);
 }
