@@ -10,6 +10,8 @@
 #include "crux-utils.h"
 #include "parameter.h"
 
+using namespace std;
+
 /**
  * PRECISION, determines the precision of the compare float, users
  * should lower the number if need more precision
@@ -382,6 +384,7 @@ static const char* scorer_type_strings[NUMBER_SCORER_TYPES] =
    "qranker_qvalue",
    "qranker_peptide_qvalue"
   };
+
 //TODO: this should probably be changed, these strings are the option args
 //Instead could have an if block in string_to_type
 
@@ -1128,7 +1131,7 @@ char** generate_feature_name_array()
 {
   char** name_array = NULL;
 
-  name_array = (char**)mycalloc(20, sizeof(char *));
+  name_array = (char**)mycalloc(NUM_FEATURES, sizeof(char *));
   name_array[0] =  my_copy_string("XCorr");
   name_array[1] =  my_copy_string("DeltCN");
   name_array[2] =  my_copy_string("DeltLCN");
@@ -1449,7 +1452,7 @@ int prepare_protein_input(
     } 
 
     if(!parse_database(*database)){
-      carp(CARP_FATAL, "Error with protein input");
+      carp(CARP_FATAL, "Error with protein database.");
     } 
     num_proteins = get_database_num_proteins(*database);
   }
@@ -1609,27 +1612,26 @@ int get_last_in_range_string(const char* range_string){
  * \returns 1 if spectrum precursor is singly charged or 0 if multiply
  * charged or -1 on error.
  */
-int choose_charge(FLOAT_T precursor_mz, ///< m/z of spectrum precursor ion
-                  PEAK_T* peaks,        ///< array of spectrum peaks
-                  int num_peaks)        ///< size of peaks array
+int choose_charge(FLOAT_T precursor_mz,    ///< m/z of spectrum precursor ion
+                  vector<PEAK_T*>& peaks)  ///< array of spectrum peaks
 {
-  if( num_peaks == 0 || peaks == NULL ){
+  if(peaks.empty()){
     carp(CARP_ERROR, "Cannot determine charge state of empty peak array.");
     return -1;
   }
 
-  FLOAT_T max_peak_mz = get_peak_location(find_peak(peaks, num_peaks - 1));
+  FLOAT_T max_peak_mz = get_peak_location(peaks.back());
   
   // sum peaks below and above the precursor m/z window separately
   FLOAT_T left_sum = 0.00001;
   FLOAT_T right_sum= 0.00001;
-  for(int peak_idx = 0; peak_idx < num_peaks; peak_idx++){
-    if(get_peak_location(find_peak(peaks, peak_idx)) < precursor_mz - 20){
-      left_sum += get_peak_intensity(find_peak(peaks, peak_idx));
+  for(unsigned int peak_idx = 0; peak_idx < peaks.size(); peak_idx++){
+    if(get_peak_location(peaks[peak_idx]) < precursor_mz - 20){
+      left_sum += get_peak_intensity(peaks[peak_idx]);
 
-    } else if(get_peak_location(find_peak(peaks, peak_idx)) 
+    } else if(get_peak_location(peaks[peak_idx]) 
               > precursor_mz + 20){
-      right_sum += get_peak_intensity(find_peak(peaks, peak_idx));
+      right_sum += get_peak_intensity(peaks[peak_idx]);
 
     } // else, skip peaks around precursor
   }

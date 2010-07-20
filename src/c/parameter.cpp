@@ -272,9 +272,13 @@ void initialize_parameters(void){
   // all arguments are left out of param file
 
   /* generate_peptide arguments */
-  set_string_parameter("protein input", NULL, 
+  set_string_parameter("protein database", NULL, 
       "Fasta file of proteins or directory containing an index.",
       "Argument for generate, index, search, analyze.", "false");
+
+  set_string_parameter("search results directory", NULL, 
+      "Directory containing the results of one search.",
+      "Argument for q-ranker, percolator, compute-q-values.", "false");
 
   /* create_index arguments */
   set_string_parameter("protein fasta file", NULL,
@@ -289,13 +293,11 @@ void initialize_parameters(void){
                        "File containing spectra to be searched.",
     "Argument, not option, for create-psm-files, get-ms2-spec, and search",
     "false");
-  //and uses 'protein input'
 
   /* get-ms2-spectrum */
   set_int_parameter("scan number", 0, 1, BILLION, 
                     "Scan number identifying the spectrum.",
                     "Argument for get-ms2-spectrum", "false");
-  //uses ms2 file
   set_string_parameter("output file", NULL, 
                        "File where spectrum will be written.",
                        "Argument for get-ms2-spectrum.", "false");
@@ -472,9 +474,10 @@ void initialize_parameters(void){
    * In this case, the default value depends on the mass type. */
   set_double_parameter("mz-bin-width", NaN(), 0.0, BILLION,
       "Specify the width of the bins used to "
-      "discretize the m/z axis.  Default=1.0005079 for monoisotopic mass "
+      "discretize the m/z axis.  Also used as tolerance for assigning "
+      "ions.  Default=1.0005079 for monoisotopic mass "
       "or 1.0011413 for average mass.",
-      "Available for crux-search-for-matches.", "true");
+      "Available for crux-search-for-matches and xlink-assign-ions.", "true");
   set_double_parameter("mz-bin-offset", SMART_MZ_OFFSET, -1.0, 1.0,
       "Specify the location of the left edge of the "
       "first bin used to discretize the m/z axis. Default=0.68",
@@ -507,6 +510,7 @@ void initialize_parameters(void){
       "'search.decoy.p.txt'",
       "Only available for crux search-for-matches. The location of this "
       "file is controlled by --output-dir.", "true");
+
   // user options regarding decoys
   set_int_parameter("num-decoys-per-target", 2, 0, 10,
       "Number of decoy peptides to search for every "
@@ -621,7 +625,7 @@ void initialize_parameters(void){
       "search-for-matches from parameter file.",
       "true");
 
-    // Sp scoring params
+  // Sp scoring params
   set_double_parameter("beta", 0.075, 0, 1, "Not for general users.",
       "Only used to set scorer->sp_beta which is used to score sp.", 
       "false"); 
@@ -645,11 +649,18 @@ void initialize_parameters(void){
       "sq-pvalue>.  Incorrect combinations of score-type and algorithm cause"
       " undefined behavior. Using 'none' will turn the binary .csm files "
       "into text.", "false");
+
+  // **** percolator options. ****
   set_boolean_parameter("feature-file", FALSE,
      "Optional file into which psm features are printed.",
-     "Available only for percolator and q-ranker.  File will be named "
+     "Available for percolator and q-ranker.  File will be named "
      "<fileroot>.percolator.features.txt or <fileroot>.qranker.features.txt.",
      "true");
+
+  // **** q-ranker options. ****
+  set_boolean_parameter("no-xval", FALSE, 
+      "Turn off cross-validation to select hyperparameters.",
+      "Available for q-ranker.", "true");
 
   /* analyze-matches parameter options */
   set_double_parameter("pi-zero", 0.9, 0, 1, 
@@ -660,11 +671,11 @@ void initialize_parameters(void){
       "Set a feature for percolator that in later versions is not an option.",
       "Shouldn't be variable; hide from user.", "false");
 
-  /* predict-peptide-ions */
+  // **** predict-peptide-ions options. ****
   set_ion_type_parameter("primary-ions", BY_ION,
       "The ion series to predict (b,y,by). Default='by' (both b and y ions).",
       "Only available for crux-predict-peptide-ions.  Set automatically to "
-                         "'by' for searching.", "true");
+      "'by' for searching.", "true");
   set_boolean_parameter("precursor-ions", FALSE,
       "Predict the precursor ions, and all associated ions "
       "(neutral-losses, multiple charge states) consistent with the "
@@ -682,9 +693,12 @@ void initialize_parameters(void){
       "Predict flanking peaks for b and y ions (T,F). Default=F.",
       "Only available for crux-predict-peptide-ion.", "true");
   set_string_parameter("max-ion-charge", "peptide",
-      "Predict ions up to this charge state (1,2,3) or to the charge state "
-      "of the peptide (peptide).  Default='peptide'.",
-      "Available only for predict-peptide-ions.  Set to 'peptide' for search.",
+      "Predict ions up to max charge state (1,2,...,6) or up to the charge state "
+      "of the peptide (peptide).  If the max-ion-charge is greater than the "
+      "charge state of the peptide, then the max is the peptide charge. "
+      "Default='peptide'.",
+      "Available for predict-peptide-ions and search-for-xlinks. "
+      "Set to 'peptide' for search.",
       "true");
   set_int_parameter("nh3",0, -100, BILLION, 
       "Predict peaks with the given maximum number of nh3 neutral loss "
@@ -695,7 +709,7 @@ void initialize_parameters(void){
       "modifications. Default=0.",
       "Only available for crux-predict-peptide-ions.", "true");
 
-  /* static mods */
+  // ***** static mods *****
   set_double_parameter("A", 0.0, -100, BILLION, 
       "Change the mass of all amino acids 'A' by the given amount.",
       "For parameter file only.  Default=no mass change.", "true");
@@ -781,7 +795,7 @@ void initialize_parameters(void){
       "Avaliable only for crux-get-ms2-spectrum.  Does not affect contents "
       "of the output file.", "true");
 
-  /* xlink-predict-peptide-ions options*/
+  // **** xlink-predict-peptide-ions options ****
   set_string_parameter("peptide A", NULL, 
       "The sequence of peptide A.",
       "Argument for xlink-predict-peptide-ions.", "false");
@@ -809,12 +823,12 @@ void initialize_parameters(void){
       "true");
 
 
-  /* xlink-score-spectrum options */
+  // **** xlink-score-spectrum options ****
   set_string_parameter("xlink-score-method", "composite", 
       "Score method for xlink {composite, modification, concatenated}. Default=composite.",
       "Argument for xlink-score-spectrum.", "false");
 
-  /* search-xlink options */
+  // **** search-xlink options ****
   set_boolean_parameter("xcorr-use-flanks", TRUE,
       "Use flank peaks in xcorr theoretical spectrum",
       "Available for crux search-for-xlinks program (Default=T).",
@@ -857,13 +871,6 @@ void initialize_parameters(void){
       "Mass modification of a cross link between two amino acids.",
       "Argument for crux search-for-xlinks.","false");
 
-  /* TODO Implement or Remove.
-  set_string_parameter("missed-link-cleavage", "K",
-      "Figure out what this parameter is supposed to mean,"
-      "should be an amino acid. Default K.",
-      "Available for crux search-for-xlinks",
-      "true");
-  */
   set_int_parameter("min-weibull-points", 4000, 1, BILLION, 
       "Minimum number of points for estimating the "
       "Weibull parameters.  Default=4000.",
@@ -1977,6 +1984,24 @@ WINDOW_TYPE_T get_window_type_parameter(
 
   return param_value;
 }
+
+int get_max_ion_charge_parameter(
+  const char* name
+  ){
+  char* param_value_str = (char*)get_hash_value(parameters, name);
+  if (strcmp(param_value_str,"peptide") == 0) {
+    return BILLION; //using this with min function on peptide charge.
+  } else {
+    int ans = atoi(param_value_str);
+    if (ans <= 0 || ans > 6) {
+      carp(CARP_FATAL,
+        "Max_ion_charge parameter %s has the value %s which is not a "
+        "legal value", name, param_value_str);
+    }
+    return ans;
+  }
+}
+
 
 SORT_TYPE_T get_sort_type_parameter(const char* name){
   char* param_value_str = (char*)get_hash_value(parameters, name);

@@ -7,11 +7,17 @@
 <blockquote> 
 <h1>Release notes for Crux</h1>
 
-<h2>Version 1.3?</h2> ADD DATE HERE
+<h2>Version 1.33</h2> July 7, 2010
 
 <h3>Major enhancements</h3>
 
 <ul>
+  <li>
+The command line syntax
+for <code>compute-q-values</code>, <code>percolator</code>
+and <code>q-ranker</code> was modified to allow the programs to read
+from and write to separate directories.</li>
+<li>Fixed a q-ranker/percolator bug giving too many id's for a small q-value.</li>
 </ul>
 
 <h3>Minor changes</h3>
@@ -20,20 +26,79 @@
 <li>
 A new option "<code>--min-peaks</code>" has been added to set a filter 
 for the minimum number of peaks a spectrum must have in order for it
-to be searched.  The default minimum is 20 peaks.
-</ul>
-
-<ul>
+to be searched.  The default minimum is 20 peaks.</li>
 <li>
 The hardcoded limit for the number of proteins allowed in a database 
-has been removed.
-</ul>
-
-<ul>
+has been removed.</li>
+<li>
+The hardcoded limit for the number of spectra and the number of 
+peaks/spectrum has been removed.</li>
 <li>
 A new option "<code>--xcorr-var-bin</code>" has been added to toggle the
-new binning of the m/z axis.
-<\ul>
+new binning of the m/z axis.</li>
+
+<li>
+The option "<code>--max-ion-charge</code>" now places a limit on the
+maximum charge state of the ions generated for the xcorr theoretical 
+spectra for <code>crux search-for-xlinks</code>.  This change is also 
+supported by <code>xlink-assign-ions</code>.
+
+<li>
+The option <code>--no-xval</code> was added to q-ranker, allowing
+faster execution by skipping the internal cross-validation to select
+hyperparameters.</li>
+
+
+</ul>
+<hr></hr>
+<h2>Version 1.32</h2> July 6, 2010
+
+<h3>Major enhancement</h3>
+
+<ul>
+
+<li>
+Version 1.32 includes changes only to Tide. A new binary is introduced
+&mdash; a modified version of ProteoWizard's <b>msconvert</b> program
+&mdash; that is capable of converting spectrum data from a wide range
+of file formats into Tide-readable <i>.spectrumrecords</i> input
+files.
+
+</ul>
+
+<h3>Minor changes</h3>
+
+<ul>
+
+<li>
+<b>tide-import-spectra</b> is removed from the distribution. Although
+it was faster than msconvert, it was specific to ms2 files, whereas
+msconvert now works with any ProteoWizard-supported file format.
+
+<li>
+A standalone utility for reading binary <i>.spectrumrecords</i> files
+is introduced, called <b>read-spectrumrecords</b>. This program is
+useful, for example, for visually checking the output of msconvert.
+
+<li>
+Demo input files <b>worm-06-10000.spectrumrecords</b>
+and <b>yeast-02-10000.spectrumrecords</b> now replace their
+counterparts worm-06-10000.ms2 and yeast-02-10000.ms2. With the
+introduction of Tide-compatible msconvert, ms2 files are in no way
+special to Tide anymore. Any ProteoWizard-supported file format can be
+converted to the <i>.spectrumrecords</i> format for use with
+Tide. Starting with data files in Tide's spectrumrecords format
+eliminates the conversion step in the Tide search demo.
+
+<li>
+The old demo scripts worm-demo.sh and yeast-demo.sh have each been
+replaced by a pair of new scripts that demonstrate the indexing and
+searching steps separately. This is in order to highlight the two-step
+process and the fact that indexing needs to be done just once for each
+fasta file, whereafter the index may be reused indefinitely to perform
+searches.
+
+</ul>
 
 <hr></hr>
 

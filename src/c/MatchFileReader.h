@@ -18,7 +18,6 @@
 #include "DelimitedFileReader.h"
 #include "MatchColumns.h"
 
-
 class MatchFileReader: public DelimitedFileReader {
   protected:
     int match_indices_[NUMBER_MATCH_COLUMNS];
