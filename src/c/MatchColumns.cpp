@@ -17,18 +17,18 @@ static const char* match_column_strings[NUMBER_MATCH_COLUMNS] = {
   "xcorr score",
   "xcorr rank",
   "p-value",
- #ifdef NEW_COLUMNS
+#ifdef NEW_COLUMNS
   "Weibull PSM q-value",
-  "Weibull peptide q-value",
+  "Weibull peptide q-value",    // NEW
   "decoy PSM q-value",
-  "decoy peptide q-value",
+  "decoy peptide q-value",      // NEW
   "percolator score",
   "percolator rank",
   "percolator PSM q-value",
-  "percolator peptide q-value",
+  "percolator peptide q-value", // NEW
   "q-ranker score",
   "q-ranker PSM q-value",
-  "q-ranker peptide q-value",
+  "q-ranker peptide q-value",   // NEW
 #else
   "Weibull est. q-value",
   "decoy q-value (xcorr)",

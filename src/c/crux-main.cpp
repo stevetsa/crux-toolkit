@@ -237,8 +237,6 @@ static MATCH_COLLECTION_T* run_percolator_or_qranker(
     fill_result_to_match_collection(
         target_match_collection, results_q, QRANKER_QVALUE, TRUE);
     fill_result_to_match_collection(
-        target_match_collection, results_score, QRANKER_PEPTIDE_QVALUE, FALSE);
-    fill_result_to_match_collection(
         target_match_collection, results_score, QRANKER_SCORE, FALSE);
     qcCleanUp();
     break;
@@ -246,6 +244,7 @@ static MATCH_COLLECTION_T* run_percolator_or_qranker(
     carp(CARP_FATAL, "Unknown command type.");
     break;
   }
+
 
   // free names
   unsigned int name_idx;
@@ -423,13 +422,9 @@ int main(int argc, char** argv){
     break;    
 
   case INVALID_COMMAND:
+  case NUMBER_COMMAND_TYPES:
     carp(CARP_FATAL, "Invalid command '%s'\n%s", op_string, usage_str);
     break;
-
-  default:
-    carp(CARP_FATAL, "Unknown command type.");
-    break;
-
   }
 
   exit (0);

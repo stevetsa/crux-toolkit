@@ -3,6 +3,7 @@
  * \brief Object for parsing the tab-delimited files
  ****************************************************************************/
 
+#include "MatchColumns.h"
 #include "MatchFileReader.h"
 #include "DelimitedFile.h"
 

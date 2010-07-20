@@ -641,18 +641,27 @@ void sort_match_collection(
     break;
 
   case PERCOLATOR_SCORE:
-  case PERCOLATOR_QVALUE:
-  case PERCOLATOR_PEPTIDE_QVALUE:
     carp(CARP_INFO, "Sorting match collection by Percolator score.");
     sort_by = PERCOLATOR_SCORE;
     break;
 
+  case PERCOLATOR_QVALUE:
+  case PERCOLATOR_PEPTIDE_QVALUE:
+    carp(CARP_DEBUG, "Sorting match collection by Percolator q-value.");
+    sort_by = PERCOLATOR_QVALUE;
+    break;
+
   case QRANKER_SCORE:
-  case QRANKER_QVALUE:
-  case QRANKER_PEPTIDE_QVALUE:
     carp(CARP_DEBUG, "Sorting match collection by Q-ranker score.");
     sort_by = QRANKER_SCORE;
     break;
+
+  case QRANKER_QVALUE:
+  case QRANKER_PEPTIDE_QVALUE:
+    carp(CARP_DEBUG, "Sorting match collection by Q-ranker q-value.");
+    sort_by = QRANKER_QVALUE;
+    break;
+
   // Should never reach this point.
   case NUMBER_SCORER_TYPES:
     carp(CARP_FATAL, "Something is terribly wrong in the sorting code!");
@@ -706,10 +715,22 @@ void sort_match_collection(
 		(QSORT_COMPARE_METHOD)compare_match_percolator_score);
     break;
 
+  case PERCOLATOR_QVALUE:
+    qsort_match(match_collection->match, 
+		match_collection->match_total, 
+		(QSORT_COMPARE_METHOD)compare_match_percolator_qvalue);
+    break;
+
   case QRANKER_SCORE:
     qsort_match(match_collection->match, 
 		match_collection->match_total, 
 		(QSORT_COMPARE_METHOD)compare_match_qranker_score);
+
+  case QRANKER_QVALUE:
+    qsort_match(match_collection->match, 
+		match_collection->match_total, 
+		(QSORT_COMPARE_METHOD)compare_match_qranker_qvalue);
+
     break;
   // Should never reach this point.
   default:
@@ -757,19 +778,29 @@ void spectrum_sort_match_collection(
     break;
 
   case PERCOLATOR_SCORE:
-  case PERCOLATOR_QVALUE:
-  case PERCOLATOR_PEPTIDE_QVALUE:
     qsort_match(match_collection->match, match_collection->match_total,
                 (QSORT_COMPARE_METHOD)compare_match_spectrum_percolator_score);
     match_collection->last_sorted = PERCOLATOR_SCORE;
     break;
 
+  case PERCOLATOR_QVALUE:
+  case PERCOLATOR_PEPTIDE_QVALUE:
+    qsort_match(match_collection->match, match_collection->match_total,
+                (QSORT_COMPARE_METHOD)compare_match_spectrum_percolator_qvalue);
+    match_collection->last_sorted = PERCOLATOR_QVALUE;
+    break;
+
   case QRANKER_SCORE:
-  case QRANKER_QVALUE:
-  case QRANKER_PEPTIDE_QVALUE:
     qsort_match(match_collection->match, match_collection->match_total,
                 (QSORT_COMPARE_METHOD)compare_match_spectrum_qranker_score);
     match_collection->last_sorted = QRANKER_SCORE;
+    break;
+
+  case QRANKER_QVALUE:
+  case QRANKER_PEPTIDE_QVALUE:
+    qsort_match(match_collection->match, match_collection->match_total,
+                (QSORT_COMPARE_METHOD)compare_match_spectrum_qranker_qvalue);
+    match_collection->last_sorted = QRANKER_QVALUE;
     break;
 
   // Should never reach this point.
@@ -1385,7 +1416,7 @@ BOOLEAN_T compute_decoy_q_values(
   for(match_idx = 0; match_idx < match_collection->match_total; match_idx++){
     MATCH_T* cur_match = match_collection->match[match_idx];
 
-    if( get_match_null_peptide(cur_match) == TRUE ){
+    if ( get_match_null_peptide(cur_match) == TRUE ){
       num_decoys += 1;
     }else{
       num_targets += 1;
@@ -1393,11 +1424,22 @@ BOOLEAN_T compute_decoy_q_values(
     FLOAT_T score = num_decoys/num_targets;
     if( num_targets == 0 ){ score = 1.0; }
 
+    /*
+    if (peptide_level) {
+      // Skip PSMs that are not top-scoring for their peptide.
+      if (!is_peptide_level(cur_match)) {
+	score = NOT_SCORED;
+	set_match_score(cur_match, DECOY_XCORR_PEPTIDE_QVALUE, NOT_SCORED);
+      } else {
+	set_match_score(cur_match, DECOY_XCORR_PEPTIDE_QVALUE, SCORE);
+      }
+    } else {
+    */
     set_match_score(cur_match, DECOY_XCORR_QVALUE, score);
     carp(CARP_DETAILED_DEBUG, 
-         "match %i xcorr or pval %f num targets %i, num decoys %i, score %f",
-         match_idx, get_match_score(cur_match, XCORR), 
-         (int)num_targets, (int)num_decoys, score);
+	 "match %i xcorr or pval %f num targets %i, num decoys %i, score %f",
+	 match_idx, get_match_score(cur_match, XCORR), 
+	 (int)num_targets, (int)num_decoys, score);
   }
 
   // compute q-value: go through list in reverse and use min FDR seen
@@ -1966,6 +2008,7 @@ MATCH_ITERATOR_T* new_match_iterator(
     sort_match_collection(match_collection, score_type);
   }
 
+
   // ok lock up match collection
   match_collection->iterator_lock = TRUE;
   
@@ -2468,32 +2511,27 @@ void update_protein_counters(
 }
 
 /**
- * Fill the match objects score with the given the FLOAT_T array. 
- * The match object order must not have been altered since scoring.
- * The result array size must match the match_total count.
- * Match ranks are also populated to preserve the original order of the
- * match input TRUE for preserve_order.
- *\returns TRUE, if successfully fills the scores into match object, else FALSE.
+ * Fill the match objects score with the given the array, and populate
+ * the corresponding ranks.  The match object order must not have been
+ * altered since scoring.  The result array size must equal the number
+ * of matches in the given match collection.  After the function
+ * completes, the match collection is sorted by the specified score,
+ * unless preserve_order is set to TRUE.
  */
-BOOLEAN_T fill_result_to_match_collection(
-  MATCH_COLLECTION_T* match_collection, 
-    ///< the match collection to iterate -out
-  double* results,  
-    ///< The result score array to fill the match objects -in
-  SCORER_TYPE_T score_type,  
-    ///< The score type of the results to fill -in
-  BOOLEAN_T preserve_order 
-    ///< preserve match order?
+void fill_result_to_match_collection(
+  MATCH_COLLECTION_T* match_collection, ///< collection to iterate over -in/out
+  double* results,           ///< array of scores -in
+  SCORER_TYPE_T score_type,  ///< The score type of the results to fill -in
+  BOOLEAN_T preserve_order   ///< preserve match order?
   )
 {
-  int match_idx = 0;
-  MATCH_T* match = NULL;
   MATCH_T** match_array = NULL;
   SCORER_TYPE_T score_type_old = match_collection->last_sorted;
 
   // iterate over match object in collection, set scores
+  int match_idx = 0;
   for(; match_idx < match_collection->match_total; ++match_idx){
-    match = match_collection->match[match_idx];
+    MATCH_T* match = match_collection->match[match_idx];
     set_match_score(match, score_type, results[match_idx]);    
   }
   
@@ -2511,7 +2549,7 @@ BOOLEAN_T fill_result_to_match_collection(
     carp(CARP_FATAL, "failed to populate match rank in match_collection");
   }
   
-  // restore match order if needed
+  // restore match order.
   if(preserve_order){
     for(match_idx=0; match_idx < match_collection->match_total; ++match_idx){
       match_collection->match[match_idx] = match_array[match_idx];
@@ -2521,8 +2559,6 @@ BOOLEAN_T fill_result_to_match_collection(
   }
 
   match_collection->scored_type[score_type] = TRUE;
-  
-  return TRUE;
 }
 
 /**
@@ -2539,7 +2575,7 @@ void process_run_specific_features(
  * ranks.  For SEQUEST style searching
  * match[i] = (match[0] - match[i]) / match[0] 
  * For other searching
- * match[i] = (match[0] - match[i+1]) / match[0].  This functin
+ * match[i] = (match[0] - match[i+1]) / match[0].  This function
  * defaults to the second case. Sorts match_collection by xcorr, if necessary.
  * 
  */

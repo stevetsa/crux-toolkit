@@ -288,12 +288,12 @@ int compare_match_p_value(
 
 
 /**
- * compare two matches, used for qsort
- * The smaller the Q value the better!!!, this is opposite to other scores
+ * Compare two matches; used for qsort.
+ * Smaller q-values are better.  Break ties using the raw score.
  * \returns 0 if q-value scores are equal, -1 if a is less than b, 1 if a
  * is greather than b.
  */
-int compare_match_q_value(
+int compare_match_percolator_qvalue(
   MATCH_T** match_a, ///< the first match -in  
   MATCH_T** match_b  ///< the scond match -in
 )
@@ -307,16 +307,16 @@ int compare_match_q_value(
 	  > (*match_a)->match_scores[PERCOLATOR_QVALUE]){
     return -1;
   }
-  return 0;
+  return compare_match_percolator_score(match_a, match_b);
 }
 
 /**
- * compare two matches, used for qsort
- * The smaller the Q value the better!!!, this is opposite to other scores
+ * Compare two matches; used for qsort.
+ * Smaller q-values are better.  Break ties using the raw q-ranker score.
  * \returns 0 if q-value scores are equal, -1 if a is less than b, 1 if a
  * is greather than b.
  */
-int compare_match_qranker_q_value(
+int compare_match_qranker_qvalue(
   MATCH_T** match_a, ///< the first match -in  
   MATCH_T** match_b  ///< the scond match -in
 )
@@ -330,16 +330,17 @@ int compare_match_qranker_q_value(
           (*match_a)->match_scores[QRANKER_QVALUE]){
     return -1;
   }
-  return 0;
+  return compare_match_qranker_score(match_a, match_b);
 }
 
 /**
- * Compare two matches by spectrum scan number and q-value, used for qsort.
+ * Compare two matches by spectrum scan number and percolator q-value, 
+ * used for qsort.
  * \returns -1 if match a spectrum number is less than that of match b
  * or if scan number is same, if score of match a is less than
  * match b.  1 if scan number and score are equal, else 0.
  */
-int compare_match_spectrum_q_value(
+int compare_match_spectrum_percolator_qvalue(
   MATCH_T** match_a, ///< the first match -in  
   MATCH_T** match_b  ///< the scond match -in
 ){
@@ -347,11 +348,12 @@ int compare_match_spectrum_q_value(
   int return_me = compare_match_spectrum( match_a, match_b );
 
   if( return_me == 0 ){
-    return_me = compare_match_q_value(match_a, match_b);
+    return_me = compare_match_percolator_qvalue(match_a, match_b);
   }
 
   return return_me;
 }
+
 
 /**
  * Compare two matches by spectrum scan number and qranker q-value, 
@@ -360,7 +362,7 @@ int compare_match_spectrum_q_value(
  * or if scan number is same, if score of match a is less than
  * match b.  1 if scan number and score are equal, else 0.
  */
-int compare_match_spectrum_qranker_q_value(
+int compare_match_spectrum_qranker_qvalue(
   MATCH_T** match_a, ///< the first match -in  
   MATCH_T** match_b  ///< the scond match -in
 ){
@@ -368,7 +370,7 @@ int compare_match_spectrum_qranker_q_value(
   int return_me = compare_match_spectrum( match_a, match_b );
 
   if( return_me == 0 ){
-    return_me = compare_match_q_value(match_a, match_b);
+    return_me = compare_match_qranker_qvalue(match_a, match_b);
   }
 
   return return_me;
@@ -587,7 +589,7 @@ static void print_one_match_field(
   int      num_matches,            ///< num matches in spectrum -in
   int      charge,                 ///< charge -in
   const BOOLEAN_T* scores_computed,///< scores_computed[TYPE] = T if match was scored for TYPE
- int      b_y_total,              ///< total b/y ions -in
+  int      b_y_total,              ///< total b/y ions -in
   int      b_y_matched             ///< Number of b/y ions matched. -in
 ) {
 
@@ -1339,7 +1341,7 @@ int get_match_rank(
  */
 void set_match_rank(
   MATCH_T* match, ///< the match to work -in  
-  SCORER_TYPE_T match_mode, ///< the working mode (SP, XCORR) -in
+  SCORER_TYPE_T match_mode, ///< the working mode -in
   int match_rank ///< the rank of the match -in
   )
 {
