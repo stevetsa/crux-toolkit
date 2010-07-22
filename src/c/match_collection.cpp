@@ -1411,6 +1411,7 @@ BOOLEAN_T compute_decoy_q_values(
   return TRUE;
 }
 
+
 /**
  * match_collection get, set method
  */
@@ -3033,6 +3034,29 @@ void force_scored_by(MATCH_COLLECTION_T* match_collection, SCORER_TYPE_T type){
 }
 
 
+/**
+ * Extract a given type of score into an array.  The array is
+ * allocated here and must be freed by the caller.
+ */
+FLOAT_T* extract_scores_match_collection(
+  SCORER_TYPE_T       score_type, ///< Type of score to extract.
+  MATCH_COLLECTION_T* all_matches ///< add scores to this collection
+)
+{
+  FLOAT_T* return_value = (FLOAT_T*)mycalloc(all_matches->match_total,
+					     sizeof(FLOAT_T));
+
+  MATCH_ITERATOR_T* match_iterator = 
+    new_match_iterator(all_matches, XCORR, FALSE);
+  int idx = 0;
+  while(match_iterator_has_next(match_iterator)){
+    MATCH_T* match = match_iterator_next(match_iterator); 
+    return_value[idx] = get_match_score(match, score_type);
+  }
+  free_match_iterator(match_iterator);
+
+  return(return_value);
+}
 
 
 /*

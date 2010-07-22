@@ -22,6 +22,7 @@
 #include "match.h"
 #include "match_collection.h"
 #include "output-files.h"
+#include "hash.h"
 
 MATCH_COLLECTION_T* run_qvalue(
   char* psm_result_folder, 

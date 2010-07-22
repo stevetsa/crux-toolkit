@@ -593,6 +593,16 @@ void add_decoy_scores_match_collection(
   MODIFIED_PEPTIDES_ITERATOR_T* peptides ///< use these peptides to search
 );
 
+
+/**
+ * Extract a given type of score into an array.  The array is
+ * allocated here and must be freed by the caller.
+ */
+FLOAT_T* extract_scores_match_collection(
+  SCORER_TYPE_T       score_type, ///< Type of score to extract.
+  MATCH_COLLECTION_T* all_matches ///< add scores to this collection
+);
+
 #endif
 
 /*
