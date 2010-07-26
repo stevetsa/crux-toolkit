@@ -24,6 +24,12 @@
 #include "output-files.h"
 #include "hash.h"
 
+FLOAT_T* compute_decoy_qvalues(
+  FLOAT_T* target_scores,
+  int      num_targets,
+  FLOAT_T* decoy_scores,
+  int      num_decoys);
+
 MATCH_COLLECTION_T* run_qvalue(
   char* psm_result_folder, 
   char* fasta_file );

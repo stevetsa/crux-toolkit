@@ -90,67 +90,6 @@ static void identify_best_psm_per_peptide
   free_match_iterator(match_iterator);
 }
 
-#ifdef OLD_VERSION
-/**
- * Find the best-scoring match, by XCorr, for each peptide in a given
- * collection.  Only consider the top-ranked PSM per spectrum.
- *
- * Results are stored in the given match collection.
- */
-static void identify_best_psm_per_peptide
-  (MATCH_COLLECTION_T* all_matches)
-{
-  /* Instantiate a hash table.  key = peptide; value = maximal xcorr
-     for that peptide. */
-  HASH_T* best_xcorr_per_peptide 
-    = new_hash(get_match_collection_match_total(all_matches));
-
-  MATCH_ITERATOR_T* match_iterator 
-    = new_match_iterator(all_matches, XCORR, FALSE);
-  while(match_iterator_has_next(match_iterator)){
-    MATCH_T* match = match_iterator_next(match_iterator);
-
-    // Skip matches that are not top-ranked.
-    if (get_match_rank(match, XCORR) == 1) {
-      char* peptide = get_match_sequence(match);
-      FLOAT_T xcorr = get_match_score(match, XCORR);
-
-      FLOAT_T* best_xcorr = 
-	(FLOAT_T*)get_hash_value(best_xcorr_per_peptide, peptide);
-      if (best_xcorr == NULL) {
-	add_hash(best_xcorr_per_peptide, peptide, (void*)&xcorr);
-      } else if (*best_xcorr < xcorr) {
-	update_hash_value(best_xcorr_per_peptide, peptide, (void*)&xcorr);
-      }
-    }
-  }
-  free_match_iterator(match_iterator);
-
-  // Set the best_per_peptide Boolean in the match, based on the hash.
-  match_iterator = new_match_iterator(all_matches, XCORR, FALSE);
-  while(match_iterator_has_next(match_iterator)){
-    MATCH_T* match = match_iterator_next(match_iterator);
-
-    // Skip matches that are not top-ranked.
-    if (get_match_rank(match, XCORR) == 1) {
-      char* peptide = get_match_sequence(match);
-      FLOAT_T xcorr = get_match_score(match, XCORR);
-      FLOAT_T* stored_best = 
-	(FLOAT_T*)get_hash_value(best_xcorr_per_peptide, peptide);
-
-      if (*stored_best == xcorr) {
-	set_best_per_peptide(match);
-
-	// Prevent ties from causing two peptides to be best.
-	FLOAT_T huge = HUGE_VAL;
-	update_hash_value(best_xcorr_per_peptide, peptide, (void*)&huge);
-      }
-    }
-    free_match_iterator(match_iterator);
-  }
-  free_hash(best_xcorr_per_peptide);
-}
-#endif
 
 /**
  * Compare doubles
@@ -198,21 +137,17 @@ static void convert_fdr_to_qvalue
  *
  * The new hash table must be freed by the caller.
  */
-static HASH_T* store_arrays_as_hash
+map<FLOAT_T, FLOAT_T> store_arrays_as_hash
   (FLOAT_T* keys, 
    FLOAT_T* values,
    int      num_values
 ){
 
-  HASH_T* return_value = new_hash(num_values);
+  map<FLOAT_T, FLOAT_T> return_value;
+
   int idx;
   for (idx=0; idx < num_values; idx++){
-    // QUESTION: How long should this string be?  And who will free it?
-    char* key_string = (char*)mymalloc(30 * sizeof(char));
-    // QUESTION: How much precision should I use to store this value?
-    sprintf(key_string, "%g", keys[idx]);
-    FLOAT_T value = values[idx];
-    add_hash(return_value, key_string, (void*)&value);
+    return_value[keys[idx]] = values[idx];
   }
   return(return_value);
 }
@@ -263,7 +198,7 @@ static FLOAT_T* compute_qvalues_from_pvalues(
  * q-values to all of the matches in a given collection.
  */
 static void assign_qvalues(
-  HASH_T* score_to_qvalue_hash,
+  map<FLOAT_T, FLOAT_T> score_to_qvalue_hash,
   SCORER_TYPE_T score_type,
   MATCH_COLLECTION_T* all_matches
 ){
@@ -276,45 +211,49 @@ static void assign_qvalues(
     FLOAT_T score = get_match_score(match, score_type);
 
     // Retrieve the corresponding q-value.
-    char score_string[30];
-    sprintf(score_string, "%g", score);
-    FLOAT_T* qvalue = (FLOAT_T*)get_hash_value(score_to_qvalue_hash, 
-					       score_string);
+    map<FLOAT_T, FLOAT_T>::iterator map_position 
+      = score_to_qvalue_hash.find(score);
+    if (map_position == score_to_qvalue_hash.end()) {
+      carp(CARP_FATAL,
+	   "Cannot find q-value corresponding to score of %g.",
+	   score);
+    }
+    FLOAT_T qvalue = map_position->second;
 
     /* If we're given a base score, then store the q-value.  If we're
        given a q-value, then store the peptide-level q-value. */
     switch (score_type) {
 
     case XCORR:
-      set_match_score(match, DECOY_XCORR_QVALUE, *qvalue);
+      set_match_score(match, DECOY_XCORR_QVALUE, qvalue);
       break;
 
     case DECOY_XCORR_QVALUE:
-      set_match_score(match, DECOY_XCORR_PEPTIDE_QVALUE, *qvalue);
+      set_match_score(match, DECOY_XCORR_PEPTIDE_QVALUE, qvalue);
       break;
 
     case LOGP_BONF_WEIBULL_XCORR: 
-      set_match_score(match, LOGP_QVALUE_WEIBULL_XCORR, *qvalue);
+      set_match_score(match, LOGP_QVALUE_WEIBULL_XCORR, qvalue);
       break;
 
     case LOGP_QVALUE_WEIBULL_XCORR:
-      set_match_score(match, LOGP_PEPTIDE_QVALUE_WEIBULL, *qvalue);
+      set_match_score(match, LOGP_PEPTIDE_QVALUE_WEIBULL, qvalue);
       break;
 
     case PERCOLATOR_SCORE:
-      set_match_score(match, PERCOLATOR_QVALUE, *qvalue);
+      set_match_score(match, PERCOLATOR_QVALUE, qvalue);
       break;
 
     case PERCOLATOR_QVALUE:
-      set_match_score(match, PERCOLATOR_PEPTIDE_QVALUE, *qvalue);
+      set_match_score(match, PERCOLATOR_PEPTIDE_QVALUE, qvalue);
       break;
 
     case QRANKER_SCORE:
-      set_match_score(match, QRANKER_QVALUE, *qvalue);
+      set_match_score(match, QRANKER_QVALUE, qvalue);
       break;
 
     case QRANKER_QVALUE:
-      set_match_score(match, QRANKER_PEPTIDE_QVALUE, *qvalue);
+      set_match_score(match, QRANKER_PEPTIDE_QVALUE, qvalue);
       break;
 
     // Should never reach this point.
@@ -334,8 +273,10 @@ static void assign_qvalues(
  * \brief Compute q-values from a given set of scores, using a second
  * set of scores as an empirical null.  Sorts the incoming target
  * scores and returns a corresponding list of q-values.
+ *
+ * This function is only exported to allow unit testing.
  */
-static FLOAT_T* compute_decoy_qvalues(
+FLOAT_T* compute_decoy_qvalues(
   FLOAT_T* target_scores,
   int      num_targets,
   FLOAT_T* decoy_scores,
@@ -368,10 +309,11 @@ static FLOAT_T* compute_decoy_qvalues(
     FLOAT_T fdr = decoy_idx / target_idx;
     if( target_idx == 0 ){ fdr = 1.0; }
 
-    qvalues[target_idx] = fdr;
+    // Store FDRs as negative logs.
+    qvalues[target_idx] = - log(fdr);
   }
 
-  // convert the FDRs into q-values
+  // Convert the FDRs into q-values.
   convert_fdr_to_qvalue(qvalues, num_targets);
 
   return(qvalues);
@@ -478,12 +420,11 @@ MATCH_COLLECTION_T* run_qvalue(
   }
 
   // Store p-values to q-values as a hash, and then assign them.
-  HASH_T* qvalue_hash 
+  map<FLOAT_T, FLOAT_T> qvalue_hash 
     = store_arrays_as_hash(pvalues, qvalues, num_pvals);
   assign_qvalues(qvalue_hash, XCORR, target_matches);
   free(pvalues);
   free(qvalues);
-  free_hash(qvalue_hash);
 
   // Identify PSMs that are top-scoring per peptide.
   identify_best_psm_per_peptide(target_matches);
