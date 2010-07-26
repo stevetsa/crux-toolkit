@@ -15,11 +15,82 @@
  * the same ms2 file. 
  ****************************************************************************/
 #include "q-value.h"
+#include <map>
+
+using namespace std;
 
 static const int MAX_PSMS = 10000000;
 // 14th decimal place
 static const double EPSILON = 0.00000000000001;
 
+/**
+* Find the best-scoring match, by XCorr, for each peptide in a given
+* collection.  Only consider the top-ranked PSM per spectrum.
+*
+* Results are stored in the given match collection.
+*/
+static void identify_best_psm_per_peptide
+ (MATCH_COLLECTION_T* all_matches)
+{
+  /* Instantiate a hash table.  key = peptide; value = maximal xcorr
+     for that peptide. */
+  map<string, FLOAT_T> best_xcorr_per_peptide;
+
+  // Store in the hash the best xcorr per peptide.
+  MATCH_ITERATOR_T* match_iterator 
+    = new_match_iterator(all_matches, XCORR, FALSE);
+  while(match_iterator_has_next(match_iterator)){
+    MATCH_T* match = match_iterator_next(match_iterator);
+
+    // Skip matches that are not top-ranked.
+    if (get_match_rank(match, XCORR) == 1) {
+      char *peptide = get_match_sequence(match);
+      FLOAT_T xcorr = get_match_score(match, XCORR);
+
+      map<string, FLOAT_T>::iterator map_position 
+	= best_xcorr_per_peptide.find(peptide);
+
+      if (map_position == best_xcorr_per_peptide.end()) {
+	best_xcorr_per_peptide[peptide] = xcorr;
+      } else {
+        if (map_position->second < xcorr) {
+          best_xcorr_per_peptide[peptide] = xcorr;
+        }
+      }
+      free(peptide);
+    }
+  }
+  free_match_iterator(match_iterator);
+
+
+  // Set the best_per_peptide Boolean in the match, based on the hash.
+  match_iterator = new_match_iterator(all_matches, XCORR, FALSE);
+  while(match_iterator_has_next(match_iterator)){
+    MATCH_T* match = match_iterator_next(match_iterator);
+
+     // Skip matches that are not top-ranked.
+    if (get_match_rank(match, XCORR) == 1) {
+      char* peptide = get_match_sequence(match);
+      FLOAT_T xcorr = get_match_score(match, XCORR);
+
+      map<string, FLOAT_T>::iterator map_position 
+	= best_xcorr_per_peptide.find(peptide);
+
+      if (map_position->second == xcorr) {
+	set_best_per_peptide(match);
+
+        // Prevent ties from causing two peptides to be best.
+        best_xcorr_per_peptide[peptide] = HUGE_VAL;
+     }
+
+     free(peptide);
+    }
+  }
+
+  free_match_iterator(match_iterator);
+}
+
+#ifdef OLD_VERSION
 /**
  * Find the best-scoring match, by XCorr, for each peptide in a given
  * collection.  Only consider the top-ranked PSM per spectrum.
@@ -34,7 +105,6 @@ static void identify_best_psm_per_peptide
   HASH_T* best_xcorr_per_peptide 
     = new_hash(get_match_collection_match_total(all_matches));
 
-  // Store in the hash the best xcorr per peptide.
   MATCH_ITERATOR_T* match_iterator 
     = new_match_iterator(all_matches, XCORR, FALSE);
   while(match_iterator_has_next(match_iterator)){
@@ -80,6 +150,7 @@ static void identify_best_psm_per_peptide
   }
   free_hash(best_xcorr_per_peptide);
 }
+#endif
 
 /**
  * Compare doubles
@@ -136,7 +207,9 @@ static HASH_T* store_arrays_as_hash
   HASH_T* return_value = new_hash(num_values);
   int idx;
   for (idx=0; idx < num_values; idx++){
+    // QUESTION: How long should this string be?  And who will free it?
     char* key_string = (char*)mymalloc(30 * sizeof(char));
+    // QUESTION: How much precision should I use to store this value?
     sprintf(key_string, "%g", keys[idx]);
     FLOAT_T value = values[idx];
     add_hash(return_value, key_string, (void*)&value);
