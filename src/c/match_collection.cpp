@@ -673,6 +673,7 @@ void sort_match_collection(
 
   // Should never reach this point.
   case NUMBER_SCORER_TYPES:
+  case INVALID_SCORER_TYPE:
     carp(CARP_FATAL, "Something is terribly wrong in the sorting code!");
   }
 
@@ -753,6 +754,7 @@ void spectrum_sort_match_collection(
 
   // Should never reach this point.
   case NUMBER_SCORER_TYPES:
+  case INVALID_SCORER_TYPE:
     carp(CARP_FATAL, "Something is terribly wrong in the sorting code!");
  }
 }

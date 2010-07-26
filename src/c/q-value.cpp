@@ -24,37 +24,39 @@ static const int MAX_PSMS = 10000000;
 static const double EPSILON = 0.00000000000001;
 
 /**
-* Find the best-scoring match, by XCorr, for each peptide in a given
-* collection.  Only consider the top-ranked PSM per spectrum.
+* Find the best-scoring match for each peptide in a given collection.
+* Only consider the top-ranked PSM per spectrum.
 *
 * Results are stored in the given match collection.
 */
 static void identify_best_psm_per_peptide
- (MATCH_COLLECTION_T* all_matches)
+(MATCH_COLLECTION_T* all_matches,
+ SCORER_TYPE_T score_type)
 {
   /* Instantiate a hash table.  key = peptide; value = maximal xcorr
      for that peptide. */
-  map<string, FLOAT_T> best_xcorr_per_peptide;
+  map<string, FLOAT_T> best_score_per_peptide;
 
-  // Store in the hash the best xcorr per peptide.
+  // Store in the hash the best score per peptide.
   MATCH_ITERATOR_T* match_iterator 
-    = new_match_iterator(all_matches, XCORR, FALSE);
+    = new_match_iterator(all_matches, score_type, FALSE);
   while(match_iterator_has_next(match_iterator)){
     MATCH_T* match = match_iterator_next(match_iterator);
 
     // Skip matches that are not top-ranked.
-    if (get_match_rank(match, XCORR) == 1) {
+    if (get_match_rank(match, score_type) == 1) {
       char *peptide = get_match_sequence(match);
-      FLOAT_T xcorr = get_match_score(match, XCORR);
+      FLOAT_T this_score = get_match_score(match, score_type);
 
       map<string, FLOAT_T>::iterator map_position 
-	= best_xcorr_per_peptide.find(peptide);
+	= best_score_per_peptide.find(peptide);
 
-      if (map_position == best_xcorr_per_peptide.end()) {
-	best_xcorr_per_peptide[peptide] = xcorr;
+      if (map_position == best_score_per_peptide.end()) {
+	best_score_per_peptide[peptide] = this_score;
       } else {
-        if (map_position->second < xcorr) {
-          best_xcorr_per_peptide[peptide] = xcorr;
+	// FIXME: Need a generic compare operator for score_type.
+        if (map_position->second < this_score) {
+          best_score_per_peptide[peptide] = this_score;
         }
       }
       free(peptide);
@@ -64,23 +66,23 @@ static void identify_best_psm_per_peptide
 
 
   // Set the best_per_peptide Boolean in the match, based on the hash.
-  match_iterator = new_match_iterator(all_matches, XCORR, FALSE);
+  match_iterator = new_match_iterator(all_matches, score_type, FALSE);
   while(match_iterator_has_next(match_iterator)){
     MATCH_T* match = match_iterator_next(match_iterator);
 
      // Skip matches that are not top-ranked.
-    if (get_match_rank(match, XCORR) == 1) {
+    if (get_match_rank(match, score_type) == 1) {
       char* peptide = get_match_sequence(match);
-      FLOAT_T xcorr = get_match_score(match, XCORR);
+      FLOAT_T this_score = get_match_score(match, score_type);
 
       map<string, FLOAT_T>::iterator map_position 
-	= best_xcorr_per_peptide.find(peptide);
+	= best_score_per_peptide.find(peptide);
 
-      if (map_position->second == xcorr) {
+      if (map_position->second == this_score) {
 	set_best_per_peptide(match);
 
         // Prevent ties from causing two peptides to be best.
-        best_xcorr_per_peptide[peptide] = HUGE_VAL;
+        best_score_per_peptide[peptide] = HUGE_VAL;
      }
 
      free(peptide);
@@ -112,22 +114,20 @@ static int compare_doubles_descending(
  * The q-value is defined as the minimum FDR at which a given score is
  * deemed significant.  This function takes a list of FDRs in sorted
  * order and converts them into q-values.
- *
- * All calculations are done as negative logs.
  */
 static void convert_fdr_to_qvalue 
   (FLOAT_T* qvalues,     ///< Come in as FDRs, go out as q-values.
    int      num_values)
 {
-  double max_log_qvalue = - BILLION;
+  FLOAT_T prev_fdr = qvalues[num_values - 1];
   int idx;
-  for (idx=num_values-1; idx >= 0; idx--){
-    if (qvalues[idx] > max_log_qvalue){
-      max_log_qvalue = qvalues[idx];
-    } else { // current q-value is <= max q-value
-      // set to max q-value so far
-      qvalues[idx] = max_log_qvalue; 
+  for (idx=num_values - 2; idx >= 0; idx--){
+    carp(CARP_DETAILED_DEBUG, "fdr[%i] = %.10f", idx, qvalues[idx]);
+    FLOAT_T this_fdr = qvalues[idx];
+    if (prev_fdr < this_fdr) {
+      qvalues[idx] = prev_fdr;
     }
+    prev_fdr = qvalues[idx];
     carp(CARP_DETAILED_DEBUG, "qvalue[%i] = %.10f", idx, qvalues[idx]);
   }
 }
@@ -147,6 +147,7 @@ map<FLOAT_T, FLOAT_T> store_arrays_as_hash
 
   int idx;
   for (idx=0; idx < num_values; idx++){
+    carp(CARP_DETAILED_DEBUG, "%g maps to %g", keys[idx], values[idx]);
     return_value[keys[idx]] = values[idx];
   }
   return(return_value);
@@ -157,33 +158,27 @@ map<FLOAT_T, FLOAT_T> store_arrays_as_hash
  * p-values into q-values.  
  *
  * Assumes that the input is an array of negative log p-values.  The
- * output array also contains negative log q-values.
+ * output q-values are not log-transformed.
  *
  * This function uses the command line parameter "pi-zero".
  */
-static FLOAT_T* compute_qvalues_from_pvalues(
+FLOAT_T* compute_qvalues_from_pvalues(
   FLOAT_T* pvalues, 
-  int      num_pvals
+  int      num_pvals,
+  FLOAT_T  pi_zero
 ){
 
   // sort the - log p-values in descending order
-  qsort(pvalues, num_pvals, sizeof(double), compare_doubles_descending);
-
-  // work in negative log space, since that is where p- and qvalues end up
-  double log_num_psms = - log(num_pvals);
-  double log_pi_0 = - log(get_double_parameter("pi-zero"));
+  qsort(pvalues, num_pvals, sizeof(FLOAT_T), compare_doubles_descending);
 
   // convert the p-values into FDRs using Benjamini-Hochberg
   FLOAT_T* qvalues = (FLOAT_T*)mycalloc(num_pvals, sizeof(FLOAT_T));
   int idx;
   for (idx=0; idx < num_pvals; idx++){
-    carp(CARP_DETAILED_DEBUG, "pvalue[%i] = %.10f", idx, pvalues[idx]);
-    int pvalue_idx = idx + 1; // start counting pvalues at 1
-    double log_pvalue = pvalues[idx];
-
-    double log_qvalue = 
-      log_pvalue + log_num_psms - (-log(pvalue_idx)) + log_pi_0;
-    qvalues[idx] = log_qvalue;
+    carp(CARP_DETAILED_DEBUG, "pvalue[%i] = %.10f", idx, exp(-pvalues[idx]));
+    double fdr = (exp(-pvalues[idx]) / (idx + 1)) 
+      * (FLOAT_T)num_pvals * pi_zero;
+    qvalues[idx] = fdr;
     carp(CARP_DETAILED_DEBUG, "FDR[%i] = %.10f", idx, qvalues[idx]);
   }
 
@@ -205,7 +200,7 @@ static void assign_qvalues(
 
   // Iterate over the matches filling in the q-values
   MATCH_ITERATOR_T* match_iterator = new_match_iterator(all_matches, 
-                                                        XCORR, FALSE);
+                                                        score_type, FALSE);
   while(match_iterator_has_next(match_iterator)){
     MATCH_T* match = match_iterator_next(match_iterator);
     FLOAT_T score = get_match_score(match, score_type);
@@ -264,6 +259,7 @@ static void assign_qvalues(
     case PERCOLATOR_PEPTIDE_QVALUE:
     case QRANKER_PEPTIDE_QVALUE:
     case NUMBER_SCORER_TYPES:
+    case INVALID_SCORER_TYPE:
       carp(CARP_FATAL, "Something is terribly wrong!");
     }
   }
@@ -280,7 +276,8 @@ FLOAT_T* compute_decoy_qvalues(
   FLOAT_T* target_scores,
   int      num_targets,
   FLOAT_T* decoy_scores,
-  int      num_decoys
+  int      num_decoys,
+  FLOAT_T  pi_zero
 ){
   if ((num_targets == 0) || (num_decoys == 0)) {
     carp(CARP_FATAL, "Cannot compute q-values (%d targets, %d nulls).",
@@ -292,6 +289,10 @@ FLOAT_T* compute_decoy_qvalues(
   qsort(target_scores, num_targets, sizeof(FLOAT_T), compare_doubles_descending);
   qsort(decoy_scores, num_targets, sizeof(FLOAT_T), compare_doubles_descending);
 
+  // Precompute the ratio of targets to decoys.
+  FLOAT_T targets_to_decoys = (FLOAT_T)num_targets / (FLOAT_T)num_decoys;
+  
+
   // Compute false discovery rate for each target score.
   FLOAT_T* qvalues = (FLOAT_T*)mycalloc(num_targets, sizeof(FLOAT_T));
   int decoy_idx = 0;
@@ -299,18 +300,20 @@ FLOAT_T* compute_decoy_qvalues(
   for (target_idx = 0; target_idx < num_targets; target_idx++) {
     FLOAT_T target_score = target_scores[target_idx];
 
-    // Find the index of the first decoy score 
+    // Find the index of the first decoy score greater than this target score.
     while ((decoy_idx < num_decoys) &&
 	   (decoy_scores[decoy_idx] > target_score)) {
       decoy_idx++;
     }
 
     // FDR = #decoys / #targets
-    FLOAT_T fdr = decoy_idx / target_idx;
-    if( target_idx == 0 ){ fdr = 1.0; }
+    FLOAT_T fdr = pi_zero * targets_to_decoys * 
+      ((FLOAT_T)decoy_idx / (FLOAT_T)(target_idx + 1));
+    if ( fdr > 1.0 ){
+      fdr = 1.0;
+    }
 
-    // Store FDRs as negative logs.
-    qvalues[target_idx] = - log(fdr);
+    qvalues[target_idx] = fdr;
   }
 
   // Convert the FDRs into q-values.
@@ -390,6 +393,7 @@ MATCH_COLLECTION_T* run_qvalue(
   FLOAT_T* pvalues = NULL; // N.B. Misnamed for decoy calculation.
   int num_pvals = get_match_collection_match_total(target_matches);
   FLOAT_T* qvalues = NULL;
+  SCORER_TYPE_T score_type = INVALID_SCORER_TYPE;
   if (have_pvalues == TRUE) {
     carp(CARP_DEBUG, "There are %d PSMs for q-value computation.", num_pvals);
     set_match_collection_scored_type(target_matches, 
@@ -397,7 +401,9 @@ MATCH_COLLECTION_T* run_qvalue(
 				     TRUE);
     pvalues = extract_scores_match_collection(LOGP_BONF_WEIBULL_XCORR,
 					      target_matches);
-    qvalues = compute_qvalues_from_pvalues(pvalues, num_pvals);
+    qvalues = compute_qvalues_from_pvalues(pvalues, num_pvals,
+					   get_double_parameter("pi-zero"));
+    score_type = LOGP_BONF_WEIBULL_XCORR;
   }
 
   // Compute q-values from the XCorr decoy distribution.
@@ -410,8 +416,10 @@ MATCH_COLLECTION_T* run_qvalue(
     FLOAT_T* decoy_xcorrs 
       = extract_scores_match_collection(XCORR, decoy_matches);
     qvalues = compute_decoy_qvalues(pvalues, num_pvals, 
-				    decoy_xcorrs, num_decoys);
+				    decoy_xcorrs, num_decoys,
+				    get_double_parameter("pi-zero"));
     free(decoy_xcorrs);
+    score_type = XCORR;
   }
 
   // Fatal: Cannot compute q-values.
@@ -422,12 +430,12 @@ MATCH_COLLECTION_T* run_qvalue(
   // Store p-values to q-values as a hash, and then assign them.
   map<FLOAT_T, FLOAT_T> qvalue_hash 
     = store_arrays_as_hash(pvalues, qvalues, num_pvals);
-  assign_qvalues(qvalue_hash, XCORR, target_matches);
+  assign_qvalues(qvalue_hash, score_type, target_matches);
   free(pvalues);
   free(qvalues);
 
   // Identify PSMs that are top-scoring per peptide.
-  identify_best_psm_per_peptide(target_matches);
+  identify_best_psm_per_peptide(target_matches, score_type);
 
   // Compute peptide-level q-values.
   //  compute_decoy_q_values(all_matches/

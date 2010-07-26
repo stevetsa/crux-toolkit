@@ -655,7 +655,7 @@ static void print_one_match_field(
   case WEIBULL_QVALUE_COL:
     if( scores_computed[LOGP_QVALUE_WEIBULL_XCORR] == TRUE ){ 
       double weibull_qvalue = get_match_score(match, LOGP_QVALUE_WEIBULL_XCORR);
-      fprintf(output_file, float_format, exp(-1 * weibull_qvalue));
+      fprintf(output_file, float_format, weibull_qvalue);
     }
     break;
 #ifdef NEW_COLUMNS
@@ -663,7 +663,7 @@ static void print_one_match_field(
     if ((scores_computed[LOGP_QVALUE_WEIBULL_XCORR] == TRUE) &&
 	(match->best_per_peptide == TRUE)) {
       double qvalue = get_match_score(match, LOGP_PEPTIDE_QVALUE_WEIBULL);
-      fprintf(output_file, float_format, exp(-1 * qvalue));
+      fprintf(output_file, float_format, qvalue);
     }
     break;
 #endif
