@@ -2044,7 +2044,6 @@ void print_matches_multi_spectra
  FILE* tab_file, 
  FILE* decoy_tab_file){
 
-
   carp(CARP_DETAILED_DEBUG, "Writing matches to file");
 
   // if file location is target (i.e. tdc=T), print all to target
@@ -2069,11 +2068,13 @@ void print_matches_multi_spectra
 
     if( is_decoy ){
       print_match_tab(match_collection, cur_match, decoy_file, scan_num, mz, 
-                      spec_mass, (int)num_psm_per_spec, charge, match_collection->scored_type );
+                      spec_mass, (int)num_psm_per_spec, charge, 
+		      match_collection->scored_type );
     }
     else{
       print_match_tab(match_collection, cur_match, tab_file, scan_num, mz,
-                      spec_mass, (int)num_psm_per_spec, charge, match_collection->scored_type );
+                      spec_mass, (int)num_psm_per_spec, charge, 
+		      match_collection->scored_type );
     }
 
   }
@@ -3059,6 +3060,80 @@ FLOAT_T* extract_scores_match_collection(
   free_match_iterator(match_iterator);
 
   return(return_value);
+}
+
+/**
+ * Given a hash table that maps from a score to its q-value, assign
+ * q-values to all of the matches in a given collection.
+ */
+void assign_match_collection_qvalues(
+  map<FLOAT_T, FLOAT_T> score_to_qvalue_hash,
+  SCORER_TYPE_T score_type,
+  MATCH_COLLECTION_T* all_matches
+){
+
+  // Iterate over the matches filling in the q-values
+  MATCH_ITERATOR_T* match_iterator = new_match_iterator(all_matches, 
+                                                        score_type, FALSE);
+  while(match_iterator_has_next(match_iterator)){
+    MATCH_T* match = match_iterator_next(match_iterator);
+    FLOAT_T score = get_match_score(match, score_type);
+
+    // Retrieve the corresponding q-value.
+    map<FLOAT_T, FLOAT_T>::iterator map_position 
+      = score_to_qvalue_hash.find(score);
+    if (map_position == score_to_qvalue_hash.end()) {
+      carp(CARP_FATAL,
+	   "Cannot find q-value corresponding to score of %g.",
+	   score);
+    }
+    FLOAT_T qvalue = map_position->second;
+
+    /* If we're given a base score, then store the q-value.  If we're
+       given a q-value, then store the peptide-level q-value. */
+    SCORER_TYPE_T derived_score_type = INVALID_SCORER_TYPE;
+    switch (score_type) {
+    case XCORR:
+      derived_score_type = DECOY_XCORR_QVALUE;
+      break;
+    case DECOY_XCORR_QVALUE:
+      derived_score_type = DECOY_XCORR_PEPTIDE_QVALUE;
+      break;
+    case LOGP_BONF_WEIBULL_XCORR: 
+      derived_score_type = LOGP_QVALUE_WEIBULL_XCORR;
+      break;
+    case LOGP_QVALUE_WEIBULL_XCORR:
+      derived_score_type = LOGP_PEPTIDE_QVALUE_WEIBULL;
+      break;
+    case PERCOLATOR_SCORE:
+      derived_score_type = PERCOLATOR_QVALUE;
+      break;
+    case PERCOLATOR_QVALUE:
+      derived_score_type = PERCOLATOR_PEPTIDE_QVALUE;
+      break;
+    case QRANKER_SCORE:
+      derived_score_type = QRANKER_QVALUE;
+      break;
+    case QRANKER_QVALUE:
+      derived_score_type = QRANKER_PEPTIDE_QVALUE;
+      break;
+    // Should never reach this point.
+    case SP: 
+    case LOGP_WEIBULL_XCORR: 
+    case DECOY_XCORR_PEPTIDE_QVALUE:
+    case LOGP_PEPTIDE_QVALUE_WEIBULL:
+    case PERCOLATOR_PEPTIDE_QVALUE:
+    case QRANKER_PEPTIDE_QVALUE:
+    case NUMBER_SCORER_TYPES:
+    case INVALID_SCORER_TYPE:
+      carp(CARP_FATAL, "Something is terribly wrong!");
+    }
+
+    set_match_score(match, derived_score_type, qvalue);
+    all_matches->scored_type[derived_score_type] = TRUE;
+
+  }
+  free_match_iterator(match_iterator);
 }
 
 
