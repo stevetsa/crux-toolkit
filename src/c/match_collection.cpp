@@ -3054,6 +3054,7 @@ FLOAT_T* extract_scores_match_collection(
   while(match_iterator_has_next(match_iterator)){
     MATCH_T* match = match_iterator_next(match_iterator); 
     return_value[idx] = get_match_score(match, score_type);
+    idx++;
   }
   free_match_iterator(match_iterator);
 

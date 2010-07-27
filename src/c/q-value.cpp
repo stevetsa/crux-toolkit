@@ -169,7 +169,7 @@ FLOAT_T* compute_qvalues_from_pvalues(
 ){
 
   // sort the - log p-values in descending order
-  qsort(pvalues, num_pvals, sizeof(FLOAT_T), compare_doubles_descending);
+  qsort(pvalues, num_pvals, sizeof(double), compare_doubles_descending);
 
   // convert the p-values into FDRs using Benjamini-Hochberg
   FLOAT_T* qvalues = (FLOAT_T*)mycalloc(num_pvals, sizeof(FLOAT_T));
@@ -286,8 +286,8 @@ FLOAT_T* compute_decoy_qvalues(
   carp(CARP_DEBUG, "Computing decoy q-values.");
 
   // Sort both sets of scores.
-  qsort(target_scores, num_targets, sizeof(FLOAT_T), compare_doubles_descending);
-  qsort(decoy_scores, num_targets, sizeof(FLOAT_T), compare_doubles_descending);
+  qsort(target_scores, num_targets, sizeof(double), compare_doubles_descending);
+  qsort(decoy_scores, num_targets, sizeof(double), compare_doubles_descending);
 
   // Precompute the ratio of targets to decoys.
   FLOAT_T targets_to_decoys = (FLOAT_T)num_targets / (FLOAT_T)num_decoys;
