@@ -29,7 +29,13 @@ int main(void){
 
   // BF: comment out three broken tests (ion, scorer, spectrum).
 
+
   // Create all check suites.
+  /* To add a new suite for <<<class>>>, add a line of the following form:
+   *
+   *   Suite* suite_<<<class>>> = <<<class>>>_suite();
+   *
+   */
   Suite* suite_crux_utils = crux_utils_suite();
   Suite* suite_database = database_suite();
   Suite* suite_generate_peptides_iterator = generate_peptides_iterator_suite();
@@ -57,6 +63,11 @@ int main(void){
   //add each suite to Runner
   SRunner *sr = srunner_create(NULL);
   
+  /* To add a new suite for <<<class>>>, add a line of the following form:
+   *
+   *   srunner_add_suite(sr, suite_<<<class>>>);
+   *
+   */
   srunner_add_suite(sr, suite_crux_utils);
   srunner_add_suite(sr, suite_database);
   srunner_add_suite(sr, suite_generate_peptides_iterator);

@@ -94,8 +94,9 @@ static void identify_best_psm_per_peptide
 
 /**
  * The q-value is defined as the minimum FDR at which a given score is
- * deemed significant.  This function takes a list of FDRs in sorted
- * order and converts them into q-values.
+ * deemed significant.  This function takes a list of FDRs and
+ * converts them into q-values.  The FDRs should be ordered from
+ * lowest to highest, sorted according to the underlying score.
  */
 static void convert_fdr_to_qvalue 
   (FLOAT_T* qvalues,     ///< Come in as FDRs, go out as q-values.
@@ -119,18 +120,18 @@ static void convert_fdr_to_qvalue
  *
  * The new hash table must be freed by the caller.
  */
-map<FLOAT_T, FLOAT_T> store_arrays_as_hash
+map<FLOAT_T, FLOAT_T>* store_arrays_as_hash
   (FLOAT_T* keys, 
    FLOAT_T* values,
    int      num_values
 ){
 
-  map<FLOAT_T, FLOAT_T> return_value;
+  map<FLOAT_T, FLOAT_T>* return_value = new map<FLOAT_T, FLOAT_T>();
 
   int idx;
   for (idx=0; idx < num_values; idx++){
     carp(CARP_DETAILED_DEBUG, "%g maps to %g", keys[idx], values[idx]);
-    return_value[keys[idx]] = values[idx];
+    (*return_value)[keys[idx]] = values[idx];
   }
   return(return_value);
 }
@@ -355,9 +356,9 @@ MATCH_COLLECTION_T* run_qvalue(
   }
 
   // Store p-values to q-values as a hash, and then assign them.
-  map<FLOAT_T, FLOAT_T> qvalue_hash 
+  map<FLOAT_T, FLOAT_T>* qvalue_hash 
     = store_arrays_as_hash(pvalues, qvalues, num_pvals);
-  assign_match_collection_qvalues(qvalue_hash, score_type, target_matches);
+  assign_match_collection_qvalues(*qvalue_hash, score_type, target_matches);
   free(pvalues);
   free(qvalues);
 
