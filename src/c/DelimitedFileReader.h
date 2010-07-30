@@ -141,6 +141,17 @@ class DelimitedFileReader {
   std::vector<std::string>& getColumnNames();
 
   /**
+  *\returns the current_row_
+  */
+  unsigned int getCurrentRow();
+
+  /**
+  *\returns the current_data_string_
+  */
+  std::string& getDataString();
+
+
+  /**
    * gets a string value of the cell
    * uses the current_row_ as the row index
    */

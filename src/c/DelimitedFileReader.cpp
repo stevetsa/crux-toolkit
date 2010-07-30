@@ -194,6 +194,20 @@ vector<string>& DelimitedFileReader::getColumnNames() {
 }
 
 /**
+ *\returns the current_row_
+ */
+unsigned int DelimitedFileReader::getCurrentRow() {
+  return current_row_;
+}
+
+/**
+ *\returns the current_data_string_
+ */
+string& DelimitedFileReader::getDataString() {
+  return current_data_string_;
+}
+
+/**
  *\returns the string value of the cell
  */
 string& DelimitedFileReader::getString(

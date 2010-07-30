@@ -34,6 +34,10 @@ public:
 inline bool operator>(const ScoreHolder &one, const ScoreHolder &other); 
 inline bool operator<(const ScoreHolder &one, const ScoreHolder &other); 
 
+inline bool compareScore(const ScoreHolder& one, const ScoreHolder &other);
+inline bool comparePValue(const ScoreHolder& one, const ScoreHolder &other);
+
+
 class AlgIn;
 
 class Scores
@@ -58,6 +62,12 @@ public:
     double estimatePi0();
     void printRoc(string & fn); 
     void fill(string & fn);
+
+    void getMaxScores(Scores &max_scores);
+    void calcQValues(int max_pos);
+    void calcFDR_BH(int max_pos);
+    void calcPValues(bool do_max_psm,int &max_pos);
+
     inline unsigned int size() {return (pos+neg);} 
     inline unsigned int posSize() {return (pos);} 
     inline unsigned int posNowSize() {return (posNow);} 

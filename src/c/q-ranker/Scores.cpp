@@ -33,6 +33,17 @@ inline bool operator>(const ScoreHolder &one, const ScoreHolder &other)
 inline bool operator<(const ScoreHolder &one, const ScoreHolder &other) 
     {return (one.score<other.score);}
 
+
+//sort in descending order.
+inline bool compareScore(const ScoreHolder &one, const ScoreHolder &other) {
+  return one.score>other.score;
+}
+
+//sort in ascending order
+inline bool comparePValue(const ScoreHolder &one, const ScoreHolder &other) {
+  return one.pPSM -> pvalue<other.pPSM -> pvalue;
+}
+
 Scores::Scores()
 {
     factor=1;
@@ -351,22 +362,19 @@ void Scores::calcPep() {
 }
 
 
-void Scores::calcQValues() {
 
-  cerr << "Scores::calcQValues(): Start"<<endl;
-  vector<ScoreHolder>::iterator it;
-
-  sort(scores.begin(),scores.end());
-  reverse(scores.begin(), scores.end());
-
+void Scores::getMaxScores(Scores &max_scores) {
+  //max_scores.clear();
+  
   std::map<int,ScoreHolder> best_target_per_scan_map;
   std::map<int,ScoreHolder> best_decoy_per_scan_map;
   std::map<int,ScoreHolder>::iterator find_iter;
+  
+  vector<ScoreHolder>::iterator it;
 
-  cerr << "Building Maps"<<endl;
   for (it=scores.begin();it!=scores.end();it++) {
     unsigned int current_scan = it->pPSM->scan;
-    cerr << "scan:"<<current_scan<<endl;
+    //cerr << "scan:"<<current_scan<<endl;
     if (it->label!=-1) {
       find_iter = best_target_per_scan_map.find(current_scan);
       if (find_iter == best_target_per_scan_map.end() ||
@@ -384,70 +392,125 @@ void Scores::calcQValues() {
   }
   cerr << "max target:" << best_target_per_scan_map.size() << endl;
   cerr << "max decoy:"  << best_decoy_per_scan_map.size()  << endl;
-  vector<ScoreHolder> max_scores;
-
+  
   for (find_iter = best_target_per_scan_map.begin();
     find_iter != best_target_per_scan_map.end();
     ++find_iter) {
 
-    max_scores.push_back(find_iter -> second);
+    max_scores.scores.push_back(find_iter -> second);
   }
   
   for (find_iter = best_decoy_per_scan_map.begin();
     find_iter != best_decoy_per_scan_map.end();
     ++find_iter) {
 
-    max_scores.push_back(find_iter -> second);
+    max_scores.scores.push_back(find_iter -> second);
   }
 
-
-  cerr << "Initialization to pi0" << endl;
-  //initialize everything to pi0
-  for (it=scores.begin();it!=scores.end();it++) {
-    it -> pPSM->q=pi0;
-  }
-
-  cerr << "Calculating FDR"<<endl;
-  //calculate fdr for the max_scores.
-  sort(max_scores.begin(), max_scores.end());
-  reverse(max_scores.begin(),max_scores.end());
+  max_scores.pos=best_target_per_scan_map.size();
+  max_scores.neg=best_decoy_per_scan_map.size();
+  max_scores.factor=max_scores.pos/max_scores.neg;
   
-  int positives=0,nulls=0;
-  double efp=0.0,q;
-  register unsigned int ix=0;
-  for(it=max_scores.begin();it!=max_scores.end();it++) {
-    if (it->label!=-1)
-      positives++;
-    if (it->label==-1) {
-      nulls++;
-      efp=pi0*nulls*factor;
-    }
-    if (positives)
-      q=efp/(double)positives;
-    else
-      q=pi0;
-    if (q>pi0)
-      q=pi0;
-    it->pPSM->q=q;
+  sort(max_scores.begin(), max_scores.end(), compareScore);
 
-    cerr<<it->pPSM->scan<<" "<<it->pPSM->q<<endl;
+  for (int idx=0;idx < 3;idx++) {
+    cerr << idx << ":"<< max_scores[idx].score << endl;
   }
+  
 
-  //the q-value is actually fdr
-  //calculate the actual q-values.       
-  cerr <<"Calculating q-values"<<endl;
+}
+
+void Scores::calcQValues(int max_pos) {
+
+  //assume that the pvalues are calculated for every psm.
+  calcFDR_BH(max_pos);
   
   double min_fdr = pi0;
-  for (int idx=max_scores.size()-1;idx>=0;idx--) {
-    double current_fdr = max_scores[idx].pPSM->q;
-    if (current_fdr < min_fdr) {
-      min_fdr = current_fdr;
-    } else {
-      max_scores[idx].pPSM->q=min_fdr;
+  for (int idx=scores.size()-1;idx>=0;idx--) {
+    if (scores[idx].label == 1) {
+      double current_fdr = scores[idx].pPSM->q;
+      if (current_fdr < min_fdr) {
+        min_fdr = current_fdr;
+      } else {
+        scores[idx].pPSM->q=min_fdr;
+      }
     }
   }
   
   cerr << "Scores::calcQValues(): done." << endl;
+}
+
+
+void Scores::calcPValues(bool do_max_psm,int &max_pos) {
+
+  vector<ScoreHolder>::iterator iter;
+
+  Scores max_scores;
+  
+  if (do_max_psm) {
+    getMaxScores(max_scores);
+    max_pos = max_scores.pos;
+    //intialize everything to pvalue of 1.0
+    for (iter=scores.begin();
+      iter != scores.end();
+      ++iter) {
+      iter -> pPSM -> pvalue = 1.0;
+    }
+  } else {
+    //sort by score in descending order.
+    max_pos = pos;
+    sort(scores.begin(), scores.end(), compareScore);
+    max_scores = *this;
+  }
+
+  int nulls = 0;
+  int positives = 0;
+  for (iter = max_scores.scores.begin();
+    iter != max_scores.scores.end();
+    ++iter) {
+    if (iter -> label == -1) {
+      nulls++;
+    } else {
+      iter -> pPSM -> pvalue = (double)nulls / (double)max_scores.neg;
+    }
+  }
+}
+
+void Scores::calcFDR_BH(int max_pos) {
+
+  vector<ScoreHolder>::iterator it;
+  cerr << "calcFDR_BH: max pos:"<<max_pos<<endl;
+
+  //sort by pvalue in ascending order.
+  sort(scores.begin(), scores.end(), comparePValue);
+  cerr << "pvalue"<<endl;
+  for (int idx=0;idx < 3;idx++) {
+    cerr << idx << ":"<< scores[idx].pPSM -> pvalue << endl;
+  }
+
+
+  //convert pvalues to qvalues.
+  int pos_count = 0;
+  for (it=scores.begin();it!=scores.end();it++) {
+    if (it->label==1) {
+      //so if the do_max_psm was intitiated, the
+      //max number of positives is now different.
+      //all of the psms that were not the max should
+      //have a pvalue of 1.0, but we want to make
+      //sure that pos_count doesn't go beyond the
+      //number of max_positives.
+      if (pos_count < max_pos) {
+        pos_count++;
+      }
+
+      if (it -> pPSM -> pvalue >= 1.0) {
+        it -> pPSM -> q = pi0;
+      } else {
+        it -> pPSM -> q = min(pi0, (double)max_pos * pi0 / 
+          (double)(pos_count) * it -> pPSM -> pvalue);
+      }
+    }
+  }
 }
 
 /**
@@ -457,8 +520,8 @@ int Scores::calcOverFDR(double fdr) {
   
   vector<ScoreHolder>::iterator it = scores.begin();
 
-  sort(scores.begin(),scores.end());
-  reverse(scores.begin(),scores.end());
+  //sort in descending order.
+  sort(scores.begin(),scores.end(),compareScore);
   
   int positives=0,nulls=0;
   double efp=0.0,q;
@@ -493,8 +556,7 @@ void Scores::calcMultiOverFDR(vector<double> &fdr, vector<int> &overFDR) {
   
   vector<ScoreHolder>::iterator it = scores.begin();
 
-  sort(scores.begin(),scores.end());
-  reverse(scores.begin(),scores.end());
+  sort(scores.begin(),scores.end(), compareScore);
   
   int positives=0,nulls=0;
   double efp=0.0,q;

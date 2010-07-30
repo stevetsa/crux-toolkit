@@ -51,18 +51,28 @@ public:
     }
 
     void train_net_two(Scores &set);
-    void train_many_general_nets();
-    void train_many_target_nets_ave();
+    void train_many_general_nets(Scores& trainset, Scores& testset, Scores& thresholdset);
+    void train_many_target_nets_ave(Scores& trainset, Scores& testset, Scores& thresholdset);
     void train_many_nets(bool do_xval, bool do_max_psm);
+    void train_many_nets(
+      Scores& trainset,
+      Scores& testset,
+      vector<Scores>& xv_train,
+      vector<Scores>& xv_test,
+      bool do_xval, ////< Select hyperparameters via cross-validation. -in
+      bool do_max_psm,
+      int& max_pos); 
+    void train_many_nets(Scores& trainset, Scores& testset, bool do_xval, bool do_max_psm);
     void three_plot(double qv);
     
     int getOverFDR(Scores &set, NeuralNet &n, double fdr);
-    void calcQValues(Scores &set, NeuralNet &n);
+    void calcScores(Scores &set, NeuralNet &n);
+    void calcPValues(Scores &set, NeuralNet &n, bool do_max_psm, int &max_pos);
     void getMultiFDR(Scores &set, NeuralNet &n, vector<double> &qval);
     void printNetResults(vector<int> &scores);
     void write_max_nets(string filename, NeuralNet *max_net);
     
-    void xvalidate_net(double qv);
+    void xvalidate_net(std::vector<Scores>& trainset, std::vector<Scores>& thresholdset, double qv);
     void train_general_net(Scores &train, Scores &thresh, double qv);
     void train_target_net(Scores &train, Scores &thresh, double qv);
 
@@ -98,7 +108,9 @@ protected:
     clock_t startClock;
     const static unsigned int xval_fold;
     XvType xv_type; 
-    vector<Scores> xv_train,xv_test;
+    vector<Scores> trainset_xv_train,trainset_xv_test;
+    vector<Scores> testset_xv_train,testset_xv_test;
+
     vector<double> xv_cposs,xv_cfracs;
     SetHandler normal,shuffled;
     Scores fullset; 

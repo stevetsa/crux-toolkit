@@ -123,8 +123,8 @@ void qcGetScores(double *scoreArr,double *qArr) {
   int ix=0;
   SetHandler::Iterator iter(pCaller->getSetHandler(Caller::NORMAL));
   while(PSMDescription * pPSM = iter.getNext()) {
-    cerr << pPSM -> peptide << "\t" << pPSM -> sc << "\t" << pPSM -> q<<endl;
-    scoreArr[ix] = pPSM->sc;
+    //cerr << pPSM -> peptide << "\t" << pPSM -> sc << "\t" << pPSM -> q<<endl;
+    scoreArr[ix] = pPSM->pvalue;
     qArr[ix++] =  pPSM->q;
   }
 } 

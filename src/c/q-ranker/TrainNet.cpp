@@ -39,39 +39,34 @@ string res_prefix="yeast_trypsin";
 /********************* writing out results functions***************************************/
 int Caller :: getOverFDR(Scores &set, NeuralNet &n, double fdr)
 {
-  double r = 0.0;
-  const double* featVec;
-  int label = 0;
-  loss = 0;
-  for(unsigned int i = 0; i < set.size(); i++)
-    {
-      featVec = set[i].pPSM->features;
-      label = set[i].label;
-      r = n.classify(featVec);
-      set[i].score = r;
-      set[i].pPSM->sc=r;
-      loss += n.get_err(label);
-    }
+
+  calcScores(set, n);
   return set.calcOverFDR(fdr);
 }
 
-void Caller :: calcQValues(Scores &set, NeuralNet &n)
+void Caller :: calcScores(Scores &set, NeuralNet &n)
 {
   double r = 0.0;
   const double* featVec;
   int label = 0;
-  loss = 0;
-  for(unsigned int i = 0; i < set.size(); i++)
+
+  for (unsigned int i = 0; i < set.size(); i++) 
     {
       featVec = set[i].pPSM->features;
       label = set[i].label;
       r = n.classify(featVec);
       set[i].score = r;
       set[i].pPSM->sc=r;
-      loss += n.get_err(label);
     }
-  set.calcQValues();
 }
+
+void Caller :: calcPValues(Scores &set, NeuralNet &n, bool do_max_psm, int &max_pos)
+{
+  calcScores(set, n);
+
+  set.calcPValues(do_max_psm, max_pos);
+}
+
  
 
 void Caller :: getMultiFDR(Scores &set, NeuralNet &n, vector<double> &qvalues)
@@ -239,6 +234,8 @@ void Caller :: train_target_net(Scores &train, Scores &thresh, double qv)
  * number of target scores below a specified q-value threshold.
  */
 void Caller :: xvalidate_net(
+  vector<Scores>& xv_train,
+  vector<Scores>& xv_test,
   double qv ////< The q-value threshold -in
 )
 {
@@ -393,7 +390,10 @@ void Caller :: train_net_two(Scores &set)
 
 
 
-void Caller :: train_many_general_nets()
+void Caller :: train_many_general_nets(
+  Scores& trainset, 
+  Scores& testset,
+  Scores& thresholdset)
 {
   ind_low = -1;
   for(int i=0;i<switch_iter;i++) {
@@ -426,7 +426,10 @@ void Caller :: train_many_general_nets()
 
 }
 
-void Caller :: train_many_target_nets_ave()
+void Caller :: train_many_target_nets_ave(
+  Scores& trainset,
+  Scores& testset,
+  Scores& thresholdset) 
 {
 
   int  thr_count = num_qvals-1;
@@ -491,12 +494,31 @@ void Caller :: train_many_target_nets_ave()
     }
 }
 
-
 void Caller::train_many_nets(
-  bool do_xval, ////< Select hyperparameters via cross-validation. -in
+  bool do_xval,
   bool do_max_psm) 
 {
+  int max_pos = 0;
+  int full_max_pos = 0;
+  train_many_nets(trainset, testset, trainset_xv_train, trainset_xv_test, do_xval, do_max_psm, max_pos);
+  full_max_pos = max_pos;
+  train_many_nets(testset, trainset, testset_xv_train, testset_xv_test, do_xval, do_max_psm, max_pos);
+  full_max_pos += max_pos;
+  fullset.calcQValues(full_max_pos);
+}
+
+void Caller::train_many_nets(
+  Scores& trainset,
+  Scores& testset,
+  vector<Scores>& xv_train,
+  vector<Scores>& xv_test,
+  bool do_xval, ////< Select hyperparameters via cross-validation. -in
+  bool do_max_psm,
+  int& max_pos) 
+{
   
+  thresholdset = trainset;
+
   switch_iter =100;
   niter = 200;
    
@@ -537,7 +559,7 @@ void Caller::train_many_nets(
   int clf = 0;
 
   if (do_xval) {
-    xvalidate_net(selectionfdr);
+    xvalidate_net(xv_train, xv_test, selectionfdr);
   }
 
   net.initialize(FeatureNames::getNumFeatures(),num_hu,mu,clf,lf,bs);
@@ -557,7 +579,7 @@ void Caller::train_many_nets(
   cerr << "\n";
   
 
-  train_many_general_nets();
+  train_many_general_nets(trainset, testset, thresholdset);
   
 
   //write out the results of the general net
@@ -589,7 +611,7 @@ void Caller::train_many_nets(
     max_overFDR[count] = ave_overFDR[count];
   
 
-  train_many_target_nets_ave();  
+  train_many_target_nets_ave(trainset, testset, thresholdset);  
  
   //write out the results of the target net
   //cerr << "target net results: ";
@@ -612,13 +634,11 @@ void Caller::train_many_nets(
     }
   net = max_net_targ[ind];
   
-  cerr << " Found " << getOverFDR(fullset, net, selectionfdr) << " over q<" << selectionfdr << "\n";
+  cerr << " Found " << getOverFDR(testset, net, selectionfdr) << " over q<" << selectionfdr << "\n";
   
-  if (do_max_psm) {
-    cerr << "Calculating q-values using max_psm" << endl;
-    calcQValues(fullset, net);
-  }
 
+  //calculate pvalues on testset.
+  calcPValues(testset, net, do_max_psm, max_pos);
 
   delete [] max_net_gen;
   delete [] max_net_targ;

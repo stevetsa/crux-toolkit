@@ -15,6 +15,7 @@ public:
   void calcRegressionFeature();        
 
   double q,pep,sc;
+  double pvalue;
   double * features;
   double * retentionFeatures;
   double retentionTime,massDiff,pI;

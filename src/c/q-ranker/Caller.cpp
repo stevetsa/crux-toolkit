@@ -471,7 +471,8 @@ void Caller::fillFeatureSets(bool do_max_psm) {
 
 
 int Caller::preIterationSetup() {
-     trainset.createXvalSets(xv_train,xv_test,xval_fold);
+     trainset.createXvalSets(trainset_xv_train, trainset_xv_test, xval_fold);
+     testset.createXvalSets(testset_xv_train, testset_xv_test, xval_fold);
 }    
 
 int Caller::run(
