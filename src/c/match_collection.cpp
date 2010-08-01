@@ -3067,7 +3067,7 @@ FLOAT_T* extract_scores_match_collection(
  * q-values to all of the matches in a given collection.
  */
 void assign_match_collection_qvalues(
-  map<FLOAT_T, FLOAT_T>& score_to_qvalue_hash,
+  const map<FLOAT_T, FLOAT_T>* score_to_qvalue_hash,
   SCORER_TYPE_T score_type,
   MATCH_COLLECTION_T* all_matches
 ){
@@ -3080,9 +3080,9 @@ void assign_match_collection_qvalues(
     FLOAT_T score = get_match_score(match, score_type);
 
     // Retrieve the corresponding q-value.
-    map<FLOAT_T, FLOAT_T>::iterator map_position 
-      = score_to_qvalue_hash.find(score);
-    if (map_position == score_to_qvalue_hash.end()) {
+    map<FLOAT_T, FLOAT_T>::const_iterator map_position 
+      = score_to_qvalue_hash->find(score);
+    if (map_position == score_to_qvalue_hash->end()) {
       carp(CARP_FATAL,
 	   "Cannot find q-value corresponding to score of %g.",
 	   score);

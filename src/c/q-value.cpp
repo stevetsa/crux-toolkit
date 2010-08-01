@@ -358,7 +358,7 @@ MATCH_COLLECTION_T* run_qvalue(
   // Store p-values to q-values as a hash, and then assign them.
   map<FLOAT_T, FLOAT_T>* qvalue_hash 
     = store_arrays_as_hash(pvalues, qvalues, num_pvals);
-  assign_match_collection_qvalues(*qvalue_hash, score_type, target_matches);
+  assign_match_collection_qvalues(qvalue_hash, score_type, target_matches);
   free(pvalues);
   free(qvalues);
 

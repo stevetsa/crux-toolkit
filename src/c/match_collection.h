@@ -611,7 +611,7 @@ FLOAT_T* extract_scores_match_collection(
  * q-values to all of the matches in a given collection.
  */
 void assign_match_collection_qvalues(
-  map<FLOAT_T, FLOAT_T>& score_to_qvalue_hash,
+  const map<FLOAT_T, FLOAT_T>* score_to_qvalue_hash,
   SCORER_TYPE_T score_type,
   MATCH_COLLECTION_T* all_matches
 );

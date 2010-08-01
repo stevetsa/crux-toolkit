@@ -23,6 +23,11 @@
 #include "check-spectrum.h"
 #include "check-spectrum_collection.h"
 #include "check-crux-utils.h"
+/* To add a new suite for <<<class>>>, add a line of the following form:
+ *
+ *   #include "check-<<<class>>>.h"
+ *
+ */
 
 //must set bash export CK_FORK=no
 int main(void){
