@@ -252,8 +252,8 @@ void shuffle_floats(FLOAT_T* array, int size);
  * \returns -1,0,1 if a is <,=,> b
  */
 struct compareDescending {
-  bool operator() (double i,double j) { return (i<j);}
-  bool operator() (float i,float j) { return (i<j);}
+  bool operator() (double i,double j) { return (i>j);}
+  bool operator() (float i,float j) { return (i>j);}
 }; 
 
 /**
