@@ -1064,7 +1064,7 @@ BOOLEAN_T estimate_weibull_parameters_from_xcorrs(
   }
 
   // reverse sort the scores
-  qsort(scores, num_scores, sizeof(FLOAT_T), compare_floats_descending);
+  sort(scores, scores + num_scores, compareDescending());
 
   // use only a fraction of the samples, the high-scoring tail
   // this parameter is hidden from the user

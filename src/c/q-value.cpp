@@ -152,7 +152,7 @@ FLOAT_T* compute_qvalues_from_pvalues(
 ){
 
   // sort the - log p-values in descending order
-  qsort(pvalues, num_pvals, sizeof(FLOAT_T), compare_floats_descending);
+  sort(pvalues, pvalues + num_pvals, compareDescending());
 
   // convert the p-values into FDRs using Benjamini-Hochberg
   FLOAT_T* qvalues = (FLOAT_T*)mycalloc(num_pvals, sizeof(FLOAT_T));
@@ -199,8 +199,8 @@ FLOAT_T* compute_decoy_qvalues(
   }
 
   // Sort both sets of scores.
-  qsort(target_scores, num_targets, sizeof(FLOAT_T), compare_floats_descending);
-  qsort(decoy_scores, num_targets, sizeof(FLOAT_T), compare_floats_descending);
+  sort(target_scores, target_scores + num_targets, compareDescending());
+  sort(decoy_scores, decoy_scores + num_decoys, compareDescending());
 
   for (target_idx = 0; target_idx < num_targets; target_idx++) {
     carp(CARP_DEBUG, "target_scores[%d]=%g decoy_scores[%d]=%g",
