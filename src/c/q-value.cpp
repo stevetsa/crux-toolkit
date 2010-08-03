@@ -223,14 +223,6 @@ FLOAT_T* compute_decoy_qvalues(
       decoy_idx++;
     }
 
-    /*
-     * FIXME: Previously, pi-zero was not used in the target-decoy
-     * q-value estimation.  Hence, I currently force pi-zero to be 1.
-     * In the next iteration, we should make the default pi-zero=1,
-     * and remove this forcing. --WSN 27 July 2010
-     */
-    pi_zero = 1.0; 
-
     // FDR = #decoys / #targets
     FLOAT_T fdr = pi_zero * targets_to_decoys * 
       ((FLOAT_T)decoy_idx / (FLOAT_T)(target_idx + 1));
