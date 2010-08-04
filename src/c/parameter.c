@@ -793,13 +793,18 @@ void initialize_parameters(void){
        "Ignore peptides with multiple mappings to proteins (T,F). Default (F)",
        "For quantify to determine to use only peptides with only one protein "
        "mapping", "false");
+  set_boolean_parameter("average", FALSE,
+       "For SIN, calcuate the average instead of total of ion " 
+       "intensities/ms1 peaks (T, f). Default (F)",
+       "A way of avoiding double counting spectra for each peptide",
+       "false"		);
   set_string_parameter("input-bullseye", NULL,
        "Bullseye file produced by using the same ms1 file used to produce ms2"
        " file",
        "For SIN to use areas under peaks instead of total ion intensity",
        "false");
   set_string_parameter("quant-level", "PROTEIN",
-        "Quantification at protein or peptide level (PROTEIN|PEPTIDE) "
+        "Quantification at protein or peptide level (PROTEIN,PEPTIDE) "
 	"Default (PROTEIN)",
         "For NSAF and SIN to know which level of quantification should be done",
 	"false"); 

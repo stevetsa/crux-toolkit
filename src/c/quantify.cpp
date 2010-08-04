@@ -20,6 +20,10 @@ typedef map<string, int> ProteinToLength;             /* maps protein to thier
 							 length */
 typedef map<string, set<string> > ProteinToPeptides;  /* maps protein to the set
 							 of peptides matched */
+typedef map<string, string > PeptideToProteins;       /* maps peptide to a 
+							 list of proteins in a 
+							 comma delimited 
+							 string*/
 typedef map<string, FLOAT_T> MappingToScore;          /* maps protein or peptide
 							 to thier score 
 							 (nsaf or sin)*/
@@ -36,7 +40,9 @@ bool print_nsaf_scores(
 		       ScoreToMapping& scoreToMapping,
 		       string full_output_file,
 		       string measure,
-		       BOOLEAN_T use_prot_level
+		       PeptideToProteins& peptideToProteins,
+		       BOOLEAN_T use_prot_level,
+		       MappingToSpc& mappingToSpc
 		       );
 
 // gets the indices of all the values based off of header 
@@ -63,6 +69,8 @@ bool print_scores(
 		  double score_summation,
 		  map<string, int>& proteinToNumSpectra,
 		  map<string, int>& proteinToPn,
+		  map<string, int>& pepToNumSpectra,
+		  PeptideToProteins& peptideToProteins,
 		  BOOLEAN_T use_prot_level
 		 );
 
@@ -85,7 +93,8 @@ bool get_sin_scores(
 		     double * score_summation,
 		     map<string, int>& proteinToNumSpectra,
 		     map<string, int>& pepToNumSpectra,
-		     map<string, int>& proteinToPn
+		     map<string, int>& proteinToPn,
+		     BOOLEAN_T use_prot_level
 		     ); 
 
 // get the ion intensity score by running scripts and reading
@@ -96,7 +105,8 @@ bool get_ion_intensity_scores(
 			      char * txt_file,
 			      char * output_dir,
 			      string input_ms2,
-			      map<string, int>& pepToNumSpectra
+			      map<string, int>& pepToNumSpectra,
+			      BOOLEAN_T get_average
 			      );
 
 // find the normalized score by dividing all the scores by the 
@@ -119,6 +129,7 @@ bool get_matches_from_txt(
 			  ProteinToPepc& proteinToPepc,
 			  ProteinToPeptides& proteinToPeptides,
 			  ScanChargeToPeptides& scanChargeToPeptides,
+			  PeptideToProteins& peptideToProteins,
 			  float threshold,
 			  BOOLEAN_T only_unique,
 			  BOOLEAN_T use_prot_level
@@ -132,7 +143,9 @@ bool get_matches_from_txt(
 bool get_bullseye_areas(
 			PeptideToIntensity& peptideToIntensity,
 			char * bullseye_file,
-			ScanChargeToPeptides& scanChargeToPeptides
+			ScanChargeToPeptides& scanChargeToPeptides,
+			map<string, int>& pepToNumSpectra,
+			BOOLEAN_T get_average
 			);
 
 
@@ -144,6 +157,7 @@ bool get_data_from_db(
 
 bool file_exists(string file_name);
 
+string parseProteinId(string proteinId);
 
 // take in the threshold value and returns the output file name
 string create_file_name(float number);
@@ -172,7 +186,9 @@ int quantify_main(int argc, char** argv){
     "overwrite",
     "unique-mapping",
     "input-bullseye",
+    "quant-level",
     "measure",
+    "average",
     "version"
   };
   int num_options = sizeof(option_list) / sizeof(char*);
@@ -193,6 +209,7 @@ int quantify_main(int argc, char** argv){
   char *  ms2 = get_string_parameter("input-ms2");
   char * bullseye = get_string_parameter("input-bullseye");
   string quant_level = get_string_parameter("quant-level");
+  BOOLEAN_T get_average = get_boolean_parameter("average");
   BOOLEAN_T overwrite = get_boolean_parameter("overwrite");
   BOOLEAN_T only_unique = get_boolean_parameter("unique-mapping");
 
@@ -256,6 +273,8 @@ int quantify_main(int argc, char** argv){
 					    in database */
   ProteinToPeptides proteinToPeptides;   /* maps proteins to set of matched 
 					    peptides */
+  PeptideToProteins peptideToProteins;   /* maps peptide to list of proteins
+					    in a string form */
   PeptideToIntensity peptideToIntensity; /* maps peptides to sum of ion 
 					    intensities for all matched 
 					    spectra */
@@ -267,7 +286,7 @@ int quantify_main(int argc, char** argv){
 					    intensity for each peptide */
   map<string, int> proteinToNumSpectra;  /* number of spectra with ion 
 					    intensity for each protein */
-  map<string, int> proteinToPn;           /* number of peptides used with 
+  map<string, int> proteinToPn;          /* number of peptides used with 
 					     ion intensity for the protein */
 
   /* read from the database and target.txt file */
@@ -278,6 +297,7 @@ int quantify_main(int argc, char** argv){
 			    proteinToPepc, 
 			    proteinToPeptides, 
 			    scanChargeToPeptides,
+			    peptideToProteins,
 			    threshold, 
 			    only_unique, 
 			    use_prot_level)){
@@ -297,8 +317,6 @@ int quantify_main(int argc, char** argv){
       carp(CARP_ERROR, "error finding nsaf scores"); 
       exit(1);
     }
-    carp(CARP_INFO, "%i", mappingToScore.size());
-    carp(CARP_INFO, "%i", mappingToSpc.size());
   } else {
 
     /* if bullseye parameter was passed, then use bullseye */
@@ -306,9 +324,12 @@ int quantify_main(int argc, char** argv){
       
       /* calculate areas under peak in bullseye file */
       if (!get_bullseye_areas(
-			peptideToIntensity,
-			bullseye,
-			scanChargeToPeptides)){
+			      peptideToIntensity,
+			      bullseye,
+			      scanChargeToPeptides,
+			      pepToNumSpectra,
+			      get_average
+			      )){
 	    carp(CARP_ERROR, "error finding area under peaks in bullseye");
 	    exit(1);
 	  }
@@ -320,26 +341,26 @@ int quantify_main(int argc, char** argv){
 				    psm_dir, 
 				    output_dir, 
 				    input_ms2, 
-				    pepToNumSpectra)){
+				    pepToNumSpectra,
+				    get_average
+				    )){
 	carp(CARP_ERROR, "error finding ion intensities");
 	exit(1);
       }
     }
     
     /* using the ion intensities, find the sin scores */
-    if (!use_prot_level) {
-      mappingToScore = peptideToIntensity;
-    } else {
-      if (!get_sin_scores(mappingToScore, 
-			  proteinToPeptides, 
-			  peptideToIntensity, 
-			  &score_summation, 
-			  proteinToNumSpectra, 
-			  pepToNumSpectra, 
-			  proteinToPn)){
-	carp(CARP_ERROR, "error finding sin scores");
-	exit(1);
-      }  
+    if (!get_sin_scores(mappingToScore, 
+			proteinToPeptides, 
+			peptideToIntensity, 
+			&score_summation, 
+			proteinToNumSpectra, 
+			pepToNumSpectra, 
+			proteinToPn,
+			use_prot_level
+			)){
+      carp(CARP_ERROR, "error finding sin scores");
+      exit(1);
     }
   }
   
@@ -362,7 +383,9 @@ int quantify_main(int argc, char** argv){
     if (!print_nsaf_scores(normScoreToMapping, 
 			   full_output_file, 
 			   measure,
-			   use_prot_level
+			   peptideToProteins,
+			   use_prot_level,
+			   mappingToSpc
 			   )){
       carp(CARP_ERROR, "error printing scores");
       exit(1);
@@ -377,6 +400,8 @@ int quantify_main(int argc, char** argv){
 		      score_summation, 
 		      proteinToNumSpectra, 
 		      proteinToPn,
+		      pepToNumSpectra,
+		      peptideToProteins,
 		      use_prot_level
 		      )){
       carp(CARP_ERROR, "error printing scores");
@@ -397,7 +422,9 @@ bool print_nsaf_scores(
 		       ScoreToMapping& scoreToMapping,
 		       string full_output_file,
 		       string measure,
-		       BOOLEAN_T use_prot_level
+		       PeptideToProteins& peptideToProteins,
+		       BOOLEAN_T use_prot_level,
+		       MappingToSpc& mappingToSpc
 		       ){
   carp(CARP_INFO, "Outputting matches");
   ofstream output_stream(full_output_file.c_str());
@@ -415,13 +442,27 @@ bool print_nsaf_scores(
   
   
   /* print header */
-  output_stream<< prot_level+"\t "+measure+" score" <<endl;
-  // for each protein, print out its id and score
-  for (ScoreToMapping::const_iterator score_pair = scoreToMapping.begin();
+
+  if (! use_prot_level){
+    output_stream<< prot_level+"\t "+measure+"_score" << "\tproteins"<<endl;
+    // for each protein, print out its id and score
+    for (ScoreToMapping::const_iterator score_pair = scoreToMapping.begin();
 	 score_pair != scoreToMapping.end(); ++score_pair){
-    output_stream << score_pair->second << "\t" << score_pair->first << endl;
+      output_stream << score_pair->second << "\t" 
+		    << score_pair->first << "\t"
+		    << peptideToProteins[score_pair->second] 
+		    << endl;
+    }
+  } else {
+    output_stream<< prot_level+"\t "+measure+"_score" << "\tnum_spectra"<<endl;
+    for (ScoreToMapping::const_iterator score_pair = scoreToMapping.begin();
+	 score_pair != scoreToMapping.end(); ++score_pair){
+      output_stream << score_pair->second << "\t" 
+		    << score_pair->first << "\t"
+		    << mappingToSpc[score_pair->second]
+		    << endl;
+    }
   }
-  
   
   
 
@@ -439,6 +480,8 @@ bool print_scores(
 		  double score_summation,
 		  map<string, int>& proteinToNumSpectra,
 		  map<string, int>& proteinToPn,
+		  map<string, int>& pepToNumSpectra,
+		  PeptideToProteins& peptideToProteins,
 		  BOOLEAN_T use_prot_level
 		  ){
   /* create a stream to the output file */
@@ -451,13 +494,14 @@ bool print_scores(
   /* print header */
   if (use_prot_level){
     /* For Protein level quantification */
-    output_stream<< "Protein id \t "+measure+" score" 
+    output_stream<< "Protein_id \t "+measure+"_score" 
 		 << "\ttotal_intensity" 
 		 << "\tlength" 
 		 << "\tnum_spectra"
 		 << "\tnum_peptides"
-		 << "\tsum_intensities=" 
+		 << "\t(sum_intensities=" 
 		 << score_summation 
+		 << ")"
 		 << endl;
     /* for each protein, print out its id and score */
     for (ScoreToMapping::const_iterator score_pair = scoreToMapping.begin();
@@ -472,11 +516,13 @@ bool print_scores(
     }
   } else {
     /* For Peptide level quantification */
-    output_stream<< "Peptide seq \t "+measure+" score" 
+    output_stream<< "Peptide_seq \t "+measure+"_score" 
 		 << "\ttotal_intensity" 
 		 << "\tnum_spectra"
-		 << "\tsum_intensities=" 
+		 << "\tproteins"
+		 << "\t(sum_intensities=" 
 		 << score_summation 
+		 << ")"
 		 << endl;
     /* for each protein, print out its id and score */
     for (ScoreToMapping::const_iterator score_pair = scoreToMapping.begin();
@@ -484,7 +530,8 @@ bool print_scores(
       output_stream << score_pair->second << "\t" 
 		    << score_pair->first  << "\t" 
 		    << mappingToScore[score_pair->second] << "\t" 
-		      << proteinToNumSpectra[score_pair->second] << "\t" 
+		    << pepToNumSpectra[score_pair->second] << "\t" 
+		    << peptideToProteins[score_pair->second] << "\t"
 		    << endl;
     }
   }
@@ -543,7 +590,6 @@ bool get_nsaf_scores(
   string protein_id;
   int count;
   int length;
-  
   carp(CARP_INFO, "Finding summation");
   /* start summation at zero */
   (*score_summation) = 0;
@@ -577,49 +623,61 @@ bool get_sin_scores(
 		     double * score_summation,
 		     map<string, int>& proteinToNumSpectra,
 		     map<string, int>& pepToNumSpectra,
-		     map<string, int>& proteinToPn
+		     map<string, int>& proteinToPn,
+		     BOOLEAN_T use_prot_level
 		    ){
   string protein_id;
-  string peptide_id;
+  string peptide_seq;
   FLOAT_T total_intensity;
   int total_spectra;
   int total_peptide;
   (*score_summation) = 0;
 
-  /* iterate through all peptides of all proteins while adding up the intensity 
-     of each spectra and storing them into peptideToIntensity */
-  for (ProteinToPeptides::const_iterator proteinIterator = proteinToPeptides.begin();
-       proteinIterator != proteinToPeptides.end(); ++proteinIterator){
-    protein_id = (*proteinIterator).first;
-    //carp(CARP_INFO, "For Portein %s", protein_id.c_str());
-    total_intensity = 0.0;
-    total_spectra = 0;
-    total_peptide = 0;
-    /* for each peptide */
-    for (set<string>::const_iterator peptideIterator = 
-	   proteinToPeptides[protein_id].begin(); peptideIterator 
-	   != proteinToPeptides[protein_id].end(); ++peptideIterator){
-      peptide_id = (*peptideIterator);
-      /* add to sum if the intensity exists */
-      if (peptideToIntensity.find(peptide_id) != peptideToIntensity.end()){
-	total_intensity += peptideToIntensity[peptide_id];
-	total_spectra += pepToNumSpectra[peptide_id];
-	total_peptide += 1;
-	//carp (CARP_INFO, "successfully added ion score");
-      } else {
-	//carp (CARP_INFO, "\tMissing ion intensity score for peptide %s ", 
-	//peptide_id.c_str());
+  if (use_prot_level){
+    /* iterate through all peptides of all proteins while adding up the intensity 
+       of each spectra and storing them into peptideToIntensity */
+    for (ProteinToPeptides::const_iterator proteinIterator = proteinToPeptides.begin();
+	 proteinIterator != proteinToPeptides.end(); ++proteinIterator){
+      protein_id = (*proteinIterator).first;
+      //carp(CARP_INFO, "For Portein %s", protein_id.c_str());
+      total_intensity = 0.0;
+      total_spectra = 0;
+      total_peptide = 0;
+      /* for each peptide */
+      for (set<string>::const_iterator peptideIterator = 
+	     proteinToPeptides[protein_id].begin(); peptideIterator 
+	     != proteinToPeptides[protein_id].end(); ++peptideIterator){
+	
+	peptide_seq = (*peptideIterator);
+	/* add to sum if the intensity exists */
+	if (peptideToIntensity.find(peptide_seq) != peptideToIntensity.end()){
+	  total_intensity += peptideToIntensity[peptide_seq];
+	  total_spectra += pepToNumSpectra[peptide_seq];
+	  total_peptide += 1;
+	} else {
+	  carp(CARP_DEBUG, "\tMissing ion intensity score for peptide %s ", 
+	       peptide_seq.c_str());
+	}
+      }
+      /* extra test since bullseye scores do not match up perfectly */
+      if (total_intensity != 0){
+	mappingToScore.insert(make_pair(protein_id, total_intensity));
+	proteinToNumSpectra.insert(make_pair(protein_id, total_spectra));
+	proteinToPn.insert(make_pair(protein_id, total_peptide));
+	(*score_summation) += total_intensity;
       }
     }
-    /* extra test since bullseye scores do not match up perfectly */
-    if (total_intensity != 0){
-      mappingToScore.insert(make_pair(protein_id, total_intensity));
-      proteinToNumSpectra.insert(make_pair(protein_id, total_spectra));
-      proteinToPn.insert(make_pair(protein_id, total_peptide));
-      (*score_summation) += total_intensity;
+  } else {
+    mappingToScore = peptideToIntensity;
+    for (MappingToScore::const_iterator iter = mappingToScore.begin();
+	 iter != mappingToScore.end(); ++iter){
+      peptide_seq = (*iter).first;
+	(*score_summation) += mappingToScore[peptide_seq];
     }
+    
   }
   return true;
+
 }
 
 
@@ -638,7 +696,7 @@ string create_file_name(float number){
 /* Iterates through database and the text file to retrieve
  * protein lengths and spc scores 
  */
-bool  get_matches_from_txt(
+bool get_matches_from_txt(
 			   char* txt_file,
 			   char* database_file,
 			   ProteinToLength& proteinToData,
@@ -646,6 +704,7 @@ bool  get_matches_from_txt(
 			   ProteinToPepc& proteinToPepc,
 			   ProteinToPeptides& proteinToPeptides,
 			   ScanChargeToPeptides& scanChargeToPeptides,
+			   PeptideToProteins& peptideToProteins,
 			   float threshold,
 			   BOOLEAN_T only_unique,
 			   BOOLEAN_T use_prot_level
@@ -684,8 +743,6 @@ bool  get_matches_from_txt(
   free_database(database);
   
 
-
-  /* find indices of which element are the scores for a particular file (temporary solution) */
   int score_index, proteins_index, 
     peptide_index, rank_index,
     scan_index, charge_index;
@@ -706,26 +763,37 @@ bool  get_matches_from_txt(
 	     line);
   string peptide_sequence;
   string protein_id;
-  float score = 0.0;
+  double score = 0.0;
   int rank, scan, charge;
   vector<string> match_fields;
   vector<string> matched_proteins;
   string PSMId;
 
-  while (getline(myfile, line) && score < threshold){
+  while (getline(myfile, line)){
     split(line, match_fields, "\t");
     rank = atoi(match_fields.at(rank_index).c_str());
     score = atof(match_fields.at(score_index).c_str());
-    carp(CARP_INFO, "rank %i score %f ", rank, score);
+    carp(CARP_DEBUG, "rank %i score %f ", rank, score);
+
+
+    peptide_sequence = match_fields.at(peptide_index);
+    
     /* only record if score is below threshold and rank is one */
-    if (score < threshold && rank == 1){
+    if ((int)(score*1000000) < (int)(threshold*1000000) && rank == 1){
       scan = atoi(match_fields.at(scan_index).c_str());
       charge = atoi(match_fields.at(charge_index).c_str());
       peptide_sequence = match_fields.at(peptide_index);
       scanChargeToPeptides.insert(make_pair(make_pair(scan ,charge ),
 					    peptide_sequence));
+      /* record the protein the peptide maps to */
+      carp(CARP_DEBUG, "peptide %s  - protein: %s", peptide_sequence.c_str(), match_fields.at(proteins_index).c_str());
+      if (peptideToProteins.find(peptide_sequence) == peptideToProteins.end()){
+	peptideToProteins.insert(make_pair(peptide_sequence, 
+					  match_fields.at(proteins_index)));
+      }
+      
       tokenize(match_fields.at(proteins_index), matched_proteins, ",");
-      carp(CARP_INFO, "scan %i charge %i %s", scan, charge, peptide_sequence.c_str());
+      carp(CARP_DEBUG, "scan %i charge %i %s", scan, charge, peptide_sequence.c_str());
       
       /* for each match: */
       if (use_prot_level){
@@ -733,8 +801,8 @@ bool  get_matches_from_txt(
 	if (matched_proteins.size() == 1 || !only_unique){
 	  for (vector<string>::iterator it = matched_proteins.begin(); 
 	       it != matched_proteins.end(); ++it){
-	    protein_id = *it;
-	    carp(CARP_INFO, "protein %s", protein_id.c_str());
+	    protein_id = parseProteinId(*it);
+	    carp(CARP_DEBUG, "protein %s", protein_id.c_str());
 	    /* check if peptide has already been counted */
 	    if (proteinToPeptides[protein_id].find(peptide_sequence) == 
 		proteinToPeptides[protein_id].end()){
@@ -760,6 +828,7 @@ bool  get_matches_from_txt(
     matched_proteins.clear();
     match_fields.clear();
   }
+
   myfile.close();
   /*
   for (MappingToSpc::const_iterator it = mappingToSpc.begin();
@@ -773,6 +842,14 @@ bool  get_matches_from_txt(
 }
 
 
+string parseProteinId(string proteinId){
+  size_t paren_loc = proteinId.find_first_of("(");
+  if (paren_loc != string::npos){
+    proteinId.erase(paren_loc);
+  }
+  return proteinId;
+}
+
 
 /* Gets the ion_intensity_scores for each peptide by first running
  * couple scripts and then reading from the last output file
@@ -783,7 +860,8 @@ bool get_ion_intensity_scores(
 			      char * txt_file,
 			      char * output_path,
 			      string input_ms2,
-			      map<string, int>& pepToNumSpectra
+			      map<string, int>& pepToNumSpectra,
+			      BOOLEAN_T get_average
 			      ){
   carp(CARP_INFO, "Getting ion intensity scores");
   /* TODO: Somehow not rely on knowing the paths...*/
@@ -872,7 +950,7 @@ bool get_ion_intensity_scores(
 	/* if doesn't exist, insert a new entry */
 	peptideToIntensity.insert(make_pair(sequence, totalIntensity));
 	pepToNumSpectra.insert(make_pair(sequence, 1));
-	carp(CARP_INFO, "peptide: %s\t addingScore: %f", sequence.c_str(), totalIntensity);
+	carp(CARP_DEBUG, "peptide: %s\t addingScore: %f", sequence.c_str(), totalIntensity);
       }else{
 	/* if peptide exists, then add to the totalIntensity */
 	peptideToIntensity[sequence]+= totalIntensity;
@@ -881,6 +959,15 @@ bool get_ion_intensity_scores(
     }
     /* reset vector */
     all_sequences.clear();
+  }
+
+  /* find average */
+  if (get_average){
+    for (PeptideToIntensity::iterator it = peptideToIntensity.begin();
+	 it !=peptideToIntensity.end(); ++it){
+      sequence = (*it).first;
+      peptideToIntensity[sequence] = (*it).second / pepToNumSpectra[sequence];
+    }
   }
   
   return true;
@@ -938,12 +1025,14 @@ bool get_data_from_db(
 /* 
  * Takes PeptideToIntensity mapping and fills them with 
  * mapping of peptides to areas of bullseye results
- * NOTE: Name of mappping is inaccurate
+ * NOTE: Name of mapping is inaccurate
  */
 bool get_bullseye_areas(
 			PeptideToIntensity& peptideToIntensity,
 			char * bullseye_file,
-			ScanChargeToPeptides& scanChargeToPeptides
+			ScanChargeToPeptides& scanChargeToPeptides,
+			map<string, int>& pepToNumSpectra,
+			BOOLEAN_T get_average
 			){
   carp(CARP_INFO, "Finding area under peaks from bullseye");
   
@@ -953,51 +1042,66 @@ bool get_bullseye_areas(
   }
   
   ifstream myfile (bullseye_file);
-  string line, prev;
+  string line;
   vector<string> split_line;
+  map<pair<int, int>, float> scanChargeToBestMz;
+  map<pair<int, int>, float> scanChargeToBestArea;
+  map<pair<int, int>, float>::iterator bestMz_it;
+  map<pair<int, int>, float>::iterator bestArea_it;
+  pair<int, int> scan_charge;
 
   /* get rid of Header lines */
   getline(myfile, line);
 
-
-
   while (line != "" && line.at(0) == 'H'){
-    prev = line;
     getline(myfile, line);
   }
 
   /* Bullseye accidently outputs first scan on the last Header line */
-  float best_area, pre_mz, best_mz, mz;
-  int scan, charge, temp_charge;
-  ScanChargeToPeptides::iterator it;
-  tokenize(prev, split_line, "\t");
-  pre_mz = atof(split_line.at(5).c_str());
-  scan = atoi(split_line.at(3).c_str());
-  best_area = 0.0;
+  float area, pre_mz, best_mz, mz;
+  int scan, charge;
+  string peptide;
+
+  ScanChargeToPeptides::iterator scan_charge_pep_it;
+  PeptideToIntensity::iterator pep_intensity_it;
+  tokenize(line, split_line, "\t");
+  scan = atoi(split_line.at(1).c_str());
+  pre_mz = atof(split_line.at(3).c_str());
+  getline(myfile, line);
   best_mz = 0.0;
   charge = 0;
+  
   while(1){
     /* finding the area for the mz closest to pre_mz */
     while (line != "" && line.at(0) != 'S'){
       if (line.find("EZ") != string::npos){
 	split_line.clear();
 	tokenize(line, split_line ,"\t");
-	temp_charge = atoi(split_line.at(2).c_str());
-	mz = atof(split_line.at(3).c_str()) / (float) temp_charge;
-	if (fabs(pre_mz-mz) < fabs(best_mz-pre_mz)){
-	  best_mz = mz;
-	  best_area = atoi(split_line.at(5).c_str());
-	  charge = temp_charge;
+	charge = atoi(split_line.at(2).c_str());
+	mz = atof(split_line.at(3).c_str()) / (float) charge;
+	area = atoi(split_line.at(5).c_str());
+
+	scan_charge = make_pair(scan,charge);
+	bestMz_it = scanChargeToBestMz.find(scan_charge);
+	bestArea_it = scanChargeToBestArea.find(scan_charge);
+	/* if best mz/area already exists, compare if new mz is better and
+	 if it is, replace with new mz and new area*/
+	if (bestMz_it != scanChargeToBestMz.end()){
+	  best_mz = (*bestMz_it).second;
+	  if (fabs(pre_mz-mz) < fabs(pre_mz-best_mz)){
+	    scanChargeToBestMz[scan_charge] = mz;
+	    scanChargeToBestArea[scan_charge] = area;
+	  }
+	} else {
+	  /* insert new mz/area */
+	  scanChargeToBestMz.insert(make_pair(scan_charge, mz));
+	  scanChargeToBestArea.insert(make_pair(scan_charge, area));
 	}
+	
       }
       getline(myfile, line);
     }
-    /* record best results into the mapping */
-    it = scanChargeToPeptides.find(make_pair(scan, charge));
-    if (it != scanChargeToPeptides.end()){
-      //carp(CARP_INFO, "%f", best_area);
-      peptideToIntensity.insert(make_pair((*it).second, best_area));
-    }
+    
     /* end of the file */
     if (line == ""){
       break;
@@ -1009,8 +1113,36 @@ bool get_bullseye_areas(
     pre_mz = atof(split_line.at(3).c_str());
     getline(myfile, line);
   }
-    
   myfile.close();
+
+  /* Iterate through best scans/charges and find sum areas
+   for each peptide*/
+  for (bestArea_it = scanChargeToBestArea.begin(); 
+       bestArea_it!=scanChargeToBestArea.end(); bestArea_it++){
+    scan_charge = (*bestArea_it).first;
+    scan_charge_pep_it = scanChargeToPeptides.find(scan_charge);
+    if (scan_charge_pep_it != scanChargeToPeptides.end()){
+      peptide = (*scan_charge_pep_it).second;
+      if (peptideToIntensity.find(peptide) != peptideToIntensity.end()){
+	peptideToIntensity[peptide] += (*bestArea_it).second;
+	pepToNumSpectra[peptide] += 1;
+      } else {
+	peptideToIntensity.insert(make_pair(peptide, (*bestArea_it).second));
+	pepToNumSpectra.insert(make_pair(peptide, 1));
+      }
+      
+    }
+  }
+
+
+  /* find average */
+  if (get_average){
+    for (PeptideToIntensity::iterator it = peptideToIntensity.begin();
+	 it !=peptideToIntensity.end(); it++){
+      peptide = (*it).first;
+      peptideToIntensity[peptide] = (*it).second / pepToNumSpectra[peptide];
+    }
+  }
   return true;
 }
 
