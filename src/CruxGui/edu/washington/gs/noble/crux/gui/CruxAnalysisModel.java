@@ -11,7 +11,7 @@ import java.io.Serializable;
 import java.util.logging.Logger;
 
 import javax.swing.JOptionPane;
-
+import java.util.HashSet;
 
 /**
  * The CruxAnalysisClass is used to hold all the information required to run a Crux analysis.
@@ -94,6 +94,34 @@ public class CruxAnalysisModel extends Object implements Serializable{
 		public String toString() { return this.name; };
 	}
 	
+	/** The list of amino acids */
+	public enum AminoAcid{
+		LYSINE("K"),
+		ASPARAGINE("N"),
+		THREONINE("T"),
+		ARGININE("R"),
+		METHIONINE("M"),
+		ISOLEUCINE("I"),
+		GLUTAMINE("Q"),
+		HISTIDINE("H"),
+		PROLINE("P"),
+		GLUTAMIC("E"),
+		ASPARTIC("D"),
+		ALANINE("A"),
+		GLYCINE("G"),
+		VALINE("V"),
+		TYROSINE("Y"),
+		SERINE("S"),
+		TRYPTOPHAN("W"),
+		CYSTEINE("C"),
+		LEUCINE("L"),
+		PHENYLALANINE("F");
+		String name;
+		AminoAcid(String name) {this.name = name;};
+		public static int getSize() {return 20;};
+		public String toString() {return this.name;}
+	}
+	
 	/** The list of allowed spectrum charges */
 	public enum AllowedSpectrumCharge {
 		ONE("1"), 
@@ -155,9 +183,12 @@ public class CruxAnalysisModel extends Object implements Serializable{
 
 	
 	// Crux parameters
+	private HashSet<AminoAcid> selectedCustomEnzymeBefore;
+	private boolean preventCustomEnzymeBefore;
+	private HashSet<AminoAcid> selectedCustomEnzymeAfter;
+	private boolean preventCustomEnzymeAfter;
+	private boolean enableCustomEnzyme;
 	private boolean allowMissedCleavages;
-	private String customEnzymeBeforeCleavage;
-	private String customEnzymeAfterCleavage;
 	private String outputDir;
 	private boolean decoyPValues;
 	private DigestType digestType;
@@ -184,10 +215,15 @@ public class CruxAnalysisModel extends Object implements Serializable{
         
 	
 	// Crux parameters defaults
+	final private HashSet<CruxAnalysisModel.AminoAcid> selectedCustomEnzymeBeforeDefault = 
+		new HashSet<CruxAnalysisModel.AminoAcid>();
+	final private boolean preventCustomEnzymeBeforeDefault = false;
+	final private HashSet<CruxAnalysisModel.AminoAcid> selectedCustomEnzymeAfterDefault =
+		new HashSet<CruxAnalysisModel.AminoAcid>();
+	final private boolean preventCustomEnzymeAfterDefault = false;
+	final private boolean enableCustomEnzymeDefault = false;
 	final private boolean allowMissedCleavagesDefault = false;
-	final private String customEnzymeAfterCleavageDefault = null;
 	final private String outputDirDefault = null;
-	final private String customEnzymeBeforeCleavageDefault = null;
 	final private DecoyLocation decoyLocationDefault = DecoyLocation.SEPARATE_DECOY_FILES;
 	final private boolean decoyPValuesDefault = false;
 	final private DigestType digestTypeDefault = DigestType.FULL;
@@ -209,7 +245,7 @@ public class CruxAnalysisModel extends Object implements Serializable{
 	final private double spectrumMinMassDefault = 0.0;
 	final private int topMatchDefault = 5;
 	final private Verbosity verbosityDefault=Verbosity.WARNINGS;
-    
+ 
 	
 	public CruxAnalysisModel() {
 		setDefaults();
@@ -285,6 +321,10 @@ public class CruxAnalysisModel extends Object implements Serializable{
 			out.println("spectrum-max-mass=" + spectrumMaxMass);
 			out.println("spectrum-min-mass=" + spectrumMinMass);
 			out.println("top-match=" + topMatch);
+			if (enableCustomEnzyme){
+				out.println("custom-enzyme=" + generateCustomEnzyme());
+			}
+			
 			out.close();
 			logger.info("Saved analysis parameter file to " + fileName);	
 			result = true;
@@ -381,8 +421,8 @@ public class CruxAnalysisModel extends Object implements Serializable{
 				     proteinSource = this.proteinSource;
 				     command = pathToCrux 
 						+ " " + subCommand 
-					        + " --overwrite T " 
-					        + " --verbosity "+ verbosity.getLevel()
+					    + " --overwrite T " 
+					    + " --verbosity "+ verbosity.getLevel()
 						+ " --parameter-file " + name + "/analysis.params " 
 						+ proteinSource 
 						+ " " + name + "/index";
@@ -391,21 +431,41 @@ public class CruxAnalysisModel extends Object implements Serializable{
 					command = pathToCrux 
 						+ " " + subCommand 
 					 	+ " --overwrite T "
-					        + " --verbosity " + verbosity.getLevel()
+					    + " --verbosity " + verbosity.getLevel()
 						+ " --output-dir " + name + "/crux-output"
-					 	+ " --parameter-file " + name + "/analysis.params " 
-					 	+ spectraSource + " " + proteinSource;
+					 	+ " --parameter-file " + name + "/analysis.params" 
+					 	+ " " +spectraSource 
+					 	+ " " +proteinSource;
 					break;
 				case COMPUTE_Q_VALUES:
+					command = pathToCrux
+						+ " " +subCommand
+						+ " --overwrite T "
+						+ " --verbosity " + verbosity.getLevel()
+						+ " --output-dir " + name + "/crux-output"
+						+ " --parameter-file " + name + "/analysis.params "
+						+ " " +proteinSource
+						+ " " +name + "/crux-output";
+					break;
 				case PERCOLATOR:
+					command = pathToCrux
+						+ " "+subCommand
+						+ " --overwrite T "
+						+ " --verbosity " + verbosity.getLevel()
+						+ " --output-dir " + name + "/crnext step: gather relavant statistics on peak area calculationux-output"
+						+ " --parameter-file " + name + "/analysis.params "
+						+ " " +proteinSource
+						+ " " +name+ "/crux-output";
+					break;
 				case QRANKER:
 					command = pathToCrux 
 						+ " " + subCommand 
 					 	+ " --overwrite T "
-					        + " --verbosity "+ verbosity.getLevel()
+					 	+ " --verbosity "+ verbosity.getLevel()
 						+ " --output-dir " + name + "/crux-output"
 					 	+ " --parameter-file " + name + "/analysis.params " 
-					 	+ proteinSource;
+					 	+ " " +proteinSource
+					 	+ " " +name+ "/crux-output";
 					break;
 			}
 			try {
@@ -420,6 +480,35 @@ public class CruxAnalysisModel extends Object implements Serializable{
 		return process;
 		
 	}
+	
+	private String generateCustomEnzyme(){
+
+		String beforeOpenBracket = "[";
+		String afterOpenBracket = "[";
+		String beforeCloseBracket = "]";
+		String afterCloseBracket = "]";
+		if (preventCustomEnzymeBefore){
+			beforeOpenBracket = "{";
+			beforeCloseBracket = "}";
+		} 
+		if (preventCustomEnzymeAfter){
+			afterOpenBracket = "[";
+			afterCloseBracket = "]";
+		}
+		String beforeAmino = new String();
+		for (AminoAcid aminoAcid : selectedCustomEnzymeBefore){
+			beforeAmino += aminoAcid.toString();
+		}
+		String afterAmino = new String();
+		for (AminoAcid aminoAcid : selectedCustomEnzymeAfter){
+			afterAmino += aminoAcid.toString();
+		}
+		return beforeOpenBracket+beforeAmino+beforeCloseBracket+"|"+
+			afterOpenBracket+afterAmino+afterCloseBracket;
+		
+	}
+	
+	
 	
 	public String getName() {
 		return name;
@@ -444,9 +533,12 @@ public class CruxAnalysisModel extends Object implements Serializable{
 			showAdvancedParameters[component.ordinal()] = false;
 			componentsRunStatus[component.ordinal()] = RunStatus.NOT_RUN;
 		}
+		selectedCustomEnzymeBefore = selectedCustomEnzymeBeforeDefault;
+		preventCustomEnzymeBefore = preventCustomEnzymeBeforeDefault;
+		selectedCustomEnzymeAfter = selectedCustomEnzymeAfterDefault;
+		preventCustomEnzymeAfter = preventCustomEnzymeAfterDefault;
+		enableCustomEnzyme = enableCustomEnzymeDefault;
 		allowMissedCleavages = allowMissedCleavagesDefault;
-	    customEnzymeBeforeCleavage = customEnzymeBeforeCleavageDefault;
-	    customEnzymeAfterCleavage = customEnzymeAfterCleavageDefault;
 	    decoyPValues = decoyPValuesDefault;
 	    digestType = digestTypeDefault;
 	    enzyme = enzymeDefault;
@@ -477,9 +569,12 @@ public class CruxAnalysisModel extends Object implements Serializable{
 		verbosity = verbosityDefault;
 		switch (component) {
 		    case CREATE_INDEX:
+		    	selectedCustomEnzymeBefore = selectedCustomEnzymeBeforeDefault;
+				preventCustomEnzymeBefore = preventCustomEnzymeBeforeDefault;
+				selectedCustomEnzymeAfter = selectedCustomEnzymeAfterDefault;
+				preventCustomEnzymeAfter = preventCustomEnzymeAfterDefault;
+				enableCustomEnzyme = enableCustomEnzymeDefault;
 		    	allowMissedCleavages = allowMissedCleavagesDefault;
-		    	customEnzymeBeforeCleavage = customEnzymeBeforeCleavageDefault;
-		    	customEnzymeAfterCleavage = customEnzymeAfterCleavageDefault;
 		    	digestType = digestTypeDefault;
 		    	enzyme = enzymeDefault;
 		    	massType = massTypeDefault; 
@@ -490,8 +585,6 @@ public class CruxAnalysisModel extends Object implements Serializable{
 		        proteinSource = proteinSourceDefault;
 		    	break;
 		    case SEARCH_FOR_MATCHES:
-		    	customEnzymeBeforeCleavage = customEnzymeBeforeCleavageDefault;
-		    	customEnzymeAfterCleavage = customEnzymeAfterCleavageDefault;
 		    	decoyPValues = decoyPValuesDefault;
 		    	maxMods = maxModsDefaults;
 		    	numDecoysPerTarget = numDecoysPerTargetDefault;
@@ -513,6 +606,65 @@ public class CruxAnalysisModel extends Object implements Serializable{
 		    	break;
 		}
 		logger.info("Model restored to default values");
+	}
+	
+	
+	
+	
+	
+	
+	
+/****************************************************/
+/*              Getters and Setters                 */
+/****************************************************/
+	
+	public void setCustomEnzymeCleavage(HashSet<AminoAcid> selectedBefore, 
+		HashSet<AminoAcid> selectedAfter, boolean preventBefore, boolean preventAfter, boolean enable){
+		selectedCustomEnzymeBefore = selectedBefore;
+		preventCustomEnzymeBefore = preventBefore;
+		selectedCustomEnzymeAfter = selectedAfter;
+		preventCustomEnzymeAfter = preventAfter;
+		enableCustomEnzyme = enable;
+	}
+	
+	public HashSet<AminoAcid>  getSelectedCustomEnzymeBefore(){
+		return selectedCustomEnzymeBefore;
+	}
+	
+	public HashSet<AminoAcid>  getSelectedCustomEnzymeAfter(){
+		return selectedCustomEnzymeAfter;
+	}
+	
+	public boolean getPreventCustomEnzymeBefore(){
+		return preventCustomEnzymeBefore;
+	}
+	
+	public boolean getPreventCustomEnzymeAfter(){
+		return preventCustomEnzymeAfter;
+	}
+	
+	public boolean getEnableCustomEnzyme(){
+		return enableCustomEnzyme;
+	}
+	
+	public HashSet<AminoAcid>  getDefaultSelectedCustomEnzymeBefore(){
+		return selectedCustomEnzymeBeforeDefault;
+	}
+	
+	public HashSet<AminoAcid>  getDefaultSelectedCustomEnzymeAfter(){
+		return selectedCustomEnzymeAfterDefault;
+	}
+	
+	public boolean getDefaultPreventCustomEnzymeBefore(){
+		return preventCustomEnzymeBeforeDefault;
+	}
+	
+	public boolean getDefaultPreventCustomEnzymeAfter(){
+		return preventCustomEnzymeAfterDefault;
+	}
+	
+	public boolean getDefaultEnableCustomEnzyme(){
+		return enableCustomEnzymeDefault;
 	}
 	
 	public boolean getRunComponent(CruxComponents component) {
@@ -611,22 +763,6 @@ public class CruxAnalysisModel extends Object implements Serializable{
 		logger.info("Model parameter 'spectraSource' set to " + fileName);
 	}
 	
-	public String getCustomEnzymeAfterCleavage() {
-		return customEnzymeAfterCleavage;
-	}
-
-	public void setCustomEnzymeAfterCleavage(String customEnzymeAfterCleavage) {
-		this.customEnzymeAfterCleavage = customEnzymeAfterCleavage;
-	}
-
-	public String getCustomEnzymeBeforeCleavage() {
-		return customEnzymeBeforeCleavage;
-	}
-
-	public void setCustomEnzymeBeforeCleavage(String customEnzymeBeforeCleavage) {
-		this.customEnzymeBeforeCleavage = customEnzymeBeforeCleavage;
-	}
-
 	public boolean isDecoyPValues() {
 		return decoyPValues;
 	}
@@ -780,14 +916,6 @@ public class CruxAnalysisModel extends Object implements Serializable{
 	        this.outputDir = outputDir;
 	}
 
-
-	public String getCustomEnzymeAfterCleavageDefault() {
-		return customEnzymeAfterCleavageDefault;
-	}
-
-	public String getCustomEnzymeBeforeCleavageDefault() {
-		return customEnzymeBeforeCleavageDefault;
-	}
 
 	public DigestType getDigestTypeDefault() {
 		return digestTypeDefault;

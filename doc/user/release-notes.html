@@ -17,6 +17,11 @@
 The default value of the "pi-zero" parameter has been changed from 0.9
 to 1.0.</li>
 
+<li>
+A new option <code>--peptide-list</code> has been added to <code>crux
+create-index</code>.  When set to T, this option causes an ASCII
+file of peptides to be included in the output directory.</li>
+
 </ul>
 
 <hr></hr>
@@ -75,6 +80,16 @@ supported by <code>xlink-assign-ions</code>.
 The option <code>--no-xval</code> was added to q-ranker, allowing
 faster execution by skipping the internal cross-validation to select
 hyperparameters.</li>
+
+<li>
+The precision of modification masses written to the .txt files now matches 
+the maximum precision given in the parameter file.
+
+<li>
+Sub-options <code>prevents&nbsp;cleavage</code> and 
+<code>prevents&nbsp;cross-link</code> have been added to variable modifications 
+and support has been provided for the <code>"prevents&nbsp;cleavage"</code> 
+sub-option.</li>
 
 </ul>
 

@@ -126,7 +126,7 @@ static MATCH_COLLECTION_T* run_percolator_or_qranker(
           (NSet)get_match_collection_iterator_number_collections(
                   match_collection_iterator), 
           NUM_FEATURES, 
-          get_match_collection_match_total(match_collection), 
+          num_spectra, 
           feature_names, 
           pi0);
 	break;
@@ -139,7 +139,15 @@ static MATCH_COLLECTION_T* run_percolator_or_qranker(
             feature_names, 
             pi0);
         break;
-      default:
+      case INDEX_COMMAND:
+      case SEARCH_COMMAND:
+      case SEQUEST_COMMAND:
+      case QVALUE_COMMAND:
+      case PROCESS_SPEC_COMMAND:
+      case XLINK_SEARCH_COMMAND:
+      case VERSION_COMMAND:
+      case INVALID_COMMAND:
+      case NUMBER_COMMAND_TYPES:
 	carp(CARP_FATAL, "Unknown command type.");
 	break;
       }

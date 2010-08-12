@@ -9,6 +9,7 @@
 #include "crux-utils.h"
 #include "parameter.h"
 
+
 //TODO:  in all set, change result=add_... to result= result && add_...
 
 /**
@@ -423,7 +424,6 @@ void initialize_parameters(void){
       "for-matches.  When used with enzyme=<trypsin|elastase|chymotrpysin> "
       " includes peptides containing one or more potential cleavage sites.",
       "true");
-  //  set_boolean_parameter("unique-peptides", FALSE,
   set_boolean_parameter("unique-peptides", TRUE,
       "Generate peptides only once, even if they appear in more "
       "than one protein (T,F).  Default=F.",
@@ -431,6 +431,12 @@ void initialize_parameters(void){
       "crux-genereate-peptides. Returns one line per peptide "
       "when true or one line per peptide per protein occurence when false.  ",
       "true");
+  set_boolean_parameter("peptide-list", FALSE,
+			"Create an ASCII version of the peptide list.  "
+			"Default=F.",
+			"Creates an ASCII file in the output directory "
+			"containing one peptide per line.",
+			"true");
   
   /* more generate_peptide parameters */
   set_boolean_parameter("output-sequence", FALSE, 
@@ -581,7 +587,9 @@ void initialize_parameters(void){
                           "true");
   set_string_parameter("mod", "NO MODS",
       "Specify a variable modification to apply to peptides.  " 
-      "<mass change>:<aa list>:<max per peptide>. Default=no mods.",
+      "<mass change>:<aa list>:<max per peptide>:<prevents cleavage>:<prevents cross-link>."
+      "  Sub-parameters prevents cleavage and prevents cross-link are optional (T|F)."
+      "Default=no mods.",
       "Available from parameter file for crux-generate-peptides and "
       "crux-search-for-matches and the "
       "the same must be used for crux compute-q-value.", "true");
@@ -614,8 +622,13 @@ void initialize_parameters(void){
       "Available in the parameter file for any command that prints peptides "
       "sequences.  Example: TRUE is SE[12.40]Q and FALSE is SE[10.00,2.40]Q",
       "true" );
+  set_int_parameter("mod-precision", MOD_MASS_PRECISION, 0, 20,//arbitrary
+      "Set the precision for modifications as written to .txt files.",
+      "Also changes mods written to parameter file. Set internally based on "
+      "the max mod precision in the param file.",
+      "false");
   set_int_parameter("precision", 8, 1, 100, //max is arbitrary
-      "Set the precision for masses and scores written to sqt and text files. "
+      "Set the precision for scores written to sqt and text files. "
       "Default=8.",
       "Available from parameter file for crux search-for-matches, percolator, "
       "and compute-q-values.", "true");
@@ -1539,7 +1552,7 @@ BOOLEAN_T check_option_type_and_bounds(const char* name){
               "Must be (mass, mz, ppm)", value_str, name);
     }
     break;
-  default:
+  case NUMBER_PARAMETER_TYPES:
     carp(CARP_FATAL, "Your param type '%s' wasn't found (code %i)", 
         type_str, (int)param_type);
   }
@@ -1554,6 +1567,55 @@ BOOLEAN_T check_option_type_and_bounds(const char* name){
  * Maximum size of the description of a parameter.
  */
 static const int PARAMETER_BUFFER = 10000;
+
+/**
+ *  Print modifications to the given file in the format used in the
+ *  parameter file.  Expected names are "mod", "cmod", "nmod".  The
+ *  function to get the list of modifications should correspond to the
+ *  mod name.  (i.e. for "mod", use get_aa_mod_list(), for "cmod" use
+ *  get_c_mod_list(), for "nmod" use get_n_mod_list())
+ */
+void print_mods_parameter_file(FILE* param_file, 
+                               const char* name,
+                               int (*mod_getter)(AA_MOD_T***)){
+  // get mod description
+  char comments[PARAMETER_BUFFER] = "";
+  strcat_formatted(comments, "# ", (char*)get_hash_value(usages, name));
+  strcat_formatted(comments, "# ", (char*)get_hash_value(file_notes, name));
+  int precision = get_int_parameter("mod-precision");
+
+  // get list of mods to print
+  AA_MOD_T** mod_list = NULL;
+  int total_mods = (*mod_getter)(&mod_list);
+  for( int mod_idx = 0 ; mod_idx < total_mods; mod_idx++){
+    float mass = aa_mod_get_mass_change(mod_list[mod_idx]);
+
+    // standard mods have the format mass:aa_list:max
+    if( strcmp(name, "mod") == 0 ){
+      int max = aa_mod_get_max_per_peptide(mod_list[mod_idx]);
+      BOOLEAN_T* aas_modified = aa_mod_get_aa_list(mod_list[mod_idx]);
+      char aa_str[PARAMETER_BUFFER] = "";
+      char* aa_str_ptr = aa_str;
+      for(int aa_idx = 0; aa_idx < AA_LIST_LENGTH; aa_idx++){
+        if( aas_modified[aa_idx] == TRUE ){
+          sprintf(aa_str_ptr, "%c", (aa_idx + 'A'));
+          aa_str_ptr++;
+        }
+      }
+      fprintf(param_file, "%s%s=%.*f:%s:%i\n\n", comments, name, precision, 
+              mass, aa_str, max); 
+    } else { // nmod, cmod have the format mass:end_distance
+      int distance = aa_mod_get_max_distance(mod_list[mod_idx]);
+      fprintf(param_file, "%s%s=%.*f:%i\n\n", comments, name, precision, 
+              mass, distance);
+    }
+  }
+
+  // if there were no mods, print placeholder
+  if( total_mods == 0 ){
+    fprintf(param_file, "%s%s=NO MODS\n\n", comments, name);
+  }
+}
 
 /**
  * \brief Creates a file containing all parameters and their current
@@ -1578,14 +1640,24 @@ void print_parameter_file(char** filename){
     char* key = hash_iterator_next(iterator);
     char* show_users = (char*)get_hash_value(for_users, key);
     if( strcmp(show_users, "true") == 0 ){
+      // print mods separately at the end
+      if( strcmp(key, "mod") == 0 || strcmp(key, "cmod") == 0
+          || strcmp(key, "nmod") == 0 ){ 
+        continue;
+      }
       char buffer[PARAMETER_BUFFER] = "";
       strcat_formatted(buffer, "# ", (char*)get_hash_value(usages, key));
       strcat_formatted(buffer, "# ", (char*)get_hash_value(file_notes, key));
       fprintf(param_file, "%s%s=%s\n\n", buffer, key, 
-	      (char*)get_hash_value(parameters, key));
+              (char*)get_hash_value(parameters, key));
     }
   }
 
+  // now print all mods
+  print_mods_parameter_file(param_file, "mod", get_aa_mod_list);
+  print_mods_parameter_file(param_file, "nmod", get_n_mod_list);
+  print_mods_parameter_file(param_file, "cmod", get_c_mod_list);
+  
   free_hash_iterator(iterator);
   fclose(param_file);
   free(output_dir);
@@ -2530,19 +2602,30 @@ int get_all_aa_mod_list
  *
  * \returns A pointer to the next token in the line.
  */
-char* read_mass_change(AA_MOD_T* mod, char* line, char separator){
+char* read_mass_change(AA_MOD_T* mod, char* line, char separator,
+                       int& max_precision){
   //carp(CARP_DEBUG, "token points to %s", line);
 
   aa_mod_set_mass_change(mod, atof(line));
-  //mod->mass_change = atof(line);
   if( aa_mod_get_mass_change(mod) == 0){
-  //if( mod->mass_change == 0){
     carp(CARP_FATAL, "The mass change is not valid for mod %s", line);
   }
   char* next = line;
+  char* decimal = NULL;
   while(*next != separator){
+    if(*next == '.'){
+      decimal = next;
+    }
     next++;
   }
+  // distance from decimal to separator is number of digits
+  if( decimal != NULL ){
+    int distance = next - decimal -1;
+    if( distance > max_precision ){
+      max_precision = distance;
+    }
+  }
+
   next++;  // point past the separator
 
   return next;
@@ -2589,7 +2672,7 @@ char* set_aa_list(AA_MOD_T* mod, char* line, char separator){
  * Fails if line does not point to a valid integer.
  * \returns void
  */
-void read_max_per_peptide(AA_MOD_T* mod, char* line){
+char* read_max_per_peptide(AA_MOD_T* mod, char* line, char separator){
   //carp(CARP_DETAILED_DEBUG, "token points to %s", line);
   if( *line == '\0' ){
     carp(CARP_FATAL, "Missing maximum mods per peptide for mod %s", line);
@@ -2602,7 +2685,77 @@ void read_max_per_peptide(AA_MOD_T* mod, char* line){
     carp(CARP_FATAL, "Maximum mods per peptide is invalid for mod %s", line);
   }
 
+  char* next = line;
+  while(*next != '\0' && *next != separator){
+    next++;
+  }
+  if (*next != '\0') {
+    next++;  // point past the separator
+  }
+  return next;
 }
+
+char* read_prevents_cleavage(AA_MOD_T* mod, char* line, char separator) {
+  char* next = line;
+  switch(*line) {
+    case ':':
+      next++;
+    case '\0':
+      carp(CARP_DEBUG, "No prevents_cleavage property found %s",line);
+      break;
+    case 'T':
+    case 't':
+      carp(CARP_DEBUG, "prevents_cleavage set to true %s",line);
+      aa_mod_set_prevents_cleavage(mod, TRUE);
+      break;
+    case 'F':
+    case 'f':
+      carp(CARP_DEBUG, "prevents_cleavage set to false %s", line);
+      aa_mod_set_prevents_cleavage(mod, FALSE);
+      break;
+  }
+
+  while (*next != '\0' && *next != separator) {
+    next++;
+  }
+  if (*next != '\0') {
+    next++; //points past the separator
+  }
+
+  return next;
+}
+
+char* read_prevents_xlink(AA_MOD_T* mod, char* line, char separator) {
+  char* next = line;
+  switch(*line) {
+    case ':':
+      next++;
+    case '\0':
+      carp(CARP_DEBUG, "No prevents_xlink property found %s",line);
+      break;
+    case 'T':
+    case 't':
+      carp(CARP_DEBUG, "prevents_xlink set to true %s",line);
+      aa_mod_set_prevents_xlink(mod, TRUE);
+      break;
+    case 'F':
+    case 'f':
+      carp(CARP_DEBUG, "prevents_xlink set to false %s",line);
+      aa_mod_set_prevents_xlink(mod, FALSE);
+      break;
+  }
+
+  while (*next != '\0' && *next != separator) {
+    next++;
+  }
+  if (*next != '\0') {
+    next++; //points past the separator
+  }
+
+  return next;
+}
+
+
 
 /**
  * \brief Set the max_distance field in the mod with the value
@@ -2640,7 +2793,9 @@ int read_mods(
  FILE* param_file, ///< file from which to read mod info
  int cur_index,    ///< index of next mod to be entered
  const char* line_tag,///< text at beginning of mod line (eg mod=)
- MOD_POSITION_T position){///< type of mod (any, c-, n-term)
+ MOD_POSITION_T position,///< type of mod (any, c-, n-term)
+ int& max_precision///< most digits in mass change
+){
 
   carp(CARP_DEBUG, "Reading mods for %d position", (int)position);
   char* line = (char*)mycalloc(MAX_LINE_LENGTH, sizeof(char));
@@ -2670,7 +2825,7 @@ int read_mods(
     }
 
     // get the FLOAT_T and check for ok-ness
-    token = read_mass_change(cur_mod, token, ':');
+    token = read_mass_change(cur_mod, token, ':', max_precision);
 
     // fill in values for standard mods
     if( position == ANY_POSITION ){
@@ -2678,7 +2833,15 @@ int read_mods(
       token = set_aa_list(cur_mod, token, ':');
 
       // get max per peptide
-      read_max_per_peptide(cur_mod, token);
+      token = read_max_per_peptide(cur_mod, token, ':');
+
+      // read whether this modification prevents cleavage (OPTIONAL)
+      token = read_prevents_cleavage(cur_mod, token, ':');
+
+      // read whether this modification prevents xlink (OPTIONAL)
+      token = read_prevents_xlink(cur_mod, token, ':');
+
+
     }// fill in values for c- or n-mod
     else{
       // get the max distance
@@ -2725,9 +2888,10 @@ void read_mods_from_file(char* param_filename){
   // get first mod
   //AA_MOD_T* cur_mod = list_of_mods[num_mods]; // num_mods == 0
   int total_num_mods = 0;
+  int max_precision = MOD_MASS_PRECISION;
 
   total_num_mods = read_mods(param_file, total_num_mods,
-                             "mod=", ANY_POSITION);
+                             "mod=", ANY_POSITION, max_precision);
   num_mods = total_num_mods;  // set global var
 
   // Read the file again to get the cmods
@@ -2736,7 +2900,7 @@ void read_mods_from_file(char* param_filename){
   // set cmod pointer to next in array
   list_of_c_mods = &list_of_mods[total_num_mods];
 
-  total_num_mods = read_mods(param_file, total_num_mods, "cmod=", C_TERM);
+  total_num_mods = read_mods(param_file, total_num_mods, "cmod=", C_TERM, max_precision);
   num_c_mods = total_num_mods - num_mods;
 
   // if no cmods present, don't point to the list of mods
@@ -2750,13 +2914,19 @@ void read_mods_from_file(char* param_filename){
   // set nmod pointer to next in array
   list_of_n_mods = &list_of_mods[total_num_mods];
 
-  total_num_mods = read_mods(param_file, total_num_mods, "nmod=", N_TERM);
+  total_num_mods = read_mods(param_file, total_num_mods, "nmod=", N_TERM, max_precision);
   num_n_mods = total_num_mods - num_mods - num_c_mods;
 
   // if no nmods present, don't point to the list of mods
   if( num_n_mods == 0){
     list_of_n_mods = NULL;
   }
+
+  // set the mod-precision option
+  char val_str[16];
+  sprintf(val_str, "%i", max_precision);
+  update_hash_value(parameters, "mod-precision", val_str);
+
 
   // close file
   fclose(param_file);
