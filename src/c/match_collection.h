@@ -292,6 +292,18 @@ void print_matches_multi_spectra
  FILE* tab_file, 
  FILE* decoy_tab_file);
 
+void print_matches_multi_spectra_xml(
+ MATCH_COLLECTION_T* match_collection,
+ FILE* output);
+
+
+/*
+ * Print the XML file header
+ */ 
+void print_xml_header(FILE* outfile);
+
+
+
 /*
  * Print the SQT file header 
  */
@@ -304,6 +316,22 @@ void print_sqt_header(FILE* outfile,
  * Print the tab delimited file header 
  */
 void print_tab_header(FILE* outfile);
+
+/**
+ * Print the psm features to output file upto 'top_match' number of
+ * top peptides among the match_collection in xml file format
+ * returns TRUE, if sucessfully print xml format of the PSMs, else FALSE
+ */
+
+
+BOOLEAN_T print_match_collection_xml(
+  FILE* output,
+  int top_match,
+  MATCH_COLLECTION_T* match_collection,
+  SPECTRUM_T* spectrum,
+  SCORER_TYPE_T main_score
+  );
+
 
 /**
  * Print the psm features to output file upto 'top_match' number of 

@@ -316,6 +316,40 @@ void print_spectrum_processed_peaks(
 /**
  * Prints a spectrum object to file in sqt format.
  */
+void print_spectrum_xml(
+  SPECTRUM_T* spectrum, ///< spectrum to print -in
+  FILE* file,           ///< output file to print at -out
+  int num_matches,      ///< number of peptides compared to this spec -in
+  int charge            ///< charge used for the search -in
+  ){
+  
+  int start_scan = get_spectrum_first_scan(spectrum);
+  int last_scan = get_spectrum_last_scan(spectrum);
+  string period = ".";
+  std::ostringstream spectrum_id;
+  spectrum_id << start_scan << period.c_str() << last_scan << period.c_str() <<charge  << period.c_str() <<num_matches;
+  
+  fprintf(file, "<spectrum_query spectrum=\"%s\" start_scan=\"%i\""
+	  " end_scan=\"%i\" precursor_neutral_mass=\"%f\""
+	  " assumed_charge=\"%i\" index=\"%i\" retention_time_sec=\"%f\">\n",
+	  spectrum_id.str().c_str(),
+          start_scan, 
+          last_scan,
+	  get_spectrum_neutral_mass(spectrum, charge),
+          charge, 
+          0,  // FIXME dummy <index?>
+          0.0 // FIXME dummy <retention_time>
+	  );
+  fprintf(file, "<search_result>");
+}
+
+
+
+
+
+/**
+ * Prints a spectrum object to file in sqt format.
+ */
 void print_spectrum_sqt(
   SPECTRUM_T* spectrum, ///< spectrum to print -in
   FILE* file,           ///< output file to print at -out

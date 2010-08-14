@@ -12,6 +12,7 @@
 #include <assert.h>
 #include <ctype.h>
 #include <unistd.h>
+#include <set>
 #include "carp.h"
 #include "parse_arguments.h"
 #include "spectrum.h"
@@ -787,6 +788,199 @@ static void print_one_match_field(
   }
 }
 
+void print_match_xml(
+		     //MATCH_COLLECTION_T* collection,  ///< collection holding this match -in 
+  MATCH_T* match,                  ///< the match to print -in  
+  FILE*    output_file,            ///< output stream -out
+  FLOAT_T  spectrum_mass,          ///< spectrum neutral mass -in
+  const BOOLEAN_T* scores_computed ///< scores_computed[TYPE] = T if match was scored for TYPE
+  ){
+
+  carp(CARP_INFO, "**entered");
+  if ( output_file == NULL ){
+    return;
+  }
+
+  if ( match == NULL ){
+    carp(CARP_ERROR, "Cannot print NULL match to tab delimited file.");
+    return;
+  }
+
+  int b_y_total = get_match_b_y_ion_possible(match);
+  int b_y_matched = get_match_b_y_ion_matched(match);
+  
+  if ( b_y_total == 0 ){
+    int factor = get_match_charge(match);
+    if ( factor == 3 ){
+      factor = 2;
+    } else {
+      factor = 1;
+    }
+    PEPTIDE_T* peptide = get_match_peptide(match);
+    b_y_total = (get_peptide_length(peptide)-1) * 2 * factor;
+    b_y_matched = (int)((get_match_b_y_ion_fraction_matched(match)) 
+			* b_y_total);
+  }
+  /* get proteins */
+
+    PEPTIDE_T* peptide = get_match_peptide(match);
+    double peptide_mass = get_peptide_peptide_mass(peptide);
+    PEPTIDE_SRC_ITERATOR_T* peptide_src_iterator = 
+      new_peptide_src_iterator(peptide);
+
+    std::ostringstream protein_field_stream;
+    set<pair<string, string> > protein_info;
+    int protein_count = 0;
+    while(peptide_src_iterator_has_next(peptide_src_iterator)){
+      PEPTIDE_SRC_T* peptide_src = peptide_src_iterator_next(peptide_src_iterator);
+      PROTEIN_T* protein = get_peptide_src_parent_protein(peptide_src);
+      char* protein_id = get_protein_id(protein);
+      char* protein_annotation = get_protein_annotation(protein);      
+      char* str_iter = protein_annotation;
+      while ( (*str_iter) != '\0' ){
+	if ((*str_iter) == '\"'){
+	  (*str_iter) = '\'';
+	}
+	str_iter++;
+	}
+      std::ostringstream protein_stream;
+      protein_stream << protein_id;
+      protein_info.insert(make_pair(protein_id, protein_annotation));
+      free(protein_id);
+      protein_count++;
+    }
+    free(peptide_src_iterator);
+    
+    /* get other data */
+    int ranking = -1;
+    if (scores_computed[XCORR]){
+      ranking = get_match_rank(match, XCORR);
+    }
+    char * flanking_aas = get_flanking_aas(peptide);
+    char flanking_aas_prev[2];
+    char flanking_aas_next[2];
+    flanking_aas_prev[1] = '\0';
+    flanking_aas_next[1] = '\0';
+    flanking_aas_prev[0] = flanking_aas[0];
+    flanking_aas_next[0] = flanking_aas[1];
+    
+    
+
+    
+
+    set<pair<string, string> >::iterator prot_iter = protein_info.begin();
+    fprintf(output_file, "<search_hit hit_rank=\"%i\" peptide=\"%s\" peptide_prev_aa=\"%s\" "
+	    "peptide_next_aa=\"%s\" protein=\"%s\" num_tot_proteins=\"%i\" num_matched_ions=\"%i\" " 
+	    "tot_num_ions=\"%i\" calc_neutral_pep_mass=\"%f\" massdiff=\"%+f\" num_tol_term=\"%i\" "
+	    " num_missed_cleavages=\"%i\" calc_pI=\"%f\" is_rejected=\"%i\" protein_descr=\"%s\">\n",
+	    ranking, // -1 if unavailable, uses xcorr rank otherwise
+	    get_match_mod_sequence_str_with_masses(match, get_boolean_parameter("display-summed-mod-masses")),
+	    flanking_aas_prev,
+	    flanking_aas_next,
+	    ((*prot_iter).first).c_str(),
+	    (int) protein_info.size(),
+	    b_y_matched, 
+	    b_y_total, 
+	    peptide_mass,
+	    spectrum_mass-peptide_mass,
+	    0, // TODO , dummy value
+	    0, // TODO , dummy value
+	    0.0, // TODO , dummy value
+	    0, // TODO, dummy value
+	    ((*prot_iter).second).c_str() 
+	    );
+    carp(CARP_INFO, "**after1");
+    // print additional proteins
+    while (++prot_iter != protein_info.end()){
+      flanking_aas+=3;
+      flanking_aas_prev[0] = flanking_aas[0];
+      flanking_aas_next[0] = flanking_aas[1];
+      fprintf(output_file, "<alternative_protein protein=\"%s\" protein_descr=\"%s\" "
+	      "num_tol_term=\"%i\" protein_mw=\"%i\" peptide_prev_aa=\"%s\" "
+	      "peptide_next_aa=\"%s\"/> \n",
+	      ((*prot_iter).first).c_str(),
+	      ((*prot_iter).second).c_str(), // TODO, dummy value
+	      0, // TODO, dummy value
+	      0, // TODO, dummy value
+	      flanking_aas_prev,
+	      flanking_aas_next);
+    }
+    carp(CARP_INFO, "**after2");
+
+
+    // get modification information
+    fprintf(output_file, "<modification_info>\n");
+
+    char* modified_sequence = get_match_mod_sequence_str_with_masses(match, TRUE);
+    int seq_index = 1;
+    char* amino = modified_sequence;
+    char* end;
+    char* start;
+    // parsing of returned string
+    while (*(amino+1) != '\0'){
+      if ((*amino+1) =='['){
+	start = amino+2;
+	end = amino+2;
+	while (*end != ']'){
+	  end++;
+	}
+	char* mass  = (char *) mymalloc(sizeof(char)*(end-start+1));
+	char* mass_iter = mass;
+	while (start != end){
+	  *mass_iter = *start;
+	  start++;
+	  mass_iter++;
+	}
+	mass_iter = '\0';
+	fprintf(output_file, "<mod_aminoacid_mass position=\"%i\" mass=\"%s\"/>\n",
+	       seq_index,
+	       mass);
+	free(mass);
+	amino = end;
+      }
+      seq_index++;
+      amino++;
+    }
+    free(modified_sequence);
+    
+
+    fprintf(output_file, "</modification_info>\n");
+
+
+
+
+
+
+    if (scores_computed[PERCOLATOR_SCORE]){
+      fprintf(output_file, "<search_score name=\"percolator_score\" value=\"%f\"/>\n"
+	      "<search_score name=\"percolator_qvalue\" value=\"%f\"/>\n",
+	      get_match_score(match, PERCOLATOR_SCORE),
+	      get_match_score(match, PERCOLATOR_QVALUE));
+    }
+    carp(CARP_INFO, "**after3");
+    if (scores_computed[QRANKER_SCORE]){
+      fprintf(output_file, "<search_score name=\"qranker_score\" value=\"%f\"/>\n"
+	      "<search_score name=\"qranker_qvalue\" value=\"%f\"/>\n",
+	      get_match_score(match, QRANKER_SCORE),
+	      get_match_score(match, QRANKER_QVALUE));
+    }
+    carp(CARP_INFO, "**after4");
+    if (scores_computed[LOGP_QVALUE_WEIBULL_XCORR]){
+      fprintf(output_file, "<search_score name=\"logp_qvalue_weibull_score\" value=\"%f\"/>\n",
+	       get_match_score(match, LOGP_QVALUE_WEIBULL_XCORR));
+    }
+    carp(CARP_INFO, "**after5");
+    fprintf(output_file, "<search_score name=\"xcorr_score\" value=\"%f\"/>\n",
+	    get_match_score(match, XCORR));
+    
+    
+    
+    
+    carp(CARP_INFO, "**exited");
+
+}
+
+
 /**
  * \brief Print the match information in tab delimited format to the given file
  *
@@ -1016,7 +1210,7 @@ double* get_match_percolator_features(
       peptide_src = peptide_src_iterator_next(src_iterator);
       protein = get_peptide_src_parent_protein(peptide_src);
       protein_idx = get_protein_protein_idx(protein);
-      
+
       // numProt
       if(feature_array[18] < get_match_collection_protein_counter(
                               match_collection, protein_idx)){

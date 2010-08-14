@@ -250,6 +250,24 @@ void print_match_sqt(
   FILE* file      ///< output stream -out
 );
 
+
+
+/**
+ * \brief Print the match information in xml format to the given file
+ *
+ * Prints out the match information in the format described as pep xml.
+ * Fills out as much information as available.
+ *
+ */
+void print_match_xml(
+  MATCH_T* match,
+  FILE* output_file,
+  FLOAT_T spectrum_mass,
+  const BOOLEAN_T* scores_computed
+);
+
+
+
 /**
  * \brief Print the match information in tab delimited format to the given file
  *

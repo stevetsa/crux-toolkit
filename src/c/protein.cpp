@@ -25,7 +25,7 @@ using namespace std;
  */
 static const int PROTEIN_ID_LENGTH = 100;
 static const int PROTEIN_SEQUENCE_LENGTH = 40000;
-static const int PROTEIN_ANNOTATION_LENGTH = 100;
+static const int PROTEIN_ANNOTATION_LENGTH = 200;
 static const int LONGEST_LINE  = PROTEIN_ID_LENGTH + PROTEIN_ID_LENGTH;
 static const int FASTA_LINE = 50;
 static const int SMALLEST_MASS = 57;

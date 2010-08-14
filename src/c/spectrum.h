@@ -63,6 +63,18 @@ void print_spectrum_sqt(
   int charge            ///< charge used for the search -in
   );
 
+
+/**
+ * Prints a spectrum object to file in xml format.
+ */
+void print_spectrum_xml(
+  SPECTRUM_T* spectrum, ///< spectrum to print -in
+  FILE* file,           ///< output file to print at -out
+  int num_matches,      ///< number of peptides compared to this spec -in
+  int charge            ///< charge used for the search -in
+  );
+
+
 /**
  * Prints a spectrum object to STDOUT.
  */
