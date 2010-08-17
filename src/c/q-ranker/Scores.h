@@ -66,6 +66,7 @@ public:
     void getMaxScores(Scores &max_scores);
     void calcQValues(int max_pos);
     void calcFDR_BH(int max_pos);
+    void calcFDR_Decoy(bool do_max_psm);
     void calcPValues(bool do_max_psm,int &max_pos);
 
     inline unsigned int size() {return (pos+neg);} 
@@ -75,7 +76,7 @@ public:
     static double pi0; 
     double factor;
 
-    int calcOverFDR(double fdr);
+    int calcOverFDR(double fdr, bool do_max_psm=false);
     void calcQValues();
     void calcMultiOverFDR(vector<double> &fdr, vector<int> &overFDR);
     inline ScoreHolder& operator[](int ix){return scores[ix];}

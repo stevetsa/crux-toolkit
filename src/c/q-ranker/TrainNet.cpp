@@ -37,11 +37,11 @@ string res_prefix="yeast_trypsin";
 
 
 /********************* writing out results functions***************************************/
-int Caller :: getOverFDR(Scores &set, NeuralNet &n, double fdr)
+int Caller :: getOverFDR(Scores &set, NeuralNet &n, double fdr, bool do_max_psm)
 {
 
   calcScores(set, n);
-  return set.calcOverFDR(fdr);
+  return set.calcOverFDR(fdr, do_max_psm);
 }
 
 void Caller :: calcScores(Scores &set, NeuralNet &n)
@@ -60,7 +60,7 @@ void Caller :: calcScores(Scores &set, NeuralNet &n)
     }
 }
 
-void Caller :: calcPValues(Scores &set, NeuralNet &n, bool do_max_psm, int &max_pos)
+void Caller :: calcPValues(Scores &set, NeuralNet &n, int &max_pos)
 {
   calcScores(set, n);
 
@@ -477,7 +477,7 @@ void Caller :: train_many_target_nets_ave(
 	      }
 	  }
 
-	if((i % 50) == 0)
+	if((i % 20) == 0)
 	  {
 	    cerr << "Iteration " << i << " : \n";
 	    getMultiFDR(testset,net,qvals);
@@ -494,17 +494,20 @@ void Caller :: train_many_target_nets_ave(
     }
 }
 
-void Caller::train_many_nets(
-  bool do_xval,
-  bool do_max_psm) 
+void Caller::train_many_nets() 
 {
   int max_pos = 0;
   int full_max_pos = 0;
-  train_many_nets(trainset, testset, trainset_xv_train, trainset_xv_test, do_xval, do_max_psm, max_pos);
+  train_many_nets(trainset, testset, trainset_xv_train, trainset_xv_test, max_pos);
   full_max_pos = max_pos;
-  train_many_nets(testset, trainset, testset_xv_train, testset_xv_test, do_xval, do_max_psm, max_pos);
-  full_max_pos += max_pos;
-  fullset.calcQValues(full_max_pos);
+  
+  if (do_pvalue) {
+    train_many_nets(testset, trainset, testset_xv_train, testset_xv_test, max_pos);
+    full_max_pos += max_pos;
+    fullset.calcQValues(full_max_pos);
+  } else {
+    fullset.calcFDR_Decoy(do_max_psm);
+  }
 }
 
 void Caller::train_many_nets(
@@ -512,14 +515,12 @@ void Caller::train_many_nets(
   Scores& testset,
   vector<Scores>& xv_train,
   vector<Scores>& xv_test,
-  bool do_xval, ////< Select hyperparameters via cross-validation. -in
-  bool do_max_psm,
   int& max_pos) 
 {
   
   thresholdset = trainset;
 
-  switch_iter =100;
+  switch_iter = 100;
   niter = 200;
    
   num_qvals = 14;
@@ -612,7 +613,7 @@ void Caller::train_many_nets(
   
 
   train_many_target_nets_ave(trainset, testset, thresholdset);  
- 
+   
   //write out the results of the target net
   //cerr << "target net results: ";
   //ostringstream s2;
@@ -623,6 +624,7 @@ void Caller::train_many_nets(
   int max_fdr = 0;
   int fdr = 0;
   int ind = 0;
+  cerr <<"Choosing best net"<<endl;
   for(unsigned int count = 0; count < qvals.size();count++)
     {
       fdr = getOverFDR(thresholdset, max_net_targ[count], selectionfdr);
@@ -634,12 +636,16 @@ void Caller::train_many_nets(
     }
   net = max_net_targ[ind];
   
-  cerr << " Found " << getOverFDR(testset, net, selectionfdr) << " over q<" << selectionfdr << "\n";
-  
+
 
   //calculate pvalues on testset.
-  calcPValues(testset, net, do_max_psm, max_pos);
-
+  if (do_pvalue) {
+    cerr << " Found " << getOverFDR(testset, net, selectionfdr, do_max_psm) << " over q<" << selectionfdr << "\n";
+    cerr <<"Calculating pvalues"<<endl;
+    calcPValues(testset, net, max_pos);
+  } else {
+    cerr << " Found " << getOverFDR(fullset, net, selectionfdr, do_max_psm) << " over q<" << selectionfdr << "\n";
+  }
   delete [] max_net_gen;
   delete [] max_net_targ;
 

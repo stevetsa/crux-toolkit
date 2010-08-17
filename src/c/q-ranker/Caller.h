@@ -24,7 +24,7 @@ public:
 	virtual ~Caller();
     void readRetentionTime(string filename);
     void step(Scores& train, vector<double>& w, double Cpos, double Cneg, double fdr);
-    void train(bool do_xval, bool do_max_psm);
+    void train();
     void trainEm(vector<vector<double> >& w);
     int xvalidate_step(vector<vector<double> >& w);
     int xv_step(vector<vector<double> >& w);
@@ -36,10 +36,17 @@ public:
     void readWeights(istream & weightStream, vector<double>& w);
     void readFiles(bool &doSingleFile);
     void filelessSetup(unsigned int nsets,const unsigned int numFeatures, int* numSpectra, char ** fetureNames, double pi0);
-    void fillFeatureSets(bool do_max_psm);    
+    void fillFeatureSets();    
     int preIterationSetup();
     Scores* getFullSet() {return &fullset;}    
-    int run(bool do_xval, bool do_max_psm);
+    int run();
+
+    void setHU(int hu);
+    void setSeed(unsigned int seed);
+    void setDoMaxPSM(bool ado_max_psm);
+    void setDoXVal(bool ado_xal);
+    void setDoPValue(bool ado_pvalue);
+
     SetHandler * getSetHandler(SetHandlerType sh) {
         switch(sh) {
            case NORMAL: return &normal;
@@ -53,21 +60,21 @@ public:
     void train_net_two(Scores &set);
     void train_many_general_nets(Scores& trainset, Scores& testset, Scores& thresholdset);
     void train_many_target_nets_ave(Scores& trainset, Scores& testset, Scores& thresholdset);
-    void train_many_nets(bool do_xval, bool do_max_psm);
+    void train_many_nets();
     void train_many_nets(
       Scores& trainset,
       Scores& testset,
       vector<Scores>& xv_train,
       vector<Scores>& xv_test,
-      bool do_xval, ////< Select hyperparameters via cross-validation. -in
-      bool do_max_psm,
       int& max_pos); 
-    void train_many_nets(Scores& trainset, Scores& testset, bool do_xval, bool do_max_psm);
+    void train_many_nets(Scores& trainset, 
+      Scores& testset);
+
     void three_plot(double qv);
     
-    int getOverFDR(Scores &set, NeuralNet &n, double fdr);
+    int getOverFDR(Scores &set, NeuralNet &n, double fdr, bool do_max_psm=false);
     void calcScores(Scores &set, NeuralNet &n);
-    void calcPValues(Scores &set, NeuralNet &n, bool do_max_psm, int &max_pos);
+    void calcPValues(Scores &set, NeuralNet &n, int &max_pos);
     void getMultiFDR(Scores &set, NeuralNet &n, vector<double> &qval);
     void printNetResults(vector<int> &scores);
     void write_max_nets(string filename, NeuralNet *max_net);
@@ -96,6 +103,9 @@ protected:
     bool dtaSelect;
     bool docFeatures;
     bool reportPerformanceEachIteration;
+    bool do_xval;
+    bool do_max_psm;
+    bool do_pvalue;
     double test_fdr;
     double selectionfdr;
     double selectedCpos;

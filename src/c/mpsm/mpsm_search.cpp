@@ -342,9 +342,6 @@ int mpsm_search_main(int argc, char** argv){
     mpsm_map.sortMatches(XCORR);
   //print out map
   //output the spsms.
-
-    spsm_map.calcDeltaCN();
-    spsm_map.calcZScores();
     mpsm_map.calcDeltaCN();
     mpsm_map.calcZScores();
   }
@@ -624,22 +621,29 @@ bool passRTimeThreshold(MPSM_Match& match,
   FLOAT_T rtime_max_diff) {
 
   if (rtime_threshold) {
+    //cerr <<"Testing rtime"<<endl;
     ChargeIndex& charge_index = match.getChargeIndex();
 
     double fdiff = fabs(rtime_max_diff);
 
     //all +2
     if (charge_index.numCharge(2) == match.numMatches()) {
+      //cerr <<"Done. All +2"<<endl;
       return fdiff <= 8.4;
     } else if (charge_index.numCharge(3) == match.numMatches()) {
+      //cerr <<"Done .All +3"<<endl;
       return fdiff <= 14.1;
     } else {
+      //cerr <<"Done. Mixture"<<endl;
       return fdiff <= 14.7;
     }
+    
   } else {
     return true;
   }
 }
+
+RetentionPredictor* rtime_predictor = NULL;
 
 
 BOOLEAN_T extendMatch(MPSM_Match& orig_mpsm, 
@@ -648,10 +652,12 @@ BOOLEAN_T extendMatch(MPSM_Match& orig_mpsm,
   vector<set<string> >& visited,
   int match_collection_idx) {
   
+  cerr <<"extendMatch: start"<<endl;
   BOOLEAN_T match_added = FALSE;
   
-  RetentionPredictor* rtime_predictor = RetentionPredictor::createRetentionPredictor();
-
+  if (rtime_predictor == NULL) {
+    rtime_predictor = RetentionPredictor::createRetentionPredictor();
+  }
   set<string>& visited_here = visited[match_collection_idx];
 
   for (int idx=0;idx < spsm_matches.numMatches(); idx++) {
@@ -670,9 +676,7 @@ BOOLEAN_T extendMatch(MPSM_Match& orig_mpsm,
       }
     }
   }
-
-  delete rtime_predictor;
-
+  cerr <<"extendMatch:done. "<< match_added <<endl;
   return match_added;
 }
 

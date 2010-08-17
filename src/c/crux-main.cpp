@@ -179,6 +179,14 @@ static MATCH_COLLECTION_T* run_percolator_or_qranker(
       }
     }
 
+    if (command == QRANKER_COMMAND) {
+
+      qcSetHU(get_int_parameter("qranker-num-hu"));
+      qcSetDoXVal(!get_boolean_parameter("no-xval"));
+      qcSetDoMaxPSM(get_boolean_parameter("do-max-psm"));
+      qcSetDoPValue(get_boolean_parameter("qranker-do-pvalue"));
+    }
+
     // create iterator, to register each PSM feature.
     match_iterator = new_match_iterator(match_collection, XCORR, FALSE);
     
@@ -232,8 +240,7 @@ static MATCH_COLLECTION_T* run_percolator_or_qranker(
     pcCleanUp();
     break;
   case QRANKER_COMMAND:
-    qcExecute(!get_boolean_parameter("no-xval"),
-      get_boolean_parameter("do-max-psm")); 
+    qcExecute();
     qcGetScores(results_score, results_q); 
     fill_result_to_match_collection(
         target_match_collection, results_q, QRANKER_Q_VALUE, TRUE);

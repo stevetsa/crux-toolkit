@@ -680,6 +680,15 @@ void initialize_parameters(void){
   set_boolean_parameter("do-max-psm", FALSE, 
        "Only calculate q-values for the maximum scoring psm/scan.",
        "Available for q-ranker.", "true");
+
+  set_boolean_parameter("qranker-do-pvalue", FALSE, 
+       "",
+	   "","true");
+
+  set_int_parameter("qranker-num-hu", 5, 1, 50,
+      "Number of hidden units to use for q-ranker",
+      "Available for q-ranker.", "true");
+
   /* analyze-matches parameter options */
   set_double_parameter("pi-zero", 0.9, 0, 1, 
       "The estimated percent of target scores that are drawn from the "

@@ -39,10 +39,29 @@ static Caller * getCaller() {
     return pCaller;
 } 
 
+void qcSetSeed(unsigned int seed) {
+  getCaller() -> setSeed(seed);
+}
 
+void qcSetHU(int hu) {
+  getCaller()->setHU(hu);
+}
+
+void qcSetDoXVal(bool do_xval) {
+  getCaller()->setDoXVal(do_xval);
+}
+
+void qcSetDoMaxPSM(bool do_max_psm) {
+  getCaller()->setDoMaxPSM(do_max_psm);
+}
+
+void qcSetDoPValue(bool do_pvalue) {
+  getCaller()->setDoPValue(do_pvalue);
+}
 /** Call that initiates percolator */
 void qcInitiate(int sets, unsigned int numFeat, int* numSpectra, char ** featureNames, double pi0) {
   pCaller=new Caller();
+
   nset=(NSet)sets;
   numFeatures = numFeat;
   pCaller->filelessSetup((int)sets,numFeatures, numSpectra, featureNames, pi0);
@@ -105,15 +124,12 @@ void qcRegisterPSM(SetType set, unsigned int scan, char * identifier, double * f
 }
 
 /** Function called when we want to start processing */
-void qcExecute(
-  bool do_xval, ////< Select hyperparameters via cross-validation? -in
-  bool do_max_psm ///< Calculate q-values based upon the max scoring psm/scan
-) {
+void qcExecute() {
 
   
-  pCaller->fillFeatureSets(do_max_psm);
+  pCaller->fillFeatureSets();
   pCaller->preIterationSetup();
-  pCaller->train(do_xval, do_max_psm);
+  pCaller->train();
 } 
 
 /** Function called when retrieving target scores and q-values after processing,

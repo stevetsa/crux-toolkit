@@ -34,10 +34,6 @@ class MPSM_Match {
     
     FLOAT_T rtime_max_diff_;
 
-    FLOAT_T delta_cn_;
-    FLOAT_T zscore_;
-    
-
     /*
     std::vector<bool> has_rtime;
     std::vector<FLOAT_T> rtimes;
@@ -53,7 +49,8 @@ class MPSM_Match {
     void setParent(MPSM_MatchCollection* parent);
     MPSM_MatchCollection* getParent();
 
-
+    double getDeltaCN();
+    double getZScore();
 
     virtual ~MPSM_Match();
 
@@ -68,10 +65,6 @@ class MPSM_Match {
 
     void setRTimeMaxDiff(FLOAT_T rtime_max_diff);
     FLOAT_T getRTimeMaxDiff();
-
-    void setDeltaCN(FLOAT_T delta_cn);
-    void setZScore(double zscore);
-
 
     ChargeIndex& getChargeIndex();
 

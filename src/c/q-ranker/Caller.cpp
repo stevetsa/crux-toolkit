@@ -46,7 +46,7 @@ Caller::Caller() : pNorm(NULL), pCheck(NULL), svmInput(NULL),
   gistInput(false), tabInput(false), dtaSelect(false), docFeatures(false), reportPerformanceEachIteration(false),
   test_fdr(0.01), selectionfdr(0.01), selectedCpos(0), selectedCneg(0), threshTestRatio(0.3), trainRatio(0.5),
 		   niter(10), seed(0), xv_type(EACH_STEP), trainNN(1), splitPositives(1), num_hu(5),mu(0.005),weightDecay(0.00005),
-		   shuffled1_present(false),shuffled2_present(false)
+		   shuffled1_present(false),shuffled2_present(false),do_xval(true),do_max_psm(false)
 {
 }
 
@@ -417,16 +417,14 @@ void Caller::readFiles(bool &doSingleFile) {
 }
 
 
-void Caller::train(
-  bool do_xval, ////< Select hyperparameters via cross-validation? -in
-  bool do_max_psm) {
+void Caller::train() {
 
   cerr << "do_xval:"<<do_xval<<" do_max_psm:"<<do_max_psm<<endl;
-  train_many_nets(do_xval, do_max_psm);
+  train_many_nets();
 }
 
 
-void Caller::fillFeatureSets(bool do_max_psm) {
+void Caller::fillFeatureSets() {
 
     if(shuffled2_present)
       Scores::fillFeaturesSplit(trainset,testset,normal,shuffled,shuffled1,shuffled2,trainRatio);
@@ -475,23 +473,41 @@ int Caller::preIterationSetup() {
      testset.createXvalSets(testset_xv_train, testset_xv_test, xval_fold);
 }    
 
-int Caller::run(
-  bool do_xval, ////< Select hyperparameters via cross-validation? -in
-  bool do_max_psm ////< Get q-values for max scoreing psm/scan
-  ) {
+int Caller::run() {
   srand(seed);
   if(VERB>0)  cerr << extendedGreeter();
   //File reading
   bool doSingleFile = !decoyWC.empty();
   readFiles(doSingleFile);
-  fillFeatureSets(do_max_psm);
+  fillFeatureSets();
   preIterationSetup();
-  train(do_xval, do_max_psm);
+  train();
   
   cerr << " Found " << getOverFDR(fullset, net, selectionfdr) << " over q<" << selectionfdr << "\n";
   normal.print(fullset);
   
   return 0;
+}
+
+void Caller::setSeed(unsigned int rseed) {
+  seed = rseed;
+  srand(seed);
+}
+
+void Caller::setHU(int hu) {
+  num_hu = hu;
+}
+
+void Caller::setDoMaxPSM(bool ado_max_psm) {
+  do_max_psm = ado_max_psm;
+}
+
+void Caller::setDoXVal(bool ado_xval) {
+  do_xval = ado_xval;
+}
+
+void Caller::setDoPValue(bool ado_pvalue) {
+  do_pvalue = ado_pvalue;
 }
 
 } // qranker namspace

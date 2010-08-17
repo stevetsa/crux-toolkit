@@ -85,69 +85,59 @@ void MPSM_MatchCollection::sortByScore(SCORER_TYPE_T match_mode) {
 void MPSM_MatchCollection::calcDeltaCN() {
 
   if (numMatches() == 0) {
+    xcorr_2_ = 0;
     return;
   }
 
   if (numMatches() == 1) {
-
-    getMatch(0).setDeltaCN(0.0);
+    xcorr_2_ = 0;
   } else {
 
-    sortByScore(XCORR);
-  
-    FLOAT_T second_best = getMatch(1).getScore(XCORR);
-
-    for (int idx = 0;idx < numMatches();idx++) {
-
-      FLOAT_T delta_cn = (getMatch(idx).getScore(XCORR) - second_best) / 
-        second_best;
-      getMatch(idx).setDeltaCN(delta_cn);
-    }
+    sortByScore(XCORR);  
+    xcorr_2_ = getMatch(1).getScore(XCORR);
   }
 }
 
-void MPSM_MatchCollection::calcZScores() {
-  if (numMatches() == 0) {
+double MPSM_MatchCollection::calcDeltaCNMatch(double xcorr) {
+  return (xcorr - xcorr_2_) / xcorr;
+}
+
+
+void MPSM_MatchCollection::calcZParameters(double& mean, double& std) {
+  mean = 0;
+  std = 1;
+
+  if (numMatches() < 2) {
     return;
   }
 
-  if (numMatches() < 2) {
-    for (int idx=0;idx < numMatches();idx++) {
-      getMatch(idx).setZScore(0);
-    }
-  } else {
-    double sum = 0;
-
-    for (int idx = 0;idx < numMatches();idx++) {
-      sum += getMatch(idx).getScore(XCORR);
-    }
-
-    double avg = sum / (double)numMatches();
-
-    double std = 0;
-
-    for (int idx=0;idx < numMatches();idx++) {
-      double temp = getMatch(idx).getScore(XCORR) - avg;
-      std += temp * temp;
-
-    }
-
-    std = sqrt(1.0 / (double)(numMatches() - 1) * std);
-
-    for (int idx=0;idx < numMatches();idx++) {
-
-      double zscore = (getMatch(idx).getScore(XCORR) - avg) / std;
-      getMatch(idx).setZScore(zscore);
-
-
-    }
-
-
+  for (int idx=0;idx < numMatches();idx++) {
+    mean += getMatch(idx).getScore(XCORR);
   }
 
+  mean = mean / (double)numMatches();
+
+  std = 0;
+  for (int idx=0;idx < numMatches();idx++) {
+    double temp = getMatch(idx).getScore(XCORR) - mean;
+    std += temp * temp;
+  }
+
+  std = sqrt(1.0 / (double)(numMatches() - 1) * std);
+
+  setZParameters(mean, std);
 
 }
 
+void MPSM_MatchCollection::setZParameters(double mean, double std) {
+  zscore_mean_ = mean;
+  zscore_std_ = std;
+}
+
+double MPSM_MatchCollection::calcZScore(double xcorr) {
+
+    return (xcorr - zscore_mean_) / zscore_std_;
+}
 
 ostream& operator<<(ostream& os, MPSM_MatchCollection& collection_obj) {
 

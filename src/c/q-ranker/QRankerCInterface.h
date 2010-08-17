@@ -23,12 +23,21 @@ void qcInitiate(int sets, unsigned int numFeatures, int* numSpectra, char ** fea
  *  0 is quiet, 2 is default, 5 is more than you want */
 void qcSetVerbosity(int verbosity);
 
+void qcSetSeed(unsigned int seed);
+
+void qcSetHU(int hu);
+
+void qcSetDoXVal(bool do_xval);
+
+void qcSetDoMaxPSM(bool do_max_psm);
+
+void qcSetDoPValue(bool do_pvalue);
 
 /** Register a PSM */
 void qcRegisterPSM(SetType set, unsigned int scan, char * identifier, double * features);
 
 /** Function called when we want to start processing */
-void qcExecute(bool do_xval, bool do_max_psm); 
+void qcExecute(); 
 
 /**
  * Given the set enum and features, return the Percolator score for the PSM

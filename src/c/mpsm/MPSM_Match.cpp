@@ -227,14 +227,6 @@ FLOAT_T MPSM_Match::getRTimeMaxDiff() {
   return rtime_max_diff_;
 }
 
-void MPSM_Match::setDeltaCN(FLOAT_T delta_cn) {
-  //delta_cn_ = delta_cn;
-}
-
-void MPSM_Match::setZScore(double zscore) {
-  //zscore_ = zscore;
-}
-
 string MPSM_Match::getString() {
   string ans;
 
@@ -301,6 +293,15 @@ bool MPSM_Match::operator ==(MPSM_Match& match_obj) {
 }
 
 
+double MPSM_Match::getDeltaCN() {
+  return (parent_ -> calcDeltaCNMatch(getScore(XCORR)));
+}
+
+double MPSM_Match::getZScore() {
+  double xcorr = getScore(XCORR);
+  return (parent_ -> calcZScore(xcorr));
+}
+
 
 ostream& operator <<(ostream& os, MPSM_Match& match_obj) {
 
@@ -352,13 +353,13 @@ ostream& operator <<(ostream& os, MPSM_Match& match_obj) {
      << spectrum_precursor_mz << "\t"
      << DelimitedFile::splice(spectrum_neutral_masses, ',') << "\t" //spectrum neutral mass
      << DelimitedFile::splice(peptide_masses, ',') << "\t" //peptide mass
-     << 0/*match_obj.delta_cn_*/ << "\t" //delta_cn
+     << match_obj.getDeltaCN() << "\t" //delta_cn
      /*<< "TODO"*/ << "\t" //sp score
      /*<< "TODO"*/ << "\t" //sp rank
      << xcorr_score << "\t" //xcorr score
      /*<< xcorr_rank*/ << "\t" //xcorr rank.
      /*<< "TODO"*/ << "\t" //p-value
-     << 0 /*match_obj.zscore_*/ << "\t" //Weibull est. q-value
+     << match_obj.getZScore() << "\t" //Weibull est. q-value
      /*<< "TODO"*/ << "\t" //decoy q-value (xcorr)
      /*<< "TODO"*/ << "\t" //percolator score
      /*<< "TODO"*/ << "\t" //percolator rank

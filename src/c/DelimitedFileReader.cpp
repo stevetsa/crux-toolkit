@@ -111,7 +111,7 @@ void DelimitedFileReader::loadData(
   has_header_ = hasHeader;
   num_rows_valid_ = false;
   column_names_.clear();
-  file_ptr_ = new fstream(file_name, ios::in);
+  file_ptr_ = new fstream(file_name_.c_str(), ios::in);
   current_row_ = 0;
   column_mismatch_warned_ = false;
 

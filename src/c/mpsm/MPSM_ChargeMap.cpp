@@ -162,13 +162,14 @@ void MPSM_ChargeMap::calcZScores() {
 
     vector<MPSM_MatchCollection>& match_collections = iter -> second;
 
+    double mean,std;
+    match_collections.back().calcZParameters(mean, std);
+
     for (int collection_idx = 0;
       collection_idx < match_collections.size();
       collection_idx++) {
 
-      MPSM_MatchCollection& match_collection = match_collections[collection_idx];
-      match_collection.calcZScores();
-
+      match_collections[collection_idx].setZParameters(mean, std);
     }
   }
 }

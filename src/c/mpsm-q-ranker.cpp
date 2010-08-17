@@ -99,6 +99,10 @@ int mpsm_qranker_main(int argc, char** argv){
     "verbosity",
     "parameter-file",
     "fileroot",
+    "no-xval",
+    "do-max-psm",
+    "qranker-do-pvalue",
+    "qranker-num-hu",
     "feature-file",
     "output-dir",
     "overwrite"
@@ -121,7 +125,7 @@ int mpsm_qranker_main(int argc, char** argv){
   char* protein_input_name = get_string_parameter("protein database");
 
   // TODO (BF oct-22-09): consider adding feature file to OutputFiles
-  char* feature_file = NULL;
+  char* feature_file = "features.txt";
 
 
   if (feature_file != NULL) {
@@ -151,26 +155,6 @@ int mpsm_qranker_main(int argc, char** argv){
 }
 
 //const int number_features = 11;
-const char* feature_names[] = {
-  "XCorr",
-  "avedM",
-  "maxdM",
-  "theoryFrac",
-  "obsFrac",
-  "numTests",
-  "aveMissed",
-  "maxMissed",
-  "aveLength",
-  "maxLength",
-  "charge1",
-  "charge2",
-  "charge3",
-  "numPep",
-  "aveRT",
-  "maxRT"
-};
-
-const int number_features = sizeof(feature_names) / sizeof(char*);
 
 
 double getAveDiff(vector<double>& as, vector<double>& bs) {
@@ -315,6 +299,27 @@ double getMaxRT(vector<double>& rtimes) {
   return ans;
 }
 
+const char* feature_names[] = {
+  "XCorr",
+  "DeltCN",
+  "avedM",
+  "maxdM",
+  "theoryFrac",
+  "obsFrac",
+  "numTests",
+  "aveMissed",
+  "maxMissed",
+  "aveLength",
+  "maxLength",
+  "charge1",
+  "charge2",
+  "charge3",
+  "numPep",
+  "aveRT",
+  "maxRT"
+};
+
+const int number_features = sizeof(feature_names) / sizeof(char*);
 
 
 
@@ -343,21 +348,22 @@ double* get_mpsm_features(DelimitedFileReader& matches) {
   ChargeIndex charge(string_charge);
 
   features[0] = matches.getDouble("xcorr score");         //xcorr_score;
-  features[1] = getAveDiff(neutral_masses, peptide_masses); //abs_ave_diff;
-  features[2] = getMaxDiff(neutral_masses, peptide_masses); //abs_max_diff;
-  features[3] = getTheoryFrac();
-  features[4] = getObsFrac();
-  features[5] = lnSM;//lnSM;
-  features[6] = getAveMissed(peptide_sequences);
-  features[7] = getMaxMissed(peptide_sequences);
-  features[8] = getAveLength(peptide_sequences);//ave_pep_len
-  features[9] = getMaxLength(peptide_sequences);//max_pep_len;
-  features[10] = charge.numCharge(1); //ncharge1;
-  features[11] = charge.numCharge(2);//ncharge2;
-  features[12] = charge.numCharge(3);//ncharge3;
-  features[13] = peptide_sequences.size();//num_peptides;
-  features[14] = getAveRT(rtimes);
-  features[15] = getMaxRT(rtimes);
+  features[1] = matches.getDouble("delta_cn"); //delta_cn
+  features[2] = getAveDiff(neutral_masses, peptide_masses); //abs_ave_diff;
+  features[3] = getMaxDiff(neutral_masses, peptide_masses); //abs_max_diff;
+  features[4] = getTheoryFrac();
+  features[5] = getObsFrac();
+  features[6] = lnSM;//lnSM;
+  features[7] = getAveMissed(peptide_sequences);
+  features[8] = getMaxMissed(peptide_sequences);
+  features[9] = getAveLength(peptide_sequences);//ave_pep_len
+  features[10] = getMaxLength(peptide_sequences);//max_pep_len;
+  features[11] = charge.numCharge(1); //ncharge1;
+  features[12] = charge.numCharge(2);//ncharge2;
+  features[13] = charge.numCharge(3);//ncharge3;
+  features[14] = peptide_sequences.size();//num_peptides;
+  features[15] = getAveRT(rtimes);
+  features[16] = getMaxRT(rtimes);
 
   return features;
 
@@ -451,16 +457,16 @@ void registerMatches(DelimitedFileReader& matches,
   SetType set_idx, 
   FILE* feature_file) {
 
-  cout <<"Inside registerMatches"<<endl;
+  //cout <<"Inside registerMatches"<<endl;
   double* features = NULL;
 
   matches.reset();
-  cout<<"Building feature set"<<endl;
+  //cout<<"Building feature set"<<endl;
 
   while (matches.hasNext()) {
-  
+    //cerr <<"Getting features for entry:"<<matches.getCurrentRow()<<endl;
     features = get_mpsm_features(matches);
-
+    //cerr <<"Registering match"<<endl;
     if ((int)set_idx == 0) {
        string id = matches.getString("sequence");
      
@@ -480,8 +486,10 @@ void registerMatches(DelimitedFileReader& matches,
     }
     //carp(CARP_INFO,"freeing features");
     free(features);
+    //cerr<<"Getting next match"<<endl;
     matches.next();
   }
+  //cerr<<"Done registering matches"<<endl;
 }
 
 
@@ -582,6 +590,11 @@ void run_mpsm_q(
     (char**)feature_names, 
     pi0);
 
+  qcSetHU(get_int_parameter("qranker-num-hu"));
+  qcSetDoXVal(!get_boolean_parameter("no-xval"));
+  qcSetDoMaxPSM(get_boolean_parameter("do-max-psm"));
+  qcSetDoPValue(get_boolean_parameter("qranker-do-pvalue"));
+
   //carp(CARP_INFO,"%d",pi0);
   // Call that sets verbosity level
   // 0 is quiet, 2 is default, 5 is more than you want
@@ -610,8 +623,7 @@ void run_mpsm_q(
     carp(CARP_INFO, "got to here");
     
     // Start processing
-  qcExecute(!get_boolean_parameter("no-xval"), 
-    get_boolean_parameter("do-max-psm"));
+  qcExecute();
   
   carp(CARP_INFO," Done executing q-ranker");  
   /* Retrieving target scores and qvalues after 

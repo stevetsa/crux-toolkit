@@ -18,6 +18,9 @@ protected:
 
   std::vector<MPSM_Match> matches_;
 
+  double zscore_mean_;
+  double zscore_std_;
+  double xcorr_2_;
   bool sorted_;
 
 public:
@@ -40,7 +43,10 @@ public:
   void sortByScore(SCORER_TYPE_T match_mode);
 
   void calcDeltaCN();
-  void calcZScores();
+  double calcDeltaCNMatch(double xcorr);
+  void calcZParameters(double& mean, double& std);
+  void setZParameters(double mean, double std);
+  double calcZScore(double xcorr);
 
   friend std::ostream& operator<<(std::ostream& os, MPSM_MatchCollection& collection_obj);
 
