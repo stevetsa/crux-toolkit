@@ -70,8 +70,8 @@ void print_spectrum_sqt(
 void print_spectrum_xml(
   SPECTRUM_T* spectrum, ///< spectrum to print -in
   FILE* file,           ///< output file to print at -out
-  int num_matches,      ///< number of peptides compared to this spec -in
-  int charge            ///< charge used for the search -in
+  int charge,            ///< charge used for the search -in
+  int index
   );
 
 

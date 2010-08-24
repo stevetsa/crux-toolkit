@@ -1533,21 +1533,51 @@ void print_xml_header(
   char * enz_str = enzyme_type_to_string(enzyme);
   char * database = get_string_parameter("protein database");
   char * msms_file = get_string_parameter("ms2 file");
+  #if DARWIN
+  char path_buffer[PATH_MAX];
+  char* absolute_msms_path =  realpath(msms_file, path_buffer);
+  #else
+  char* absolute_msms_path =  realpath(msms_file, NULL);
+  #endif
+  // Removes the extension from ms2 file path
+  char absolute_msms_path_no_ext[strlen(absolute_msms_path)];
+  strcpy(absolute_msms_path_no_ext, absolute_msms_path);
+  char * extension = strstr(absolute_msms_path_no_ext, ".ms2");
+  if (extension != NULL) (*extension) = '\0';
+
   MASS_TYPE_T isotopic_mass_type = get_mass_type_parameter("isotopic-mass");
   MASS_TYPE_T fragment_mass_type = get_mass_type_parameter("fragment-mass");
+
   char * isotopic_mass;
   char * fragment_mass;
-
-  if (isotopic_mass_type == AVERAGE){
-    isotopic_mass = (char *) "AVERAGE";
+  DIGEST_T digest = get_digest_type_parameter("digestion");
+  int max_num_internal_cleavages;
+  int min_number_termini;
+  BOOLEAN_T missed_cleavage = get_boolean_parameter("missed-cleavages");
+  if (missed_cleavage){
+    max_num_internal_cleavages = get_int_parameter("max-length");
   } else {
-    isotopic_mass = (char *) "MONO";
+    max_num_internal_cleavages = 0;
+  }
+
+  if (digest == FULL_DIGEST){
+    min_number_termini = 2;
+  } else if (digest == PARTIAL_DIGEST){
+    min_number_termini = 1;
+  } else {
+    min_number_termini = 0;
+  }
+  
+  if (isotopic_mass_type == AVERAGE){
+    isotopic_mass = (char *) "average";
+  } else {
+    isotopic_mass = (char *) "monoisotopic";
   }
 
   if (fragment_mass_type == AVERAGE){
-    fragment_mass = (char *) "AVERAGE";
+    fragment_mass = (char *) "average";
   } else {
-    fragment_mass = (char *) "MONO";
+    fragment_mass = (char *) "monoisotopic";
   }
 
 
@@ -1561,20 +1591,27 @@ void print_xml_header(
     free(database);
     database = fasta_name;
   }
+  #if DARWIN
+  char path_buffer[PATH_MAX];
+  char* absolute_database_path =  realpath(database, path_buffer);
+  #else
+  char* absolute_database_path =  realpath(database, NULL);
+  #endif
 
   
   hold_time = time(0);
-  carp(CARP_INFO, "test 1");
+
   fprintf(output, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
   fprintf(output, "<?xml-stylesheet type=\"text/xsl\" href=\"\">\n");
-  fprintf(output, "<msms_pipeline_analysis date=\"%s\"", ctime(&hold_time));
-  fprintf(output, "xmlns=\"\" xmlns:xsi=\"\" xsi:schemaLocation=\"\""
-	  " summary_xml=\"\">\n");
-  carp(CARP_INFO, "test 2");
+  fprintf(output, "<msms_pipeline_analysis date=\"%s\" xmlns=\"\""
+	  " xmlns:xsi=\"\" xsi:schemaLocation=\"\""
+	  " summary_xml=\"\">\n",
+	  ctime(&hold_time));
+
   fprintf(output, "<msms_run_summary base_name=\"%s\" msManufacturer=\"%s\" "
 	  "msModel=\"%s\" msIonization=\"%s\" msAnalyzer=\"%s\" msDectector=\"%s\" "
 	  "raw_data_type=\"%s\" raw_data=\"%s\" >\n",
-	  msms_file,
+	  absolute_msms_path_no_ext,
 	  "NA", // TODO, dummy value
 	  "NA", // TODO, dummy value
 	  "NA", // TODO, dummy value
@@ -1584,32 +1621,32 @@ void print_xml_header(
 	  "NA" // TODO, dummy value
 	  );
 
-    carp(CARP_INFO, "test 3");
-  fprintf(output, "<sample_enzyme name=\"%s\">\n",
-	  "trypsin");
 
-  //fprintf(output, "<specificity cut=\"\" no_cut=\"\" sense=\"\" /></sample_enzyme>\n"); not required
+  fprintf(output, "<sample_enzyme name=\"%s\">\n", enz_str);
+
   fprintf(output, "<search_summary base_name=\"%s\" search_engine=\"%s\" precursor_mass_type=\"%s\" "
 	  "fragment_mass_type=\"%s\" out_data_type=\"%s\" out_data=\"%s\" search_id=\"%i\" >\n",
-	  msms_file,
-	  "NA", // TODO, dummy value
+	  absolute_msms_path_no_ext,
+	  "Crux",
 	  isotopic_mass, // isotopic mass type is precursor mass type?
 	  fragment_mass,
 	  "NA", // TODO, dummy value
 	  "NA",
 	  1 // TODO, dummy value
 	  );
-  carp(CARP_INFO, "test 4");
+
   fprintf(output, "<search_database local_path=\"%s\" type=\"%s\" />\n", 
-	  database, 
-	  "AA");
+	  absolute_database_path, 
+	  "AA"
+	  );
   free(database);
   fprintf(output, "<enzymatic_search_constraint enzyme=\"%s\" "
-	  "max_num_internal_cleavages=\"%s\" min_number_termini=\"%s\"/>\n",
+	  "max_num_internal_cleavages=\"%i\" min_number_termini=\"%i\"/>\n",
 	  enz_str,
-	  "NA",
-	  "NA");
-      carp(CARP_INFO, "test 5");
+	  max_num_internal_cleavages,
+	  min_number_termini
+	  );
+
   char aa_str[2];
   aa_str[1] = '\0';
   int alphabet_size = (int)'A'+ ((int)'Z'-(int)'A');
@@ -1628,11 +1665,10 @@ void print_xml_header(
 	      aa_str,
 	      mass,
 	      mod,
-	      "Y" /* TODO , dummy value (Y if both modified and unmodified aminoacid could be present in the dataset, N if only modified aminoacid can be present*/
+	      "N" // N if static modification
 	      );      
     }
   }
-  carp(CARP_INFO, "test 6");
   // dynamic amino acid modifications
   AA_MOD_T** aa_mod_list = NULL;
   int num_mods = get_all_aa_mod_list(&aa_mod_list);
@@ -1649,14 +1685,12 @@ void print_xml_header(
 	    aa_symbol,
 	    mass,
 	    mass_dif,
-	    "Y" /* TODO , dummy value */
+	    "Y" // Y if dynamic modification
 	    );    
   }
-  carp(CARP_INFO, "test 7");
- 
 
-  // TODO write all paramters . See how parameter files are written
-  // fprintf(output, '<parameter name="%s" value="%s"/>')
+  print_parameters_xml(output);
+  
   fprintf(output, "</search_summary>\n");
   
 }
@@ -1871,11 +1905,25 @@ void print_tab_header(FILE* output){
 }
 
 
+/**
+ * Print Footer lines for xml files
+ */
+void print_xml_footer(FILE* output){
+  if (output == NULL ){
+    return;
+  }
+  
+  fprintf(output, "    </msms_run_summary>\n");
+  fprintf(output, "    </msms_pipeline_analysis>\n");
+}
+
+
+
 void print_matches_multi_spectra_xml(
   MATCH_COLLECTION_T* match_collection,
   FILE* output){
   carp(CARP_DETAILED_DEBUG, "Writing matches to xml file");
-  
+  static int index_count = 1;
   int match_idx = 0;
   int num_matches = match_collection->match_total;
   for (match_idx = 0; match_idx < num_matches; match_idx++){
@@ -1885,19 +1933,18 @@ void print_matches_multi_spectra_xml(
     FLOAT_T num_psm_per_spec = get_match_ln_experiment_size(cur_match);
     num_psm_per_spec = expf(num_psm_per_spec) + 0.5; // round to nearest int
     int charge = get_match_charge(cur_match);
-    print_spectrum_xml(spectrum, output, (int)num_psm_per_spec, charge);
+    print_spectrum_xml(spectrum, output, charge, index_count);
+    fprintf(output, "    <search_result>\n");
     FLOAT_T spec_mass = get_spectrum_neutral_mass(spectrum, charge);
     if (! is_decoy){
       print_match_xml(cur_match, output, spec_mass,
 		      match_collection->scored_type );
-      fprintf(output, "</search_summary>\n");
+      fprintf(output, "    </search_result>\n");
     }
+    index_count++;
   }
   
 }
-
-
-
 
 
 BOOLEAN_T print_match_collection_xml(
@@ -1905,7 +1952,8 @@ BOOLEAN_T print_match_collection_xml(
   int top_match,
   MATCH_COLLECTION_T* match_collection,
   SPECTRUM_T* spectrum,
-  SCORER_TYPE_T main_score
+  SCORER_TYPE_T main_score,
+  int index
   )
 {
   if ( output == NULL || match_collection == NULL || spectrum == NULL ){
@@ -1921,7 +1969,8 @@ BOOLEAN_T print_match_collection_xml(
   calculate_delta_cn(match_collection, SEARCH_COMMAND);
 
   /* print spectrum query */
-  print_spectrum_xml(spectrum, output, num_matches, charge);
+  print_spectrum_xml(spectrum, output,  charge, index);
+
 
   MATCH_T* match = NULL;
   // create match iterator
@@ -1959,7 +2008,7 @@ BOOLEAN_T print_match_collection_xml(
 
   free_match_iterator(match_iterator);
   
-  fprintf(output, "</spectrum_query>\n");
+  fprintf(output, "    </spectrum_query>\n");
   
   return TRUE;
 

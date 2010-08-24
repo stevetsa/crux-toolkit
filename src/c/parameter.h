@@ -228,6 +228,12 @@ double get_mz_bin_offset();
 
 
 /**
+ * Prints the parameters to xml output file
+ */
+void print_parameters_xml(FILE* output);
+
+
+/**
  * Prints the parameters.  If lead_string is not null, preprends it to
  * each line.
  */

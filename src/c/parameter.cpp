@@ -1612,6 +1612,29 @@ void print_mods_parameter_file(FILE* param_file,
   }
 }
 
+
+void print_parameters_xml(FILE* output){
+  if (output == NULL){
+    return;
+  }
+  carp(CARP_DEBUG, "Printing parameters to xml output");
+  HASH_ITERATOR_T* iterator = new_hash_iterator(parameters);
+  while (hash_iterator_has_next(iterator)){
+    char * key = hash_iterator_next(iterator);
+    char * show_users = (char *)get_hash_value(for_users, key);
+    if ( strcmp(show_users, "true") == 0 ){
+      if (strcmp(key, "mod") == 0 || strcmp(key, "cmod") == 0
+	  || strcmp(key, "nmod") == 0){
+	continue;
+      }
+      fprintf(output, "<parameter name=\"%s\" value=\"%s\"/>\n",
+	      key, (char*) get_hash_value(parameters, key));
+    }
+  }
+  free_hash_iterator(iterator);
+}
+
+
 /**
  * \brief Creates a file containing all parameters and their current
  * values in the parameter file format. Created in the output directory

@@ -31,6 +31,7 @@ class OutputFiles{
   void writeHeaders(int num_proteins = 0);
   void writeFeatureHeader(char** feature_names = NULL,
                           int num_names = 0);
+  void writeFooters();
   void writeMatches(MATCH_COLLECTION_T* matches,
                     MATCH_COLLECTION_T** decoy_matches_array,
                     int num_decoys,

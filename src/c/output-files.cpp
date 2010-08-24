@@ -202,7 +202,7 @@ BOOLEAN_T OutputFiles::createFile(FILE** file_ptr,
   return TRUE;
 }
 /**
- * \brief Write header lines to the .txt and .sqt files.
+ * \brief Write header lines to the .txt ,.sqt files ,and .pep.xml files.
  */
 void OutputFiles::writeHeaders(int num_proteins){
 
@@ -242,6 +242,20 @@ void OutputFiles::writeFeatureHeader(char** feature_names,
     fprintf(feature_file_, "\n");
   }
 }
+
+
+/**
+ * \brief Write footer lines to xml files
+ */
+void OutputFiles::writeFooters(){
+  if (xml_file_array_){
+    for (int file_idx = 0; file_idx < num_files_; file_idx++){
+      print_xml_header(xml_file_array_[file_idx]);
+    }
+  }
+
+}
+
 /**
  * \brief Write the given matches to appropriate output files.  Limit
  * the number of matches per spectrum based on top-match parameter
@@ -256,7 +270,6 @@ void OutputFiles::writeMatches(
   SPECTRUM_T* spectrum     ///< given when all matches are to one spec
   ){
   
-  carp(CARP_INFO, "**************in write matches");
 
   if( target_matches == NULL ){
     return;  // warn?
@@ -346,6 +359,7 @@ void OutputFiles::printMatchesSqt(
 
 }
 
+
 void OutputFiles::printMatchesXml(
   MATCH_COLLECTION_T*  target_matches, ///< from real peptides
   MATCH_COLLECTION_T** decoy_matches_array,  
@@ -355,8 +369,7 @@ void OutputFiles::printMatchesXml(
   
 ){
   
-  carp(CARP_INFO, "print matches: in");
-  
+  static int index = 1;
   if( xml_file_array_ == NULL ){
     return;
   }
@@ -369,14 +382,14 @@ void OutputFiles::printMatchesXml(
                                matches_per_spec_,
                                cur_matches,
                                spectrum,
-			       rank_type);
+			       rank_type,
+			       index);
 
     if( decoy_matches_array ){
       cur_matches = decoy_matches_array[file_idx];
     } // else if NULL, num_files_==1 and this is last loop
   }
-
-  carp(CARP_INFO, "print matches: ");
+  index++;
 
 }
 

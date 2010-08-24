@@ -317,6 +317,12 @@ void print_sqt_header(FILE* outfile,
  */
 void print_tab_header(FILE* outfile);
 
+
+/*
+ * Print the XML file footer
+ */
+void print_xml_footer(FILE* outfile);
+
 /**
  * Print the psm features to output file upto 'top_match' number of
  * top peptides among the match_collection in xml file format
@@ -329,7 +335,8 @@ BOOLEAN_T print_match_collection_xml(
   int top_match,
   MATCH_COLLECTION_T* match_collection,
   SPECTRUM_T* spectrum,
-  SCORER_TYPE_T main_score
+  SCORER_TYPE_T main_score,
+  int index
   );
 
 
