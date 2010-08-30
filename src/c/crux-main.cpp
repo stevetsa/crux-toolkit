@@ -362,13 +362,12 @@ static void analyze_matches_main(
   }
 
   carp(CARP_INFO, "Outputting matches.");
-  carp(CARP_INFO, "HELLO");
   output.writeMatches(match_collection);
-  carp(CARP_INFO, "HELLO");
+
 
   // MEMLEAK below causes seg fault (or used to)
   // free_match_collection(match_collection);
-
+  output.writeFooters();
   // clean up
   free(input_directory);
   free(protein_database_name);

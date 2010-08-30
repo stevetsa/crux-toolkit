@@ -1533,12 +1533,17 @@ void print_xml_header(
   char * enz_str = enzyme_type_to_string(enzyme);
   char * database = get_string_parameter("protein database");
   char * msms_file = get_string_parameter("ms2 file");
-  #if DARWIN
-  char path_buffer[PATH_MAX];
-  char* absolute_msms_path =  realpath(msms_file, path_buffer);
-  #else
-  char* absolute_msms_path =  realpath(msms_file, NULL);
-  #endif
+  char* absolute_msms_path;
+  if (msms_file == NULL){
+    absolute_msms_path = (char*) "NA";
+  } else {
+    #if DARWIN
+    char path_buffer[PATH_MAX];
+    absolute_msms_path =  realpath(msms_file, path_buffer);
+    #else
+    absolute_msms_path =  realpath(msms_file, NULL);
+    #endif
+  }
   // Removes the extension from ms2 file path
   char absolute_msms_path_no_ext[strlen(absolute_msms_path)];
   strcpy(absolute_msms_path_no_ext, absolute_msms_path);
@@ -1582,9 +1587,7 @@ void print_xml_header(
 
 
 
-  if (msms_file == NULL){
-    msms_file = (char *) "NA";
-  }
+
   BOOLEAN_T use_index = is_directory(database);
   if( use_index == TRUE ){
     char* fasta_name  = get_index_binary_fasta_name(database);
@@ -1598,7 +1601,6 @@ void print_xml_header(
   char* absolute_database_path =  realpath(database, NULL);
   #endif
 
-  
   hold_time = time(0);
 
   fprintf(output, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
@@ -1622,7 +1624,7 @@ void print_xml_header(
 	  );
 
 
-  fprintf(output, "<sample_enzyme name=\"%s\">\n", enz_str);
+  fprintf(output, "<sample_enzyme name=\"%s\">\n</sample_enzyme>\n", enz_str);
 
   fprintf(output, "<search_summary base_name=\"%s\" search_engine=\"%s\" precursor_mass_type=\"%s\" "
 	  "fragment_mass_type=\"%s\" out_data_type=\"%s\" out_data=\"%s\" search_id=\"%i\" >\n",
@@ -1660,8 +1662,8 @@ void print_xml_header(
     double mass = get_mass_amino_acid(aa, isotopic_type);
     
     if (mod != 0 ){
-      fprintf(output, "<aminoacid_modification amimnoacid=\"%s\" mass=\"%f\" "
-	      "massdiff=\"%f\" variable=\"%s\" >\n",
+      fprintf(output, "<aminoacid_modification aminoacid=\"%s\" mass=\"%f\" "
+	      "massdiff=\"%f\" variable=\"%s\" />\n",
 	      aa_str,
 	      mass,
 	      mod,
@@ -1670,25 +1672,29 @@ void print_xml_header(
     }
   }
   // dynamic amino acid modifications
-  AA_MOD_T** aa_mod_list = NULL;
-  int num_mods = get_all_aa_mod_list(&aa_mod_list);
-  int mod_idx = 0;
-  for (mod_idx = 0; mod_idx < num_mods; mod_idx++){
+  AA_MOD_T** mod_list = NULL;
+  int num_mods = get_all_aa_mod_list(&mod_list);
+  for (int mod_idx = 0; mod_idx < num_mods; mod_idx++){
+    float mass = aa_mod_get_mass_change(mod_list[mod_idx]);
+    
+    BOOLEAN_T* aas_modified = aa_mod_get_aa_list(mod_list[mod_idx]);
+    for (int aa_idx = 0; aa_idx < AA_LIST_LENGTH; aa_idx++){
+      if (aas_modified[aa_idx] == TRUE ){
+	int aa = (aa_idx+'A');
+	float original_mass = get_mass_amino_acid(aa , isotopic_type);
+	float mass_dif = mass - original_mass;
+	fprintf(output, "<aminoacid_modification amimnoacid=\"%c\" mass=\"%f\" "
+		"massdiff=\"%f\" variable=\"%s\" />\n",
+		aa,
+		mass,
+		mass_dif,
+		"Y" // Y if dynamic modification
+		);    
 
-    AA_MOD_T* aamod = aa_mod_list[mod_idx];
-    char aa_symbol = aa_mod_get_symbol(aamod);
-    aa_str[0] = aa_symbol;
-    double mass = get_mass_amino_acid(aa, isotopic_type);
-    double mass_dif = aa_mod_get_mass_change(aamod);
-    fprintf(output, "<aminoacid_modification amimnoacid=\"%c\" mass=\"%f\" "
-	    "massdiff=\"%f\" variable=\"%s\" >\n",
-	    aa_symbol,
-	    mass,
-	    mass_dif,
-	    "Y" // Y if dynamic modification
-	    );    
+      }
+    }
+
   }
-
   print_parameters_xml(output);
   
   fprintf(output, "</search_summary>\n");
@@ -1913,8 +1919,8 @@ void print_xml_footer(FILE* output){
     return;
   }
   
-  fprintf(output, "    </msms_run_summary>\n");
-  fprintf(output, "    </msms_pipeline_analysis>\n");
+  fprintf(output, "</msms_run_summary>\n");
+  fprintf(output, "</msms_pipeline_analysis>\n");
 }
 
 
@@ -1940,6 +1946,7 @@ void print_matches_multi_spectra_xml(
       print_match_xml(cur_match, output, spec_mass,
 		      match_collection->scored_type );
       fprintf(output, "    </search_result>\n");
+      fprintf(output, "    </spectrum_query>\n");
     }
     index_count++;
   }
@@ -1979,12 +1986,13 @@ BOOLEAN_T print_match_collection_xml(
     new_match_iterator(match_collection, main_score, TRUE);
   int count = 0;
   int last_rank = 0;
-    
+  
+  fprintf(output, "    <search_result>\n");
    // iterate over matches
   while(match_iterator_has_next(match_iterator)){
     match = match_iterator_next(match_iterator);    
     int cur_rank = get_match_rank(match, main_score);
-
+  
 
     
     // print if we haven't reached the limit
@@ -2007,7 +2015,7 @@ BOOLEAN_T print_match_collection_xml(
        count, num_matches);
 
   free_match_iterator(match_iterator);
-  
+  fprintf(output, "    </search_result>\n");
   fprintf(output, "    </spectrum_query>\n");
   
   return TRUE;

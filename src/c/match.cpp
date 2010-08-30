@@ -805,8 +805,17 @@ void print_match_xml(
     return;
   }
 
-
-
+  FLOAT_T delta_cn = get_match_delta_cn(match);
+  
+  // filters matches with delta cn less than 0
+  if (delta_cn < 0 ){
+    return;
+  }
+  
+  if( delta_cn == 0 ){// I hate -0, this prevents it
+    delta_cn = 0.0;
+  }
+  
   PEPTIDE_T* peptide = get_match_peptide(match);
   ENZYME_T enzyme = get_enzyme_type_parameter("enzyme");
   char* peptide_sequence = get_peptide_sequence(peptide);
@@ -824,12 +833,30 @@ void print_match_xml(
     char* protein_id = get_protein_id(protein);
     char* protein_annotation = get_protein_annotation(protein);      
     char* str_iter = protein_annotation;
+    // replaces double quotes with single quote
     while ( (*str_iter) != '\0' ){
       if ((*str_iter) == '\"'){
 	(*str_iter) = '\'';
       }
       str_iter++;
     }
+    // removes tags 
+    char* str_iter_cur = protein_annotation;
+    str_iter = protein_annotation;
+    while ((*str_iter) != '\0'){
+      if ((*str_iter) == '<'){
+	str_iter++;
+	while (*(str_iter-1) != '>' && (*str_iter) != '\0'){
+	  str_iter++;
+	}
+      }
+      (*str_iter_cur) = (*str_iter);
+      if ((*str_iter) !=  '\0'){
+	str_iter_cur++;
+	str_iter++;
+      }
+    }
+    
     std::ostringstream protein_stream;
       protein_stream << protein_id;
       protein_info.insert(make_pair(protein_id, protein_annotation));
@@ -845,7 +872,7 @@ void print_match_xml(
   }
   char * flanking_aas = get_flanking_aas(peptide);
   char * mod_seq = 
-    get_match_mod_sequence_str_with_masses(match, get_boolean_parameter("display-summed-mod-masses"));
+    get_match_mod_sequence_str_with_masses(match, TRUE);
   int is_modified = strcmp(mod_seq, peptide_sequence);
   char flanking_aas_prev = '\0';
   char flanking_aas_next = '\0';
@@ -899,11 +926,6 @@ void print_match_xml(
 	    num_missed_cleavages, 
 	    0
 	    );
-    // only print modified peptide if it was modified
-    if (is_modified != 0){
-      fprintf(output_file, "modified_peptide=\"%s\" ",
-	      mod_seq);
-    }
     fprintf(output_file, "protein_descr=\"%s\">\n",
 	    ((*prot_iter).second).c_str());
 
@@ -938,17 +960,20 @@ void print_match_xml(
     }
 
 
-    // get modification information (TODO - better way to do this?)
+    set<int> var_mod_indices;
+
+    // get variable modifications
     if (is_modified){
-      fprintf(output_file, "<modification_info>\n");
-      char* modified_sequence = get_match_mod_sequence_str_with_masses(match, TRUE);
+      fprintf(output_file, 
+	      "<modification_info modified_peptide=\"%s\">\n",
+	      mod_seq);
       int seq_index = 1;
-      char* amino = modified_sequence;
+      char* amino = mod_seq;
       char* end;
       char* start;
       // parsing of returned string
       while (*(amino+1) != '\0'){
-	if ((*amino+1) =='['){
+	if (*(amino+1) =='['){
 	  start = amino+2;
 	  end = amino+2;
 	  while (*end != ']'){
@@ -965,39 +990,76 @@ void print_match_xml(
 	  fprintf(output_file, "<mod_aminoacid_mass position=\"%i\" mass=\"%s\"/>\n",
 		  seq_index,
 		  mass);
+	  var_mod_indices.insert(seq_index);
 	  free(mass);
 	  amino = end;
 	}
 	seq_index++;
 	amino++;
       }
-      free(modified_sequence);
+      fprintf(output_file, "</modification_info>\n");
+    }
+   
+    // get modification info for static modifications
+    BOOLEAN_T printed_mod_tag = FALSE;
+    seq_iter = peptide_sequence;
+    
+    MASS_TYPE_T isotopic_type = get_mass_type_parameter("isotopic-mass");
+    
+    char aa[2];
+    aa[1] = '\0';
+    int seq_index = 1;
+    while ((*seq_iter) != '\0'){
+      *aa = (*seq_iter);
+      // write static mod if user requested static mod and also
+      // if there is no variable mod on the same character
+      if (get_double_parameter( (const char *)aa)!= 0 && 
+	  var_mod_indices.find(seq_index) == var_mod_indices.end()){
+	if (printed_mod_tag == FALSE){
+	  fprintf(output_file, "<modification_info modified_peptide=\"%s\">\n",
+		  peptide_sequence);
+	  printed_mod_tag = TRUE;
+	}
+	double mass = get_mass_amino_acid(*seq_iter, isotopic_type);
+	fprintf(output_file, "<mod_aminoacid_mass position=\"%i\" mass=\"%f\"/>\n",
+		seq_index,
+		mass);
+      }
+      seq_iter++;
+      seq_index++;
+    }
+    if (printed_mod_tag == TRUE){
       fprintf(output_file, "</modification_info>\n");
     }
 
 
 
+    fprintf(output_file, 
+	    "        <search_score name=\"delta_cn\" value=\"%f\" />\n",
+	    delta_cn);
 
 
 
-    // Add all scores available
+
+    // print all scores available
     if (scores_computed[PERCOLATOR_SCORE]){
-      fprintf(output_file, "        <search_score name=\"percolator_score\" value=\"%f\"/>\n"
-	      "        <search_score name=\"percolator_qvalue\" value=\"%f\"/>\n",
+      fprintf(output_file, 
+	      "        <search_score name=\"percolator_score\" value=\"%f\" />\n"
+	      "        <search_score name=\"percolator_qvalue\" value=\"%f\" />\n",
 	      get_match_score(match, PERCOLATOR_SCORE),
 	      get_match_score(match, PERCOLATOR_QVALUE));
     }
     if (scores_computed[QRANKER_SCORE]){
-      fprintf(output_file, "        <search_score name=\"qranker_score\" value=\"%f\"/>\n"
-	      "        <search_score name=\"qranker_qvalue\" value=\"%f\"/>\n",
+      fprintf(output_file, "        <search_score name=\"qranker_score\" value=\"%f\" />\n"
+	      "        <search_score name=\"qranker_qvalue\" value=\"%f\" />\n",
 	      get_match_score(match, QRANKER_SCORE),
 	      get_match_score(match, QRANKER_QVALUE));
     }
     if (scores_computed[LOGP_QVALUE_WEIBULL_XCORR]){
-      fprintf(output_file, "        <search_score name=\"logp_qvalue_weibull_score\" value=\"%f\"/>\n",
+      fprintf(output_file, "        <search_score name=\"logp_qvalue_weibull_score\" value=\"%f\" />\n",
 	       get_match_score(match, LOGP_QVALUE_WEIBULL_XCORR));
     }
-    fprintf(output_file, "        <search_score name=\"xcorr_score\" value=\"%f\"/>\n",
+    fprintf(output_file, "        <search_score name=\"xcorr_score\" value=\"%f\" />\n",
 	    get_match_score(match, XCORR));
     
     

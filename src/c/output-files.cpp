@@ -250,7 +250,7 @@ void OutputFiles::writeFeatureHeader(char** feature_names,
 void OutputFiles::writeFooters(){
   if (xml_file_array_){
     for (int file_idx = 0; file_idx < num_files_; file_idx++){
-      print_xml_header(xml_file_array_[file_idx]);
+      print_xml_footer(xml_file_array_[file_idx]);
     }
   }
 
