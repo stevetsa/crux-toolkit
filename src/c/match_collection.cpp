@@ -1522,6 +1522,11 @@ void transfer_match_collection_weibull(
   to_collection->correlation = from_collection->correlation;
 }
 
+/**
+ * \brief Prints out the pepxml header to the output stream
+ * passed in as a parameter.
+ */
+
 void print_xml_header(
   FILE* output
   ){
@@ -1671,7 +1676,7 @@ void print_xml_header(
 	      );      
     }
   }
-  // dynamic amino acid modifications
+  // variable amino acid modifications
   AA_MOD_T** mod_list = NULL;
   int num_mods = get_all_aa_mod_list(&mod_list);
   for (int mod_idx = 0; mod_idx < num_mods; mod_idx++){
@@ -1688,7 +1693,7 @@ void print_xml_header(
 		aa,
 		mass,
 		mass_dif,
-		"Y" // Y if dynamic modification
+		"Y" // Y if variable modification
 		);    
 
       }
@@ -1924,7 +1929,12 @@ void print_xml_footer(FILE* output){
 }
 
 
-
+/**
+ * \brief Print the given match collection for several spectra to
+ * xml files only. Takes the spectrum information from the
+ * matches in the collection. At least for now, prints all matches in
+ * the collection rather than limiting by top-match parameter. 
+ */
 void print_matches_multi_spectra_xml(
   MATCH_COLLECTION_T* match_collection,
   FILE* output){
@@ -1953,6 +1963,15 @@ void print_matches_multi_spectra_xml(
   
 }
 
+/**
+ * \brief Print the psm features to file in xml format
+ *
+ * Prints a spectrum_query tag which encompasses the search_hit tag
+ * which represents peptide to spectra match.
+ *
+ * returns TRUE, if succesfully printed xml format of PSMs, else FALSE
+ *
+ */
 
 BOOLEAN_T print_match_collection_xml(
   FILE* output,
@@ -2022,11 +2041,6 @@ BOOLEAN_T print_match_collection_xml(
 
     
 }
-
-
-
-
-
 
 
 /**

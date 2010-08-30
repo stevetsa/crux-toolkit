@@ -788,8 +788,15 @@ static void print_one_match_field(
   }
 }
 
+/**
+ * \ brief Print the match information in xml format to the given file. 
+ *
+ * Prints whatever score is available. Also prints out any modifications
+ * if any exist for this match. If more than one protein is mapped from the peptide,
+ * then those proteins are presented in an alternative_protein tag following the search
+ * hit tag
+ */
 void print_match_xml(
-		     //MATCH_COLLECTION_T* collection,  ///< collection holding this match -in 
   MATCH_T* match,                  ///< the match to print -in  
   FILE*    output_file,            ///< output stream -out
   FLOAT_T  spectrum_mass,          ///< spectrum neutral mass -in
@@ -827,20 +834,21 @@ void print_match_xml(
   std::ostringstream protein_field_stream;
   set<pair<string, string> > protein_info;
   int protein_count = 0;
+  // for each protein that the peptide maps, get its id and description
   while(peptide_src_iterator_has_next(peptide_src_iterator)){
     PEPTIDE_SRC_T* peptide_src = peptide_src_iterator_next(peptide_src_iterator);
     PROTEIN_T* protein = get_peptide_src_parent_protein(peptide_src);
     char* protein_id = get_protein_id(protein);
     char* protein_annotation = get_protein_annotation(protein);      
     char* str_iter = protein_annotation;
-    // replaces double quotes with single quote
+    // replaces double quotes with single quote in the description
     while ( (*str_iter) != '\0' ){
       if ((*str_iter) == '\"'){
 	(*str_iter) = '\'';
       }
       str_iter++;
     }
-    // removes tags 
+    // removes any tags existing in the description
     char* str_iter_cur = protein_annotation;
     str_iter = protein_annotation;
     while ((*str_iter) != '\0'){
@@ -857,15 +865,13 @@ void print_match_xml(
       }
     }
     
-    std::ostringstream protein_stream;
-      protein_stream << protein_id;
-      protein_info.insert(make_pair(protein_id, protein_annotation));
-      free(protein_id);
-      protein_count++;
+    protein_info.insert(make_pair(protein_id, protein_annotation));
+    free(protein_id);
+    protein_count++;
   }
   free(peptide_src_iterator);
   
-    /* get other data */
+  /* get other data */
   int ranking = -1;
   if (scores_computed[XCORR]){
     ranking = get_match_rank(match, XCORR);
@@ -876,25 +882,67 @@ void print_match_xml(
   int is_modified = strcmp(mod_seq, peptide_sequence);
   char flanking_aas_prev = '\0';
   char flanking_aas_next = '\0';
+  flanking_aas_prev = flanking_aas[0];
+  flanking_aas_next = flanking_aas[1];
+  
+  // get number of internal cleavages
+  int num_missed_cleavages = 0;
+  char * seq_iter = peptide_sequence;
+  
+  while (*(seq_iter+1) != '\0'){
+    if (valid_cleavage_position(seq_iter, enzyme) == TRUE){
+      num_missed_cleavages++;
+    }
+    seq_iter++;
+  }
+  
+  
+  // get number of peptide termini consistent with cleavage 
+  int num_tol_term = 0;
+  char cleavage[3];
+  cleavage[2] = '\0';
+  cleavage[0] = flanking_aas_prev;
+  cleavage[1] = peptide_sequence[1];
+  if (flanking_aas_prev == '-' ||
+      valid_cleavage_position(seq_iter, enzyme) == TRUE){
+      num_tol_term++;
+  }
+  cleavage[0] = peptide_sequence[strlen(peptide_sequence)-1];
+  cleavage[1] = flanking_aas_next;
+  if (flanking_aas_next == '-' ||
+      valid_cleavage_position(seq_iter, enzyme) == TRUE){
+    num_tol_term++;
+  }
+  
+  // Print out search hit only with the first protein
+  set<pair<string, string> >::iterator prot_iter = protein_info.begin();
+  fprintf(output_file, "    <search_hit hit_rank=\"%i\" peptide=\"%s\" "
+	  "peptide_prev_aa=\"%c\" peptide_next_aa=\"%c\" protein=\"%s\" "
+	    "num_tot_proteins=\"%i\" calc_neutral_pep_mass=\"%f\" massdiff=\"%+f\" "
+	  "num_tol_term=\"%i\" num_missed_cleavages=\"%i\"  is_rejected=\"%i\" ",
+	  ranking, // -1 if unavailable, uses xcorr rank otherwise
+	  peptide_sequence,
+	  flanking_aas_prev,
+	  flanking_aas_next,
+	  ((*prot_iter).first).c_str(),
+	  (int) protein_info.size(),
+	  peptide_mass,
+	    spectrum_mass-peptide_mass,
+	  num_tol_term, 
+	  num_missed_cleavages, 
+	  0
+	  );
+  fprintf(output_file, "protein_descr=\"%s\">\n",
+	  ((*prot_iter).second).c_str());
+  
+  
+  
+  // print additional proteins in alternative_protein tags
+  while (++prot_iter != protein_info.end()){
+    flanking_aas+=3;
     flanking_aas_prev = flanking_aas[0];
     flanking_aas_next = flanking_aas[1];
-    
-    // get number of internal cleavages
-    int num_missed_cleavages = 0;
-    char * seq_iter = peptide_sequence;
-    
-    while (*(seq_iter+1) != '\0'){
-      if (valid_cleavage_position(seq_iter, enzyme) == TRUE){
-	num_missed_cleavages++;
-      }
-      seq_iter++;
-    }
-
-
-    // get number of peptide termini consistent with cleavage 
-    int num_tol_term = 0;
-    char cleavage[3];
-    cleavage[2] = '\0';
+    num_tol_term = 0;
     cleavage[0] = flanking_aas_prev;
     cleavage[1] = peptide_sequence[1];
     if (flanking_aas_prev == '-' ||
@@ -907,164 +955,122 @@ void print_match_xml(
 	valid_cleavage_position(seq_iter, enzyme) == TRUE){
       num_tol_term++;
     }
-    
-    // Print out first protein
-    set<pair<string, string> >::iterator prot_iter = protein_info.begin();
-    fprintf(output_file, "    <search_hit hit_rank=\"%i\" peptide=\"%s\" "
-	    "peptide_prev_aa=\"%c\" peptide_next_aa=\"%c\" protein=\"%s\" "
-	    "num_tot_proteins=\"%i\" calc_neutral_pep_mass=\"%f\" massdiff=\"%+f\" "
-	    "num_tol_term=\"%i\" num_missed_cleavages=\"%i\"  is_rejected=\"%i\" ",
-	    ranking, // -1 if unavailable, uses xcorr rank otherwise
-	    peptide_sequence,
-	    flanking_aas_prev,
-	    flanking_aas_next,
+    fprintf(output_file, "        <alternative_protein protein=\"%s\" protein_descr=\"%s\" "
+	    "num_tol_term=\"%i\"  peptide_prev_aa=\"%c\" "
+	    "peptide_next_aa=\"%c\"/> \n",
 	    ((*prot_iter).first).c_str(),
-	    (int) protein_info.size(),
-	    peptide_mass,
-	    spectrum_mass-peptide_mass,
+	    ((*prot_iter).second).c_str(),
 	    num_tol_term, 
-	    num_missed_cleavages, 
-	    0
-	    );
-    fprintf(output_file, "protein_descr=\"%s\">\n",
-	    ((*prot_iter).second).c_str());
-
-    
-
-    // print additional proteins
-    while (++prot_iter != protein_info.end()){
-      flanking_aas+=3;
-      flanking_aas_prev = flanking_aas[0];
-      flanking_aas_next = flanking_aas[1];
-      num_tol_term = 0;
-      cleavage[0] = flanking_aas_prev;
-      cleavage[1] = peptide_sequence[1];
-      if (flanking_aas_prev == '-' ||
-	  valid_cleavage_position(seq_iter, enzyme) == TRUE){
-	num_tol_term++;
-      }
-      cleavage[0] = peptide_sequence[strlen(peptide_sequence)-1];
-      cleavage[1] = flanking_aas_next;
-      if (flanking_aas_next == '-' ||
-	  valid_cleavage_position(seq_iter, enzyme) == TRUE){
-	num_tol_term++;
-      }
-      fprintf(output_file, "        <alternative_protein protein=\"%s\" protein_descr=\"%s\" "
-	      "num_tol_term=\"%i\"  peptide_prev_aa=\"%c\" "
-	      "peptide_next_aa=\"%c\"/> \n",
-	      ((*prot_iter).first).c_str(),
-	      ((*prot_iter).second).c_str(),
-	      num_tol_term, 
-	      flanking_aas_prev,
+	    flanking_aas_prev,
 	      flanking_aas_next);
-    }
+  }
+  
+  
+  set<int> var_mod_indices;
 
-
-    set<int> var_mod_indices;
-
-    // get variable modifications
-    if (is_modified){
-      fprintf(output_file, 
-	      "<modification_info modified_peptide=\"%s\">\n",
-	      mod_seq);
-      int seq_index = 1;
-      char* amino = mod_seq;
-      char* end;
-      char* start;
-      // parsing of returned string
-      while (*(amino+1) != '\0'){
-	if (*(amino+1) =='['){
-	  start = amino+2;
-	  end = amino+2;
-	  while (*end != ']'){
-	    end++;
-	  }
-	  char* mass  = (char *) mymalloc(sizeof(char)*(end-start+1));
-	  char* mass_iter = mass;
-	  while (start != end){
-	    *mass_iter = *start;
-	    start++;
-	    mass_iter++;
-	  }
-	  mass_iter = '\0';
-	  fprintf(output_file, "<mod_aminoacid_mass position=\"%i\" mass=\"%s\"/>\n",
-		  seq_index,
-		  mass);
-	  var_mod_indices.insert(seq_index);
-	  free(mass);
-	  amino = end;
-	}
-	seq_index++;
-	amino++;
-      }
-      fprintf(output_file, "</modification_info>\n");
-    }
-   
-    // get modification info for static modifications
-    BOOLEAN_T printed_mod_tag = FALSE;
-    seq_iter = peptide_sequence;
-    
-    MASS_TYPE_T isotopic_type = get_mass_type_parameter("isotopic-mass");
-    
-    char aa[2];
-    aa[1] = '\0';
+  // get variable modifications
+  if (is_modified){
+    fprintf(output_file, 
+	    "<modification_info modified_peptide=\"%s\">\n",
+	    mod_seq);
     int seq_index = 1;
-    while ((*seq_iter) != '\0'){
-      *aa = (*seq_iter);
-      // write static mod if user requested static mod and also
-      // if there is no variable mod on the same character
-      if (get_double_parameter( (const char *)aa)!= 0 && 
-	  var_mod_indices.find(seq_index) == var_mod_indices.end()){
-	if (printed_mod_tag == FALSE){
-	  fprintf(output_file, "<modification_info modified_peptide=\"%s\">\n",
-		  peptide_sequence);
-	  printed_mod_tag = TRUE;
+    char* amino = mod_seq;
+    char* end;
+    char* start;
+    // parsing of returned string
+    while (*(amino+1) != '\0'){
+      if (*(amino+1) =='['){
+	start = amino+2;
+	end = amino+2;
+	while (*end != ']'){
+	  end++;
 	}
-	double mass = get_mass_amino_acid(*seq_iter, isotopic_type);
-	fprintf(output_file, "<mod_aminoacid_mass position=\"%i\" mass=\"%f\"/>\n",
+	char* mass  = (char *) mymalloc(sizeof(char)*(end-start+1));
+	char* mass_iter = mass;
+	while (start != end){
+	  *mass_iter = *start;
+	  start++;
+	  mass_iter++;
+	}
+	mass_iter = '\0';
+	fprintf(output_file, "<mod_aminoacid_mass position=\"%i\" mass=\"%s\"/>\n",
 		seq_index,
 		mass);
+	var_mod_indices.insert(seq_index);
+	free(mass);
+	amino = end;
       }
-      seq_iter++;
       seq_index++;
+      amino++;
+      }
+    fprintf(output_file, "</modification_info>\n");
+  }
+  
+  // get modification info for static modifications
+  BOOLEAN_T printed_mod_tag = FALSE;
+  seq_iter = peptide_sequence;
+  
+  MASS_TYPE_T isotopic_type = get_mass_type_parameter("isotopic-mass");
+  
+  char aa[2];
+  aa[1] = '\0';
+  int seq_index = 1;
+  while ((*seq_iter) != '\0'){
+    *aa = (*seq_iter);
+    // write static mod if user requested static mod and also
+    // if there is no variable mod on the same character
+    if (get_double_parameter( (const char *)aa)!= 0 && 
+	var_mod_indices.find(seq_index) == var_mod_indices.end()){
+      if (printed_mod_tag == FALSE){
+	fprintf(output_file, "<modification_info modified_peptide=\"%s\">\n",
+		peptide_sequence);
+	printed_mod_tag = TRUE;
+      }
+      double mass = get_mass_amino_acid(*seq_iter, isotopic_type);
+      fprintf(output_file, "<mod_aminoacid_mass position=\"%i\" mass=\"%f\"/>\n",
+	      seq_index,
+	      mass);
     }
-    if (printed_mod_tag == TRUE){
-      fprintf(output_file, "</modification_info>\n");
-    }
+    seq_iter++;
+    seq_index++;
+  }
+  if (printed_mod_tag == TRUE){
+    fprintf(output_file, "</modification_info>\n");
+  }
+  
+  
+  
+  fprintf(output_file, 
+	  "        <search_score name=\"delta_cn\" value=\"%f\" />\n",
+	  delta_cn);
 
+  
+  
 
-
+  // print all scores available
+  if (scores_computed[PERCOLATOR_SCORE]){
     fprintf(output_file, 
-	    "        <search_score name=\"delta_cn\" value=\"%f\" />\n",
-	    delta_cn);
-
-
-
-
-    // print all scores available
-    if (scores_computed[PERCOLATOR_SCORE]){
-      fprintf(output_file, 
-	      "        <search_score name=\"percolator_score\" value=\"%f\" />\n"
-	      "        <search_score name=\"percolator_qvalue\" value=\"%f\" />\n",
-	      get_match_score(match, PERCOLATOR_SCORE),
-	      get_match_score(match, PERCOLATOR_QVALUE));
+	    "        <search_score name=\"percolator_score\" value=\"%f\" />\n"
+	    "        <search_score name=\"percolator_qvalue\" value=\"%f\" />\n",
+	    get_match_score(match, PERCOLATOR_SCORE),
+	    get_match_score(match, PERCOLATOR_QVALUE));
     }
-    if (scores_computed[QRANKER_SCORE]){
-      fprintf(output_file, "        <search_score name=\"qranker_score\" value=\"%f\" />\n"
-	      "        <search_score name=\"qranker_qvalue\" value=\"%f\" />\n",
-	      get_match_score(match, QRANKER_SCORE),
-	      get_match_score(match, QRANKER_QVALUE));
-    }
-    if (scores_computed[LOGP_QVALUE_WEIBULL_XCORR]){
-      fprintf(output_file, "        <search_score name=\"logp_qvalue_weibull_score\" value=\"%f\" />\n",
-	       get_match_score(match, LOGP_QVALUE_WEIBULL_XCORR));
-    }
-    fprintf(output_file, "        <search_score name=\"xcorr_score\" value=\"%f\" />\n",
-	    get_match_score(match, XCORR));
+  if (scores_computed[QRANKER_SCORE]){
+    fprintf(output_file, "        <search_score name=\"qranker_score\" value=\"%f\" />\n"
+	    "        <search_score name=\"qranker_qvalue\" value=\"%f\" />\n",
+	    get_match_score(match, QRANKER_SCORE),
+	    get_match_score(match, QRANKER_QVALUE));
+  }
+  if (scores_computed[LOGP_QVALUE_WEIBULL_XCORR]){
+    fprintf(output_file, "        <search_score name=\"logp_qvalue_weibull_score\" value=\"%f\" />\n",
+	    get_match_score(match, LOGP_QVALUE_WEIBULL_XCORR));
+  }
+  fprintf(output_file, "        <search_score name=\"xcorr_score\" value=\"%f\" />\n",
+	  get_match_score(match, XCORR));
     
-    
-    fprintf(output_file, "    </search_hit>\n");
-
+  
+  fprintf(output_file, "    </search_hit>\n");
+  
 }
 
 

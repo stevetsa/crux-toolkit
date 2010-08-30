@@ -228,7 +228,11 @@ double get_mz_bin_offset();
 
 
 /**
- * Prints the parameters to xml output file
+ * \brief prints all parameters except mods into the output stream
+ * in xml format. 
+ *
+ * Each parameter has a self closing tag and has attributes name for 
+ * parameter name and value for parameter value
  */
 void print_parameters_xml(FILE* output);
 

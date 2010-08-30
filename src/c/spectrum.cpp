@@ -318,7 +318,7 @@ void print_spectrum_processed_peaks(
 
 
 /**
- * Prints a spectrum object to file in sqt format.
+ * Prints a spectrum object to file in xml format.
  */
 void print_spectrum_xml(
   SPECTRUM_T* spectrum, ///< spectrum to print -in

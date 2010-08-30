@@ -1265,7 +1265,7 @@ BOOLEAN_T parse_cmd_line_into_params_hash(int argc,
 }
 
 /**
- * Read the value given for custom-enzyme and enter values into global
+ * Read the value given for cusom-enzyme and enter values into global
  * params.  Correct syntax is [A-Z]|[A-Z] or {A-Z}|{A-Z}.  An X
  * indicates that any residue is legal. Sets pre/post_list size and
  * allocates memory for pre/post_cleavage_list.  Sets
@@ -1613,6 +1613,13 @@ void print_mods_parameter_file(FILE* param_file,
 }
 
 
+/**
+ * \brief prints all parameters except mods into the output stream
+ * in xml format. 
+ *
+ * Each parameter has a self closing tag and has attributes name for 
+ * parameter name and value for parameter value
+ */
 void print_parameters_xml(FILE* output){
   if (output == NULL){
     return;

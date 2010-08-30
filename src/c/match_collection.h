@@ -292,6 +292,13 @@ void print_matches_multi_spectra
  FILE* tab_file, 
  FILE* decoy_tab_file);
 
+
+/**
+ * \brief Print the given match collection for several spectra to
+ * xml files only. Takes the spectrum information from the
+ * matches in the collection. At least for now, prints all matches in
+ * the collection rather than limiting by top-match parameter. 
+ */
 void print_matches_multi_spectra_xml(
  MATCH_COLLECTION_T* match_collection,
  FILE* output);
