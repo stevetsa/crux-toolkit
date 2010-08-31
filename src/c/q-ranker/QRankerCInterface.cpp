@@ -58,6 +58,21 @@ void qcSetDoMaxPSM(bool do_max_psm) {
 void qcSetDoPValue(bool do_pvalue) {
   getCaller()->setDoPValue(do_pvalue);
 }
+
+bool qcGetDoPValue() {
+  return getCaller()->getDoPValue();
+}
+
+void qcSetNIter(unsigned int niter) {
+  getCaller() -> setNIter(niter);
+}
+
+void qcSetSwitchIter(unsigned int switch_iter) {
+  getCaller() -> setSwitchIter(switch_iter);
+}
+
+
+
 /** Call that initiates percolator */
 void qcInitiate(int sets, unsigned int numFeat, int* numSpectra, char ** featureNames, double pi0) {
   pCaller=new Caller();
@@ -140,7 +155,11 @@ void qcGetScores(double *scoreArr,double *qArr) {
   SetHandler::Iterator iter(pCaller->getSetHandler(Caller::NORMAL));
   while(PSMDescription * pPSM = iter.getNext()) {
     //cerr << pPSM -> peptide << "\t" << pPSM -> sc << "\t" << pPSM -> q<<endl;
-    scoreArr[ix] = pPSM->pvalue;
+    if (qcGetDoPValue()) {
+      scoreArr[ix] = pPSM->pvalue;
+    } else {
+      scoreArr[ix] = pPSM->sc;
+    }
     qArr[ix++] =  pPSM->q;
   }
 } 

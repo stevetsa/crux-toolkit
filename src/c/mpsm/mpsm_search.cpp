@@ -215,7 +215,7 @@ int mpsm_search_main(int argc, char** argv){
 
     carp(CARP_DEBUG, "processing spec %d charge:%d", get_spectrum_first_scan(spectrum), charge);
     if (spectrum != current_spectrum) {
-      carp(CARP_DEBUG, "Processed all charges for spec %d", get_spectrum_first_scan(current_spectrum));
+      carp(CARP_INFO, "Processed all charges for spec %d", get_spectrum_first_scan(current_spectrum));
       carp(CARP_DEBUG, "Searching for mpsms");
       search_for_mpsms(spsm_map, mpsm_map);
       if (get_boolean_parameter("mpsm-do-sort")) {

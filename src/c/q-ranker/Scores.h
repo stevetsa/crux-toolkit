@@ -78,7 +78,7 @@ public:
 
     int calcOverFDR(double fdr, bool do_max_psm=false);
     void calcQValues();
-    void calcMultiOverFDR(vector<double> &fdr, vector<int> &overFDR);
+    void calcMultiOverFDR(vector<double> &fdr, vector<int> &overFDR, bool do_sort);
     inline ScoreHolder& operator[](int ix){return scores[ix];}
     void static fillFeaturesSplit(Scores& train,Scores& test,SetHandler& norm,SetHandler& shuff, const double ratio);
     void static fillFeaturesSplit(Scores& train,Scores& test,SetHandler& norm,SetHandler& shuff, SetHandler& shuff1, const double ratio);

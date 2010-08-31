@@ -69,26 +69,29 @@ void Caller :: calcPValues(Scores &set, NeuralNet &n, int &max_pos)
 
  
 
-void Caller :: getMultiFDR(Scores &set, NeuralNet &n, vector<double> &qvalues)
+void Caller :: getMultiFDR(Scores &set, NeuralNet &n, vector<double> &qvalues, bool do_classify, bool do_sort)
 {
   double r = 0.0;
   const double* featVec;
   int label = 0;
   loss = 0;
  
-  for(unsigned int i = 0; i < set.size(); i++)
-    {
-      featVec = set[i].pPSM->features;
-      label = set[i].label;
-      r = n.classify(featVec);
-      set[i].score = r;
-      loss += n.get_err(label);
-     }
- 
+  if (do_classify) {
+    for(unsigned int i = 0; i < set.size(); i++)
+      {
+        featVec = set[i].pPSM->features;
+        label = set[i].label;
+        r = n.classify(featVec);
+        set[i].score = r;
+        loss += n.get_err(label);
+       }
+  }
+
+
 
   for(unsigned int ct = 0; ct < qvalues.size(); ct++)
     overFDRmulti[ct] = 0;
-  set.calcMultiOverFDR(qvalues, overFDRmulti);
+  set.calcMultiOverFDR(qvalues, overFDRmulti, do_classify || do_sort);
 }
 
 
@@ -457,11 +460,11 @@ void Caller :: train_many_target_nets_ave(
 	for(int count = 0; count < num_qvals; count++)
 	  ave_overFDR[count] += overFDRmulti[count];
 		
-	getMultiFDR(thresholdset,net, qvals1);
+	getMultiFDR(thresholdset,net, qvals1, false, false);
 	for(int count = 0; count < num_qvals; count++)
 	  ave_overFDR[count] += overFDRmulti[count];
 	
-	getMultiFDR(thresholdset,net, qvals2);
+	getMultiFDR(thresholdset,net, qvals2, false, false);
 	for(int count = 0; count < num_qvals; count++)
 	  ave_overFDR[count] += overFDRmulti[count];
 	
@@ -519,10 +522,10 @@ void Caller::train_many_nets(
 {
   
   thresholdset = trainset;
-
+  /*
   switch_iter = 100;
   niter = 200;
-   
+  */ 
   num_qvals = 14;
   qvals.resize(num_qvals,0.0);
   qvals1.resize(num_qvals,0.0);
@@ -599,10 +602,10 @@ void Caller::train_many_nets(
   getMultiFDR(thresholdset,net, qvals);
   for(int count = 0; count < num_qvals; count++)
     ave_overFDR[count] += overFDRmulti[count];
-  getMultiFDR(thresholdset,net, qvals1);
+  getMultiFDR(thresholdset,net, qvals1, false, false);
   for(int count = 0; count < num_qvals; count++)
     ave_overFDR[count] += overFDRmulti[count];
-  getMultiFDR(thresholdset,net, qvals2);
+  getMultiFDR(thresholdset,net, qvals2, false, false);
   for(int count = 0; count < num_qvals; count++)
     ave_overFDR[count] += overFDRmulti[count];
   for(int count = 0; count < num_qvals; count++)

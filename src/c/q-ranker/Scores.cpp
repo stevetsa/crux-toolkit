@@ -485,31 +485,30 @@ void Scores::calcPValues(bool do_max_psm,int &max_pos) {
 }
 
 void Scores::calcFDR_Decoy(bool do_max_psm) {
-  cerr<<"Scores::calcOverFDR: start()"<<endl;  
+  cerr<<"Scores::calcFDR_Decoy: start()"<<endl;  
   vector<ScoreHolder>::iterator it;
-  Scores& scores_ref = *this;;
-  
+  Scores max_scores;
   if (do_max_psm) {
-    Scores max_scores;
     getMaxScores(max_scores);
-    scores_ref = max_scores;
     //intialize everything to pvalue of 1.0
-    //cerr <<"calcOverFDR: intializing"<<endl;
+    cerr <<"calcFDR_Decoy: intializing"<<endl;
     for (it=scores.begin();
       it != scores.end();
       ++it) {
       it -> pPSM -> q = pi0;
     }
+    //return;
   } else {
+    max_scores = *this;
     //sort by score in descending order.
-    sort(scores_ref.begin(), scores_ref.end(), ScoreComparator());
+    sort(max_scores.begin(), max_scores.end(), ScoreComparator());
   }
   //cerr<<"calcOverFDR: calculating fdr"<<endl;
   int positives=0,nulls=0;
   double efp=0.0,q;
   posNow = 0;
   register unsigned int ix=0;
-  for(it=scores_ref.begin();it!=scores_ref.end();it++) {
+  for(it=max_scores.begin();it!=max_scores.end();it++) {
     if (it->label!=-1)
       positives++;
     if (it->label==-1) {
@@ -526,9 +525,9 @@ void Scores::calcFDR_Decoy(bool do_max_psm) {
   }
 
   //cerr<<"calcOverFDR: calculating q-values"<<endl;
-  for (ix=scores_ref.size();--ix;) {
-    if (scores_ref[ix-1].pPSM->q > scores_ref[ix].pPSM->q)
-      scores_ref[ix-1].pPSM->q = scores_ref[ix].pPSM->q;  
+  for (ix=max_scores.size();--ix;) {
+    if (max_scores[ix-1].pPSM->q > max_scores[ix].pPSM->q)
+      max_scores[ix-1].pPSM->q = max_scores[ix].pPSM->q;  
   }
 }
 
@@ -573,19 +572,16 @@ void Scores::calcFDR_BH(int max_pos) {
  * Calculate the number of targets that score above a specified FDR.
  */
 int Scores::calcOverFDR(double fdr, bool do_max_psm) {
-  cerr<<"Scores::calcOverFDR: start()"<<endl;  
+  //cerr<<"Scores::calcOverFDR: start()"<<do_max_psm<<endl;  
   vector<ScoreHolder>::iterator it;
 
-
-  Scores& scores_ref = *this;;
-  
+  Scores max_scores;
   if (do_max_psm) {
-    Scores max_scores;
     getMaxScores(max_scores);
-    scores_ref = max_scores;
   } else {
+    max_scores = *this;
     //sort by score in descending order.
-    sort(scores_ref.begin(), scores_ref.end(), ScoreComparator());
+    sort(max_scores.begin(), max_scores.end(), ScoreComparator());
   }
   //cerr<<"calcOverFDR: calculating fdr"<<endl;
   int positives=0,nulls=0;
@@ -595,7 +591,7 @@ int Scores::calcOverFDR(double fdr, bool do_max_psm) {
   double efp=0.0,q;
   posNow = 0;
   register unsigned int ix=0;
-  for(it=scores_ref.begin();it!=scores_ref.end();it++) {
+  for(it=max_scores.begin();it!=max_scores.end();it++) {
     if (it->label!=-1)
       positives++;
     if (it->label==-1) {
@@ -617,12 +613,12 @@ int Scores::calcOverFDR(double fdr, bool do_max_psm) {
   return posNow;
 }
 
-void Scores::calcMultiOverFDR(vector<double> &fdr, vector<int> &overFDR) {
+void Scores::calcMultiOverFDR(vector<double> &fdr, vector<int> &overFDR, bool do_sort) {
   //cerr<<"calcMultiOverFDR: start"<<endl;
   vector<ScoreHolder>::iterator it;
-
-  sort(scores.begin(),scores.end(), ScoreComparator());
-  
+  if (do_sort) {
+    sort(scores.begin(),scores.end(), ScoreComparator());
+  }
   int max_nulls = (int)ceil(fdr.back() * (double)pos / (pi0 * factor));
 
   int positives=0,nulls=0;

@@ -185,6 +185,8 @@ static MATCH_COLLECTION_T* run_percolator_or_qranker(
       qcSetDoXVal(!get_boolean_parameter("no-xval"));
       qcSetDoMaxPSM(get_boolean_parameter("do-max-psm"));
       qcSetDoPValue(get_boolean_parameter("qranker-do-pvalue"));
+      qcSetNIter(get_int_parameter("qranker-niter"));
+      qcSetSwitchIter(get_int_parameter("qranker-siter"));
     }
 
     // create iterator, to register each PSM feature.

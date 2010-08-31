@@ -46,6 +46,9 @@ public:
     void setDoMaxPSM(bool ado_max_psm);
     void setDoXVal(bool ado_xal);
     void setDoPValue(bool ado_pvalue);
+    bool getDoPValue();
+    void setNIter(unsigned int iter);
+    void setSwitchIter(unsigned int iter);
 
     SetHandler * getSetHandler(SetHandlerType sh) {
         switch(sh) {
@@ -75,7 +78,7 @@ public:
     int getOverFDR(Scores &set, NeuralNet &n, double fdr, bool do_max_psm=false);
     void calcScores(Scores &set, NeuralNet &n);
     void calcPValues(Scores &set, NeuralNet &n, int &max_pos);
-    void getMultiFDR(Scores &set, NeuralNet &n, vector<double> &qval);
+    void getMultiFDR(Scores &set, NeuralNet &n, vector<double> &qval, bool do_classify=true, bool do_sort=true);
     void printNetResults(vector<int> &scores);
     void write_max_nets(string filename, NeuralNet *max_net);
     

@@ -33,6 +33,12 @@ void qcSetDoMaxPSM(bool do_max_psm);
 
 void qcSetDoPValue(bool do_pvalue);
 
+void qcSetNIter(unsigned int niter);
+
+void qcSetSwitchIter(unsigned int switch_iter);
+
+
+
 /** Register a PSM */
 void qcRegisterPSM(SetType set, unsigned int scan, char * identifier, double * features);
 

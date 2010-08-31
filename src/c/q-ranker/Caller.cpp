@@ -45,7 +45,7 @@ Caller::Caller() : pNorm(NULL), pCheck(NULL), svmInput(NULL),
   decoyWC(""), rocFN(""), gistFN(""), tabFN(""), weightFN(""),
   gistInput(false), tabInput(false), dtaSelect(false), docFeatures(false), reportPerformanceEachIteration(false),
   test_fdr(0.01), selectionfdr(0.01), selectedCpos(0), selectedCneg(0), threshTestRatio(0.3), trainRatio(0.5),
-		   niter(10), seed(0), xv_type(EACH_STEP), trainNN(1), splitPositives(1), num_hu(5),mu(0.005),weightDecay(0.00005),
+		   niter(200), switch_iter(100), seed(0), xv_type(EACH_STEP), trainNN(1), splitPositives(1), num_hu(5),mu(0.005),weightDecay(0.00005),
 		   shuffled1_present(false),shuffled2_present(false),do_xval(true),do_max_psm(false)
 {
 }
@@ -508,6 +508,21 @@ void Caller::setDoXVal(bool ado_xval) {
 
 void Caller::setDoPValue(bool ado_pvalue) {
   do_pvalue = ado_pvalue;
+}
+
+bool Caller::getDoPValue() {
+  return do_pvalue;
+}
+
+void Caller::setNIter(unsigned int iter) {
+  cerr<<"Setting niter to:"<<iter<<endl;
+  niter = iter;
+}
+
+void Caller::setSwitchIter(unsigned int iter) {
+  //assert(iter < niter);
+  cerr<<"Setting switch_iter to:"<<iter<<endl;
+  switch_iter = iter;
 }
 
 } // qranker namspace

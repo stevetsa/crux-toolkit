@@ -103,6 +103,8 @@ int mpsm_qranker_main(int argc, char** argv){
     "do-max-psm",
     "qranker-do-pvalue",
     "qranker-num-hu",
+    "qranker-niter",
+    "qranker-siter",
     "feature-file",
     "output-dir",
     "overwrite"
@@ -594,6 +596,9 @@ void run_mpsm_q(
   qcSetDoXVal(!get_boolean_parameter("no-xval"));
   qcSetDoMaxPSM(get_boolean_parameter("do-max-psm"));
   qcSetDoPValue(get_boolean_parameter("qranker-do-pvalue"));
+  qcSetNIter(get_int_parameter("qranker-niter"));
+  qcSetSwitchIter(get_int_parameter("qranker-siter"));
+
 
   //carp(CARP_INFO,"%d",pi0);
   // Call that sets verbosity level
