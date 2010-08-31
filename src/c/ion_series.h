@@ -46,6 +46,20 @@ ION_SERIES_T* new_ion_series_generic(
   );
 
 
+void remove_ion_from_ion_series(
+  ION_SERIES_T* ion_series,
+  ION_T* ion
+);
+
+/**
+ * user must ensure that there is enough space for this ion
+ * adds ion to ion_series' master ion_array and if B|Y ion to the specific ion_array
+ */
+void add_ion_to_ion_series(
+  ION_SERIES_T* ion_series, ///< the ion series to predict ions for -out
+  ION_T* ion ///< ion to add -in
+  );
+
 /**
  * Updates an ion_series to a specific instance of a peptide sequence.
  * If the ion_series has been already generated its ions, will free ions up.
@@ -62,7 +76,8 @@ void update_ion_series(
  * Frees an allocated ion_series object.
  */
 void free_ion_series(
-  ION_SERIES_T* ion_series ///< the ion collection to free - in
+  ION_SERIES_T* ion_series, ///< the ion collection to free - in
+  BOOLEAN_T free_ions = TRUE
 );
 
 /**

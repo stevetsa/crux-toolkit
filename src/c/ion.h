@@ -276,6 +276,15 @@ void set_ion_mass_z(
   FLOAT_T mass_z ///< the m/z location -in
   );
 
+FLOAT_T get_ion_mass_from_mass_z(
+  ION_T* working_ion
+  );
+
+void set_ion_mass_z_from_mass(
+  ION_T* working_ion,
+  FLOAT_T mass
+);
+
 
 /**
  * return the cleavage_idx of the ion object

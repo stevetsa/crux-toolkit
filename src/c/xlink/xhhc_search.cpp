@@ -49,7 +49,7 @@ void plot_weibull(vector<pair<FLOAT_T, LinkedPeptide> >& scores, SPECTRUM_T* spe
 
 string get_protein_ids_locations(vector<PEPTIDE_T*>& peptides);
 
-int xlink_search_main(int argc, char** argv) {
+int xhhc_search_main(int argc, char** argv) {
 
   /* Verbosity level for set-up/command line reading */
   set_verbosity_level(CARP_ERROR);

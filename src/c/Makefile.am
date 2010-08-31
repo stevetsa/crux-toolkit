@@ -181,7 +181,7 @@ crux_LDADD = \
   -lmstoolkit \
   -lArrayLibrary
 
-xlink_predict_peptide_ions_SOURCES=./xlink/xhhc_predict_peptide_ions.cpp
+xlink_predict_peptide_ions_SOURCES=./xlink/xlink_predict_peptide_ions.cpp
 xlink_predict_peptide_ions_CXXFLAGS= \
   $(AM_CFLAGS) \
   -DMAIN \

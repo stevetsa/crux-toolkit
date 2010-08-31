@@ -863,6 +863,11 @@ void initialize_parameters(void){
       "Available for crux search-for-xlinks program.",
       "true");
 
+  set_string_parameter("xlink-prevents-cleavage", "K",
+		       "List of amino acids that prevent cleavage",
+		       "Available for search-for-xlinks program (Default=K).",
+		       "true");
+
   set_double_parameter("precursor-window-decoy", 20.0, 0, 1e6, 
       "Search decoy-peptides within +/- "
       " 'mass-window-decoy' of the spectrum mass.  Default=20.0.",

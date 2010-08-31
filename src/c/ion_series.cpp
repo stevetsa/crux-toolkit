@@ -191,6 +191,33 @@ ION_SERIES_T* new_ion_series_generic(
   return ion_series;
 }
 
+
+void remove_ion_from_ion_series(
+				ION_SERIES_T* ion_series,
+				ION_T* ion) {
+  int idx = 0;
+  int del_idx = -1;
+  for (idx=0;idx<ion_series->num_ions;idx++) {
+    if (ion_series->ions[idx] == ion) {
+      del_idx = idx;
+      break;
+    }
+  }
+
+  if (del_idx == -1) {
+    carp(CARP_WARNING,"Cannot find ion to delete!");
+  } else {
+
+    for (idx=del_idx;idx<ion_series->num_ions-1;idx++) {
+      ion_series->ions[idx] = ion_series->ions[idx+1];
+    }
+    ion_series->num_ions--;
+    ION_TYPE_T ion_type = get_ion_type(ion);
+    ion_series->num_specific_ions[ion_type]--;
+  }
+
+}
+
 /**
  * \brief Updates an ion_series to a specific instance of a peptide
  * sequence. If the ion_series has already generated ions, they will
@@ -252,8 +279,9 @@ void update_ion_series(
  * Frees an allocated ion_series object.
  */
 void free_ion_series(
-  ION_SERIES_T* ion_series ///< the ion collection to free - in
-  )
+  ION_SERIES_T* ion_series, ///< the ion collection to free - in
+  BOOLEAN_T free_ions
+)
 {
   if(ion_series->peptide){
     free(ion_series->peptide);
@@ -265,13 +293,13 @@ void free_ion_series(
     free(ion_series->loss_limit);
   }
   // free constraint?
-
-  // iterate over all ions, and free them
-  while(ion_series->num_ions > 0){
-    free_ion(ion_series->ions[ion_series->num_ions-1]);
-    --ion_series->num_ions;
+  if (free_ions) {
+    // iterate over all ions, and free them
+    while(ion_series->num_ions > 0){
+      free_ion(ion_series->ions[ion_series->num_ions-1]);
+      --ion_series->num_ions;
+    }
   }
-
   free(ion_series);
 }
 

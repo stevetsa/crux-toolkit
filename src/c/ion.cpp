@@ -935,6 +935,20 @@ FLOAT_T get_ion_mass_z(
   return working_ion->ion_mass_z;
 }
 
+FLOAT_T get_ion_mass_from_mass_z(
+				 ION_T* working_ion
+				 ) {
+  FLOAT_T ans = (working_ion->ion_mass_z - MASS_PROTON) * (double)working_ion->charge;
+  return ans;
+}
+
+void set_ion_mass_z_from_mass(
+				 ION_T* working_ion,
+				 FLOAT_T mass) {
+  double charge = working_ion->charge;
+  working_ion->ion_mass_z = (mass + MASS_PROTON * charge)/charge;
+}
+
 
 /**
  * sets the mass/z of the ION_T object

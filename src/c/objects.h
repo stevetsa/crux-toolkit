@@ -15,6 +15,12 @@ class DelimitedFile;
 class DelimitedFileReader;
 class MatchFileReader;
 
+
+class MatchCandidate;
+class XLinkablePeptide;
+class XLinkBondMap;
+class XLinkPeptide;
+
 /**
  * \typedef PEAK_T 
  * A peak in a spectrum

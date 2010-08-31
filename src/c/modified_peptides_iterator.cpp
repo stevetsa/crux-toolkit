@@ -260,6 +260,43 @@ MODIFIED_PEPTIDES_ITERATOR_T* new_modified_peptides_iterator_from_mass(
 }
 
 
+MODIFIED_PEPTIDES_ITERATOR_T* new_modified_peptides_iterator_from_mass_range(
+  double min_mass,    ///< min-mass of peptides
+  double max_mass,    ///< max-mass of peptides
+  PEPTIDE_MOD_T* pmod, ///< Peptide mod to apply
+  BOOLEAN_T is_decoy, ///< generate decoy peptides
+  INDEX_T* index,     ///< Index from which to draw peptides OR
+  DATABASE_T* dbase   ///< Database from which to draw peptides
+  ) {
+  
+  MODIFIED_PEPTIDES_ITERATOR_T* new_iterator = 
+    allocate_modified_peptides_iterator();
+
+  // init max aas modified
+  new_iterator->max_aas_modified = get_int_parameter("max-aas-modified");
+  
+  // init the peptide list
+  new_iterator->temp_peptide_list = new_empty_list();
+  
+  // set peptide_mod field
+  new_iterator->peptide_mod = pmod;
+
+  // set is_decoy field
+  new_iterator->is_decoy = is_decoy;
+  
+  // get the mass difference
+  double delta_mass = peptide_mod_get_mass_change(pmod);
+  
+  // create peptide_generator
+  new_iterator->peptide_generator = 
+    new_generate_peptides_iterator_from_mass_range(min_mass-delta_mass, max_mass-delta_mass, index, dbase);
+  
+  // queue first peptide
+  queue_next_peptide( new_iterator );
+
+  return new_iterator;
+}
+
 /**
  * \brief Create a new modified_PEPTIDES_iterator for a specific mass/charge.
  *
