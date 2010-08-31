@@ -24,7 +24,7 @@ XLinkablePeptide::XLinkablePeptide(PEPTIDE_T* peptide,
 
   peptide_ = peptide;
   link_sites_.clear();
-  for (int idx=0;idx<link_sites.size();idx++) {
+  for (unsigned int idx=0;idx<link_sites.size();idx++) {
     addLinkSite(link_sites[idx]);
   }
 }
@@ -152,7 +152,7 @@ MODIFIED_AA_T* XLinkablePeptide::getModifiedSequence() {
 
 int findLink(vector<int>& link_sites, int link_site) {
   
-  for (int idx=0;idx<link_sites.size();idx++) {
+  for (unsigned int idx=0;idx<link_sites.size();idx++) {
     if (link_sites[idx] == link_site)
       return idx;
   }
@@ -161,17 +161,17 @@ int findLink(vector<int>& link_sites, int link_site) {
 }
 
 void doSwitch(vector<int>& link_sites, int siteA, int siteB) {
-  int start_link_idx  = findLink(link_sites, start_idx);
-  int switch_link_idx = findLink(link_sites, switch_idx);
+  int siteA_link_idx  = findLink(link_sites, siteA);
+  int siteB_link_idx = findLink(link_sites, siteB);
   
-  if (start_link_idx != -1 && switch_link_idx != -1) {
-    int temp_idx = link_sites[start_link_idx];
-    link_sites[start_link_idx] = link_sites[switch_link_idx];
-    link_sites[switch_link_idx] = temp_idx;
-  } else if (start_link_idx != -1) {
-    link_sites[start_link_idx] = switch_idx;
-  } else if (switch_link_idx != -1) {
-    link_sites[switch_link_idx] = start_idx;
+  if (siteA_link_idx != -1 && siteB_link_idx != -1) {
+    int temp_idx = link_sites[siteA_link_idx];
+    link_sites[siteA_link_idx] = link_sites[siteB_link_idx];
+    link_sites[siteB_link_idx] = temp_idx;
+  } else if (siteA_link_idx != -1) {
+    link_sites[siteA_link_idx] = siteB;
+  } else if (siteB_link_idx != -1) {
+    link_sites[siteB_link_idx] = siteA;
   }
 }
 
@@ -203,7 +203,7 @@ char* generateShuffledSequence(
     }
 
 
-  } while (equal_peptides(sequence, peptide) && (num_shuffles < MAX_SHUFFLES));
+  } while (/*equal_peptides(sequence, peptide) &&*/ (num_shuffles < MAX_SHUFFLES));
 
   return sequence;
 
@@ -215,8 +215,8 @@ MODIFIED_AA_T* generateShuffledModSequence(
   vector<int>& link_sites
   ) {
 
-ls  MODIFIED_AA_T* sequence = get_peptide_modified_aa_sequence(peptide);
-  int length = peptide->length;
+  MODIFIED_AA_T* sequence = get_peptide_modified_aa_sequence(peptide);
+  int length = get_peptide_length(peptide);
   int start_idx = 0;
   int end_idx = length-1;
   int switch_idx = 0;
@@ -244,18 +244,20 @@ ls  MODIFIED_AA_T* sequence = get_peptide_modified_aa_sequence(peptide);
 XLinkablePeptide XLinkablePeptide::shuffle() {
   PEPTIDE_T* peptide = copy_peptide(peptide_);
   vector<int> link_sites;
-  for (int idx=0;idx<numLinkSites();idx++) {
+  for (unsigned int idx=0;idx<numLinkSites();idx++) {
     link_sites.push_back(getLinkSite(idx));
   }
 
-  if(shuffled_peptide->modified_seq) {
-    MODIFIED_AA_T* new_seq =
-      generateShuffledModSequence(peptide, link_sites);
-    peptide->decoy_modified_seq=new_seq;
+  MODIFIED_AA_T* new_mod_seq = NULL;
+
+  if(get_peptide_is_modified(peptide)) {
+    new_mod_seq = generateShuffledModSequence(peptide, link_sites);
+    set_peptide_decoy_modified_seq(peptide, new_mod_seq);
   } else {
     char* new_seq =
       generateShuffledSequence(peptide, link_sites);
-    convert_to_mod_aa_seq(new_seq, &(peptide->decoy_modified_seq));
+    convert_to_mod_aa_seq(new_seq, &new_mod_seq);
+    set_peptide_decoy_modified_seq(peptide, new_mod_seq);
     free(new_seq);
   }
 

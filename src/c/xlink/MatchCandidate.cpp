@@ -8,6 +8,10 @@
 
 using namespace std;
 
+MatchCandidate::~MatchCandidate() {
+
+}
+
 void MatchCandidate::computeWeibullPvalue(
   FLOAT_T shift,
   FLOAT_T eta,

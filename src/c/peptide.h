@@ -315,6 +315,13 @@ unsigned short* get_peptide_modified_aa_sequence(
  PEPTIDE_T* peptide
  );
 
+
+
+void set_peptide_decoy_modified_seq(PEPTIDE_T* peptide, MODIFIED_AA_T* mod_seq);
+
+BOOLEAN_T get_peptide_is_modified(PEPTIDE_T* peptide);
+
+
 /**
  * \brief Get the modified aa sequence in string form.
  *

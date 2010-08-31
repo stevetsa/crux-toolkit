@@ -151,8 +151,8 @@ void SelfLoopPeptide::predictIons(ION_SERIES_T* ion_series, int charge) {
     new_ion_iterator(ion_series);
 
   while(ion_iterator_has_next(ion_iter)) {
-    int start_idx;
-    int end_idx;
+    int start_idx=0;
+    int end_idx=0;
     ION_T* ion = ion_iterator_next(ion_iter);
 
     bool keep_ion = false;

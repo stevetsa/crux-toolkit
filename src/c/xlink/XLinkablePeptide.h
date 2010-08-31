@@ -19,8 +19,12 @@ class XLinkablePeptide {
  public:
   XLinkablePeptide();
   XLinkablePeptide(char* xlinkable);
+  XLinkablePeptide(PEPTIDE_T* peptide, std::vector<int>& link_sites);
   XLinkablePeptide(PEPTIDE_T* peptide, XLinkBondMap& bondmap);
+  
   virtual ~XLinkablePeptide();
+
+  XLinkablePeptide shuffle();
 
   size_t numLinkSites();
   BOOLEAN_T isLinkable();

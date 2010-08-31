@@ -760,6 +760,16 @@ void set_peptide_mod(PEPTIDE_T* peptide,     ///< peptide to be modified
 
 }
 
+void set_peptide_decoy_modified_seq(PEPTIDE_T* peptide, MODIFIED_AA_T* mod_seq) {
+  peptide->decoy_modified_seq=mod_seq;
+}
+
+BOOLEAN_T get_peptide_is_modified(PEPTIDE_T* peptide) {
+  return peptide->modified_seq != NULL;
+}
+
+
+
 /**
  * \brief Get the modified peptide sequence
  *

@@ -25,6 +25,9 @@ class MatchCandidate {
   int xcorr_rank_;
   FLOAT_T pvalue_;
  public:
+
+  virtual ~MatchCandidate();
+
   virtual MATCHCANDIDATE_TYPE_T getCandidateType() = 0;
 
   virtual std::string getSequenceString() = 0;
