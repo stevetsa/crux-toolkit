@@ -322,7 +322,12 @@ FLOAT_T XLinkPeptide::getMass() {
 }
 
 MatchCandidate* XLinkPeptide::shuffle() {
-  XLinkPeptide* decoy = new XLinkPeptide(*this);
+
+  XLinkPeptide* decoy = new XLinkPeptide();
+  decoy->linked_peptides_.push_back(linked_peptides_[0].shuffle());
+  decoy->linked_peptides_.push_back(linked_peptides_[1].shuffle());
+  decoy->link_pos_idx_.push_back(link_pos_idx_[0]);
+  decoy->link_pos_idx_.push_back(link_pos_idx_[1]);
 
   return (MatchCandidate*)decoy;
 

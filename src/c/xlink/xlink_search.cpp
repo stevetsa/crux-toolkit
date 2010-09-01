@@ -90,10 +90,10 @@ int xlink_search_main(int argc, char** argv) {
   free(input_file);
 
   XLinkBondMap bondmap;
-  /*
+  
   unsigned int min_weibull_points = 
     (unsigned int)get_int_parameter("min-weibull-points");
-  */
+  
   int scan_num = 0;
   int charge = 1;
 
@@ -175,19 +175,19 @@ int xlink_search_main(int argc, char** argv) {
     //cerr<<"Have "<<train_target_candidates.size()<<" target training candidates"<<endl;
     MatchCandidateVector train_candidates(train_target_candidates);
     //get enough weibull training candidates by shuffling.
-    //cerr<<"Shuffling "<<min_weibull_points<<endl;
-    /*
+    cerr<<"Shuffling "<<min_weibull_points<<endl;
+    
     while(train_candidates.size() < min_weibull_points) {
       train_target_candidates.shuffle(train_candidates);
     }
-    */
-    //cerr<<"Have "<<train_candidates.size()<<" training candidates"<<endl;
+    
+    cerr<<"Have "<<train_candidates.size()<<" training candidates"<<endl;
 
-    //cerr <<"scoring targets"<<endl;
+    cerr <<"scoring targets"<<endl;
     target_candidates.scoreSpectrum(spectrum);
-    //cerr <<"scoring decoys"<<endl;
+    cerr <<"scoring decoys"<<endl;
     decoy_candidates.scoreSpectrum(spectrum);
-    //cerr <<"scoring training candidates"<<endl;
+    cerr <<"scoring training candidates"<<endl;
     train_candidates.scoreSpectrum(spectrum);
 
     //cerr <<"Sorting by XCorr"<<endl;

@@ -1,7 +1,7 @@
 #ifndef MATCHCANDIDATEVECTOR_H_
 #define MATCHCANDIDATEVECTOR_H_
 
-#include "xlink.h"
+#include "XLink.h"
 #include "MatchCandidate.h"
 
 #include "index.h"

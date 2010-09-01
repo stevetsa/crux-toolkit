@@ -4,7 +4,7 @@
 
 #include "crux-utils.h"
 
-#include "xlink.h"
+#include "XLink.h"
 #include "MatchCandidateVector.h"
 
 #include <string>
