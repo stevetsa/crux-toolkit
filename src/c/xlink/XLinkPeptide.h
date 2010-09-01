@@ -39,7 +39,6 @@ class XLinkPeptide : public MatchCandidate {
 
   static void setLinkerMass(FLOAT_T linker_mass);
   static FLOAT_T getLinkerMass();
-  static void cleanUp();
   static void addCandidates(FLOAT_T precursor_mz, int charge, 
 			    XLinkBondMap& bondmap, 
 			    INDEX_T* index, DATABASE_T* database,

@@ -18,5 +18,10 @@ void get_min_max_mass(
   FLOAT_T& max_mass);
 
 
+namespace XLink {
+
+void addAllocatedPeptide(PEPTIDE_T* peptide);
+void deleteAllocatedPeptides();
+};
   
 #endif

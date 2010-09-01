@@ -278,7 +278,8 @@ BOOLEAN_T algorithm_type_to_string(ALGORITHM_TYPE_T type, char* type_str){
 
 static const char* command_type_file_strings[NUMBER_COMMAND_TYPES] =
   { "invalid", "index", "search", "sequest", "qvalues", "percolator", 
-    "qranker", "processed-spectra", "search-for-xlinks", "version"
+    "qranker", "processed-spectra", "search-for-xlinks", 
+    "search-for-xlinks-mods","version"
   };
 /**
  * Conversion of COMMAND_T to the base filename used for that
@@ -309,7 +310,7 @@ const char* command_type_to_file_string_ptr(COMMAND_T type){
 static const char* command_type_command_line_strings[NUMBER_COMMAND_TYPES] =
   { "invalid", "create-index", "search-for-matches", "sequest-search",
     "compute-q-values", "percolator", "q-ranker", "print-processed-spectra",
-    "search-for-xlinks", "version"
+    "search-for-xlinks", "search-for-xlinks-mods", "version"
   };
 /**
  * Conversion of COMMAND_T to the string used on the command line.

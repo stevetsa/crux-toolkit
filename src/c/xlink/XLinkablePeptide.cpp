@@ -5,6 +5,8 @@
 
 #include <iostream>
 
+#include "XLink.h"
+
 using namespace std;
 
 XLinkablePeptide::XLinkablePeptide() {
@@ -31,8 +33,17 @@ XLinkablePeptide::XLinkablePeptide(PEPTIDE_T* peptide,
 
 XLinkablePeptide::XLinkablePeptide(PEPTIDE_T* peptide, 
 				   XLinkBondMap& bondmap) {
-
   peptide_=peptide;
+  findLinkSites(peptide_, bondmap, link_sites_);
+}
+
+void XLinkablePeptide::findLinkSites(
+  PEPTIDE_T* peptide,
+  XLinkBondMap& bondmap,
+  vector<int>& link_sites) {
+
+  link_sites.clear();
+
   //find all modifications that can prevent xlink.
   AA_MOD_T** mod_list = NULL;
   int total_mods = get_all_aa_mod_list(&mod_list);
@@ -82,7 +93,7 @@ XLinkablePeptide::XLinkablePeptide(PEPTIDE_T* peptide,
       //passes both tests, this is a linkable site.
       if (!link_prevented) {
 	//if it is a linkable site, then add it to the list.
-	addLinkSite(seq_idx);
+        link_sites.push_back(seq_idx);
       }
     }
   }
@@ -246,6 +257,7 @@ MODIFIED_AA_T* generateShuffledModSequence(
 XLinkablePeptide XLinkablePeptide::shuffle() {
   //cerr <<"XLinkablePeptide::shuffle():start"<<endl;
   PEPTIDE_T* peptide = copy_peptide(peptide_);
+  XLink::addAllocatedPeptide(peptide);
   //cerr <<"Linksites"<<endl;
   vector<int> link_sites;
   for (unsigned int idx=0;idx<numLinkSites();idx++) {

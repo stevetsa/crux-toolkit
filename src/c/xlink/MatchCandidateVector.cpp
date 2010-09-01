@@ -132,7 +132,10 @@ void MatchCandidateVector::shuffle(MatchCandidateVector& decoy_vector) {
 }
 
 void MatchCandidateVector::scoreSpectrum(SPECTRUM_T* spectrum) {
-  XLinkScorer scorer(spectrum, charge_);
+
+  int max_ion_charge = get_max_ion_charge_parameter("max-ion-charge");
+  
+  XLinkScorer scorer(spectrum, min(charge_, max_ion_charge));
   for (unsigned int idx=0;idx<size();idx++) {
     scorer.scoreCandidate(at(idx));
   }
@@ -148,9 +151,6 @@ void MatchCandidateVector::fitWeibull(
   FLOAT_T& beta, 
   FLOAT_T& corr) {
 
-
-  
-
   //create the array of x's and 
   shift=0;
   eta=0;
@@ -164,10 +164,6 @@ void MatchCandidateVector::fitWeibull(
   }
 
   sort(xcorrs, xcorrs+size(), greater<FLOAT_T>());
-
-  for (int i=0;i<3;i++) {
-    carp(CARP_INFO,"%i:%f",i,xcorrs[i]);
-  }
 
   double fraction_to_fit = get_double_parameter("fraction-top-scores-to-fit");
   int num_tail_samples = (int)(size() * fraction_to_fit);
@@ -185,11 +181,6 @@ void MatchCandidateVector::fitWeibull(
 			      &corr);
 
   free(xcorrs);
-  /*
-  eta_ = eta;
-  beta_ = beta;
-  shift_ = shift;
-  */
 }
 
 

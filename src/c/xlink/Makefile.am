@@ -20,6 +20,7 @@ libxlink_la_SOURCES = \
   MatchCandidate.cpp \
   MatchCandidateVector.cpp \
   SelfLoopPeptide.cpp \
+  XLink.cpp \
   XLinkBondMap.cpp \
   XLinkPeptide.cpp \
   XLinkablePeptide.cpp \

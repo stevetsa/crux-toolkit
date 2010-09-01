@@ -24,6 +24,12 @@ class XLinkablePeptide {
   
   virtual ~XLinkablePeptide();
 
+  static void findLinkSites(
+    PEPTIDE_T* peptide, 
+    XLinkBondMap& bondmap, 
+    std::vector<int>& link_sites
+  );
+
   XLinkablePeptide shuffle();
 
   size_t numLinkSites();

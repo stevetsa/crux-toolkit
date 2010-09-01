@@ -835,6 +835,9 @@ void initialize_parameters(void){
       "Available for search-for-xlinks program (Default=F).",
       "true");
 
+  set_int_parameter("max-missed-cleavages", 1, 0, BILLION,
+      "",
+      "", "true");
 
   // **** xlink-score-spectrum options ****
   set_string_parameter("xlink-score-method", "composite", 

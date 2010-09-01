@@ -34,6 +34,8 @@ const char* usage_str = "Usage: crux <command> [options] <argument>\n"
 "                      database, returning a collection of matches\n"
 "                      corresponding to linear and cross-linked peptides\n"
 "                      scored by XCorr.\n"
+"  search-for-xlinks-mods\n"
+"                      search-for-xlinks allowing modifications (ALPHA)\n"
 "  version             Print the Crux version number to standard output,\n"
 "                      then exit.\n"
 "\n"
@@ -145,6 +147,7 @@ static MATCH_COLLECTION_T* run_percolator_or_qranker(
       case QVALUE_COMMAND:
       case PROCESS_SPEC_COMMAND:
       case XLINK_SEARCH_COMMAND:
+      case XLINK_SEARCH_MODS_COMMAND:
       case VERSION_COMMAND:
       case INVALID_COMMAND:
       case NUMBER_COMMAND_TYPES:
@@ -408,9 +411,12 @@ int main(int argc, char** argv){
     break;
   
   case XLINK_SEARCH_COMMAND:
-    xlink_search_main(argc-1, argv+1);
+    xhhc_search_main(argc-1, argv+1);
     break;
 
+  case XLINK_SEARCH_MODS_COMMAND:
+    xlink_search_main(argc-1, argv+1);
+    break;
   case QVALUE_COMMAND:
   case QRANKER_COMMAND:
   case PERCOLATOR_COMMAND:

@@ -175,22 +175,19 @@ int xlink_search_main(int argc, char** argv) {
     //cerr<<"Have "<<train_target_candidates.size()<<" target training candidates"<<endl;
     MatchCandidateVector train_candidates(train_target_candidates);
     //get enough weibull training candidates by shuffling.
-    cerr<<"Shuffling "<<min_weibull_points<<endl;
+    cerr<<"Shuffling "<<train_candidates.size()<<":"<<min_weibull_points<<endl;
     
     while(train_candidates.size() < min_weibull_points) {
       train_target_candidates.shuffle(train_candidates);
     }
-    
+    cerr<<"Have "<<target_candidates.size()<<" target candidates"<<endl;
+    cerr<<"Have "<<decoy_candidates.size()<<" decoy candidates"<<endl;
     cerr<<"Have "<<train_candidates.size()<<" training candidates"<<endl;
 
-    cerr <<"scoring targets"<<endl;
     target_candidates.scoreSpectrum(spectrum);
-    cerr <<"scoring decoys"<<endl;
     decoy_candidates.scoreSpectrum(spectrum);
-    cerr <<"scoring training candidates"<<endl;
     train_candidates.scoreSpectrum(spectrum);
 
-    //cerr <<"Sorting by XCorr"<<endl;
     target_candidates.sortByXCorr();
     decoy_candidates.sortByXCorr();
     
@@ -214,7 +211,7 @@ int xlink_search_main(int argc, char** argv) {
       decoy_file << decoy_candidates[idx]->getResultString() << endl;
     }
     
-    XLinkPeptide::cleanUp();
+    XLink::deleteAllocatedPeptides();
     
     //carp(CARP_DEBUG, "num targets:%d",target_candidates.size());
     //free_spectrum(spectrum);
@@ -227,6 +224,11 @@ int xlink_search_main(int argc, char** argv) {
   free_spectrum_collection(spectra);
   //free_spectrum(spectrum);
   //carp(CARP_INFO,"Done freeing spectrum collection");
+
+  //Calculate q-values.
+  carp(CARP_INFO,"Computing Q-Values");
+  xlink_compute_qvalues();
+
   carp(CARP_INFO, "Elapsed time: %.3g s", wall_clock() / 1e6);
   carp(CARP_INFO, "Finished crux search-for-xlinks.");
 

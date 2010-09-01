@@ -127,6 +127,8 @@ void XLinkPeptide::addLinkablePeptides(double min_mass, double max_mass,
 			 XLinkBondMap& bondmap, 
 			 vector<XLinkablePeptide>& linkable_peptides) {
   
+  int max_missed_cleavages=get_int_parameter("max-missed-cleavages");
+
   //cerr <<"addLinkablePeptides(): start"<<endl;
   MODIFIED_PEPTIDES_ITERATOR_T* peptide_iterator =
     new_modified_peptides_iterator_from_mass_range(
@@ -139,12 +141,18 @@ void XLinkPeptide::addLinkablePeptides(double min_mass, double max_mass,
 
   while (modified_peptides_iterator_has_next(peptide_iterator)) {
     PEPTIDE_T* peptide = modified_peptides_iterator_next(peptide_iterator);
+    if (get_peptide_missed_cleavage_sites(peptide) <= max_missed_cleavages) {
+      
+      vector<int> link_sites;
+      XLinkablePeptide::findLinkSites(peptide, bondmap, link_sites);
 
-    XLinkablePeptide xlinkable_peptide(peptide, bondmap);
-
-    if (xlinkable_peptide.isLinkable()) {
-      linkable_peptides.push_back(xlinkable_peptide);
-      allocated_peptides_.insert(peptide);
+      if (link_sites.size() > 0) {
+        XLinkablePeptide xlinkable_peptide(peptide, link_sites);
+        linkable_peptides.push_back(xlinkable_peptide);
+        XLink::addAllocatedPeptide(peptide);
+      } else {
+        free_peptide(peptide);
+      }
     } else {
       free_peptide(peptide);
     }
@@ -152,19 +160,6 @@ void XLinkPeptide::addLinkablePeptides(double min_mass, double max_mass,
   free_modified_peptides_iterator(peptide_iterator);
   //cerr <<"addLinkablePeptides(): done."<<endl;
 }
-
-void XLinkPeptide::cleanUp() {
-  //cerr<<"Freeing peptides"<<endl;
-  for (set<PEPTIDE_T*>::iterator iter = 
-	 allocated_peptides_.begin();
-       iter != allocated_peptides_.end();
-       ++iter) {
-    free_peptide(*iter);
-  }
-  allocated_peptides_.clear();
-  //cerr<<"Done freeing peptides"<<endl;
-}
-
 
 void XLinkPeptide::addCandidates(FLOAT_T precursor_mz, int charge,
 			    XLinkBondMap& bondmap,
