@@ -24,9 +24,6 @@ bool compareXCorr(MatchCandidate* mc1, MatchCandidate* mc2) {
 MatchCandidateVector::MatchCandidateVector() {
   charge_ = 0;
   scan_ = 0;
-  
-  include_self_loops=FALSE;
-  include_linear_peptides=FALSE;
 }
 
 MatchCandidateVector::MatchCandidateVector(MatchCandidateVector& vector) : std::vector<MatchCandidate*>() {
@@ -66,10 +63,9 @@ MatchCandidateVector::MatchCandidateVector(
   charge_ = charge;
   precursor_mz_ = precursor_mz;
 
-  include_linear_peptides=FALSE;
-  include_self_loops=FALSE;
+  include_linear_peptides=get_boolean_parameter("xlink-include-linears");
+  include_self_loops=get_boolean_parameter("xlink-include-selfloops");
 
-  //cerr<<"MatchCandidateVector(): Adding xlink candidates"<<endl;
     XLinkPeptide::addCandidates(precursor_mz, 
 				charge, 
 				bondmap,

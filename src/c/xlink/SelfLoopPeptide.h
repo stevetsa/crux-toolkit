@@ -14,11 +14,13 @@ class SelfLoopPeptide : public MatchCandidate {
  protected:
 
   XLinkablePeptide linked_peptide_;
-  std::vector<int> link_pos_;
+  std::vector<int> link_pos_idx_;
   
   BOOLEAN_T is_decoy_;
  public:
   
+  int getLinkPos(int link_idx);
+
   SelfLoopPeptide();
   SelfLoopPeptide(XLinkablePeptide& peptide,
 		  int posA, int posB);

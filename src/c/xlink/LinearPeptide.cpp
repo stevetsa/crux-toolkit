@@ -34,6 +34,8 @@ void LinearPeptide::addCandidates(FLOAT_T precursor_mz, int charge,
 			    MatchCandidateVector& candidates,
 			     BOOLEAN_T use_decoy_window) {
 
+  int max_missed_cleavages = get_int_parameter("max-missed-cleavages");
+
   FLOAT_T min_mass;
   FLOAT_T max_mass;
 
@@ -54,9 +56,16 @@ void LinearPeptide::addCandidates(FLOAT_T precursor_mz, int charge,
 
     while (modified_peptides_iterator_has_next(peptide_iterator)) {
       PEPTIDE_T* peptide = modified_peptides_iterator_next(peptide_iterator);
-      MatchCandidate* new_candidate = new LinearPeptide(peptide);
-      //cerr <<"Adding Linear Peptide:"<<new_candidate -> getSequenceString()<<" "<<new_candidate->getMass()<<endl;
-      candidates.add(new_candidate);
+
+      if (get_peptide_missed_cleavage_sites(peptide) <= max_missed_cleavages) {
+
+        MatchCandidate* new_candidate = new LinearPeptide(peptide);
+        //cerr <<"Adding Linear Peptide:"<<new_candidate -> getSequenceString()<<" "<<new_candidate->getMass()<<endl;
+        candidates.add(new_candidate);
+        XLink::addAllocatedPeptide(peptide);
+      } else {
+        free_peptide(peptide);
+      }
     }
     free_modified_peptides_iterator(peptide_iterator);
   }
@@ -87,7 +96,14 @@ FLOAT_T LinearPeptide::getMass() {
 }
 
 MatchCandidate* LinearPeptide::shuffle() {
-  LinearPeptide* decoy = new LinearPeptide(*this);
+
+  PEPTIDE_T* decoy_peptide = copy_peptide(peptide_);
+
+  transform_peptide_to_decoy(decoy_peptide);
+
+  XLink::addAllocatedPeptide(decoy_peptide);
+
+  LinearPeptide* decoy = new LinearPeptide(decoy_peptide);
 
   return (MatchCandidate*)decoy;
 }

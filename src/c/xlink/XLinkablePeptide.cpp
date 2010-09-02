@@ -52,7 +52,7 @@ void XLinkablePeptide::findLinkSites(
   for (int mod_idx = 0;mod_idx < total_mods; mod_idx++) {
     if (aa_mod_get_prevents_xlink(mod_list[mod_idx])) {
       prevents_xlink.push_back(mod_list[mod_idx]);
-    }
+   }
   }
 
   //scan through the sequence and find linkable sites.

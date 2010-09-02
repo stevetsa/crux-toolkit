@@ -81,10 +81,12 @@ int main(int argc, char** argv) {
 
   cout <<"creating peptide"<<endl;
 
-  if (string(peptideB) == "NULL") {
+  if (string(peptideB) == string("NULL")) {
     if (posA == -1 || posB == -1) {
+      cout<<"Creating linear peptide"<<endl;
       linked_peptide = new LinearPeptide(peptideA);
     } else {
+      cout<<"Creating selfloop peptide"<<endl;
       linked_peptide = new SelfLoopPeptide(peptideA, posA-1, posB-1);
     }
   } else {

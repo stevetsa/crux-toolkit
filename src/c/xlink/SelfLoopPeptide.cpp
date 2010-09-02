@@ -20,10 +20,11 @@ SelfLoopPeptide::SelfLoopPeptide(
   int posB) {
 
   linked_peptide_ = XLinkablePeptide(peptide);
-  link_pos_.push_back(posA);
-  link_pos_.push_back(posB);
+  linked_peptide_.addLinkSite(posA);
+  linked_peptide_.addLinkSite(posB);
 
-  sort(link_pos_.begin(), link_pos_.end());
+  link_pos_idx_.push_back(0);
+  link_pos_idx_.push_back(1);
 
 }
 
@@ -33,10 +34,8 @@ SelfLoopPeptide::SelfLoopPeptide(
   int posB) {
 
   linked_peptide_ = peptide;
-  link_pos_.push_back(posA);
-  link_pos_.push_back(posB);
-
-  sort(link_pos_.begin(), link_pos_.end());
+  link_pos_idx_.push_back(posA);
+  link_pos_idx_.push_back(posB);
   
 }
 
@@ -92,7 +91,7 @@ void SelfLoopPeptide::addCandidates(FLOAT_T precursor_mz, int charge,
 	  //create the candidate.
 	  //cerr<<"Adding new selfloop peptide"<<endl;
 	  MatchCandidate* new_candidate = 
-	    new SelfLoopPeptide(pep, link1_site, link2_site);
+	    new SelfLoopPeptide(pep, link1_idx, link2_idx);
 	  //cerr<<new_candidate -> getSequenceString()<<" " <<new_candidate -> getMass();
 	  //cerr<<" "<<min_mass<<" "<<max_mass<<endl;
 
@@ -103,20 +102,25 @@ void SelfLoopPeptide::addCandidates(FLOAT_T precursor_mz, int charge,
   }
 }
 
+
+int SelfLoopPeptide::getLinkPos(int link_idx) {
+  return linked_peptide_.getLinkSite(link_pos_idx_[link_idx]);
+}
+
 MATCHCANDIDATE_TYPE_T SelfLoopPeptide::getCandidateType() {
   return SELFLOOP_CANDIDATE;
 }
 
 string SelfLoopPeptide::getSequenceString() {
-  char* seq = get_peptide_modified_sequence_with_masses(linked_peptide_.getPeptide(), FALSE);
+  cerr<<"SelfLoopPeptide::getSequenceString(): start."<<endl;
+
+  string seq = linked_peptide_.getModifiedSequenceString();
   
   ostringstream oss;
-
-  oss << seq << " (" << (link_pos_[0]+1) << "," << (link_pos_[1]+1) << ")";
+  cerr<<"Creating string"<<endl;
+  oss << seq << " (" << (getLinkPos(0)+1) << "," << (getLinkPos(1)+1) << ")";
 
   string svalue = oss.str();
-
-  free(seq);
 
   return svalue;
 }
@@ -126,8 +130,11 @@ FLOAT_T SelfLoopPeptide::getMass() {
 }
 
 MatchCandidate* SelfLoopPeptide::shuffle() {
-  SelfLoopPeptide* decoy = new SelfLoopPeptide(*this);
+  SelfLoopPeptide* decoy = new SelfLoopPeptide();
 
+  decoy->linked_peptide_ = linked_peptide_.shuffle();
+  decoy->link_pos_idx_.push_back(link_pos_idx_[0]);
+  decoy->link_pos_idx_.push_back(link_pos_idx_[1]);
 
   return (MatchCandidate*)decoy;
 
@@ -135,14 +142,18 @@ MatchCandidate* SelfLoopPeptide::shuffle() {
 }
 
 void SelfLoopPeptide::predictIons(ION_SERIES_T* ion_series, int charge) {
-  char* seq = get_peptide_sequence(linked_peptide_.getPeptide());
-  MODIFIED_AA_T* mod_seq = get_peptide_modified_aa_sequence(linked_peptide_.getPeptide());
+  char* seq = linked_peptide_.getSequence();
+  MODIFIED_AA_T* mod_seq = linked_peptide_.getModifiedSequence();
   set_ion_series_charge(ion_series, charge);
   update_ion_series(ion_series, seq, mod_seq);
   predict_ions(ion_series);
-  free(seq);
+  
   free(mod_seq);
 
+  unsigned int first_site = min(getLinkPos(0), getLinkPos(1));
+  unsigned int second_site = max(getLinkPos(0), getLinkPos(1));
+  unsigned int N = strlen(seq);
+  free(seq);
 
   //iterate through the ions and modify the ones that have the linker 
   //attached.
@@ -151,45 +162,35 @@ void SelfLoopPeptide::predictIons(ION_SERIES_T* ion_series, int charge) {
     new_ion_iterator(ion_series);
 
   while(ion_iterator_has_next(ion_iter)) {
-    int start_idx=0;
-    int end_idx=0;
     ION_T* ion = ion_iterator_next(ion_iter);
 
     bool keep_ion = false;
     bool modify_ion = false;
-
-    switch(get_ion_type(ion)) {
-    case B_ION:
-      start_idx = 0;
-      end_idx = get_ion_cleavage_idx(ion)+1; 
-      if (link_pos_[0] == 0) {
-	if (end_idx >= link_pos_[1]) {
-	  keep_ion = true;
-	  modify_ion = true;
-	}
+    unsigned int cleavage_idx = get_ion_cleavage_idx(ion);
+   
+    if (is_forward_ion_type(ion)) {
+      if (cleavage_idx > first_site) {
+        if (cleavage_idx <= second_site) {
+          keep_ion = false;
+        } else {
+          keep_ion = true;
+          modify_ion = true;
+        }
+      } else {
+        keep_ion = true;
+        modify_ion = false;
       }
-      break;
-    case Y_ION:
-      start_idx = get_ion_cleavage_idx(ion);
-      end_idx = get_peptide_length(linked_peptide_.getPeptide());
-      if (link_pos_[1] == end_idx) {
-	if (start_idx <= link_pos_[0]) {
-	  keep_ion = true;
-	  modify_ion = true;
-	}
-      }
-    default:
-      keep_ion = false;
-      modify_ion = false;
-    }
-
-    if (!keep_ion) {
-      if (start_idx < link_pos_[0] && end_idx < link_pos_[0]) {
-	keep_ion = true;
-	modify_ion = false;
-      } else if (start_idx > link_pos_[1] && end_idx > link_pos_[1]) {
-	keep_ion = true;
-	modify_ion = false;
+    } else {
+      if (cleavage_idx >= (N-second_site)) {
+        if (cleavage_idx < (N-first_site)) {
+          keep_ion = false;
+        } else {
+          keep_ion = true;
+          modify_ion = true;
+        }
+      } else {
+        keep_ion = true;
+        modify_ion = false;
       }
     }
 
@@ -205,8 +206,6 @@ void SelfLoopPeptide::predictIons(ION_SERIES_T* ion_series, int charge) {
     } else {
       to_remove.push_back(ion);
     }
-
-
   }
 
   for (unsigned int idx=0;idx < to_remove.size();idx++) {
@@ -217,9 +216,37 @@ void SelfLoopPeptide::predictIons(ION_SERIES_T* ion_series, int charge) {
   free_ion_iterator(ion_iter);
 
 
-
 }
 
 string SelfLoopPeptide::getIonSequence(ION_T* ion) {
-  return get_ion_peptide_sequence(ion);
+  
+
+  string ion_sequence = get_ion_peptide_sequence(ion);
+
+  unsigned int cleavage_idx = get_ion_cleavage_idx(ion);
+
+  unsigned int first_site  = min(getLinkPos(0), getLinkPos(1));
+  unsigned int second_site = max(getLinkPos(0), getLinkPos(1));
+
+  bool is_linked = false;
+  if (is_forward_ion_type(ion)) {
+    is_linked = (cleavage_idx > first_site);
+  } else {
+    is_linked = (cleavage_idx >= (ion_sequence.length() - second_site));
+  }
+
+  string subseq;
+
+  //cerr<<"creating substring"<<endl;
+  if (is_forward_ion_type(ion)) {
+    subseq = ion_sequence.substr(0, cleavage_idx);
+  } else {
+    subseq = ion_sequence.substr(ion_sequence.length() - cleavage_idx, ion_sequence.length());
+  }
+
+  if (is_linked) {
+    return subseq + string("*");
+  } else {
+    return subseq;
+  }
 }
