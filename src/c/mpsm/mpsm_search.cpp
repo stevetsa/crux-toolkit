@@ -293,7 +293,7 @@ int mpsm_search_main(int argc, char** argv){
     for(decoy_idx = 0; decoy_idx < num_decoy_collections; decoy_idx++){
 
       MATCH_COLLECTION_T* decoy_psms = new_empty_match_collection(is_decoy);
-      decoy_collection_list.at(decoy_idx) = decoy_psms;
+      decoy_collection_list[decoy_idx] = decoy_psms;
 
       mpsm_search_pep_mods(decoy_psms, 
                       is_decoy,   
@@ -319,7 +319,7 @@ int mpsm_search_main(int argc, char** argv){
     mpsm_collections.push_back(spsm_targets);
     
     for (decoy_idx = 0; decoy_idx < num_decoy_collections; decoy_idx++) {
-      MPSM_MatchCollection spsm_decoy(decoy_collection_list.at(decoy_idx));
+      MPSM_MatchCollection spsm_decoy(decoy_collection_list[decoy_idx]);
       mpsm_collections.push_back(spsm_decoy);
     }
     
@@ -333,7 +333,7 @@ int mpsm_search_main(int argc, char** argv){
     
     //free_match_collection(target_psms);
     for(decoy_idx = 0; decoy_idx < num_decoy_collections; decoy_idx++){
-      decoy_collection_list.at(decoy_idx) = NULL;
+      decoy_collection_list[decoy_idx] = NULL;
     }
     //free the array.
     free(decoy_collection_list);
