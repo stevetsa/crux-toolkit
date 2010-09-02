@@ -963,6 +963,40 @@ FLOAT_T calc_peptide_mass(
   return peptide_mass + MASS_H2O_MONO;
 }
 
+FLOAT_T calc_modified_peptide_mass(
+  PEPTIDE_T* peptide, ///< the query peptide -in
+  MASS_TYPE_T mass_type ///< isotopic mass type (AVERAGE, MONO) -in
+  ) {
+
+  if (peptide->modified_seq == NULL) {
+    return calc_peptide_mass(peptide, mass_type);
+  }
+
+  AA_MOD_T** mod_list = NULL;
+  int total_mods = get_all_aa_mod_list(&mod_list);
+
+  FLOAT_T peptide_mass = 0;
+  for (int idx = 0; idx < get_peptide_length(peptide); idx++) {
+    MODIFIED_AA_T modified_aa = peptide->modified_seq[idx];
+    char aa = modified_aa_to_char(modified_aa);
+    peptide_mass += get_mass_amino_acid(aa, mass_type);
+
+    for (int mod_idx = 0;mod_idx < total_mods;mod_idx++) {
+      if ( is_aa_modified(modified_aa, mod_list[mod_idx])) {
+        peptide_mass += aa_mod_get_mass_change(mod_list[mod_idx]);
+      }
+    }
+  }
+
+  if (mass_type == AVERAGE) {
+    return peptide_mass + MASS_H2O_AVERAGE;
+  } else {
+    return peptide_mass + MASS_H2O_MONO;
+  }
+  
+}
+
+
 static FLOAT_T krokhin_index['Z'-'A'] = {
   0.8, 0.0, -0.8, -0.5, 0.0, 10.5, -0.9, -1.3, 8.4, 0.0, 
   -1.9, 9.6, 5.8, -1.2, 0.0, 0.2, -0.9, -1.3, -0.8, 0.4,

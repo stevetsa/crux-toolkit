@@ -43,10 +43,11 @@ class SelfLoopPeptide : public MatchCandidate {
 
   virtual MATCHCANDIDATE_TYPE_T getCandidateType();
   virtual std::string getSequenceString();
-  virtual FLOAT_T getMass();
+  virtual FLOAT_T calcMass(MASS_TYPE_T mass_type);
   virtual MatchCandidate* shuffle();
   virtual void predictIons(ION_SERIES_T* ion_series, int charge);
   std::string getIonSequence(ION_T* ion);
+  virtual PEPTIDE_T* getPeptide(int peptide_idx);
 };
 
 

@@ -14,13 +14,13 @@ using namespace std;
 FLOAT_T XLinkPeptide::linker_mass_;
 set<PEPTIDE_T*> XLinkPeptide::allocated_peptides_;
 
-XLinkPeptide::XLinkPeptide() {
+XLinkPeptide::XLinkPeptide() : MatchCandidate() {
 
 }
 
 XLinkPeptide::XLinkPeptide(XLinkablePeptide& peptideA,
 			   XLinkablePeptide& peptideB,
-			   int posA, int posB) {
+			   int posA, int posB) : MatchCandidate() {
   //cout<<"XLinkPeptide"<<endl;
   linked_peptides_.push_back(peptideA);
   linked_peptides_.push_back(peptideB);
@@ -30,7 +30,7 @@ XLinkPeptide::XLinkPeptide(XLinkablePeptide& peptideA,
 
 XLinkPeptide::XLinkPeptide(char* peptideA,
 			   char* peptideB,
-			   int posA, int posB) {
+			   int posA, int posB) : MatchCandidate() {
 
   //cout <<"Creating peptideA"<<endl;
   XLinkablePeptide A(peptideA);
@@ -311,9 +311,10 @@ string XLinkPeptide::getSequenceString() {
   return svalue;
 }
 
-FLOAT_T XLinkPeptide::getMass() {
-  return linked_peptides_[0].getMass() + linked_peptides_[1].getMass() + linker_mass_;
-
+FLOAT_T XLinkPeptide::calcMass(MASS_TYPE_T mass_type) {
+  return linked_peptides_[0].getMass(mass_type) + 
+    linked_peptides_[1].getMass(mass_type) + 
+    linker_mass_;
 }
 
 MatchCandidate* XLinkPeptide::shuffle() {
@@ -331,7 +332,7 @@ MatchCandidate* XLinkPeptide::shuffle() {
 
 void XLinkPeptide::predictIons(ION_SERIES_T* ion_series, int charge) {
   //cerr << "Inside predictIons"<<endl;
- 
+  MASS_TYPE_T fragment_mass_type = get_mass_type_parameter("fragment-mass"); 
   //cerr << "Predicting "<<getSequenceString()<<" +"<<charge<<endl;
   //predict the ion_series of the first peptide.
   char* seq1 = linked_peptides_[0].getSequence();
@@ -356,13 +357,13 @@ void XLinkPeptide::predictIons(ION_SERIES_T* ion_series, int charge) {
     if (is_forward_ion_type(ion)) {
       if (cleavage_idx > (unsigned int)getLinkPos(0)) {
 	FLOAT_T mass = get_ion_mass_from_mass_z(ion);
-	mass += linked_peptides_[1].getMass() + linker_mass_;
+	mass += linked_peptides_[1].getMass(fragment_mass_type) + linker_mass_;
 	set_ion_mass_z_from_mass(ion, mass);
       }
     } else {
       if (cleavage_idx >= (strlen(seq1) - (unsigned int)getLinkPos(0))) {
 	FLOAT_T mass = get_ion_mass_from_mass_z(ion);
-	mass += linked_peptides_[1].getMass() + linker_mass_;
+	mass += linked_peptides_[1].getMass(fragment_mass_type) + linker_mass_;
 	set_ion_mass_z_from_mass(ion, mass);
       }
     }
@@ -397,13 +398,13 @@ void XLinkPeptide::predictIons(ION_SERIES_T* ion_series, int charge) {
     if (is_forward_ion_type(ion)) {
       if (cleavage_idx > (unsigned int)getLinkPos(1)) {
 	FLOAT_T mass = get_ion_mass_from_mass_z(ion);
-	mass += linked_peptides_[0].getMass() + linker_mass_;
+	mass += linked_peptides_[0].getMass(fragment_mass_type) + linker_mass_;
 	set_ion_mass_z_from_mass(ion, mass);
       }
     } else {
       if (cleavage_idx >= (strlen(seq2)-(unsigned int)getLinkPos(1))) {
 	FLOAT_T mass = get_ion_mass_from_mass_z(ion);
-	mass += linked_peptides_[0].getMass() + linker_mass_;
+	mass += linked_peptides_[0].getMass(fragment_mass_type) + linker_mass_;
 	set_ion_mass_z_from_mass(ion, mass);
       }
     }
@@ -470,4 +471,8 @@ string XLinkPeptide::getIonSequence(ION_T* ion) {
     }
     return ans;
   }
+}
+
+PEPTIDE_T* XLinkPeptide::getPeptide(int peptide_idx) {
+  return linked_peptides_[peptide_idx].getPeptide();
 }

@@ -39,6 +39,7 @@ class XLinkablePeptide {
 
   PEPTIDE_T* getPeptide();
   FLOAT_T getMass() const;
+  FLOAT_T getMass(MASS_TYPE_T mass_type);
   char* getSequence();
   MODIFIED_AA_T* getModifiedSequence();
   //std::string getAASequence();

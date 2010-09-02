@@ -8,6 +8,17 @@
 
 using namespace std;
 
+MatchCandidate::MatchCandidate() {
+  parent_ = NULL;
+  xcorr_ = 0;
+  xcorr_rank_ = 0;
+  pvalue_= 1;
+  for (int idx = 0;idx < NUMBER_MASS_TYPES;idx++) {
+    mass_calculated_[idx] = FALSE;
+    mass_[idx] = 0;
+  }
+}
+
 MatchCandidate::~MatchCandidate() {
 
 }
@@ -28,6 +39,34 @@ FLOAT_T MatchCandidate::getXCorr() {
   return xcorr_;
 }
 
+string MatchCandidate::getProteinIdString(int peptide_idx) {
+  PEPTIDE_T* peptide = this -> getPeptide(peptide_idx);
+
+  if (peptide == NULL) {
+    return string("");
+  } else {
+    return XLink::get_protein_ids_locations(peptide);
+  }
+}
+
+
+FLOAT_T MatchCandidate::getMass(MASS_TYPE_T mass_type) {
+
+  if (!mass_calculated_[mass_type]) {
+    mass_[mass_type] = calcMass(mass_type);
+    mass_calculated_[mass_type] = TRUE;
+  }
+  return mass_[mass_type];
+}
+
+
+FLOAT_T MatchCandidate::getPPMError() {
+  FLOAT_T mono_mass = getMass(MONO);
+  
+  return (mono_mass - parent_->getSpectrumNeutralMass()) / mono_mass * 1e6;
+  
+}
+
 string MatchCandidate::getResultHeader() {
 
   ostringstream oss;
@@ -43,7 +82,8 @@ string MatchCandidate::getResultHeader() {
       << "p-value" << "\t"
       << "matches/spectrum" << "\t"
       << "sequence" << "\t"
-      << "protein id"<< "\t"
+      << "protein id(loc) 1"<< "\t"
+      << "protein id(loc) 2" << "\t"
       << "by total" << "\t"
       << "by observable (0-1200)" << "\t"
       << "by observable bin (0-1200)" << "\t"
@@ -66,15 +106,16 @@ std::string MatchCandidate::getResultString() {
      << parent_->getCharge() << "\t" //charge
      << parent_->getPrecursorMZ() << "\t" //precursor mz
      << parent_->getSpectrumNeutralMass() << "\t"
-     << this->getMass() << "\t"
-     << this->getMass() << "\t"
-     << "" /*this->getPPMError(parent_->getSpectrumNeutralMass())*/ << "\t"
+     << this->getMass(MONO) << "\t"
+     << this->getMass(AVERAGE) << "\t"
+     << this->getPPMError() << "\t"
      << xcorr_ << "\t" //xcorr score
      << ""/*xcorr_rank_*/ << "\t"
      << pvalue_ << "\t"
      << parent_->size() << "\t"
      << this->getSequenceString() << "\t"
-     << "" << "\t"   //protein id
+     << this->getProteinIdString(0) << "\t"   //protein id(loc) 1
+     << this->getProteinIdString(1) << "\t"   //protein id(loc) 2
      << "" << "\t"   // by total
      << "" << "\t"   // by observable (0-1200)
      << "" << "\t"   // by observable bin (0-1200)

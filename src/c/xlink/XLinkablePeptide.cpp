@@ -140,6 +140,15 @@ FLOAT_T XLinkablePeptide::getMass() const {
   }
 }
 
+FLOAT_T XLinkablePeptide::getMass(MASS_TYPE_T mass_type) {
+  if (peptide_ == NULL) {
+    return calc_sequence_mass(sequence_, mass_type);
+  } else {
+    return calc_modified_peptide_mass(peptide_, mass_type);
+  }
+}
+
+
 char* XLinkablePeptide::getSequence() {
   if (peptide_ == NULL) {
     return my_copy_string(sequence_);

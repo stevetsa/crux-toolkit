@@ -125,8 +125,8 @@ string SelfLoopPeptide::getSequenceString() {
   return svalue;
 }
 
-FLOAT_T SelfLoopPeptide::getMass() {
-  return linked_peptide_.getMass() + XLinkPeptide::getLinkerMass();
+FLOAT_T SelfLoopPeptide::calcMass(MASS_TYPE_T mass_type) {
+  return linked_peptide_.getMass(mass_type) + XLinkPeptide::getLinkerMass();
 }
 
 MatchCandidate* SelfLoopPeptide::shuffle() {
@@ -248,5 +248,13 @@ string SelfLoopPeptide::getIonSequence(ION_T* ion) {
     return subseq + string("*");
   } else {
     return subseq;
+  }
+}
+
+PEPTIDE_T* SelfLoopPeptide::getPeptide(int peptide_idx) {
+  if (peptide_idx == 0) {
+    return linked_peptide_.getPeptide();
+  } else {
+    return NULL;
   }
 }

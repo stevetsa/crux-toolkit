@@ -96,7 +96,7 @@ int main(int argc, char** argv) {
 
   cout << "Printing stuff"<<endl;
   cout << "precursor: " << linked_peptide -> getSequenceString() << endl;
-  cout << "mass:" << linked_peptide -> getMass()<<endl;;
+  cout << "mass:" << linked_peptide -> getMass(MONO)<<" "<< linked_peptide -> getMass(AVERAGE) <<endl;;
   cout << "charge:" << charge << endl;
   cout << "link mass:"<< linker_mass << endl;
   cout << "print_spectrum:"<< print_spectrum << endl;

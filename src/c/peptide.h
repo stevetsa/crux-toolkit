@@ -384,6 +384,14 @@ FLOAT_T calc_peptide_mass(
   );
 
 /**
+ * \returns The mass of the given peptide with modifications.
+ */
+FLOAT_T calc_modified_peptide_mass(
+  PEPTIDE_T* peptide, ///< the query peptide -in
+  MASS_TYPE_T mass_type ///< isotopic mass type (AVERAGE, MONO) -in
+  );
+
+/**
  * \returns The hydrophobicity of the given peptide, as in Krokhin (2004).
  */
 FLOAT_T calc_krokhin_hydrophobicity(

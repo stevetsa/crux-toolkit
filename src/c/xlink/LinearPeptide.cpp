@@ -87,11 +87,11 @@ string LinearPeptide::getSequenceString() {
   }
 }
 
-FLOAT_T LinearPeptide::getMass() {
+FLOAT_T LinearPeptide::calcMass(MASS_TYPE_T mass_type) {
   if (peptide_ == NULL) {
-    return calc_sequence_mass(sequence_,AVERAGE);
+    return calc_sequence_mass(sequence_,mass_type);
   } else {
-    return get_peptide_peptide_mass(peptide_);
+    return calc_modified_peptide_mass(peptide_, mass_type);
   }
 }
 
@@ -129,4 +129,12 @@ void LinearPeptide::predictIons(ION_SERIES_T* ion_series, int charge) {
 
 string LinearPeptide::getIonSequence(ION_T* ion) {
   return get_ion_peptide_sequence(ion);
+}
+
+PEPTIDE_T* LinearPeptide::getPeptide(int peptide_idx) {
+  if (peptide_idx == 0) {
+    return peptide_;
+  } else {
+    return NULL;
+  }
 }

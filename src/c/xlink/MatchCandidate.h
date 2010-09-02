@@ -24,19 +24,26 @@ class MatchCandidate {
   FLOAT_T xcorr_;
   int xcorr_rank_;
   FLOAT_T pvalue_;
+  bool mass_calculated_[NUMBER_MASS_TYPES];
+  FLOAT_T mass_[NUMBER_MASS_TYPES];
  public:
+  MatchCandidate();
 
   virtual ~MatchCandidate();
 
   virtual MATCHCANDIDATE_TYPE_T getCandidateType() = 0;
 
   virtual std::string getSequenceString() = 0;
-  virtual FLOAT_T getMass() = 0;
+  virtual FLOAT_T calcMass(MASS_TYPE_T mass_type) = 0;
+  
+  FLOAT_T getMass(MASS_TYPE_T mass_type);
 
   virtual MatchCandidate* shuffle() = 0;
 
   virtual void predictIons(ION_SERIES_T* ion_series, int charge)=0;
   virtual std::string getIonSequence(ION_T* ion)=0;
+  virtual PEPTIDE_T* getPeptide(int peptide_idx)=0;
+
 
   void computeWeibullPvalue(
     FLOAT_T shift,
@@ -49,7 +56,8 @@ class MatchCandidate {
 
   static std::string getResultHeader();
   std::string getResultString();
-
+  FLOAT_T getPPMError();
+  std::string getProteinIdString(int peptide_idx);
   void setParent(MatchCandidateVector* parent);
 
 
