@@ -4,6 +4,27 @@
 
 using namespace std;
 
+
+void MPSM_ChargeMap::insert(ChargeIndex& charge_index) {
+  MPSM_ChargeMap:: iterator cur_iter;
+  
+  cur_iter = find(charge_index);
+
+  if (cur_iter == end()) {
+    vector<MPSM_MatchCollection> match_collections;
+    (*this)[charge_index] = match_collections;
+  }
+
+  vector<MPSM_MatchCollection>& match_collections = at(charge_index);
+
+  while (match_collections.size() < 3) {
+    MPSM_MatchCollection new_collection;
+    match_collections.push_back(new_collection);
+  }
+  
+
+}
+
 //assume that this is one charge.
 void MPSM_ChargeMap::insert(vector<MPSM_MatchCollection>& match_collection) {
 

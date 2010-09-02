@@ -39,6 +39,13 @@ void ChargeIndex::add(unsigned char charge) {
   sort(begin(), end());
 }
 
+void ChargeIndex::add(ChargeIndex& charges) {
+  for (int idx = 0;idx< charges.size();idx++) {
+    push_back(charges[idx]);
+  }
+  sort(begin(), end());
+}
+
 unsigned char ChargeIndex::max() {
   return back();
 }

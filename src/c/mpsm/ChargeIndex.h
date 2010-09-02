@@ -13,6 +13,7 @@ public:
   ChargeIndex(std::string& charges, char delimiter=',');
 
   void add(unsigned char charge);
+  void add(ChargeIndex& charges);
 
   unsigned char max();
 

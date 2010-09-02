@@ -222,26 +222,30 @@ int mpsm_search_main(int argc, char** argv){
         //spsm_map.calcDeltaCN();
         //spsm_map.calcZScores();
         //spsm_map.sortMatches(XCORR);
+        cerr<<"Calculating delta cn"<<endl;
         mpsm_map.calcDeltaCN();
+        cerr<<"Calculating zscores"<<endl;
         mpsm_map.calcZScores();
+        cerr<<"Sorting by XCORR"<<endl;
         mpsm_map.sortMatches(XCORR);
       }
       //print out map
       //output the spsms.
       //output_files.writeMatches(spsm_map);
-      carp(CARP_INFO, "writing matches");
+      cerr<< "writing matches";
       output_files.writeMatches(mpsm_map);
-
+      cerr<<"Clear map"<<endl;
       //clear map and clean up match collections.
       mpsm_map.clearMap();
 
+      cerr<<"Deleting spsm matches"<<endl;
       for (MPSM_ChargeMap::iterator iter = spsm_map.begin();
         iter != spsm_map.end();
         ++iter) {
 
         vector<MPSM_MatchCollection>& spsm_match_collections = iter -> second;
         for (int idx = 0;idx < spsm_match_collections.size();idx++) {
-          spsm_match_collections[idx].free();
+          spsm_match_collections.at(idx).free();
         }
       }
 
@@ -289,7 +293,7 @@ int mpsm_search_main(int argc, char** argv){
     for(decoy_idx = 0; decoy_idx < num_decoy_collections; decoy_idx++){
 
       MATCH_COLLECTION_T* decoy_psms = new_empty_match_collection(is_decoy);
-      decoy_collection_list[decoy_idx] = decoy_psms;
+      decoy_collection_list.at(decoy_idx) = decoy_psms;
 
       mpsm_search_pep_mods(decoy_psms, 
                       is_decoy,   
@@ -315,7 +319,7 @@ int mpsm_search_main(int argc, char** argv){
     mpsm_collections.push_back(spsm_targets);
     
     for (decoy_idx = 0; decoy_idx < num_decoy_collections; decoy_idx++) {
-      MPSM_MatchCollection spsm_decoy(decoy_collection_list[decoy_idx]);
+      MPSM_MatchCollection spsm_decoy(decoy_collection_list.at(decoy_idx));
       mpsm_collections.push_back(spsm_decoy);
     }
     
@@ -329,7 +333,7 @@ int mpsm_search_main(int argc, char** argv){
     
     //free_match_collection(target_psms);
     for(decoy_idx = 0; decoy_idx < num_decoy_collections; decoy_idx++){
-      decoy_collection_list[decoy_idx] = NULL;
+      decoy_collection_list.at(decoy_idx) = NULL;
     }
     //free the array.
     free(decoy_collection_list);
@@ -357,7 +361,7 @@ int mpsm_search_main(int argc, char** argv){
     
     vector<MPSM_MatchCollection>& spsm_match_collections = iter -> second;
     for (int idx = 0;idx < spsm_match_collections.size();idx++) {
-      spsm_match_collections[idx].free();
+      spsm_match_collections.at(idx).free();
     }
   }
 
@@ -625,19 +629,19 @@ bool passRTimeThreshold(MPSM_Match& match,
     ChargeIndex& charge_index = match.getChargeIndex();
 
     double fdiff = fabs(rtime_max_diff);
-
+    bool ans = false;
     //all +2
     if (charge_index.numCharge(2) == match.numMatches()) {
       //cerr <<"Done. All +2"<<endl;
-      return fdiff <= 8.4;
+      ans = fdiff <= 8.4;
     } else if (charge_index.numCharge(3) == match.numMatches()) {
       //cerr <<"Done .All +3"<<endl;
-      return fdiff <= 14.1;
+      ans = fdiff <= 14.1;
     } else {
       //cerr <<"Done. Mixture"<<endl;
-      return fdiff <= 14.7;
+      ans = fdiff <= 14.7;
     }
-    
+    return ans;
   } else {
     return true;
   }
@@ -658,7 +662,7 @@ BOOLEAN_T extendMatch(MPSM_Match& orig_mpsm,
   if (rtime_predictor == NULL) {
     rtime_predictor = RetentionPredictor::createRetentionPredictor();
   }
-  set<string>& visited_here = visited[match_collection_idx];
+  set<string>& visited_here = visited.at(match_collection_idx);
 
   for (int idx=0;idx < spsm_matches.numMatches(); idx++) {
     MPSM_Match new_match(orig_mpsm);
@@ -728,7 +732,7 @@ BOOLEAN_T extendChargeMap(MPSM_ChargeMap& spsm_map,
 
     //start with targets.
     //Take the top candidate and consider matching it with every one else.
-    MPSM_MatchCollection& target_collection = match_collections[0];
+    MPSM_MatchCollection& target_collection = match_collections.at(0);
     
     if (get_boolean_parameter("mpsm-do-sort")) {
       target_collection.sortByScore(XCORR);
@@ -752,15 +756,21 @@ BOOLEAN_T extendChargeMap(MPSM_ChargeMap& spsm_map,
 
         ChargeIndex spsm_charge_index = map_iter2 -> first;
 
+        ChargeIndex new_charge_index(charge_index);
+        new_charge_index.add(spsm_charge_index);
+        cerr<<"Finding matches for:"<<new_charge_index<<endl;
+
+        current_mpsm_map.insert(new_charge_index);
+
         vector<MPSM_MatchCollection>& spsm_match_collections = map_iter2 -> second;
-        MPSM_MatchCollection& spsm_target_match_collection = spsm_match_collections[0];
+        MPSM_MatchCollection& spsm_target_match_collection = spsm_match_collections.at(0);
       
         BOOLEAN_T matches_added = extendMatch(current_mpsm_target, 
           spsm_target_match_collection, 
           current_mpsm_map,
           visited,
           0);
-
+        cerr<<"Extending Target:"<<matches_added<<endl;
          //if there are some matches found, then search the decoys.
   
         if (!matches_added) {
@@ -770,29 +780,45 @@ BOOLEAN_T extendChargeMap(MPSM_ChargeMap& spsm_map,
         for (int idx=0;idx < match_collections.size()-1;idx++) {
 
           if (get_boolean_parameter("mpsm-do-sort")) {
-            match_collections[idx+1].sortByScore(XCORR);
+            match_collections.at(idx+1).sortByScore(XCORR);
           }
         }
       
         for (int decoy_idx=1;decoy_idx < spsm_match_collections.size();decoy_idx++) {
-        
-          //target-decoy
-          MPSM_MatchCollection& spsm_decoy_match_collection = spsm_match_collections[decoy_idx];
+          MPSM_MatchCollection& spsm_decoy_match_collection = spsm_match_collections.at(decoy_idx);
           if (get_boolean_parameter("mpsm-do-sort")) {
             spsm_decoy_match_collection.sortByScore(XCORR);
           }  
-          extendMatch(current_mpsm_target,
-            spsm_decoy_match_collection,
-            current_mpsm_map,
-            visited,
-            decoy_idx);
+          if (get_boolean_parameter("mpsm-decoy-decoy")) {
+            //decoy-decoy
+            MPSM_MatchCollection& current_decoy_collection = match_collections.at(decoy_idx);
+            MPSM_Match& current_mpsm_decoy = current_decoy_collection.getMatch(current_index);
+
+            matches_added = extendMatch(current_mpsm_decoy,
+              spsm_decoy_match_collection,
+              current_mpsm_map,
+              visited,
+              decoy_idx);
+            cerr<<"Extending decoy("<<decoy_idx<<":"<<matches_added<<endl;
+
+          } else {
+            //target-decoy
+            
+            extendMatch(current_mpsm_target,
+              spsm_decoy_match_collection,
+              current_mpsm_map,
+              visited,
+              decoy_idx);
+          }
        
         } /* for (decoy_idx)*/
       } /* map_iter2++ */
     } /* current_index++ */
   } /* map_iter++ */
-  if (get_boolean_parameter("mpsm-do-sort"))
+  if (get_boolean_parameter("mpsm-do-sort")) {
+    cerr<<"Done extending (sorting)"<<endl;
     current_mpsm_map.sortMatches(XCORR);
+  }
 }
 
 
@@ -818,5 +844,6 @@ void search_for_mpsms(MPSM_ChargeMap& charge_spsm_map,
     if (!added)
       break;
   }
+  cerr<<"Done searching for mpsms for this scan.."<<endl;
 }
 

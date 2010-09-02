@@ -911,7 +911,12 @@ void initialize_parameters(void){
       "Available for crux search-for-xlinks", "true");
 
   /* mpsm options */
-    
+  
+  set_boolean_parameter("mpsm-decoy-decoy", FALSE,
+    "",
+    "", 
+    "true");
+   
   set_int_parameter("mpsm-max-peptides", 2, 1, 10,
       "maximum number of peptides to consider (1-10). Default 1.",
       "Available for crux search-for-mpsms ",
