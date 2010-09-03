@@ -127,18 +127,15 @@ int xlink_search_main(int argc, char** argv) {
   int search_count = 0;
   // for every observed spectrum 
   while (filtered_spectrum_charge_iterator_has_next(spectrum_iterator)) {
-    //cerr<<"Getting next spectrum"<<endl;
+
     spectrum = filtered_spectrum_charge_iterator_next(spectrum_iterator, &charge);
-    //SCORER_T* scorer = new_scorer(XCORR);
     scan_num = get_spectrum_first_scan(spectrum);
 
-    if (search_count % 1 == 0)
+    if (search_count % 10 == 0)
       carp(CARP_INFO,"count %d scan %d charge %d", search_count, scan_num, charge);
     search_count++;
 
     FLOAT_T precursor_mz = get_spectrum_precursor_mz(spectrum);
-    //FLOAT_T precursor_mass = get_spectrum_neutral_mass(spectrum, charge); 
- 
     
     MatchCandidateVector target_candidates(precursor_mz, 
 					   charge, 
@@ -151,15 +148,11 @@ int xlink_search_main(int argc, char** argv) {
 
     target_candidates.setScan(get_spectrum_first_scan(spectrum));
 
-
     if (target_candidates.size() < 1) {
       carp(CARP_INFO, "not enough precursors found in range, skipping scan %d charge %d", scan_num, charge);
       continue;
     }
-
-    //cerr <<"Found "<<target_candidates.size()<<" targets"<<endl;
     
-
     MatchCandidateVector decoy_candidates;
     target_candidates.shuffle(decoy_candidates);
 
@@ -172,17 +165,17 @@ int xlink_search_main(int argc, char** argv) {
 						 num_peptide_mods,
 						 TRUE);
    
-    //cerr<<"Have "<<train_target_candidates.size()<<" target training candidates"<<endl;
     MatchCandidateVector train_candidates(train_target_candidates);
     //get enough weibull training candidates by shuffling.
-    cerr<<"Shuffling "<<train_candidates.size()<<":"<<min_weibull_points<<endl;
+    carp(CARP_DEBUG,"Shuffling %d:%d", train_candidates.size(), min_weibull_points);
     
     while(train_candidates.size() < min_weibull_points) {
       train_target_candidates.shuffle(train_candidates);
     }
-    cerr<<"Have "<<target_candidates.size()<<" target candidates"<<endl;
-    cerr<<"Have "<<decoy_candidates.size()<<" decoy candidates"<<endl;
-    cerr<<"Have "<<train_candidates.size()<<" training candidates"<<endl;
+    carp(CARP_DEBUG, "Have %d target candidates", target_candidates.size());
+    carp(CARP_DEBUG, "Have %d decoy candidates", decoy_candidates.size());
+    carp(CARP_DEBUG, "Have %d training candidates", train_candidates.size());
+
 
     target_candidates.scoreSpectrum(spectrum);
     decoy_candidates.scoreSpectrum(spectrum);
@@ -226,7 +219,7 @@ int xlink_search_main(int argc, char** argv) {
   //carp(CARP_INFO,"Done freeing spectrum collection");
 
   //Calculate q-values.
-  carp(CARP_INFO,"Computing Q-Values");
+  carp(CARP_DEBUG, "Computing Q-Values");
   xlink_compute_qvalues();
 
   carp(CARP_INFO, "Elapsed time: %.3g s", wall_clock() / 1e6);

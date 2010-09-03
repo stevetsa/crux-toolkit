@@ -196,7 +196,7 @@ void XLinkPeptide::addCandidates(FLOAT_T precursor_mz, int charge,
     int this_aa_mods = peptide_mod_get_num_aa_mods(peptide_mod);
     
     if( this_aa_mods > cur_aa_mods ){
-      carp(CARP_INFO, "Finished searching %i mods", cur_aa_mods);
+      carp(CARP_DEBUG, "Finished searching %i mods", cur_aa_mods);
       /*
 	TODO - do we need this?
       BOOLEAN_T passes = is_search_complete(match_collection, cur_aa_mods);
@@ -216,7 +216,7 @@ void XLinkPeptide::addCandidates(FLOAT_T precursor_mz, int charge,
   }//next peptide mod
 
   if (linkable_peptides.size() == 0) {
-    carp(CARP_INFO, "No linkable peptides found!");
+    carp(CARP_DEBUG, "No linkable peptides found!");
     return;
   }
 

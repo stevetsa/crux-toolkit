@@ -112,14 +112,10 @@ MATCHCANDIDATE_TYPE_T SelfLoopPeptide::getCandidateType() {
 }
 
 string SelfLoopPeptide::getSequenceString() {
-  cerr<<"SelfLoopPeptide::getSequenceString(): start."<<endl;
 
   string seq = linked_peptide_.getModifiedSequenceString();
-  
   ostringstream oss;
-  cerr<<"Creating string"<<endl;
   oss << seq << " (" << (getLinkPos(0)+1) << "," << (getLinkPos(1)+1) << ")";
-
   string svalue = oss.str();
 
   return svalue;
