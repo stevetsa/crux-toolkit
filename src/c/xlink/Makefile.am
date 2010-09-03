@@ -17,14 +17,23 @@ libxlink_la_SOURCES = \
   xhhc_scorer.h \
   xhhc_search.cpp \
   LinearPeptide.cpp \
+  LinearPeptide.h \
   MatchCandidate.cpp \
+  MatchCandidate.h \
   MatchCandidateVector.cpp \
+  MatchCandidateVector.h \
   SelfLoopPeptide.cpp \
+  SelfLoopPeptide.h \
   XLink.cpp \
+  XLink.h \
   XLinkBondMap.cpp \
+  XLinkBondMap.h \
   XLinkPeptide.cpp \
+  XLinkPeptide.h \
   XLinkablePeptide.cpp \
+  XLinkablePeptide.h \
   XLinkScorer.cpp \
+  XLinkScorer.h \
   xlink_search.cpp \
   xlink_assign_ions.cpp \
   xlink_compute_qvalues.cpp

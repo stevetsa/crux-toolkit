@@ -131,7 +131,7 @@ int xlink_search_main(int argc, char** argv) {
     spectrum = filtered_spectrum_charge_iterator_next(spectrum_iterator, &charge);
     scan_num = get_spectrum_first_scan(spectrum);
 
-    if (search_count % 1 == 0)
+    if (search_count % 10 == 0)
       carp(CARP_INFO,"count %d scan %d charge %d", search_count, scan_num, charge);
     search_count++;
 
