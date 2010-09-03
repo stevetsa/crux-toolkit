@@ -56,14 +56,13 @@ void LinearPeptide::addCandidates(FLOAT_T precursor_mz, int charge,
 
     while (modified_peptides_iterator_has_next(peptide_iterator)) {
       PEPTIDE_T* peptide = modified_peptides_iterator_next(peptide_iterator);
-
-      if (get_peptide_missed_cleavage_sites(peptide) <= max_missed_cleavages) {
-
-        MatchCandidate* new_candidate = new LinearPeptide(peptide);
+      MatchCandidate* new_candidate = new LinearPeptide(peptide);
+      if (new_candidate->getNumMissedCleavages() <= max_missed_cleavages) {
         //cerr <<"Adding Linear Peptide:"<<new_candidate -> getSequenceString()<<" "<<new_candidate->getMass()<<endl;
         candidates.add(new_candidate);
         XLink::addAllocatedPeptide(peptide);
       } else {
+        delete new_candidate;
         free_peptide(peptide);
       }
     }
@@ -137,4 +136,9 @@ PEPTIDE_T* LinearPeptide::getPeptide(int peptide_idx) {
   } else {
     return NULL;
   }
+}
+
+int LinearPeptide::getNumMissedCleavages() {
+  set<int> skip;
+  return get_peptide_missed_cleavage_sites(peptide_, skip);
 }

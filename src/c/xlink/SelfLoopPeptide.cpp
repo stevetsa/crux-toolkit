@@ -50,6 +50,8 @@ void SelfLoopPeptide::addCandidates(FLOAT_T precursor_mz, int charge,
   MatchCandidateVector& candidates,
   BOOLEAN_T use_decoy_window) {
 
+  int max_missed_cleavages = get_int_parameter("max-missed-cleavages");
+
   FLOAT_T min_mass,max_mass;
 
   get_min_max_mass(precursor_mz, 
@@ -92,10 +94,12 @@ void SelfLoopPeptide::addCandidates(FLOAT_T precursor_mz, int charge,
 	  //cerr<<"Adding new selfloop peptide"<<endl;
 	  MatchCandidate* new_candidate = 
 	    new SelfLoopPeptide(pep, link1_idx, link2_idx);
-	  //cerr<<new_candidate -> getSequenceString()<<" " <<new_candidate -> getMass();
-	  //cerr<<" "<<min_mass<<" "<<max_mass<<endl;
 
-	  candidates.add(new_candidate);
+          if (new_candidate->getNumMissedCleavages() <= max_missed_cleavages) {
+            candidates.add(new_candidate);
+          } else {
+            delete new_candidate;
+          }
 	}
       }
     }
@@ -253,4 +257,28 @@ PEPTIDE_T* SelfLoopPeptide::getPeptide(int peptide_idx) {
   } else {
     return NULL;
   }
+}
+
+int SelfLoopPeptide::getNumMissedCleavages() {
+  char missed_cleavage_link_site = 'K';
+
+  int link1_site = getLinkPos(0);
+  int link2_site = getLinkPos(1);
+
+  set<int> skip;
+
+  PEPTIDE_T* pep = linked_peptide_.getPeptide();
+
+  char* seq = get_peptide_sequence_pointer(pep);
+
+  if (seq[link1_site] == missed_cleavage_link_site) {
+    skip.insert(link1_site);
+  }
+
+  if (seq[link2_site] == missed_cleavage_link_site) {
+    skip.insert(link2_site);
+  }
+
+  return get_peptide_missed_cleavage_sites(pep, skip);
+
 }

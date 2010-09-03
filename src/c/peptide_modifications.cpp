@@ -267,8 +267,9 @@ BOOLEAN_T is_sequence_position_modifiable(
   if(is_aa_modifiable(char_aa_to_modified(sequence[position]), mod)) {
 
     if (aa_mod_get_prevents_cleavage(mod)) {
-      //make sure that position is not the beginning or end.
-      if (position == 0 || sequence[position+1] == '\0') {
+      //TODO make this correct.
+      //make sure that position is not a cleavage point at the end.
+      if (sequence[position+1] == '\0') {
         return FALSE;
       } else {
         return TRUE;

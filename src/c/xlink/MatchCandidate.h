@@ -54,6 +54,8 @@ class MatchCandidate {
   void setXCorr(FLOAT_T xcorr);
   FLOAT_T getXCorr();
 
+  virtual int getNumMissedCleavages() = 0;
+
   static std::string getResultHeader();
   std::string getResultString();
   FLOAT_T getPPMError();

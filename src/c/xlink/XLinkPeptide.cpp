@@ -126,8 +126,6 @@ void XLinkPeptide::addLinkablePeptides(double min_mass, double max_mass,
 			 PEPTIDE_MOD_T* peptide_mod, BOOLEAN_T is_decoy, 
 			 XLinkBondMap& bondmap, 
 			 vector<XLinkablePeptide>& linkable_peptides) {
-  
-  int max_missed_cleavages=get_int_parameter("max-missed-cleavages");
 
   //cerr <<"addLinkablePeptides(): start"<<endl;
   MODIFIED_PEPTIDES_ITERATOR_T* peptide_iterator =
@@ -141,22 +139,18 @@ void XLinkPeptide::addLinkablePeptides(double min_mass, double max_mass,
 
   while (modified_peptides_iterator_has_next(peptide_iterator)) {
     PEPTIDE_T* peptide = modified_peptides_iterator_next(peptide_iterator);
-    if (get_peptide_missed_cleavage_sites(peptide) <= max_missed_cleavages) {
-      
-      vector<int> link_sites;
-      XLinkablePeptide::findLinkSites(peptide, bondmap, link_sites);
+    vector<int> link_sites;
+    XLinkablePeptide::findLinkSites(peptide, bondmap, link_sites);
 
-      if (link_sites.size() > 0) {
-        XLinkablePeptide xlinkable_peptide(peptide, link_sites);
-        linkable_peptides.push_back(xlinkable_peptide);
-        XLink::addAllocatedPeptide(peptide);
-      } else {
-        free_peptide(peptide);
-      }
+    if (link_sites.size() > 0) {
+      XLinkablePeptide xlinkable_peptide(peptide, link_sites);
+      linkable_peptides.push_back(xlinkable_peptide);
+      XLink::addAllocatedPeptide(peptide);
     } else {
       free_peptide(peptide);
     }
   }
+  
   free_modified_peptides_iterator(peptide_iterator);
   //cerr <<"addLinkablePeptides(): done."<<endl;
 }
@@ -172,7 +166,7 @@ void XLinkPeptide::addCandidates(FLOAT_T precursor_mz, int charge,
   //get all linkable peptides up to mass-linkermass.
 
   //cerr <<"XLinkPeptide::addCandidates() : start."<<endl;
-
+  int max_missed_cleavages = get_int_parameter("max-missed-cleavages");
   vector<XLinkablePeptide> linkable_peptides;
 
   //find max, min mass.
@@ -275,7 +269,11 @@ void XLinkPeptide::addCandidates(FLOAT_T precursor_mz, int charge,
 	    //create the candidate
 	    MatchCandidate* newCandidate = 
 	      new XLinkPeptide(pep1, pep2, link1_idx, link2_idx);
-	    candidates.add(newCandidate);
+            if (newCandidate->getNumMissedCleavages() <= max_missed_cleavages) {
+              candidates.add(newCandidate);
+            } else {
+              delete newCandidate;
+            }
 	    //cerr<<"Adding candidate:"<<newCandidate -> getSequenceString()<<
 	    //	" "<<newCandidate->getMass()<<" "<<min_mass<<" "<<max_mass<<endl;
 	  }
@@ -475,4 +473,40 @@ string XLinkPeptide::getIonSequence(ION_T* ion) {
 
 PEPTIDE_T* XLinkPeptide::getPeptide(int peptide_idx) {
   return linked_peptides_[peptide_idx].getPeptide();
+}
+
+int XLinkPeptide::getNumMissedCleavages() {
+
+  char missed_cleavage_link_site = 'K';
+  set<int> skip;
+
+  int link1_site = getLinkPos(0);
+  int link2_site = getLinkPos(1);
+  
+  PEPTIDE_T* pep1 = linked_peptides_[0].getPeptide();
+  PEPTIDE_T* pep2 = linked_peptides_[1].getPeptide();
+  
+  char *seq1 = get_peptide_sequence_pointer(pep1);
+  char *seq2 = get_peptide_sequence_pointer(pep2);
+
+  if (seq1[link1_site] == missed_cleavage_link_site) {
+    skip.insert(link1_site);
+  }
+
+  int missed1 = get_peptide_missed_cleavage_sites(pep1, skip);
+  
+  skip.clear();
+
+  if (seq2[link2_site] == missed_cleavage_link_site) {
+    skip.insert(link2_site);
+  }
+  
+  int missed2 = get_peptide_missed_cleavage_sites(pep2, skip);
+
+  //cerr<<getSequenceString()<<" "<<missed1<<" "<<missed2<<endl;
+
+  return max(missed1, missed2);
+
+
+
 }

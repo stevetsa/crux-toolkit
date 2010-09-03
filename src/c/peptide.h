@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <set>
 
 #include "utils.h"
 #include "crux-utils.h"
@@ -405,6 +406,11 @@ FLOAT_T calc_krokhin_hydrophobicity(
  */
 int get_peptide_missed_cleavage_sites(
   PEPTIDE_T* peptide  ///< the peptide to query -in
+);
+
+int get_peptide_missed_cleavage_sites(
+  PEPTIDE_T* peptide, ///< the peptide to query -in
+  std::set<int> skip //skip these amino acid indices.
 );
 
 /**
