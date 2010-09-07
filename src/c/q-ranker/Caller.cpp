@@ -427,17 +427,17 @@ void Caller::train() {
 void Caller::fillFeatureSets() {
 
     if(shuffled2_present)
-      Scores::fillFeaturesSplit(trainset,testset,normal,shuffled,shuffled1,shuffled2,trainRatio);
+      Scores::fillFeaturesSplit(trainset_,testset_,normal,shuffled,shuffled1,shuffled2,trainRatio);
     else if( shuffled1_present) {
       if (do_max_psm) {
         cerr <<"Calling fillFeaturesSplitPSM"<<endl;
-        Scores::fillFeaturesSplitPSM(trainset,testset,normal,shuffled,shuffled1,trainRatio);
+        Scores::fillFeaturesSplitPSM(trainset_,testset_,normal,shuffled,shuffled1,trainRatio);
       } 
       else
-        Scores::fillFeaturesSplit(trainset,testset,normal,shuffled,shuffled1,trainRatio);
+        Scores::fillFeaturesSplit(trainset_,testset_,normal,shuffled,shuffled1,trainRatio);
     }
     else
-    Scores::fillFeaturesSplit(trainset,testset,normal,shuffled,trainRatio);     
+    Scores::fillFeaturesSplit(trainset_,testset_,normal,shuffled,trainRatio);     
   thresholdset=trainset;
   
   fullset.fillFeatures(normal,shuffled);

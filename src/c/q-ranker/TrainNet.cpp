@@ -501,11 +501,11 @@ void Caller::train_many_nets()
 {
   int max_pos = 0;
   int full_max_pos = 0;
-  train_many_nets(trainset, testset, trainset_xv_train, trainset_xv_test, max_pos);
+  train_many_nets(trainset_, testset_, trainset_xv_train, trainset_xv_test, max_pos);
   full_max_pos = max_pos;
   
   if (do_pvalue) {
-    train_many_nets(testset, trainset, testset_xv_train, testset_xv_test, max_pos);
+    train_many_nets(testset_, trainset_, testset_xv_train, testset_xv_test, max_pos);
     full_max_pos += max_pos;
     fullset.calcQValues(full_max_pos);
   } else {

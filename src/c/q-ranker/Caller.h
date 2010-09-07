@@ -136,8 +136,8 @@ protected:
 
 
 
-    Scores trainset,testset,thresholdset;
-    int trainNN;
+    Scores trainset_,testset_,thresholdset_;
+    int trainNN; 
     int splitPositives;
 
     NeuralNet net;
