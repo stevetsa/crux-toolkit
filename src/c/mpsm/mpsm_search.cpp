@@ -663,8 +663,16 @@ BOOLEAN_T extendMatch(MPSM_Match& orig_mpsm,
     rtime_predictor = RetentionPredictor::createRetentionPredictor();
   }
   set<string>& visited_here = visited.at(match_collection_idx);
+  int n = spsm_matches.numMatches();
 
-  for (int idx=0;idx < spsm_matches.numMatches(); idx++) {
+  if (get_boolean_parameter("mpsm-search-old-way")) {
+    int top_n = get_int_parameter("mpsm-top-n");
+    if (top_n != -1) {
+      n = min(spsm_matches.numMatches(), top_n);
+    }
+  }
+
+  for (int idx=0;idx < n; idx++) {
     MPSM_Match new_match(orig_mpsm);
     if (new_match.addMatch(spsm_matches.getMatch(idx).getMatch(0))) {
 

@@ -75,12 +75,13 @@ public:
     inline unsigned int negSize() {return (neg);} 
     static double pi0; 
     double factor;
-
+ 
     int calcOverFDR(double fdr, bool do_max_psm=false);
     void calcQValues();
     void calcMultiOverFDR(vector<double> &fdr, vector<int> &overFDR, bool do_sort);
     inline ScoreHolder& operator[](int ix){return scores[ix];}
     void static fillFeaturesSplit(Scores& train,Scores& test,SetHandler& norm,SetHandler& shuff, const double ratio);
+    void static fillFeaturesSplitPSM(Scores& train,Scores& test,SetHandler& norm,SetHandler& shuff, const double ratio);
     void static fillFeaturesSplit(Scores& train,Scores& test,SetHandler& norm,SetHandler& shuff, SetHandler& shuff1, const double ratio);
     void static fillFeaturesSplitPSM(Scores& train,Scores& test,SetHandler& norm,SetHandler& shuff,SetHandler& shuff1, const double ratio);
 

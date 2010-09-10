@@ -77,17 +77,8 @@ void Caller :: getMultiFDR(Scores &set, NeuralNet &n, vector<double> &qvalues, b
   loss = 0;
  
   if (do_classify) {
-    for(unsigned int i = 0; i < set.size(); i++)
-      {
-        featVec = set[i].pPSM->features;
-        label = set[i].label;
-        r = n.classify(featVec);
-        set[i].score = r;
-        loss += n.get_err(label);
-       }
+    calcScores(set, n);
   }
-
-
 
   for(unsigned int ct = 0; ct < qvalues.size(); ct++)
     overFDRmulti[ct] = 0;
@@ -119,8 +110,8 @@ void Caller :: write_max_nets(string filename, NeuralNet* max_net)
   for(int count = 0; count < num_qvals; count++)
     {
       net = max_net[count];
-      int r = getOverFDR(testset,net, qvals[count]);
-      int r1 = getOverFDR(trainset,net, qvals[count]);
+      int r = getOverFDR(testset_,net, qvals[count]);
+      int r1 = getOverFDR(trainset_,net, qvals[count]);
       f1 << qvals[count] << " " << r1 << " " << r << "\n";
       
       double qn;
@@ -128,8 +119,8 @@ void Caller :: write_max_nets(string filename, NeuralNet* max_net)
 	qn = 0.0012;
       else
 	qn = 0.005;
-      r = getOverFDR(testset,net, qvals[count]+qn);
-      r1 = getOverFDR(trainset,net, qvals[count]+qn);
+      r = getOverFDR(testset_,net, qvals[count]+qn);
+      r1 = getOverFDR(trainset_,net, qvals[count]+qn);
       f1 << qvals[count]+qn << " " << r1 << " " << r << "\n";
       
       //write out the net for a certain qvals
@@ -149,13 +140,14 @@ void Caller :: train_general_net(Scores &train, Scores &thresh, double qv)
 {
   int overFDR = 0;
   int best_overFDR = 0;
-  
+  int best_iteration = 0;
   overFDR = getOverFDR(thresh,net, qv);
   ind_low = -1;
 
   NeuralNet best_net;
   best_net = net;
   best_overFDR = overFDR;
+
   
   for(int i=0;i<switch_iter;i++) {
     train_net_two(train);
@@ -166,6 +158,7 @@ void Caller :: train_general_net(Scores &train, Scores &thresh, double qv)
       {
 	best_overFDR = overFDR;
 	best_net = net;
+        best_iteration = i;
       }
       
     /*
@@ -182,6 +175,9 @@ void Caller :: train_general_net(Scores &train, Scores &thresh, double qv)
     */
     
   }
+
+  cerr<<"train_general_net(): best iter:"<<best_iteration<<" bestFDR("<<qv<<")="<<best_overFDR<<endl;
+
   net = best_net;
   best_net.clear();
 }
@@ -475,22 +471,26 @@ void Caller :: train_many_target_nets_ave(
 	  {
 	    if(ave_overFDR[count] > max_overFDR[count])
 	      {
+                //cerr<<"Updating net:"<<count<<endl;
 		max_overFDR[count] = ave_overFDR[count];
 		max_net_targ[count] = net;
 	      }
 	  }
 
 	if((i % 20) == 0)
-	  {
-	    cerr << "Iteration " << i << " : \n";
-	    getMultiFDR(testset,net,qvals);
-	    cerr << "testset: ";
-	    printNetResults(overFDRmulti);
-	    cerr << "\n";
-	    //cerr << "ave ";
-	    //printNetResults(ave_overFDR);
-	    //cerr << "\n";
-	  }
+        {
+          cerr << "Iteration " << i << " : \n";
+          /*
+          cerr << "trainset: ";
+          getMultiFDR(trainset,net,qvals);
+          printNetResults(overFDRmulti);
+          cerr << "\n";
+          */
+          cerr << "testset: ";
+          getMultiFDR(testset,net,qvals);
+          printNetResults(overFDRmulti);
+          cerr << "\n";
+        }
 
       }
       thr_count -= 2;
@@ -521,19 +521,27 @@ void Caller::train_many_nets(
   int& max_pos) 
 {
   
-  thresholdset = trainset;
+  thresholdset_ = trainset;
   /*
   switch_iter = 100;
   niter = 200;
   */ 
   num_qvals = 14;
+  qvals.clear();
   qvals.resize(num_qvals,0.0);
+  qvals1.clear();
   qvals1.resize(num_qvals,0.0);
+  qvals2.clear();
   qvals2.resize(num_qvals,0.0);
  
+  overFDRmulti.clear();
   overFDRmulti.resize(num_qvals,0);
+  ave_overFDR.clear();
   ave_overFDR.resize(num_qvals,0);
-  max_overFDR.resize(num_qvals,0); 
+  max_overFDR.clear();
+  max_overFDR.resize(num_qvals,0);
+
+ 
   max_net_gen = new NeuralNet[num_qvals];
   max_net_targ = new NeuralNet[num_qvals];
   
@@ -583,7 +591,7 @@ void Caller::train_many_nets(
   cerr << "\n";
   
 
-  train_many_general_nets(trainset, testset, thresholdset);
+  train_many_general_nets(trainset, testset, thresholdset_);
   
 
   //write out the results of the general net
@@ -593,29 +601,31 @@ void Caller::train_many_nets(
     filename << res_prefix << "_hu" << num_hu;
     write_max_nets(filename.str(), max_net_gen);
   }
+
   //copy the general net into target nets;
   for(int count = 0; count < num_qvals; count++)
     max_net_targ[count] = max_net_gen[count];
 
   //calculate average of target q-values
   //and q-value +0.05 and -0.05
-  getMultiFDR(thresholdset,net, qvals);
+  getMultiFDR(thresholdset_,net, qvals);
   for(int count = 0; count < num_qvals; count++)
     ave_overFDR[count] += overFDRmulti[count];
-  getMultiFDR(thresholdset,net, qvals1, false, false);
+  getMultiFDR(thresholdset_,net, qvals1, false, false);
   for(int count = 0; count < num_qvals; count++)
     ave_overFDR[count] += overFDRmulti[count];
-  getMultiFDR(thresholdset,net, qvals2, false, false);
+  getMultiFDR(thresholdset_,net, qvals2, false, false);
   for(int count = 0; count < num_qvals; count++)
     ave_overFDR[count] += overFDRmulti[count];
   for(int count = 0; count < num_qvals; count++)
     ave_overFDR[count] /=3;
-  //printNetResults(ave_overFDR);
+  cerr<<"ave:"<<endl;
+  printNetResults(ave_overFDR);
   for(int count = 0; count < num_qvals;count++)
     max_overFDR[count] = ave_overFDR[count];
   
 
-  train_many_target_nets_ave(trainset, testset, thresholdset);  
+  train_many_target_nets_ave(trainset, testset, thresholdset_);  
    
   //write out the results of the target net
   //cerr << "target net results: ";
@@ -630,7 +640,8 @@ void Caller::train_many_nets(
   cerr <<"Choosing best net"<<endl;
   for(unsigned int count = 0; count < qvals.size();count++)
     {
-      fdr = getOverFDR(thresholdset, max_net_targ[count], selectionfdr);
+      fdr = getOverFDR(thresholdset_, max_net_targ[count], selectionfdr, do_max_psm);
+
       if(fdr > max_fdr)
 	{
 	  max_fdr = fdr;
@@ -638,7 +649,7 @@ void Caller::train_many_nets(
 	}
     }
   net = max_net_targ[ind];
-  
+  cerr<<"Best :"<<ind<<":"<<max_fdr<<endl;
 
 
   //calculate pvalues on testset.

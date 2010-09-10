@@ -927,6 +927,11 @@ void initialize_parameters(void){
     "Available for crux search-for-mpsms",
     "true");
 
+  set_boolean_parameter("mpsm-search-old-way", FALSE,
+    "",
+    "",
+    "true");
+
   set_boolean_parameter("rtime-threshold", FALSE,
     "relative retention time threshold for mpsm candidates with homogeneous charge mixture",
     "Available for crux search-for-mpsms",

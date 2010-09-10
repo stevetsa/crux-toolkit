@@ -46,7 +46,7 @@ Caller::Caller() : pNorm(NULL), pCheck(NULL), svmInput(NULL),
   gistInput(false), tabInput(false), dtaSelect(false), docFeatures(false), reportPerformanceEachIteration(false),
   test_fdr(0.01), selectionfdr(0.01), selectedCpos(0), selectedCneg(0), threshTestRatio(0.3), trainRatio(0.5),
 		   niter(200), switch_iter(100), seed(0), xv_type(EACH_STEP), trainNN(1), splitPositives(1), num_hu(5),mu(0.005),weightDecay(0.00005),
-		   shuffled1_present(false),shuffled2_present(false),do_xval(true),do_max_psm(false)
+		   shuffled1_present(false),shuffled2_present(false),do_xval(true),do_max_psm(false),do_pvalue(false)
 {
 }
 
@@ -419,7 +419,7 @@ void Caller::readFiles(bool &doSingleFile) {
 
 void Caller::train() {
 
-  cerr << "do_xval:"<<do_xval<<" do_max_psm:"<<do_max_psm<<endl;
+  cerr << "do_xval:"<<do_xval<<" do_max_psm:"<<do_max_psm<<" do_pvalue:"<<do_pvalue<<endl;
   train_many_nets();
 }
 
@@ -433,20 +433,26 @@ void Caller::fillFeatureSets() {
         cerr <<"Calling fillFeaturesSplitPSM"<<endl;
         Scores::fillFeaturesSplitPSM(trainset_,testset_,normal,shuffled,shuffled1,trainRatio);
       } 
-      else
+      else {
         Scores::fillFeaturesSplit(trainset_,testset_,normal,shuffled,shuffled1,trainRatio);
+      }
     }
-    else
-    Scores::fillFeaturesSplit(trainset_,testset_,normal,shuffled,trainRatio);     
-  thresholdset=trainset;
+    else {
+      if (do_max_psm) {
+        Scores::fillFeaturesSplitPSM(trainset_,testset_,normal,shuffled,trainRatio);
+      } else {
+        Scores::fillFeaturesSplit(trainset_,testset_,normal,shuffled,trainRatio);
+      }
+  }     
+  thresholdset_=trainset_;
   
   fullset.fillFeatures(normal,shuffled);
 
   //if (VERB>0) {
-    cerr << "Train set contains " << trainset.posSize() << " positives and " << trainset.negSize() << " negatives, size ratio="
-         << trainset.factor << " and pi0=" << trainset.pi0 << endl;
-    cerr << "Test set contains " << testset.posSize() << " positives and " << testset.negSize() << " negatives, size ratio="
-         << testset.factor << " and pi0=" << testset.pi0 << endl;
+    cerr << "Train set contains " << trainset_.posSize() << " positives and " << trainset_.negSize() << " negatives, size ratio="
+         << trainset_.factor << " and pi0=" << trainset_.pi0 << endl;
+    cerr << "Test set contains " << testset_.posSize() << " positives and " << testset_.negSize() << " negatives, size ratio="
+         << testset_.factor << " and pi0=" << testset_.pi0 << endl;
     //}
   
   set<DataSet *> all;
@@ -469,8 +475,8 @@ void Caller::fillFeatureSets() {
 
 
 int Caller::preIterationSetup() {
-     trainset.createXvalSets(trainset_xv_train, trainset_xv_test, xval_fold);
-     testset.createXvalSets(testset_xv_train, testset_xv_test, xval_fold);
+     trainset_.createXvalSets(trainset_xv_train, trainset_xv_test, xval_fold);
+     testset_.createXvalSets(testset_xv_train, testset_xv_test, xval_fold);
 }    
 
 int Caller::run() {
