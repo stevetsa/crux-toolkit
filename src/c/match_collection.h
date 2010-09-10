@@ -19,6 +19,7 @@
 #include <assert.h>
 #include <ctype.h>
 #include <unistd.h>
+#include <map>
 #include <time.h>
 #include "carp.h"
 #include "parse_arguments.h"
@@ -38,6 +39,8 @@
 #include "protein_index.h"
 #include "modifications.h"
 #include "modified_peptides_iterator.h"
+
+using namespace std;
 
 static const int _PSM_SAMPLE_SIZE = 500;
 static const int _MAX_NUMBER_PEPTIDES = 10000000;
@@ -365,6 +368,26 @@ BOOLEAN_T print_match_collection_tab_delimited(
   );
 
 /**
+ * Get the second ranked xcorr score for the match
+ * this is keyed upon the scan and charge
+ *\returns the 2nd ranked xcorr score.
+ */
+FLOAT_T get_xcorr_2(
+  MATCH_COLLECTION_T* match_collection,
+  MATCH_T* match
+  );
+
+/**
+ * Get the last ranked xcorr score for the match
+ * this is keyed upon the scan and charge
+ *\returns the 2nd ranked xcorr score.
+ */
+FLOAT_T get_xcorr_last(
+  MATCH_COLLECTION_T* match_collection, 
+  MATCH_T* match
+  );
+
+
  * Print the calibration parameters eta, beta, shift and correlation
  * with tabs between.
  */

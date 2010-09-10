@@ -12,6 +12,10 @@
 
 #include "MatchFileReader.h"
 
+#include <map>
+
+using namespace std;
+
 /* Private data types (structs) */
 
 /**
@@ -76,6 +80,9 @@ struct match_collection{
   ///< has the scored type been confirmed for the match collection,
   // set after the first match collection is extended
   MATCH_T* top_scoring_sp; ///< the match with Sp rank == 1 
+
+  map<int, map<int, FLOAT_T> >* scan_charge_xcorr_2; //stores the 2nd ranked xcorr score for a scan,charge.
+  map<int, map<int, FLOAT_T> >* scan_charge_xcorr_last; //stores the last ranked xcorr score for a scan,charge.
 };
 
 /**
@@ -222,6 +229,14 @@ void free_match_collection(
 
   if(match_collection->top_scoring_sp){
     free_match(match_collection->top_scoring_sp);
+  }
+
+  if (match_collection->scan_charge_xcorr_2) {
+    delete match_collection->scan_charge_xcorr_2;
+  }
+
+  if (match_collection->scan_charge_xcorr_last) {
+    delete match_collection->scan_charge_xcorr_last;
   }
 
   free(match_collection);
@@ -1895,6 +1910,112 @@ BOOLEAN_T print_match_collection_tab_delimited(
   free_match_iterator(match_iterator);
   
   return TRUE;
+}
+
+
+/**
+ * \brief Find the 2nd ranked xcorr score for all matches in the match collection.
+ * Indexed by scan,charge.
+ */
+void calc_scan_charge_xcorr_2(
+  MATCH_COLLECTION_T* match_collection
+  ) {
+
+  if (match_collection->scan_charge_xcorr_2 == NULL) {
+    map<int, map<int, FLOAT_T> >* new_map = new map<int, map<int, FLOAT_T> >();
+    match_collection->scan_charge_xcorr_2 = new_map;
+
+    for (int match_idx=0;match_idx<match_collection->match_total;match_idx++) {
+      MATCH_T* match = match_collection->match[match_idx];
+      if (get_match_rank(match, XCORR) == 2) {
+        int scan = get_spectrum_first_scan(get_match_spectrum(match));
+        int charge = get_match_charge(match);
+        FLOAT_T xcorr = get_match_score(match, XCORR);
+
+        if (new_map -> find(scan) == new_map -> end()) {  
+          map<int, FLOAT_T> charge_xcorr;
+          (*new_map)[scan] = charge_xcorr;
+        }
+        (*new_map)[scan][charge] = xcorr;
+      }
+    }
+  } else {
+    carp(CARP_DEBUG, "map already created!");
+  }
+}
+
+/**
+ * \brief Find the last ranked xcorr score for all matches in the match collection.
+ * Indexed by scan,charge.
+ */
+void calc_scan_charge_xcorr_last(
+  MATCH_COLLECTION_T* match_collection
+  ) {
+
+  if (match_collection->scan_charge_xcorr_last == NULL) {
+    map<int, map<int, FLOAT_T> >* new_map = new map<int, map<int, FLOAT_T> >();
+    match_collection->scan_charge_xcorr_last = new_map;
+
+    for (int match_idx=0;match_idx<match_collection->match_total;match_idx++) {
+      MATCH_T* match = match_collection->match[match_idx];
+      int scan = get_spectrum_first_scan(get_match_spectrum(match));
+      int charge = get_match_charge(match);
+      FLOAT_T xcorr = get_match_score(match, XCORR);
+
+      map<int, map<int, FLOAT_T> >::iterator iter1 = new_map -> find(scan);
+
+      if (iter1 == new_map -> end()) {  
+        //scan entry doesn't exist yet, create a new entry.
+        map<int, FLOAT_T> charge_xcorr;
+        (*new_map)[scan] = charge_xcorr;
+      } else {
+        map<int, FLOAT_T>::iterator iter2 = iter1->second.find(charge);
+        //if charge entry doesn't exist or the current xcorr is less than the
+         //entry, then set the entry to the new xcorr score.
+        if ((iter2 == iter1 ->second.end()) || (iter2 -> second > xcorr)) {
+          (*new_map)[scan][charge] = xcorr;
+        }
+      }
+    }
+  } else {
+    carp(CARP_DEBUG, "map already created!");
+  }
+}
+
+
+/**
+ * Get the second ranked xcorr score for the match
+ * this is keyed upon the scan and charge
+ *\returns the 2nd ranked xcorr score.
+ */
+FLOAT_T get_xcorr_2(
+  MATCH_COLLECTION_T* match_collection,
+  MATCH_T* match
+  ) {
+
+  if (match_collection->scan_charge_xcorr_2 == NULL) {
+    calc_scan_charge_xcorr_2(match_collection);
+  }
+
+  int scan = get_spectrum_first_scan(get_match_spectrum(match));
+  int charge = get_match_charge(match);
+
+  return (*(match_collection->scan_charge_xcorr_2))[scan][charge];
+}
+
+FLOAT_T get_xcorr_last(
+  MATCH_COLLECTION_T* match_collection,
+  MATCH_T* match
+  ) {
+
+  if (match_collection->scan_charge_xcorr_last == NULL) {
+    calc_scan_charge_xcorr_last(match_collection);
+  }
+
+  int scan = get_spectrum_first_scan(get_match_spectrum(match));
+  int charge = get_match_charge(match);
+
+  return (*(match_collection->scan_charge_xcorr_last))[scan][charge];
 }
 
 /**

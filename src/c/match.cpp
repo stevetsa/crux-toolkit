@@ -820,6 +820,10 @@ double* get_match_percolator_features(
   FLOAT_T weight_diff = get_peptide_peptide_mass(match->peptide) -
     get_spectrum_neutral_mass(match->spectrum, match->charge);
 
+  FLOAT_T xcorr = get_match_score(match, XCORR);
+  //Calculate percolator style delta_cns.
+  FLOAT_T delta_cn =  (xcorr - get_xcorr_2(match_collection, match)) / xcorr;
+  FLOAT_T delta_lcn = (xcorr - get_xcorr_last(match_collection, match)) / xcorr;
   
   carp(CARP_DETAILED_DEBUG, "spec: %d, charge: %d", 
     get_spectrum_first_scan(match -> spectrum),
@@ -829,14 +833,14 @@ double* get_match_percolator_features(
   carp(CARP_DETAILED_DEBUG,"spectrum neutral mass:%f", get_spectrum_neutral_mass(match -> spectrum, match -> charge));
 
   // Xcorr
-  feature_array[0] = get_match_score(match, XCORR);
+  feature_array[0] = xcorr;
   // FIX - Using delta_cn as a feature in percolator/q-ranker gives
   // erroneous results, set to zero for now and figure out what to do with
   // it later (SJM 07-07-2010).
   // DeltCN
-  feature_array[1] = 0;//match->delta_cn;
+  feature_array[1] = delta_cn;//match->delta_cn;
   // DeltLCN
-  feature_array[2] = 0;//match->ln_delta_cn;
+  feature_array[2] = delta_lcn;//match->ln_delta_cn;
   // SP
   feature_array[3] = get_match_score(match, SP);
   // lnrSP
