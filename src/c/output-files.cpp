@@ -51,19 +51,19 @@ OutputFiles::OutputFiles(COMMAND_T program_name)
 
   // all operations create tab files
   createFiles(&tab_file_array_, 
-	      output_directory, 
-	      fileroot, 
-	      program_name, 
-	      "txt", 
-	      overwrite); 
+              output_directory, 
+              fileroot, 
+              program_name, 
+              "txt", 
+              overwrite); 
 
   // all operations create xml files
   createFiles(&xml_file_array_,
-	      output_directory,
-	      fileroot,
-	      program_name,
-	      "pep.xml",
-	      overwrite);
+              output_directory,
+              fileroot,
+              program_name,
+              "pep.xml",
+              overwrite);
   
   // only sequest creates sqt files
   if( program_name == SEQUEST_COMMAND ){
@@ -382,8 +382,8 @@ void OutputFiles::printMatchesXml(
                                matches_per_spec_,
                                cur_matches,
                                spectrum,
-			       rank_type,
-			       index);
+                               rank_type,
+                               index);
 
     if( decoy_matches_array ){
       cur_matches = decoy_matches_array[file_idx];
@@ -400,7 +400,7 @@ void OutputFiles::writeMatches(
                               tab_file_array_[0], 
                               NULL);// no decoy file
   print_matches_multi_spectra_xml(matches,
-				  xml_file_array_[0]);
+                                  xml_file_array_[0]);
 }
 
 /**

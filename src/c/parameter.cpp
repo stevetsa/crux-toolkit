@@ -539,8 +539,8 @@ void initialize_parameters(void){
       "Target-decoy competition. puts decoy psms in target file. ",
       "Now hidden from the user", "false");
   set_boolean_parameter("decoy-p-values", FALSE,
-			"Store all decoy p-values in a file",
-			"", "false");
+                        "Store all decoy p-values in a file",
+                        "", "false");
 
   set_boolean_parameter("reverse-sequence", FALSE,
       "Generate decoys by reversing the peptide string rather than shuffling."
@@ -1631,11 +1631,11 @@ void print_parameters_xml(FILE* output){
     char * show_users = (char *)get_hash_value(for_users, key);
     if ( strcmp(show_users, "true") == 0 ){
       if (strcmp(key, "mod") == 0 || strcmp(key, "cmod") == 0
-	  || strcmp(key, "nmod") == 0){
-	continue;
+          || strcmp(key, "nmod") == 0){
+        continue;
       }
       fprintf(output, "<parameter name=\"%s\" value=\"%s\"/>\n",
-	      key, (char*) get_hash_value(parameters, key));
+              key, (char*) get_hash_value(parameters, key));
     }
   }
   free_hash_iterator(iterator);

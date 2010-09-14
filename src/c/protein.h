@@ -341,7 +341,6 @@ void prepare_protein_peptide_iterator_mc(
  */
 BOOLEAN_T valid_cleavage_position(
    char* sequence,
-   //   PEPTIDE_TYPE_T cleavage
    ENZYME_T enzyme);
 
 

@@ -335,25 +335,22 @@ void print_spectrum_xml(
   } else {
     filename = parse_filename_path_extension(filepath, ".ms2")[0];
   }
-  char * period = (char *) ".";
+  const char * period = ".";
   std::ostringstream spectrum_id;
   spectrum_id << filename << period << std::setw(5)  << std::setfill('0') 
-	      << start_scan << period << std::setw(5) << std::setfill('0') 
-	      << last_scan << period <<charge ;
+              << start_scan << period << std::setw(5) << std::setfill('0') 
+              << last_scan << period <<charge ;
   fprintf(file, "    <spectrum_query spectrum=\"%s\" start_scan=\"%i\""
-	  " end_scan=\"%i\" precursor_neutral_mass=\"%f\""
-	  " assumed_charge=\"%i\" index=\"%i\">\n",
-	  spectrum_id.str().c_str(),
+          " end_scan=\"%i\" precursor_neutral_mass=\"%f\""
+          " assumed_charge=\"%i\" index=\"%i\">\n",
+          spectrum_id.str().c_str(),
           start_scan, 
           last_scan,
-	  get_spectrum_neutral_mass(spectrum, charge),
+          get_spectrum_neutral_mass(spectrum, charge),
           charge, 
-	  index
-	  );
+          index
+          );
 }
-
-
-
 
 
 /**
