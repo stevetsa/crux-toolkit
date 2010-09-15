@@ -328,14 +328,16 @@ void print_spectrum_xml(
   ){
   int start_scan = get_spectrum_first_scan(spectrum);
   int last_scan = get_spectrum_last_scan(spectrum);
-  char * filepath = spectrum->filename;
-  char * filename;
+  char* filepath = spectrum->filename;
+  char** name_ext_array = NULL;
+  const char* filename = NULL;
   if (filepath == NULL){
-    filename = (char *) "NA";
+    filename = (char*) "NA";
   } else {
-    filename = parse_filename_path_extension(filepath, ".ms2")[0];
+    name_ext_array = parse_filename_path_extension(filepath, ".ms2");
+    filename = name_ext_array[0];
   }
-  const char * period = ".";
+  const char* period = ".";
   std::ostringstream spectrum_id;
   spectrum_id << filename << period << std::setw(5)  << std::setfill('0') 
               << start_scan << period << std::setw(5) << std::setfill('0') 
@@ -350,6 +352,17 @@ void print_spectrum_xml(
           charge, 
           index
           );
+
+  if (name_ext_array != NULL){
+    if (name_ext_array[0] != NULL){
+      free(name_ext_array[0]);
+    }
+    if (name_ext_array[1] != NULL){
+      free(name_ext_array[1]);
+    }
+    free(name_ext_array);
+  }
+
 }
 
 

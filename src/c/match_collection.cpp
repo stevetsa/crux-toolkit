@@ -1697,7 +1697,7 @@ void print_xml_header(
         int aa = (aa_idx+'A');
         FLOAT_T original_mass = get_mass_amino_acid(aa , isotopic_type);
         FLOAT_T mass_dif = mass - original_mass;
-        fprintf(output, "<aminoacid_modification amimnoacid=\"%c\" mass=\"%f\" "
+        fprintf(output, "<aminoacid_modification aminoacid=\"%c\" mass=\"%f\" "
                 "massdiff=\"%f\" variable=\"%s\" />\n",
                 aa,
                 mass,

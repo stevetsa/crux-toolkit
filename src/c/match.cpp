@@ -896,7 +896,7 @@ void print_match_xml(
   
   // print additional proteins in alternative_protein tags
   while (++prot_iter != protein_info.end()){
-    flanking_aas_iter+=3;
+    flanking_aas_iter += strlen("XX,"); 
     flanking_aas_prev = flanking_aas_iter[0];
     flanking_aas_next = flanking_aas_iter[1];
     num_tol_term = get_num_terminal_cleavage(peptide_sequence,
@@ -922,11 +922,11 @@ void print_match_xml(
   
   protein_info.clear();
 
-  // [rint modifications to the output file
+  // print modifications to the output file
   print_modifications_xml(mod_seq,
                       peptide_sequence,
                       output_file);
-
+  free(mod_seq);
   
 
   // print all scores available
@@ -985,8 +985,8 @@ void print_modifications_xml(char* mod_seq,
             mod_seq);
     int seq_index = 1;
     char* amino = mod_seq;
-    char* end;
-    char* start;
+    char* end = NULL;
+    char* start = NULL;
     // Parse returned string to find modifications within
     // brackets
     while (*(amino+1) != '\0'){
@@ -1011,7 +1011,6 @@ void print_modifications_xml(char* mod_seq,
       }
     fprintf(output_file, "</modification_info>\n");
   }
-  free(mod_seq);
 
   // get modification info for static modifications
   BOOLEAN_T printed_mod_tag = FALSE;
