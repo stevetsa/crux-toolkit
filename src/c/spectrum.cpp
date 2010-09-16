@@ -332,7 +332,7 @@ void print_spectrum_xml(
   char** name_ext_array = NULL;
   const char* filename = NULL;
   if (filepath == NULL){
-    filename = (char*) "NA";
+    filename = "NA";
   } else {
     name_ext_array = parse_filename_path_extension(filepath, ".ms2");
     filename = name_ext_array[0];
