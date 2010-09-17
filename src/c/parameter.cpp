@@ -424,7 +424,6 @@ void initialize_parameters(void){
       "for-matches.  When used with enzyme=<trypsin|elastase|chymotrpysin> "
       " includes peptides containing one or more potential cleavage sites.",
       "true");
-  //  set_boolean_parameter("unique-peptides", FALSE,
   set_boolean_parameter("unique-peptides", TRUE,
       "Generate peptides only once, even if they appear in more "
       "than one protein (T,F).  Default=F.",
@@ -432,6 +431,12 @@ void initialize_parameters(void){
       "crux-genereate-peptides. Returns one line per peptide "
       "when true or one line per peptide per protein occurence when false.  ",
       "true");
+  set_boolean_parameter("peptide-list", FALSE,
+			"Create an ASCII version of the peptide list.  "
+			"Default=F.",
+			"Creates an ASCII file in the output directory "
+			"containing one peptide per line.",
+			"true");
   
   /* more generate_peptide parameters */
   set_boolean_parameter("output-sequence", FALSE, 
@@ -457,6 +462,10 @@ void initialize_parameters(void){
       "possible psms for each spectrum. Default is the SEQUEST-style xcorr."
       " Crux also offers a p-value calculation for each psm based on xcorr "
       "or sp (xcorr-pvalue, sp-pvalue).", "false"); 
+  set_boolean_parameter("compute-sp", FALSE,
+      "Compute the Sp score for all candidate peptides.  Default=F",
+      "Available for search-for-matches.  Sp scoring is always done for "
+      "sequest-search.", "true");
   set_boolean_parameter("compute-p-values", FALSE, 
       "Compute p-values for the main score type. Default=F.",
       "Currently only implemented for XCORR.", "true");
@@ -660,7 +669,7 @@ void initialize_parameters(void){
 
   // **** percolator options. ****
   set_boolean_parameter("feature-file", FALSE,
-     "Optional file into which psm features are printed.",
+     "Optional file into which psm features are printed. Default=F.",
      "Available for percolator and q-ranker.  File will be named "
      "<fileroot>.percolator.features.txt or <fileroot>.qranker.features.txt.",
      "true");
@@ -671,7 +680,7 @@ void initialize_parameters(void){
       "Available for q-ranker.", "true");
 
   /* analyze-matches parameter options */
-  set_double_parameter("pi-zero", 0.9, 0, 1, 
+  set_double_parameter("pi-zero", 1.0, 0, 1, 
       "The estimated percent of target scores that are drawn from the "
       "null distribution.",
       "Used by compute-q-values, percolator and q-ranker", "true");
@@ -1138,7 +1147,7 @@ double get_mz_bin_offset() {
   if (get_boolean_parameter("xcorr-var-bin")) {
     return get_double_parameter("mz-bin-offset");
   } else {
-    return 0;
+    return SMART_MZ_OFFSET;
   }
 }
 
