@@ -2,7 +2,14 @@
 <html><head>
 <meta http-equiv="content-type" content="text/html; charset=UTF-8"><title>crux quantify</title>
 
-<link href="nsaf_files/crux.css" rel="styleSheet" type="text/css"></head>
+<link href="nsaf_files/crux.css" rel="styleSheet" type="text/css">
+<style type="text/css">
+  ul {
+  margin-top:0px;
+  padding-top:0px;
+  }
+</style>
+ </head>
 <body>
 <blockquote>
 <h1 align="center">crux quantify</h1>
@@ -17,21 +24,22 @@
 <p>Given a collection of scored PSMs, produce a&nbsp;list
 of proteins ranked by their a specified score. Quantify supports two types of quantification: Normalized Spectral Abundance Factor (NSAF) and Normalized Spectral Index (SI<sub>N</sub>). The NSAF method is from a <a href="http://www.ncbi.nlm.nih.gov/pubmed/17138671">publication by Paoletti et al. (2006)</a>. The SI<sub>N</sub> method is from the <a href="http://www.nature.com/nbt/journal/v28/n1/abs/nbt.1592.html">Griffin et al. (2010) paper</a>. The two quantification methods are listed below:</p>
 <div>
+<div> <u>Protein Quantification </u>
 <ol>
 <li><p>For each protein in a given database, the NSAF score is:</p>
-<p><img style="width: 251px; height: 58px;" alt="" src="nsaf_formula.jpg"></p>
-<p>where:</p>
+<p><img alt="" src="nsaf_prot_equation.gif"></p>
+<div>where:</div>
 <ul>
 <li>k is a particular protein from the input database</li>
-<li>SpC is the number of peptides from protein k that
-appear in input collection of PSMs at the given threshold. This is obtained by summing up all intensities of b and y ions. </li>
+<li>(SpC)<sub>k</sub> is the number Spectra identified for protein k</li>
 <li>L is the length of protein k (number of amino acids)</li>
 <li>N is the total number of proteins in the input database</li>
 </ul></li>
 <li>
+
 	<p>For each protein in a given database, the SI<sub>N</sub> score is:</p>
-	<p><img style="width: 251px; height: 58px;" alt="" src="sin_formula.png"></p>
-	<p>where:</p>
+	<p><img alt="" src="sin_prot_equation.gif"></p>
+	<div>where:</div>
 	<ul>
 		<li>N is a particular protein from input database</li>
 		<li>pn is peptide matched to the protein n</li>
@@ -43,7 +51,32 @@ appear in input collection of PSMs at the given threshold. This is obtained by s
 </ol>
 </div>
 
-Note that if several spectra map to the same peptide, then only the PSM with the lowest q-value is retained
+<div> <u>Peptide Quantification</u>
+  <ol>
+<li><p>For each peptide in a given database, the NSAF score is:</p>
+<p><img alt="" src="nsaf_pep_equation.gif"></p>
+<div>where:</div>
+<ul>
+<li>k is a particular peptide from the input database</li>
+<li>(SpC)<sub>k</sub> is the number of spectra identified from peptide k</li>
+<li>N is the total number of peptide in the input database</li>
+</ul></li>
+<li>
+
+	<p>For each peptide in a given database, the SI<sub>N</sub> score is:</p>
+	<p><img alt="" src="sin_pep_equation.gif"></p>
+	<div>where:</div>
+	<ul>
+		<li>N is a particular peptide from input database</li>
+		<li>sc is spectra matched to peptide N</li>
+		<li>i<sub>j</sub> is ion intensity of spectra</li>
+	</ul>
+</li>
+</ol>
+</div>
+</div>
+
+
 </blockquote>
 <p>
 <b>Input:</b></p>
@@ -76,10 +109,16 @@ In addition, a log file called </li><li><span style="font-weight: bold;">quantif
 <br>
 <ul>
 <li>
-<code>--measure NSAF|SIN</code> –
-Type of analysis to make on match results: (NSAF | SIN). Default SIN.
+  <code>--measure NSAF|SIN</code> –
+  Type of analysis to make on match results: (NSAF | SIN). Default SIN.
 </li>
-<li><code>--threshold &lt;double&gt; </code>-
+<li>
+  <code>--quant-level PROTEIN|PEPTIDE</code> - 
+  Quantification at protein or peptide level. See how methods differ under Description. Default=PROTEIN.
+  
+</li>
+<li>
+  <code>--threshold &lt;double&gt; </code>-
 The&nbsp;q-value threshold (all PSMs with q-value higher than this will be
 ignored). Default = 0.01.
 <code></code></li>
@@ -95,7 +134,11 @@ ms2 file corresponding to the psm file. Required if you plan to measure the SIN.
 The name of the directory where output files will be created.
 Default = crux-output.</li>
 <li>
-<code>--overwrite T|F</code> Replace
+  <code>--unique-mapping &lt;unique-mapping&gt;</code> -
+  Ignore peptides with multiple mappings to proteins (T,F). Default (F)
+</li>
+<li>
+<code>--overwrite T|F</code> - Replace
 existing files if true (T) or
 fail when trying to overwrite a file if false (F). Default = F.
 </li>

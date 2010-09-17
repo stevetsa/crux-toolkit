@@ -794,8 +794,9 @@ void initialize_parameters(void){
        "For quantify to determine to use only peptides with only one protein "
        "mapping", "false");
   set_boolean_parameter("average", FALSE,
-       "For SIN, calcuate the average instead of total of ion " 
-       "intensities/ms1 peaks (T, f). Default (F)",
+       "For SIN, calcuate the average of the 3 highest "
+       "values for each spectra instead of total of ion " 
+       "intensities/ms1 peaks (T, F). Default (F)",
        "A way of avoiding double counting spectra for each peptide",
        "false"		);
   set_string_parameter("input-bullseye", NULL,
