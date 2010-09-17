@@ -1,4 +1,5 @@
 #include "MPSM_MatchCollection.h"
+#include "RetentionPredictor.h"
 
 #include <iostream>
 
@@ -99,7 +100,11 @@ void MPSM_MatchCollection::calcDeltaCN() {
 }
 
 double MPSM_MatchCollection::calcDeltaCNMatch(double xcorr) {
-  return (xcorr - xcorr_2_) / xcorr;
+  if (xcorr > 0 && numMatches() > 1) {
+    return (xcorr - xcorr_2_) / xcorr;
+  } else {
+    return 0;
+  }
 }
 
 
@@ -138,6 +143,24 @@ double MPSM_MatchCollection::calcZScore(double xcorr) {
 
     return (xcorr - zscore_mean_) / zscore_std_;
 }
+
+double MPSM_MatchCollection::getSpectrumRTime() {
+  return get_spectrum_rtime(get_match_spectrum(getMatch(0)[0]));
+}
+
+double MPSM_MatchCollection::getPredictedRTime(MPSM_Match& match) {
+  double ans = 0.0;
+
+  if (match.numMatches() == 1) {
+    RetentionPredictor* predictor = RetentionPredictor::createRetentionPredictor();
+    ans = predictor->predictRTime(match[0]);
+    delete predictor;
+  }
+  return ans;
+
+  
+}
+
 
 ostream& operator<<(ostream& os, MPSM_MatchCollection& collection_obj) {
 

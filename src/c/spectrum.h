@@ -176,6 +176,16 @@ void set_spectrum_id(
   int id ///< the id -in
   );
 
+
+FLOAT_T get_spectrum_rtime(
+  SPECTRUM_T* spectrum
+);
+
+void set_spectrum_rtime(
+  SPECTRUM_T* spectrum,
+  FLOAT_T rtime
+);
+
 /**
  * \returns the spectrum_type
  */

@@ -302,6 +302,13 @@ double MPSM_Match::getZScore() {
   return (parent_ -> calcZScore(xcorr));
 }
 
+double MPSM_Match::getSpectrumRTime() {
+  return (parent_ -> getSpectrumRTime());
+}
+
+double MPSM_Match::getPredictedRTime() {
+  return (parent_ -> getPredictedRTime(*this));
+}
 
 ostream& operator <<(ostream& os, MPSM_Match& match_obj) {
 
@@ -374,8 +381,8 @@ ostream& operator <<(ostream& os, MPSM_Match& match_obj) {
      /*<< "TODO"*/ << "\t" //protein_id
      /*<< "TODO"*/ << "\t" //flanking aa
      /*<< "TODO"*/ << "\t" //unshuffled sequence
-     /*<< "TODO"*/ << "\t" //eta
-     /*<< "TODO"*/ << "\t" //beta
+     << match_obj.getSpectrumRTime() << "\t" //eta (spectrum retention time)
+     << match_obj.getPredictedRTime() << "\t" //beta (predicted retention time)
      /*<< "TODO"*/ << "\t" //shift
      << match_obj.getRTimeMaxDiff() /*<< "TODO"*/; //corr
      ;

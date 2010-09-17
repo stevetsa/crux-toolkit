@@ -75,10 +75,12 @@ public:
 
     void three_plot(double qv);
     
-    int getOverFDR(Scores &set, NeuralNet &n, double fdr, bool do_max_psm=false);
+  
+    int getOverFDR(Scores &set, NeuralNet &n, double fdr);
+    int getOverFDR(Scores &set, NeuralNet &n, double fdr, bool do_max_psm);
     void calcScores(Scores &set, NeuralNet &n);
     void calcPValues(Scores &set, NeuralNet &n, int &max_pos);
-    void getMultiFDR(Scores &set, NeuralNet &n, vector<double> &qval, bool do_classify=true, bool do_sort=true);
+    void getMultiFDR(Scores &set, NeuralNet &n, vector<double> &qval, bool do_classify=true);
     void printNetResults(vector<int> &scores);
     void write_max_nets(string filename, NeuralNet *max_net);
     

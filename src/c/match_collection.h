@@ -388,7 +388,7 @@ FLOAT_T get_xcorr_last(
   );
 
 
- * Print the calibration parameters eta, beta, shift and correlation
+/** Print the calibration parameters eta, beta, shift and correlation
  * with tabs between.
  */
 void print_calibration_parameters(

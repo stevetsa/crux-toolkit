@@ -48,6 +48,9 @@ public:
   void setZParameters(double mean, double std);
   double calcZScore(double xcorr);
 
+  double getSpectrumRTime();
+  double getPredictedRTime(MPSM_Match& match);
+
   friend std::ostream& operator<<(std::ostream& os, MPSM_MatchCollection& collection_obj);
 
 

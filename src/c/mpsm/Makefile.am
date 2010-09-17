@@ -14,6 +14,8 @@ libmpsm_la_SOURCES = \
   MPSM_Scorer.h \
   RetentionPredictor.cpp \
   RetentionPredictor.h \
+  AKlammerRetentionPredictor.cpp \
+  AKlammerRetentionPredictor.h \
   KrokhinRetentionPredictor.h \
   KrokhinRetentionPredictor.cpp \
   PalmbaldRetentionPredictor.cpp \

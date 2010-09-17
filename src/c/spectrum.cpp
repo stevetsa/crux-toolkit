@@ -23,6 +23,7 @@
 #include <string>
 #include "MatchFileReader.h"
 #include "./MSToolkit/Spectrum.h"
+#include "DelimitedFile.h"
 
 // There is a name clash with MS2 in MSToolkit, so can't use the
 // namespace declared here. Using namespace MSToolkit;
@@ -75,6 +76,7 @@ struct spectrum{
   vector<PEAK_T*>  peaks;         ///< The spectrum peaks
   FLOAT_T          min_peak_mz;   ///< The minimum m/z of all peaks
   FLOAT_T          max_peak_mz;   ///< The maximum m/z of all peaks
+  FLOAT_T          rtime;
   double           total_energy;  ///< The sum of intensities in all peaks
   char*            filename;      ///< Optional filename
   vector<string>   i_lines_v; ///< store i lines
@@ -787,7 +789,7 @@ BOOLEAN_T parse_spectrum_file(
    set_spectrum_first_scan( spectrum, first_scan);
    set_spectrum_last_scan( spectrum, last_scan);
    set_spectrum_precursor_mz( spectrum, precursor_mz);
-
+   set_spectrum_rtime( spectrum, first_scan);
    return TRUE;
  }
 
@@ -899,6 +901,15 @@ BOOLEAN_T parse_spectrum_file(
    // remove the newline (windows or unix style)
    line_str.erase( line_str.find_first_of("\r\n") );
    spectrum->i_lines_v.push_back(line_str);
+
+   vector<string>tokens;
+   DelimitedFile::tokenize(line_str, tokens, '\t');
+   if (tokens[1] == "RTime") {
+    FLOAT_T rtime;
+    DelimitedFile::from_string(rtime, tokens[2]);
+    set_spectrum_rtime(spectrum, rtime);
+   }
+
 
   return TRUE;
 }
@@ -1167,6 +1178,20 @@ void set_spectrum_id(
 {
   spectrum->id = id;
 }
+
+FLOAT_T get_spectrum_rtime(
+  SPECTRUM_T* spectrum
+) {
+  return spectrum->rtime;
+}
+
+void set_spectrum_rtime(
+  SPECTRUM_T* spectrum,
+  FLOAT_T rtime
+) {
+  spectrum->rtime = rtime;
+}
+
 
 /**
  * \returns the spectrum_type

@@ -37,6 +37,11 @@ string res_prefix="yeast_trypsin";
 
 
 /********************* writing out results functions***************************************/
+
+int Caller :: getOverFDR(Scores &set, NeuralNet &n, double fdr) {
+  return getOverFDR(set, n, fdr, do_max_psm);
+}
+
 int Caller :: getOverFDR(Scores &set, NeuralNet &n, double fdr, bool do_max_psm)
 {
 
@@ -69,7 +74,7 @@ void Caller :: calcPValues(Scores &set, NeuralNet &n, int &max_pos)
 
  
 
-void Caller :: getMultiFDR(Scores &set, NeuralNet &n, vector<double> &qvalues, bool do_classify, bool do_sort)
+void Caller :: getMultiFDR(Scores &set, NeuralNet &n, vector<double> &qvalues, bool do_classify)
 {
   double r = 0.0;
   const double* featVec;
@@ -82,7 +87,7 @@ void Caller :: getMultiFDR(Scores &set, NeuralNet &n, vector<double> &qvalues, b
 
   for(unsigned int ct = 0; ct < qvalues.size(); ct++)
     overFDRmulti[ct] = 0;
-  set.calcMultiOverFDR(qvalues, overFDRmulti, do_classify || do_sort);
+  set.calcMultiOverFDR(qvalues, overFDRmulti, do_max_psm, do_classify);
 }
 
 
@@ -191,7 +196,11 @@ void Caller :: train_target_net(Scores &train, Scores &thresh, double qv)
   
   overFDR = getOverFDR(train,net, qv);
   ind_low = overFDR;
-  
+
+  if (do_max_psm) {
+    ind_low = getOverFDR(train,net, qv, false);
+  }
+
   NeuralNet best_net;
   best_net = net;
   best_overFDR = overFDR;
@@ -314,7 +323,32 @@ void Caller :: train_net_two(Scores &set)
   double diff = 0;
   int label = 1;
   const double *featVec;
+
+  double total_choose_time = 0;
+  double total_classify_time = 0;
+  double total_train_time = 0;
+  double total_cn = 0;
+
+  if (ind_low > 0) {
+  /*
+    vector<int> positive_indices;
+    vector<int> negative_indices;
+    int interval = min(set.size()-1, (unsigned int)ind_low*2);
+    for (int i = 0;i<interval;i++) {
+      if (set[i].label == 1) {
+        positive_indices.push_back(i);
+      } else {
+        negative_indices.push_back(i);
+      }
+    }
+    cerr<<"Looking at "<<interval<<" of "<<set.size()<<endl;
+    cerr<<"Number of positives:"<<positive_indices.size()<<endl;
+    cerr<<"Number of negatives:"<<negative_indices.size()<<endl;
+  */
+  }
+
   
+
   for(unsigned int i = 0; i < set.size(); i++)
     { 
       if(ind_low<0)
@@ -327,6 +361,8 @@ void Caller :: train_net_two(Scores &set)
 	}
       else
 	{
+
+          clock_t start_clock = clock();
 	  interval = ind_low*2;
 	  unsigned int ind1, ind2;
 	  int label_flag = 1;
@@ -357,13 +393,17 @@ void Caller :: train_net_two(Scores &set)
 	      	}
 	      cn++;
 	    }
-	  
+
+          total_cn += cn;
+
+	  clock_t choose_clock = clock();
 	  
 	  //pass both through the net
 	  r1 = net.classify(set[ind1].pPSM->features);
 	  r2 = net.classify(set[ind2].pPSM->features);
 	  diff = r1-r2;
 
+          clock_t classify_clock = clock();
 
 	  label=0;
 
@@ -382,7 +422,25 @@ void Caller :: train_net_two(Scores &set)
 		  net.train1(set[ind2].pPSM->features, set[ind2].label);
 		}
 	    }
+          clock_t train_clock = clock();
+          total_choose_time += (double)(choose_clock - start_clock) / CLOCKS_PER_SEC;
+          total_classify_time += (double)(classify_clock - choose_clock)/CLOCKS_PER_SEC;
+          total_train_time += (double)(train_clock-classify_clock)/CLOCKS_PER_SEC;
 	}
+    }
+    if (ind_low >= 0) {  
+    /*
+      cerr<<"Average choose:"<<(total_choose_time / (double)set.size())<<endl;
+      cerr<<"Average classify:"<<(total_classify_time / (double)set.size()) << endl;
+      cerr<<"Average train:"<<(total_train_time / (double)set.size())<<endl;
+      cerr<<"Average cn:"<<total_cn / (double)set.size()<<endl;
+      cerr<<"ind_low:"<<ind_low<<endl;
+      double total = total_choose_time + total_classify_time + total_train_time;
+
+      cerr<<"Ratio choose:"<<(total_choose_time/total)<<endl;
+      cerr<<"Ratio classify:"<<(total_classify_time/total)<<endl;
+      cerr<<"Ratio train:"<<(total_train_time/total)<<endl;
+    */
     }
 }
 
@@ -434,14 +492,15 @@ void Caller :: train_many_target_nets_ave(
   int  thr_count = num_qvals-1;
   while (thr_count > 0)
     {
-      net = max_net_gen[thr_count];
+      //net = max_net_gen[thr_count];
+      net = max_net_targ[thr_count];
       net.set_cost_flag(1);;
       net.remove_bias();
            
       //cerr << "training thresh " << thr_count << " mu " << net.get_mu() << "\n";
       cerr << "training thresh " << thr_count  << "\n";
-      
-      ind_low = getOverFDR(trainset, net, qvals[thr_count]);
+
+      ind_low = getOverFDR(trainset, net, qvals[thr_count], false);
       for(int i=switch_iter;i<niter;i++) {
 		
 	//sorts the examples in the training set according to the current net scores
@@ -456,11 +515,11 @@ void Caller :: train_many_target_nets_ave(
 	for(int count = 0; count < num_qvals; count++)
 	  ave_overFDR[count] += overFDRmulti[count];
 		
-	getMultiFDR(thresholdset,net, qvals1, false, false);
+	getMultiFDR(thresholdset,net, qvals1, false);
 	for(int count = 0; count < num_qvals; count++)
 	  ave_overFDR[count] += overFDRmulti[count];
 	
-	getMultiFDR(thresholdset,net, qvals2, false, false);
+	getMultiFDR(thresholdset,net, qvals2, false);
 	for(int count = 0; count < num_qvals; count++)
 	  ave_overFDR[count] += overFDRmulti[count];
 	
@@ -611,10 +670,12 @@ void Caller::train_many_nets(
   getMultiFDR(thresholdset_,net, qvals);
   for(int count = 0; count < num_qvals; count++)
     ave_overFDR[count] += overFDRmulti[count];
-  getMultiFDR(thresholdset_,net, qvals1, false, false);
+  printNetResults(ave_overFDR);
+  getMultiFDR(thresholdset_,net, qvals1, false);
   for(int count = 0; count < num_qvals; count++)
     ave_overFDR[count] += overFDRmulti[count];
-  getMultiFDR(thresholdset_,net, qvals2, false, false);
+  printNetResults(ave_overFDR);
+  getMultiFDR(thresholdset_,net, qvals2, false);
   for(int count = 0; count < num_qvals; count++)
     ave_overFDR[count] += overFDRmulti[count];
   for(int count = 0; count < num_qvals; count++)
@@ -640,7 +701,7 @@ void Caller::train_many_nets(
   cerr <<"Choosing best net"<<endl;
   for(unsigned int count = 0; count < qvals.size();count++)
     {
-      fdr = getOverFDR(thresholdset_, max_net_targ[count], selectionfdr, do_max_psm);
+      fdr = getOverFDR(thresholdset_, max_net_targ[count], selectionfdr);
 
       if(fdr > max_fdr)
 	{
@@ -654,11 +715,11 @@ void Caller::train_many_nets(
 
   //calculate pvalues on testset.
   if (do_pvalue) {
-    cerr << " Found " << getOverFDR(testset, net, selectionfdr, do_max_psm) << " over q<" << selectionfdr << "\n";
+    cerr << " Found " << getOverFDR(testset, net, selectionfdr) << " over q<" << selectionfdr << "\n";
     cerr <<"Calculating pvalues"<<endl;
     calcPValues(testset, net, max_pos);
   } else {
-    cerr << " Found " << getOverFDR(fullset, net, selectionfdr, do_max_psm) << " over q<" << selectionfdr << "\n";
+    cerr << " Found " << getOverFDR(fullset, net, selectionfdr) << " over q<" << selectionfdr << "\n";
   }
   delete [] max_net_gen;
   delete [] max_net_targ;

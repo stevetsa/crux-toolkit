@@ -74,7 +74,8 @@ class MPSM_Match {
     MATCH_T* getMatch(int match_idx);
     MATCH_T* operator [] (int match_idx);
 
-
+    double getSpectrumRTime();
+    double getPredictedRTime();
     int numMatches();
 
 
