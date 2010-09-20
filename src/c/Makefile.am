@@ -108,6 +108,8 @@ LIBFILES= \
   spectrum_collection.cpp \
   spectrum_collection.h \
   spectrum.h \
+  SqtFileReader.cpp \
+  SqtFileReader.h \
   utils.cpp \
   utils.h \
   version.h \

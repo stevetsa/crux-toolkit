@@ -14,6 +14,7 @@
 class DelimitedFile;
 class DelimitedFileReader;
 class MatchFileReader;
+class SqtFileReader;
 
 /**
  * \typedef PEAK_T 
