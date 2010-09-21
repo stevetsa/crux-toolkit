@@ -152,7 +152,7 @@ char* window_type_to_string(WINDOW_TYPE_T type){
  * The string version of retention time predictor types
  */
 static const char* rtp_type_strings[NUMBER_RTP_TYPES] =
-  {"invalid", "krokhin", "palmbald"};
+  {"invalid", "krokhin", "palmbald","aklammer"};
 
 RTP_TYPE_T string_to_rtp_type(char* name) {
   int rtp_int = convert_enum_type_str(name, -10,

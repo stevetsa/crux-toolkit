@@ -22,7 +22,12 @@ libmpsm_la_SOURCES = \
   PalmbaldRetentionPredictor.h \
   BigSmallReal.cpp \
   BigSmallReal.h \
-  mpsm_search.cpp
+  mpsm_search.cpp \
+  svm.h \
+  svm.cpp \
+  train_aklammer.cpp
+
+
 
 libmpsm_la_CXXFLAGS = $(AM_CXXFLAGS) \
   -D SEARCH_ENABLED \

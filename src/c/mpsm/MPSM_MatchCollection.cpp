@@ -148,13 +148,17 @@ double MPSM_MatchCollection::getSpectrumRTime() {
   return get_spectrum_rtime(get_match_spectrum(getMatch(0)[0]));
 }
 
+RetentionPredictor* rtime_predictor_ = NULL;
+
 double MPSM_MatchCollection::getPredictedRTime(MPSM_Match& match) {
   double ans = 0.0;
 
   if (match.numMatches() == 1) {
-    RetentionPredictor* predictor = RetentionPredictor::createRetentionPredictor();
-    ans = predictor->predictRTime(match[0]);
-    delete predictor;
+    if (rtime_predictor_ == NULL) {
+      rtime_predictor_ = RetentionPredictor::createRetentionPredictor();
+    }
+    //cerr<<"Predicting retention time"<<endl;
+    ans = rtime_predictor_->predictRTime(match[0]);
   }
   return ans;
 

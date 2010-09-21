@@ -941,6 +941,29 @@ void initialize_parameters(void){
     "Sort the mpsms.",
     "Available for crux search-for-mpsms. Default true.","true");
 
+
+  /* AKlammer Options */
+
+  set_string_parameter("result file", NULL,
+                       "File containing spectra to be searched.",
+    "",
+    "false");
+
+  set_boolean_parameter("aklammer-rtime-nterm", TRUE,
+  "",
+  "", "true");
+
+  set_boolean_parameter("aklammer-rtime-cterm", TRUE,
+  "",
+  "", "true");
+
+  set_boolean_parameter("aklammer-rtime-tryptic", TRUE,
+  "",
+  "", "true");
+
+  
+
+
   // now we have initialized the parameters
   parameter_initialized = TRUE;
   usage_initialized = TRUE;

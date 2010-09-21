@@ -2,25 +2,21 @@
 #define AKLAMMERRETENTIONPREDICTOR_H
 
 #include "RetentionPredictor.h"
-
+#include "DelimitedFileReader.h"
+#include "mass.h"
 #include "match.h"
 
-#include <map>
+#include <string>
+#include <vector>
 
 
-static const char* canonical_aminos = 
-{"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", 
- "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", 
- "X", "Y"};
-
-static const int num_aminos = 25;
 
 class AKlammerRetentionPredictor: public RetentionPredictor {
   protected:
     bool nterm_;
     bool cterm_;
     bool tryptic_;
-
+    bool spectrum_mass_;
     /*
     bool twomer_;
     bool spectrum_;
@@ -29,15 +25,42 @@ class AKlammerRetentionPredictor: public RetentionPredictor {
     struct svm_model* model_;
     struct svm_node* data_;
 
-    vector<string> feature_names_;
-        
+    std::vector<std::string> feature_names_;
+    std::vector<double> mins;
+    std::vector<double> maxs;
 
-    void fillFeatures(char* sequence, int N, int charge) {
-    }
+    
+
+    void fillFeatures(
+      struct svm_node* data,
+      char* sequence, 
+      int N, 
+      int charge,
+      double spectrum_mz);
+
+    void fillFeatures(struct svm_node* data, MATCH_T* match);
+    void fillFeatures(struct svm_node* data, DelimitedFileReader& result_data);
+
+
+    FLOAT_T predict(struct svm_node* data);
+    FLOAT_T predict(DelimitedFileReader& result_data);
+
+    void printFeatureNames(std::ostream& os);
+    void printFeatures(std::ostream& os, struct svm_node* data);
+
+    void trainScale(struct svm_node** data, double* rtimes, int num_examples);
+    void scale(struct svm_node** data, double* rtimes, int num_examples);
+    void scale(struct svm_node* data, double& rtime);
+    void unscale(double& rtime);
+    
+    void saveModel();
+    void loadModel();
+
 
   public:
+    AKlammerRetentionPredictor(bool training);
     AKlammerRetentionPredictor();
-    void init();
+    void init(bool training=false);
 
     virtual ~AKlammerRetentionPredictor();
 

@@ -167,6 +167,7 @@ enum _rtime_predictor_type {
   RTP_INVALID,
   RTP_KROKHIN,
   RTP_PALMBALD,
+  RTP_AKLAMMER,
   NUMBER_RTP_TYPES
 };  
 

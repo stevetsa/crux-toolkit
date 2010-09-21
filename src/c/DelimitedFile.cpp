@@ -714,6 +714,41 @@ void DelimitedFile::getIntegerVectorFromCell(
   }
 }
 
+/**
+ * gets an vector of integers from cell where the
+ * string in the cell are integers which are separated
+ * by a delimiter which is differnt than the column
+ * delimiter.  The default delimiter is a comma
+ * uses the current_row_ as the row index.
+ * clears the integer vector before 
+ * populating it.
+ */
+void DelimitedFile::getDoubleVectorFromCell(
+    const char* column_name, ///< the column name
+    vector<double>& double_vector, ///<the vector of integers
+    char delimiter ///<the delimiter to use
+  ) {
+  
+  //get the list of strings separated by delimiter
+  vector<string> string_vector_ans;
+
+  getStringVectorFromCell(column_name, string_vector_ans, delimiter);
+
+  //convert each string into an integer.
+  double_vector.clear();
+
+  for (vector<string>::iterator string_iter = string_vector_ans.begin();
+    string_iter != string_vector_ans.end();
+    ++string_iter) {
+
+    double double_ans;
+    from_string<double>(double_ans, *string_iter);
+    double_vector.push_back(double_ans);
+  }
+}
+
+
+
 template <typename T>
 void DelimitedFile::reorderRows(multimap<T, unsigned int>& sort_indices, BOOLEAN_T ascending) {
   //cout <<"reorderRows: start"<<endl;

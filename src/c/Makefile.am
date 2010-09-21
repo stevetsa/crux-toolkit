@@ -138,7 +138,8 @@ PROGRAM_FILES = \
   crux-predict-peptide-ions \
   xlink-predict-peptide-ions \
   xlink-score-spectrum \
-  xlink-assign-ions
+  xlink-assign-ions \
+  crux-train-aklammer
 
 bin_PROGRAMS = $(PROGRAM_FILES)
 
@@ -227,6 +228,22 @@ xlink_assign_ions_LDADD = \
   -L$(top_builddir)/src/c/xlink \
   -lm \
   -lxlink \
+  libcrux.la \
+  -lmstoolkit
+
+
+crux_train_aklammer_SOURCES=./mpsm/train_aklammer.cpp
+crux_train_aklammer_CXXFLAGS= \
+  $(AM_CFLAGS) \
+  -DMAIN \
+  -I$(top_srcdir)/src/c/mpsm
+
+crux_train_aklammer_LDADD = \
+  $(AM_LDFLAGS) \
+  -L$(top_builddir)/src/c/MSToolkit \
+  -L$(top_builddir)/src/c/mpsm \
+  -lm \
+  -lmpsm \
   libcrux.la \
   -lmstoolkit
 
