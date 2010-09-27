@@ -131,12 +131,14 @@ int xlink_search_main(int argc, char** argv) {
     spectrum = filtered_spectrum_charge_iterator_next(spectrum_iterator, &charge);
     scan_num = get_spectrum_first_scan(spectrum);
 
+    carp(CARP_DEBUG,"count %d scan %d charge %d", search_count, scan_num, charge);
+
     if (search_count % 10 == 0)
       carp(CARP_INFO,"count %d scan %d charge %d", search_count, scan_num, charge);
     search_count++;
 
     FLOAT_T precursor_mz = get_spectrum_precursor_mz(spectrum);
-    
+    carp(CARP_DEBUG,"Getting targets");  
     MatchCandidateVector target_candidates(precursor_mz, 
 					   charge, 
 					   bondmap,
@@ -153,9 +155,12 @@ int xlink_search_main(int argc, char** argv) {
       continue;
     }
     
+    carp(CARP_DEBUG,"Getting decoy candidates");
+
     MatchCandidateVector decoy_candidates;
     target_candidates.shuffle(decoy_candidates);
 
+    carp(CARP_DEBUG,"Getting weibull training candidates");
     MatchCandidateVector train_target_candidates(precursor_mz,
 					         charge,
 						 bondmap,
@@ -177,19 +182,26 @@ int xlink_search_main(int argc, char** argv) {
     carp(CARP_DEBUG, "Have %d training candidates", train_candidates.size());
 
 
+    carp(CARP_DEBUG,"scoring targets");
     target_candidates.scoreSpectrum(spectrum);
+    carp(CARP_DEBUG,"scoring decoys");
     decoy_candidates.scoreSpectrum(spectrum);
+    carp(CARP_DEBUG,"scoring training points");
     train_candidates.scoreSpectrum(spectrum);
 
+    carp(CARP_DEBUG,"sorting");
     target_candidates.sortByXCorr();
     decoy_candidates.sortByXCorr();
     
     FLOAT_T shift, eta, beta, corr;
 
-    //cerr<<"Fitting Weibull"<<endl;
+    carp(CARP_DEBUG,"Fitting weibull");
+
     train_candidates.fitWeibull(shift, eta, beta, corr);
    
     int nprint = min(top_match,(int)target_candidates.size());
+
+    carp(CARP_DEBUG,"Printing %d targets", nprint);
  
     //print out data.
     for (int idx=0;idx < nprint;idx++) {
@@ -199,17 +211,20 @@ int xlink_search_main(int argc, char** argv) {
 
     nprint = min(top_match,(int)decoy_candidates.size());
 
+    carp(CARP_DEBUG,"Printing %d decoys", nprint);
+
     for (int idx=0;idx < nprint;idx++) {
       decoy_candidates[idx]->computeWeibullPvalue(shift, eta, beta);
       decoy_file << decoy_candidates[idx]->getResultString() << endl;
     }
     
+    carp(CARP_DEBUG,"Cleanup");
     XLink::deleteAllocatedPeptides();
     
     //carp(CARP_DEBUG, "num targets:%d",target_candidates.size());
     //free_spectrum(spectrum);
 
-    //carp(CARP_INFO,"Done with spectrum %d", scan_num);
+    carp(CARP_DEBUG,"Done with spectrum %d", scan_num);
   } // get next spectrum
   //carp(CARP_INFO,"Done searching spectra");
   target_file.close();
