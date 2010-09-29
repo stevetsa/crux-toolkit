@@ -492,6 +492,11 @@ void initialize_parameters(void){
       "Specify the location of the left edge of the "
       "first bin used to discretize the m/z axis. Default=0.68",
       "Available for crux-search-for-matches.", "true");
+  set_boolean_parameter("flanking-peaks", TRUE,
+      "Include peaks +/- 1da around b/y ions in theoretical spectrum.  "
+      "Default=T.",
+      "",
+      "false");
   set_double_parameter("spectrum-min-mass", 0.0, 0, BILLION, 
       "Minimum mass of spectra to be searched. Default=0.",
       "Available for crux-search-for-matches.", "true");
