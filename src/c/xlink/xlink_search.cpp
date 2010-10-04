@@ -50,7 +50,7 @@ int xlink_search_main(int argc, char** argv) {
     "xlink-include-linears",
     "xlink-include-deadends",
     "xlink-include-selfloops",
-    "xcorr-use-flanks",
+    "use-flanking-peaks",
     "use-mgf"
   };
   int num_options = sizeof(option_list) / sizeof(char*);

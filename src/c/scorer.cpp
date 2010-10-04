@@ -65,7 +65,8 @@ static const int B_Y_HEIGHT = 50;
 /**
  * Relative height of flanking peaks.
  */
-static const int FLANK_HEIGHT = 25;
+//static const int FLANK_HEIGHT = 25;
+static int FLANK_HEIGHT = 25;
 /**
  * Relative height of neutral loss peaks.
  */
@@ -176,6 +177,9 @@ SCORER_T* new_scorer(
     scorer->initialized = FALSE;
   }
 
+  if( get_boolean_parameter("use-flanking-peaks") == FALSE ){
+    FLANK_HEIGHT = 0;
+  }
   return scorer;
 }
 
