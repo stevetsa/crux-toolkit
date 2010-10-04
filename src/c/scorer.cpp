@@ -177,7 +177,7 @@ SCORER_T* new_scorer(
     scorer->initialized = FALSE;
   }
 
-  if( get_boolean_parameter("flanking-peaks") == FALSE ){
+  if( get_boolean_parameter("use-flanking-peaks") == FALSE ){
     FLANK_HEIGHT = 0;
   }
   return scorer;
