@@ -492,8 +492,8 @@ void Caller :: train_many_target_nets_ave(
   int  thr_count = num_qvals-1;
   while (thr_count > 0)
     {
-      //net = max_net_gen[thr_count];
-      net = max_net_targ[thr_count];
+      net = max_net_gen[thr_count];
+      //net = max_net_targ[thr_count];
       net.set_cost_flag(1);;
       net.remove_bias();
            

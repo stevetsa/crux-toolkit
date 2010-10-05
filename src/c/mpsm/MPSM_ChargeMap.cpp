@@ -195,6 +195,22 @@ void MPSM_ChargeMap::calcZScores() {
   }
 }
 
+void MPSM_ChargeMap::calcXCorrRanks() {
+
+  for (MPSM_ChargeMap::iterator iter = begin();
+    iter != end();
+    ++iter) {
+
+    vector<MPSM_MatchCollection>& match_collections = iter -> second;
+    for (int collection_idx = 0;
+      collection_idx < match_collections.size();
+      collection_idx++) {
+
+      match_collections[collection_idx].calcXCorrRanks();
+    }
+  }
+}
+
 
 MPSM_ChargeMap::~MPSM_ChargeMap() {
   clearMap();

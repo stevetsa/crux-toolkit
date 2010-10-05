@@ -72,14 +72,18 @@ void MPSM_OutputFiles::writeMatches(
   FILE* file_ptr, 
   MPSM_MatchCollection& mpsm_match_collection) {
 
-  int match_idx;
-  int n = min(mpsm_match_collection.numMatches(), getMatchesPerSpec());
-  //carp(CARP_INFO,"Printing %d matches", n);
-  //TODO - fix this to rank after we have implemented the sort by XCORR.
-  for (match_idx = 0;match_idx < n; match_idx++) {
+  for (int match_idx = 0;match_idx < mpsm_match_collection.numMatches(); match_idx++) {
     //cout <<"Match "<<match_idx<<" out of "<<n<<endl;
-    mpsm_match_collection.getMatch(match_idx).setParent(&mpsm_match_collection);
-    writeMatch(file_ptr, mpsm_match_collection.getMatch(match_idx));
+
+    MPSM_Match& current_match = mpsm_match_collection.getMatch(match_idx);
+    current_match.setParent(&mpsm_match_collection);
+    int rank = current_match.getXCorrRank();
+
+    if (rank <= getMatchesPerSpec()) {
+      writeMatch(file_ptr, current_match);
+    } else {
+      break;
+    }
   }
 }
 

@@ -310,6 +310,33 @@ double MPSM_Match::getPredictedRTime() {
   return (parent_ -> getPredictedRTime(*this));
 }
 
+void MPSM_Match::setXCorrRank(int xcorr_rank) {
+  xcorr_rank_ = xcorr_rank;
+}
+
+int MPSM_Match::getXCorrRank() {
+  if (numMatches() == 1) {
+    return get_match_rank(getMatch(0), XCORR);
+  } else {
+    return xcorr_rank_;
+  }
+}
+
+string MPSM_Match::getSRankString() {
+
+  ostringstream oss;
+
+  oss << get_match_rank(getMatch(0), XCORR);
+
+  for (int idx=1;idx<numMatches();idx++) {
+    oss << "," << get_match_rank(getMatch(idx), XCORR);
+  }
+
+  return oss.str();
+
+}
+
+
 ostream& operator <<(ostream& os, MPSM_Match& match_obj) {
 
   //cout <<"operator start"<<endl;
@@ -364,7 +391,7 @@ ostream& operator <<(ostream& os, MPSM_Match& match_obj) {
      /*<< "TODO"*/ << "\t" //sp score
      /*<< "TODO"*/ << "\t" //sp rank
      << xcorr_score << "\t" //xcorr score
-     /*<< xcorr_rank*/ << "\t" //xcorr rank.
+     << match_obj.getXCorrRank() << "\t" //xcorr rank.
      /*<< "TODO"*/ << "\t" //p-value
      << match_obj.getZScore() << "\t" //Weibull est. q-value
      /*<< "TODO"*/ << "\t" //decoy q-value (xcorr)
@@ -383,8 +410,8 @@ ostream& operator <<(ostream& os, MPSM_Match& match_obj) {
      /*<< "TODO"*/ << "\t" //unshuffled sequence
      << match_obj.getSpectrumRTime() << "\t" //eta (spectrum retention time)
      << match_obj.getPredictedRTime() << "\t" //beta (predicted retention time)
-     /*<< "TODO"*/ << "\t" //shift
-     << match_obj.getRTimeMaxDiff() /*<< "TODO"*/; //corr
+     << match_obj.getSRankString() << "\t" //shift (spsm ranks)
+     << match_obj.getRTimeMaxDiff() /*<< "TODO"*/; //corr (rtime max diff)
      ;
 
   //cout <<"operator done"<<endl;

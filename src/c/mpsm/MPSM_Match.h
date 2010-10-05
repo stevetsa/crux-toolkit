@@ -20,6 +20,7 @@ class MPSM_Match {
     
 
     FLOAT_T xcorr_score_;
+    int xcorr_rank_;
     FLOAT_T xcorr_score_valid_;
     
 
@@ -49,8 +50,13 @@ class MPSM_Match {
     void setParent(MPSM_MatchCollection* parent);
     MPSM_MatchCollection* getParent();
 
+    std::string getSRankString();
+
     double getDeltaCN();
     double getZScore();
+
+    void setXCorrRank(int xcorr_rank);
+    int getXCorrRank();
 
     virtual ~MPSM_Match();
 

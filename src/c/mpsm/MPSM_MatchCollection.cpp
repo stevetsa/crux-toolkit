@@ -99,6 +99,39 @@ void MPSM_MatchCollection::calcDeltaCN() {
   }
 }
 
+void MPSM_MatchCollection::calcXCorrRanks() {
+
+  if (numMatches() == 0) {
+    return;
+  }
+  //all single peptide match ranks are already calculated.
+  if (getMatch(0).numMatches() == 1) {
+    return;
+  }
+
+  sortByScore(XCORR);
+  int top_match = get_int_parameter("top-match");
+  int cur_rank = 1;
+  FLOAT_T cur_score = getMatch(0).getScore(XCORR);
+  getMatch(0).setXCorrRank(cur_rank);
+  for (int match_idx = 1;match_idx < numMatches();match_idx++) {
+    FLOAT_T this_score = getMatch(match_idx).getScore(XCORR);
+    if (this_score != cur_score) {
+      cur_score = this_score;
+      cur_rank++;
+    }
+    getMatch(match_idx).setXCorrRank(cur_rank);
+    if (cur_rank > top_match) break;
+  }
+  
+
+  
+
+
+
+}
+
+
 double MPSM_MatchCollection::calcDeltaCNMatch(double xcorr) {
   if (xcorr > 0 && numMatches() > 1) {
     return (xcorr - xcorr_2_) / xcorr;

@@ -85,6 +85,9 @@ void print_spectrum_matches(
 #ifdef SEARCH_ENABLED // Discard this code in open source release
 
 BOOLEAN_T rtime_threshold = FALSE;
+double rtime_all2_threshold = 8.4;
+double rtime_all3_threshold = 14.1;
+double rtime_default_threshold = 14.7;
 
 int mpsm_search_main(int argc, char** argv){
 
@@ -107,6 +110,9 @@ int mpsm_search_main(int argc, char** argv){
     "precursor-window-type",
     "mpsm-max-peptides",
     "rtime-threshold",
+    "rtime-all2-threshold",
+    "rtime-all3-threshold",
+    "rtime-default-threshold",
     "mpsm-top-n",
     "mpsm-do-sort",
     "rtime-predictor",
@@ -130,6 +136,10 @@ int mpsm_search_main(int argc, char** argv){
   SPECTRUM_COLLECTION_T* spectra = new_spectrum_collection(ms2_file);
 
   rtime_threshold = get_boolean_parameter("rtime-threshold");
+  rtime_all2_threshold = get_double_parameter("rtime-all2-threshold");
+  rtime_all3_threshold = get_double_parameter("rtime-all3-threshold");
+  rtime_default_threshold = get_double_parameter("rtime-default-threshold");
+
 
   // parse the ms2 file for spectra
   carp(CARP_INFO, "Reading in ms2 file %s", ms2_file);
@@ -226,8 +236,8 @@ int mpsm_search_main(int argc, char** argv){
         mpsm_map.calcDeltaCN();
         cerr<<"Calculating zscores"<<endl;
         mpsm_map.calcZScores();
-        cerr<<"Sorting by XCORR"<<endl;
-        mpsm_map.sortMatches(XCORR);
+        cerr<<"Calculating xcorr ranks"<<endl;
+        mpsm_map.calcXCorrRanks();
       }
       //print out map
       //output the spsms.
@@ -348,6 +358,7 @@ int mpsm_search_main(int argc, char** argv){
   //output the spsms.
     mpsm_map.calcDeltaCN();
     mpsm_map.calcZScores();
+    mpsm_map.calcXCorrRanks();
   }
   //output_files.writeMatches(spsm_map);
   output_files.writeMatches(mpsm_map);
@@ -621,6 +632,7 @@ void add_decoy_scores(
 }
 */
 
+
 bool passRTimeThreshold(MPSM_Match& match,
   FLOAT_T rtime_max_diff) {
 
@@ -633,13 +645,13 @@ bool passRTimeThreshold(MPSM_Match& match,
     //all +2
     if (charge_index.numCharge(2) == match.numMatches()) {
       //cerr <<"Done. All +2"<<endl;
-      ans = fdiff <= 8.4;
+      ans = fdiff <= rtime_all2_threshold; //8.4;
     } else if (charge_index.numCharge(3) == match.numMatches()) {
       //cerr <<"Done .All +3"<<endl;
-      ans = fdiff <= 14.1;
+      ans = fdiff <= rtime_all3_threshold; //14.1;
     } else {
       //cerr <<"Done. Mixture"<<endl;
-      ans = fdiff <= 14.7;
+      ans = fdiff <= rtime_default_threshold; //14.7;
     }
     return ans;
   } else {

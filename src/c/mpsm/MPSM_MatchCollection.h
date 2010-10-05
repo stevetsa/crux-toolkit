@@ -51,6 +51,8 @@ public:
   double getSpectrumRTime();
   double getPredictedRTime(MPSM_Match& match);
 
+  void calcXCorrRanks();
+
   friend std::ostream& operator<<(std::ostream& os, MPSM_MatchCollection& collection_obj);
 
 
