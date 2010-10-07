@@ -27,25 +27,25 @@ of proteins ranked by their a specified score. Quantify supports two types of qu
 <div> <u>Protein Quantification </u>
 <ol>
 <li><p>For each protein in a given database, the NSAF score is:</p>
-<p><img alt="" src="nsaf_prot_equation.gif"></p>
+<p><img alt="" src="nsaf_prot_equation.png"></p>
 <div>where:</div>
 <ul>
-<li>k is a particular protein from the input database</li>
-<li>(SpC)<sub>k</sub> is the number Spectra identified for protein k</li>
-<li>L is the length of protein k (number of amino acids)</li>
-<li>N is the total number of proteins in the input database</li>
+<li>N is protein index</li>
+<li>S<sub>N</sub> is the number Spectra matched to protein index</li>
+<li>L<sub>N</sub> is the length of protein N </li>
+<li>n is the total number of proteins in the input database</li>
 </ul></li>
 <li>
 
 	<p>For each protein in a given database, the SI<sub>N</sub> score is:</p>
-	<p><img alt="" src="sin_prot_equation.gif"></p>
+	<p><img alt="" src="sin_prot_equation.png"></p>
 	<div>where:</div>
 	<ul>
-		<li>N is a particular protein from input database</li>
-		<li>pn is peptide matched to the protein n</li>
-		<li>sc is spectra matched to peptide</li>
-		<li>i<sub>j</sub> is ion intensity of spectra</li>
-		<li>L is length of protein n</li>
+		<li>N is protein index</li>
+		<li>p<sub>n</sub> is number of unique peptides in protein N</li>
+		<li>s<sub>j</sub> number of spectra assigned to peptide j</li>
+		<li>i<sub>k</sub> is the total fragment ion intensity of spectrum k</li>
+		<li>L<sub>N</sub> is length of protein N</li>
 	</ul>
 </li>
 </ol>
@@ -54,22 +54,24 @@ of proteins ranked by their a specified score. Quantify supports two types of qu
 <div> <u>Peptide Quantification</u>
   <ol>
 <li><p>For each peptide in a given database, the NSAF score is:</p>
-<p><img alt="" src="nsaf_pep_equation.gif"></p>
+<p><img alt="" src="nsaf_pep_equation.png"></p>
 <div>where:</div>
 <ul>
-<li>k is a particular peptide from the input database</li>
-<li>(SpC)<sub>k</sub> is the number of spectra identified from peptide k</li>
-<li>N is the total number of peptide in the input database</li>
+<li>N is peptide index</li>
+<li>S<sub>N</sub> is the number Spectra matched to peptide N</li>
+<li>L<sub>N</sub> is the length of peptide N </li>
+<li>n is the total number of peptides in the input database</li>
 </ul></li>
 <li>
 
 	<p>For each peptide in a given database, the SI<sub>N</sub> score is:</p>
-	<p><img alt="" src="sin_pep_equation.gif"></p>
+	<p><img alt="" src="sin_pep_equation.png"></p>
 	<div>where:</div>
 	<ul>
-		<li>N is a particular peptide from input database</li>
-		<li>sc is spectra matched to peptide N</li>
-		<li>i<sub>j</sub> is ion intensity of spectra</li>
+		<li>N is peptide index</li>
+		<li>s<sub>N</sub> is number of spectra assigned to peptide N</li>
+		<li>i<sub>k</sub> is the total fragment ion intensity of spectra</li>
+		<li>L<sub>N</sub> is length of peptide N</li>
 	</ul>
 </li>
 </ol>
