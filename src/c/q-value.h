@@ -23,11 +23,11 @@
 #include "match_collection.h"
 
 FLOAT_T* compute_decoy_qvalues(
-  FLOAT_T* target_scores,
-  int      num_targets,
-  FLOAT_T* decoy_scores,
-  int      num_decoys,
-  FLOAT_T  pi_zero);
+  FLOAT_T*  target_scores,
+  int       num_targets,
+  FLOAT_T*  decoy_scores,
+  int       num_decoys,
+  FLOAT_T   pi_zero);
 
 FLOAT_T* compute_qvalues_from_pvalues(
   FLOAT_T* pvalues, 

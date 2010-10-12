@@ -1452,13 +1452,37 @@ BOOLEAN_T get_match_collection_iterator_lock(
 }
 
 /**
- *\returns the total match objects avaliable in current match_collection
+ * \returns The total number of match objects in the current match
+ * collection.
  */
 int get_match_collection_match_total(
   MATCH_COLLECTION_T* match_collection ///< working match collection -in
   )
 {
   return match_collection->match_total;
+}
+
+/**
+ * \returns The total number of match objects the current match
+ * collection that have received a peptide-level score.
+ */
+int get_match_collection_peptide_level_total(
+  MATCH_COLLECTION_T* match_collection ///< working match collection -in
+  ){
+  int return_value = 0;
+
+  // Count matches, skipping those that aren't best per peptide.
+  MATCH_ITERATOR_T* match_iterator = new_match_iterator(match_collection,
+							XCORR, // Irrelevant
+							FALSE); // No sort
+  while(match_iterator_has_next(match_iterator)){
+    MATCH_T* match = match_iterator_next(match_iterator);
+    if (get_best_per_peptide(match) == TRUE) {
+      return_value++;
+    }
+  }
+  free_match_iterator(match_iterator);
+  return(return_value);
 }
 
 /**
@@ -3042,11 +3066,18 @@ void force_scored_by(MATCH_COLLECTION_T* match_collection, SCORER_TYPE_T type){
  * allocated here and must be freed by the caller.
  */
 FLOAT_T* extract_scores_match_collection(
-  SCORER_TYPE_T       score_type, ///< Type of score to extract.
-  MATCH_COLLECTION_T* all_matches ///< add scores to this collection
+  BOOLEAN_T           peptide_level, ///< Get one score per peptide?
+  SCORER_TYPE_T       score_type,    ///< Type of score to extract.
+  MATCH_COLLECTION_T* all_matches    ///< add scores to this collection
 )
 {
-  FLOAT_T* return_value = (FLOAT_T*)mycalloc(all_matches->match_total,
+  int num_scores;
+  if (peptide_level == TRUE) {
+    num_scores = get_match_collection_peptide_level_total(all_matches);
+  } else {
+    num_scores = get_match_collection_match_total(all_matches);
+  }
+  FLOAT_T* return_value = (FLOAT_T*)mycalloc(num_scores,
 					     sizeof(FLOAT_T));
 
   MATCH_ITERATOR_T* match_iterator = 
@@ -3054,8 +3085,11 @@ FLOAT_T* extract_scores_match_collection(
   int idx = 0;
   while(match_iterator_has_next(match_iterator)){
     MATCH_T* match = match_iterator_next(match_iterator); 
-    return_value[idx] = get_match_score(match, score_type);
-    idx++;
+    if ((peptide_level == FALSE) ||
+	(get_best_per_peptide(match) == TRUE)) {
+      return_value[idx] = get_match_score(match, score_type);
+      idx++;
+    }
   }
   free_match_iterator(match_iterator);
 
@@ -3067,6 +3101,7 @@ FLOAT_T* extract_scores_match_collection(
  * q-values to all of the matches in a given collection.
  */
 void assign_match_collection_qvalues(
+  BOOLEAN_T peptide_level,
   const map<FLOAT_T, FLOAT_T>* score_to_qvalue_hash,
   SCORER_TYPE_T score_type,
   MATCH_COLLECTION_T* all_matches
@@ -3078,6 +3113,13 @@ void assign_match_collection_qvalues(
   while(match_iterator_has_next(match_iterator)){
     MATCH_T* match = match_iterator_next(match_iterator);
     FLOAT_T score = get_match_score(match, score_type);
+
+    // If we're doing peptide-level scoring, skip if this isn't the best 
+    // match per spectrum.
+    if ((peptide_level == TRUE) && 
+	(get_best_per_peptide(match) == FALSE)) {
+      continue;
+    }
 
     // Retrieve the corresponding q-value.
     map<FLOAT_T, FLOAT_T>::const_iterator map_position 

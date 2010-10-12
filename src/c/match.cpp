@@ -1599,6 +1599,16 @@ void set_best_per_peptide(
   match->best_per_peptide = TRUE;
 }
 
+/**
+ * Get the best-per-peptide Boolean.
+ */
+BOOLEAN_T get_best_per_peptide(
+  MATCH_T* match ///< the match to work with -in
+  )
+{
+  return(match->best_per_peptide);
+}
+
 /*
  * Local Variables:
  * mode: c
