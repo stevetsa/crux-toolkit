@@ -1288,11 +1288,6 @@ MODIFIED_AA_T* get_match_mod_sequence(
  */
 char* get_match_mod_sequence_str_with_symbols( MATCH_T* match ){
 
-  // if post_process_match and has a null peptide you can't get sequence
-  if(match->post_process_match && match->null_peptide){
-    return NULL;
-  }
-
   if(match->mod_sequence == NULL){
     match->mod_sequence = get_peptide_modified_aa_sequence(match->peptide);
   }

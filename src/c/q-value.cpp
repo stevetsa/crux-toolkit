@@ -101,14 +101,8 @@ static void identify_best_psm_per_peptide
 
     // Skip matches that are not top-ranked.
     if (get_match_rank(match, score_type) == 1) {
-      char *peptide = get_match_mod_sequence_str_with_symbols(match);
+      char *peptide = get_peptide_unshuffled_sequence(get_match_peptide(match));
       FLOAT_T this_score = get_match_score(match, score_type);
-
-      // If this is a decoy, then get the target sequence.
-      // FIXME: This doesn't work yet.
-      //      if(match->null_peptide == TRUE){
-      //        *peptide = get_peptide_unshuffled_sequence(match->peptide);
-      //      }
 
       map<string, FLOAT_T>::iterator map_position 
 	= best_score_per_peptide.find(peptide);
@@ -125,7 +119,6 @@ static void identify_best_psm_per_peptide
   }
   free_match_iterator(match_iterator);
 
-
   // Set the best_per_peptide Boolean in the match, based on the hash.
   match_iterator = new_match_iterator(all_matches, score_type, FALSE);
   while(match_iterator_has_next(match_iterator)){
@@ -133,7 +126,7 @@ static void identify_best_psm_per_peptide
 
     // Skip matches that are not top-ranked.
     if (get_match_rank(match, score_type) == 1) {
-      char* peptide = get_match_mod_sequence_str_with_symbols(match);
+      char* peptide = get_peptide_unshuffled_sequence(get_match_peptide(match));
       FLOAT_T this_score = get_match_score(match, score_type);
 
       map<string, FLOAT_T>::iterator map_position 
@@ -434,6 +427,10 @@ MATCH_COLLECTION_T* run_qvalue(
     qvalues = compute_qvalues_from_pvalues(pvalues, num_pvals,
 					   get_double_parameter("pi-zero"));
     score_type = LOGP_BONF_WEIBULL_XCORR;
+    set_match_collection_scored_type(target_matches, LOGP_BONF_WEIBULL_XCORR, 
+                                     TRUE);
+    set_match_collection_scored_type(decoy_matches, LOGP_BONF_WEIBULL_XCORR, 
+                                     TRUE);
   }
 
   // Compute q-values from the XCorr decoy distribution.
@@ -462,45 +459,45 @@ MATCH_COLLECTION_T* run_qvalue(
   free(qvalues);
   free(qvalue_hash);
 
-  // Convert the score type to the corresponding q-value.
-  SCORER_TYPE_T qvalue_score_type = INVALID_SCORER_TYPE;
-  if (score_type == LOGP_BONF_WEIBULL_XCORR) {
-    qvalue_score_type = LOGP_PEPTIDE_QVALUE_WEIBULL;
-  } else if (score_type == XCORR) {
-    qvalue_score_type = DECOY_XCORR_QVALUE;
+  // Now compute q-values at the peptide level, currently only
+  // implemented for decoy q-values
+
+  if( have_decoys ){
+    // Identify PSMs that are top-scoring per peptide.
+    identify_best_psm_per_peptide(target_matches, XCORR);
+    identify_best_psm_per_peptide(decoy_matches, XCORR);
+    
+    // Compute peptide-level q-values.
+    FLOAT_T* peptide_pvalues = NULL;
+    FLOAT_T* peptide_qvalues = NULL;
+    compute_decoy_qvalues_from_psms(TRUE, // Peptide level scoring
+                                    target_matches,
+                                    decoy_matches,
+                                    &peptide_pvalues,
+                                    &peptide_qvalues);
+    
+    // Store p-values to q-values as a hash, and then assign them.
+    int num_peptides = get_match_collection_peptide_level_total(target_matches);
+    map<FLOAT_T, FLOAT_T>* peptide_qvalue_hash 
+      = store_arrays_as_hash(peptide_pvalues, peptide_qvalues, num_peptides);
+    assign_match_collection_qvalues(TRUE, // Peptide level scoring.
+                                    peptide_qvalue_hash, 
+                                    XCORR,
+                                    target_matches);
+    carp(CARP_DEBUG,
+         "Computed %d peptide-level q-values from %d PSMs.\n",
+         num_peptides, num_pvals);
+    free(peptide_pvalues);
+    free(peptide_qvalues);
+    free(peptide_qvalue_hash);
+    
+   } else {
+    carp(CARP_WARNING, "Cannot compute peptide level q-values from p-values.");
   }
-
-  // Identify PSMs that are top-scoring per peptide.
-  identify_best_psm_per_peptide(target_matches, score_type);
-  identify_best_psm_per_peptide(decoy_matches, score_type);
-
-  // Compute peptide-level q-values.
-  FLOAT_T* peptide_pvalues = NULL;
-  FLOAT_T* peptide_qvalues = NULL;
-  compute_decoy_qvalues_from_psms(TRUE, // Peptide level scoring
-				  target_matches,
-				  decoy_matches,
-				  &peptide_pvalues,
-				  &peptide_qvalues);
-
-  // Store p-values to q-values as a hash, and then assign them.
-  int num_peptides = get_match_collection_peptide_level_total(target_matches);
-  map<FLOAT_T, FLOAT_T>* peptide_qvalue_hash 
-    = store_arrays_as_hash(peptide_pvalues, peptide_qvalues, num_peptides);
-  assign_match_collection_qvalues(TRUE, // Peptide level scoring.
-				  peptide_qvalue_hash, 
-				  qvalue_score_type,
-				  target_matches);
-  carp(CARP_DEBUG,
-       "Computed %d peptide-level q-values from %d PSMs.\n",
-       num_peptides, num_pvals);
-  free(peptide_pvalues);
-  free(peptide_qvalues);
-  free(peptide_qvalue_hash);
-
+  
   // Sort targets by score.
   sort_match_collection(target_matches, score_type);
-
+  
   free_match_collection(decoy_matches);
   return(target_matches);
 }

@@ -3107,6 +3107,49 @@ void assign_match_collection_qvalues(
   MATCH_COLLECTION_T* all_matches
 ){
 
+  // decide where to store the q-values
+  /* If we're given a base score, then store the q-value.  If we're
+     given a q-value, then store the peptide-level q-value. */
+  SCORER_TYPE_T derived_score_type = INVALID_SCORER_TYPE;
+  switch (score_type) {
+  case XCORR:
+    derived_score_type = DECOY_XCORR_QVALUE;
+    break;
+  case DECOY_XCORR_QVALUE:
+    derived_score_type = DECOY_XCORR_PEPTIDE_QVALUE;
+    break;
+  case LOGP_BONF_WEIBULL_XCORR: 
+    derived_score_type = LOGP_QVALUE_WEIBULL_XCORR;
+    break;
+  case LOGP_QVALUE_WEIBULL_XCORR:
+    derived_score_type = LOGP_PEPTIDE_QVALUE_WEIBULL;
+    break;
+  case PERCOLATOR_SCORE:
+    derived_score_type = PERCOLATOR_QVALUE;
+    break;
+  case PERCOLATOR_QVALUE:
+    derived_score_type = PERCOLATOR_PEPTIDE_QVALUE;
+    break;
+  case QRANKER_SCORE:
+    derived_score_type = QRANKER_QVALUE;
+    break;
+  case QRANKER_QVALUE:
+    derived_score_type = QRANKER_PEPTIDE_QVALUE;
+    break;
+    // Should never reach this point.
+  case SP: 
+  case LOGP_WEIBULL_XCORR: 
+  case DECOY_XCORR_PEPTIDE_QVALUE:
+  case LOGP_PEPTIDE_QVALUE_WEIBULL:
+  case PERCOLATOR_PEPTIDE_QVALUE:
+  case QRANKER_PEPTIDE_QVALUE:
+  case NUMBER_SCORER_TYPES:
+  case INVALID_SCORER_TYPE:
+    char str[256];
+    scorer_type_to_string(score_type, str);
+    carp(CARP_FATAL, "Something is terribly wrong!  Shouldn't have been given score type %s.", str);
+  }
+
   // Iterate over the matches filling in the q-values
   MATCH_ITERATOR_T* match_iterator = new_match_iterator(all_matches, 
                                                         score_type, FALSE);
@@ -3131,50 +3174,10 @@ void assign_match_collection_qvalues(
     }
     FLOAT_T qvalue = map_position->second;
 
-    /* If we're given a base score, then store the q-value.  If we're
-       given a q-value, then store the peptide-level q-value. */
-    SCORER_TYPE_T derived_score_type = INVALID_SCORER_TYPE;
-    switch (score_type) {
-    case XCORR:
-      derived_score_type = DECOY_XCORR_QVALUE;
-      break;
-    case DECOY_XCORR_QVALUE:
-      derived_score_type = DECOY_XCORR_PEPTIDE_QVALUE;
-      break;
-    case LOGP_BONF_WEIBULL_XCORR: 
-      derived_score_type = LOGP_QVALUE_WEIBULL_XCORR;
-      break;
-    case LOGP_QVALUE_WEIBULL_XCORR:
-      derived_score_type = LOGP_PEPTIDE_QVALUE_WEIBULL;
-      break;
-    case PERCOLATOR_SCORE:
-      derived_score_type = PERCOLATOR_QVALUE;
-      break;
-    case PERCOLATOR_QVALUE:
-      derived_score_type = PERCOLATOR_PEPTIDE_QVALUE;
-      break;
-    case QRANKER_SCORE:
-      derived_score_type = QRANKER_QVALUE;
-      break;
-    case QRANKER_QVALUE:
-      derived_score_type = QRANKER_PEPTIDE_QVALUE;
-      break;
-    // Should never reach this point.
-    case SP: 
-    case LOGP_WEIBULL_XCORR: 
-    case DECOY_XCORR_PEPTIDE_QVALUE:
-    case LOGP_PEPTIDE_QVALUE_WEIBULL:
-    case PERCOLATOR_PEPTIDE_QVALUE:
-    case QRANKER_PEPTIDE_QVALUE:
-    case NUMBER_SCORER_TYPES:
-    case INVALID_SCORER_TYPE:
-      carp(CARP_FATAL, "Something is terribly wrong!");
-    }
 
     set_match_score(match, derived_score_type, qvalue);
-    all_matches->scored_type[derived_score_type] = TRUE;
-
   }
+  all_matches->scored_type[derived_score_type] = TRUE;
   free_match_iterator(match_iterator);
 }
 

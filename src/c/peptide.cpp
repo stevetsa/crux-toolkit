@@ -806,7 +806,7 @@ char* get_peptide_modified_sequence_with_symbols(
   if( peptide->decoy_modified_seq ){
     seq_string = 
       modified_aa_string_to_string_with_symbols(peptide->decoy_modified_seq, 
-                                              peptide->length); 
+                                                peptide->length); 
   } else if( peptide->modified_seq == NULL ){
     seq_string = get_peptide_sequence(peptide);
   }else{
