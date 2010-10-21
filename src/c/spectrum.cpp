@@ -22,6 +22,7 @@
 #include <vector>
 #include <string>
 #include "MatchFileReader.h"
+#include "SqtFileReader.h"
 #include "./MSToolkit/Spectrum.h"
 
 // There is a name clash with MS2 in MSToolkit, so can't use the
@@ -228,7 +229,8 @@ void print_spectrum(
   )
 {
   unsigned int num_peak_index = 0;
-
+  SqtFileReader* reader = new SqtFileReader();
+  reader->next();
   fprintf(file, "S\t%06d\t%06d\t%.2f\n", 
          spectrum->first_scan,
          spectrum->last_scan,
@@ -1445,6 +1447,28 @@ SPECTRUM_T* parse_spectrum_tab_delimited(
   spectrum -> has_peaks = FALSE;
   return spectrum;
 
+}
+
+/**
+ * Creates new spectrum with the data from parsing
+ * a sqt file.
+ */
+SPECTRUM_T* create_spectrum_sqt(
+  int first_scan,
+  int last_scan,
+  FLOAT_T precursor_mz
+  ){
+  
+  SPECTRUM_T* spectrum = (SPECTRUM_T*)mycalloc(1, sizeof(SPECTRUM_T));
+  
+  spectrum -> first_scan = first_scan;
+  spectrum -> last_scan = last_scan;
+  spectrum -> spectrum_type = MS2; //assum MS2
+  spectrum -> precursor_mz = precursor_mz;
+
+  spectrum -> has_peaks = FALSE;
+  return spectrum;
+  
 }
 
 /***********************************************************************

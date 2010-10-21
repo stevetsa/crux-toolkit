@@ -534,6 +534,107 @@ BOOLEAN_T parse_peptide_src_tab_delimited(
 }
 
 
+
+/**
+ * \brief Read in the peptide_src objects from the given values and
+ * assosiated them with the given peptide.  
+ * Proteins for the pepitde_src are found in the given database.  If
+ * database is NULL, does not set proteins.  (This option is used for
+ * sorting index files while creating index.)  Either array or 
+ * linked list implementation of multiple peptide_src is used based on
+ * the value of use_array.
+ *
+ * \returns TRUE if peptide_src's were successfully parsed, else
+ * returns FALSE.
+ */
+BOOLEAN_T parse_peptide_src_sqt(
+  PEPTIDE_T* peptide,   ///< assign peptide_src(s) to this peptide
+  DATABASE_T* database, ///< database containing proteins
+  string sequence,
+  vector<string> protein_ids, 
+  DIGEST_T digestion,
+  BOOLEAN_T use_array)
+{
+  if( peptide == NULL){
+    carp(CARP_ERROR, "Cannot parse peptide src with NULL peptide or file.");
+    return FALSE;
+  }
+
+  
+  int num_peptide_src = protein_ids.size();
+  
+  PEPTIDE_SRC_T* peptide_src = NULL;
+
+  // allocate new src based on requested type
+  if(use_array){
+    peptide_src = new_peptide_src_array(num_peptide_src);
+  } else {
+    peptide_src = new_peptide_src_linklist(num_peptide_src);
+  }
+
+  // give it to the peptide
+  add_peptide_peptide_src_array(peptide, peptide_src);
+
+  
+  PROTEIN_T* parent_protein = NULL;
+  int start_index = 1;
+  for (vector<string>::iterator iter = protein_ids.begin();
+    iter != protein_ids.end();
+    ++iter) {
+
+    carp(CARP_DETAILED_DEBUG,"Parsing %s",iter -> c_str());
+    // get the protein and peptide index e.g. X(10)
+    size_t left_paren_index = iter -> find('(');
+
+    if (left_paren_index == string::npos) {
+      //protein id is the string.
+      string protein_id_string = *iter;
+      
+      parent_protein =
+        get_database_protein_by_id_string(database, protein_id_string.c_str());
+      
+      //find the start index by searching the protein sequence.
+      string protein_sequence(get_protein_sequence_pointer(parent_protein));
+
+      size_t pos = protein_sequence.find(sequence);
+
+      if (pos == string::npos) {
+        carp(CARP_FATAL, "Can't find sequence %s in %s",sequence.c_str(), protein_sequence.c_str());
+      }
+      start_index = (int)pos + 1;
+
+    } else {
+      string protein_id_string = iter -> substr(0, left_paren_index);
+      string peptide_start_index_string = iter -> substr(left_paren_index+1, 
+      iter -> length() - 1);
+
+      //  set fields in new peptide src
+      parent_protein =
+        get_database_protein_by_id_string(database, protein_id_string.c_str());
+     
+      if (parent_protein == NULL) {
+        carp(CARP_FATAL, "Can't find protein %s", iter -> c_str());
+        continue;
+      }
+
+      DelimitedFile::from_string<int>(start_index, peptide_start_index_string); 
+    }
+    // set parent protein of the peptide src
+    set_peptide_src_parent_protein(peptide_src, parent_protein);
+
+    // set digest type of peptide src
+    set_peptide_src_digest(peptide_src, digestion);
+
+    // set start index of peptide src
+    set_peptide_src_start_idx(peptide_src, start_index);
+
+    // set current peptide_src to the next empty peptide src
+    peptide_src = get_peptide_src_next_association(peptide_src);
+  } // next peptide_src in file
+
+  return TRUE;
+}
+
 /**
  * \brief Read in the peptide_src objects from the given file and
  * assosiated them with the given peptide.  

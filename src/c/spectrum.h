@@ -109,6 +109,18 @@ SPECTRUM_T* parse_spectrum_tab_delimited(
   MatchFileReader& file ///< output stream -out
   );
 
+
+
+/**
+ * Creates new spectrum with the data from parsing
+ * a sqt file.
+ */
+SPECTRUM_T* create_spectrum_sqt(
+  int first_scan,
+  int last_scan,
+  FLOAT_T precursor_mz
+  );
+
 /***********************************************************************
  * Normalize peak intensities so that they sum to unity.
  ***********************************************************************/

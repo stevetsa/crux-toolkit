@@ -534,6 +534,18 @@ enum  _set_type {SET_TARGET=0,SET_DECOY1,SET_DECOY2,SET_DECOY3};
  */
 typedef enum _set_type SET_TYPE_T;
 
+
+/**
+ * Identifying PSM format
+ */
+enum _psm_format {TXT=0,SQT,PEPXML};
+
+/**
+ * \typedef PSM_FORMAT_T
+ * \brief the typedef for psm format type TXT, PEPXML, and SQT
+ */
+typedef enum _psm_format PSM_FORMAT_T;
+
 /**
  * \typedef MODIFIED_AA_T
  * \brief The alternate type for encoding a peptide sequence (instead

@@ -2101,7 +2101,7 @@ void print_matches_multi_spectra
 MATCH_COLLECTION_T* new_match_collection_psm_output(
   MATCH_COLLECTION_ITERATOR_T* match_collection_iterator, 
     ///< the working match_collection_iterator -in
-  SET_TYPE_T set_type  
+  SET_TYPE_T set_type
     ///< what set of match collection are we creating? (TARGET, DECOY1~3) -in 
   )
 { 

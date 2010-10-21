@@ -6,6 +6,7 @@
 #include <string.h>
 
 #include <set>
+#include <vector> 
 
 #include "MatchFileReader.h"
 
@@ -1745,6 +1746,47 @@ PEPTIDE_T* parse_peptide_tab_delimited(
   return peptide;
 
 }
+
+
+/**
+ * \brief Takes values for a peptide that can be parsed from sqt file 
+ * and returns it.
+ *
+ * Parses the information for a peptide match from the sqt search.  
+ * Allocates memory for the peptide and all of
+ * its peptide_src's.  Requires a database so that the protein can be
+ * set for each peptide_src.  Returns NULL if eof or if file format
+ * appears incorrect.
+ *
+ * \returns A newly allocated peptide or NULL
+ */
+PEPTIDE_T* parse_peptide_sqt(
+  DATABASE_T* database,
+  string sequence,
+  FLOAT_T mass,
+  vector<string> protein_ids,
+  DIGEST_T digestion, 
+  BOOLEAN_T use_array
+  ){
+ 
+  // new peptide to be given values in file
+  PEPTIDE_T* peptide = allocate_peptide();
+  
+  //populate peptide struct.
+  peptide->length = convert_to_mod_aa_seq(sequence.c_str(),
+					  &peptide->modified_seq);
+  peptide->peptide_mass = mass;
+  if (!parse_peptide_src_sqt(peptide, database, sequence, protein_ids, digestion, use_array)){
+    carp(CARP_ERROR, "Failed to parse peptide src.");
+    free(peptide);
+    return NULL;
+  };
+  carp(CARP_DETAILED_DEBUG, "Finished parsing peptide.");
+  return peptide;
+}
+  
+  
+
 
 /**
  * \brief Read in a peptide from a binary file and return it.

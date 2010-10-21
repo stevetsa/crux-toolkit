@@ -6,6 +6,8 @@
 #ifndef PEPTIDE_SRC_H
 #define PEPTIDE_SRC_H
 #include <stdio.h>
+#include <vector>
+#include <string>
 
 #include "utils.h"
 #include "mass.h"
@@ -13,6 +15,7 @@
 #include "objects.h"
 #include "carp.h"
 #include "peptide_constraint.h"
+
 
 /**
  * \returns An (empty) peptide_src object.
@@ -110,6 +113,27 @@ BOOLEAN_T parse_peptide_src_tab_delimited(
   MatchFileReader& file,           ///< file to read from
   DATABASE_T* database, ///< database containing proteins
   BOOLEAN_T use_array); ///< use array implementation vs. linked list
+
+
+/**
+ * \brief Read in the peptide_src objects from the given values and
+ * assosiated them with the given peptide.  
+ * Proteins for the pepitde_src are found in the given database.  If
+ * database is NULL, does not set proteins.  (This option is used for
+ * sorting index files while creating index.)  Either array or 
+ * linked list implementation of multiple peptide_src is used based on
+ * the value of use_array.
+ *
+ * \returns TRUE if peptide_src's were successfully parsed, else
+ * returns FALSE.
+ */
+BOOLEAN_T parse_peptide_src_sqt(
+  PEPTIDE_T* peptide,   ///< assign peptide_src(s) to this peptide
+  DATABASE_T* database, ///< database containing proteins
+  std::string sequence,
+  std::vector<std::string> protein_ids, 
+  DIGEST_T digestion,
+  BOOLEAN_T use_array);
 
 /**
  * \brief Read in the peptide_src objects from the given file and

@@ -4,6 +4,9 @@
 #include <set>
 #include <sstream>
 #include <vector>
+#include "spectrum.h"
+#include "peptide.h"
+#include "match.h"
 
 #include "parameter.h"
 
@@ -15,8 +18,10 @@ class SqtFileReader{
   std::vector<std::string> data_;
   std::fstream* file_ptr_;
   std::string file_name_;
-  BOOLEAN_T okay_;
+  DATABASE_T* database_;
   BOOLEAN_T has_next_;
+  SPECTRUM_T* spectrum_;
+  PEPTIDE_T* peptide_;
   // S line
   int low_scan_;
   int high_scan_;
@@ -39,7 +44,7 @@ class SqtFileReader{
   std::string sequence_matched_;
   std::string validation_status_;
   // L line
-  std::set<std::string> protein_ids_;
+  std::vector<std::string> protein_ids_;
   
  public:
   /**
@@ -52,12 +57,14 @@ class SqtFileReader{
    * specified by the file_name
    */
   SqtFileReader(
-    const char* file_name
+    const char* file_name,
+    DATABASE_T* database
   );
 
 
   SqtFileReader(
-    const std::string& file_name
+    const std::string& file_name,
+    DATABASE_T* database
   );
 
   /**
@@ -77,7 +84,7 @@ class SqtFileReader{
    * Updates the variables with the next match on iteration
    * and does nothing if iterated through entire file
    */
-  void next();
+  BOOLEAN_T next();
 
   /**
    * Resets the file pointer to the beginning of the file
@@ -113,13 +120,15 @@ class SqtFileReader{
   int getExpectedIons();
   std::string getSequenceMatched();
   std::string getValidationStatus();
-  std::set<std::string>getProteinIds();
-  BOOLEAN_T okay();
+  std::vector<std::string>getProteinIds();
+  void fillMatch(MATCH_T* match);
   
  private:
   void getLLine();
   void getSLine();
   void getMLine();
+  void createSpectrum();
+  void createPeptide();
 };
 
 

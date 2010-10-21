@@ -2,6 +2,11 @@
 
 #include <fstream>
 #include <sstream>
+
+#include "objects.h"
+#include "match.h"
+#include "spectrum.h"
+#include "peptide.h"
 #include "carp.h"
 
 using namespace std;
@@ -16,17 +21,21 @@ SqtFileReader::SqtFileReader() : has_next_(false){
 
 
 SqtFileReader::SqtFileReader(
-  const char* file_name
+  const char* file_name,
+  DATABASE_T* database
 ) : has_next_(false){ 
   file_ptr_ = NULL;
   loadData(file_name);
+  database_ = database;
 }
 
 SqtFileReader::SqtFileReader(
-  const string& file_name
-  ){
+  const string& file_name,
+  DATABASE_T* database
+) : has_next_(false){
   file_ptr_ = NULL;
   loadData(file_name.c_str());
+  database_ = database;
 }
 
 /**
@@ -37,6 +46,9 @@ SqtFileReader::~SqtFileReader(){
   if (file_ptr_ != NULL){
     file_ptr_ -> close();
     delete file_ptr_;
+  }
+  if (spectrum_ != NULL){
+    free_spectrum(spectrum_);
   }
 }
 
@@ -81,22 +93,24 @@ void SqtFileReader::loadData(
  * and does nothing if iterated through entire file. Updates 
  * spectrum specific variables as it iterates.
  */
-void SqtFileReader::next(){
+BOOLEAN_T  SqtFileReader::next(){
+  BOOLEAN_T okay = false;
   if (has_next_){
-
     while (has_next_ && next_data_string_[0] == 'S'){ // new spectrum, load the S line values
       getSLine();
+      createSpectrum();
       has_next_ = (getline(*file_ptr_, next_data_string_) != NULL);
     } 
 
     if (has_next_ && next_data_string_[0] == 'M'){ // new match, load the M line values
       getMLine();
+      createPeptide();
       has_next_ = (getline(*file_ptr_, next_data_string_) != NULL);
-      okay_ = true;
+      okay = true;
     } else { 
       // In this case if last spectrum of the file did not have 
       // any matches
-      okay_ = false;
+      okay = false;
     }
     
     protein_ids_.clear();
@@ -105,14 +119,28 @@ void SqtFileReader::next(){
       has_next_ = (getline(*file_ptr_, next_data_string_) != NULL);
     }
   }
+  return okay;
 }
 
-/**
- * Call after calling next() to make sure next() returned
- * correct information
- */
-BOOLEAN_T SqtFileReader::okay(){
-  return okay_;
+
+
+
+
+void SqtFileReader::createSpectrum(){
+  if (spectrum_ != NULL){
+    free_spectrum(spectrum_);
+  }
+
+  spectrum_ = create_spectrum_sqt(low_scan_, high_scan_, experimental_mass_);
+}
+
+void SqtFileReader::createPeptide(){ // copied the implementation of parse_peptide_src_tab_delimited
+  if (peptide_ != NULL){
+    free_peptide(peptide_);
+  }
+
+  peptide_ = parse_peptide_sqt(database_, sequence_matched_, calculated_mass_, protein_ids_, FULL_DIGEST, true);
+  
 }
 
 
@@ -127,7 +155,7 @@ void SqtFileReader::getLLine(){
     carp(CARP_FATAL, "Could not parse the L line: %s", 
 	 next_data_string_.c_str());
   }
-  protein_ids_.insert(protein_id);
+  protein_ids_.push_back(protein_id);
 }
 
 
@@ -179,6 +207,20 @@ void SqtFileReader::reset(){
  */
 BOOLEAN_T SqtFileReader::hasNext(){
   return has_next_;
+}
+
+
+
+void SqtFileReader::fillMatch(
+ MATCH_T* match
+){
+  if (match == NULL){
+    match = new_match();
+  }
+
+  set_match_spectrum(match, spectrum_);
+  set_match_peptide(match, peptide_);
+  
 }
 
 
@@ -262,6 +304,6 @@ string SqtFileReader::getValidationStatus(){
   return validation_status_;
 }
 
-set<string> SqtFileReader::getProteinIds(){
+vector<string> SqtFileReader::getProteinIds(){
   return protein_ids_;
 }

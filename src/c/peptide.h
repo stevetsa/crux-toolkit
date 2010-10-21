@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <vector>
 
 #include "utils.h"
 #include "crux-utils.h"
@@ -594,6 +595,29 @@ PEPTIDE_T* parse_peptide_tab_delimited(
   DATABASE_T* database,///< the database containing the peptides -in
   BOOLEAN_T use_array  ///< should I use array peptide_src or link list -in  
   );
+
+/**
+ * \brief Takes values for a peptide that can be parsed from sqt file 
+ * and returns it.
+ *
+ * Parses the information for a peptide match from the sqt search.  
+ * Allocates memory for the peptide and all of
+ * its peptide_src's.  Requires a database so that the protein can be
+ * set for each peptide_src.  Returns NULL if eof or if file format
+ * appears incorrect.
+ *
+ * \returns A newly allocated peptide or NULL
+ */
+PEPTIDE_T* parse_peptide_sqt(
+  DATABASE_T* database,
+  std::string sequence,
+  FLOAT_T mass,
+  std::vector<std::string> protein_ids,
+  DIGEST_T digestion,
+  BOOLEAN_T use_array
+			     );
+
+
 
 /**
  * \brief Read in a peptide from a binary file and return it.
