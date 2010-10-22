@@ -1172,6 +1172,61 @@ MATCH_T* parse_match_tab_delimited(
 
 
 
+/**
+ *
+ *\returns a match object that is created based on values available
+ * from parsing sqt file
+ */
+MATCH_T* create_match_sqt(
+  SPECTRUM_T* spectrum,
+  PEPTIDE_T* peptide,
+  int x_corr_rank,
+  int sp_rank,
+  FLOAT_T xcorr,
+  FLOAT_T sp,
+  int matched_ions,
+  int expected_ions
+  ){
+
+  MATCH_T* match = new_match();
+  
+  match -> post_process_match = TRUE;
+  
+  match -> match_scores[SP] = sp;
+  match -> match_rank[SP] = sp_rank;
+  
+  match -> match_scores[XCORR] = xcorr;
+  match -> match_rank[XCORR] = x_corr_rank;
+  
+  // None of these values are available in sqt files
+  match -> match_scores[DECOY_XCORR_QVALUE] = NOT_SCORED;
+  match -> match_scores[LOGP_BONF_WEIBULL_XCORR] = NOT_SCORED;
+  match -> match_scores[PERCOLATOR_SCORE] = NOT_SCORED;
+  match -> match_rank[PERCOLATOR_SCORE] = 0;
+  match -> match_scores[LOGP_QVALUE_WEIBULL_XCORR] = NOT_SCORED;
+  match -> match_scores[QRANKER_SCORE] = NOT_SCORED;
+  match -> match_rank[QRANKER_QVALUE] = 0;
+  
+  
+  match -> b_y_ion_matched = matched_ions;
+  match -> b_y_ion_possible = expected_ions;
+  
+  match -> b_y_ion_fraction_matched = 
+    (FLOAT_T)match -> b_y_ion_matched /
+    (FLOAT_T)match -> b_y_ion_possible;
+  
+  //match -> digest = 
+
+  match -> peptide_sequence = NULL;
+  match -> spectrum = spectrum;
+  match -> peptide = peptide;
+  
+  return match;
+}
+
+
+
+
 /****************************
  * match get, set methods
  ***************************/

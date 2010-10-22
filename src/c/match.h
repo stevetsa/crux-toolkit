@@ -287,6 +287,23 @@ MATCH_T* parse_match_tab_delimited(
   DATABASE_T* database ///< the database to which the peptides are created -in
   );
 
+
+/**
+ *
+ *\returns a match object that is created based on values available
+ * from parsing sqt file
+ */
+MATCH_T* create_match_sqt(
+ SPECTRUM_T* spectrum, ///< spectrum object associated with match
+ PEPTIDE_T* peptide, ///< peptide object associated with match
+ int x_corr_rank,    ///< xcorr rank of the match
+ int sp_rank,        ///< sp rank of the match
+ FLOAT_T xcorr,      ///< xcorr score of match
+ FLOAT_T sp,         ///< sp score of match
+ int matched_ions,   ///< number of matched ions
+ int expected_ions   ///< number of possible ions
+ );
+
 /****************************
  * match get, set methods
  ***************************/

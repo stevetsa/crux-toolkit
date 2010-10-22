@@ -47,9 +47,11 @@ SqtFileReader::~SqtFileReader(){
     file_ptr_ -> close();
     delete file_ptr_;
   }
+  /*
   if (spectrum_ != NULL){
     free_spectrum(spectrum_);
   }
+  */
 }
 
 
@@ -98,13 +100,10 @@ BOOLEAN_T  SqtFileReader::next(){
   if (has_next_){
     while (has_next_ && next_data_string_[0] == 'S'){ // new spectrum, load the S line values
       getSLine();
-      createSpectrum();
       has_next_ = (getline(*file_ptr_, next_data_string_) != NULL);
     } 
-
     if (has_next_ && next_data_string_[0] == 'M'){ // new match, load the M line values
       getMLine();
-      createPeptide();
       has_next_ = (getline(*file_ptr_, next_data_string_) != NULL);
       okay = true;
     } else { 
@@ -122,26 +121,6 @@ BOOLEAN_T  SqtFileReader::next(){
   return okay;
 }
 
-
-
-
-
-void SqtFileReader::createSpectrum(){
-  if (spectrum_ != NULL){
-    free_spectrum(spectrum_);
-  }
-
-  spectrum_ = create_spectrum_sqt(low_scan_, high_scan_, experimental_mass_);
-}
-
-void SqtFileReader::createPeptide(){ // copied the implementation of parse_peptide_src_tab_delimited
-  if (peptide_ != NULL){
-    free_peptide(peptide_);
-  }
-
-  peptide_ = parse_peptide_sqt(database_, sequence_matched_, calculated_mass_, protein_ids_, FULL_DIGEST, true);
-  
-}
 
 
 /**
@@ -214,13 +193,9 @@ BOOLEAN_T SqtFileReader::hasNext(){
 void SqtFileReader::fillMatch(
  MATCH_T* match
 ){
-  if (match == NULL){
-    match = new_match();
-  }
-
-  set_match_spectrum(match, spectrum_);
-  set_match_peptide(match, peptide_);
-  
+  SPECTRUM_T* spectrum = create_spectrum_sqt(low_scan_, high_scan_, experimental_mass_);
+  PEPTIDE_T* peptide = parse_peptide_sqt(database_, sequence_matched_, calculated_mass_, protein_ids_, FULL_DIGEST, true);  
+  match = create_match_sqt(spectrum, peptide, x_corr_rank_, sp_rank_, xcorr_, sp_, matched_ions_, expected_ions_);
 }
 
 

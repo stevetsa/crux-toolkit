@@ -20,8 +20,6 @@ class SqtFileReader{
   std::string file_name_;
   DATABASE_T* database_;
   BOOLEAN_T has_next_;
-  SPECTRUM_T* spectrum_;
-  PEPTIDE_T* peptide_;
   // S line
   int low_scan_;
   int high_scan_;
@@ -127,8 +125,7 @@ class SqtFileReader{
   void getLLine();
   void getSLine();
   void getMLine();
-  void createSpectrum();
-  void createPeptide();
+  
 };
 
 
