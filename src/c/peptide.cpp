@@ -1059,7 +1059,6 @@ int get_peptide_missed_cleavage_sites(
   ) {
 
   int missed_count = 0;
-  int aa_idx = 0;
   char* sequence = get_peptide_sequence_pointer(peptide);
 
   AA_MOD_T** mod_list = NULL;
@@ -1070,44 +1069,39 @@ int get_peptide_missed_cleavage_sites(
     
   }
 
-
   // count the missed cleavage sites
-  for(; aa_idx < peptide->length-1; ++aa_idx){
+  for(int aa_idx=0; aa_idx < peptide->length-1; ++aa_idx){
     
     if (skip.find(aa_idx) != skip.end()) {
       continue;
     }
-  
+
+    bool cleavage_prevented = true;
     if(sequence[aa_idx] == 'K' ||
        sequence[aa_idx] == 'R'){
-      
+
+      cleavage_prevented = false;
       // skip one that are followed by a P
       if(sequence[aa_idx+1] == 'P'){
-        continue;
+        cleavage_prevented = true;
       }
 
       if (peptide->modified_seq) {
-        bool cleavage_prevented = false;
-        for (int mod_idx=0;mod_idx<total_mods;mod_idx++) {
+        int mod_idx = 0;
+        while (!cleavage_prevented && mod_idx < total_mods) {
           if (aa_mod_get_prevents_cleavage(mod_list[mod_idx])) {
             if (is_aa_modified(peptide->modified_seq[aa_idx], mod_list[mod_idx])) {
               cleavage_prevented = true;
-              break;
             }
           }
-        }
-        if (cleavage_prevented) {
-          continue;
+          mod_idx++;
         }
       }
-      //TODO if modification prevents cleavage, then skip it.
-        
+    }
 
-
-      else{
-        ++missed_count;
-      }      
-    } 
+    if (!cleavage_prevented) {
+      ++missed_count;
+    }
   }
   
   return missed_count;
