@@ -77,6 +77,60 @@ FLOAT_T MPSM_Scorer::scoreMPSM(MPSM_Match& mpsm_match, SCORER_TYPE_T match_mode)
   }
 }
 
+/*
+void MPSM_Scorer::createIonSeries(MPSM_Match& mpsm_match, ION_SERIES_T* ion_series) {
+
+
+  //find the max charge for mpsm.
+
+  int max_charge = mpsm_match.getChargeIndex().max();
+
+  set_ion_series_charge(ion_series, max_charge);
+  clear_ion_series(ion_series);
+
+
+  ION_SERIES_T* temp_ion_series =
+    new_ion_series_generic(ion_constraint, max_charge);
+  
+  for (int match_idx = 0;
+    match_idx < mpsm_match.numMatches();
+    match_idx++) {
+  
+    MATCH_T* current_match = mpsm_match.getMatch(idx);
+    
+    int current_charge = get_match_charge(current_match);
+
+    set_ion_series_charge(temp_ion_series, current_charge);
+
+    char* current_sequence = 
+      get_match_sequence(current_match);
+    MODIFIED_AA_T* mod_seq = 
+      get_match_mod_sequence(current_match);
+
+
+    update_ion_series(
+      temp_ion_series, 
+      current_sequence, 
+      current_mod_seq,
+      FALSE);
+
+    predict_ions(temp_ion_series);
+
+    ion_iter = new_ion_iterator(temp_ion_series);
+
+    while(ion_iterator_has_next(ion_iter)) {
+      ION_T* ion = ion_iterator_next(ion_iter);
+      add_ion_to_ion_series(ion_series, ion);
+    }
+
+    free(current_sequence);
+    free(current_mod_sequence);
+  }
+  free(temp_ion_series, FALSE);
+
+}
+*/
+
 FLOAT_T MPSM_Scorer::calcScore(MPSM_Match& mpsm_match, SCORER_TYPE_T match_mode) {
   //build the theoretical.
   //cout <<"Memset:"<<max_mz_<<endl;

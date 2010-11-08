@@ -480,7 +480,8 @@ void Scores::calcPValues(bool do_max_psm,int &max_pos) {
     if (iter -> label == -1) {
       nulls++;
     } else {
-      iter -> pPSM -> pvalue = (double)nulls / (double)max_scores->neg;
+      positives++;
+      iter -> pPSM -> pvalue = (double)(nulls) / (double)(max_scores->neg);
     }
   }
 

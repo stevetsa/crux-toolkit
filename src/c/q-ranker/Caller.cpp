@@ -429,7 +429,7 @@ void Caller::fillFeatureSets() {
     if(shuffled2_present)
       Scores::fillFeaturesSplit(trainset_,testset_,normal,shuffled,shuffled1,shuffled2,trainRatio);
     else if( shuffled1_present) {
-      if (do_max_psm) {
+      if (do_max_psm || do_pvalue) {
         cerr <<"Calling fillFeaturesSplitPSM"<<endl;
         Scores::fillFeaturesSplitPSM(trainset_,testset_,normal,shuffled,shuffled1,trainRatio);
       } 
@@ -438,7 +438,7 @@ void Caller::fillFeatureSets() {
       }
     }
     else {
-      if (do_max_psm) {
+      if (do_max_psm || do_pvalue) {
         Scores::fillFeaturesSplitPSM(trainset_,testset_,normal,shuffled,trainRatio);
       } else {
         Scores::fillFeaturesSplit(trainset_,testset_,normal,shuffled,trainRatio);

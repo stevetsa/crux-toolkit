@@ -568,9 +568,7 @@ void run_mpsm_q(
     carp(CARP_INFO,"Building");
     string decoy_path = 
       psm_result_folder + 
-      string("/search.decoy-") + 
-      DelimitedFile::to_string<int>(idx) + 
-      string(".txt");
+      string("/search.decoy.txt");
     //carp(CARP_INFO,"reading %s",decoy_path.c_str());
     search_results[idx].loadData(decoy_path);
     //num_matches.push_back(search_results[idx].numRows());
