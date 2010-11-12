@@ -697,6 +697,15 @@ void initialize_parameters(void){
       "Number of hidden units to use for q-ranker",
       "Available for q-ranker.", "true");
 
+  set_double_parameter("qranker-learning-rate", 5e-3, 1e-100, 1,
+    "Learning rate for q-ranker algorithm",
+    "Available for q-ranker.","true");
+
+  set_double_parameter("qranker-weight-decay", 5e-5, 1e-100, 1,
+    "Weight decoy for q-ranker algorithm",
+    "Available for q-ranker.", "true");
+
+
 
 
   /* analyze-matches parameter options */

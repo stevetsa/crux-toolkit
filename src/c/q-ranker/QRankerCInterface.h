@@ -37,6 +37,9 @@ void qcSetNIter(unsigned int niter);
 
 void qcSetSwitchIter(unsigned int switch_iter);
 
+void qcSetLearningRate(double learning_rate);
+
+void qcSetWeightDecay(double weight_decay);
 
 
 /** Register a PSM */

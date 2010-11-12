@@ -225,30 +225,30 @@ int mpsm_search_main(int argc, char** argv){
 
     carp(CARP_DEBUG, "processing spec %d charge:%d", get_spectrum_first_scan(spectrum), charge);
     if (spectrum != current_spectrum) {
-      carp(CARP_INFO, "Processed all charges for spec %d", get_spectrum_first_scan(current_spectrum));
+      carp(CARP_DEBUG, "Processed all charges for spec %d", get_spectrum_first_scan(current_spectrum));
       carp(CARP_DEBUG, "Searching for mpsms");
       search_for_mpsms(spsm_map, mpsm_map);
       if (get_boolean_parameter("mpsm-do-sort")) {
         //spsm_map.calcDeltaCN();
         //spsm_map.calcZScores();
         //spsm_map.sortMatches(XCORR);
-        cerr<<"Calculating delta cn"<<endl;
+        //cerr<<"Calculating delta cn"<<endl;
         mpsm_map.calcDeltaCN();
-        cerr<<"Calculating zscores"<<endl;
+        //cerr<<"Calculating zscores"<<endl;
         mpsm_map.calcZScores();
-        cerr<<"Calculating xcorr ranks"<<endl;
+        //cerr<<"Calculating xcorr ranks"<<endl;
         mpsm_map.calcXCorrRanks();
       }
       //print out map
       //output the spsms.
       //output_files.writeMatches(spsm_map);
-      cerr<< "writing matches";
+      //cerr<< "writing matches";
       output_files.writeMatches(mpsm_map);
-      cerr<<"Clear map"<<endl;
+      //cerr<<"Clear map"<<endl;
       //clear map and clean up match collections.
       mpsm_map.clearMap();
 
-      cerr<<"Deleting spsm matches"<<endl;
+      //cerr<<"Deleting spsm matches"<<endl;
       for (MPSM_ChargeMap::iterator iter = spsm_map.begin();
         iter != spsm_map.end();
         ++iter) {
@@ -668,7 +668,7 @@ BOOLEAN_T extendMatch(MPSM_Match& orig_mpsm,
   vector<set<string> >& visited,
   int match_collection_idx) {
   
-  cerr <<"extendMatch: start"<<endl;
+  //cerr <<"extendMatch: start"<<endl;
   BOOLEAN_T match_added = FALSE;
   
   if (rtime_predictor == NULL) {
@@ -700,7 +700,7 @@ BOOLEAN_T extendMatch(MPSM_Match& orig_mpsm,
       }
     }
   }
-  cerr <<"extendMatch:done. "<< match_added <<endl;
+  //cerr <<"extendMatch:done. "<< match_added <<endl;
   return match_added;
 }
 
@@ -732,7 +732,7 @@ BOOLEAN_T extendChargeMap(MPSM_ChargeMap& spsm_map,
 
     ChargeIndex charge_index = map_iter -> first;
 
-    carp(CARP_INFO,"mpsm_level:%d charge size:%d",mpsm_level, charge_index.size());
+    carp(CARP_DEBUG,"mpsm_level:%d charge size:%d",mpsm_level, charge_index.size());
     if (charge_index.size() != mpsm_level) {
       continue;
     }
@@ -741,7 +741,7 @@ BOOLEAN_T extendChargeMap(MPSM_ChargeMap& spsm_map,
       continue;
     }
 
-    cout <<"Extending charge: "<<charge_index<<endl;
+    //cout <<"Extending charge: "<<charge_index<<endl;
     charge_extended.insert(charge_index);
 
 
@@ -767,7 +767,7 @@ BOOLEAN_T extendChargeMap(MPSM_ChargeMap& spsm_map,
 
     for (int current_index = 0;current_index < current_top_n; current_index++) {
       MPSM_Match& current_mpsm_target = target_collection.getMatch(current_index);
-      carp(CARP_INFO,"searching %d of %d", current_index+1, current_top_n);
+      carp(CARP_DEBUG,"searching %d of %d", current_index+1, current_top_n);
 
       //Loop through spsms by charge, and extend the current mpsm target using targets.
       for (map_iter2 = spsm_map.begin();
@@ -778,7 +778,7 @@ BOOLEAN_T extendChargeMap(MPSM_ChargeMap& spsm_map,
 
         ChargeIndex new_charge_index(charge_index);
         new_charge_index.add(spsm_charge_index);
-        cerr<<"Finding matches for:"<<new_charge_index<<endl;
+        //cerr<<"Finding matches for:"<<new_charge_index<<endl;
 
         current_mpsm_map.insert(new_charge_index);
 
@@ -790,7 +790,7 @@ BOOLEAN_T extendChargeMap(MPSM_ChargeMap& spsm_map,
           current_mpsm_map,
           visited,
           0);
-        cerr<<"Extending Target:"<<matches_added<<endl;
+        //cerr<<"Extending Target:"<<matches_added<<endl;
          //if there are some matches found, then search the decoys.
   
         if (!matches_added) {
@@ -819,7 +819,7 @@ BOOLEAN_T extendChargeMap(MPSM_ChargeMap& spsm_map,
               current_mpsm_map,
               visited,
               decoy_idx);
-            cerr<<"Extending decoy("<<decoy_idx<<":"<<matches_added<<endl;
+            //cerr<<"Extending decoy("<<decoy_idx<<":"<<matches_added<<endl;
 
           } else {
             //target-decoy
@@ -836,7 +836,7 @@ BOOLEAN_T extendChargeMap(MPSM_ChargeMap& spsm_map,
     } /* current_index++ */
   } /* map_iter++ */
   if (get_boolean_parameter("mpsm-do-sort")) {
-    cerr<<"Done extending (sorting)"<<endl;
+    //cerr<<"Done extending (sorting)"<<endl;
     current_mpsm_map.sortMatches(XCORR);
   }
 }
@@ -864,6 +864,6 @@ void search_for_mpsms(MPSM_ChargeMap& charge_spsm_map,
     if (!added)
       break;
   }
-  cerr<<"Done searching for mpsms for this scan.."<<endl;
+  //cerr<<"Done searching for mpsms for this scan.."<<endl;
 }
 

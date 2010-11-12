@@ -49,6 +49,9 @@ public:
     bool getDoPValue();
     void setNIter(unsigned int iter);
     void setSwitchIter(unsigned int iter);
+    void setLearningRate(double mu);
+    void setWeightDecay(double weightDecay);
+
 
     SetHandler * getSetHandler(SetHandlerType sh) {
         switch(sh) {

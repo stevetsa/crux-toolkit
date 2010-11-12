@@ -531,5 +531,14 @@ void Caller::setSwitchIter(unsigned int iter) {
   switch_iter = iter;
 }
 
+void Caller::setLearningRate(double mu) {
+  this->mu = mu;
+}
+
+void Caller::setWeightDecay(double weightDecay) {
+  this->weightDecay = weightDecay;
+}
+
+
 } // qranker namspace
 

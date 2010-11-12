@@ -71,6 +71,14 @@ void qcSetSwitchIter(unsigned int switch_iter) {
   getCaller() -> setSwitchIter(switch_iter);
 }
 
+void qcSetLearningRate(double learning_rate) {
+  getCaller()->setLearningRate(learning_rate);
+}
+
+void qcSetWeightDecay(double weight_decay) {
+  getCaller()->setWeightDecay(weight_decay);
+}
+
 
 
 /** Call that initiates percolator */

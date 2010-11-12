@@ -187,6 +187,8 @@ static MATCH_COLLECTION_T* run_percolator_or_qranker(
       qcSetDoPValue(get_boolean_parameter("qranker-do-pvalue"));
       qcSetNIter(get_int_parameter("qranker-niter"));
       qcSetSwitchIter(get_int_parameter("qranker-siter"));
+      qcSetLearningRate(get_double_parameter("qranker-learning-rate"));
+      qcSetWeightDecay(get_double_parameter("qranker-weight-decay"));
     }
 
     // create iterator, to register each PSM feature.
