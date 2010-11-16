@@ -44,7 +44,6 @@ DelimitedFileWriter::DelimitedFileWriter
  */
 DelimitedFileWriter::~DelimitedFileWriter(){
   if( file_ptr_ ){
-    writeRow();
     file_ptr_->close();
     delete file_ptr_;
   }

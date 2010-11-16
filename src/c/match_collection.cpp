@@ -107,6 +107,7 @@ struct match_collection_iterator{
   MATCH_COLLECTION_T* match_collection; ///< the match collection to return
   BOOLEAN_T is_another_collection; 
   ///< is there another match_collection to return?
+  vector<bool> cols_in_file; ///< which columns were in the target file
 };
 
 /******* Private function declarations, described in definintions below ***/
@@ -2188,6 +2189,67 @@ BOOLEAN_T print_match_collection_tab_delimited(
 }
 
 /**
+ * TEMPORARY. This will replace the version above.
+ */
+BOOLEAN_T print_match_collection_tab_delimited(
+  MatchFileWriter* output,                  ///< the output file -out
+  int top_match,                 ///< the top matches to output -in
+  MATCH_COLLECTION_T* match_collection,
+  ///< the match_collection to print sqt -in
+  Spectrum* spectrum,          ///< the spectrum to print sqt -in
+  SCORER_TYPE_T main_score       ///< the main score to report -in
+  )
+{
+
+  if( output == NULL || match_collection == NULL || spectrum == NULL ){
+    return FALSE;
+  }
+  int charge = match_collection->charge; 
+  int num_matches = match_collection->experiment_size;
+  int scan_num = spectrum->getFirstScan();
+  FLOAT_T spectrum_neutral_mass = spectrum->getNeutralMass(charge);
+  FLOAT_T spectrum_precursor_mz = spectrum->getPrecursorMz();
+
+  // calculate delta_cn and populate fields in the matches
+  calculate_delta_cn(match_collection, SEARCH_COMMAND);
+
+  MATCH_T* match = NULL;
+  
+  // create match iterator
+  // TRUE: return match in sorted order of main_score type
+  MATCH_ITERATOR_T* match_iterator = 
+    new_match_iterator(match_collection, main_score, TRUE);
+  int count = 0;
+  int last_rank = 0;
+
+  // iterate over matches
+  while(match_iterator_has_next(match_iterator)){
+    match = match_iterator_next(match_iterator);    
+    int cur_rank = get_match_rank(match, main_score);
+
+    // print if we haven't reached the limit
+    // or if we are at the limit but this match is a tie with the last
+    if( count < top_match || last_rank == cur_rank ){
+
+      print_match_tab(match_collection, match, output, scan_num, 
+                      spectrum_precursor_mz, 
+                      spectrum_neutral_mass, num_matches, charge );
+      count++;
+      last_rank = cur_rank;
+    } else if( count >= top_match && last_rank != cur_rank ) {
+      break;
+    } // else see if there is one more tie to print
+
+  }// next match
+  
+  carp(CARP_DETAILED_DEBUG, "printed %d out of %d tab matches", 
+       count, num_matches);
+
+  free_match_iterator(match_iterator);
+  
+  return TRUE;
+}
+/**
  * Retrieve the calibration parameter eta.
  */
 FLOAT_T get_calibration_eta (
@@ -2402,6 +2464,49 @@ void print_matches_multi_spectra
 
 }
 
+/*
+ * TEMPORARY. This will replace the version above. 
+ */
+void print_matches_multi_spectra
+(MATCH_COLLECTION_T* match_collection, 
+ MatchFileWriter* tab_file, 
+ MatchFileWriter* decoy_tab_file){
+
+  carp(CARP_DETAILED_DEBUG, "Writing matches to file");
+  cerr << "match_collection multi spectra" << endl;
+
+  // if file location is target (i.e. tdc=T), print all to target
+  MatchFileWriter* decoy_file = decoy_tab_file;
+  if( get_boolean_parameter("tdc") == TRUE ){
+    decoy_file = tab_file;
+  }
+
+  // for each match, get spectrum info, determine if decoy, print
+  int match_idx = 0;
+  int num_matches = match_collection->match_total;
+  for(match_idx = 0; match_idx < num_matches; match_idx++){
+    MATCH_T* cur_match = match_collection->match[match_idx];
+    BOOLEAN_T is_decoy = get_match_null_peptide(cur_match);
+    Spectrum* spectrum = get_match_spectrum(cur_match);
+    int scan_num = spectrum->getFirstScan();
+    FLOAT_T mz = spectrum->getPrecursorMz();
+    int charge = get_match_charge(cur_match);
+    FLOAT_T spec_mass = spectrum->getNeutralMass(charge);
+    FLOAT_T num_psm_per_spec = get_match_ln_experiment_size(cur_match);
+    num_psm_per_spec = expf(num_psm_per_spec) + 0.5; // round to nearest int
+
+    if( is_decoy ){
+      print_match_tab(match_collection, cur_match, decoy_file, scan_num, mz, 
+                      spec_mass, (int)num_psm_per_spec, charge);
+    }
+    else{
+      print_match_tab(match_collection, cur_match, tab_file, scan_num, mz,
+                      spec_mass, (int)num_psm_per_spec, charge);
+    }
+
+  }
+
+}
 /*******************************************
  * match_collection post_process extension
  ******************************************/
@@ -2528,6 +2633,11 @@ MATCH_COLLECTION_T* new_match_collection_psm_output(
                                         database, 
                                         delimited_result_file);
 
+  // set headers based on input files
+  if( set_type == SET_TARGET ){
+    delimited_result_file.getMatchColumnsPresent(match_collection_iterator->cols_in_file); 
+  }
+
   carp(CARP_DETAILED_DEBUG, "Extended match collection " );
   free(file_in_dir);
   free(non_const_prefix);
@@ -2576,16 +2686,15 @@ BOOLEAN_T extend_match_collection_tab_delimited(
 
     //TODO: Parse all boolean indicators for scores
     match_collection -> 
-      scored_type[SP] = 
-      !result_file.getString(SP_SCORE_COL).empty();
+      scored_type[SP] = !result_file.empty(SP_SCORE_COL);
 
     match_collection -> 
       scored_type[XCORR] = 
-      !result_file.getString(XCORR_SCORE_COL).empty();
+      !result_file.empty(XCORR_SCORE_COL);
 
     match_collection -> 
       scored_type[DECOY_XCORR_QVALUE] = 
-      !result_file.getString(DECOY_XCORR_QVALUE_COL).empty();
+      !result_file.empty(DECOY_XCORR_QVALUE_COL);
 
 /* TODO
     match_collection -> 
@@ -2594,27 +2703,27 @@ BOOLEAN_T extend_match_collection_tab_delimited(
 */
     match_collection -> 
       scored_type[LOGP_BONF_WEIBULL_XCORR] = 
-      !result_file.getString(PVALUE_COL).empty();
+      !result_file.empty(PVALUE_COL);
 
     match_collection -> 
       scored_type[PERCOLATOR_QVALUE] = 
-      !result_file.getString(PERCOLATOR_QVALUE_COL).empty();
+      !result_file.empty(PERCOLATOR_QVALUE_COL);
 
     match_collection -> 
       scored_type[PERCOLATOR_SCORE] = 
-      !result_file.getString(PERCOLATOR_SCORE_COL).empty();
+      !result_file.empty(PERCOLATOR_SCORE_COL);
 
     match_collection -> 
       scored_type[LOGP_QVALUE_WEIBULL_XCORR] = 
-      !result_file.getString(WEIBULL_QVALUE_COL).empty();
+      !result_file.empty(WEIBULL_QVALUE_COL);
   
     match_collection -> 
       scored_type[QRANKER_SCORE] = 
-      !result_file.getString(QRANKER_SCORE_COL).empty();
+      !result_file.empty(QRANKER_SCORE_COL);
     
     match_collection -> 
       scored_type[QRANKER_QVALUE] = 
-      !result_file.getString(QRANKER_QVALUE_COL).empty();
+      !result_file.empty(QRANKER_QVALUE_COL);
 
     match_collection -> post_scored_type_set = TRUE;
 
@@ -3455,6 +3564,12 @@ void assign_match_collection_qvalues(
 
   }
   free_match_iterator(match_iterator);
+}
+
+const vector<bool>& get_match_collection_iterator_cols_in_file(
+  MATCH_COLLECTION_ITERATOR_T* match_collection_iterator){
+
+  return match_collection_iterator->cols_in_file;
 }
 
 

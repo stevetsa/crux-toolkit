@@ -39,6 +39,7 @@
 #include "protein_index.h"
 #include "modifications.h"
 #include "modified_peptides_iterator.h"
+#include "MatchFileWriter.h"
 
 using namespace std;
 
@@ -295,6 +296,10 @@ void print_matches_multi_spectra
 (MATCH_COLLECTION_T* match_collection, 
  FILE* tab_file, 
  FILE* decoy_tab_file);
+void print_matches_multi_spectra
+(MATCH_COLLECTION_T* match_collection, 
+ MatchFileWriter* tab_file, 
+ MatchFileWriter* decoy_tab_file);
 
 
 /**
@@ -376,6 +381,13 @@ BOOLEAN_T print_match_collection_tab_delimited(
   SCORER_TYPE_T main_score  ///< the main score to report -in
   );
 
+BOOLEAN_T print_match_collection_tab_delimited(
+  MatchFileWriter* output, ///< the output file -out
+  int top_match, ///< the top matches to output -in
+  MATCH_COLLECTION_T* match_collection, ///< the match_collection to print sqt -in
+  Spectrum* spectrum, ///< the spectrum to print sqt -in
+  SCORER_TYPE_T main_score  ///< the main score to report -in
+  );
 /**
  * Retrieve the calibration parameter eta.
  */
@@ -658,6 +670,9 @@ void assign_match_collection_qvalues(
   SCORER_TYPE_T score_type,
   MATCH_COLLECTION_T* all_matches
 );
+
+const vector<bool>& get_match_collection_iterator_cols_in_file(
+  MATCH_COLLECTION_ITERATOR_T* match_collection);
 
 #endif
 

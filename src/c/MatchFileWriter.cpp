@@ -280,7 +280,7 @@ void MatchFileWriter::addColumnNames
  * Write header to file using column names that have been set.
  */
 void MatchFileWriter::writeHeader(){
-
+  num_columns_ = 0;
   // set file position index for all columns being printed
   for(unsigned int col_type = 0; col_type < NUMBER_MATCH_COLUMNS; col_type++){
     if( match_to_print_[col_type] == true ){
@@ -301,8 +301,6 @@ void MatchFileWriter::writeHeader(){
 
   DelimitedFileWriter::writeHeader();
 
-  // every line will be this length, reserve space in current row for speed
-  current_row_.assign(num_columns_, "");
 }
 
 
