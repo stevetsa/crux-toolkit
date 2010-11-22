@@ -127,11 +127,11 @@ int mpsm_qranker_main(int argc, char** argv){
   char* protein_input_name = get_string_parameter("protein database");
 
   // TODO (BF oct-22-09): consider adding feature file to OutputFiles
-  char* feature_file = "features.txt";
+  const char* feature_file = "features.txt";
 
 
   if (feature_file != NULL) {
-    prefix_fileroot_to_name(&feature_file);
+    prefix_fileroot_to_name((char**)&feature_file);
   }
 
 
@@ -140,7 +140,7 @@ int mpsm_qranker_main(int argc, char** argv){
   carp(CARP_INFO,"run_mpsm_q");
   run_mpsm_q(psm_dir,
              protein_input_name,
-             feature_file);
+             (char*)feature_file);
 
   carp(CARP_INFO,"free psm_dir");
   // clean up
