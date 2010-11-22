@@ -54,15 +54,23 @@ void Caller :: calcScores(Scores &set, NeuralNet &n)
   double r = 0.0;
   const double* featVec;
   int label = 0;
+  double loss = 0;
 
   for (unsigned int i = 0; i < set.size(); i++) 
     {
       featVec = set[i].pPSM->features;
       label = set[i].label;
       r = n.classify(featVec);
+      //double err = n.get_err(label);
+      //double err = 1-label*r;
+      //if (err < 0)
+      //	err = 0;
+      //loss += err;
       set[i].score = r;
       set[i].pPSM->sc=r;
+
     }
+  //cout << "loss " << loss << "\n";
 }
 
 void Caller :: calcPValues(Scores &set, NeuralNet &n, int &max_pos)
@@ -88,6 +96,34 @@ void Caller :: getMultiFDR(Scores &set, NeuralNet &n, vector<double> &qvalues, b
   for(unsigned int ct = 0; ct < qvalues.size(); ct++)
     overFDRmulti[ct] = 0;
   set.calcMultiOverFDR(qvalues, overFDRmulti, do_max_psm, do_classify);
+
+}
+
+void Caller :: setSigmoidZero(Scores &set, NeuralNet &n)
+{
+  
+  int label;
+  int q = overFDRmulti[0];
+  //cout << "q " << q << "\n";
+  int count = 0;
+  unsigned int i;
+  for (i = 0; i < set.size(); i++)
+    {
+      if (set[i].label == 1)
+	count++;
+      if (count>q)
+	break;
+    }
+  
+  label = set[i].label;
+  double r = n.classify(set[i].pPSM->features);
+  double err = n.get_err(label);
+  //cout << "err " << err << "\n";
+  n.adjust_bias_top_layer(r);
+  r = n.classify(set[i].pPSM->features);
+  err = n.get_err(label);
+  //cout << "err " << err << "\n";
+
 }
 
 
@@ -357,7 +393,12 @@ void Caller :: train_net_two(Scores &set)
 	  ind = rand()%set.size();
 	  featVec = set[ind].pPSM->features;
 	  label = set[ind].label;
-	  net.train(featVec,label);
+	  if (label == 1)
+	    net.train(featVec,label);
+	  else {
+	  r1 = net.classify(set[ind].pPSM->features);
+	  if ((1-r1*label) > 0)
+	    net.train1(set[ind].pPSM->features, set[ind].label); }
 	}
       else
 	{
@@ -515,16 +556,16 @@ void Caller :: train_many_target_nets_ave(
 	for(int count = 0; count < num_qvals; count++)
 	  ave_overFDR[count] += overFDRmulti[count];
 		
-	getMultiFDR(thresholdset,net, qvals1, false);
-	for(int count = 0; count < num_qvals; count++)
-	  ave_overFDR[count] += overFDRmulti[count];
+	//getMultiFDR(thresholdset,net, qvals1, false);
+	//for(int count = 0; count < num_qvals; count++)
+	//  ave_overFDR[count] += overFDRmulti[count];
 	
-	getMultiFDR(thresholdset,net, qvals2, false);
-	for(int count = 0; count < num_qvals; count++)
-	  ave_overFDR[count] += overFDRmulti[count];
+	//getMultiFDR(thresholdset,net, qvals2, false);
+	//for(int count = 0; count < num_qvals; count++)
+	//  ave_overFDR[count] += overFDRmulti[count];
 	
-	for(int count = 0; count < num_qvals; count++)
-	  ave_overFDR[count] /=3;
+	//for(int count = 0; count < num_qvals; count++)
+	//  ave_overFDR[count] /=3;
 	  
 	for(int count = 0; count < num_qvals;count++)
 	  {
@@ -536,7 +577,7 @@ void Caller :: train_many_target_nets_ave(
 	      }
 	  }
 
-	if((i % 20) == 0)
+	if((i % 10) == 0)
         {
           cerr << "Iteration " << i << " : \n";
           /*
@@ -581,10 +622,11 @@ void Caller::train_many_nets(
 {
   
   thresholdset_ = trainset;
-  /*
-  switch_iter = 100;
-  niter = 200;
-  */ 
+  
+  switch_iter = 61;
+  
+  niter = 91;
+   
   num_qvals = 14;
   qvals.clear();
   qvals.resize(num_qvals,0.0);
@@ -638,20 +680,31 @@ void Caller::train_many_nets(
   for(int count = 0; count < num_qvals; count++){
     max_net_gen[count] = net;
   }
+  initial_net = net;
   
   cerr << "Before iterating\n";
   cerr << "trainset: ";
   getMultiFDR(trainset,net,qvals);
   printNetResults(overFDRmulti);
+  setSigmoidZero(trainset,net);
+  ofstream f_net_i("net_i.txt");
+  net.write_to_file(f_net_i);
+  f_net_i.close();
+
   cerr << "\n";
   cerr << "testset: ";
   getMultiFDR(testset,net,qvals);
   printNetResults(overFDRmulti);
   cerr << "\n";
   
+  for(int count = 0; count < num_qvals;count++)
+    max_overFDR[count] = overFDRmulti[count];
+
 
   train_many_general_nets(trainset, testset, thresholdset_);
-  
+  ofstream f_net("net.txt");
+  net.write_to_file(f_net);
+  f_net.close();
 
   //write out the results of the general net
   if (0){
@@ -663,7 +716,15 @@ void Caller::train_many_nets(
 
   //copy the general net into target nets;
   for(int count = 0; count < num_qvals; count++)
-    max_net_targ[count] = max_net_gen[count];
+    {
+      if (getOverFDR(trainset, max_net_gen[count], qvals[count]) > getOverFDR(trainset, initial_net, qvals[count])) 
+	max_net_targ[count] = max_net_gen[count];
+      else
+	{
+	  //cout << count << " selecting init net\n";
+	  max_net_targ[count] = initial_net;
+	}
+    }
 
   //calculate average of target q-values
   //and q-value +0.05 and -0.05
@@ -671,19 +732,19 @@ void Caller::train_many_nets(
   for(int count = 0; count < num_qvals; count++)
     ave_overFDR[count] += overFDRmulti[count];
   printNetResults(ave_overFDR);
-  getMultiFDR(thresholdset_,net, qvals1, false);
-  for(int count = 0; count < num_qvals; count++)
-    ave_overFDR[count] += overFDRmulti[count];
-  printNetResults(ave_overFDR);
-  getMultiFDR(thresholdset_,net, qvals2, false);
-  for(int count = 0; count < num_qvals; count++)
-    ave_overFDR[count] += overFDRmulti[count];
-  for(int count = 0; count < num_qvals; count++)
-    ave_overFDR[count] /=3;
-  cerr<<"ave:"<<endl;
-  printNetResults(ave_overFDR);
-  for(int count = 0; count < num_qvals;count++)
-    max_overFDR[count] = ave_overFDR[count];
+  //getMultiFDR(thresholdset_,net, qvals1, false);
+  //for(int count = 0; count < num_qvals; count++)
+  //  ave_overFDR[count] += overFDRmulti[count];
+  //printNetResults(ave_overFDR);
+  //getMultiFDR(thresholdset_,net, qvals2, false);
+  //for(int count = 0; count < num_qvals; count++)
+  //  ave_overFDR[count] += overFDRmulti[count];
+  //for(int count = 0; count < num_qvals; count++)
+  //  ave_overFDR[count] /=3;
+  //cerr<<"ave:"<<endl;
+  //printNetResults(ave_overFDR);
+  //for(int count = 0; count < num_qvals;count++)
+  //  max_overFDR[count] = ave_overFDR[count];
   
 
   train_many_target_nets_ave(trainset, testset, thresholdset_);  

@@ -50,6 +50,7 @@ class Linear
   Linear(): num_neurons(0), len_w(0), weightDecay(0.0) {}
   ~Linear() {clear();}
   void resize(int m, int n);
+  void adjust_bias(double r);
   void clear();
   Linear& operator=(Linear &L);
  
@@ -153,6 +154,7 @@ class NeuralNet
   inline void set_cost_flag(int clf){cost_lin_flag = clf;}
   inline double get_mu(){return lin1.get_mu();}
   inline void set_mu(double m) {lin1.set_mu(m); lin2.set_mu(m);}
+  void adjust_bias_top_layer(double r);
   
   inline void set_weightDecay(double lambda) {lin1.set_weightDecay(lambda); lin2.set_weightDecay(lambda);}
 

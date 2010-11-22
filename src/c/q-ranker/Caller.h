@@ -82,6 +82,7 @@ public:
     int getOverFDR(Scores &set, NeuralNet &n, double fdr);
     int getOverFDR(Scores &set, NeuralNet &n, double fdr, bool do_max_psm);
     void calcScores(Scores &set, NeuralNet &n);
+    void setSigmoidZero(Scores &set, NeuralNet &n);
     void calcPValues(Scores &set, NeuralNet &n, int &max_pos);
     void getMultiFDR(Scores &set, NeuralNet &n, vector<double> &qval, bool do_classify=true);
     void printNetResults(vector<int> &scores);
@@ -146,6 +147,7 @@ protected:
     int splitPositives;
 
     NeuralNet net;
+    NeuralNet initial_net;
     int num_hu;
     double mu;
     double weightDecay;

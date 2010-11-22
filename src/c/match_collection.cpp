@@ -2548,7 +2548,7 @@ BOOLEAN_T add_match_to_post_match_collection(
   ++match_collection->match_total;
   
   // DEBUG, print total peptided scored so far
-  if(match_collection->match_total % 1000 == 0){
+  if(match_collection->match_total % 200000 == 0){
     carp(CARP_INFO, "parsed PSM: %d", match_collection->match_total);
   }
 

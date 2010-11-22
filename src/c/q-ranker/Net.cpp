@@ -22,13 +22,37 @@ void Linear :: resize(int m, int n)
       for(int k = 0; k < num_neurons; k++)
 	w[k] = new double[len_w];
     }
-  for(int k = 0; k < num_neurons; k++)
+
+  if (0) {
+  int k = 0;
+  w[k][0] = 0.7;
+  for(int j = 1; j < len_w; j++)
+    w[k][j] = 0;
+
+  for(int k = 1; k < num_neurons; k++)
     for(int j = 0; j < len_w; j++)
       w[k][j] = ((double)rand()/RAND_MAX - 0.5)/num_features;
-  
+  }
+  else
+    {
+      for(int k = 0; k < num_neurons; k++)
+	for(int j = 0; j < len_w; j++)
+	  w[k][j] = ((double)rand()/RAND_MAX - 0.5)/num_features;
+    }
+    
   
 }
  
+  void Linear :: adjust_bias(double r){
+    if (len_w == num_features)
+      {
+	cout << "there is not bias in this net\n"; 
+	return;
+      }
+    w[0][num_features] -= r;
+    
+  }
+
 void Linear :: clear()
 {
   if(num_neurons != 0)
@@ -121,6 +145,7 @@ void Linear :: adjust_weights(State &down, State &up)
       for(j = 0; j < num_features; j++)
         {
           grad = 0.0;
+          //if(weightDecay > 0 && j > 0)
           if(weightDecay > 0)
             grad += weightDecay*w[k][j];
           grad += up.dx[k]*down.x[j];
@@ -133,7 +158,7 @@ void Linear :: adjust_weights(State &down, State &up)
           assert(len_w == num_features+1);
           grad = 0.0;
           if(weightDecay > 0)
-            grad += weightDecay*w[k][j];
+	    grad += weightDecay*w[k][j];
           grad += up.dx[k];
           w[k][j] -= mu*grad;
         }
@@ -375,6 +400,14 @@ void NeuralNet :: remove_bias()
     lin2.set_len_w(lin2.getNumFeatures());
 }
 
+
+  void NeuralNet :: adjust_bias_top_layer(double r)
+  {
+    if (lin_flag == 1) 
+      lin1.adjust_bias(r);
+    else
+      lin2.adjust_bias(r);
+  }
 
 void NeuralNet::clear()
 {
