@@ -119,6 +119,21 @@ In addition, a log file called </li><li><span style="font-weight: bold;">quantif
   Quantification at protein or peptide level. See how methods differ under Description. Default=PROTEIN.
   
 </li>
+
+<li>
+<code>--parsimony none|simple|greedy</code> - Perform a parsimony
+analysis on the proteins, and report a "parsimony rank" column in the
+output file.  This column contains integers indicating the protein's
+rank in a list sorted by spectral counts.  However, if the parsimony
+analysis results in two proteins being merged, then their parsimony
+rank is the same.  In such a case, the rank is assigned based on the
+largest spectral count of any protein in the merged meta-protein.  The
+"simple" parsimony algorithm only merges two proteins A and B if the
+peptides identified in protein A are the same as or a subset of the
+peptides identified in protein B.  The "greedy" parsimony algorithm
+does additional merging, using the peptide q-values to greedily assign
+each peptide to a single protein.</li>
+
 <li>
   <code>--threshold &lt;double&gt; </code>-
 The&nbsp;q-value threshold (all PSMs with q-value higher than this will be
