@@ -39,7 +39,7 @@ string res_prefix="yeast_trypsin";
 /********************* writing out results functions***************************************/
 
 int Caller :: getOverFDR(Scores &set, NeuralNet &n, double fdr) {
-  return getOverFDR(set, n, fdr, do_max_psm);
+  return getOverFDR(set, n, fdr, do_max_psm_);
 }
 
 int Caller :: getOverFDR(Scores &set, NeuralNet &n, double fdr, bool do_max_psm)
@@ -77,7 +77,7 @@ void Caller :: calcPValues(Scores &set, NeuralNet &n, int &max_pos)
 {
   calcScores(set, n);
 
-  set.calcPValues(do_max_psm, max_pos);
+  set.calcPValues(do_max_psm_, max_pos);
 }
 
  
@@ -95,7 +95,7 @@ void Caller :: getMultiFDR(Scores &set, NeuralNet &n, vector<double> &qvalues, b
 
   for(unsigned int ct = 0; ct < qvalues.size(); ct++)
     overFDRmulti[ct] = 0;
-  set.calcMultiOverFDR(qvalues, overFDRmulti, do_max_psm, do_classify);
+  set.calcMultiOverFDR(qvalues, overFDRmulti, do_max_psm_, do_classify);
 
 }
 
@@ -233,7 +233,7 @@ void Caller :: train_target_net(Scores &train, Scores &thresh, double qv)
   overFDR = getOverFDR(train,net, qv);
   ind_low = overFDR;
 
-  if (do_max_psm) {
+  if (do_max_psm_) {
     ind_low = getOverFDR(train,net, qv, false);
   }
 
@@ -511,18 +511,51 @@ void Caller :: train_many_general_nets(
       {
 	
 	cerr << "Iteration " << i << " : \n";
-	cerr << "trainset: ";
-	getMultiFDR(trainset,net,qvals);
-	printNetResults(overFDRmulti);
-	cerr << "\n";
-	cerr << "testset: ";
-	getMultiFDR(testset,net,qvals);
-	printNetResults(overFDRmulti);
-	cerr << "\n";
+        printResults(trainset, testset);
       }
   }
 
 }
+
+
+void Caller :: printResults(Scores& trainset, Scores& testset) {
+
+
+  cerr << "trainset: ";
+  getMultiFDR(trainset,net,qvals);
+  printNetResults(overFDRmulti);
+  cerr << "\n";
+  cerr << "testset: ";
+  getMultiFDR(testset,net,qvals);
+  printNetResults(overFDRmulti);
+  cerr << "\n";
+
+  if (do_max_psm_) {
+    do_max_psm_ = false;
+    cerr << "trainset(orig): ";
+    getMultiFDR(trainset,net,qvals);
+    printNetResults(overFDRmulti);
+    cerr << "\n";
+    cerr << "testset(orig): ";
+    getMultiFDR(testset,net,qvals);
+    printNetResults(overFDRmulti);
+    cerr << "\n";
+    do_max_psm_ = true;
+  }
+
+}
+
+void Caller :: printParameters() {
+  cerr << "Hidden Units:"<<num_hu<<endl;
+  cerr << "Learning Rate:"<<mu<<endl;
+  cerr << "Weight Decay:"<<weightDecay<<endl;
+  cerr << "Switch Iter:"<<switch_iter<<endl;
+  cerr << "Total Iter:"<<niter<<endl;
+  cerr << "do_xval:"<<do_xval<<endl;
+  cerr << "do_max_psm_:"<<do_max_psm_<<endl;
+  cerr << "do_pvalue:"<<do_pvalue<<endl;
+}
+
 
 void Caller :: train_many_target_nets_ave(
   Scores& trainset,
@@ -542,6 +575,11 @@ void Caller :: train_many_target_nets_ave(
       cerr << "training thresh " << thr_count  << "\n";
 
       ind_low = getOverFDR(trainset, net, qvals[thr_count], false);
+      cerr << "ind low:"<<ind_low<<endl;
+
+      cerr <<" Before Iterating:"<<endl;
+      printResults(trainset, testset);
+
       for(int i=switch_iter;i<niter;i++) {
 		
 	//sorts the examples in the training set according to the current net scores
@@ -579,17 +617,9 @@ void Caller :: train_many_target_nets_ave(
 
 	if((i % 10) == 0)
         {
+          
           cerr << "Iteration " << i << " : \n";
-          /*
-          cerr << "trainset: ";
-          getMultiFDR(trainset,net,qvals);
-          printNetResults(overFDRmulti);
-          cerr << "\n";
-          */
-          cerr << "testset: ";
-          getMultiFDR(testset,net,qvals);
-          printNetResults(overFDRmulti);
-          cerr << "\n";
+          printResults(trainset, testset);
         }
 
       }
@@ -609,7 +639,7 @@ void Caller::train_many_nets()
     full_max_pos += max_pos;
     fullset.calcQValues(full_max_pos);
   } else {
-    fullset.calcFDR_Decoy(do_max_psm);
+    fullset.calcFDR_Decoy(do_max_psm_);
   }
 }
 
@@ -620,12 +650,14 @@ void Caller::train_many_nets(
   vector<Scores>& xv_test,
   int& max_pos) 
 {
+
+  printParameters();
   
   thresholdset_ = trainset;
   
-  switch_iter = 61;
+  //switch_iter = 61;
   
-  niter = 91;
+  //niter = 91;
    
   num_qvals = 14;
   qvals.clear();

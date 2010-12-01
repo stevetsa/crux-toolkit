@@ -46,7 +46,7 @@ Caller::Caller() : pNorm(NULL), pCheck(NULL), svmInput(NULL),
   gistInput(false), tabInput(false), dtaSelect(false), docFeatures(false), reportPerformanceEachIteration(false),
   test_fdr(0.01), selectionfdr(0.01), selectedCpos(0), selectedCneg(0), threshTestRatio(0.3), trainRatio(0.5),
 		   niter(200), switch_iter(100), seed(0), xv_type(EACH_STEP), trainNN(1), splitPositives(1), num_hu(5),mu(0.05),weightDecay(0.0001),
-		   shuffled1_present(false),shuffled2_present(false),do_xval(true),do_max_psm(false),do_pvalue(false)
+		   shuffled1_present(false),shuffled2_present(false),do_xval(true),do_max_psm_(false),do_pvalue(false)
 {
 }
 
@@ -419,7 +419,7 @@ void Caller::readFiles(bool &doSingleFile) {
 
 void Caller::train() {
 
-  cerr << "do_xval:"<<do_xval<<" do_max_psm:"<<do_max_psm<<" do_pvalue:"<<do_pvalue<<endl;
+  cerr << "do_xval:"<<do_xval<<" do_max_psm:"<<do_max_psm_<<" do_pvalue:"<<do_pvalue<<endl;
   train_many_nets();
 }
 
@@ -429,7 +429,7 @@ void Caller::fillFeatureSets() {
     if(shuffled2_present)
       Scores::fillFeaturesSplit(trainset_,testset_,normal,shuffled,shuffled1,shuffled2,trainRatio);
     else if( shuffled1_present) {
-      if (do_max_psm || do_pvalue) {
+      if (do_max_psm_ || do_pvalue) {
         cerr <<"Calling fillFeaturesSplitPSM"<<endl;
         Scores::fillFeaturesSplitPSM(trainset_,testset_,normal,shuffled,shuffled1,trainRatio);
       } 
@@ -438,7 +438,7 @@ void Caller::fillFeatureSets() {
       }
     }
     else {
-      if (do_max_psm || do_pvalue) {
+      if (do_max_psm_ || do_pvalue) {
         Scores::fillFeaturesSplitPSM(trainset_,testset_,normal,shuffled,trainRatio);
       } else {
         Scores::fillFeaturesSplit(trainset_,testset_,normal,shuffled,trainRatio);
@@ -505,7 +505,7 @@ void Caller::setHU(int hu) {
 }
 
 void Caller::setDoMaxPSM(bool ado_max_psm) {
-  do_max_psm = ado_max_psm;
+  do_max_psm_ = ado_max_psm;
 }
 
 void Caller::setDoXVal(bool ado_xval) {

@@ -85,6 +85,8 @@ public:
     void setSigmoidZero(Scores &set, NeuralNet &n);
     void calcPValues(Scores &set, NeuralNet &n, int &max_pos);
     void getMultiFDR(Scores &set, NeuralNet &n, vector<double> &qval, bool do_classify=true);
+    void printResults(Scores& trainset, Scores& testset);
+    void printParameters();
     void printNetResults(vector<int> &scores);
     void write_max_nets(string filename, NeuralNet *max_net);
     
@@ -113,7 +115,7 @@ protected:
     bool docFeatures;
     bool reportPerformanceEachIteration;
     bool do_xval;
-    bool do_max_psm;
+    bool do_max_psm_;
     bool do_pvalue;
     double test_fdr;
     double selectionfdr;

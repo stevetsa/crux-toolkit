@@ -596,7 +596,8 @@ void run_mpsm_q(
   qcSetDoPValue(get_boolean_parameter("qranker-do-pvalue"));
   qcSetNIter(get_int_parameter("qranker-niter"));
   qcSetSwitchIter(get_int_parameter("qranker-siter"));
-
+  qcSetLearningRate(get_double_parameter("qranker-learning-rate"));
+  qcSetWeightDecay(get_double_parameter("qranker-weight-decay"));
 
   //carp(CARP_INFO,"%d",pi0);
   // Call that sets verbosity level
