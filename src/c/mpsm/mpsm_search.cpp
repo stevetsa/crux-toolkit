@@ -228,6 +228,7 @@ int mpsm_search_main(int argc, char** argv){
       carp(CARP_DEBUG, "Processed all charges for spec %d", get_spectrum_first_scan(current_spectrum));
       carp(CARP_DEBUG, "Searching for mpsms");
       search_for_mpsms(spsm_map, mpsm_map);
+      mpsm_map.calcXCorrRanks();
       if (get_boolean_parameter("mpsm-do-sort")) {
         //spsm_map.calcDeltaCN();
         //spsm_map.calcZScores();
@@ -237,7 +238,7 @@ int mpsm_search_main(int argc, char** argv){
         //cerr<<"Calculating zscores"<<endl;
         mpsm_map.calcZScores();
         //cerr<<"Calculating xcorr ranks"<<endl;
-        mpsm_map.calcXCorrRanks();
+        
       }
       //print out map
       //output the spsms.
@@ -352,13 +353,13 @@ int mpsm_search_main(int argc, char** argv){
 
   //process last spectrum.
   search_for_mpsms(spsm_map, mpsm_map);
+  mpsm_map.calcXCorrRanks();
   if (get_boolean_parameter("mpsm-do-sort")) { 
     mpsm_map.sortMatches(XCORR);
   //print out map
   //output the spsms.
     mpsm_map.calcDeltaCN();
     mpsm_map.calcZScores();
-    mpsm_map.calcXCorrRanks();
   }
   //output_files.writeMatches(spsm_map);
   output_files.writeMatches(mpsm_map);

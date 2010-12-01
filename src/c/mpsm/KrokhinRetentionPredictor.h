@@ -1,6 +1,8 @@
 #ifndef KROKHINRETENTIONPREDICTOR_H
 #define KROKHINRETENTIONPREDICTOR_H
 
+//As implemented in Krokhin et al. 2004.
+
 #include "RetentionPredictor.h"
 
 #include "match.h"

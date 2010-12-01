@@ -72,17 +72,27 @@ void MPSM_OutputFiles::writeMatches(
   FILE* file_ptr, 
   MPSM_MatchCollection& mpsm_match_collection) {
 
+  bool do_sort = get_boolean_parameter("mpsm-do-sort");
+
   for (int match_idx = 0;match_idx < mpsm_match_collection.numMatches(); match_idx++) {
     //cout <<"Match "<<match_idx<<" out of "<<n<<endl;
 
     MPSM_Match& current_match = mpsm_match_collection.getMatch(match_idx);
     current_match.setParent(&mpsm_match_collection);
     int rank = current_match.getXCorrRank();
-
-    if (rank <= getMatchesPerSpec()) {
-      writeMatch(file_ptr, current_match);
+    
+    if (do_sort) {
+      if (rank <= getMatchesPerSpec()) {
+        writeMatch(file_ptr, current_match);
+      } else {
+        break;
+      }
     } else {
-      break;
+      if (match_idx < getMatchesPerSpec()) {
+        writeMatch(file_ptr, current_match);
+      } else {
+        break;
+      }
     }
   }
 }

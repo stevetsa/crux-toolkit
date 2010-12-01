@@ -366,7 +366,12 @@ ostream& operator <<(ostream& os, MPSM_Match& match_obj) {
 
   FLOAT_T spectrum_precursor_mz = get_spectrum_precursor_mz(spectrum);
 
-  FLOAT_T xcorr_score = match_obj.getScore(XCORR);
+  FLOAT_T xcorr_score = 0;
+  if (get_boolean_parameter("mpsm-do-sort")) {
+    xcorr_score = match_obj.getScore(XCORR);
+  } else {
+    xcorr_score = match_obj.xcorr_score_;
+  }
   //int xcorr_rank = match_obj.getScore(XCORR_RANK);
   
   int matches_spectrum = 0;
