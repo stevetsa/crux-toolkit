@@ -93,6 +93,9 @@ static MATCH_COLLECTION_T* run_percolator_or_qranker(
     num_spectra[iterations] = 
       get_match_collection_match_total(match_collection);
     iterations++;
+    //if (match_collection_iterator_has_next(match_collection_iterator)) {
+      free_match_collection(match_collection);
+    //}
   }
 
   // Reset the iterator. (FIXME: There should be a function to do this!)
