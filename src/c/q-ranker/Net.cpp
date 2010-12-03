@@ -193,7 +193,7 @@ void Linear :: adjust_weights1(State &down, State &up)
           assert(len_w == num_features+1);
           grad = 0.0;
           if(weightDecay > 0)
-            grad += weightDecay*w[k][j];
+	    grad += weightDecay*w[k][j];
           grad += up.dx[k];
           w[k][j] -= (mu/(len_w*num_neurons))*grad;
         }

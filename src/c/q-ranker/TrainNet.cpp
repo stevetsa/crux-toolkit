@@ -34,8 +34,6 @@ string res_prefix="yeast_trypsin";
 
 
 
-
-
 /********************* writing out results functions***************************************/
 
 int Caller :: getOverFDR(Scores &set, NeuralNet &n, double fdr) {
@@ -393,12 +391,12 @@ void Caller :: train_net_two(Scores &set)
 	  ind = rand()%set.size();
 	  featVec = set[ind].pPSM->features;
 	  label = set[ind].label;
-	  if (label == 1)
+	  //if (label == 1)
 	    net.train(featVec,label);
-	  else {
-	  r1 = net.classify(set[ind].pPSM->features);
-	  if ((1-r1*label) > 0)
-	    net.train1(set[ind].pPSM->features, set[ind].label); }
+	    //else {
+	    //r1 = net.classify(set[ind].pPSM->features);
+	    //if ((1-r1*label) > 0)
+	    //  net.train1(set[ind].pPSM->features, set[ind].label); }
 	}
       else
 	{
@@ -654,10 +652,9 @@ void Caller::train_many_nets(
   printParameters();
   
   thresholdset_ = trainset;
-  
-  //switch_iter = 61;
-  
-  //niter = 91;
+
+  switch_iter = 61;
+  niter = 91;
    
   num_qvals = 14;
   qvals.clear();
@@ -718,7 +715,7 @@ void Caller::train_many_nets(
   cerr << "trainset: ";
   getMultiFDR(trainset,net,qvals);
   printNetResults(overFDRmulti);
-  setSigmoidZero(trainset,net);
+  //setSigmoidZero(trainset,net);
   ofstream f_net_i("net_i.txt");
   net.write_to_file(f_net_i);
   f_net_i.close();
