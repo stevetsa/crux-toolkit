@@ -23,7 +23,7 @@ void Linear :: resize(int m, int n)
 	w[k] = new double[len_w];
     }
 
-  if (0) {
+  if (1) {
   int k = 0;
   w[k][0] = 0.7;
   for(int j = 1; j < len_w; j++)
