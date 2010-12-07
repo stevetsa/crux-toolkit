@@ -1,0 +1,68 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML>
+<HEAD>
+<TITLE>extract-rows</TITLE>
+</HEAD>
+<BODY>
+<blockquote>
+<H1 ALIGN=CENTER>extract-rows</H1>
+
+<B>Usage:</B>
+
+<blockquote>
+<code>crux extract-rows [options] &nbsp;&lt;tsv&nbsp;filename&gt; 
+  &nbsp;&lt;column&nbsp;name&gt;&nbsp;&lt;column&nbsp;value </code>
+</blockquote>
+
+<B>Description:</B>
+<p>
+Given a tab-delimited filename, a column name and a column cell value, 
+extract the rows that have the matching values for that column.
+</p>
+
+<B>Input:</B>
+<UL>
+
+<li>
+&lt;tsv&nbsp;filename&gt; &ndash; A tab-delimited file with column headers.
+</li>
+	
+<li>
+&lt;column name&gt; &ndash; A column name
+</li>
+
+<li>
+&lt;column value&gt; &ndash; A cell value for a column
+</li>
+
+</UL>
+
+<B>Output:</B>
+
+<ul>
+The program prints the rows that have the matching column cell value in tab-delimited 
+format to standard output. The matching is done by string comparison.
+</ul>
+
+<B>Options:</B>
+
+<UL>
+
+<LI>
+<code>--verbosity &lt;0-100&gt;</code> &ndash; Specify the verbosity of the
+current processes. Each level prints the following messages, including
+all those at lower verbosity levels: 0-fatal errors, 10-non-fatal
+errors, 20-warnings, 30-information on the progress of execution,
+40-more progress information, 50-debug info, 60-detailed debug info.
+Default = 30.</li>
+
+</ul>
+
+<hr></hr>
+
+<p>
+<a href="crux.html">Crux home</a></p>
+
+</blockquote>
+</body>
+</html>
