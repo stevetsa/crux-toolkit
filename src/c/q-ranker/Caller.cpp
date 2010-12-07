@@ -45,7 +45,7 @@ Caller::Caller() : pNorm(NULL), pCheck(NULL), svmInput(NULL),
   decoyWC(""), rocFN(""), gistFN(""), tabFN(""), weightFN(""),
   gistInput(false), tabInput(false), dtaSelect(false), docFeatures(false), reportPerformanceEachIteration(false),
   test_fdr(0.01), selectionfdr(0.01), selectedCpos(0), selectedCneg(0), threshTestRatio(0.3), trainRatio(0.5),
-		   niter(200), switch_iter(100), seed(0), xv_type(EACH_STEP), trainNN(1), splitPositives(1), num_hu(5),mu(0.005),weightDecay(0.0005),
+		   niter(200), switch_iter(100), seed(0), xv_type(EACH_STEP), trainNN(1), splitPositives(1), num_hu(4),mu(0.005),weightDecay(0.0005),
 		   shuffled1_present(false),shuffled2_present(false),do_xval(true),topk_(0),do_pvalue(false)
 {
 }
@@ -467,6 +467,7 @@ void Caller::fillFeatureSets() {
     for (set<DataSet *>::iterator myset=all.begin();myset!=all.end();++myset)
       (*myset)->setRetentionTime(scan2rt);
   }
+
 }
 
 

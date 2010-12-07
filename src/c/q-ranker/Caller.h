@@ -66,6 +66,7 @@ public:
     void train_net_two(Scores &set);
     void train_many_general_nets(Scores& trainset, Scores& testset, Scores& thresholdset);
     void train_many_target_nets_ave(Scores& trainset, Scores& testset, Scores& thresholdset);
+    void train_many_target_nets(Scores& trainset, Scores& testset, Scores& thresholdset);
     void train_many_nets();
     void train_many_nets(
       Scores& trainset,
@@ -91,6 +92,7 @@ public:
     void write_max_nets(string filename, NeuralNet *max_net);
     
     void xvalidate_net(std::vector<Scores>& trainset, std::vector<Scores>& thresholdset, double qv);
+    void xvalidate_model(std::vector<Scores>& trainset, std::vector<Scores>& thresholdset, double qv);
     void train_general_net(Scores &train, Scores &thresh, double qv);
     void train_target_net(Scores &train, Scores &thresh, double qv);
 

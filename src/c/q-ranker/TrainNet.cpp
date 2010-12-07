@@ -186,11 +186,9 @@ void Caller :: train_general_net(Scores &train, Scores &thresh, double qv)
   NeuralNet best_net;
   best_net = net;
   best_overFDR = overFDR;
-
   
   for(int i=0;i<switch_iter;i++) {
     train_net_two(train);
-    
     //record the best result
     overFDR = getOverFDR(thresh,net, qv);
     if(overFDR > best_overFDR)
@@ -199,7 +197,6 @@ void Caller :: train_general_net(Scores &train, Scores &thresh, double qv)
 	best_net = net;
         best_iteration = i;
       }
-      
     /*
     if((i % 100) == 0)
       {
@@ -212,11 +209,8 @@ void Caller :: train_general_net(Scores &train, Scores &thresh, double qv)
 	cerr << net.get_mu() << " " << qv << " " << getOverFDR(testset,net,qv) << "\n";
       }
     */
-    
   }
-
   cerr<<"train_general_net(): best iter:"<<best_iteration<<" bestFDR("<<qv<<")="<<best_overFDR<<endl;
-
   net = best_net;
   best_net.clear();
 }
@@ -224,22 +218,16 @@ void Caller :: train_general_net(Scores &train, Scores &thresh, double qv)
 
 void Caller :: train_target_net(Scores &train, Scores &thresh, double qv)
 {
-  
   int overFDR = 0;
   int best_overFDR = 0;
-  
   overFDR = getOverFDR(train,net, qv);
   ind_low = overFDR;
-
   if (topk_) {
     ind_low = getOverFDR(train,net, qv, false);
   }
-
   NeuralNet best_net;
   best_net = net;
   best_overFDR = overFDR;
-  //cerr << "target_q " << qv << " starting " << overFDR << "\n";
- 
   for(int i = switch_iter; i < niter; i++)
     {
       overFDR = getOverFDR(train,net,qv);
@@ -269,6 +257,53 @@ void Caller :: train_target_net(Scores &train, Scores &thresh, double qv)
   best_net.clear();
 }
 
+void Caller :: train_many_target_nets(
+  Scores& trainset,
+  Scores& testset,
+  Scores& thresholdset) 
+{
+
+  int  thr_count = num_qvals-1;
+  while (thr_count > 3)
+    {
+      net = max_net_gen[thr_count];
+      net.set_cost_flag(1);;
+      net.remove_bias();
+      
+      cerr << "training thresh " << thr_count  << "\n";
+      ind_low = getOverFDR(trainset, net, qvals[thr_count], false);
+      cerr << "ind low:"<<ind_low<<endl;
+
+      cerr <<" Before Iterating:"<<endl;
+      printResults(trainset, testset);
+
+      for(int i=switch_iter;i<niter;i++) {
+		
+	//sorts the examples in the training set according to the current net scores
+	getMultiFDR(trainset,net,qvals);
+	train_net_two(trainset);
+	
+	//record the best result
+	getMultiFDR(thresholdset,net,qvals);
+	for(int count = 0; count < num_qvals;count++)
+	  {
+	    if(overFDRmulti[count] > max_overFDR[count])
+	      {
+		max_overFDR[count] = overFDRmulti[count];
+		max_net_targ[count] = net;
+	      }
+	  }
+	
+	if((i % 10) == 0)
+	  {
+	    cerr << "Iteration " << i << " : \n";
+	    printResults(trainset, testset);
+	  }
+	
+      }
+      thr_count -= 6;
+    }
+}
  
 /**
  * Do cross-validation to select two hyperparameters: the learning
@@ -289,7 +324,8 @@ void Caller :: xvalidate_net(
   //xv_mu.push_back(0.005);xv_mu.push_back(0.007);xv_mu.push_back(0.01);
   xv_mu.push_back(0.005);xv_mu.push_back(0.01);
 
-  
+  vector <double> xv_num_hu;
+  xv_num_hu.push_back(2);xv_num_hu.push_back(3);xv_num_hu.push_back(4);
 
   //split the trainset
   //for(unsigned int i = 0; i < xval_fold; i++)
@@ -343,6 +379,90 @@ void Caller :: xvalidate_net(
   
   cerr << "training target: mu " << best_mu << " " << mu << " wt_decay " << weightDecay << "\n";
    
+}
+
+
+void Caller :: xvalidate_model(
+  vector<Scores>& xv_train,
+  vector<Scores>& xv_test,
+  double qv ////< The q-value threshold -in
+)
+{
+  int overFDR = 0;
+  vector <int> xv_num_hu;
+  xv_num_hu.push_back(3);xv_num_hu.push_back(4);xv_num_hu.push_back(5);
+
+  switch_iter = 10;
+  niter = 20;
+  
+  //set the linear flag: 1 if linear, 0 otherwise
+  int lf = 0;
+  //set whether there is bias in the linear units: 1 if yes, 0 otherwise
+  int bs = 1;
+  //cost linear flag indicating whether to use the sigmoid(0) or linear loss(1)
+  int clf = 0;
+ 
+  double best_sum = 0;
+  //split the trainset
+  for(unsigned int i = 0; i < xval_fold; i++)
+    {
+      cout << "size " << xv_train[i].size() << " " << xv_test[i].size() << "\n";
+      if (best_sum < xv_test[i].size())
+	best_sum = xv_test[i].size();
+    }
+  int best_num_hu = 0;
+  map <int,int> scan2count;
+  cerr << "xvalidating model\n";
+  for(unsigned int h = 0; h < xv_num_hu.size();h++)
+    {
+      num_hu = xv_num_hu[h];
+      double sm = 0;
+      for(unsigned int i = 0; i < xval_fold; i++)
+	{
+	  net.initialize(FeatureNames::getNumFeatures(),num_hu,mu,clf,lf,bs);
+	  cout << "num_hu " << num_hu << " xval set " << i << "\n";
+	  train_many_general_nets(xv_train[i], xv_train[i], xv_test[i]);
+	  train_many_target_nets(xv_train[i], xv_test[i], xv_train[i]);  
+	  overFDR = getOverFDR(xv_test[i],net, qv);
+	  int count = 0;
+	  scan2count.clear();
+	  for (int j = 0; j < xv_test[i].size(); j++)
+	    {
+	      if(xv_test[i][j].label == 1)
+		{
+		  count++;
+		  int scan = xv_test[i][j].pPSM->scan;
+		  if (scan2count.find(scan) == scan2count.end())
+		    scan2count[scan] = 1;
+		  else
+		    scan2count[scan]++;
+		}
+	      if (count >= overFDR)
+	      	break;
+	    }
+	  double ave_count = 0;
+	  int count_multi = 0;
+	  for (map<int,int>::iterator it = scan2count.begin(); it != scan2count.end(); ++it)
+	    {
+	      ave_count += it->second;
+	      if(it->second > 2)
+		count_multi++;
+	    }
+	  //sm += ave_count/scan2count.size();
+	  sm += count_multi;
+	  cout << "count " << count << " ave count " << ave_count << " " << count_multi <<"\n";
+	  net.clear();
+	}
+      sm /=xval_fold;
+      cerr << "best_sum " << best_sum << " sum " << sm << "\n";
+      if(sm < best_sum)
+	  {
+	    best_sum = sm;
+	    best_num_hu = h;
+	  }
+    }
+  cerr << "training target: num_hu " << xv_num_hu[best_num_hu] << "\n";
+  num_hu = xv_num_hu[best_num_hu]; 
 }
 
 
@@ -563,7 +683,7 @@ void Caller :: train_many_target_nets_ave(
 {
 
   int  thr_count = num_qvals-1;
-  while (thr_count > 0)
+  while (thr_count > 3)
     {
       net = max_net_gen[thr_count];
       //net = max_net_targ[thr_count];
@@ -622,9 +742,13 @@ void Caller :: train_many_target_nets_ave(
         }
 
       }
-      thr_count -= 2;
+      thr_count -= 3;
     }
 }
+
+
+
+
 
 void Caller::train_many_nets() 
 {
@@ -654,8 +778,6 @@ void Caller::train_many_nets(
   
   thresholdset_ = trainset;
 
-  switch_iter = 61;
-  niter = 91;
    
   num_qvals = 14;
   qvals.clear();
@@ -704,6 +826,7 @@ void Caller::train_many_nets(
   if (do_xval) {
     xvalidate_net(xv_train, xv_test, selectionfdr);
   }
+  xvalidate_model(xv_train, xv_test, 0.05);
 
   net.initialize(FeatureNames::getNumFeatures(),num_hu,mu,clf,lf,bs);
   net.set_weightDecay(weightDecay);
@@ -711,6 +834,9 @@ void Caller::train_many_nets(
     max_net_gen[count] = net;
   }
   initial_net = net;
+
+  switch_iter = 31;
+  niter = 70;
   
   cerr << "Before iterating\n";
   cerr << "trainset: ";
