@@ -636,6 +636,10 @@ void initialize_parameters(void){
       "Default=8.",
       "Available from parameter file for crux search-for-matches, percolator, "
       "and compute-q-values.", "true");
+  set_int_parameter("mass-precision", 4, 1, 100, // max is arbitrary
+      "Set the precision for masses and m/z written to sqt and .txt files.  "
+      "Default=4",
+      "Available from parameter file for all commands.", "true");
   set_int_parameter("print-search-progress", 10, 0, BILLION,
       "Show search progress by printing every n spectra searched.  Default="
       "10.", "Set to 0 to show no search progress.  Available for crux "
@@ -893,6 +897,24 @@ void initialize_parameters(void){
       "Weibull parameters.  Default=4000.",
       "Available for crux search-for-xlinks", "true");
 
+  /* crux-util parameters */
+  set_string_parameter("tsv file", NULL,
+    "Path to a delimited file",
+    "Available for the delimited utility programs", "false");
+
+  set_string_parameter("column names", NULL,
+    "List of column names separated by a comma",
+    "Available for the delimited utility", "false");
+
+  set_string_parameter("column name", NULL,
+    "Name of the column to do the operation on",
+    "Available for the delimited utility programs", "false");
+
+  set_string_parameter("column value", NULL,
+    "value of the column",
+    "Available for the delimited utility programs", "false");
+
+  
   // now we have initialized the parameters
   parameter_initialized = TRUE;
   usage_initialized = TRUE;

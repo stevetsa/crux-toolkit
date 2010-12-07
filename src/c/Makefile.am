@@ -36,8 +36,14 @@ LIBFILES= \
   analyze_psms.h \
   carp.cpp \
   carp.h \
-  create_index.cpp \
-  create_index.h \
+  ComputeQValues.cpp \
+  ComputeQValues.h \
+  CreateIndex.cpp \
+  CreateIndex.h \
+  CruxApplicationList.cpp \
+  CruxApplicationList.h \
+  CruxApplication.cpp \
+  CruxApplication.h \
   crux-utils.cpp \
   crux-utils.h \
   database.cpp \
@@ -48,6 +54,10 @@ LIBFILES= \
   DelimitedFileReader.h \
   DelimitedFileWriter.cpp \
   DelimitedFileWriter.h \
+  ExtractColumns.cpp \
+  ExtractColumns.h \
+  ExtractRows.cpp \
+  ExtractRows.h \
   FilteredSpectrumChargeIterator.cpp \
   FilteredSpectrumChargeIterator.h \
   generate_peptides_iterator.cpp \
@@ -58,8 +68,12 @@ LIBFILES= \
   index.h \
   Ion.cpp \
   Ion.h \
-  ion_series.cpp \
-  ion_series.h \
+  IonConstraint.cpp \
+  IonConstraint.h \
+  IonFilteredIterator.cpp \
+  IonFilteredIterator.h \
+  IonSeries.cpp \
+  IonSeries.h \
   linked_list.cpp \
   linked_list.h \
   mass.cpp \
@@ -74,7 +88,8 @@ LIBFILES= \
   MatchFileWriter.h \
   match_collection.cpp \
   match_collection.h \
-  match_search.cpp \
+  MatchSearch.cpp \
+  MatchSearch.h \
   modifications.cpp \
   modifications.h \
   modified_peptides_iterator.cpp \
@@ -97,17 +112,23 @@ LIBFILES= \
   peptide_modifications.h \
   peptide_src.cpp \
   peptide_src.h \
+  Percolator.cpp \
+  Percolator.h \
+  PrintProcessedSpectra.cpp \
+  PrintProcessedSpectra.h \
   print-processed-spectra.cpp \
   print-processed-spectra.h \
   protein.cpp \
   protein.h \
   protein_index.cpp \
   protein_index.h \
+  QRanker.cpp \
+  QRanker.h \
   q-value.cpp \
   q-value.h \
   SearchProgress.h \
-  sequest-search.cpp \
-  sequest-search.h \
+  SequestSearch.cpp \
+  SequestSearch.h \
   scorer.cpp \
   scorer.h \
   sorter.cpp \
@@ -119,6 +140,8 @@ LIBFILES= \
   utils.cpp \
   utils.h \
   version.h \
+  Version.cpp \
+  Version.h \
   xlink_search.h \
   xlink_compute_qvalues.h
 
@@ -165,6 +188,9 @@ crux_predict_peptide_ions_LDADD = \
   $(AM_LDFLAGS) \
   libcrux.la -L$(top_builddir)/src/c/MSToolkit -lm -lmstoolkit
 
+
+
+
 crux_SOURCES = crux-main.cpp crux-main.h
 crux_CXXFLAGS = \
   $(AM_CXXFLAGS) \
@@ -188,6 +214,7 @@ crux_LDADD = \
   -lqranker \
   -lmstoolkit \
   -lArrayLibrary
+
 
 xlink_predict_peptide_ions_SOURCES=./xlink/xhhc_predict_peptide_ions.cpp
 xlink_predict_peptide_ions_CXXFLAGS= \

@@ -48,6 +48,30 @@ const char* usage_str = "Usage: crux <command> [options] <argument>\n"
  */
 int main(int argc, char** argv){
 
+
+  CruxApplicationList applications("crux");
+
+  applications.add(new CreateIndex());
+  applications.add(new MatchSearch());
+  applications.add(new SequestSearch());
+  applications.add(new ComputeQValues());
+  applications.add(new Percolator());
+  applications.add(new QRanker());
+  applications.add(new PrintProcessedSpectra());
+  applications.add(new SearchForXLinks());
+
+  applications.add(new ExtractColumns());
+  applications.add(new ExtractRows());
+
+
+  applications.add(new Version());
+
+  int ret = applications.main(argc, argv);
+
+  exit(ret);
+
+  /*
+
   // check the syntax for crux <operation>
   if( argc < 2 ){
     carp(CARP_FATAL, usage_str);
@@ -95,8 +119,9 @@ int main(int argc, char** argv){
     carp(CARP_FATAL, "Invalid command '%s'\n%s", op_string, usage_str);
     break;
   }
-
-  exit (0);
+  
+  exit ();
+  */
 }// end main
 
 

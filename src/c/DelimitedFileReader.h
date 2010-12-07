@@ -92,6 +92,16 @@ class DelimitedFileReader {
    */
   unsigned int numCols();
 
+  /*
+   *\returns a printable string of the columns available in this file
+   */
+  std::string getAvailableColumnsString();
+
+  /*
+   *\returns the column name header string
+   */
+  std::string getHeaderString();
+
   /**
    * clears the current data and column names,
    * parses the header if it exists,
@@ -139,6 +149,12 @@ class DelimitedFileReader {
    *\returns the column_names
    */
   std::vector<std::string>& getColumnNames();
+
+  /**
+   * get the current row string
+   */
+  std::string& getString();
+  
 
   /**
    * gets a string value of the cell

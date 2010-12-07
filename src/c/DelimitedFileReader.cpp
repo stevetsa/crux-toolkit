@@ -95,6 +95,41 @@ unsigned int DelimitedFileReader::numCols() {
   return column_names_.size();
 }
 
+/*
+ *\returns a printable string of the columns available in this file
+ */
+string DelimitedFileReader::getAvailableColumnsString() {
+
+  ostringstream oss;
+  oss << "Available columns:"<<endl;
+  for (unsigned int col_idx=0;col_idx<numCols();col_idx++) {
+    oss << "  " << getColumnName(col_idx) << endl;
+  }
+
+  string ans = oss.str();
+  return ans;
+}
+
+/*
+ *\returns the column name header string
+ */
+string DelimitedFileReader::getHeaderString() {
+
+  if (numCols() == 0) {
+    return string("");
+  }
+  
+  ostringstream oss;
+  oss << getColumnName(0);
+  for (unsigned int col_idx=1;col_idx<numCols();col_idx++) {
+    oss << "\t" << getColumnName(col_idx);
+  }
+  
+  string ans = oss.str();
+  return ans;
+}
+
+
 /**
  * clears the current data and column names,
  * parses the header if it exists,
@@ -191,6 +226,14 @@ string& DelimitedFileReader::getColumnName(
 vector<string>& DelimitedFileReader::getColumnNames() {
 
   return column_names_;
+}
+
+string& DelimitedFileReader::getString() {
+  if (!has_current_) {
+    carp(CARP_FATAL, "End of file!");
+  }
+  
+  return current_data_string_;
 }
 
 /**
