@@ -186,7 +186,7 @@ static MATCH_COLLECTION_T* run_percolator_or_qranker(
 
       qcSetHU(get_int_parameter("qranker-num-hu"));
       qcSetDoXVal(!get_boolean_parameter("no-xval"));
-      qcSetDoMaxPSM(get_boolean_parameter("do-max-psm"));
+      qcSetTopK(get_int_parameter("qranker-topk"));
       qcSetDoPValue(get_boolean_parameter("qranker-do-pvalue"));
       qcSetNIter(get_int_parameter("qranker-niter"));
       qcSetSwitchIter(get_int_parameter("qranker-siter"));
@@ -316,6 +316,7 @@ static void analyze_matches_main(
     "feature-file",
     "output-dir",
     "overwrite",
+    "qranker-topk"
   };
   int qranker_num_options = sizeof(qranker_option_list)/sizeof(char*);
 

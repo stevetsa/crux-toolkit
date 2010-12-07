@@ -43,7 +43,7 @@ public:
 
     void setHU(int hu);
     void setSeed(unsigned int seed);
-    void setDoMaxPSM(bool ado_max_psm);
+    void setTopK(int topk);
     void setDoXVal(bool ado_xal);
     void setDoPValue(bool ado_pvalue);
     bool getDoPValue();
@@ -80,7 +80,7 @@ public:
     
   
     int getOverFDR(Scores &set, NeuralNet &n, double fdr);
-    int getOverFDR(Scores &set, NeuralNet &n, double fdr, bool do_max_psm);
+    int getOverFDR(Scores &set, NeuralNet &n, double fdr, int topk);
     void calcScores(Scores &set, NeuralNet &n);
     void setSigmoidZero(Scores &set, NeuralNet &n);
     void calcPValues(Scores &set, NeuralNet &n, int &max_pos);
@@ -115,7 +115,7 @@ protected:
     bool docFeatures;
     bool reportPerformanceEachIteration;
     bool do_xval;
-    bool do_max_psm_;
+    int topk_;
     bool do_pvalue;
     double test_fdr;
     double selectionfdr;

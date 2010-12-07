@@ -677,13 +677,15 @@ void initialize_parameters(void){
       "Turn off cross-validation to select hyperparameters.",
       "Available for q-ranker.", "true");
 
-  set_boolean_parameter("do-max-psm", FALSE, 
-       "Only calculate q-values for the maximum scoring psm/scan.",
+  set_int_parameter("qranker-topk", 0, 1, BILLION, 
+       "Only calculate q-values for the top-k scoring psm/scan. (Zero means all)",
        "Available for q-ranker.", "true");
 
   set_boolean_parameter("qranker-do-pvalue", FALSE, 
        "",
 	   "","true");
+
+  
 
   set_int_parameter("qranker-num-hu", 5, 1, 50,
       "Number of hidden units to use for q-ranker",

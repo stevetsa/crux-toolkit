@@ -37,14 +37,14 @@ string res_prefix="yeast_trypsin";
 /********************* writing out results functions***************************************/
 
 int Caller :: getOverFDR(Scores &set, NeuralNet &n, double fdr) {
-  return getOverFDR(set, n, fdr, do_max_psm_);
+  return getOverFDR(set, n, fdr, topk_);
 }
 
-int Caller :: getOverFDR(Scores &set, NeuralNet &n, double fdr, bool do_max_psm)
+int Caller :: getOverFDR(Scores &set, NeuralNet &n, double fdr, int topk)
 {
 
   calcScores(set, n);
-  return set.calcOverFDR(fdr, do_max_psm);
+  return set.calcOverFDR(fdr, topk);
 }
 
 void Caller :: calcScores(Scores &set, NeuralNet &n)
@@ -75,7 +75,7 @@ void Caller :: calcPValues(Scores &set, NeuralNet &n, int &max_pos)
 {
   calcScores(set, n);
 
-  set.calcPValues(do_max_psm_, max_pos);
+  set.calcPValues(topk_, max_pos);
 }
 
  
@@ -93,7 +93,7 @@ void Caller :: getMultiFDR(Scores &set, NeuralNet &n, vector<double> &qvalues, b
 
   for(unsigned int ct = 0; ct < qvalues.size(); ct++)
     overFDRmulti[ct] = 0;
-  set.calcMultiOverFDR(qvalues, overFDRmulti, do_max_psm_, do_classify);
+  set.calcMultiOverFDR(qvalues, overFDRmulti, topk_, do_classify);
 
 }
 
@@ -231,7 +231,7 @@ void Caller :: train_target_net(Scores &train, Scores &thresh, double qv)
   overFDR = getOverFDR(train,net, qv);
   ind_low = overFDR;
 
-  if (do_max_psm_) {
+  if (topk_) {
     ind_low = getOverFDR(train,net, qv, false);
   }
 
@@ -528,17 +528,18 @@ void Caller :: printResults(Scores& trainset, Scores& testset) {
   printNetResults(overFDRmulti);
   cerr << "\n";
 
-  if (do_max_psm_) {
-    do_max_psm_ = false;
+  if (topk_ > 0) {
+    int temp = topk_;
+    topk_ = 0;
     cerr << "trainset(orig): ";
-    getMultiFDR(trainset,net,qvals);
+    getMultiFDR(trainset, net, qvals);
     printNetResults(overFDRmulti);
     cerr << "\n";
     cerr << "testset(orig): ";
     getMultiFDR(testset,net,qvals);
     printNetResults(overFDRmulti);
     cerr << "\n";
-    do_max_psm_ = true;
+    topk_ = temp;
   }
 
 }
@@ -550,7 +551,7 @@ void Caller :: printParameters() {
   cerr << "Switch Iter:"<<switch_iter<<endl;
   cerr << "Total Iter:"<<niter<<endl;
   cerr << "do_xval:"<<do_xval<<endl;
-  cerr << "do_max_psm_:"<<do_max_psm_<<endl;
+  cerr << "topk_:"<<topk_<<endl;
   cerr << "do_pvalue:"<<do_pvalue<<endl;
 }
 
@@ -637,7 +638,7 @@ void Caller::train_many_nets()
     full_max_pos += max_pos;
     fullset.calcQValues(full_max_pos);
   } else {
-    fullset.calcFDR_Decoy(do_max_psm_);
+    fullset.calcFDR_Decoy(topk_);
   }
 }
 

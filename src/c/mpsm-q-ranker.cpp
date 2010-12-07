@@ -100,7 +100,7 @@ int mpsm_qranker_main(int argc, char** argv){
     "parameter-file",
     "fileroot",
     "no-xval",
-    "do-max-psm",
+    "qranker-topk",
     "qranker-do-pvalue",
     "qranker-num-hu",
     "qranker-niter",
@@ -592,7 +592,7 @@ void run_mpsm_q(
 
   qcSetHU(get_int_parameter("qranker-num-hu"));
   qcSetDoXVal(!get_boolean_parameter("no-xval"));
-  qcSetDoMaxPSM(get_boolean_parameter("do-max-psm"));
+  qcSetTopK(get_int_parameter("qranker-topk"));
   qcSetDoPValue(get_boolean_parameter("qranker-do-pvalue"));
   qcSetNIter(get_int_parameter("qranker-niter"));
   qcSetSwitchIter(get_int_parameter("qranker-siter"));

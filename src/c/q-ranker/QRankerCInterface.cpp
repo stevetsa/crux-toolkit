@@ -51,8 +51,8 @@ void qcSetDoXVal(bool do_xval) {
   getCaller()->setDoXVal(do_xval);
 }
 
-void qcSetDoMaxPSM(bool do_max_psm) {
-  getCaller()->setDoMaxPSM(do_max_psm);
+void qcSetTopK(int topk) {
+  getCaller()->setTopK(topk);
 }
 
 void qcSetDoPValue(bool do_pvalue) {
@@ -171,6 +171,21 @@ void qcGetScores(double *scoreArr,double *qArr) {
     qArr[ix++] =  pPSM->q;
   }
 } 
+
+/*
+void qcGetScores(int set_id, double* scoreArr, double *qArr) {
+  int idx=0;
+  SetHandler::Iterator iter(pCaller->getSetHandler(SetHandlerType(set_id));
+
+  while(PSMDescription* pPSM = iter.getNext()) {
+    scoreArr[idx] = pPSM->sc;
+    if (qArr != NULL) {
+      qArr[idx] = pPSM->q;
+    }
+    idx++;
+  }
+}
+*/
 
 /** Function that should be called after processing finished */
 void qcCleanUp() {

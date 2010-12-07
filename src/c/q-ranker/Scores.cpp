@@ -369,9 +369,83 @@ void Scores::calcPep() {
   }
 }
 
+void Scores::getTopKScores(Scores *topk_scores, int topk) {
 
+  //cerr<<"getTopKScores:"<<topk<<endl;
+  
+  std::map<int,vector<ScoreHolder> > targets_per_scan_map;
+  std::map<int,vector<ScoreHolder> > decoys_per_scan_map;
+  std::map<int,vector<ScoreHolder> >::iterator find_iter;
+  std::map<int,vector<ScoreHolder> >* current_map = NULL;
 
+  vector<ScoreHolder>::iterator it;
+
+  for (it=scores.begin();it!=scores.end();it++) {
+    
+    unsigned int current_scan = it->pPSM->scan;
+    //cerr << "scan:"<<current_scan<<endl;
+    //TODO : there is probably a more efficient way to calculate topk.
+    if (it->label!=-1) {
+      //cerr<<"Adding to targets"<<endl;
+      current_map = &targets_per_scan_map;
+    } else {
+      //cerr<<"Adding to decoys"<<endl;
+      current_map = &decoys_per_scan_map;
+    }
+    
+    find_iter = (*current_map).find(current_scan);
+    if (find_iter == (*current_map).end()) {
+      vector<ScoreHolder> new_scores;
+      (*current_map)[current_scan] = new_scores;
+    }
+    vector<ScoreHolder>& current_scores = (*current_map)[current_scan];
+    current_scores.push_back(*it);
+    sort(current_scores.begin(), current_scores.end(), ScoreComparator());
+    while (current_scores.size() > topk) {
+      current_scores.erase(current_scores.begin()+(current_scores.size()-1));
+    }
+  }
+
+  /*
+  cout <<"Total Target Scores:"<<this->pos<<endl;
+  cout <<"Total Negative Scores:"<<this->neg<<endl;
+  cout <<"Num Target Scans:" << targets_per_scan_map.size() << endl;
+  cout <<"Num Decoy Scans: " << decoys_per_scan_map.size() << endl;
+  */
+
+  topk_scores->pos=0;
+  topk_scores->neg=0;
+
+  for (find_iter = targets_per_scan_map.begin();
+    find_iter != targets_per_scan_map.end();
+    ++find_iter) {
+    vector<ScoreHolder>& current_scores = find_iter->second;
+    for (int idx = 0;idx<current_scores.size();idx++) {
+      topk_scores->scores.push_back(current_scores[idx]);
+      topk_scores->pos++;
+    }
+  }
+  
+  for (find_iter = decoys_per_scan_map.begin();
+    find_iter != decoys_per_scan_map.end();
+    ++find_iter) {
+    vector<ScoreHolder>& current_scores = find_iter->second;
+    for (int idx = 0;idx<current_scores.size();idx++) {
+      topk_scores->scores.push_back(current_scores[idx]);
+      topk_scores->neg++;
+    }
+  }
+
+  topk_scores->factor=topk_scores->pos/topk_scores->neg;
+  
+  sort(topk_scores->begin(), topk_scores->end(), ScoreComparator());
+
+}
+
+/*
 void Scores::getMaxScores(Scores *max_scores) {
+
+
   //max_scores.clear();
   
   std::map<int,ScoreHolder> best_target_per_scan_map;
@@ -420,13 +494,9 @@ void Scores::getMaxScores(Scores *max_scores) {
   max_scores->factor=max_scores->pos/max_scores->neg;
   
   sort(max_scores->begin(), max_scores->end(), ScoreComparator());
-  /*
-  for (int idx=0;idx < 3;idx++) {
-    cerr << idx << ":"<< max_scores[idx].score << endl;
-  }
-  */
 
 }
+*/
 
 void Scores::calcQValues(int max_pos) {
 
@@ -449,16 +519,16 @@ void Scores::calcQValues(int max_pos) {
 }
 
 
-void Scores::calcPValues(bool do_max_psm,int &max_pos) {
+void Scores::calcPValues(int topk, int &max_pos) {
 
   vector<ScoreHolder>::iterator iter;
 
-  Scores* max_scores=NULL;
+  Scores* topk_scores=NULL;
   
-  if (do_max_psm) {
-    max_scores = new Scores();
-    getMaxScores(max_scores);
-    max_pos = max_scores->pos;
+  if (topk > 0) {
+    topk_scores = new Scores();
+    getTopKScores(topk_scores, topk);
+    max_pos = topk_scores->pos;
     //intialize everything to pvalue of 1.0
     for (iter=scores.begin();
       iter != scores.end();
@@ -469,34 +539,34 @@ void Scores::calcPValues(bool do_max_psm,int &max_pos) {
     //sort by score in descending order.
     max_pos = pos;
     sort(scores.begin(), scores.end(), ScoreComparator());
-    max_scores = this;
+    topk_scores = this;
   }
 
   int nulls = 0;
   int positives = 0;
-  for (iter = max_scores->scores.begin();
-    iter != max_scores->scores.end();
+  for (iter = topk_scores->scores.begin();
+    iter != topk_scores->scores.end();
     ++iter) {
     if (iter -> label == -1) {
       nulls++;
     } else {
       positives++;
-      iter -> pPSM -> pvalue = (double)(nulls) / (double)(max_scores->neg);
+      iter -> pPSM -> pvalue = (double)(nulls) / (double)(topk_scores->neg);
     }
   }
 
-  if (do_max_psm) {
-    delete max_scores;
+  if (topk > 0) {
+    delete topk_scores;
   }
 }
 
-void Scores::calcFDR_Decoy(bool do_max_psm) {
+void Scores::calcFDR_Decoy(int topk) {
   cerr<<"Scores::calcFDR_Decoy: start()"<<endl;  
   vector<ScoreHolder>::iterator it;
-  Scores* max_scores=NULL;
-  if (do_max_psm) {
-    max_scores = new Scores();
-    getMaxScores(max_scores);
+  Scores* topk_scores=NULL;
+  if (topk > 0) {
+    topk_scores = new Scores();
+    getTopKScores(topk_scores, topk);
     //intialize everything to pvalue of 1.0
     cerr <<"calcFDR_Decoy: intializing"<<endl;
     for (it=scores.begin();
@@ -506,21 +576,21 @@ void Scores::calcFDR_Decoy(bool do_max_psm) {
     }
     //return;
   } else {
-    max_scores = this;
+    topk_scores = this;
     //sort by score in descending order.
-    sort(max_scores->begin(), max_scores->end(), ScoreComparator());
+    sort(topk_scores->begin(), topk_scores->end(), ScoreComparator());
   }
   //cerr<<"calcOverFDR: calculating fdr"<<endl;
   int positives=0,nulls=0;
   double efp=0.0,q;
   posNow = 0;
   register unsigned int ix=0;
-  for(it=max_scores->begin();it!=max_scores->end();it++) {
+  for(it=topk_scores->begin();it!=topk_scores->end();it++) {
     if (it->label!=-1)
       positives++;
     if (it->label==-1) {
       nulls++;
-      efp=pi0*nulls*max_scores->factor;
+      efp=pi0*nulls*topk_scores->factor;
     }
     if (positives)
       q=efp/(double)positives;
@@ -532,13 +602,13 @@ void Scores::calcFDR_Decoy(bool do_max_psm) {
   }
 
   //cerr<<"calcOverFDR: calculating q-values"<<endl;
-  for (ix=max_scores->size();--ix;) {
-    if ((*max_scores)[ix-1].pPSM->q > (*max_scores)[ix].pPSM->q)
-      (*max_scores)[ix-1].pPSM->q = (*max_scores)[ix].pPSM->q;  
+  for (ix=topk_scores->size();--ix;) {
+    if ((*topk_scores)[ix-1].pPSM->q > (*topk_scores)[ix].pPSM->q)
+      (*topk_scores)[ix-1].pPSM->q = (*topk_scores)[ix].pPSM->q;  
   }
   
-  if (do_max_psm) {
-    delete max_scores;
+  if (topk > 0) {
+    delete topk_scores;
   }
 
 }
@@ -560,7 +630,7 @@ void Scores::calcFDR_BH(int max_pos) {
   int pos_count = 0;
   for (it=scores.begin();it!=scores.end();it++) {
     if (it->label==1) {
-      //so if the do_max_psm was intitiated, the
+      //so if the topk was intitiated, the
       //max number of positives is now different.
       //all of the psms that were not the max should
       //have a pvalue of 1.0, but we want to make
@@ -583,28 +653,28 @@ void Scores::calcFDR_BH(int max_pos) {
 /**
  * Calculate the number of targets that score above a specified FDR.
  */
-int Scores::calcOverFDR(double fdr, bool do_max_psm) {
-  //cerr<<"Scores::calcOverFDR: start()"<<do_max_psm<<endl;  
+int Scores::calcOverFDR(double fdr, int topk) {
+  //cerr<<"Scores::calcOverFDR: start()"<<topk<<endl;  
   vector<ScoreHolder>::iterator it;
 
-  Scores* max_scores = NULL;
-  if (do_max_psm) {
-    max_scores = new Scores();
-    getMaxScores(max_scores);
+  Scores* topk_scores = NULL;
+  if (topk > 0) {
+    topk_scores = new Scores();
+    getTopKScores(topk_scores, topk);
   } else {
-    max_scores = this;
+    topk_scores = this;
     //sort by score in descending order.
-    sort(max_scores->begin(), max_scores->end(), ScoreComparator());
+    sort(topk_scores->begin(), topk_scores->end(), ScoreComparator());
   }
   //cerr<<"calcOverFDR: calculating fdr"<<endl;
   int positives=0,nulls=0;
 
-  int max_nulls = (int)ceil(fdr * (double)max_scores->pos / (pi0 * max_scores->factor));
+  int max_nulls = (int)ceil(fdr * (double)topk_scores->pos / (pi0 * topk_scores->factor));
 
   double efp=0.0,q;
   posNow = 0;
   register unsigned int ix=0;
-  for(it=max_scores->begin();it!=max_scores->end();it++) {
+  for(it=topk_scores->begin();it!=topk_scores->end();it++) {
     if (it->label!=-1)
       positives++;
     if (it->label==-1) {
@@ -612,7 +682,7 @@ int Scores::calcOverFDR(double fdr, bool do_max_psm) {
       if (nulls > max_nulls) {
         break;
       }
-      efp=pi0*nulls*max_scores->factor;
+      efp=pi0*nulls*topk_scores->factor;
     }
     if (positives)
       q=efp/(double)positives;
@@ -624,47 +694,47 @@ int Scores::calcOverFDR(double fdr, bool do_max_psm) {
       posNow = positives;
   }
 
-  if (do_max_psm) {
-    delete max_scores;
+  if (topk>0) {
+    delete topk_scores;
   }
 
   return posNow;
 }
 
-void Scores::calcMultiOverFDR(vector<double> &fdr, vector<int> &overFDR, bool do_max_psm, bool do_sort) {
+void Scores::calcMultiOverFDR(vector<double> &fdr, vector<int> &overFDR, int topk, bool do_sort) {
   //cerr<<"calcMultiOverFDR: start"<<endl;
   vector<ScoreHolder>::iterator it;
 
-  //cerr<<"calcMultiOverFDR:"<<do_max_psm<<" "<<do_sort<<endl;
+  //cerr<<"calcMultiOverFDR:"<<topk_<<" "<<do_sort<<endl;
 
-  Scores* max_scores=NULL;
-  if (do_max_psm) {
-    max_scores = new Scores();
-    getMaxScores(max_scores);
+  Scores* topk_scores=NULL;
+  if (topk > 0) {
+    topk_scores = new Scores();
+    getTopKScores(topk_scores, topk);
   } else {
-    max_scores=this;
+    topk_scores=this;
     if (do_sort) {
-      sort(max_scores->begin(), max_scores->end(), ScoreComparator());
+      sort(topk_scores->begin(), topk_scores->end(), ScoreComparator());
     }
   }
 
-  int max_nulls = (int)ceil(fdr.back() * (double)max_scores->pos / (pi0 * max_scores->factor));
+  int max_nulls = (int)ceil(fdr.back() * (double)topk_scores->pos / (pi0 * topk_scores->factor));
 
   int positives=0,nulls=0;
   double efp=0.0,q;
   register unsigned int ix=0;
   
-  for(it=max_scores->begin();it!=max_scores->end();it++) {
+  for(it=topk_scores->begin();it!=topk_scores->end();it++) {
     if (it->label==1)
       positives++;
     
     if (it->label==-1) {
       nulls++;
       if (nulls > max_nulls) {
-        //cerr << "max_nulls reached:"<<max_nulls<<" "<<max_scores.pos<<endl;
+        //cerr << "max_nulls reached:"<<max_nulls<<" "<<topk_scores.pos<<endl;
         break;
       }
-      efp=pi0*nulls*max_scores->factor;
+      efp=pi0*nulls*topk_scores->factor;
     }
     if (positives)
       q=efp/(double)positives;
@@ -678,8 +748,8 @@ void Scores::calcMultiOverFDR(vector<double> &fdr, vector<int> &overFDR, bool do
 	overFDR[ct] = positives;
   }
 
-  if (do_max_psm) {
-    delete max_scores;
+  if (topk > 0) {
+    delete topk_scores;
   }
 
 }

@@ -63,11 +63,11 @@ public:
     void printRoc(string & fn); 
     void fill(string & fn);
 
-    void getMaxScores(Scores* max_scores);
+    void getTopKScores(Scores* topk_scores, int topk);
     void calcQValues(int max_pos);
     void calcFDR_BH(int max_pos);
-    void calcFDR_Decoy(bool do_max_psm);
-    void calcPValues(bool do_max_psm,int &max_pos);
+    void calcFDR_Decoy(int topk);
+    void calcPValues(int topk, int &max_pos);
 
     inline unsigned int size() {return (pos+neg);} 
     inline unsigned int posSize() {return (pos);} 
@@ -76,9 +76,9 @@ public:
     static double pi0; 
     double factor;
  
-    int calcOverFDR(double fdr, bool do_max_psm=false);
+    int calcOverFDR(double fdr, int topk=0);
     void calcQValues();
-    void calcMultiOverFDR(vector<double> &fdr, vector<int> &overFDR, bool do_max_psm=false, bool do_sort=false);
+    void calcMultiOverFDR(vector<double> &fdr, vector<int> &overFDR, int topk=0, bool do_sort=false);
     inline ScoreHolder& operator[](int ix){return scores[ix];}
     void static fillFeaturesSplit(Scores& train,Scores& test,SetHandler& norm,SetHandler& shuff, const double ratio);
     void static fillFeaturesSplitPSM(Scores& train,Scores& test,SetHandler& norm,SetHandler& shuff, const double ratio);

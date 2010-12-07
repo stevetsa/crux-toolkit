@@ -29,7 +29,7 @@ void qcSetHU(int hu);
 
 void qcSetDoXVal(bool do_xval);
 
-void qcSetDoMaxPSM(bool do_max_psm);
+void qcSetTopK(int topk);
 
 void qcSetDoPValue(bool do_pvalue);
 
@@ -61,6 +61,9 @@ void qcScorePSM(
   * the array should be numSpectra long and will be filled in the same order
   * as the features were inserted */
 void qcGetScores(double *scoreArr, double *qArr); 
+
+//void qcGetScores(int set_id, double* scoreArr, double* qArr);
+
 
 /** Function that should be called after processing finished */
 void qcCleanUp(); 
