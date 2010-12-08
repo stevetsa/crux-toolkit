@@ -1,5 +1,5 @@
 /**
- * @file quantify.cpp
+ * @file spectral-counts.cpp
  *
  * This is a crux command to use after finding peptide spectrum matches with 
  * p values and returns a file with a list of proteins with scores 
@@ -7,7 +7,7 @@
  *
  **/
 
-#include "quantify.h"
+#include "spectral-counts.h"
 
 using namespace std;
 
@@ -176,7 +176,7 @@ void split(const string& str,
 	   vector<string>& tokens, 
 	   const string& delimiters);
 
-int quantify_main(int argc, char** argv){
+int spectral_counts_main(int argc, char** argv){
   // Define optional and required command line arguments
   const char* option_list[] = {
     "threshold",
@@ -198,7 +198,7 @@ int quantify_main(int argc, char** argv){
   };
   int num_arguments = sizeof(argument_list) / sizeof(char*);
   
-  initialize_run(QUANTIFY_COMMAND, argument_list, num_arguments,
+  initialize_run(SPECTRAL_COUNTS_COMMAND, argument_list, num_arguments,
 		 option_list, num_options, argc, argv);
 
   string  measure = get_string_parameter("measure");
@@ -232,9 +232,9 @@ int quantify_main(int argc, char** argv){
 
   BOOLEAN_T use_prot_level = (quant_level=="PROTEIN");
   string input_ms2 = ms2;
-  char* output_file = (char*)malloc(sizeof(char)*20);
-  strcpy(output_file, "quantify.target.txt");
-  output_file[19] = '\0';
+  char* output_file = (char*)malloc(sizeof(char)*28);
+  strcpy(output_file, "spectral-counts.target.txt");
+  output_file[27] = '\0';
   prefix_fileroot_to_name(&output_file);
   
 
@@ -248,14 +248,16 @@ int quantify_main(int argc, char** argv){
   string full_output_file = temp1 +'/'+ temp2;
   
   /* Open the log file to record carp messages */
-  char * log_file_name = (char*)malloc(sizeof(char)*17);
-  strcpy(log_file_name, "quantify.log.txt");
-  log_file_name[16] = '\0';
+  char * log_file_name = (char*)malloc(sizeof(char)*24);
+  strcpy(log_file_name, "spectral-counts.log.txt");
+  log_file_name[23] = '\0';
+
 
   open_log_file(&log_file_name);
+
   log_command_line(argc, argv);
 
-  carp(CARP_INFO, "Running quantify with threshold of %f", threshold);
+  carp(CARP_INFO, "Running spectral_counts with threshold of %f", threshold);
 
   create_output_directory(output_dir, overwrite);
   create_file_in_path(output_file, output_dir, overwrite);
@@ -715,24 +717,24 @@ bool get_matches_from_txt(
   /* TODO check the validity of files */
  
   /* create new database object */
-  if (use_index){ 
+  if (use_index == TRUE){ 
     binary_fasta = get_index_binary_fasta_name(database_file);
   } else {
     binary_fasta = get_binary_fasta_name(database_file);
-    carp(CARP_DEBUG, "Looking for binary fasta %s", binary_fasta);
+    carp(CARP_INFO, "Looking for binary fasta %s", binary_fasta);
     if (access(binary_fasta, F_OK)){
-      carp(CARP_DEBUG, "Could not find binary fasta %s", binary_fasta);
+      carp(CARP_INFO, "Could not find binary fasta %s", binary_fasta);
       if (!create_binary_fasta_here(binary_fasta, binary_fasta)){
-	carp(CARP_FATAL, "Could not create binary fasta file %s", binary_fasta);
+	carp(CARP_INFO, "Could not create binary fasta file %s", binary_fasta);
       };
     }
   }
   database = new_database(binary_fasta, TRUE);
   /* check if already parsed */
   if(!get_database_is_parsed(database)){
-    carp(CARP_DETAILED_DEBUG,"Parsing database");
+    carp(CARP_DETAILED_INFO,"Parsing database");
     if(!parse_database(database)){
-      carp(CARP_FATAL, "Failed to parse database, cannot create new index");
+      carp(CARP_INFO, "Failed to parse database, cannot create new index");
     }
   }
   free(binary_fasta);
@@ -1007,10 +1009,12 @@ bool get_data_from_db(
   PROTEIN_T* protein;
   carp(CARP_INFO, "Getting protein lengths from database");
   while (database_protein_iterator_has_next(it)){
+    carp(CARP_INFO, "in while loop");
     protein = database_protein_iterator_next(it);
-
+    
     proteinToData.insert(make_pair(string(get_protein_id_pointer(protein)), 
 				   get_protein_length(protein)));
+    carp(CARP_INFO, "Protein %s, length %i", get_protein_id_pointer(protein), get_protein_length(protein));
   }
 
   /* printing out protein to peptide mapping */

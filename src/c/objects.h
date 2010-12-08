@@ -487,7 +487,7 @@ enum _command {
   PERCOLATOR_COMMAND,   ///< percolator
   QRANKER_COMMAND,      ///< q-ranker
   PROCESS_SPEC_COMMAND, ///< print-processed-spectra
-  QUANTIFY_COMMAND,     ///< quantify
+  SPECTRAL_COUNTS_COMMAND,     ///< quantify
   NUMBER_COMMAND_TYPES  ///< always keep this last so the value
                         /// changes as cmds are added
 };

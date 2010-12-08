@@ -1,5 +1,5 @@
-#ifndef QUANTIFY_H
-#define QUANTIFY_H
+#ifndef SPECTRAL_COUNTS_H
+#define SPECTRAL_COUNTS_H
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -25,7 +25,7 @@
 #include "objects.h"
 
 
-int quantify_main(int argc, char** argv);
+int spectral_counts_main(int argc, char** argv);
 
 
 #endif

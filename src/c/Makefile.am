@@ -97,8 +97,8 @@ LIBFILES= \
   q-ranker.h \
   q-value.cpp \
   q-value.h \
-  quantify.h \
-  quantify.cpp \
+  spectral-counts.h \
+  spectral-counts.cpp \
   sequest-search.cpp \
   sequest-search.h \
   scorer.c \

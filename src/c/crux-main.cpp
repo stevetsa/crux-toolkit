@@ -68,8 +68,8 @@ int main(int argc, char** argv){
     qranker_main(argc-1, argv+1);
     break;
 
-  case QUANTIFY_COMMAND:
-    quantify_main(argc-1, argv+1);
+  case SPECTRAL_COUNTS_COMMAND:
+    spectral_counts_main(argc-1, argv+1);
     break;
 
   case PERCOLATOR_COMMAND:
