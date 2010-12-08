@@ -30,6 +30,6 @@ string ComputeQValues::getDescription() {
 
 }
 
-string ComputeQValues::getFileString() {
+string ComputeQValues::getFileStem() {
   return "qvalues";
 }

@@ -40,14 +40,16 @@ LIBFILES= \
   ComputeQValues.h \
   CreateIndex.cpp \
   CreateIndex.h \
-  CruxApplicationList.cpp \
-  CruxApplicationList.h \
-  CruxApplication.cpp \
-  CruxApplication.h \
+  create_index.cpp \
+  create_index.h \
   crux-utils.cpp \
   crux-utils.h \
   database.cpp \
   database.h \
+  CruxApplication.cpp \
+  CruxApplication.h \
+  CruxApplicationList.cpp \
+  CruxApplicationList.h \
   DelimitedFile.cpp \
   DelimitedFile.h \
   DelimitedFileReader.cpp \
@@ -86,10 +88,11 @@ LIBFILES= \
   MatchFileReader.h \
   MatchFileWriter.cpp \
   MatchFileWriter.h \
-  match_collection.cpp \
-  match_collection.h \
   MatchSearch.cpp \
   MatchSearch.h \
+  match_collection.cpp \
+  match_collection.h \
+  match_search.cpp \
   modifications.cpp \
   modifications.h \
   modified_peptides_iterator.cpp \
@@ -129,6 +132,8 @@ LIBFILES= \
   SearchProgress.h \
   SequestSearch.cpp \
   SequestSearch.h \
+  sequest-search.cpp \
+  sequest-search.h \
   scorer.cpp \
   scorer.h \
   sorter.cpp \
@@ -188,9 +193,6 @@ crux_predict_peptide_ions_LDADD = \
   $(AM_LDFLAGS) \
   libcrux.la -L$(top_builddir)/src/c/MSToolkit -lm -lmstoolkit
 
-
-
-
 crux_SOURCES = crux-main.cpp crux-main.h
 crux_CXXFLAGS = \
   $(AM_CXXFLAGS) \
@@ -214,7 +216,6 @@ crux_LDADD = \
   -lqranker \
   -lmstoolkit \
   -lArrayLibrary
-
 
 xlink_predict_peptide_ions_SOURCES=./xlink/xhhc_predict_peptide_ions.cpp
 xlink_predict_peptide_ions_CXXFLAGS= \

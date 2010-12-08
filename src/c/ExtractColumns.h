@@ -1,3 +1,9 @@
+/**
+ * \file ExtractColumns.h 
+ * AUTHOR: Sean McIlwain
+ * CREATE DATE: 6 December 2010
+ * \brief Object for running extract-columns
+ *****************************************************************************/
 #ifndef EXTRACTCOLUMNS_H
 #define EXTRACTCOLUMNS_H
 

@@ -1,3 +1,9 @@
+/**
+ * \file ComputeQValues.h 
+ * AUTHOR: Sean McIlwain
+ * CREATE DATE: 6 December 2010
+ * \brief Object for running compute-q-values
+ *****************************************************************************/
 #ifndef ComputeQValues_H
 #define ComputeQValues_H
 
@@ -15,7 +21,7 @@ class ComputeQValues: public CruxApplication {
   virtual int main(int argc, char** argv);
   virtual std::string getName();
   virtual std::string getDescription();
-  virtual std::string getFileString();
+  virtual std::string getFileStem();
 };
 
 

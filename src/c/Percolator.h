@@ -1,3 +1,9 @@
+/**
+ * \file Percolator.h 
+ * AUTHOR: Sean McIlwain
+ * CREATE DATE: 6 December 2010
+ * \brief Object for running percolator
+ *****************************************************************************/
 #ifndef PERCOLATOR_H
 #define PERCOLATOR_H
 

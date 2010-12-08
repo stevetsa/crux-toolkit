@@ -1,3 +1,9 @@
+/**
+ * \file QRanker.h 
+ * AUTHOR: Sean McIlwain
+ * CREATE DATE: 6 December 2010
+ * \brief Object for running qranker
+ *****************************************************************************/
 #ifndef QRANKER_H
 #define QRANKER_H
 

@@ -1,3 +1,9 @@
+/**
+ * \file ExtractRows.h 
+ * AUTHOR: Sean McIlwain
+ * CREATE DATE: 6 December 2010
+ * \brief Object for running extract-rows
+ *****************************************************************************/
 #ifndef EXTRACTROWS_H
 #define EXTRACTROWS_H
 

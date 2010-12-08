@@ -1,21 +1,40 @@
+/**
+ * \file CruxApplicationList.cpp
+ * AUTHOR: Sean McIlwain
+ * CREATE DATE: December 6th, 2010
+ * \brief Maintains a list of executable applications
+ *****************************************************************************/
 #include "CruxApplicationList.h"
+#include "DelimitedFile.h"
+#include "carp.h"
 
 #include <iostream>
 
-#include "DelimitedFile.h"
-
-#include "carp.h"
-
 using namespace std;
 
-
+/**
+ * Creates an application list with a listname
+ */
 CruxApplicationList::CruxApplicationList(const char* list_name) {
   list_name_ = string(list_name);
 }
 
+
+/**
+ * Destructor for CruxApplicationList
+ */
 CruxApplicationList::~CruxApplicationList() {
+  
+  for (unsigned int idx=0;idx < size();idx++) {
+    delete at(idx);
+  }
+  clear();
+
 }
 
+/**
+ * Adds an application pointer to the list of applications
+ */
 void CruxApplicationList::add(CruxApplication* application) {
 
   if (find(application->getName()) != NULL) {
@@ -25,10 +44,18 @@ void CruxApplicationList::add(CruxApplication* application) {
   push_back(application);
 }
 
+/**
+ * \returns an application by a name,
+ * returns NULL if not found
+ */
 CruxApplication* CruxApplicationList::find(const string& appname) {
   return find(appname.c_str());
 }
 
+/**
+ * \returns an application by a name,
+ * returns NULL if not found
+ */
 CruxApplication* CruxApplicationList::find(const char* appname) {
 
   CruxApplication* crux_application = NULL;
@@ -44,6 +71,10 @@ CruxApplication* CruxApplicationList::find(const char* appname) {
   return crux_application;
 }
 
+/**
+ * prints out the usage statement for this application list.
+ * Each applications name is printed along with its description
+ */
 void CruxApplicationList::usage() {
 
   CruxApplicationList::iterator iter;
@@ -122,6 +153,11 @@ void CruxApplicationList::usage() {
 
 }
 
+/**
+ * the main method for CruxApplicationList.  Attempts to find
+ * an application by name from the first argument.  If successful,
+ * calls that applications main method with the rest of the parameters.
+ */
 int CruxApplicationList::main(int argc, char** argv) {
 
   if (argc < 2) {
@@ -130,9 +166,7 @@ int CruxApplicationList::main(int argc, char** argv) {
   }
 
   string appname = string(argv[1]);
-
   CruxApplication* crux_application = find(appname);
-
 
   if (crux_application == NULL) {
     cerr<< "Cannot find "<<appname<<" in available applications"<<endl;

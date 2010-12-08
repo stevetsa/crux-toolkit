@@ -1,3 +1,10 @@
+/**
+ * \file SearchForXLinks.h 
+ * AUTHOR: Sean McIlwain
+ * CREATE DATE: 6 December 2010
+ * \brief Object for running search-for-xlinks
+ *****************************************************************************/
+
 #ifndef SEARCHFORXLINKS_H
 #define SEARCHFORXLINKS_H
 

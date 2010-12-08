@@ -23,16 +23,3 @@
 #include "QRankerCInterface.h"
 #include "analyze_psms.h"
 
-
-#include "CruxApplicationList.h"
-#include "CreateIndex.h"
-#include "MatchSearch.h"
-#include "SequestSearch.h"
-#include "ComputeQValues.h"
-#include "Percolator.h"
-#include "QRanker.h"
-#include "PrintProcessedSpectra.h"
-#include "SearchForXLinks.h"
-#include "Version.h"
-#include "ExtractColumns.h"
-#include "ExtractRows.h"

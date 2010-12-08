@@ -1,3 +1,9 @@
+/**
+ * \file CreateIndex.h 
+ * AUTHOR: Sean McIlwain
+ * CREATE DATE: 6 December 2010
+ * \brief Object for running create-index
+ *****************************************************************************/
 #ifndef CREATEINDEX_H
 #define CREATEINDEX_H
 

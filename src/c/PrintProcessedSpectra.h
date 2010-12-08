@@ -1,5 +1,5 @@
 /**
- * \file print-processed-spectra.h
+ * \file PrintProcessedSpectra.h
  *
  * AUTHOR: Barbara Frewen
  * CREATE DATE: September 18, 2009
@@ -8,8 +8,6 @@
  *              xcorr and print peaks in ms2 format to new file.
  * REVISION:
  */
-
-
 #ifndef PRINTPROCESSEDSPECTRA_H
 #define PRINTPROCESSEDSPECTRA_H
 #include "CruxApplication.h"

@@ -1,3 +1,9 @@
+/**
+ * \file SequestSearch.h 
+ * AUTHOR: Sean McIlwain
+ * CREATE DATE: 6 December 2010
+ * \brief Object for running sequest-search
+ *****************************************************************************/
 #ifndef SEQUESTSEARCH_H
 #define SEQUESTSEARCH_H
 
@@ -12,16 +18,6 @@
 class SequestSearch: public CruxApplication {
 
  protected:
-  // Private functions, commented below at definition
-  void print_matches(
-    OutputFiles& output_files,       
-    MATCH_COLLECTION_T* target_psms, 
-    std::vector<MATCH_COLLECTION_T*>& decoy_psms,
-    Spectrum* spectrum,             
-    BOOLEAN_T combine_target_decoy,
-    int num_decoy_files
-    );
-
  public:
 
   SequestSearch();
@@ -29,7 +25,7 @@ class SequestSearch: public CruxApplication {
   virtual int main(int argc, char** argv);
   virtual std::string getName();
   virtual std::string getDescription();
-  virtual std::string getFileString();
+  virtual std::string getFileStem();
 };
 
 

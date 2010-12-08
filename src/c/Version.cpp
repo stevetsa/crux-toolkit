@@ -1,6 +1,7 @@
 #include "Version.h"
 
-#include "search.h"
+#include "version.h"
+
 
 using namespace std;
 
@@ -15,6 +16,7 @@ Version::~Version() {
 int Version::main(int argc, char** argv) {
   (void)argc;
   (void)argv;
+  printf("Crux version %s\n", VERSION);
   return 0;
 }
 
