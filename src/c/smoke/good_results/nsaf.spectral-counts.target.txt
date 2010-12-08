@@ -1,0 +1,2 @@
+Protein id	 NSAF_score	num_spectra
+gi|6381999|ref|NP_009311.2|	1	1

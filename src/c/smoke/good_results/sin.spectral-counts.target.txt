@@ -1,0 +1,2 @@
+Protein_id 	 SIN_score	total_intensity	length	num_spectra	num_peptides	(sum_intensities=2.5)
+gi|6381999|ref|NP_009311.2|	0.00282486	2.5	354	1	1

@@ -7,6 +7,13 @@
 
 # TESTS WITH NO INDEX
 
+# Spectral Counting with SIN 
+sin_spectral_counting = good_results/sin.spectral-counts.target.txt = rm -rf crux-output; crux create-index test.fasta test-index; crux spectral-counts --measure SIN --quant-level PROTEIN --threshold 0.01 --fileroot sin --input-ms2 test.ms2 --output-dir crux-output --overwrite T test_percolator.target.txt test-index; rm -rf test-index; cat crux-output/sin.spectral-counts.target.txt = 
+
+# Spectral Counting with NSAF
+nsaf_spectral_couting = good_results/nsaf.spectral-counts.target.txt = rm -rf crux-output; crux create-index test.fasta test-index; crux spectral-counts --measure NSAF --quant-level PROTEIN --threshold 0.01 --fileroot nsaf --input-ms2 test.ms2 --output-dir crux-output --overwrite T test_percolator.target.txt test-index; rm -rf test-index; cat crux-output/nsaf.spectral-counts.target.txt = 
+
+
 # Generate Peptides
 generate_peptides_no_ops = good_results/standard_generate_peptides_no_ops.out = crux-generate-peptides test.fasta =
 
@@ -144,6 +151,9 @@ tdc-ss = good_results/tdc-ss = rm -f ss/tdc*; crux sequest-search --output-dir s
 
 # No decoys
 no-decoys-ss = good_results/no-decoys-ss = rm -f ss/no-decoys*; crux sequest-search --output-dir ss --fileroot no-decoys --parameter-file params/no-decoys-ss demo.ms2 small-yeast.fasta; cat ss/no-decoys*t = 'StartTime'
+
+
+
 
 
 
