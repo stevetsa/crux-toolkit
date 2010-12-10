@@ -308,7 +308,7 @@ const char* command_type_to_file_string_ptr(COMMAND_T type){
 
 static const char* command_type_command_line_strings[NUMBER_COMMAND_TYPES] =
   { "invalid", "create-index", "search-for-matches", "sequest-search",
-    "compute-q-values", "percolator", "q-ranker", "print-processed-spectra",
+    "compute-q-values", "percolator","spectral-counts", "q-ranker", "print-processed-spectra",
     "search-for-xlinks", "version"
   };
 /**

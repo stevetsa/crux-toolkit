@@ -21,5 +21,6 @@
 #include "xlink_search.h"
 #include "PercolatorCInterface.h"
 #include "QRankerCInterface.h"
+#include "spectral-counts.h"
 #include "analyze_psms.h"
 

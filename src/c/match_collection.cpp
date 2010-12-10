@@ -2429,6 +2429,7 @@ MATCH_COLLECTION_T* new_match_collection_psm_output(
   FILE* result_file = NULL;
   char suffix[25];
   const char* prefix = get_string_parameter_pointer("fileroot");
+  const char* input_psm = get_string_parameter_pointer("input-PSM");
   char* non_const_prefix = NULL;
   // file must also start with either sequest or search; look for 'se'
   if( prefix == NULL || (strcmp(prefix, "__NULL_STR") == 0) ){
@@ -2477,6 +2478,13 @@ MATCH_COLLECTION_T* new_match_collection_psm_output(
   // iterate over all PSM files in directory to find the one to read
   while((directory_entry 
             = readdir(match_collection_iterator->working_directory))){
+
+    // Found psm file
+    if (input_psm != NULL && strcmp(input_psm, directory_entry->d_name) == 0){
+      found_file = TRUE;
+      break;
+    }
+    
 
     // skip files without the correct prefix (fileroot)
     if( ! prefix_compare(directory_entry->d_name, prefix)){
@@ -3109,6 +3117,7 @@ MATCH_COLLECTION_ITERATOR_T* new_match_collection_iterator(
     }
   }
   
+
   // set total_sets count
   int total_sets = 0;
 
@@ -3134,6 +3143,7 @@ MATCH_COLLECTION_ITERATOR_T* new_match_collection_iterator(
     carp(CARP_FATAL, "No PSM files found in directory '%s'", 
          output_file_directory);
   }
+
 
   // get binary fasta file name with path to crux directory 
   char* binary_fasta  = NULL;

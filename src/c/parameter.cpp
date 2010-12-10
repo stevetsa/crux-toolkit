@@ -730,6 +730,50 @@ void initialize_parameters(void){
       "modifications. Default=0.",
       "Only available for crux-predict-peptide-ions.", "true");
 
+
+  // ***** spectral-counts options *****
+   set_string_parameter("input-ms2", NULL,
+       "ms2 file corresponding to the psm file. Required for SIN",
+       "For SIN to find sequences of spectra",
+       "false");
+  set_string_parameter("database", NULL, 
+       "Name of file in fasta format or directory containing protein index.",
+       "To retrieve proteins and peptides",
+       "false");
+  set_string_parameter("input-PSM", NULL,
+       "Name of file in text format which holds match results",
+       "For quantify to retrieve scores for protein and peptides",
+       "false");
+  set_double_parameter("threshold", 0.01, 0, 1, 
+       "The p-value or q-value threshold. Default 0.01",
+       "All PSMs with q-value higher than this will be ignored",
+       "false");
+  set_string_parameter("measure", "SIN",
+       "Type of analysis to make on the match results: (NSAF|SIN). "
+       "Default SIN.",
+       "For quantify to determine which method of measuring results to use",
+       "false");
+  set_boolean_parameter("unique-mapping", FALSE,
+       "Ignore peptides with multiple mappings to proteins (T,F). Default (F)",
+       "For quantify to determine to use only peptides with only one protein "
+       "mapping", "false");
+  set_boolean_parameter("average", FALSE,
+       "For SIN, calcuate the average of the 3 highest "
+       "values for each spectra instead of total of ion " 
+       "intensities/ms1 peaks (T, F). Default (F)",
+       "A way of avoiding double counting spectra for each peptide",
+       "false"		);
+  set_string_parameter("input-bullseye", NULL,
+       "Bullseye file produced by using the same ms1 file used to produce ms2"
+       " file",
+       "For SIN to use areas under peaks instead of total ion intensity",
+       "false");
+  set_string_parameter("quant-level", "PROTEIN",
+        "Quantification at protein or peptide level (PROTEIN,PEPTIDE) "
+	"Default (PROTEIN)",
+        "For NSAF and SIN to know which level of quantification should be done",
+	"false"); 
+
   // ***** static mods *****
   set_double_parameter("A", 0.0, -100, BILLION, 
       "Change the mass of all amino acids 'A' by the given amount.",

@@ -64,6 +64,10 @@ int main(int argc, char** argv){
     create_index_main(argc-1, argv+1);
     break;
 
+  case SPECTRAL_COUNTS_COMMAND:
+    spectral_counts_main(argc-1, argv+1);
+    break;
+
   case SEARCH_COMMAND:
     search_main(argc-1, argv+1);
     break;

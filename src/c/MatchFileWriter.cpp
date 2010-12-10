@@ -149,6 +149,7 @@ void MatchFileWriter::addColumnNames(COMMAND_T command, bool has_decoys){
   case INDEX_COMMAND:        ///< create-index
   case PROCESS_SPEC_COMMAND: ///< print-processed-spectra
   case VERSION_COMMAND:      ///< just print the version number
+  case SPECTRAL_COUNTS_COMMAND:
   // invalid
   case NUMBER_COMMAND_TYPES:
   case INVALID_COMMAND:
@@ -232,6 +233,7 @@ void MatchFileWriter::addColumnNames
   case PROCESS_SPEC_COMMAND: ///< print-processed-spectra
   case VERSION_COMMAND:      ///< just print the version number
   // invalid
+  case SPECTRAL_COUNTS_COMMAND:
   case NUMBER_COMMAND_TYPES:
   case INVALID_COMMAND:
     carp(CARP_FATAL, "Invalid command (%s) for creating a MatchFileWriter.",
