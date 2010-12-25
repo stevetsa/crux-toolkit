@@ -8,67 +8,11 @@ typedef set<PROTEIN_T*> MetaProtein;
 typedef set<PEPTIDE_T*, bool(*)(PEPTIDE_T*, PEPTIDE_T*)> PeptideSet;
 typedef map<PeptideSet, MetaProtein, bool(*)(PeptideSet, PeptideSet) > MetaMapping;
 typedef map<PROTEIN_T*, PeptideSet , bool(*)(PROTEIN_T*, PROTEIN_T*)> ProteinToPeptides;
-typedef map<MetaProtein, int> MetaToRank;
-typedef map<MetaProtein, FLOAT_T > MetaToScore;
+typedef map<MetaProtein, int, bool(*)(MetaProtein, MetaProtein)> MetaToRank;
+typedef map<MetaProtein, FLOAT_T, bool(*)(MetaProtein, MetaProtein)> MetaToScore;
 typedef map<PROTEIN_T*, MetaProtein, bool(*)(PROTEIN_T*, PROTEIN_T*)> ProteinToMetaProtein;
+
 string pepsToString(PeptideSet s);
-
-
-
-bool compare_pep(PEPTIDE_T*, PEPTIDE_T*);
-bool compare_pep(PEPTIDE_T* peptide_one, PEPTIDE_T* peptide_two){
-  int compare = strcmp(get_peptide_sequence(peptide_one), get_peptide_sequence(peptide_two));
-  if (compare == 0){
-    return false;
-  } else {
-    return (compare > 0);
-  }
-}
-
-
-bool compare_prot(PROTEIN_T*, PROTEIN_T*);
-bool compare_prot(PROTEIN_T* protein_one, PROTEIN_T* protein_two){
-  int compare = strcmp(get_protein_id(protein_one), get_protein_id(protein_two));
-  if (compare == 0){
-    return false;
-  } else {
-    return (compare > 0);
-  }
-}
-
-bool compare_set_equality(PeptideSet, PeptideSet);
-bool compare_set_equality(PeptideSet set_one, PeptideSet set_two){
-  PeptideSet pep_union(compare_pep);
-  for (PeptideSet::iterator it = set_one.begin(); it != set_one.end();
-       it++){
-    PEPTIDE_T* peptide = (*it);
-    if (pep_union.find(peptide) == pep_union.end()){
-      pep_union.insert((*it));
-    }
-  }
-  for (PeptideSet::iterator it = set_two.begin(); it != set_two.end();
-       it++){
-    if (pep_union.find((*it)) == pep_union.end()){
-      pep_union.insert((*it));
-    }
-  }
-  
-  if (pep_union.size() == set_one.size() && set_one.size() == set_two.size()){
-    return false;
-  } else {
-    string string_one = pepsToString(set_one);
-    string string_two = pepsToString(set_two);
-    return string_one.compare(string_two) > 0;
-  }
-}
-
-
-bool compare_sets(pair<PeptideSet, MetaProtein > , pair<PeptideSet, MetaProtein >);
-bool compare_sets(pair<PeptideSet, MetaProtein > peps_one , pair<PeptideSet, MetaProtein > peps_two){
-  return ((peps_one).first.size() < (peps_two).first.size());
-}
-
-
 void getDirPath(char* path, char** dir);
 set<MATCH_T*> filterMatches(MATCH_COLLECTION_ITERATOR_T* match_collection_it);
 PeptideToScore getPeptideScores(set<MATCH_T*>  matches);
@@ -79,6 +23,23 @@ MetaMapping getMetaMapping(ProteinToPeptides proteinToPeptides);
 MetaToRank getMetaRanks(MetaToScore metaToScore);
 MetaToScore getMetaScores(MetaMapping metaMapping, ProteinToScore proteinToScore);
 MetaMapping performParsimonyAnalysis(MetaMapping metaMapping);
+
+
+
+bool compare_pep(PEPTIDE_T*, PEPTIDE_T*);
+bool compare_prot(PROTEIN_T*, PROTEIN_T*);
+bool compare_peptide_sets(PeptideSet, PeptideSet);
+bool compare_meta_proteins(MetaProtein, MetaProtein);
+string metaProteinToString(MetaProtein s);
+string pepsToString(PeptideSet s);
+
+bool compare_sets(pair<PeptideSet, MetaProtein > , pair<PeptideSet, MetaProtein >);
+bool compare_sets(pair<PeptideSet, MetaProtein > peps_one , pair<PeptideSet, MetaProtein > peps_two){
+  return ((peps_one).first.size() < (peps_two).first.size());
+}
+
+
+
 
 
 int spectral_counts_main(int argc, char** argv){
@@ -163,17 +124,17 @@ int spectral_counts_main(int argc, char** argv){
   
 
 
-  for (ProteinToScore::iterator it = proteinToScore.begin(); 
-       it != proteinToScore.end(); it++){
-    PROTEIN_T* protein = (*it).first;
-    FLOAT_T score = (*it).second;
-    MetaProtein metaProtein = proteinToMeta[protein];
-    int rank = -1;
-    if (metaToRank.find(metaProtein) == metaToRank.end()){
-      rank = metaToRank[metaProtein];
-    }
-    cout << get_protein_id(protein) << "\t" << score << "\t" << rank << endl;
-  }
+	  for (ProteinToScore::iterator it = proteinToScore.begin(); 
+	       it != proteinToScore.end(); it++){
+	    PROTEIN_T* protein = (*it).first;
+	    FLOAT_T score = (*it).second;
+	    MetaProtein metaProtein = proteinToMeta[protein];
+	    int rank = -1;
+	    if (metaToRank.find(metaProtein) == metaToRank.end()){
+	      rank = metaToRank[metaProtein];
+	    }
+	    cout << get_protein_id(protein) << "\t" << score << "\t" << rank << endl;
+	  }
   }     
 
   
@@ -422,7 +383,7 @@ MetaMapping getMetaMapping(
 			   ){
   carp(CARP_INFO, "Creating a mapping of meta protein to peptides");
   int count = 0;
-  MetaMapping metaMapping(compare_set_equality);
+  MetaMapping metaMapping(compare_peptide_sets);
   for (ProteinToPeptides::iterator prot_it = proteinToPeptides.begin();
        prot_it != proteinToPeptides.end(); prot_it++){
     PROTEIN_T* protein = (*prot_it).first;
@@ -515,7 +476,7 @@ MetaToRank getMetaRanks(
  */
 MetaMapping performParsimonyAnalysis(MetaMapping metaMapping){
   carp(CARP_INFO, "performing Parsimony analysis");
-  MetaMapping result(compare_set_equality);
+  MetaMapping result(compare_peptide_sets);
   vector< pair<PeptideSet, MetaProtein > > peps_vector;
 
   // get all meta mappings into a vector 
@@ -553,6 +514,80 @@ MetaMapping performParsimonyAnalysis(MetaMapping metaMapping){
 
 
 
+
+/* comparison and helper functions */
+
+
+
+bool compare_peptide_sets(PeptideSet set_one, PeptideSet set_two){
+  PeptideSet pep_union(compare_pep);
+  for (PeptideSet::iterator it = set_one.begin(); it != set_one.end();
+       it++){
+    PEPTIDE_T* peptide = (*it);
+    if (pep_union.find(peptide) == pep_union.end()){
+      pep_union.insert((*it));
+    }
+  }
+  for (PeptideSet::iterator it = set_two.begin(); it != set_two.end();
+       it++){
+    if (pep_union.find((*it)) == pep_union.end()){
+      pep_union.insert((*it));
+    }
+  }
+  
+  if (pep_union.size() == set_one.size() && set_one.size() == set_two.size()){
+    return false;
+  } else {
+    string string_one = pepsToString(set_one);
+    string string_two = pepsToString(set_two);
+    return string_one.compare(string_two) > 0;
+  }
+}
+
+bool compare_prot(PROTEIN_T* protein_one, PROTEIN_T* protein_two){
+  int compare = strcmp(get_protein_id(protein_one), get_protein_id(protein_two));
+  if (compare == 0){
+    return false;
+  } else {
+    return (compare > 0);
+  }
+}
+
+bool compare_pep(PEPTIDE_T* peptide_one, PEPTIDE_T* peptide_two){
+  int compare = strcmp(get_peptide_sequence(peptide_one), get_peptide_sequence(peptide_two));
+  if (compare == 0){
+    return false;
+  } else {
+    return (compare > 0);
+  }
+}
+
+bool compare_meta_proteins(MetaProtein set_one, MetaProtein set_two){
+	MetaProtein prot_union(compare_prot);
+  for (MetaProtein::iterator it = set_one.begin(); it != set_one.end();
+       it++){
+    PROTEIN_T* protein = (*it);
+    if (prot_union.find(protein) == prot_union.end()){
+      prot_union.insert((*it));
+    }
+  }
+  for (MetaProtein::iterator it = set_two.begin(); it != set_two.end();
+       it++){
+    if (prot_union.find((*it)) == prot_union.end()){
+      prot_union.insert((*it));
+    }
+  }
+
+  if (prot_union.size() == set_one.size() && set_one.size() == set_two.size()){
+    return false;
+  } else {
+    string string_one = metaProteinToString(PeptideSet s);(set_one);
+    string string_two = metaProteinToString(PeptideSet s);(set_two);
+    return string_one.compare(string_two) > 0;
+  }
+}
+
+
 string pepsToString(PeptideSet s){
   stringstream ss (stringstream::in | stringstream::out);
   for (PeptideSet::iterator p_it = s.begin();
@@ -561,5 +596,14 @@ string pepsToString(PeptideSet s){
   }
 
   return ss.str();
+}
 
+
+string metaProteinToString(MetaProtein s){
+  stringstream ss (stringstream::in | stringstream::out);
+  for (MetaProtein::iterator p_it = s.begin();
+       p_it != s.end(); p_it++){
+    ss << get_protein_id((*p_it)) << " ";
+  }
+  return ss.str();
 }
