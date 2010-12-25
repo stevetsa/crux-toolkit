@@ -12,6 +12,7 @@
 #include <math.h>
 #include <sstream>
 #include <algorithm>
+#include <queue>
 #include "match_collection.h"
 #include "utils.h"
 #include "match.h"
@@ -26,6 +27,9 @@
 #include "SpectrumCollection.h"
 #include "Spectrum.h"
 #include "FilteredSpectrumChargeIterator.h"
+#include "IonSeries.h"
+#include "IonConstraint.h"
+
 
 int spectral_counts_main(int argc, char** argv);
 
