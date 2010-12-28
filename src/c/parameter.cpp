@@ -757,12 +757,6 @@ void initialize_parameters(void){
        "Ignore peptides with multiple mappings to proteins (T,F). Default (F)",
        "For quantify to determine to use only peptides with only one protein "
        "mapping", "false");
-  set_boolean_parameter("average", FALSE,
-       "For SIN, calcuate the average of the 3 highest "
-       "values for each spectra instead of total of ion " 
-       "intensities/ms1 peaks (T, F). Default (F)",
-       "A way of avoiding double counting spectra for each peptide",
-       "false"		);
   set_string_parameter("input-bullseye", NULL,
        "Bullseye file produced by using the same ms1 file used to produce ms2"
        " file",
@@ -773,6 +767,13 @@ void initialize_parameters(void){
 	"Default (PROTEIN)",
         "For NSAF and SIN to know which level of quantification should be done",
 	"false"); 
+  set_string_parameter("parsimony", "NONE",
+	"Perform parsimony analysis on the proteins and report "
+	"a parsimony rank column in output file." ,
+	"Default = NONE. Can be <string>=NONE|SIMPLE|GREEDY",
+	"false");
+		       
+		       
 
   // ***** static mods *****
   set_double_parameter("A", 0.0, -100, BILLION, 

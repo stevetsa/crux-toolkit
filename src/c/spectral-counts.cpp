@@ -25,7 +25,20 @@ void getMetaScores(MetaMapping metaMapping, ProteinToScore proteinToScore, MetaT
 void performParsimonyAnalysis(MetaMapping* metaMapping);
 void normalizePeptideScores(PeptideToScore* peptideToScore);
 void normalizeProteinScores(ProteinToScore* proteinToScore);
+void printProteinResults(
+			 ProteinToScore* proteinToScore,
+			 MetaToRank* metaToRank,
+			 ProteinToMetaProtein* proteinToMeta,
+			 char * pathToOutput
+			 );
+void printPeptideResults(
+			 PeptideToScore* peptideToScore,
+			 char * output_path
+			 );
 
+
+
+/* compare functions */
 bool compare_pep(PEPTIDE_T*, PEPTIDE_T*);
 bool compare_prot(PROTEIN_T*, PROTEIN_T*);
 bool compare_peptide_sets(PeptideSet, PeptideSet);
@@ -41,6 +54,7 @@ bool compare_sets(pair<PeptideSet, MetaProtein > peps_one , pair<PeptideSet, Met
 
 int spectral_counts_main(int argc, char** argv){
   const char* option_list[] = {
+    "parsimony",
     "threshold",
     "input-ms2",
     "fileroot",
@@ -50,7 +64,6 @@ int spectral_counts_main(int argc, char** argv){
     "input-bullseye",
     "quant-level",
     "measure",
-    "average",
     "version",
     "verbosity"
   };
@@ -66,20 +79,38 @@ int spectral_counts_main(int argc, char** argv){
   initialize_run(SPECTRAL_COUNTS_COMMAND, argument_list, num_arguments,
 		 option_list, num_options, argc, argv);
 
-  /* Create Match Collection from input-PSM */
+
   char * psm_file = get_string_parameter("input-PSM");
   char * database = get_string_parameter("database");
-  char * dir_path = NULL;
+  char * parsimony = get_string_parameter("parsimony");
   char * quant_level = get_string_parameter("quant-level");
+  char * output_dir = get_string_parameter("output-dir");
+  char * dir_path = NULL;
 
-  if ( strcmp(quant_level,"PROTEIN") !=0 && strcmp(quant_level,"PEPTIDE") != 0 ){
-    carp(CARP_FATAL, "Must pick PROTEIN or PEPTIDE for quant-level option");
-  }
-
-  getDirPath(psm_file, &dir_path);
   
-  int decoy_count = 0;
+  
+  if ( strcmp(quant_level,"PROTEIN") !=0 && 
+       strcmp(quant_level,"PEPTIDE") != 0 ){
+    carp(CARP_FATAL, "Must pick PROTEIN or PEPTIDE for "
+	 "quant-level option");
+  } 
+  
+  if (strcmp(parsimony, "NONE") != 0 && 
+      strcmp(parsimony, "SIMPLE") != 0 &&
+      strcmp(parsimony, "GREEDY") != 0 ){
+    carp(CARP_FATAL, "Parsimony option, "
+	 "must be set to NONE|SIMPLE|GREEDY");
+  }
+  
+  if (!is_directory(output_dir)){
+    carp(CARP_FATAL, "Value passed for output-dir is not a directory");
+  }
+  char * output_path = get_full_filename(output_dir, "spectral-count.target.txt");
 
+
+  /* Create Match Collection from input-PSM */
+  int decoy_count = 0;
+  getDirPath(psm_file, &dir_path);
   MATCH_COLLECTION_ITERATOR_T* match_collection_it 
     = new_match_collection_iterator(dir_path, database, &decoy_count);
  
@@ -96,12 +127,10 @@ int spectral_counts_main(int argc, char** argv){
   getPeptideScores(matches, &peptideToScore);
   carp(CARP_INFO, "Number of Unique Peptides %i", peptideToScore.size());
 
-  // if peptide_score
-  //normalizePeptideScores(&peptideToScore);
-
-  
-  //if protein score
-  if (strcmp(quant_level,"PROTEIN") == 0){
+  if (strcmp(quant_level, "PEPTIDE") == 0){ // peptide level
+    normalizePeptideScores(&peptideToScore);
+    printPeptideResults(&peptideToScore, output_path);
+  } else { // protein level
     ProteinToScore proteinToScore(compare_prot);
     ProteinToPeptides proteinToPeptides(compare_prot);
     ProteinToMetaProtein proteinToMeta(compare_prot);
@@ -115,42 +144,26 @@ int spectral_counts_main(int argc, char** argv){
     carp(CARP_INFO, "Number of Proteins %i", proteinToScore.size());
     
     
-    // if parsimony is not none{
-    getProteinToPeptides(peptideToScore, &proteinToPeptides);
-    getMetaMapping(proteinToPeptides, &metaMapping);
-    getProteinToMetaProtein(metaMapping, &proteinToMeta);
-    carp(CARP_INFO, "Number of meta proteins %i", metaMapping.size());
-    
-        
-    // if parsimony is greedy{
-    performParsimonyAnalysis(&metaMapping);
-    //}
-    
-    getMetaScores(metaMapping, proteinToScore, &metaToScore);
-    getMetaRanks(metaToScore, &metaToRank);
-    // }
-    
-    
-    for (ProteinToScore::iterator it = proteinToScore.begin(); 
-	 it != proteinToScore.end(); it++){
-      PROTEIN_T* protein = (*it).first;
-      FLOAT_T score = (*it).second;
-      MetaProtein metaProtein = proteinToMeta[protein];
-      int rank = -1;
-      FLOAT_T meta_score = -100.0;
-      if (metaToRank.find(metaProtein) != metaToRank.end()){
-	rank = metaToRank[metaProtein];
+    if (strcmp(parsimony, "NONE") != 0){ //if parsimony is not none
+      getProteinToPeptides(peptideToScore, &proteinToPeptides);
+      getMetaMapping(proteinToPeptides, &metaMapping);
+      getProteinToMetaProtein(metaMapping, &proteinToMeta);
+      carp(CARP_INFO, "Number of meta proteins %i", metaMapping.size());
+      
+      if (strcmp(parsimony, "GREEDY") == 0){ //if parsimony is greedy
+	performParsimonyAnalysis(&metaMapping);
       }
-      if (metaToScore.find(metaProtein) != metaToScore.end()){
-	meta_score = metaToScore[metaProtein];
-      }
-      cout << get_protein_id(protein) << "\t" << score << "\t"  << meta_score << "\t" << rank << endl;
+    
+      getMetaScores(metaMapping, proteinToScore, &metaToScore);
+      getMetaRanks(metaToScore, &metaToRank);
     }
     
-  }     
-
+    printProteinResults(&proteinToScore,
+			&metaToRank,
+			&proteinToMeta,
+			output_path);
+  }
   
-
   free(dir_path);
   return 1;
 }
@@ -164,15 +177,15 @@ int spectral_counts_main(int argc, char** argv){
 void getProteinToPeptides(PeptideToScore peptideToScore, ProteinToPeptides* proteinToPeptides){
   for (PeptideToScore::iterator pep_it = peptideToScore.begin();
        pep_it != peptideToScore.end(); pep_it++){
-    PEPTIDE_T* peptide = (*pep_it).first;
+    PEPTIDE_T* peptide = pep_it->first;
     PEPTIDE_SRC_ITERATOR_T* peptide_src_iterator =
       new_peptide_src_iterator(peptide);
     while( peptide_src_iterator_has_next(peptide_src_iterator)) {
       PEPTIDE_SRC_T* peptide_src = peptide_src_iterator_next(peptide_src_iterator);
       PROTEIN_T* protein = get_peptide_src_parent_protein(peptide_src);
-      if ((*proteinToPeptides).find(protein) == (*proteinToPeptides).end()){
+      if (proteinToPeptides->find(protein) == proteinToPeptides->end()){
 	PeptideSet newset(compare_pep);
-	(*proteinToPeptides).insert(make_pair(protein, newset));
+	proteinToPeptides->insert(make_pair(protein, newset));
       }
       (*proteinToPeptides)[protein].insert(peptide);
     }
@@ -187,21 +200,12 @@ void getProteinToMetaProtein(
 			     ){
   for (MetaMapping::iterator meta_protein_it = metaMap.begin();
        meta_protein_it != metaMap.end(); meta_protein_it++){
-    MetaProtein proteins = (*meta_protein_it).second;
+    MetaProtein proteins = meta_protein_it->second;
     for (MetaProtein::iterator proteins_it = proteins.begin();
 	 proteins_it != proteins.end(); proteins_it++){
-      (*proteinToMeta).insert(make_pair((*proteins_it), proteins));
+      proteinToMeta->insert(make_pair((*proteins_it), proteins));
     }
   }
-  /*
-  for (ProteinToMetaProtein::iterator it = (*proteinToMeta).begin();
-       it != (*proteinToMeta).end(); it++){
-    PROTEIN_T* protein = (*it).first;
-    MetaProtein proteins = (*it).second;
-    cout << get_protein_id(protein) << "||"<<metaProteinToString(proteins) << endl;
-  }
-  */
-
 }
 
 
@@ -219,15 +223,15 @@ void getProteinScores(
   // iterate through each peptide
   for (PeptideToScore::iterator pep_it = peptideToScore.begin();
        pep_it != peptideToScore.end(); pep_it++){
-    PEPTIDE_T* peptide = (*pep_it).first;
-    FLOAT_T pep_score = (*pep_it).second;
+    PEPTIDE_T* peptide = pep_it->first;
+    FLOAT_T pep_score = pep_it->second;
     PEPTIDE_SRC_ITERATOR_T* peptide_src_iterator =
       new_peptide_src_iterator(peptide);
     while( peptide_src_iterator_has_next(peptide_src_iterator)) {
       PEPTIDE_SRC_T* peptide_src = peptide_src_iterator_next(peptide_src_iterator);
       PROTEIN_T* protein = get_peptide_src_parent_protein(peptide_src);
-      if ((*proteinToScore).find(protein) == (*proteinToScore).end()){
-	(*proteinToScore).insert(make_pair(protein, 0.0));
+      if (proteinToScore->find(protein) == proteinToScore->end()){
+	proteinToScore->insert(make_pair(protein, 0.0));
       }
       (*proteinToScore)[protein] += pep_score;
     }
@@ -247,20 +251,20 @@ void normalizePeptideScores(PeptideToScore* peptideToScore){
   FLOAT_T total = 0.0;
 
   // normalize by peptide length
-  for (PeptideToScore::iterator it = (*peptideToScore).begin();
-       it != (*peptideToScore).end(); it++){
-    PEPTIDE_T* peptide = (*it).first;
-    FLOAT_T score = (*it).second;
+  for (PeptideToScore::iterator it = peptideToScore->begin();
+       it != peptideToScore->end(); it++){
+    PEPTIDE_T* peptide = it->first;
+    FLOAT_T score = it->second;
     FLOAT_T normalized_score = score / strlen(get_peptide_sequence(peptide));
-    (*it).second = normalized_score;
+    it->second = normalized_score;
     total += normalized_score;
   }
   
   // normalize by sum of scores
-  for (PeptideToScore::iterator it = (*peptideToScore).begin();
-       it != (*peptideToScore).end(); it++){
-    FLOAT_T score = (*it).second;
-    (*it).second = score / total;
+  for (PeptideToScore::iterator it = peptideToScore->begin();
+       it != peptideToScore->end(); it++){
+    FLOAT_T score = it->second;
+    it->second = score / total;
   }
   
 }
@@ -275,19 +279,22 @@ void normalizePeptideScores(PeptideToScore* peptideToScore){
 void normalizeProteinScores(ProteinToScore* proteinToScore){
   carp(CARP_INFO, "Normalizing protein scores");
   FLOAT_T total = 0.0;
-  for (ProteinToScore::iterator it = (*proteinToScore).begin();
-       it != (*proteinToScore).end(); it++){
-    PROTEIN_T* protein = (*it).first;
-    FLOAT_T score = (*it).second;
+
+  // normalize by protein length
+  for (ProteinToScore::iterator it = proteinToScore->begin();
+       it != proteinToScore->end(); it++){
+    PROTEIN_T* protein = it->first;
+    FLOAT_T score = it->second;
     FLOAT_T normalized = score / strlen(get_protein_sequence(protein));
-    (*it).second = normalized;
+    it->second = normalized;
     total += normalized;
   }
 
-  for (ProteinToScore::iterator it = (*proteinToScore).begin();
-       it != (*proteinToScore).end(); it++){
-    FLOAT_T score = (*it).second;
-    (*it).second = score / total;
+  // normalize by sum of all scores
+  for (ProteinToScore::iterator it = proteinToScore->begin();
+       it != proteinToScore->end(); it++){
+    FLOAT_T score = it->second;
+    it->second = score / total;
   }
 
 }
@@ -314,6 +321,9 @@ void getPeptideScores(
   BOOLEAN_T isSin = (measure == NULL || !strcmp(measure, "SIN"));
   map<pair<int,int>, Spectrum*> spectras;
   
+  SCORER_TYPE_T score_type = XCORR;
+    
+  
   if (isSin){
     IonSeries ion_series;
     SpectrumCollection* spectrumCollection = new SpectrumCollection(ms2);
@@ -338,14 +348,17 @@ void getPeptideScores(
     MATCH_T* match = (*match_it);
     if (isSin){ // for sin, calculate total ion intensity for match
       char* peptide_seq = get_match_sequence(match);
+      MODIFIED_AA_T* modified_sequence = get_match_mod_sequence(match);
       int charge = get_match_charge(match);
       Spectrum* temp = get_match_spectrum(match);
       int scan = temp -> getFirstScan();
       // FREE temp
       Spectrum* spectrum = spectras[make_pair(scan, charge)];
       Ion* ion;
-      IonSeries* ion_series
-	= new IonSeries(peptide_seq, charge, new IonConstraint()); //What to do for ion constraint?
+      IonConstraint* ion_constraint = IonConstraint::newIonConstraintSmart(score_type, charge);
+      IonSeries* ion_series = new IonSeries(ion_constraint, charge);
+      ion_series->update(peptide_seq, modified_sequence);
+      ion_series->predictIons();
       for (IonIterator ion_it = ion_series->begin(); 
 	   ion_it != ion_series->end(); ion_it++){
 	ion = (*ion_it);
@@ -356,7 +369,6 @@ void getPeptideScores(
 						    bin_width);
 	    if (peak != NULL){
 	      match_intensity += get_peak_intensity(peak);
-	      carp(CARP_INFO, "peak intensity %i", match_intensity);
 	    }
 	  }
 	}
@@ -366,8 +378,8 @@ void getPeptideScores(
     }
     // add ion_intensity to peptide scores
     PEPTIDE_T* peptide = get_match_peptide(match);
-    if ((*peptideToScore).find(peptide) ==  (*peptideToScore).end()){
-      (*peptideToScore).insert(make_pair(peptide, 0.0));
+    if (peptideToScore->find(peptide) ==  peptideToScore->end()){
+      peptideToScore->insert(make_pair(peptide, 0.0));
     } 
     (*peptideToScore)[peptide]+=match_intensity;
   }
@@ -451,13 +463,13 @@ void getMetaMapping(
   int count = 0;
   for (ProteinToPeptides::iterator prot_it = proteinToPeptides.begin();
        prot_it != proteinToPeptides.end(); prot_it++){
-    PROTEIN_T* protein = (*prot_it).first;
-    PeptideSet pep_set = (*prot_it).second;
+    PROTEIN_T* protein = prot_it->first;
+    PeptideSet pep_set = prot_it->second;
 
-    if ((*metaMapping).find(pep_set) == (*metaMapping).end()){
+    if (metaMapping->find(pep_set) == metaMapping->end()){
       MetaProtein meta_protein(compare_prot);
       count++;
-      (*metaMapping).insert(make_pair(pep_set, meta_protein));
+      metaMapping->insert(make_pair(pep_set, meta_protein));
     }
     (*metaMapping)[pep_set].insert(protein);
   }
@@ -530,15 +542,6 @@ void getMetaRanks(
     (*metaToRank).insert(make_pair(proteins, cur_rank));
     cur_rank++;
   }
-  
-  /*
-  for (MetaToRank::iterator it = (*metaToRank).begin();
-       it != (*metaToRank).end(); it++){
-    int rank= (*it).second;
-    MetaProtein proteins = (*it).first;
-    cout << metaProteinToString(proteins) << "\t" << rank << endl;
-  }
-  */
 
 }
 
@@ -554,7 +557,7 @@ void getMetaRanks(
  *
  */
 void performParsimonyAnalysis(MetaMapping* metaMapping){
-  carp(CARP_INFO, "performing Parsimony analysis");
+  carp(CARP_INFO, "Performing Greedy Parsimony analysis");
   MetaMapping result(compare_peptide_sets);
   vector< pair<PeptideSet, MetaProtein > > peps_vector;
 
@@ -592,11 +595,103 @@ void performParsimonyAnalysis(MetaMapping* metaMapping){
 
 
 
+/* Outputs the protein id and their corresponding quantifcation
+ * score in a tab delimited format. Outputs the meta protein
+ * rank if parsimony was called.
+ */
+void printProteinResults(
+			 ProteinToScore* proteinToScore,
+			 MetaToRank* metaToRank,
+			 ProteinToMetaProtein* proteinToMeta,
+			 char * output_path
+			 ){
+  carp(CARP_INFO, "Outputting results");
+  ofstream targetFile;
+  targetFile.open(output_path);
+  BOOLEAN_T isParsimony = (proteinToMeta->size() != 0);
+
+
+  vector<pair<FLOAT_T, PROTEIN_T*> > scoreToProtein;
+  for (ProteinToScore::iterator it = proteinToScore->begin(); 
+       it != proteinToScore->end(); it++){
+    PROTEIN_T* protein = it->first;
+    FLOAT_T score = it->second;
+    scoreToProtein.push_back(make_pair(score, protein));
+  }
+  
+  /* sort and reverse the list */
+  sort(scoreToProtein.begin(), scoreToProtein.end());
+  reverse(scoreToProtein.begin(), scoreToProtein.end());
+
+  /* write header */
+  if (isParsimony){
+    targetFile << "ProteinId\tScore\tParsimonyRank" << endl;
+  } else {
+    targetFile << "ProteinId\tScore" << endl;
+  }
+
+  for (vector<pair<FLOAT_T, PROTEIN_T*> >::iterator
+	 it = scoreToProtein.begin(); 
+       it != scoreToProtein.end(); it++){
+    FLOAT_T score = it->first;
+    PROTEIN_T* protein = it->second;
+    if (isParsimony){
+      MetaProtein metaProtein = (*proteinToMeta)[protein];
+      int rank = -1;
+      if (metaToRank->find(metaProtein) != metaToRank->end()){
+	rank = (*metaToRank)[metaProtein];
+      } 
+      targetFile << get_protein_id(protein) << "\t" 
+		 << score << "\t" <<rank << endl;
+    } else {
+      targetFile << get_protein_id(protein) << "\t" 
+		 << score << endl;
+    }
+  }
+  targetFile.close();
+}
+
+
+/* Outputs the peptide sequence and its corresponding
+ * score in a tab delimited format
+ */
+void printPeptideResults(
+			 PeptideToScore* peptideToScore,
+			 char * output_path
+			 ){
+  carp(CARP_INFO, "Outputting results");
+  ofstream targetFile;
+  targetFile.open(output_path);
+  
+  vector<pair<FLOAT_T, PEPTIDE_T*> > scoreToPeptide;
+  for (PeptideToScore::iterator it = peptideToScore->begin();
+       it != peptideToScore->end(); it++){
+    PEPTIDE_T* peptide = it->first;
+    FLOAT_T score = it->second;
+    scoreToPeptide.push_back(make_pair(score, peptide));
+  }
+  
+  targetFile << "PeptideSequence\tScore" << endl;
+  
+  sort(scoreToPeptide.begin(), scoreToPeptide.end());
+  reverse(scoreToPeptide.begin(), scoreToPeptide.end());
+  for (vector<pair<FLOAT_T, PEPTIDE_T*> >::iterator 
+	 it = scoreToPeptide.begin();
+       it != scoreToPeptide.end(); it++){
+    PEPTIDE_T* peptide = it->second;
+    FLOAT_T score = it->first;
+    targetFile << get_peptide_sequence(peptide) 
+	       << "\t"  << score << endl;
+  }
+  targetFile.close();
+}
+
+
+
+
+
 
 /* comparison and helper functions */
-
-
-
 bool compare_peptide_sets(PeptideSet set_one, PeptideSet set_two){
   PeptideSet pep_union(compare_pep);
   for (PeptideSet::iterator it = set_one.begin(); it != set_one.end();
@@ -671,7 +766,6 @@ string pepsToString(PeptideSet s){
        p_it != s.end(); p_it++){
     ss << get_peptide_sequence((*p_it)) << " ";
   }
-
   return ss.str();
 }
 
