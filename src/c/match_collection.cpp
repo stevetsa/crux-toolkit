@@ -2479,11 +2479,14 @@ MATCH_COLLECTION_T* new_match_collection_psm_output(
   while((directory_entry 
             = readdir(match_collection_iterator->working_directory))){
 
+    char * file_in_dir = get_full_filename(match_collection_iterator->directory_name, directory_entry->d_name);
     // Found psm file
-    if (input_psm != NULL && strcmp(input_psm, directory_entry->d_name) == 0){
+    if (input_psm != NULL && (strcmp(input_psm, directory_entry->d_name) == 0 ||
+			      strcmp(input_psm, file_in_dir)==0)){
       found_file = TRUE;
       break;
     }
+    
     
 
     // skip files without the correct prefix (fileroot)
@@ -2495,7 +2498,6 @@ MATCH_COLLECTION_T* new_match_collection_psm_output(
     if( !suffix_compare(directory_entry->d_name, ".txt") ) {
       continue;
     }
-
     // it's the right file if ...
     //      type is target and ends in "target.txt"
     //      type is SET_DECOY1 and ends in "decoy.txt"
