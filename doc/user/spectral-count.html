@@ -12,17 +12,17 @@
  </head>
 <body>
 <blockquote>
-<h1 align="center">crux spectral-counts</h1>
+<h1 align="center">crux quantify</h1>
 <p>
 <b>Usage:</b></p>
 <blockquote>
-<code>crux spectral-counts [options] &lt;input-PSM&gt;&nbsp;</code><code>&lt;database&gt;</code>
+<code>crux quantify [options] &lt;input-PSM&gt;&nbsp;</code><code>&lt;database&gt;</code>
 </blockquote>
 <p>
 <b>Description:</b></p>
 <blockquote>
 <p>Given a collection of scored PSMs, produce a&nbsp;list
-of proteins ranked by their a specified score. Spectral-counts supports two types of quantification: Normalized Spectral Abundance Factor (NSAF) and Normalized Spectral Index (SI<sub>N</sub>). The NSAF method is from a <a href="http://www.ncbi.nlm.nih.gov/pubmed/17138671">publication by Paoletti et al. (2006)</a>. The SI<sub>N</sub> method is from the <a href="http://www.nature.com/nbt/journal/v28/n1/abs/nbt.1592.html">Griffin et al. (2010) paper</a>. The two quantification methods are listed below:</p>
+of proteins ranked by their a specified score. Quantify supports two types of quantification: Normalized Spectral Abundance Factor (NSAF) and Normalized Spectral Index (SI<sub>N</sub>). The NSAF method is from a <a href="http://www.ncbi.nlm.nih.gov/pubmed/17138671">publication by Paoletti et al. (2006)</a>. The SI<sub>N</sub> method is from the <a href="http://www.nature.com/nbt/journal/v28/n1/abs/nbt.1592.html">Griffin et al. (2010) paper</a>. The two quantification methods are listed below:</p>
 <div>
 <div> <u>Protein Quantification </u>
 <ol>
@@ -101,11 +101,11 @@ The name of the output folder can be set by the user using the <code>--output-di
 option.
 The following file will be created:</p>
 <li>
-<b>spectral-count.target.txt</b>:
+<b>quantify.target.txt</b>:
 a tab-delimited text file
 containing the
 protein IDs and their corresponding scores, in sorted order.
-In addition, a log file called </li><li><span style="font-weight: bold;">spectral-count.log.txt</span> will be written in the same directory.&nbsp;</li>
+In addition, a log file called </li><li><span style="font-weight: bold;">quantify.log.txt</span> will be written in the same directory.&nbsp;</li>
 </ul>
 <b>Options:</b>
 <br>
