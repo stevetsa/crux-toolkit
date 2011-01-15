@@ -9,8 +9,11 @@
  * spectrum against a database.
  ****************************************************************************/
 #include "match_collection.h"
+#include <string>
 
 #include "MatchFileReader.h"
+
+using namespace std;
 
 /* Private data types (structs) */
 
@@ -107,7 +110,7 @@ struct match_collection_iterator{
   MATCH_COLLECTION_T* match_collection; ///< the match collection to return
   BOOLEAN_T is_another_collection; 
   ///< is there another match_collection to return?
-  vector<bool> cols_in_file; ///< which columns were in the target file
+  vector<bool>* cols_in_file; ///< which columns were in the target file
 };
 
 /******* Private function declarations, described in definintions below ***/
@@ -1665,8 +1668,10 @@ void print_xml_header(
           min_number_termini
           );
 
+#ifndef DARWIN
   free(absolute_msms_path);
   free(absolute_database_path);
+#endif
   free(enz_str);
 
 
@@ -2406,6 +2411,80 @@ void print_matches_multi_spectra
  ******************************************/
 
 /**
+ * Read files in the directory and return the names of target or
+ * decoy files to use for post-search commands.
+ * \returns Vector parameter filled with names of target or decoy
+ * files.
+ */
+void get_target_decoy_filenames(vector<string>& target_decoy_names,
+                                DIR* directory,
+                                SET_TYPE_T type){
+  if( directory == NULL ){
+    carp(CARP_FATAL, "Cannot read files from NULL directory.");
+  }
+
+  // look for both files from search-for-matches and sequest-search
+  vector<string> possible_names;
+
+  // decide on the search string (target/decoy)
+  switch(type){
+  case SET_TARGET:
+    possible_names.push_back("search.target.txt");
+    possible_names.push_back("sequest.target.txt");
+    break;
+  case SET_DECOY1:
+    possible_names.push_back("search.decoy.txt");
+    possible_names.push_back("search.decoy-1.txt");
+    possible_names.push_back("sequest.decoy.txt");
+    possible_names.push_back("sequest.decoy-1.txt");
+    break;
+  case SET_DECOY2:
+    possible_names.push_back("search.decoy-2.txt");
+    possible_names.push_back("sequest.decoy-2.txt");
+    break;
+  case SET_DECOY3:
+    possible_names.push_back("search.decoy-3.txt");
+    possible_names.push_back("sequest.decoy-3.txt");
+    break;
+  }
+
+  // open the directory
+  struct dirent* directory_entry = NULL;
+  rewinddir(directory);
+  // for each file, compare to each name, if it matches, add to the list
+  while((directory_entry = readdir(directory))){
+    for(int name_idx = 0; name_idx < (int)possible_names.size(); name_idx++){
+      string filename = directory_entry->d_name;
+      if( filename.find(possible_names[name_idx]) != string::npos ){
+        target_decoy_names.push_back(filename);
+      } 
+    }
+  }
+
+  // check that it is only sequest or search files, not both
+  bool found_search = false;
+  bool found_sequest = false;
+  for(int name_idx = 0; name_idx < (int)target_decoy_names.size(); name_idx++){
+    // don't look for just "search" and "sequest" in case they are in
+    // the fileroot
+    if( target_decoy_names[name_idx].find(possible_names.front()) 
+        != string::npos ){
+      found_search = true;
+    }
+    if( target_decoy_names[name_idx].find(possible_names.back()) 
+        != string::npos ){
+      found_sequest = true;
+    }
+  }
+
+  if( found_search && found_sequest ){
+    carp(CARP_FATAL, "Cannot analyze results from both crux search-for-matches "
+         " and sequest-search.  Please remove one from the directory.");
+  }
+  // check that headers are all the same??
+}
+
+/**
  * \brief Creates a new match_collection from the match collection
  * iterator. 
  *
@@ -2424,29 +2503,14 @@ MATCH_COLLECTION_T* new_match_collection_psm_output(
     ///< what set of match collection are we creating? (TARGET, DECOY1~3) -in 
   )
 { 
-  struct dirent* directory_entry = NULL;
-  char* file_in_dir = NULL;
-  FILE* result_file = NULL;
-  char suffix[25];
-  const char* prefix = get_string_parameter_pointer("fileroot");
-  char* non_const_prefix = NULL;
-  // file must also start with either sequest or search; look for 'se'
-  if( prefix == NULL || (strcmp(prefix, "__NULL_STR") == 0) ){
-    prefix = "se";
-  } else {
-    non_const_prefix = cat_string(prefix, ".se");
-    prefix = non_const_prefix;
-  }
-  carp(CARP_DEBUG, "Calling new_match_collection_psm_output");
-  DATABASE_T* database = match_collection_iterator->database;
-  
-  // allocate match_collection object
+  // prepare the match_collection
   MATCH_COLLECTION_T* match_collection = allocate_match_collection();
 
   // set this as a post_process match collection
   match_collection->post_process_collection = TRUE;
   
   // the protein counter size, create protein counter
+  DATABASE_T* database = match_collection_iterator->database;
   match_collection->post_protein_counter_size 
    = get_database_num_proteins(database);
   match_collection->post_protein_counter 
@@ -2458,85 +2522,32 @@ MATCH_COLLECTION_T* new_match_collection_psm_output(
   // Set initial capacity to protein count.
   match_collection->post_hash 
     = new_hash(match_collection->post_protein_counter_size);
-  
-  // set the suffix of the file to parse
-  // Also, tag if match_collection type is null_peptide_collection
 
-  if(set_type == SET_TARGET){
-    sprintf(suffix, ".target.txt");
-    match_collection->null_peptide_collection = FALSE;
-  }
-  else{
-    sprintf(suffix, ".decoy-%d.txt", (int)set_type);
-    match_collection->null_peptide_collection = TRUE;
-  }
-  
-  carp(CARP_DEBUG, "Set type is %d, suffix is %s and prefix is %s.", 
-       (int)set_type, suffix, prefix);
-  BOOLEAN_T found_file = FALSE;
-  // iterate over all PSM files in directory to find the one to read
-  while((directory_entry 
-            = readdir(match_collection_iterator->working_directory))){
+  // get the list of files to open
+  vector<string> file_names;
+  get_target_decoy_filenames(file_names, 
+                             match_collection_iterator->working_directory,
+                             set_type);
 
-    // skip files without the correct prefix (fileroot)
-    if( ! prefix_compare(directory_entry->d_name, prefix)){
-      continue;
+  // open each file and add psms to match collection
+  for(int file_idx = 0; file_idx < (int)file_names.size(); file_idx++){
+    char* full_filename = 
+      get_full_filename(match_collection_iterator->directory_name,
+                        file_names[file_idx].c_str());
+    MatchFileReader delimited_result_file(full_filename);
+    free(full_filename);
+
+    extend_match_collection_tab_delimited(match_collection, 
+                                          database, 
+                                          delimited_result_file);
+
+    // for the first target file, set headers based on input files
+    if( set_type == SET_TARGET && file_idx == 0 ){
+      delimited_result_file.getMatchColumnsPresent(
+                                  *match_collection_iterator->cols_in_file); 
     }
+  } // next file
 
-    // skip over any file not ending in .txt
-    if( !suffix_compare(directory_entry->d_name, ".txt") ) {
-      continue;
-    }
-
-    // it's the right file if ...
-    //      type is target and ends in "target.txt"
-    //      type is SET_DECOY1 and ends in "decoy.txt"
-    //      type is t and ends in "decoy-t.txt"
-
-    if( set_type == SET_TARGET && 
-        suffix_compare(directory_entry->d_name, "target.txt") ){
-      found_file = TRUE;
-      break;
-    } else if( set_type == SET_DECOY1 && 
-               suffix_compare(directory_entry->d_name, "decoy.txt") ){
-      found_file = TRUE;
-      break;
-    } else if( suffix_compare(directory_entry->d_name, suffix) ){
-      found_file = TRUE;
-      break;
-      }
-  }
-
-  if( ! found_file ){
-    carp(CARP_ERROR, "Could not find file ending in '%s'.", suffix);
-  }
-
-  file_in_dir = get_full_filename(match_collection_iterator->directory_name, 
-                                  directory_entry->d_name);
-  
-  carp(CARP_INFO, "Getting PSMs from %s", file_in_dir);
-  result_file = fopen(file_in_dir, "r");
-  if( access(file_in_dir, R_OK)){
-    carp(CARP_FATAL, "Cannot read from psm file '%s'", file_in_dir);
-  }
-  fclose(result_file);
-  // add all the match objects from result_file
-  carp(CARP_INFO,"Parsing tab delimited file");
-  MatchFileReader delimited_result_file(file_in_dir);
-  extend_match_collection_tab_delimited(match_collection, 
-                                        database, 
-                                        delimited_result_file);
-
-  // set headers based on input files
-  if( set_type == SET_TARGET ){
-    delimited_result_file.getMatchColumnsPresent(match_collection_iterator->cols_in_file); 
-  }
-
-  carp(CARP_DETAILED_DEBUG, "Extended match collection " );
-  free(file_in_dir);
-  free(non_const_prefix);
-  carp(CARP_DETAILED_DEBUG, "Finished file.");
-  
   return match_collection;
 }
 
@@ -2732,6 +2743,7 @@ BOOLEAN_T add_match_to_post_match_collection(
   // update hash table
   char* hash_value = get_peptide_hash_value(peptide); 
   add_hash(match_collection->post_hash, hash_value, NULL); 
+  free(hash_value);
   
   return TRUE;
 }
@@ -3183,6 +3195,8 @@ MATCH_COLLECTION_ITERATOR_T* new_match_collection_iterator(
     my_copy_string(output_file_directory);
   match_collection_iterator->is_another_collection = FALSE;
 
+  match_collection_iterator->cols_in_file = new vector<bool>();
+
   // setup the match collection iterator for iteration
   // here it will go parse files to construct match collections
   setup_match_collection_iterator(match_collection_iterator);
@@ -3232,6 +3246,8 @@ void free_match_collection_iterator(
   free(match_collection_iterator->directory_name);
   free_database(match_collection_iterator->database);
   closedir(match_collection_iterator->working_directory); 
+  delete match_collection_iterator->cols_in_file;
+
   free(match_collection_iterator);
 }
 
@@ -3465,7 +3481,7 @@ void assign_match_collection_qvalues(
 const vector<bool>& get_match_collection_iterator_cols_in_file(
   MATCH_COLLECTION_ITERATOR_T* match_collection_iterator){
 
-  return match_collection_iterator->cols_in_file;
+  return *match_collection_iterator->cols_in_file;
 }
 
 
@@ -3475,4 +3491,5 @@ const vector<bool>& get_match_collection_iterator_cols_in_file(
  * c-basic-offset: 2
  * End:
  */
+
 

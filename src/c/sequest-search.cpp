@@ -214,6 +214,16 @@ int sequest_search_main(int argc,   ///< number of cmd line tokens
 
   } // next spectrum
 
+  // clean up
+  delete spectrum_iterator;
+  delete spectra;
+  for(int mod_idx = 0; mod_idx < num_peptide_mods; mod_idx++){
+    free_peptide_mod(peptide_mods[mod_idx]);
+  }
+  free(peptide_mods);
+  free_index(index);
+  free_database(database);
+
   carp(CARP_INFO, "Elapsed time: %.3g s", wall_clock() / 1e6);
   carp(CARP_INFO, "Finished crux sequest-search");
   
@@ -272,9 +282,9 @@ void print_matches(
     populate_match_rank_match_collection(all_psms, SP);
     save_top_sp_match(all_psms);
     populate_match_rank_match_collection(all_psms, XCORR);
+    vector<MATCH_COLLECTION_T*> empty_list;
     output_files.writeMatches(all_psms, // target matches
-                              NULL,     // decoy matches
-                              0,        // num decoys
+                              empty_list,     // decoy matches
                               XCORR,    // use XCORR rank for cutoff
                               spectrum); 
 
@@ -295,21 +305,20 @@ void print_matches(
       save_top_sp_match(merged_decoy_psms);
       populate_match_rank_match_collection(merged_decoy_psms, XCORR);
 
-      output_files.writeMatches(target_psms, &merged_decoy_psms, 
-                                1, // num decoys
+      vector<MATCH_COLLECTION_T*> decoy_list(1, merged_decoy_psms);
+      output_files.writeMatches(target_psms, decoy_list, 
                                 XCORR, spectrum);
       
     }else{   // write targets and decoys to separate files
       // TODO write a version of OutputFiles::writeMatches that takes
       // a vector of decoy match collections
       int num_decoys = decoy_psms.size();
-      MATCH_COLLECTION_T** decoy_psm_array = 
-        (MATCH_COLLECTION_T**)mycalloc(num_decoys, sizeof(MATCH_COLLECTION_T*));
+      vector<MATCH_COLLECTION_T*> decoy_psm_array;
       for(int decoy_idx = 0; decoy_idx < num_decoys; decoy_idx++){
-        decoy_psm_array[decoy_idx] = decoy_psms.at(decoy_idx);
+        decoy_psm_array.push_back(decoy_psms.at(decoy_idx));
       }
 
-      output_files.writeMatches(target_psms, decoy_psm_array, num_decoys, 
+      output_files.writeMatches(target_psms, decoy_psm_array, 
                                 XCORR, spectrum);
     }
   }

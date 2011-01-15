@@ -100,9 +100,10 @@ OutputFiles::~OutputFiles(){
   }
   if( feature_file_ ){ fclose(feature_file_); }
 
-  delete delim_file_array_;
-  delete sqt_file_array_;
-  delete xml_file_array_;
+  delete [] delim_file_array_;
+  delete [] sqt_file_array_;
+  delete [] xml_file_array_;
+  delete [] target_decoy_list_;
 }
 
 /**
@@ -350,9 +351,8 @@ void OutputFiles::writeFooters(){
  */
 void OutputFiles::writeMatches(
   MATCH_COLLECTION_T*  target_matches, ///< from real peptides
-  MATCH_COLLECTION_T** decoy_matches_array,  
+  vector<MATCH_COLLECTION_T*>& decoy_matches_array,  
                                 ///< array of collections from shuffled peptides
-  int num_decoy_collections,    ///< num collections in array
   SCORER_TYPE_T rank_type,      ///< use ranks for this type
   Spectrum* spectrum            ///< given when all matches are to one spec
   ){
@@ -362,10 +362,10 @@ void OutputFiles::writeMatches(
   }
 
   // confirm that there are the expected number of decoy collections
-  if( num_decoy_collections != num_files_ - 1){
+  if( (int)decoy_matches_array.size() != num_files_ - 1){
     carp(CARP_FATAL, 
          "WriteMatches was given %d decoy collections but was expecting %d.",
-         num_decoy_collections, num_files_ - 1);
+         (int)decoy_matches_array.size(), num_files_ - 1);
   }
 
   // print to each file type
@@ -380,7 +380,7 @@ void OutputFiles::writeMatches(
 // already confirmed that num_files_ = num decoy collections + 1
 void OutputFiles::printMatchesTab(
   MATCH_COLLECTION_T*  target_matches, ///< from real peptides
-  MATCH_COLLECTION_T** decoy_matches_array,  
+  vector<MATCH_COLLECTION_T*>& decoy_matches_array,  
   SCORER_TYPE_T rank_type,
   Spectrum* spectrum
 ){
@@ -404,7 +404,7 @@ void OutputFiles::printMatchesTab(
                                            rank_type);
 
       carp(CARP_DETAILED_DEBUG, "done writing file index %d", file_idx);
-      if( decoy_matches_array ){
+      if( decoy_matches_array.size() > (size_t)file_idx ){
         cur_matches = decoy_matches_array[file_idx];
       }// else if it is NULL, num_files_ == 1 and loop will exit here
     }
@@ -420,7 +420,7 @@ void OutputFiles::printMatchesTab(
 
 void OutputFiles::printMatchesSqt(
   MATCH_COLLECTION_T*  target_matches, ///< from real peptides
-  MATCH_COLLECTION_T** decoy_matches_array,  
+  vector<MATCH_COLLECTION_T*>& decoy_matches_array,  
                                 ///< array of collections from shuffled peptides
   Spectrum* spectrum
 ){
@@ -438,7 +438,7 @@ void OutputFiles::printMatchesSqt(
                                cur_matches,
                                spectrum);
 
-    if( decoy_matches_array ){
+    if( decoy_matches_array.size() > (size_t)file_idx ){
       cur_matches = decoy_matches_array[file_idx];
     } // else if NULL, num_files_==1 and this is last loop
   }
@@ -448,7 +448,7 @@ void OutputFiles::printMatchesSqt(
 
 void OutputFiles::printMatchesXml(
   MATCH_COLLECTION_T*  target_matches, ///< from real peptides
-  MATCH_COLLECTION_T** decoy_matches_array,  
+  vector<MATCH_COLLECTION_T*>& decoy_matches_array,  
                                 ///< array of collections from shuffled peptides
   Spectrum* spectrum,
   SCORER_TYPE_T rank_type
@@ -471,7 +471,7 @@ void OutputFiles::printMatchesXml(
                                rank_type,
                                index);
 
-    if( decoy_matches_array ){
+    if( decoy_matches_array.size() > (size_t)file_idx ){
       cur_matches = decoy_matches_array[file_idx];
     } // else if NULL, num_files_==1 and this is last loop
   }
