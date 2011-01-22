@@ -76,7 +76,7 @@ int xhhc_search_main(int argc, char** argv) {
     "xlink-include-linears",
     "xlink-include-deadends",
     "xlink-include-selfloops",
-    "xcorr-use-flanks",
+    /*"xcorr-use-flanks",*/
     "use-mgf"
   };
   int num_options = sizeof(option_list) / sizeof(char*);

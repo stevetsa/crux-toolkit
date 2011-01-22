@@ -136,10 +136,10 @@ bool Scorer::xlink_create_map_theoretical(
     // In addition, add peaks of intensity of 25.0 to +/- 1 m/z flanking each B, Y ion.
     // Skip ions that are located beyond max mz limit
     add_intensity_map(theoretical, intensity_array_idx, 50);
-    if (get_boolean_parameter("xcorr-use-flanks")) {
+    //if (get_boolean_parameter("xcorr-use-flanks")) {
       if (intensity_array_idx > 0) {
 	add_intensity_map(theoretical, intensity_array_idx - 1, 25);
-      }
+      //}
       add_intensity_map(theoretical, intensity_array_idx + 1, 25);
      
     }
@@ -196,13 +196,13 @@ bool Scorer::hhc_create_intensity_array_theoretical(
         //if (ion->type() == Y_ION)
         //add_intensity(theoretical, intensity_array_idx, 51);
         add_intensity(theoretical, intensity_array_idx, 50);
-        if (get_boolean_parameter("xcorr-use-flanks") &&
-	    intensity_array_idx > 0) {
-	      add_intensity(theoretical, intensity_array_idx - 1, 25);
-      }
-	if(get_boolean_parameter("xcorr-use-flanks") &&
-	   ((intensity_array_idx + 1)< max_mz)) {
-        add_intensity(theoretical, intensity_array_idx + 1, 25);
+        //if (get_boolean_parameter("xcorr-use-flanks") &&
+	if (intensity_array_idx > 0) {
+          add_intensity(theoretical, intensity_array_idx - 1, 25);
+        }
+	//if(get_boolean_parameter("xcorr-use-flanks") &&
+	if   ((intensity_array_idx + 1)< max_mz) {
+          add_intensity(theoretical, intensity_array_idx + 1, 25);
 	}
       }
 

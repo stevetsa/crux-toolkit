@@ -437,6 +437,7 @@ BOOLEAN_T parse_spectrum_file_mgf(
   BOOLEAN_T pepmass_found = FALSE;
   BOOLEAN_T peaks_found = FALSE;
   BOOLEAN_T end_found = FALSE;
+  BOOLEAN_T scans_found = FALSE;
 
   carp(CARP_DEBUG, "parsing MGF Scan");
 
@@ -456,15 +457,16 @@ BOOLEAN_T parse_spectrum_file_mgf(
   while( (line_length = getline(&new_line, &buf_length, file)) != -1){
     if (strncmp(new_line, "TITLE=",6) == 0) {
       title_found = TRUE;
-      int first_scan = spec_count;
-      int last_scan = spec_count;
       //  TODO : figure out what to do here, the format is dependent 
       // upon the machine i think
       // parse the title line
-      
-      set_spectrum_first_scan(spectrum, first_scan);
-      set_spectrum_last_scan(spectrum, last_scan);
-      set_spectrum_spectrum_type(spectrum, MS2);
+
+    } else if (strncmp(new_line, "SCANS=",6) == 0) {
+      int scans = atoi(new_line+6);
+      scans_found = TRUE;
+      spec_count = scans;
+      set_spectrum_first_scan(spectrum, scans);
+      set_spectrum_last_scan(spectrum, scans);
     } else if (strncmp(new_line, "CHARGE=",7) == 0) {
       //parse the charge line
       int charge;
@@ -500,6 +502,11 @@ BOOLEAN_T parse_spectrum_file_mgf(
 
   //TODO check to make sure we gleaned the information from
   //the headers.
+  if (!scans_found) {
+      set_spectrum_first_scan(spectrum, spec_count);
+      set_spectrum_last_scan(spectrum, spec_count);
+  }
+  set_spectrum_spectrum_type(spectrum, MS2);
 
   //parse peak information
   do {
