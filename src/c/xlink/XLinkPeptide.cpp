@@ -61,65 +61,98 @@ int XLinkPeptide::getLinkPos(int peptide_idx) {
 }
 
 
-void get_min_max_mass(
-  FLOAT_T precursor_mz, 
-  int charge, 
-  FLOAT_T window,
-  WINDOW_TYPE_T precursor_window_type,
-  FLOAT_T& min_mass, 
-  FLOAT_T& max_mass) {
+bool XLinkPeptide::isInter() {
 
-  double mass = (precursor_mz - MASS_PROTON) * (double)charge;
-  //cerr <<"mz: "
-  //     <<precursor_mz
-  //     <<" charge:"
-  //     <<charge
-  //     <<" mass:"<<mass
-  //     <<" window:"<<window<<endl;
-  if (precursor_window_type == WINDOW_MASS) {
-    //cerr<<"WINDOW_MASS"<<endl;
-    min_mass = mass - window;
-    max_mass = mass + window;
-  } else if (precursor_window_type == WINDOW_MZ) {
-    //cerr<<"WINDOW_MZ"<<endl;
-    double min_mz = precursor_mz - window;
-    double max_mz = precursor_mz + window;
-    min_mass = (min_mz - MASS_PROTON) * (double)charge;
-    max_mass = (max_mz - MASS_PROTON) * (double)charge;
-  } else if (precursor_window_type == WINDOW_PPM) {
-    //cerr<<"WINDOW_PPM"<<endl;
-    min_mass = mass / (1.0 + window * 1e-6);
-    max_mass = mass / (1.0 - window * 1e-6);
-  }
+  PEPTIDE_T* peptide_a = linked_peptides_[0].getPeptide();
+  PEPTIDE_T* peptide_b = linked_peptides_[1].getPeptide();
+
+  PEPTIDE_SRC_T* proteins_src_a = get_peptide_peptide_src(peptide_a);
+  PEPTIDE_SRC_T* proteins_src_b = get_peptide_peptide_src(peptide_b);
+
+  vector<PROTEIN_T*> proteins_a;
+  vector<PROTEIN_T*> proteins_b;
   
-  //cerr<<"min:"<<min_mass<<" "<<"max: "<<max_mass<<endl;
+
+  while (proteins_src_a != NULL) {
+
+    proteins_a.push_back(get_peptide_src_parent_protein(proteins_src_a));
+    proteins_src_a = get_peptide_src_next_association(proteins_src_a);
+  }
+
+  while (proteins_src_b != NULL) {
+
+    proteins_b.push_back(get_peptide_src_parent_protein(proteins_src_b));
+    proteins_src_b = get_peptide_src_next_association(proteins_src_b);
+  }
+
+  sort(proteins_a.begin(), proteins_a.end());
+  sort(proteins_b.begin(), proteins_b.end());
+
+
+  for (unsigned int idx_a=0;idx_a<proteins_a.size();idx_a++) {
+
+    for (unsigned int idx_b=0;idx_b<proteins_b.size();idx_b++) {
+
+      if (proteins_a[idx_a] != proteins_b[idx_b]) {
+        //Found an instance where the proteins are not equal, therefore it is
+        //inter. but still could be intra....
+        return true;
+      }
+    }
+  }
+
+  //all proteins equal, so it is definately intra
+  return false;
 
 }
 
-void get_min_max_mass(
-  FLOAT_T precursor_mz, 
-  int charge, 
-  BOOLEAN_T use_decoy_window,
-  FLOAT_T& min_mass, 
-  FLOAT_T& max_mass) {
-  
-  if (use_decoy_window) {
-    get_min_max_mass(precursor_mz,
-		     charge,
-		     get_double_parameter("precursor-window-decoy"),
-		     get_window_type_parameter("precursor-window-type-decoy"),
-		     min_mass,
-		     max_mass);
-  } else {
-    get_min_max_mass(precursor_mz,
-		     charge,
-		     get_double_parameter("precursor-window"),
-		     get_window_type_parameter("precursor-window-type"),
-		     min_mass,
-		     max_mass);
-  }
-}
+bool XLinkPeptide::isIntra() {
 
+  PEPTIDE_T* peptide_a = linked_peptides_[0].getPeptide();
+  PEPTIDE_T* peptide_b = linked_peptides_[1].getPeptide();
+
+  PEPTIDE_SRC_T* proteins_src_a = get_peptide_peptide_src(peptide_a);
+  PEPTIDE_SRC_T* proteins_src_b = get_peptide_peptide_src(peptide_b);
+
+  vector<PROTEIN_T*> proteins_a;
+  vector<PROTEIN_T*> proteins_b;
+  
+
+  while (proteins_src_a != NULL) {
+
+    proteins_a.push_back(get_peptide_src_parent_protein(proteins_src_a));
+    proteins_src_a = get_peptide_src_next_association(proteins_src_a);
+  }
+
+  while (proteins_src_b != NULL) {
+
+    proteins_b.push_back(get_peptide_src_parent_protein(proteins_src_b));
+    proteins_src_b = get_peptide_src_next_association(proteins_src_b);
+  }
+
+  sort(proteins_a.begin(), proteins_a.end());
+  sort(proteins_b.begin(), proteins_b.end());
+
+
+  for (unsigned int idx_a=0;idx_a<proteins_a.size();idx_a++) {
+
+    for (unsigned int idx_b=0;idx_b<proteins_b.size();idx_b++) {
+
+      if (proteins_a[idx_a] == proteins_b[idx_b]) {
+        //Found an instance where the protein are equal, therefore it is
+        //intra. but still also be inter as well....
+        return true;
+      }
+    }
+  }
+
+  //all proteins inequal, so it is definately inter
+  return false;
+
+
+
+
+}
 
 void XLinkPeptide::addLinkablePeptides(double min_mass, double max_mass,
 			 INDEX_T* index, DATABASE_T* database,
@@ -155,26 +188,21 @@ void XLinkPeptide::addLinkablePeptides(double min_mass, double max_mass,
   //cerr <<"addLinkablePeptides(): done."<<endl;
 }
 
-void XLinkPeptide::addCandidates(FLOAT_T precursor_mz, int charge,
-			    XLinkBondMap& bondmap,
-			    INDEX_T* index, DATABASE_T* database,
-			    PEPTIDE_MOD_T** peptide_mods,
-			    int num_peptide_mods,
-			    MatchCandidateVector& candidates,
-			    BOOLEAN_T use_decoy_window) {
+void XLinkPeptide::addCandidates(
+  FLOAT_T min_mass,
+  FLOAT_T max_mass,
+  XLinkBondMap& bondmap,
+  INDEX_T* index, 
+  DATABASE_T* database,
+  PEPTIDE_MOD_T** peptide_mods,
+  int num_peptide_mods,
+  MatchCandidateVector& candidates) {
 
   //get all linkable peptides up to mass-linkermass.
 
   //cerr <<"XLinkPeptide::addCandidates() : start."<<endl;
   int max_missed_cleavages = get_int_parameter("max-missed-cleavages");
   vector<XLinkablePeptide> linkable_peptides;
-
-  //find max, min mass.
-  FLOAT_T max_mass;
-  FLOAT_T min_mass;
-
-  get_min_max_mass(precursor_mz, charge, use_decoy_window, min_mass, max_mass);
-
   
   //iterate through each modification, 
   //get all peptides that are linkable up to the max_mass-linker_mass.

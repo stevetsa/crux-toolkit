@@ -42,23 +42,16 @@ SelfLoopPeptide::SelfLoopPeptide(
 SelfLoopPeptide::~SelfLoopPeptide() {
 }
 
-void SelfLoopPeptide::addCandidates(FLOAT_T precursor_mz, int charge, 
+void SelfLoopPeptide::addCandidates(
+  FLOAT_T min_mass,
+  FLOAT_T max_mass,
   XLinkBondMap& bondmap, 
   INDEX_T* index, DATABASE_T* database,
   PEPTIDE_MOD_T** peptide_mods,
   int num_peptide_mods,
-  MatchCandidateVector& candidates,
-  BOOLEAN_T use_decoy_window) {
+  MatchCandidateVector& candidates) {
 
   int max_missed_cleavages = get_int_parameter("max-missed-cleavages");
-
-  FLOAT_T min_mass,max_mass;
-
-  get_min_max_mass(precursor_mz, 
-		   charge,
-		   use_decoy_window,
-		   min_mass,
-		   max_mass);
   
   vector<XLinkablePeptide> linkable_peptides;
   int cur_aa_mods = 0;

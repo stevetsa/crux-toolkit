@@ -18,9 +18,29 @@ class MatchCandidateVector : public std::vector<MatchCandidate*> {
   int scan_;
   FLOAT_T precursor_mz_;
 
+
+  void addCandidates(
+    FLOAT_T min_mass,
+    FLOAT_T max_mass,
+    XLinkBondMap& bondmap,
+    INDEX_T* index,
+    DATABASE_T* database,
+    PEPTIDE_MOD_T** peptide_mods,
+    int num_peptide_mods);
+
+
  public:
   MatchCandidateVector();
   MatchCandidateVector(MatchCandidateVector& vector);
+
+  MatchCandidateVector(
+    XLinkBondMap& bondmap,
+    PEPTIDE_MOD_T** peptide_mods,
+    int num_peptide_mods,
+    INDEX_T* index,
+    DATABASE_T* database);
+
+
   MatchCandidateVector(FLOAT_T precursor_mz,
 		       int charge,
 		       XLinkBondMap& bondmap,

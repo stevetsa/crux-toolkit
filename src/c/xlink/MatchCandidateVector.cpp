@@ -17,6 +17,69 @@ static const FLOAT_T XCORR_SHIFT = 0.05;
 
 using namespace std;
 
+void get_min_max_mass(
+  FLOAT_T precursor_mz, 
+  int charge, 
+  FLOAT_T window,
+  WINDOW_TYPE_T precursor_window_type,
+  FLOAT_T& min_mass, 
+  FLOAT_T& max_mass) {
+
+  double mass = (precursor_mz - MASS_PROTON) * (double)charge;
+  //cerr <<"mz: "
+  //     <<precursor_mz
+  //     <<" charge:"
+  //     <<charge
+  //     <<" mass:"<<mass
+  //     <<" window:"<<window<<endl;
+  if (precursor_window_type == WINDOW_MASS) {
+    //cerr<<"WINDOW_MASS"<<endl;
+    min_mass = mass - window;
+    max_mass = mass + window;
+  } else if (precursor_window_type == WINDOW_MZ) {
+    //cerr<<"WINDOW_MZ"<<endl;
+    double min_mz = precursor_mz - window;
+    double max_mz = precursor_mz + window;
+    min_mass = (min_mz - MASS_PROTON) * (double)charge;
+    max_mass = (max_mz - MASS_PROTON) * (double)charge;
+  } else if (precursor_window_type == WINDOW_PPM) {
+    //cerr<<"WINDOW_PPM"<<endl;
+    min_mass = mass / (1.0 + window * 1e-6);
+    max_mass = mass / (1.0 - window * 1e-6);
+  }
+  
+  //cerr<<"min:"<<min_mass<<" "<<"max: "<<max_mass<<endl;
+
+}
+
+void get_min_max_mass(
+  FLOAT_T precursor_mz, 
+  int charge, 
+  BOOLEAN_T use_decoy_window,
+  FLOAT_T& min_mass, 
+  FLOAT_T& max_mass) {
+  
+  if (use_decoy_window) {
+    get_min_max_mass(precursor_mz,
+		     charge,
+		     get_double_parameter("precursor-window-decoy"),
+		     get_window_type_parameter("precursor-window-type-decoy"),
+		     min_mass,
+		     max_mass);
+  } else {
+    get_min_max_mass(precursor_mz,
+		     charge,
+		     get_double_parameter("precursor-window"),
+		     get_window_type_parameter("precursor-window-type"),
+		     min_mass,
+		     max_mass);
+  }
+}
+
+
+
+
+
 bool compareXCorr(MatchCandidate* mc1, MatchCandidate* mc2) {
   return mc1->getXCorr() > mc2->getXCorr(); 
 }
@@ -53,6 +116,78 @@ MatchCandidateVector::MatchCandidateVector(MatchCandidateVector& vector) : std::
 
 }
 
+MatchCandidateVector::MatchCandidateVector(
+  XLinkBondMap& bondmap,
+  PEPTIDE_MOD_T** peptide_mods,
+  int num_peptide_mods,
+  INDEX_T* index,
+  DATABASE_T* database) {
+
+
+  FLOAT_T min_mass = get_double_parameter("min-mass");
+  FLOAT_T max_mass = get_double_parameter("max-mass");
+
+  addCandidates(
+    min_mass, 
+    max_mass, 
+    bondmap, 
+    index, 
+    database, 
+    peptide_mods, 
+    num_peptide_mods);
+  
+}
+
+
+void MatchCandidateVector::addCandidates(
+  FLOAT_T min_mass,
+  FLOAT_T max_mass,
+  XLinkBondMap& bondmap,
+  INDEX_T* index,
+  DATABASE_T* database,
+  PEPTIDE_MOD_T** peptide_mods,
+  int num_peptide_mods) {
+
+
+  include_linear_peptides = get_boolean_parameter("xlink-include-linears");
+  include_self_loops = get_boolean_parameter("xlink-include-selfloops");
+
+  XLinkPeptide::addCandidates(
+    min_mass, 
+    max_mass,
+    bondmap,
+    index,
+    database,
+    peptide_mods,
+    num_peptide_mods,
+    *this);
+
+  if (include_linear_peptides) {
+
+    LinearPeptide::addCandidates(
+      min_mass,
+      max_mass,
+      index,
+      database,
+      peptide_mods,
+      num_peptide_mods,
+      *this);
+
+  }
+
+  if (include_self_loops) {
+
+    SelfLoopPeptide::addCandidates(
+      min_mass,
+      max_mass,
+      bondmap,
+      index,
+      database,
+      peptide_mods,
+      num_peptide_mods,
+      *this);
+  }
+}
 
 
 MatchCandidateVector::MatchCandidateVector(
@@ -63,44 +198,13 @@ MatchCandidateVector::MatchCandidateVector(
   charge_ = charge;
   precursor_mz_ = precursor_mz;
 
-  include_linear_peptides=get_boolean_parameter("xlink-include-linears");
-  include_self_loops=get_boolean_parameter("xlink-include-selfloops");
 
-    XLinkPeptide::addCandidates(precursor_mz, 
-				charge, 
-				bondmap,
-				index,
-				database,
-				peptide_mods,
-				num_peptide_mods,
-				*this,
-				use_decoy_window);
-    
-    if (include_linear_peptides) {
-      //cerr <<"MatchCandidateVector(): Adding linear candidates"<<endl;
-      LinearPeptide::addCandidates(precursor_mz,
-				   charge,
-				   index,
-				   database,
-				   peptide_mods,
-				   num_peptide_mods,
-				   *this,
-				   use_decoy_window);
-    }
-    if (include_self_loops) {
-      //cerr <<"MatchCandidateVector():  Adding self loop candidates"<<endl;
-      SelfLoopPeptide::addCandidates(precursor_mz,
-				     charge,
-				     bondmap,
-				     index,
-				     database,
-				     peptide_mods,
-				     num_peptide_mods,
-				     *this,
-				     use_decoy_window);
-    }
+  FLOAT_T min_mass;
+  FLOAT_T max_mass;
 
-    //cerr<<"MatchCandidateVector(): Done adding candidates"<<endl;
+  get_min_max_mass(precursor_mz, charge, use_decoy_window, min_mass, max_mass);
+
+  addCandidates(min_mass, max_mass, bondmap, index, database, peptide_mods, num_peptide_mods);
 }
 
 

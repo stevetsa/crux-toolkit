@@ -36,7 +36,8 @@ libxlink_la_SOURCES = \
   XLinkScorer.h \
   xlink_search.cpp \
   xlink_assign_ions.cpp \
-  xlink_compute_qvalues.cpp
+  xlink_compute_qvalues.cpp \
+  generate_xlink_peptides.cpp
 
 
 

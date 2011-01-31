@@ -27,19 +27,16 @@ LinearPeptide::LinearPeptide(PEPTIDE_T* peptide) {
 LinearPeptide::~LinearPeptide() {
 }
 
-void LinearPeptide::addCandidates(FLOAT_T precursor_mz, int charge, 
-			    INDEX_T* index, DATABASE_T* database,
-			    PEPTIDE_MOD_T** peptide_mods,
-			    int num_peptide_mods,
-			    MatchCandidateVector& candidates,
-			     BOOLEAN_T use_decoy_window) {
+void LinearPeptide::addCandidates(
+  FLOAT_T min_mass,
+  FLOAT_T max_mass,
+  INDEX_T* index, 
+  DATABASE_T* database,
+  PEPTIDE_MOD_T** peptide_mods,
+  int num_peptide_mods,
+  MatchCandidateVector& candidates) {
 
   int max_missed_cleavages = get_int_parameter("max-missed-cleavages");
-
-  FLOAT_T min_mass;
-  FLOAT_T max_mass;
-
-  get_min_max_mass(precursor_mz, charge, use_decoy_window, min_mass, max_mass);
 
   for (int mod_idx=0;mod_idx<num_peptide_mods; mod_idx++) {
     PEPTIDE_MOD_T* peptide_mod = peptide_mods[mod_idx];

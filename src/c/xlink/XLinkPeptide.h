@@ -37,15 +37,21 @@ class XLinkPeptide : public MatchCandidate {
 
   virtual ~XLinkPeptide();
 
+  bool isInter();
+  bool isIntra();
+
+
   static void setLinkerMass(FLOAT_T linker_mass);
   static FLOAT_T getLinkerMass();
-  static void addCandidates(FLOAT_T precursor_mz, int charge, 
-			    XLinkBondMap& bondmap, 
-			    INDEX_T* index, DATABASE_T* database,
-			    PEPTIDE_MOD_T** peptide_modes,
-			    int num_peptide_mods,
-			    MatchCandidateVector& candidates,
-			    BOOLEAN_T use_decoy_window=FALSE);
+  static void addCandidates(
+    FLOAT_T min_mass, 
+    FLOAT_T max_mass,
+    XLinkBondMap& bondmap, 
+    INDEX_T* index, 
+    DATABASE_T* database,
+    PEPTIDE_MOD_T** peptide_mods,
+    int num_peptide_mods,
+    MatchCandidateVector& candidates);
 
   static void addLinkablePeptides(
     double min_mass, double max_mass,

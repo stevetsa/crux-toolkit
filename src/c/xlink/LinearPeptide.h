@@ -24,12 +24,14 @@ class LinearPeptide : public MatchCandidate {
 
   virtual ~LinearPeptide();
 
-  static void addCandidates(FLOAT_T precursor_mz, int charge, 
-			    INDEX_T* index, DATABASE_T* database,
-			    PEPTIDE_MOD_T** peptide_modes,
-			    int num_peptide_mods,
-			    MatchCandidateVector& candidates,
-			    BOOLEAN_T use_decoy_window);
+  static void addCandidates(
+    FLOAT_T min_mass,
+    FLOAT_T max_mass,
+    INDEX_T* index, 
+    DATABASE_T* database,
+    PEPTIDE_MOD_T** peptide_mods,
+    int num_peptide_mods,
+    MatchCandidateVector& candidates);
 
   virtual MATCHCANDIDATE_TYPE_T getCandidateType();
   virtual std::string getSequenceString();
