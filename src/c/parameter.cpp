@@ -25,7 +25,8 @@ static const char* parameter_type_strings[NUMBER_PARAMETER_TYPES] = {
   "INT_ARG", "DOUBLE_ARG", "STRING_ARG", "MASS_TYPE_T", "DIGEST_T", 
   "ENZYME_T", //"PEPTIDE_TYPE_T", 
   "BOOLEAN_T", "SORT_TYPE_T", "SCORER_TYPE_T", "ION_TYPE_T",
-  "ALGORITHM_TYPE_T", "WINDOW_TYPE_T"};
+  "ALGORITHM_TYPE_T", "WINDOW_TYPE_T", "MEASURE_TYPE_T", 
+  "PARSIMONY_TYPE_T", "QUANT_LEVEL_T"};
 
 //one hash for parameter values, one for usage statements, one for types
 // all hashes keyed on parameter/option name
@@ -733,45 +734,42 @@ void initialize_parameters(void){
 
   // ***** spectral-counts options *****
    set_string_parameter("input-ms2", NULL,
-       "ms2 file corresponding to the psm file. Required for SIN",
+       "ms2 file corresponding to the psm file. Required for SIN.",
        "For SIN to find sequences of spectra",
        "false");
-  set_string_parameter("database", NULL, 
-       "Name of file in fasta format or directory containing protein index.",
-       "To retrieve proteins and peptides",
-       "false");
-  set_string_parameter("input-PSM", NULL,
-       "Name of file in text format which holds match results",
-       "For quantify to retrieve scores for protein and peptides",
+  set_string_parameter("input PSM", NULL,
+       "Name of file in text format which holds match results.",
+       "For quantify to retrieve scores for protein and peptides.",
        "false");
   set_double_parameter("threshold", 0.01, 0, 1, 
-       "The p-value or q-value threshold. Default 0.01",
-       "All PSMs with q-value higher than this will be ignored",
-       "false");
+       "The p-value or q-value threshold. Default=0.01.",
+       "All PSMs with q-value higher than this will be ignored.",
+       "true");
   set_string_parameter("measure", "SIN",
        "Type of analysis to make on the match results: (NSAF|SIN). "
-       "Default SIN.",
-       "For quantify to determine which method of measuring results to use",
-       "false");
+       "Default=SIN. NSAF is Normalized Spectral Abundance Factor"
+       " and SIN is Spectral Index Normalized",
+       "For quantify to determine which method of measuring results to use.",
+       "true");
   set_boolean_parameter("unique-mapping", FALSE,
-       "Ignore peptides with multiple mappings to proteins (T,F). Default (F)",
-       "For quantify to determine to use only peptides with only one protein "
-       "mapping", "false");
+       "Ignore peptides with multiple mappings to proteins (T,F). Default=F.",
+       "For quantify to determine to use only peptides with only one protein. "
+       "mapping", "true");
   set_string_parameter("input-bullseye", NULL,
        "Bullseye file produced by using the same ms1 file used to produce ms2"
-       " file",
-       "For SIN to use areas under peaks instead of total ion intensity",
-       "false");
+       " file.",
+       "For SIN to use areas under peaks instead of total ion intensity.",
+       "true");
   set_string_parameter("quant-level", "PROTEIN",
-        "Quantification at protein or peptide level (PROTEIN,PEPTIDE) "
-	"Default (PROTEIN)",
-        "For NSAF and SIN to know which level of quantification should be done",
-	"false"); 
+        "Quantification at protein or peptide level (PROTEIN,PEPTIDE). "
+	"Default=PROTEIN.",
+        "For NSAF and SIN to know which level of quantification should be done.",
+	"true"); 
   set_string_parameter("parsimony", "NONE",
 	"Perform parsimony analysis on the proteins and report "
 	"a parsimony rank column in output file." ,
-	"Default = NONE. Can be <string>=NONE|SIMPLE|GREEDY",
-	"false");
+	"Default=NONE. Can be <string>=NONE|SIMPLE|GREEDY",
+	"true");
 		       
 		       
 
@@ -1605,6 +1603,31 @@ BOOLEAN_T check_option_type_and_bounds(const char* name){
               "Must be (mass, mz, ppm)", value_str, name);
     }
     break;
+  case MEASURE_TYPE_P:
+    carp(CARP_DETAILED_DEBUG, "found measure type param, value '%s'",
+	 value_str);
+    if (string_to_measure_type(value_str) == MEASURE_INVALID){
+      success = FALSE;
+      sprintf(die_str, "Illegal measure type '%s' for option '%s'. "
+	      "Must be (NSAF, SIN)", value_str, name);
+    }
+  case PARSIMONY_TYPE_P:
+    carp(CARP_DETAILED_DEBUG, "found parsimony type param, value '%s'",
+	 value_str);
+    if (string_to_parsimony_type(value_str) == PARSIMONY_INVALID){
+      success = FALSE;
+      sprintf(die_str, "Illegal measure type '%s' for option '%s'. "
+	      "Must be (none, simple, greedy)", value_str, name);
+    }
+  case QUANT_LEVEL_TYPE_P:
+    carp(CARP_DETAILED_DEBUG, "found measure type param, value '%s'",
+	 value_str);
+    if (string_to_quant_level_type(value_str) == QUANT_LEVEL_INVALID){
+      success = FALSE;
+      sprintf(die_str, "Illegal measure type '%s' for option '%s'. "
+	      "Must be (peptide, protein)", value_str, name);
+    }
+    
   case NUMBER_PARAMETER_TYPES:
     carp(CARP_FATAL, "Your param type '%s' wasn't found (code %i)", 
         type_str, (int)param_type);
@@ -2140,6 +2163,37 @@ WINDOW_TYPE_T get_window_type_parameter(
   return param_value;
 }
 
+PARSIMONY_TYPE_T get_parsimony_type_parameter(
+  const char* name
+  ){
+  char * param_value_str = (char*)get_hash_value(parameters, name);
+  PARSIMONY_TYPE_T param_value =
+    string_to_parsimony_type(param_value_str);
+  
+  return param_value;
+}
+
+QUANT_LEVEL_TYPE_T get_quant_level_type_parameter(
+  const char* name
+  ){
+  char * param_value_str = (char*)get_hash_value(parameters, name);
+  QUANT_LEVEL_TYPE_T param_value =
+    string_to_quant_level_type(param_value_str);
+  
+  return param_value;
+}
+
+
+MEASURE_TYPE_T get_measure_type_parameter(
+  const char* name
+  ){
+  char * param_value_str = (char*)get_hash_value(parameters, name);
+  MEASURE_TYPE_T param_value =
+    string_to_measure_type(param_value_str);
+  
+  return param_value;
+}
+
 int get_max_ion_charge_parameter(
   const char* name
   ){
@@ -2467,6 +2521,91 @@ BOOLEAN_T set_window_type_parameter(
   return result;
 
 }
+
+BOOLEAN_T set_measure_type_parameter(
+  const char* name, ///< the name of the parameter looking for -in
+  MEASURE_TYPE_T set_value, ///< the value to be set -in
+  const char* usage, ///< string to print in usage statement
+  const char* filenotes, ///<additional infor for param file
+  const char* foruser 
+  ){
+  BOOLEAN_T result = TRUE;
+
+  // check if parameters can be changed
+  if(!parameter_plasticity){
+    carp(CARP_ERROR, "can't change parameters once they are confirmed");
+    return FALSE;
+  }
+  
+  /* stringify the value */
+  char* value_str = measure_type_to_string(set_value);
+  
+  result = add_or_update_hash(parameters, name, value_str);
+  result = add_or_update_hash(usages, name, usage);
+  result = add_or_update_hash(file_notes, name, filenotes);
+  result = add_or_update_hash(for_users, name, foruser);
+  result = add_or_update_hash(types, name, "MEASURE_TYPE_T");
+  free(value_str);
+  return result;
+  
+}
+
+BOOLEAN_T set_parsimony_type_parameter(
+  const char* name, ///< the name of the parameter looking for -in
+  PARSIMONY_TYPE_T set_value, ///< the value to be set -in
+  const char* usage, ///< string to print in usage statement
+  const char* filenotes, ///<additional infor for param file
+  const char* foruser 
+  ){
+  BOOLEAN_T result = TRUE;
+
+  // check if parameters can be changed
+  if(!parameter_plasticity){
+    carp(CARP_ERROR, "can't change parameters once they are confirmed");
+    return FALSE;
+  }
+  
+  /* stringify the value */
+  char* value_str = parsimony_type_to_string(set_value);
+  
+  result = add_or_update_hash(parameters, name, value_str);
+  result = add_or_update_hash(usages, name, usage);
+  result = add_or_update_hash(file_notes, name, filenotes);
+  result = add_or_update_hash(for_users, name, foruser);
+  result = add_or_update_hash(types, name, "PARSIMONY_TYPE_T");
+  free(value_str);
+  return result;
+  
+}
+
+BOOLEAN_T set_quant_level_type_parameter(
+  const char* name, ///< the name of the parameter looking for -in
+  QUANT_LEVEL_TYPE_T set_value, ///< the value to be set -in
+  const char* usage, ///< string to print in usage statement
+  const char* filenotes, ///<additional infor for param file
+  const char* foruser 
+  ){
+  BOOLEAN_T result = TRUE;
+
+  // check if parameters can be changed
+  if(!parameter_plasticity){
+    carp(CARP_ERROR, "can't change parameters once they are confirmed");
+    return FALSE;
+  }
+  
+  /* stringify the value */
+  char* value_str = quant_level_type_to_string(set_value);
+  
+  result = add_or_update_hash(parameters, name, value_str);
+  result = add_or_update_hash(usages, name, usage);
+  result = add_or_update_hash(file_notes, name, filenotes);
+  result = add_or_update_hash(for_users, name, foruser);
+  result = add_or_update_hash(types, name, "QUANT_LEVEL_TYPE_T");
+  free(value_str);
+  return result;
+  
+}
+  
 
 BOOLEAN_T set_sort_type_parameter(
   const char* name,

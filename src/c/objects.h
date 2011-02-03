@@ -81,6 +81,7 @@ typedef struct residue_iterator RESIDUE_ITERATOR_T;
  */
 typedef struct peptide_src_iterator PEPTIDE_SRC_ITERATOR_T;
 
+
 // REPLACE PEPTIDE_TYPE_T with DIGEST_T and ENZYME_T
 /**
  * \enum _digest_type
@@ -152,6 +153,58 @@ enum _window_type {
   WINDOW_PPM,
   NUMBER_WINDOW_TYPES  
 };
+
+
+/**
+ * The enum for measure type for spectral counts
+ */
+enum _measure_type {
+  MEASURE_INVALID,
+  MEASURE_SIN,
+  MEASURE_NSAF,
+  NUMBER_MEASURE_TYPES
+};
+
+/**
+ * \typedef MEASURE_TYPE_T
+ * \brief The typedef for measure type (sin, nsaf)
+ */
+typedef enum _measure_type MEASURE_TYPE_T;
+
+/**
+ * The quantification level type for spectral counts
+ */
+enum _quant_level_type {
+  QUANT_LEVEL_INVALID,
+  PEPTIDE_QUANT_LEVEL,
+  PROTEIN_QUANT_LEVEL,
+  NUMBER_QUANT_LEVEL_TYPES
+};
+
+/**
+ * \typedef QUANT_LEVEL_TYPE_T
+ * \brief The typdef for quantificaiton level (peptide, protein)
+ */
+typedef enum _quant_level_type QUANT_LEVEL_TYPE_T;
+
+
+/**
+ * The enum for parsimony type for spectral counts
+ */
+enum _parsimony_type {
+  PARSIMONY_INVALID,
+  PARSIMONY_SIMPLE,
+  PARSIMONY_GREEDY,
+  PARSIMONY_NONE,
+  NUMBER_PARSIMONY_TYPES
+};
+
+/*
+ * \typedef PARSIMONY_TYPE_T
+ * \brief The typedef for parsimony type (simple, greedy, none)
+ */
+typedef enum _parsimony_type PARSIMONY_TYPE_T;
+
 
 /**
  * \typedef WINDOW_TYPE_T
