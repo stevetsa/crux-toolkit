@@ -52,9 +52,8 @@ typedef map<MetaProtein, FLOAT_T, bool(*)(MetaProtein, MetaProtein)> MetaToScore
 typedef map<PROTEIN_T*, MetaProtein, bool(*)(PROTEIN_T*, PROTEIN_T*)> ProteinToMetaProtein;
 
 /* private function declarations */
-set<MATCH_T*> filter_matches(
-  MATCH_COLLECTION_ITERATOR_T* match_collection_it
-);
+void filter_matches(MATCH_COLLECTION_ITERATOR_T* match_collection_it,
+                    set<MATCH_T*>& match_set);
 void get_peptide_scores(
   set<MATCH_T*>*  matches, 
   PeptideToScore* peptideToScore
@@ -167,7 +166,8 @@ int spectral_counts_main(int argc, char** argv){
     = new_match_collection_iterator(path_info[1], database, &decoy_count);
    
   // get a set of matches that pass threshold
-  set<MATCH_T*> matches = filter_matches(match_collection_it);
+  set<MATCH_T*> matches;
+  filter_matches(match_collection_it, matches);
   carp(CARP_INFO, "Number of matches passed the threshold %i", 
        matches.size());
 
@@ -368,16 +368,57 @@ void normalize_protein_scores(ProteinToScore* proteinToScore){
 
 }
 
+/**
+ * For the spectrum associated with the match, sum the intensities of
+ * all b and y ions that are not modified.
+ * \return The sum of unmodified b and y ions.
+ */
+int sum_match_intensity(MATCH_T* match, 
+                        map<pair<int,int>, Spectrum*>& spectra,
+                        FLOAT_T bin_width)
+{
+  int match_intensity = 0;
+  char* peptide_seq = get_match_sequence(match);
+  MODIFIED_AA_T* modified_sequence = get_match_mod_sequence(match);
+  int charge = get_match_charge(match);
+  Spectrum* temp = get_match_spectrum(match);
+  int scan = temp -> getFirstScan();
+  Spectrum* spectrum = spectra[make_pair(scan, charge)];
+  Ion* ion;
+  SCORER_TYPE_T score_type = XCORR;
+  IonConstraint* ion_constraint = 
+    IonConstraint::newIonConstraintSmart(score_type, charge);
+  IonSeries* ion_series = new IonSeries(ion_constraint, charge);
+  ion_series->update(peptide_seq, modified_sequence);
+  ion_series->predictIons();
+  for (IonIterator ion_it = ion_series->begin(); 
+       ion_it != ion_series->end(); ++ion_it){
+    ion = (*ion_it);
+    if (ion -> getType() == B_ION || ion -> getType() == Y_ION){
+      if (!ion->isModified()){
+        PEAK_T* peak = spectrum->getNearestPeak(ion->getMassZ(),
+                                                bin_width);
+        if (peak != NULL){
+          match_intensity += get_peak_intensity(peak);
+        }
+      }
+    }
+  }
+  delete ion_series;
+  free(peptide_seq);
+  
+  return match_intensity;
+}
+
 
 /**
- * For SIN, it will parse the spectras from ms2 to
+ * For SIN, it will parse the spectra in the ms2 file to
  * find the total ion intensity from b and y ions without
  * h20 modifications. These ion intensities are summed
- * for each peptide 
+ * for each peptide.
  *
- * For NSAF, it will sum up the counts of matches for each
- * peptide
- *
+ * For NSAF, it will sum up the number of matches for each
+ * peptide.
  */
 void get_peptide_scores(
 		      set<MATCH_T*> * matches,
@@ -387,71 +428,47 @@ void get_peptide_scores(
   MEASURE_TYPE_T measure = get_measure_type_parameter("measure");
   char* ms2 = get_string_parameter("input-ms2");
   FLOAT_T bin_width = get_double_parameter("mz-bin-width");
-  map<pair<int,int>, Spectrum*> spectras;
+  map<pair<int,int>, Spectrum*> spectra;
   
-  SCORER_TYPE_T score_type = XCORR;
     
   // for SIN, parse out spectrum collection from ms2 fiel
   if( measure == MEASURE_SIN ){ 
     IonSeries ion_series;
-    SpectrumCollection* spectrumCollection = new SpectrumCollection(ms2);
-    if (!spectrumCollection->parse()){
+    SpectrumCollection* spectrum_collection = new SpectrumCollection(ms2);
+    if (!spectrum_collection->parse()){
       carp(CARP_FATAL, "Failed to parse ms2 file: %s", ms2);
     } 
     // get spectra from ms2 file
     FilteredSpectrumChargeIterator* spectrum_iterator = 
-      new FilteredSpectrumChargeIterator(spectrumCollection);
+      new FilteredSpectrumChargeIterator(spectrum_collection);
     while (spectrum_iterator->hasNext()){
       int charge = 0;
       Spectrum* spectrum = spectrum_iterator->next(&charge);
-      spectras.insert(make_pair(make_pair(spectrum->getFirstScan(), 
-					  charge), spectrum));
+      spectra.insert(make_pair(make_pair(spectrum->getFirstScan(), 
+                                         charge), spectrum));
     }
-    carp(CARP_INFO, "Number of Spectras %i", spectras.size());
+    carp(CARP_INFO, "Number of Spectra %i", spectra.size());
+    delete spectrum_iterator;
   }
-  
 
   for(set<MATCH_T*>::iterator match_it = matches->begin();
       match_it != matches->end(); ++match_it){
-    int match_intensity = 0;
+
+    int match_intensity = 1; // for NSAF every match counted as 1
+
     MATCH_T* match = (*match_it);
     // for sin, calculate total ion intensity for match by
     // summing up peak intensities
     if( measure == MEASURE_SIN ){ 
-      char* peptide_seq = get_match_sequence(match);
-      MODIFIED_AA_T* modified_sequence = get_match_mod_sequence(match);
-      int charge = get_match_charge(match);
-      Spectrum* temp = get_match_spectrum(match);
-      int scan = temp -> getFirstScan();
-      Spectrum* spectrum = spectras[make_pair(scan, charge)];
-      Ion* ion;
-      IonConstraint* ion_constraint = 
-	IonConstraint::newIonConstraintSmart(score_type, charge);
-      IonSeries* ion_series = new IonSeries(ion_constraint, charge);
-      ion_series->update(peptide_seq, modified_sequence);
-      ion_series->predictIons();
-      for (IonIterator ion_it = ion_series->begin(); 
-	   ion_it != ion_series->end(); ++ion_it){
-	ion = (*ion_it);
-	if (ion -> getType() == B_ION || ion -> getType() == Y_ION){
-	  if (!ion->isModified()){
-	    PEAK_T* peak = spectrum->getNearestPeak(ion->getMassZ(),
-						    bin_width);
-	    if (peak != NULL){
-	      match_intensity += get_peak_intensity(peak);
-	    }
-	  }
-	}
-      }
-    } else { // for nsaf every match is counted as 1 
-      match_intensity = 1;
+      match_intensity = sum_match_intensity(match, spectra, bin_width);
     }
+
     // add ion_intensity to peptide scores
     PEPTIDE_T* peptide = get_match_peptide(match);
     if (peptideToScore->find(peptide) ==  peptideToScore->end()){
       peptideToScore->insert(make_pair(peptide, 0.0));
     } 
-    (*peptideToScore)[peptide]+=match_intensity;
+    (*peptideToScore)[peptide] += match_intensity;
   }
 
   free(ms2);
@@ -460,13 +477,13 @@ void get_peptide_scores(
 
 
 /**
- * For every match in the match collection, return a set of 
- * matches that have a qvalue score lower than user-specified
- * threshold and has a XCORR ranking of 1
- *
+ * Create a set of matches, all with an XCORR rank == 1 and all of which
+ * have a qvalue score lower than user-specified threshold.
  */
-set<MATCH_T*> filter_matches(MATCH_COLLECTION_ITERATOR_T* match_collection_it){
-  set<MATCH_T*> match_set;
+void filter_matches(MATCH_COLLECTION_ITERATOR_T* match_collection_it, 
+               set<MATCH_T*>& match_set )
+{
+  match_set.clear();
   MATCH_ITERATOR_T* match_iterator = NULL;
   MATCH_COLLECTION_T* match_collection = NULL;
   FLOAT_T threshold = get_double_parameter("threshold");
@@ -500,7 +517,6 @@ set<MATCH_T*> filter_matches(MATCH_COLLECTION_ITERATOR_T* match_collection_it){
 	}
       }
     }
-  return match_set;
 }
 
 
@@ -623,7 +639,7 @@ void perform_parsimony_analysis(MetaMapping* metaMapping){
     sort(peps_vector.begin(), peps_vector.end(), compare_sets);
     pair<PeptideSet, MetaProtein> node = peps_vector.back();
     peps_vector.pop_back();
-    if (node.first.size() == 0) break; // do not enter anything without peptide sizes
+    if (node.first.size() == 0){ break; }// do not enter anything without peptide sizes
     result.insert(node);
     PeptideSet cur_peptides = node.first;
     // update the peptide sets for the rest of meta proteins
