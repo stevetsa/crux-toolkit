@@ -108,6 +108,7 @@ void make_unique_mapping(
 string meta_protein_to_string(MetaProtein s);
 string peps_to_string(PeptideSet s);
 /* comparison function declarations */
+// TODO look in peptide and protein files for comparison functions
 bool compare_pep(PEPTIDE_T*, PEPTIDE_T*);
 bool compare_prot(PROTEIN_T*, PROTEIN_T*);
 bool compare_peptide_sets(PeptideSet, PeptideSet);
@@ -117,9 +118,13 @@ bool compare_sets(
   pair<PeptideSet, MetaProtein> 
 );
 
-
-
-
+/**
+ * Given a collection of scored PSMs, print a list of proteins
+ * ranked by their a specified score. Spectral-counts supports two
+ * types of quantification: Normalized Spectral Abundance Factor (NSAF)
+ * and Normalized Spectral Index (SIN). 
+ * \returns 0 on successful completion.
+ */
 int spectral_counts_main(int argc, char** argv){
 
   const char* option_list[] = {
@@ -334,7 +339,8 @@ void normalize_peptide_scores(PeptideToScore* peptideToScore){
        it != peptideToScore->end(); ++it){
     FLOAT_T score = it->second;
     PEPTIDE_T* peptide = it->first;
-    it->second = score / total / strlen(get_peptide_sequence(peptide));
+    it->second = score / total / get_peptide_length(peptide);
+
   }
   
 }
@@ -723,7 +729,7 @@ void print_protein_results(
  */
 void print_peptide_results(
 			 PeptideToScore* peptideToScore,
-			 char * output_path
+			 char* output_path
 			 ){
   carp(CARP_INFO, "Outputting results");
   ofstream targetFile;
@@ -746,8 +752,9 @@ void print_peptide_results(
        it != scoreToPeptide.end(); ++it){
     PEPTIDE_T* peptide = it->second;
     FLOAT_T score = it->first;
-    targetFile << get_peptide_sequence(peptide) 
-	       << "\t"  << score << endl;
+    char* seq = get_peptide_sequence(peptide);
+    targetFile << seq << "\t"  << score << endl;
+    free(seq);
   }
   targetFile.close();
 }
@@ -873,19 +880,21 @@ string peps_to_string(PeptideSet s){
   stringstream ss (stringstream::in | stringstream::out);
   for (PeptideSet::iterator p_it = s.begin();
        p_it != s.end(); ++p_it){
-    ss << get_peptide_sequence((*p_it)) << " ";
+    char* seq = get_peptide_sequence((*p_it));  
+    ss << seq << " ";
+    free(seq);
   }
   return ss.str();
 }
 
 /**
- * returns a string of all protein ids separated by
+ * \returns A string of all protein ids separated by
  * space
  */
-string meta_protein_to_string(MetaProtein s){
+string meta_protein_to_string(MetaProtein meta_protein){
   stringstream ss (stringstream::in | stringstream::out);
-  for (MetaProtein::iterator p_it = s.begin();
-       p_it != s.end(); ++p_it){
+  for (MetaProtein::iterator p_it = meta_protein.begin();
+       p_it != meta_protein.end(); ++p_it){
     ss << get_protein_id((*p_it)) << " ";
   }
   return ss.str();
