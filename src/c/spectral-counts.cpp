@@ -52,9 +52,8 @@ typedef map<MetaProtein, FLOAT_T, bool(*)(MetaProtein, MetaProtein)> MetaToScore
 typedef map<PROTEIN_T*, MetaProtein, bool(*)(PROTEIN_T*, PROTEIN_T*)> ProteinToMetaProtein;
 
 /* private function declarations */
-string pepsToString(PeptideSet s);
-void getDirPath(char* path, char** dir);
-set<MATCH_T*> filterMatches(
+void getDirPath(char* path, char** dir); // TODO replace me
+set<MATCH_T*> filter_matches(
   MATCH_COLLECTION_ITERATOR_T* match_collection_it
 );
 void get_peptide_scores(
@@ -124,7 +123,10 @@ bool compare_sets(
 
 
 int spectral_counts_main(int argc, char** argv){
+
   const char* option_list[] = {
+    "verbosity",
+    "parameter-file",
     "parsimony",
     "threshold",
     "input-ms2",
@@ -134,9 +136,7 @@ int spectral_counts_main(int argc, char** argv){
     "unique-mapping",
     "input-bullseye",
     "quant-level",
-    "measure",
-    "version",
-    "verbosity"
+    "measure"
   };
   const char* argument_list[] = {
     "input PSM",
@@ -146,58 +146,28 @@ int spectral_counts_main(int argc, char** argv){
   int num_options = sizeof(option_list) / sizeof(char*);
   int num_arguments = sizeof(argument_list) / sizeof(char*);
 
-
   initialize_run(SPECTRAL_COUNTS_COMMAND, argument_list, num_arguments,
 		 option_list, num_options, argc, argv);
 
   bool unique_mapping = get_boolean_parameter("unique-mapping");
-  char * psm_file = get_string_parameter("input-PSM");
-  char * database = get_string_parameter("database");
+  char * psm_file = get_string_parameter("input PSM");
+  char * database = get_string_parameter("protein database");
   char * parsimony = get_string_parameter("parsimony");
   char * quant_level = get_string_parameter("quant-level");
   char * output_dir = get_string_parameter("output-dir");
-  char * measure = get_string_parameter("measure"); 
-  char * ms2 = get_string_parameter("input-ms2");
   char * dir_path = NULL;
-
-  /* Check input validity */
-  if (strcmp(measure, "SIN") != 0 &&
-      strcmp(measure, "NSAF") != 0 ){
-    carp(CARP_FATAL, "SIN or NSAF are the only "
-	 "valid input for --measure");
-  }
-  if (strcmp(measure, "SIN") == 0 &&
-      ms2 == NULL){
-    carp(CARP_FATAL, "Must specify ms2 file "
-	 "with --input-ms2 option if SIN is "
-	 "to be measured.");
-  }
-  if ( strcmp(quant_level,"PROTEIN") !=0 && 
-       strcmp(quant_level,"PEPTIDE") != 0 ){
-    carp(CARP_FATAL, "Must pick PROTEIN or PEPTIDE for "
-	 "quant-level option");
-  } 
-  if (strcmp(parsimony, "NONE") != 0 && 
-      strcmp(parsimony, "SIMPLE") != 0 &&
-      strcmp(parsimony, "GREEDY") != 0 ){
-    carp(CARP_FATAL, "Parsimony option, "
-	 "must be set to NONE|SIMPLE|GREEDY");
-  }
-  if (!is_directory(output_dir)){
-    carp(CARP_FATAL, 
-	 "Value passed for output-dir is not a directory");
-  }
 
   char * output_path = 
     get_full_filename(output_dir, "spectral-count.target.txt");
   int decoy_count = 0;
   getDirPath(psm_file, &dir_path);
+
   // create match collection
   MATCH_COLLECTION_ITERATOR_T* match_collection_it 
     = new_match_collection_iterator(dir_path, database, &decoy_count);
    
   // get a set of matches that pass threshold
-  set<MATCH_T*> matches = filterMatches(match_collection_it);
+  set<MATCH_T*> matches = filter_matches(match_collection_it);
   carp(CARP_INFO, "Number of matches passed the threshold %i", 
        matches.size());
 
@@ -483,7 +453,7 @@ void get_peptide_scores(
  * threshold and has a XCORR ranking of 1
  *
  */
-set<MATCH_T*> filterMatches(MATCH_COLLECTION_ITERATOR_T* match_collection_it){
+set<MATCH_T*> filter_matches(MATCH_COLLECTION_ITERATOR_T* match_collection_it){
   set<MATCH_T*> match_set;
   MATCH_ITERATOR_T* match_iterator = NULL;
   MATCH_COLLECTION_T* match_collection = NULL;

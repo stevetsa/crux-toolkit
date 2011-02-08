@@ -147,7 +147,6 @@ char* window_type_to_string(WINDOW_TYPE_T type){
   return type_str;
 }
 
-
 /**
  * The string version of parsimony types
  */
@@ -394,8 +393,8 @@ const char* command_type_to_file_string_ptr(COMMAND_T type){
 
 static const char* command_type_command_line_strings[NUMBER_COMMAND_TYPES] =
   { "invalid", "create-index", "search-for-matches", "sequest-search",
-    "compute-q-values", "percolator","spectral-counts", "q-ranker", "print-processed-spectra",
-    "search-for-xlinks", "version"
+    "compute-q-values", "percolator","spectral-counts", "q-ranker", 
+    "print-processed-spectra", "search-for-xlinks", "version"
   };
 /**
  * Conversion of COMMAND_T to the string used on the command line.

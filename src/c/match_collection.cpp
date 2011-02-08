@@ -2429,7 +2429,7 @@ MATCH_COLLECTION_T* new_match_collection_psm_output(
   FILE* result_file = NULL;
   char suffix[25];
   const char* prefix = get_string_parameter_pointer("fileroot");
-  const char* input_psm = get_string_parameter_pointer("input-PSM");
+  const char* input_psm = get_string_parameter_pointer("input PSM");
   char* non_const_prefix = NULL;
   // file must also start with either sequest or search; look for 'se'
   if( prefix == NULL || (strcmp(prefix, "__NULL_STR") == 0) ){

@@ -23,10 +23,10 @@ static const FLOAT_T SMART_MZ_OFFSET = 0.68;
 
 static const char* parameter_type_strings[NUMBER_PARAMETER_TYPES] = { 
   "INT_ARG", "DOUBLE_ARG", "STRING_ARG", "MASS_TYPE_T", "DIGEST_T", 
-  "ENZYME_T", //"PEPTIDE_TYPE_T", 
+  "ENZYME_T", 
   "BOOLEAN_T", "SORT_TYPE_T", "SCORER_TYPE_T", "ION_TYPE_T",
   "ALGORITHM_TYPE_T", "WINDOW_TYPE_T", "MEASURE_TYPE_T", 
-  "PARSIMONY_TYPE_T", "QUANT_LEVEL_T"};
+  "PARSIMONY_TYPE_T", "QUANT_LEVEL_TYPE_T"};
 
 //one hash for parameter values, one for usage statements, one for types
 // all hashes keyed on parameter/option name
@@ -199,6 +199,27 @@ BOOLEAN_T set_ion_type_parameter(
  const char* filenotes,
  const char* foruser);
 
+BOOLEAN_T set_parsimony_type_parameter(
+  const char* name, ///< the name of the parameter looking for -in
+  PARSIMONY_TYPE_T set_value, ///< the value to be set -in
+  const char* usage, ///< string to print in usage statement
+  const char* filenotes, ///<additional infor for param file
+  const char* foruser); 
+
+BOOLEAN_T set_quant_level_parameter(
+  const char* name, ///< the name of the parameter looking for -in
+  QUANT_LEVEL_TYPE_T set_value, ///< the value to be set -in
+  const char* usage, ///< string to print in usage statement
+  const char* filenotes, ///<additional infor for param file
+  const char* foruser); 
+
+BOOLEAN_T set_measure_type_parameter(
+  const char* name, ///< the name of the parameter looking for -in
+  MEASURE_TYPE_T set_value, ///< the value to be set -in
+  const char* usage, ///< string to print in usage statement
+  const char* filenotes, ///<additional infor for param file
+  const char* foruser);
+ 
 BOOLEAN_T select_cmd_line(  
   const char** option_names, ///< list of options to be allowed for main -in
   int    num_options,  ///< number of optons in that list -in
@@ -732,45 +753,49 @@ void initialize_parameters(void){
       "Only available for crux-predict-peptide-ions.", "true");
 
 
-  // ***** spectral-counts options *****
-   set_string_parameter("input-ms2", NULL,
-       "ms2 file corresponding to the psm file. Required for SIN.",
-       "For SIN to find sequences of spectra",
-       "false");
+  // ***** spectral-counts aguments *****
   set_string_parameter("input PSM", NULL,
        "Name of file in text format which holds match results.",
        "For quantify to retrieve scores for protein and peptides.",
        "false");
+  // also uses "protein database"
+
+  // ***** spectral-counts options *****
+   set_string_parameter("input-ms2", NULL,
+       "MS2 file corresponding to the psm file. Required for SIN.",
+       "Available for spectral-counts with measure=SIN.",
+       "true");
   set_double_parameter("threshold", 0.01, 0, 1, 
        "The p-value or q-value threshold. Default=0.01.",
-       "All PSMs with q-value higher than this will be ignored.",
+       "Available for spectral-counts.  All PSMs with q-value higher than "
+       "this will be ignored.",
        "true");
-  set_string_parameter("measure", "SIN",
+  set_measure_type_parameter("measure", MEASURE_SIN,
        "Type of analysis to make on the match results: (NSAF|SIN). "
-       "Default=SIN. NSAF is Normalized Spectral Abundance Factor"
-       " and SIN is Spectral Index Normalized",
-       "For quantify to determine which method of measuring results to use.",
+       "Default=SIN. ", 
+       "Available for spectral-counts.  NSAF is Normalized Spectral "
+       "Abundance Factor and SIN is Spectral Index Normalized.",
        "true");
   set_boolean_parameter("unique-mapping", FALSE,
        "Ignore peptides with multiple mappings to proteins (T,F). Default=F.",
-       "For quantify to determine to use only peptides with only one protein. "
-       "mapping", "true");
-  set_string_parameter("input-bullseye", NULL,
-       "Bullseye file produced by using the same ms1 file used to produce ms2"
-       " file.",
-       "For SIN to use areas under peaks instead of total ion intensity.",
+       "Available for spectral-counts.",
        "true");
-  set_string_parameter("quant-level", "PROTEIN",
-        "Quantification at protein or peptide level (PROTEIN,PEPTIDE). "
-	"Default=PROTEIN.",
-        "For NSAF and SIN to know which level of quantification should be done.",
-	"true"); 
-  set_string_parameter("parsimony", "NONE",
-	"Perform parsimony analysis on the proteins and report "
-	"a parsimony rank column in output file." ,
-	"Default=NONE. Can be <string>=NONE|SIMPLE|GREEDY",
-	"true");
-		       
+  set_string_parameter("input-bullseye", NULL,
+       "Bullseye output from the accompanying MS1 file to provide area under "
+       "the chromatogram peak.  Default is to use total ion intenstiy",
+       "Available for spectral-counts and the SIN measure.  Use areas under "
+       "peaks instead of total ion intensity.",
+       "true");
+  set_quant_level_parameter("quant-level", PROTEIN_QUANT_LEVEL,
+       "Quantification at protein or peptide level (PROTEIN,PEPTIDE). "
+       "Default=PROTEIN.",
+       "Available for spectral-counts and either NSAF and SIN.",
+       "true"); 
+  set_parsimony_type_parameter("parsimony", PARSIMONY_NONE,
+       "Perform parsimony analysis on the proteins and report "
+       "a parsimony rank column in output file." ,
+       "Default=none. Can be <string>=none|simple|greedy",
+       "true");
 		       
 
   // ***** static mods *****
@@ -1486,7 +1511,6 @@ BOOLEAN_T check_option_type_and_bounds(const char* name){
   char* max_str = (char*)get_hash_value(max_values, name);
 
   MASS_TYPE_T mass_type;
-  //PEPTIDE_TYPE_T pep_type;
   SORT_TYPE_T sort_type;
   SCORER_TYPE_T scorer_type;
   ALGORITHM_TYPE_T algorithm_type;
@@ -1611,27 +1635,29 @@ BOOLEAN_T check_option_type_and_bounds(const char* name){
       sprintf(die_str, "Illegal measure type '%s' for option '%s'. "
 	      "Must be (NSAF, SIN)", value_str, name);
     }
+    break;
   case PARSIMONY_TYPE_P:
     carp(CARP_DETAILED_DEBUG, "found parsimony type param, value '%s'",
-	 value_str);
+     value_str);
     if (string_to_parsimony_type(value_str) == PARSIMONY_INVALID){
       success = FALSE;
-      sprintf(die_str, "Illegal measure type '%s' for option '%s'. "
+      sprintf(die_str, "Illegal parsimony type '%s' for option '%s'. "
 	      "Must be (none, simple, greedy)", value_str, name);
     }
+    break;
   case QUANT_LEVEL_TYPE_P:
-    carp(CARP_DETAILED_DEBUG, "found measure type param, value '%s'",
-	 value_str);
+    carp(CARP_DETAILED_DEBUG, "found quant level type param, value");// '%s'",
+    //	 value_str);
     if (string_to_quant_level_type(value_str) == QUANT_LEVEL_INVALID){
       success = FALSE;
-      sprintf(die_str, "Illegal measure type '%s' for option '%s'. "
+      sprintf(die_str, "Illegal quantitation level type '%s' for option '%s'. "
 	      "Must be (peptide, protein)", value_str, name);
     }
-    
+    break;
   case NUMBER_PARAMETER_TYPES:
     carp(CARP_FATAL, "Your param type '%s' wasn't found (code %i)", 
         type_str, (int)param_type);
-  }
+  } // end switch
 
   if( ! success ){
     carp(CARP_FATAL, die_str);
@@ -2578,7 +2604,7 @@ BOOLEAN_T set_parsimony_type_parameter(
   
 }
 
-BOOLEAN_T set_quant_level_type_parameter(
+BOOLEAN_T set_quant_level_parameter(
   const char* name, ///< the name of the parameter looking for -in
   QUANT_LEVEL_TYPE_T set_value, ///< the value to be set -in
   const char* usage, ///< string to print in usage statement

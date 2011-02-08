@@ -1,11 +1,11 @@
 INFO: CPU: ranunculus
-INFO: Mon Dec  6 11:01:10 PST 2010
+INFO: Mon Feb  7 16:07:51 PST 2011
 COMMAND LINE: crux sequest-search --output-dir ss --fileroot tdc --parameter-file params/tdc-ss demo.ms2 small-yeast.fasta
 INFO: Preparing protein fasta file small-yeast.fasta
 INFO: Reading in ms2 file demo.ms2
 INFO: Created 1 peptide mods, keeping 1 with 255 or fewer aa mods
 INFO: Searching spectrum number 96, charge 2, search number 100
-INFO: Elapsed time: 1.63 s
+INFO: Elapsed time: 1.67 s
 INFO: Finished crux sequest-search
 # Which isotopes to use in calculating fragment ion mass.
 # <string>=average|mono. Default=mono.
@@ -48,6 +48,11 @@ primary-ions=by
 # xcorr scoring.
 neutral-losses=all
 
+# Perform parsimony analysis on the proteins and report a parsimony rank
+# column in output file.
+# Default=none. Can be <string>=none|simple|greedy
+parsimony=none
+
 # Which isotopes to use in calcuating peptide mass.
 # <string>=average|mono. Default=average.
 # Used from command line or parameter file by crux-create-index and
@@ -58,6 +63,11 @@ isotopic-mass=average
 # Include self-loop peptides in the database.  Default=T.
 # Available for crux search-for-xlinks program.
 xlink-include-selfloops=TRUE
+
+# Quantification at protein or peptide level (PROTEIN,PEPTIDE).
+# Default=PROTEIN.
+# Available for spectral-counts and either NSAF and SIN.
+quant-level=protein
 
 # Window type to use for selecting candidate peptides. 
 # <string>=mass|mz|ppm. Default=mass.
@@ -229,6 +239,12 @@ min-peaks=20
 # Only available for crux-predict-peptide-ions.
 nh3=0
 
+# Type of analysis to make on the match results: (NSAF|SIN).
+# Default=SIN. 
+# Available for spectral-counts.  NSAF is Normalized Spectral Abundance
+# Factor and SIN is Spectral Index Normalized.
+measure=SIN
+
 # Use variable binning for XCORR.  If set to true, mz-bin-width, and
 # mz-bin-offset parameters are utilized
 # Available for crux-search-for-matches.
@@ -254,6 +270,10 @@ max-mods=255
 # state.  With 1, 2 ,or 3 only spectra with that that charge will be
 # searched.
 spectrum-charge=all
+
+# MS2 file corresponding to the psm file. Required for SIN.
+# Available for spectral-counts with measure=SIN.
+input-ms2=__NULL_STR
 
 # Show search progress by printing every n spectra searched. 
 # Default=10.
@@ -421,6 +441,17 @@ precision=8
 # num-decoys-per-target.
 decoy-location=target-file
 
+# The p-value or q-value threshold. Default=0.01.
+# Available for spectral-counts.  All PSMs with q-value higher than this
+# will be ignored.
+threshold=0.010000
+
+# Bullseye output from the accompanying MS1 file to provide area under
+# the chromatogram peak.  Default is to use total ion intenstiy
+# Available for spectral-counts and the SIN measure.  Use areas under
+# peaks instead of total ion intensity.
+input-bullseye=__NULL_STR
+
 # Optional file into which psm features are printed. Default=F.
 # Available for percolator and q-ranker.  File will be named
 # <fileroot>.percolator.features.txt or <fileroot>.qranker.features.txt.
@@ -451,6 +482,10 @@ xcorr-use-flanks=TRUE
 # modifications. Default=0.
 # Only available for crux-predict-peptide-ions.
 h2o=0
+
+# Ignore peptides with multiple mappings to proteins (T,F). Default=F.
+# Available for spectral-counts.
+unique-mapping=FALSE
 
 # Compute p-values for the main score type. Default=F.
 # Currently only implemented for XCORR.
@@ -501,7 +536,7 @@ H	SQTGenerator Crux
 H	SQTGeneratorVersion 1.0
 H	Comment Crux was written by...
 H	Comment ref...
-H	StartTime	Mon Dec  6 11:01:10 2010
+H	StartTime	Mon Feb  7 16:07:51 2011
 H	EndTime                               
 H	Database	small-yeast.fasta
 H	DBSeqLength	?
