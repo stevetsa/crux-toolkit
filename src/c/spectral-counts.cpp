@@ -52,7 +52,6 @@ typedef map<MetaProtein, FLOAT_T, bool(*)(MetaProtein, MetaProtein)> MetaToScore
 typedef map<PROTEIN_T*, MetaProtein, bool(*)(PROTEIN_T*, PROTEIN_T*)> ProteinToMetaProtein;
 
 /* private function declarations */
-void getDirPath(char* path, char** dir); // TODO replace me
 set<MATCH_T*> filter_matches(
   MATCH_COLLECTION_ITERATOR_T* match_collection_it
 );
@@ -149,40 +148,44 @@ int spectral_counts_main(int argc, char** argv){
   initialize_run(SPECTRAL_COUNTS_COMMAND, argument_list, num_arguments,
 		 option_list, num_options, argc, argv);
 
-  bool unique_mapping = get_boolean_parameter("unique-mapping");
-  char * psm_file = get_string_parameter("input PSM");
-  char * database = get_string_parameter("protein database");
-  char * parsimony = get_string_parameter("parsimony");
-  char * quant_level = get_string_parameter("quant-level");
-  char * output_dir = get_string_parameter("output-dir");
-  char * dir_path = NULL;
-
-  char * output_path = 
+  // get output file name
+  char* output_dir = get_string_parameter("output-dir");
+  char* output_path = 
     get_full_filename(output_dir, "spectral-count.target.txt");
-  int decoy_count = 0;
-  getDirPath(psm_file, &dir_path);
+
+  // get input file directory
+  char* psm_file = get_string_parameter("input PSM");
+  char** path_info = parse_filename_path(psm_file);
+  if( path_info[1] == NULL ){
+    path_info[1] = my_copy_string(".");
+  }
 
   // create match collection
+  int decoy_count = 0;
+  char* database = get_string_parameter("protein database");
   MATCH_COLLECTION_ITERATOR_T* match_collection_it 
-    = new_match_collection_iterator(dir_path, database, &decoy_count);
+    = new_match_collection_iterator(path_info[1], database, &decoy_count);
    
   // get a set of matches that pass threshold
   set<MATCH_T*> matches = filter_matches(match_collection_it);
   carp(CARP_INFO, "Number of matches passed the threshold %i", 
        matches.size());
 
-  
+  // get a set of peptides
   PeptideToScore peptideToScore(compare_pep);
   get_peptide_scores(&matches, &peptideToScore);
-  if (unique_mapping){
+  if( get_boolean_parameter("unique-mapping") ){
     make_unique_mapping(&peptideToScore);
   }
   carp(CARP_INFO, "Number of Unique Peptides %i", peptideToScore.size());
 
-  if (strcmp(quant_level, "PEPTIDE") == 0){ // peptide level
+  // quantify at either the peptide or protein level
+  QUANT_LEVEL_TYPE_T quant_level =get_quant_level_type_parameter("quant-level");
+  if( quant_level == PEPTIDE_QUANT_LEVEL ){ // peptide level
     normalize_peptide_scores(&peptideToScore);
     print_peptide_results(&peptideToScore, output_path);
-  } else { // protein level
+
+  } else if( quant_level == PROTEIN_QUANT_LEVEL ){ // protein level
     ProteinToScore proteinToScore(compare_prot);
     ProteinToPeptides proteinToPeptides(compare_prot);
     ProteinToMetaProtein proteinToMeta(compare_prot);
@@ -193,15 +196,15 @@ int spectral_counts_main(int argc, char** argv){
     get_protein_scores(&peptideToScore, &proteinToScore);
     normalize_protein_scores(&proteinToScore);
     carp(CARP_INFO, "Number of Proteins %i", proteinToScore.size());
-    
-    
-    if (strcmp(parsimony, "NONE") != 0){ //if parsimony is not none
+        
+    PARSIMONY_TYPE_T parsimony = get_parsimony_type_parameter("parsimony");
+    if( parsimony != PARSIMONY_NONE ){ //if parsimony is not none
       get_protein_to_peptides(&peptideToScore, &proteinToPeptides);
       get_meta_mapping(&proteinToPeptides, &metaMapping);
       get_protein_to_meta_protein(&metaMapping, &proteinToMeta);
       carp(CARP_INFO, "Number of meta proteins %i", metaMapping.size());
       
-      if (strcmp(parsimony, "GREEDY") == 0){ //if parsimony is greedy
+      if( parsimony == PARSIMONY_GREEDY ){ //if parsimony is greedy
 	perform_parsimony_analysis(&metaMapping);
       }
       get_meta_scores(&metaMapping, &proteinToScore, &metaToScore);
@@ -209,13 +212,21 @@ int spectral_counts_main(int argc, char** argv){
     }
     
     print_protein_results(&proteinToScore,
-			&metaToRank,
-			&proteinToMeta,
-			output_path);
+                          &metaToRank,
+                          &proteinToMeta,
+                          output_path);
+  } else {
+    carp(CARP_FATAL, "Invalid quantification level.");
   }
   
-  free(dir_path);
-  return 1;
+  free(output_dir);
+  free(psm_file);
+  free(path_info[1]);
+  free(path_info[0]);
+  free(path_info);
+  free(database);
+
+  return 0;
 }
 
 /**
@@ -373,22 +384,21 @@ void get_peptide_scores(
 		      PeptideToScore* peptideToScore
 		      ){
   
-  char * measure = get_string_parameter("measure"); //TODO check this value
-  char * ms2 = get_string_parameter("input-ms2");
+  MEASURE_TYPE_T measure = get_measure_type_parameter("measure");
+  char* ms2 = get_string_parameter("input-ms2");
   FLOAT_T bin_width = get_double_parameter("mz-bin-width");
-  bool isSin = (measure == NULL || !strcmp(measure, "SIN"));
   map<pair<int,int>, Spectrum*> spectras;
   
   SCORER_TYPE_T score_type = XCORR;
     
   // for SIN, parse out spectrum collection from ms2 fiel
-  if (isSin){ 
+  if( measure == MEASURE_SIN ){ 
     IonSeries ion_series;
     SpectrumCollection* spectrumCollection = new SpectrumCollection(ms2);
     if (!spectrumCollection->parse()){
       carp(CARP_FATAL, "Failed to parse ms2 file: %s", ms2);
     } 
-    // get spectras from ms2 file
+    // get spectra from ms2 file
     FilteredSpectrumChargeIterator* spectrum_iterator = 
       new FilteredSpectrumChargeIterator(spectrumCollection);
     while (spectrum_iterator->hasNext()){
@@ -407,7 +417,7 @@ void get_peptide_scores(
     MATCH_T* match = (*match_it);
     // for sin, calculate total ion intensity for match by
     // summing up peak intensities
-    if (isSin){ 
+    if( measure == MEASURE_SIN ){ 
       char* peptide_seq = get_match_sequence(match);
       MODIFIED_AA_T* modified_sequence = get_match_mod_sequence(match);
       int charge = get_match_charge(match);
@@ -443,6 +453,8 @@ void get_peptide_scores(
     } 
     (*peptideToScore)[peptide]+=match_intensity;
   }
+
+  free(ms2);
 }
 
 
@@ -637,11 +649,11 @@ void perform_parsimony_analysis(MetaMapping* metaMapping){
  * rank if parsimony was called.
  */
 void print_protein_results(
-			 ProteinToScore* proteinToScore,
-			 MetaToRank* metaToRank,
-			 ProteinToMetaProtein* proteinToMeta,
-			 char * output_path
-			 ){
+                           ProteinToScore* proteinToScore,
+                           MetaToRank* metaToRank,
+                           ProteinToMetaProtein* proteinToMeta,
+                           char * output_path)
+{
   carp(CARP_INFO, "Outputting results");
   ofstream targetFile;
   targetFile.open(output_path);
@@ -873,20 +885,3 @@ bool compare_sets(
   return ((peps_one).first.size() < (peps_two).first.size());
 }
 
-/**
- * Helper function to find the path of directory
- * for a given path to a file
- */
-void getDirPath(char* path, char** dir){
-  int pos = strlen(path)-1;
-  while (pos >0 && *(path+pos) != '/'){pos--;}
-  if (pos == 0){ // no backslashes exist
-    *dir = (char*) malloc(sizeof(char)*2);
-    strcpy(*dir, ".");
-  } else {
-    *dir = (char*) malloc((sizeof(char)*pos)+1);
-    strncpy(*dir, path, pos);
-    (*dir)[pos] = '\0';
-  }
-  carp(CARP_INFO, "directory: %s", *dir);
-}
