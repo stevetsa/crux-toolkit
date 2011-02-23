@@ -32,9 +32,6 @@
 
 using namespace std;
 
-static const int NUM_GEN_PEP_OPTIONS = 15;
-static const int NUM_GEN_PEP_ARGS = 1;
-
 /* Private function declarations */
 void print_header();
 
@@ -52,8 +49,7 @@ int main(int argc, char** argv){
   INDEX_T* index = NULL;
     
   /* Define optional command line arguments */ 
-  int num_options = NUM_GEN_PEP_OPTIONS;
-  const char* option_list[NUM_GEN_PEP_OPTIONS] = {
+  const char* option_list[] = {
     "version",
     "verbosity",
     "parameter-file",
@@ -73,6 +69,8 @@ int main(int argc, char** argv){
     //"output-trypticity",
     "sort"
   };
+
+  int num_options = sizeof(option_list) / sizeof(char*);
 
   /* Define required command-line arguments */
   const char* argument_list[] = { 
@@ -142,10 +140,15 @@ int main(int argc, char** argv){
 
 
   int type_counts[3] = {0,0,0};
+  int type_mod_counts[3] = {0,0,0};
 
   int num_inter = 0;
   int num_intra = 0;
   int num_inter_intra = 0;
+
+  int num_mod_inter = 0;
+  int num_mod_intra = 0;
+  int num_mod_inter_intra = 0;
 
   for (unsigned int idx=0;idx<xlink_candidates.size();idx++) {
 
@@ -157,7 +160,9 @@ int main(int argc, char** argv){
     string sequence = current_candidate->getSequenceString();
     MATCHCANDIDATE_TYPE_T candidate_type = current_candidate->getCandidateType();
 
-    type_counts[candidate_type]++;
+    bool modified = current_candidate->isModified();
+
+    if (modified) {type_mod_counts[candidate_type]++;} else {type_counts[candidate_type]++;}
 
     string stype;
     switch(candidate_type) {
@@ -167,7 +172,7 @@ int main(int argc, char** argv){
         break;
       case SELFLOOP_CANDIDATE:
         stype = "SelfLoop";
-        num_intra++;
+        if (modified) {num_mod_intra++;} else {num_intra++;}
         break;
       case XLINK_CANDIDATE:
         stype = "XLink";
@@ -175,12 +180,16 @@ int main(int argc, char** argv){
 
         if (xlink_peptide->isInter() && xlink_peptide->isIntra()) {
           stype += "(Intra/Inter)";
-          num_inter_intra++;
+          if (modified) {num_mod_inter_intra++;} else {num_inter_intra++;}
         } else if (xlink_peptide->isInter()) {
           stype += "(Inter)";
-          num_inter++;
+          if (modified) { num_mod_inter++;} else {num_inter++;}
+          if (modified) {
+            num_mod_inter++;
+          }
         } else if (xlink_peptide->isIntra()) {
-          num_intra++;
+          stype += "(Intra)";
+          if (modified) { num_mod_intra++; } else { num_intra++;}
         } else {
           carp(CARP_FATAL,"????");
         }
@@ -202,9 +211,18 @@ int main(int argc, char** argv){
   carp(CARP_INFO, "Number Linear:%d", type_counts[LINEAR_CANDIDATE]);
   carp(CARP_INFO, "Number SelfLoop:%d", type_counts[SELFLOOP_CANDIDATE]);
   carp(CARP_INFO, "Number XLinks:%d", type_counts[XLINK_CANDIDATE]);
+
+  carp(CARP_INFO, "Number Modified Linear:%d",type_mod_counts[LINEAR_CANDIDATE]);
+  carp(CARP_INFO, "Number Modified SelfLoop:%d", type_mod_counts[SELFLOOP_CANDIDATE]);
+  carp(CARP_INFO, "Number Modified XLinks:%d", type_mod_counts[XLINK_CANDIDATE]);
+
   carp(CARP_INFO, "Number Inter Links:%d", num_inter);
   carp(CARP_INFO, "Number Intra Links:%d", num_intra);
   carp(CARP_INFO, "Number Inter/Intra:%d", num_inter_intra);
+
+  carp(CARP_INFO, "Number Mod Inter Links:%d", num_mod_inter);
+  carp(CARP_INFO, "Number Mod Intra Links:%d", num_mod_intra);
+  carp(CARP_INFO, "Number Mod Inter/Intra Links:%d", num_mod_inter_intra);
 
 
   free_parameters();

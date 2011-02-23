@@ -44,6 +44,9 @@ class XLinkablePeptide {
   MODIFIED_AA_T* getModifiedSequence();
   //std::string getAASequence();
   std::string getModifiedSequenceString();
+
+  bool isModified();
+
   
 };
 

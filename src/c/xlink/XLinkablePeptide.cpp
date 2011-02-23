@@ -314,6 +314,11 @@ string XLinkablePeptide::getModifiedSequenceString() {
 
 }
 
+bool XLinkablePeptide::isModified() {
+  return get_peptide_is_modified(peptide_);
+}
+
+
 bool compareXLinkablePeptideMass(
   const XLinkablePeptide& xpep1,
   const XLinkablePeptide& xpep2
@@ -321,3 +326,4 @@ bool compareXLinkablePeptideMass(
 
   return xpep1.getMass() < xpep2.getMass();
 }
+

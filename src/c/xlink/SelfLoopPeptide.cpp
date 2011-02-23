@@ -275,3 +275,8 @@ int SelfLoopPeptide::getNumMissedCleavages() {
   return get_peptide_missed_cleavage_sites(pep, skip);
 
 }
+
+bool SelfLoopPeptide::isModified() {
+
+  return linked_peptide_.isModified();
+}

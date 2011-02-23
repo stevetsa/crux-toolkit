@@ -56,6 +56,9 @@ class MatchCandidate {
 
   virtual int getNumMissedCleavages() = 0;
 
+  virtual bool isModified() = 0;
+
+
   static std::string getResultHeader();
   std::string getResultString();
   FLOAT_T getPPMError();

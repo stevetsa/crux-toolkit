@@ -53,6 +53,8 @@ class SelfLoopPeptide : public MatchCandidate {
 
   virtual int getNumMissedCleavages();
 
+  virtual bool isModified();
+
 };
 
 

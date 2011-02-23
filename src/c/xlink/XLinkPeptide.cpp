@@ -538,3 +538,9 @@ int XLinkPeptide::getNumMissedCleavages() {
 
 
 }
+
+
+bool XLinkPeptide::isModified() {
+
+  return linked_peptides_[0].isModified() || linked_peptides_[1].isModified();
+}

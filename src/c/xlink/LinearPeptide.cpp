@@ -139,3 +139,8 @@ int LinearPeptide::getNumMissedCleavages() {
   set<int> skip;
   return get_peptide_missed_cleavage_sites(peptide_, skip);
 }
+
+bool LinearPeptide::isModified() {
+
+  return get_peptide_is_modified(peptide_);
+}

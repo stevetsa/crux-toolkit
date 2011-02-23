@@ -71,6 +71,8 @@ class XLinkPeptide : public MatchCandidate {
   virtual PEPTIDE_T* getPeptide(int peptide_idx);
 
   virtual int getNumMissedCleavages();
+
+  virtual bool isModified();
 };
 
 
