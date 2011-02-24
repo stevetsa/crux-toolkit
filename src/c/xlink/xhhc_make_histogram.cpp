@@ -1,6 +1,9 @@
 #include "xhhc_ion_series.h"
 #include "xhhc_scorer.h"
+
 #include "objects.h"
+#include "IonConstraint.h"
+
 #include <fstream>
 #include <math.h>
 #include <iostream>
@@ -14,7 +17,9 @@ using namespace std;
 
 //typedef map<char, set<char> > BondMap;
 
-void plot_weibull(vector<pair<FLOAT_T, LinkedPeptide> >& scores, SPECTRUM_T* spectrum, int charge); 
+void plot_weibull(vector<pair<FLOAT_T, LinkedPeptide> >& scores, 
+                  Spectrum* spectrum, 
+                  int charge); 
 
 int main(int argc, char** argv) {
   const char* missed_link_cleavage = "K";
@@ -176,14 +181,14 @@ int main(int argc, char** argv) {
   cout << "decoys      " << filtered_ions.size() - num_ions << "<br>" << endl;
   cout << "total       " << filtered_ions.size() << "<br>" << endl;
 
-  SPECTRUM_T* spectrum = allocate_spectrum();
-  SPECTRUM_COLLECTION_T* collection = new_spectrum_collection(ms2_file);
+  Spectrum* spectrum = new Spectrum();
+  SpectrumCollection* collection = new SpectrumCollection(ms2_file);
   //SCORER_T* scorer = new_scorer(XCORR);
   Scorer xhhc_scorer;
-  if(!get_spectrum_collection_spectrum(collection, scan_num, spectrum)){
+  if(!collection->getSpectrum(scan_num, spectrum)){
     carp(CARP_ERROR, "failed to find spectrum with  scan_num: %d", scan_num);
-    free_spectrum_collection(collection);
-    free_spectrum(spectrum);
+    delete collection;
+    delete spectrum;
     exit(1);
   }
   
@@ -192,9 +197,9 @@ int main(int argc, char** argv) {
   if (open_modification) {
   FLOAT_T mod_mass;
     SCORER_T* scorer = new_scorer(XCORR);
-    ION_SERIES_T* ion_series = NULL; 
-    ION_CONSTRAINT_T* ion_constraint = 
-	new_ion_constraint_sequest_xcorr(charge);
+    IonSeries* ion_series = NULL; 
+    IonConstraint* ion_constraint = 
+	IonConstraint::newIonConstraintSequestXcorr(charge);
     set<pair<FLOAT_T, string> > scores;
     stringstream ss;
     // for every precursor in the mass window
@@ -203,7 +208,7 @@ int main(int argc, char** argv) {
 	vector<Peptide> peptides = ion->peptides();
 	// score the first peptide with modification of second peptide	
         mod_mass = linker_mass + peptides[1].mass(MONO);	
-	ion_series = new_ion_series((char*)peptides[0].sequence().c_str(), ion->charge(), ion_constraint);
+	ion_series = new IonSeries((char*)peptides[0].sequence().c_str(), ion->charge(), ion_constraint);
 	hhc_predict_ions(ion_series, mod_mass, peptides[0].link_site());
 	score = score_spectrum_v_ion_series(scorer, spectrum, ion_series);
 	//score = xhhc_scorer.score_spectrum_vs_series(spectrum, ion_series);
@@ -212,7 +217,7 @@ int main(int argc, char** argv) {
         scores.insert(make_pair(score, ss.str()));	
 	// score second peptide with modification of first peptide
         mod_mass = linker_mass + peptides[0].mass(MONO);	
-	ion_series = new_ion_series((char*)peptides[1].sequence().c_str(), ion->charge(), ion_constraint);
+	ion_series = new IonSeries((char*)peptides[1].sequence().c_str(), ion->charge(), ion_constraint);
 	hhc_predict_ions(ion_series, mod_mass, peptides[1].link_site());
         //score = xhhc_scorer.score_spectrum_vs_series(spectrum, ion_series);
 	score = score_spectrum_v_ion_series(scorer, spectrum, ion_series);
@@ -253,13 +258,14 @@ int main(int argc, char** argv) {
     }
   }
   //free_scorer(scorer);
-  free_spectrum_collection(collection);
-  free_spectrum(spectrum);
+  delete collection;
+  delete spectrum;
   return 0;
 }
 
 // for running experiments. plots fit and pvalues
-void plot_weibull(vector<pair<FLOAT_T, LinkedPeptide> >& scores, SPECTRUM_T* spectrum, int charge) {
+void plot_weibull(vector<pair<FLOAT_T, LinkedPeptide> >& scores, 
+                  Spectrum* spectrum, int charge) {
   
   ofstream target_fit_file ("fit.target");
   ofstream decoy_fit_file ("fit.decoy");
@@ -298,7 +304,8 @@ void plot_weibull(vector<pair<FLOAT_T, LinkedPeptide> >& scores, SPECTRUM_T* spe
   FLOAT_T y;
 
   // plot fit for targets
-  hhc_estimate_weibull_parameters_from_xcorrs(target_scores_array, num_targets, &eta_target, 
+  hhc_estimate_weibull_parameters_from_xcorrs(target_scores_array, 
+                                              num_targets, &eta_target, 
 	&beta_target, &shift_target, &correlation_target, spectrum, charge);
   for (FLOAT_T x = scores.front().first; x <= scores.back().first; x = x + 0.01) {
       y = (beta_target / eta_target) * pow(((x+shift_target)/eta_target), beta_target - 1) * exp(- pow((x+shift_target)/eta_target, beta_target));

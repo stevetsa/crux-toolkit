@@ -23,10 +23,10 @@
 #include <time.h>
 #include "carp.h"
 #include "parse_arguments.h"
-#include "spectrum.h"
-#include "spectrum_collection.h"
-#include "ion.h"
-#include "ion_series.h"
+#include "Spectrum.h"
+#include "SpectrumCollection.h"
+#include "Ion.h"
+#include "IonSeries.h"
 #include "crux-utils.h"
 #include "objects.h"
 #include "parameter.h"
@@ -39,6 +39,7 @@
 #include "protein_index.h"
 #include "modifications.h"
 #include "modified_peptides_iterator.h"
+#include "MatchFileWriter.h"
 
 using namespace std;
 
@@ -93,12 +94,13 @@ void free_match_collection(
  */
 int add_matches(
   MATCH_COLLECTION_T* match_collection,///< add matches to this
-  SPECTRUM_T* spectrum,  ///< compare peptides to this spectrum
-  int charge,            ///< use this charge state for spectrum
+  Spectrum* spectrum,  ///< compare peptides to this spectrum
+  SpectrumZState& zstate,            ///< use this charge state for spectrum
   MODIFIED_PEPTIDES_ITERATOR_T* peptide_iterator, ///< use these peptides
   BOOLEAN_T is_decoy,     ///< do we shuffle the peptides
   BOOLEAN_T store_scores, ///< TRUE means save scores in xcorrs[]
-  BOOLEAN_T do_prelim_score///< TRUE means do Sp before xcorr
+  BOOLEAN_T do_sp_score,  ///< TRUE means do Sp before xcorr
+  BOOLEAN_T filter_by_sp  ///< TRUE means keep only high sp scoring psms
 );
 
 /**
@@ -277,7 +279,7 @@ BOOLEAN_T add_match_to_match_collection(
  */
 void print_matches
 (MATCH_COLLECTION_T* match_collection, 
- SPECTRUM_T* spectrum, 
+ Spectrum* spectrum, 
  BOOLEAN_T is_decoy,
  FILE* psm_file,
  FILE* sqt_file, 
@@ -292,8 +294,27 @@ void print_matches
  */
 void print_matches_multi_spectra
 (MATCH_COLLECTION_T* match_collection, 
- FILE* tab_file, 
- FILE* decoy_tab_file);
+ MatchFileWriter* tab_file, 
+ MatchFileWriter* decoy_tab_file);
+
+
+/**
+ * \brief Print the given match collection for several spectra to
+ * xml files only. Takes the spectrum information from the
+ * matches in the collection. At least for now, prints all matches in
+ * the collection rather than limiting by top-match parameter. 
+ */
+void print_matches_multi_spectra_xml(
+ MATCH_COLLECTION_T* match_collection,
+ FILE* output);
+
+
+/*
+ * Print the XML file header
+ */ 
+void print_xml_header(FILE* outfile);
+
+
 
 /*
  * Print the SQT file header 
@@ -308,6 +329,29 @@ void print_sqt_header(FILE* outfile,
  */
 void print_tab_header(FILE* outfile);
 
+
+/*
+ * Print the XML file footer
+ */
+void print_xml_footer(FILE* outfile);
+
+/**
+ * Print the psm features to output file upto 'top_match' number of
+ * top peptides among the match_collection in xml file format
+ * returns TRUE, if sucessfully print xml format of the PSMs, else FALSE
+ */
+
+
+BOOLEAN_T print_match_collection_xml(
+  FILE* output,
+  int top_match,
+  MATCH_COLLECTION_T* match_collection,
+  Spectrum* spectrum,
+  SCORER_TYPE_T main_score,
+  int index
+  );
+
+
 /**
  * Print the psm features to output file upto 'top_match' number of 
  * top peptides among the match_collection in sqt file format
@@ -317,7 +361,7 @@ BOOLEAN_T print_match_collection_sqt(
   FILE* output, ///< the output file -out
   int top_match, ///< the top matches to output -in
   MATCH_COLLECTION_T* match_collection, ///< the match_collection to print -in
-  SPECTRUM_T* spectrum ///< the spectrum to print sqt -in
+  Spectrum* spectrum ///< the spectrum to print sqt -in
   );
 
 /**
@@ -326,10 +370,10 @@ BOOLEAN_T print_match_collection_sqt(
  *\returns TRUE, if sucessfully print sqt format of the PSMs, else FALSE 
  */
 BOOLEAN_T print_match_collection_tab_delimited(
-  FILE* output, ///< the output file -out
+  MatchFileWriter* output, ///< the output file -out
   int top_match, ///< the top matches to output -in
   MATCH_COLLECTION_T* match_collection, ///< the match_collection to print sqt -in
-  SPECTRUM_T* spectrum, ///< the spectrum to print sqt -in
+  Spectrum* spectrum, ///< the spectrum to print sqt -in
   SCORER_TYPE_T main_score  ///< the main score to report -in
   );
 
@@ -547,7 +591,7 @@ BOOLEAN_T estimate_weibull_parameters(
   MATCH_COLLECTION_T* match_collection, 
   SCORER_TYPE_T score_type,
   int sample_count, 
-  SPECTRUM_T* spectrum,
+  Spectrum* spectrum,
   int charge
   );
 
@@ -562,7 +606,7 @@ BOOLEAN_T estimate_weibull_parameters(
  */
 BOOLEAN_T estimate_weibull_parameters_from_xcorrs(
   MATCH_COLLECTION_T* match_collection, 
-  SPECTRUM_T* spectrum,
+  Spectrum* spectrum,
   int charge
   );
 
@@ -578,9 +622,15 @@ BOOLEAN_T compute_p_values(
  *
  * \returns TRUE if the match_collection's charge state was changed.
  */
+/*
 BOOLEAN_T set_match_collection_charge(
   MATCH_COLLECTION_T* match_collection,  ///< match collection to change
   int charge ///< new charge state
+);
+*/
+BOOLEAN_T set_match_collection_zstate(
+  MATCH_COLLECTION_T* match_collection, ///< match collection to change
+  SpectrumZState& zstate ///< new zstate
 );
 
 /**
@@ -591,7 +641,7 @@ BOOLEAN_T set_match_collection_charge(
  */
 void add_decoy_scores_match_collection(
   MATCH_COLLECTION_T* target_matches, ///< add scores to this collection
-  SPECTRUM_T* spectrum, ///< search this spectrum
+  Spectrum* spectrum, ///< search this spectrum
   int charge, ///< search spectrum at this charge state
   MODIFIED_PEPTIDES_ITERATOR_T* peptides ///< use these peptides to search
 );
@@ -615,6 +665,9 @@ void assign_match_collection_qvalues(
   SCORER_TYPE_T score_type,
   MATCH_COLLECTION_T* all_matches
 );
+
+const vector<bool>& get_match_collection_iterator_cols_in_file(
+  MATCH_COLLECTION_ITERATOR_T* match_collection);
 
 #endif
 

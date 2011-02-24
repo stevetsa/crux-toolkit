@@ -3,6 +3,7 @@
 
 #include "XLink.h"
 #include "MatchCandidate.h"
+#include "SpectrumZState.h"
 
 #include "index.h"
 #include "database.h"
@@ -14,7 +15,8 @@ class MatchCandidateVector : public std::vector<MatchCandidate*> {
  protected:
   BOOLEAN_T include_linear_peptides;
   BOOLEAN_T include_self_loops;
-  int charge_;
+
+  SpectrumZState zstate_;
   int scan_;
   FLOAT_T precursor_mz_;
 
@@ -42,7 +44,7 @@ class MatchCandidateVector : public std::vector<MatchCandidate*> {
 
 
   MatchCandidateVector(FLOAT_T precursor_mz,
-		       int charge,
+                       SpectrumZState& zstate,
 		       XLinkBondMap& bondmap,
 		       INDEX_T* index,
 		       DATABASE_T* database,
@@ -58,7 +60,7 @@ class MatchCandidateVector : public std::vector<MatchCandidate*> {
   void shuffle();
   void shuffle(MatchCandidateVector& decoy_vector);
 
-  void scoreSpectrum(SPECTRUM_T* spectrum);
+  void scoreSpectrum(Spectrum* spectrum);
   void sortByXCorr();
   void fitWeibull(FLOAT_T& shift, 
 		  FLOAT_T& eta, 

@@ -1,4 +1,4 @@
-#include "ion_series.h"
+#include "IonSeries.h"
 #include "MatchCandidate.h"
 #include "XLinkPeptide.h"
 #include "LinearPeptide.h"
@@ -103,34 +103,31 @@ int main(int argc, char** argv) {
 
   int max_charge = min(get_max_ion_charge_parameter("max-ion-charge"), charge);
 
-  ION_CONSTRAINT_T* ion_constraint = new_ion_constraint(MONO, max_charge, BY_ION,  FALSE);
+  IonConstraint* ion_constraint = new IonConstraint(MONO, max_charge, BY_ION,  false);
 
-  ION_SERIES_T* ion_series = new_ion_series_generic(ion_constraint, charge);
+  IonSeries* ion_series = new IonSeries(ion_constraint, charge);
 
   linked_peptide->predictIons(ion_series, charge);
 
-  ION_ITERATOR_T* ion_iter = new_ion_iterator(ion_series);
+  for (IonIterator ion_iter = ion_series->begin();
+    ion_iter != ion_series->end();
+    ++ion_iter) {
 
-  while (ion_iterator_has_next(ion_iter)) {
-    ION_T* ion = ion_iterator_next(ion_iter);
-    FLOAT_T mz = get_ion_mass_z(ion);
-    FLOAT_T mass = get_ion_mass_from_mass_z(ion);
-    int charge = get_ion_charge(ion);
+    Ion* ion = *ion_iter;
+    FLOAT_T mz = ion->getMassZ();
+    FLOAT_T mass = ion->getMassFromMassZ();
+    int charge = ion->getCharge();
     string sequence = linked_peptide->getIonSequence(ion);
-    int cleavage_idx = get_ion_cleavage_idx(ion);
+    int cleavage_idx = ion->getCleavageIdx();
     cout << mz << "\t"
 	 << mass << "\t"
 	 << charge << "\t"
          << cleavage_idx << "\t"
 	 << sequence << endl;
-    
-    
-
   }
 
-  free_ion_iterator(ion_iter);
-  free_ion_series(ion_series);
 
+  delete ion_series;
   delete linked_peptide;
 
   return 0;

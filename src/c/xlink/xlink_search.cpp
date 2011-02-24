@@ -11,6 +11,8 @@
 
 //CRUX INCLUDES
 #include "objects.h"
+#include "FilteredSpectrumChargeIterator.h"
+
 
 #include <algorithm>
 #include <cmath>
@@ -95,7 +97,9 @@ int xlink_search_main(int argc, char** argv) {
     (unsigned int)get_int_parameter("min-weibull-points");
   
   int scan_num = 0;
-  int charge = 1;
+
+  SpectrumZState zstate;
+
 
   //int max_ion_charge = get_max_ion_charge_parameter("max-ion-charge");
 
@@ -103,11 +107,12 @@ int xlink_search_main(int argc, char** argv) {
   XLinkPeptide::setLinkerMass(get_double_parameter("link mass"));
 
   carp(CARP_INFO,"Loading Spectra");
-  SPECTRUM_T* spectrum = allocate_spectrum();
-  SPECTRUM_COLLECTION_T* spectra = new_spectrum_collection(ms2_file);
-  parse_spectrum_collection(spectra);
-  FILTERED_SPECTRUM_CHARGE_ITERATOR_T* spectrum_iterator = 
-	new_filtered_spectrum_charge_iterator(spectra);
+  Spectrum* spectrum = new Spectrum();
+  SpectrumCollection* spectra = new SpectrumCollection(ms2_file);
+  spectra->parse();
+
+  FilteredSpectrumChargeIterator* spectrum_iterator =
+    new FilteredSpectrumChargeIterator(spectra);
 
   char* output_dir = get_string_parameter("output-dir");
 
@@ -126,21 +131,22 @@ int xlink_search_main(int argc, char** argv) {
 
   int search_count = 0;
   // for every observed spectrum 
-  while (filtered_spectrum_charge_iterator_has_next(spectrum_iterator)) {
+  while (spectrum_iterator->hasNext()) {
 
-    spectrum = filtered_spectrum_charge_iterator_next(spectrum_iterator, &charge);
-    scan_num = get_spectrum_first_scan(spectrum);
+    spectrum = spectrum_iterator->next(zstate);
+    scan_num = spectrum->getFirstScan();
 
-    carp(CARP_DEBUG,"count %d scan %d charge %d", search_count, scan_num, charge);
+    carp(CARP_DEBUG,"count %d scan %d charge %d", search_count, scan_num, zstate.getCharge());
 
     if (search_count % 10 == 0)
-      carp(CARP_INFO,"count %d scan %d charge %d", search_count, scan_num, charge);
+      carp(CARP_INFO,"count %d scan %d charge %d", search_count, scan_num, zstate.getCharge());
     search_count++;
 
-    FLOAT_T precursor_mz = get_spectrum_precursor_mz(spectrum);
+    FLOAT_T precursor_mz = spectrum->getPrecursorMz();
+
     carp(CARP_DEBUG,"Getting targets");  
-    MatchCandidateVector target_candidates(precursor_mz, 
-					   charge, 
+    MatchCandidateVector target_candidates(precursor_mz,
+                                           zstate,
 					   bondmap,
 					   index,
 					   database,
@@ -148,10 +154,10 @@ int xlink_search_main(int argc, char** argv) {
 					   num_peptide_mods,
 					   FALSE);
 
-    target_candidates.setScan(get_spectrum_first_scan(spectrum));
+    target_candidates.setScan(spectrum->getFirstScan());
 
     if (target_candidates.size() < 1) {
-      carp(CARP_INFO, "not enough precursors found in range, skipping scan %d charge %d", scan_num, charge);
+      carp(CARP_INFO, "not enough precursors found in range, skipping scan %d charge %d", scan_num, zstate.getCharge());
       continue;
     }
     
@@ -162,7 +168,7 @@ int xlink_search_main(int argc, char** argv) {
 
     carp(CARP_DEBUG,"Getting weibull training candidates");
     MatchCandidateVector train_target_candidates(precursor_mz,
-					         charge,
+                                                 zstate,
 						 bondmap,
 						 index,
 						 database,
@@ -229,7 +235,7 @@ int xlink_search_main(int argc, char** argv) {
   //carp(CARP_INFO,"Done searching spectra");
   target_file.close();
   decoy_file.close();
-  free_spectrum_collection(spectra);
+  delete spectra;
   //free_spectrum(spectrum);
   //carp(CARP_INFO,"Done freeing spectrum collection");
 

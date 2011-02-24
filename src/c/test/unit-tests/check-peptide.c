@@ -4,12 +4,12 @@
 #include "check-peak.h"
 #include "mass.h"
 #include "objects.h"
-#include "spectrum.h"
+#include "Spectrum.h"
 #include "peak.h"
 #include "peptide.h"
 #include "peptide_src.h"
 #include "peptide_constraint.h"
-#include "protein.h"
+#include "Protein.h"
 #include "database.h"
 // also from parameter.c
 void force_set_aa_mod_list(AA_MOD_T** amod_list, int num_mods);
@@ -20,13 +20,13 @@ void force_set_aa_mod_list(AA_MOD_T** amod_list, int num_mods);
  ********************************************/
 
 static PEPTIDE_T *peptide1, *peptide2, *peptide3, *palindrome_peptide;
-static PROTEIN_T *protein1; 
+static Protein *protein1; 
 static char protseq1[1024] = "MRVLKFGGTSVANAERFLRVADILESNARQGQVATVLSAPAKITIKAVAMIEKTISGQDALPNISDAERIFAELLTGLAAAQPGFPLAQLKTFVDQEFAQIKHVLHGISLLGQCPDSINAALICRGEKMSIAIMAGVLEARGHNVTVIDPVEKLLAVGHYLESTVDIAESTRRIAASRIPADHMVLMAGFTAGNEKGELVVLGRNGSDYSAAVLAACLRADCCEIWTDVDGVYTCDPRQVPDARLLKSMSYQEAMELSYFGAKVLHPRTITPIAQFQIPCLIKNTGNPQAPGTLIGASRDEDELPVKGISNLNNMAMFSVSGPGMKGMVGMAARVFAAMSRARISVVLITQSSSEYSISFCVPQSDCVRAERAMQEEFYLELKEGLLEPLAVTERLAIISVVGDGMRTLRGISAKFFAALARANINIVAIAQGSSERSISVVVNNDDATTGVRVTHQMLFNTDQVIEVFVIGVGGVGGALLEQLKRQQSW";
 
 // old test commented out at botom of file
 
 void pep_setup(){
-  protein1 = new_protein( "Protein1", protseq1, strlen(protseq1), 
+  protein1 = new Protein( "Protein1", protseq1, strlen(protseq1), 
                           NULL, 0, 0, NULL);//description, offset, idx, dbase
   peptide1 = new_peptide( 10, 1087.20, protein1, 20);//VADILESNAR
   peptide2 = new_peptide( 16, 1736.02, protein1, 1);//MRVLKFGGTSVANAER
@@ -39,7 +39,7 @@ void pep_teardown(){
   free_peptide(peptide1);
   free_peptide(peptide2);
   free_peptide(peptide3);
-  free_protein(protein1);
+  delete protein1;
 }
 
 START_TEST (test_ndist){// start index
@@ -130,7 +130,7 @@ START_TEST(test_mod_on_unmodified){
 END_TEST
 
 START_TEST(test_with_mod){
-  double initial_mass = get_peptide_neutral_mass(peptide3);
+  double initial_mass = get_peptide_peptide_mass(peptide3);
   // set up the mod
   AA_MOD_T* amod = new_aa_mod(0);
   aa_mod_set_mass_change(amod, 100);
@@ -166,7 +166,7 @@ START_TEST(test_with_mod){
    "Peptide3 should have returned modified seq %s, but instead returned %s",
                mod_seq_str, returned_str);
   // check the mass
-  fail_unless( (initial_mass + 100.0) == get_peptide_neutral_mass(peptide3),
+  fail_unless( (initial_mass + 100.0) == get_peptide_peptide_mass(peptide3),
                "Modified peptide should have initial mass + 100.");
 }
 END_TEST

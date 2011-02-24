@@ -432,11 +432,11 @@ void initialize_parameters(void){
       "when true or one line per peptide per protein occurence when false.  ",
       "true");
   set_boolean_parameter("peptide-list", FALSE,
-			"Create an ASCII version of the peptide list.  "
-			"Default=F.",
-			"Creates an ASCII file in the output directory "
-			"containing one peptide per line.",
-			"true");
+                        "Create an ASCII version of the peptide list.  "
+                        "Default=F.",
+                        "Creates an ASCII file in the output directory "
+                        "containing one peptide per line.",
+                        "true");
   
   /* more generate_peptide parameters */
   set_boolean_parameter("output-sequence", FALSE, 
@@ -462,6 +462,10 @@ void initialize_parameters(void){
       "possible psms for each spectrum. Default is the SEQUEST-style xcorr."
       " Crux also offers a p-value calculation for each psm based on xcorr "
       "or sp (xcorr-pvalue, sp-pvalue).", "false"); 
+  set_boolean_parameter("compute-sp", FALSE,
+      "Compute the Sp score for all candidate peptides.  Default=F",
+      "Available for search-for-matches.  Sp scoring is always done for "
+      "sequest-search.", "true");
   set_boolean_parameter("compute-p-values", FALSE, 
       "Compute p-values for the main score type. Default=F.",
       "Currently only implemented for XCORR.", "true");
@@ -510,8 +514,8 @@ void initialize_parameters(void){
       "that charge will be searched.", "true");
   set_string_parameter("fileroot", NULL, 
       "Prefix added to output file names. Default=none. ",
-      "Used by crux create-index, crux search-for-matches, "
-      "crux compute-q-values, and crux percolator.", "true");
+      "Used by crux search-for-matches, crux sequest-search, crux percolator "
+      "crux compute-q-values, and crux q-ranker.", "true");
   set_string_parameter("output-dir", "crux-output", 
       "Folder to which results will be written. "
       "Default='crux-output'.",
@@ -638,6 +642,10 @@ void initialize_parameters(void){
       "Default=8.",
       "Available from parameter file for crux search-for-matches, percolator, "
       "and compute-q-values.", "true");
+  set_int_parameter("mass-precision", 4, 1, 100, // max is arbitrary
+      "Set the precision for masses and m/z written to sqt and .txt files.  "
+      "Default=4",
+      "Available from parameter file for all commands.", "true");
   set_int_parameter("print-search-progress", 10, 0, BILLION,
       "Show search progress by printing every n spectra searched.  Default="
       "10.", "Set to 0 to show no search progress.  Available for crux "
@@ -1664,6 +1672,36 @@ void print_mods_parameter_file(FILE* param_file,
   }
 }
 
+
+/**
+ * \brief prints all parameters except mods into the output stream
+ * in xml format. 
+ *
+ * Each parameter has a self closing tag and has attributes name for 
+ * parameter name and value for parameter value
+ */
+void print_parameters_xml(FILE* output){
+  if (output == NULL){
+    return;
+  }
+  carp(CARP_DEBUG, "Printing parameters to xml output");
+  HASH_ITERATOR_T* iterator = new_hash_iterator(parameters);
+  while (hash_iterator_has_next(iterator)){
+    char * key = hash_iterator_next(iterator);
+    char * show_users = (char *)get_hash_value(for_users, key);
+    if ( strcmp(show_users, "true") == 0 ){
+      if (strcmp(key, "mod") == 0 || strcmp(key, "cmod") == 0
+          || strcmp(key, "nmod") == 0){
+        continue;
+      }
+      fprintf(output, "<parameter name=\"%s\" value=\"%s\"/>\n",
+              key, (char*) get_hash_value(parameters, key));
+    }
+  }
+  free_hash_iterator(iterator);
+}
+
+
 /**
  * \brief Creates a file containing all parameters and their current
  * values in the parameter file format. Created in the output directory
@@ -2175,6 +2213,10 @@ ION_TYPE_T get_ion_type_parameter(const char* name){
  *   SETTERS (private)
  **************************************************
  */
+
+BOOLEAN_T reset_parameter(const char* name, const char* value){
+  return add_or_update_hash(parameters, name, value);
+}
 
 BOOLEAN_T set_boolean_parameter(
  const char* name,       ///< the name of the parameter looking for -in

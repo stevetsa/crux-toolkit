@@ -17,15 +17,15 @@
  */
 
 #include <vector>
-#include "output-files.h"
-#include "search-progress.h"
+#include "OutputFiles.h"
+#include "SearchProgress.h"
 #include "objects.h"
 #include "carp.h"
 #include "parameter.h"
-#include "protein.h"
+#include "Protein.h"
 #include "peptide.h"
-#include "spectrum_collection.h"
-
+#include "SpectrumCollection.h"
+#include "FilteredSpectrumChargeIterator.h"
 
 using namespace std;
 

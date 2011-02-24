@@ -1,7 +1,7 @@
 #include "XLinkPeptide.h"
 #include "modified_peptides_iterator.h"
-#include "ion_series.h"
-#include "ion.h"
+#include "IonSeries.h"
+#include "Ion.h"
 
 
 
@@ -69,8 +69,8 @@ bool XLinkPeptide::isInter() {
   PEPTIDE_SRC_T* proteins_src_a = get_peptide_peptide_src(peptide_a);
   PEPTIDE_SRC_T* proteins_src_b = get_peptide_peptide_src(peptide_b);
 
-  vector<PROTEIN_T*> proteins_a;
-  vector<PROTEIN_T*> proteins_b;
+  vector<Protein*> proteins_a;
+  vector<Protein*> proteins_b;
   
 
   while (proteins_src_a != NULL) {
@@ -114,8 +114,8 @@ bool XLinkPeptide::isIntra() {
   PEPTIDE_SRC_T* proteins_src_a = get_peptide_peptide_src(peptide_a);
   PEPTIDE_SRC_T* proteins_src_b = get_peptide_peptide_src(peptide_b);
 
-  vector<PROTEIN_T*> proteins_a;
-  vector<PROTEIN_T*> proteins_b;
+  vector<Protein*> proteins_a;
+  vector<Protein*> proteins_b;
   
 
   while (proteins_src_a != NULL) {
@@ -356,7 +356,7 @@ MatchCandidate* XLinkPeptide::shuffle() {
 
 }
 
-void XLinkPeptide::predictIons(ION_SERIES_T* ion_series, int charge) {
+void XLinkPeptide::predictIons(IonSeries* ion_series, int charge) {
   //cerr << "Inside predictIons"<<endl;
   MASS_TYPE_T fragment_mass_type = get_mass_type_parameter("fragment-mass"); 
   //cerr << "Predicting "<<getSequenceString()<<" +"<<charge<<endl;
@@ -366,43 +366,41 @@ void XLinkPeptide::predictIons(ION_SERIES_T* ion_series, int charge) {
 
   //carp(CARP_INFO,"predictIONS %s",seq1);
 
-  set_ion_series_charge(ion_series, charge);
-  update_ion_series(ion_series, seq1, mod_seq1);
-  predict_ions(ion_series);
+  ion_series->setCharge(charge);
+  ion_series->update(seq1, mod_seq1);
+  ion_series->predictIons();
 
   //iterate through all of the ions, if the ion contains a link, then
   //add the mass of peptide2 + linker_mass.
 
-  ION_ITERATOR_T* ion_iter =
-    new_ion_iterator(ion_series);
-  while (ion_iterator_has_next(ion_iter)) {
-    ION_T* ion = ion_iterator_next(ion_iter);
+  for (IonIterator ion_iter = ion_series->begin();
+    ion_iter != ion_series->end();
+    ++ion_iter) {
 
-    unsigned int cleavage_idx = get_ion_cleavage_idx(ion);
+    Ion* ion = *ion_iter;
 
-    if (is_forward_ion_type(ion)) {
+    unsigned int cleavage_idx = ion->getCleavageIdx();
+
+    if (ion->isForwardType()) {
       if (cleavage_idx > (unsigned int)getLinkPos(0)) {
-	FLOAT_T mass = get_ion_mass_from_mass_z(ion);
+	FLOAT_T mass = ion->getMassFromMassZ();
 	mass += linked_peptides_[1].getMass(fragment_mass_type) + linker_mass_;
-	set_ion_mass_z_from_mass(ion, mass);
+	ion->setMassZFromMass(mass);
       }
     } else {
       if (cleavage_idx >= (strlen(seq1) - (unsigned int)getLinkPos(0))) {
-	FLOAT_T mass = get_ion_mass_from_mass_z(ion);
+	FLOAT_T mass = ion->getMassFromMassZ();
 	mass += linked_peptides_[1].getMass(fragment_mass_type) + linker_mass_;
-	set_ion_mass_z_from_mass(ion, mass);
+	ion->setMassZFromMass(mass);
       }
     }
   }
 
-  free_ion_iterator(ion_iter);    
-
-
   //predict the ion_series of the second peptide.
-  ION_CONSTRAINT_T* ion_constraint = 
-    get_ion_series_ion_constraint(ion_series);
-  ION_SERIES_T* ion_series2 = 
-      new_ion_series_generic(ion_constraint, charge);
+  IonConstraint* ion_constraint = ion_series->getIonConstraint();
+
+  IonSeries* ion_series2 = 
+      new IonSeries(ion_constraint, charge);
   
   char* seq2 = linked_peptides_[1].getSequence();
 
@@ -410,31 +408,32 @@ void XLinkPeptide::predictIons(ION_SERIES_T* ion_series, int charge) {
 
   MODIFIED_AA_T* mod_seq2 = 
     linked_peptides_[1].getModifiedSequence();
-  set_ion_series_charge(ion_series2, charge);
-  update_ion_series(ion_series2, seq2, mod_seq2);
-  predict_ions(ion_series2);
-  
-  ion_iter = new_ion_iterator(ion_series2);
-  
-  //modify the necessary ions and add to the ion_series.
-  while(ion_iterator_has_next(ion_iter)) {
-    ION_T* ion = ion_iterator_next(ion_iter);
+  ion_series2->setCharge(charge);
+  ion_series2->update(seq2, mod_seq2);
+  ion_series2->predictIons();
 
-    unsigned int cleavage_idx = get_ion_cleavage_idx(ion);
-    if (is_forward_ion_type(ion)) {
+  //modify the necessary ions and add to the ion_series  
+  for (IonIterator ion_iter = ion_series2->begin();
+    ion_iter != ion_series2->end();
+    ++ion_iter) {
+
+    Ion* ion = *ion_iter;
+
+    unsigned int cleavage_idx = ion->getCleavageIdx();
+    if (ion->isForwardType()) {
       if (cleavage_idx > (unsigned int)getLinkPos(1)) {
-	FLOAT_T mass = get_ion_mass_from_mass_z(ion);
+	FLOAT_T mass = ion->getMassFromMassZ();
 	mass += linked_peptides_[0].getMass(fragment_mass_type) + linker_mass_;
-	set_ion_mass_z_from_mass(ion, mass);
+	ion->setMassZFromMass(mass);
       }
     } else {
       if (cleavage_idx >= (strlen(seq2)-(unsigned int)getLinkPos(1))) {
-	FLOAT_T mass = get_ion_mass_from_mass_z(ion);
+	FLOAT_T mass = ion->getMassFromMassZ();
 	mass += linked_peptides_[0].getMass(fragment_mass_type) + linker_mass_;
-	set_ion_mass_z_from_mass(ion, mass);
+	ion->setMassZFromMass(mass);
       }
     }
-    add_ion_to_ion_series(ion_series, ion);
+    ion_series->addIon(ion);
   }
   //carp(CARP_INFO,"free(seq1)");
   free(seq1);
@@ -445,19 +444,17 @@ void XLinkPeptide::predictIons(ION_SERIES_T* ion_series, int charge) {
   //carp(CARP_INFO,"free(mod_seq2)");
   free(mod_seq2);
   
-  free_ion_series(ion_series2, FALSE);
-
-  free_ion_iterator(ion_iter);
+  IonSeries::freeIonSeries(ion_series2, false);
 
   //carp(CARP_INFO,"Number of ions:%d",get_ion_series_num_ions(ion_series));
   
 }
 
-string XLinkPeptide::getIonSequence(ION_T* ion) {
+string XLinkPeptide::getIonSequence(Ion* ion) {
 
   int peptide_idx = 0;
 
-  string ion_sequence = get_ion_peptide_sequence(ion);
+  string ion_sequence = ion->getPeptideSequence();
 
   if (ion_sequence == linked_peptides_[0].getSequence()) {
     peptide_idx = 0;
@@ -465,18 +462,18 @@ string XLinkPeptide::getIonSequence(ION_T* ion) {
     peptide_idx = 1;
   }
 
-  unsigned int cleavage_idx = get_ion_cleavage_idx(ion);
+  unsigned int cleavage_idx = ion->getCleavageIdx();
 
   bool is_linked = false;
 
-  if (is_forward_ion_type(ion)) {
+  if (ion->isForwardType()) {
     is_linked = (cleavage_idx > (unsigned int)getLinkPos(peptide_idx)); 
   } else {
     is_linked = (cleavage_idx >= (ion_sequence.length() - getLinkPos(peptide_idx)));
   }
 
   string subseq;
-  if (is_forward_ion_type(ion)) {
+  if (ion->isForwardType()) {
     subseq = ion_sequence.substr(0, cleavage_idx);
   } else {
     subseq = ion_sequence.substr(ion_sequence.length() - cleavage_idx, ion_sequence.length());

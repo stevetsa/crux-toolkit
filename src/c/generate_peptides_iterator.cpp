@@ -14,7 +14,7 @@
 #include "carp.h"
 #include "peptide.h"
 #include "peptide_src.h"
-#include "protein.h"
+#include "Protein.h"
 #include "database.h"
 #include "parameter.h"
 #include "index.h"
@@ -232,7 +232,8 @@ GENERATE_PEPTIDES_ITERATOR_T* new_generate_peptides_iterator_from_mass_range(
       carp(CARP_DETAILED_DEBUG, "Creating database peptide iterator");
       // create peptide iterator  & set generate_peptides_iterator
       DATABASE_PEPTIDE_ITERATOR_T* iterator 
-        = new_database_peptide_iterator(database, constraint); 
+        = new_database_peptide_iterator(database, constraint, 
+                                        true); // store peptides,return unique
       gen_peptide_iterator->iterator = iterator;
       gen_peptide_iterator->has_next = &void_database_peptide_iterator_has_next;
       gen_peptide_iterator->next = &void_database_peptide_iterator_next;
@@ -346,6 +347,9 @@ void free_generate_peptides_iterator(
 {
   // free the nested iterator
   generate_peptides_iterator->free(generate_peptides_iterator->iterator);
+
+  free_database(generate_peptides_iterator->database);
+  free_index(generate_peptides_iterator->index);
   free_peptide_constraint(generate_peptides_iterator->constraint);
   free(generate_peptides_iterator);
 }

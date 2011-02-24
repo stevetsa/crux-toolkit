@@ -12,15 +12,16 @@
 #include "crux-utils.h"
 #include "objects.h"
 #include "parameter.h"
-#include "protein.h"
+#include "Protein.h"
 #include "peptide.h"
-#include "spectrum.h"
+#include "Spectrum.h"
 #include "parse_arguments.h" 
-#include "spectrum_collection.h"
+#include "SpectrumCollection.h"
 #include "generate_peptides_iterator.h"
 #include "scorer.h"
 #include "match.h"
 #include "match_collection.h"
+#include "OutputFiles.h"
 
 FLOAT_T* compute_decoy_qvalues(
   FLOAT_T* target_scores,
@@ -36,7 +37,8 @@ FLOAT_T* compute_qvalues_from_pvalues(
 
 MATCH_COLLECTION_T* run_qvalue(
   char* psm_result_folder, 
-  char* fasta_file );
+  char* fasta_file,
+  OutputFiles& output );
 
 #endif //QVALUE_H
 

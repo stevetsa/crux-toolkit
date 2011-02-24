@@ -19,7 +19,7 @@ void print_matches(
   OutputFiles& output_files,       
   MATCH_COLLECTION_T* target_psms, 
   vector<MATCH_COLLECTION_T*>& decoy_psms,
-  SPECTRUM_T* spectrum,             
+  Spectrum* spectrum,             
   BOOLEAN_T combine_target_decoy,
   int num_decoy_files
                    );
@@ -82,16 +82,16 @@ int sequest_search_main(int argc,   ///< number of cmd line tokens
   const char* ms2_file = get_string_parameter_pointer("ms2 file");
 
   // open ms2 file
-  SPECTRUM_COLLECTION_T* spectra = new_spectrum_collection(ms2_file);
+  SpectrumCollection* spectra = new SpectrumCollection(ms2_file);
 
   // parse the ms2 file for spectra
   carp(CARP_INFO, "Reading in ms2 file %s", ms2_file);
-  if(!parse_spectrum_collection(spectra)){
+  if(!spectra->parse()){
     carp(CARP_FATAL, "Failed to parse ms2 file: %s", ms2_file);
   }
   
   carp(CARP_DEBUG, "There were %i spectra found in the ms2 file",
-       get_spectrum_collection_num_spectra(spectra));
+       spectra->getNumSpectra());
 
   // Prepare output files 
   OutputFiles output_files(SEQUEST_COMMAND); 
@@ -109,25 +109,28 @@ int sequest_search_main(int argc,   ///< number of cmd line tokens
   int num_peptide_mods = generate_peptide_mod_list( &peptide_mods );
 
   // create spectrum iterator
-  FILTERED_SPECTRUM_CHARGE_ITERATOR_T* spectrum_iterator = 
-    new_filtered_spectrum_charge_iterator(spectra);
+  FilteredSpectrumChargeIterator* spectrum_iterator = 
+    new FilteredSpectrumChargeIterator(spectra);
 
   // Perform search on each spectrum
-  while(filtered_spectrum_charge_iterator_has_next(spectrum_iterator)){
-    int charge = 0;
-    SPECTRUM_T* spectrum = 
-      filtered_spectrum_charge_iterator_next(spectrum_iterator, &charge);
+  while(spectrum_iterator->hasNext()){
 
-    progress.report(get_spectrum_first_scan(spectrum), charge);
+    SpectrumZState zstate;
+    Spectrum* spectrum = 
+      spectrum_iterator->next(zstate);
+
+    double mz = spectrum->getPrecursorMz();
+
+    progress.report(spectrum->getFirstScan(), zstate.getCharge());
 
     // create empty match collections to store results in
     MATCH_COLLECTION_T* target_psms = new_empty_match_collection(FALSE); 
-    set_match_collection_charge(target_psms, charge);
+    set_match_collection_zstate(target_psms, zstate);
 
     vector<MATCH_COLLECTION_T*> decoy_psm_collections;
     for(int decoy_idx=0; decoy_idx < num_decoys_per_target; decoy_idx++){
       MATCH_COLLECTION_T* psms = new_empty_match_collection(TRUE);
-      set_match_collection_charge(psms, charge);
+      set_match_collection_zstate(psms, zstate);
       decoy_psm_collections.push_back(psms);
     }
 
@@ -138,10 +141,11 @@ int sequest_search_main(int argc,   ///< number of cmd line tokens
       PEPTIDE_MOD_T* peptide_mod = peptide_mods[mod_idx];
 
       // get peptide iterator
-      FLOAT_T precursor_mz = get_spectrum_precursor_mz(spectrum);
+
       MODIFIED_PEPTIDES_ITERATOR_T* peptide_iterator =
-        new_modified_peptides_iterator_from_mz(precursor_mz,
-                                               charge,
+        new_modified_peptides_iterator_from_zstate(
+                                               mz,
+                                               zstate,
                                                peptide_mod, 
                                                FALSE, // not decoy
                                                index,
@@ -150,11 +154,12 @@ int sequest_search_main(int argc,   ///< number of cmd line tokens
       // add matches to targets
       int added = add_matches(target_psms,
                               spectrum,
-                              charge,
+                              zstate,
                               peptide_iterator,
                               FALSE, // not decoy
                               FALSE, // don't save scores for p-values
-                              TRUE   // do preliminary scoring
+                              TRUE,  // do preliminary Sp scoring
+                              TRUE   // filter by Sp
                               ); 
 
       // add matches to each decoy
@@ -163,8 +168,9 @@ int sequest_search_main(int argc,   ///< number of cmd line tokens
         // get new peptide iterator
         free_modified_peptides_iterator(peptide_iterator);
         peptide_iterator =
-          new_modified_peptides_iterator_from_mz(precursor_mz,
-                                                 charge,
+          new_modified_peptides_iterator_from_zstate(
+                                                 mz,
+                                                 zstate,
                                                  peptide_mod, 
                                                  TRUE,  // is decoy
                                                  index,
@@ -173,11 +179,12 @@ int sequest_search_main(int argc,   ///< number of cmd line tokens
         MATCH_COLLECTION_T* cur_decoys = decoy_psm_collections.at(decoy_idx);
         add_matches(cur_decoys,
                     spectrum,
-                    charge,
+                    zstate,
                     peptide_iterator,
                     TRUE,  // is decoy
                     FALSE, // don't save scores for p-values
-                    TRUE   // do preliminary scoring
+                    TRUE,  // do preliminary Sp scoring
+                    TRUE   // filter by Sp
                     ); 
       }
 
@@ -193,7 +200,7 @@ int sequest_search_main(int argc,   ///< number of cmd line tokens
 
     if( total_matches == 0 ){
       carp(CARP_WARNING, "No matches found for spectrum %i, charge %i.",
-           get_spectrum_first_scan(spectrum), charge);
+           spectrum->getFirstScan(), zstate.getCharge());
       progress.increment(FALSE);
 
     }else{  
@@ -211,6 +218,16 @@ int sequest_search_main(int argc,   ///< number of cmd line tokens
     }
 
   } // next spectrum
+
+  // clean up
+  delete spectrum_iterator;
+  delete spectra;
+  for(int mod_idx = 0; mod_idx < num_peptide_mods; mod_idx++){
+    free_peptide_mod(peptide_mods[mod_idx]);
+  }
+  free(peptide_mods);
+  free_index(index);
+  free_database(database);
 
   carp(CARP_INFO, "Elapsed time: %.3g s", wall_clock() / 1e6);
   carp(CARP_INFO, "Finished crux sequest-search");
@@ -253,7 +270,7 @@ void print_matches(
   OutputFiles& output_files,       ///< files to print to
   MATCH_COLLECTION_T* target_psms, ///< target psms to print
   vector<MATCH_COLLECTION_T*>& decoy_psms,///< decoy psms to print
-  SPECTRUM_T* spectrum,            ///< all matches are to this spec
+  Spectrum* spectrum,            ///< all matches are to this spec
   BOOLEAN_T combine_target_decoy,  ///< merge targets and decoys?
   int num_decoy_files              ///< merge decoys?
 ){ 
@@ -270,9 +287,9 @@ void print_matches(
     populate_match_rank_match_collection(all_psms, SP);
     save_top_sp_match(all_psms);
     populate_match_rank_match_collection(all_psms, XCORR);
+    vector<MATCH_COLLECTION_T*> empty_list;
     output_files.writeMatches(all_psms, // target matches
-                              NULL,     // decoy matches
-                              0,        // num decoys
+                              empty_list,     // decoy matches
                               XCORR,    // use XCORR rank for cutoff
                               spectrum); 
 
@@ -293,21 +310,20 @@ void print_matches(
       save_top_sp_match(merged_decoy_psms);
       populate_match_rank_match_collection(merged_decoy_psms, XCORR);
 
-      output_files.writeMatches(target_psms, &merged_decoy_psms, 
-                                1, // num decoys
+      vector<MATCH_COLLECTION_T*> decoy_list(1, merged_decoy_psms);
+      output_files.writeMatches(target_psms, decoy_list, 
                                 XCORR, spectrum);
       
     }else{   // write targets and decoys to separate files
       // TODO write a version of OutputFiles::writeMatches that takes
       // a vector of decoy match collections
       int num_decoys = decoy_psms.size();
-      MATCH_COLLECTION_T** decoy_psm_array = 
-        (MATCH_COLLECTION_T**)mycalloc(num_decoys, sizeof(MATCH_COLLECTION_T*));
+      vector<MATCH_COLLECTION_T*> decoy_psm_array;
       for(int decoy_idx = 0; decoy_idx < num_decoys; decoy_idx++){
-        decoy_psm_array[decoy_idx] = decoy_psms.at(decoy_idx);
+        decoy_psm_array.push_back(decoy_psms.at(decoy_idx));
       }
 
-      output_files.writeMatches(target_psms, decoy_psm_array, num_decoys, 
+      output_files.writeMatches(target_psms, decoy_psm_array, 
                                 XCORR, spectrum);
     }
   }

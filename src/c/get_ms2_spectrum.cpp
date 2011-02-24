@@ -14,9 +14,9 @@
 #include <vector>
 #include "parameter.h"
 #include "carp.h"
-#include "spectrum.h"
+#include "Spectrum.h"
 #include "peak.h"
-#include "spectrum_collection.h"
+#include "SpectrumCollection.h"
 #include "unistd.h"
 
 /****************************************************************************
@@ -92,7 +92,7 @@ int main(int argc, char** argv){
   int max_scan;
   parse_scan_numbers(get_string_parameter("scan number"), &min_scan, &max_scan);
   fprintf(stderr, "Scanning from %d to %d.\n", min_scan, max_scan);
-				   
+
   const char* ms2_filename = get_string_parameter_pointer("ms2 file");
   carp(CARP_DETAILED_DEBUG, "ms2_filename: %s", ms2_filename);
 
@@ -104,58 +104,54 @@ int main(int argc, char** argv){
     carp(CARP_FATAL, "Could not read from ms2 file '%s'", ms2_filename);
   }
   carp(CARP_DETAILED_DEBUG, "Creating spectrum collection.");
-  SPECTRUM_COLLECTION_T* collection = new_spectrum_collection(ms2_filename);
+  SpectrumCollection* collection = new SpectrumCollection(ms2_filename);
 
-  int scan_number;
   int num_found = 0;
-  for (scan_number = min_scan; scan_number <= max_scan; scan_number++) {
-    SPECTRUM_T* spectrum = allocate_spectrum();
+  for (int scan_number = min_scan; scan_number <= max_scan; scan_number++) {
 
     /* search for spectrum with the correct scan number */
-    BOOLEAN_T spectrum_found = get_spectrum_collection_spectrum(collection, 
-								scan_number, 
-								spectrum);
-    if( !spectrum_found ){
+    Spectrum* spectrum = collection->getSpectrum(scan_number);
+
+    if( spectrum == NULL ){
       carp(CARP_WARNING, "Could not find scan number %i", scan_number);
-      free_spectrum(spectrum);
       continue;
     }
 
     /* Print either the spectrum or stats. */
     if (!options){
-      print_spectrum(spectrum, stdout);
+      spectrum->print(stdout);
 
     } else {
 
       int charge_state_index = 0; 
-      int charge_state_num = get_spectrum_num_possible_z(spectrum);
-      std::vector<int> possible_z_array = get_spectrum_possible_z(spectrum);
-      int possible_z;
+      int charge_state_num = spectrum->getNumZStates();
+      std::vector<SpectrumZState> zstates_array = spectrum->getZStates();
   
       printf("Scan number: %i\n", scan_number);
-      printf("Precursor m/z:%.2f\n", get_spectrum_precursor_mz(spectrum));
-      printf("Total Ion Current:%.2f\n", get_spectrum_total_energy(spectrum));
+      printf("Precursor m/z:%.2f\n", spectrum->getPrecursorMz());
+      printf("Total Ion Current:%.2f\n", spectrum->getTotalEnergy());
       printf("Base Peak Intensity:%.1f\n", 
-	     get_spectrum_max_peak_intensity(spectrum)); // base is max
-      printf("Number of peaks:%d\n", get_spectrum_num_peaks(spectrum));
-      printf("Minimum m/z:%.1f\n", get_spectrum_min_peak_mz(spectrum));
-      printf("Maximum m/z:%.1f\n", get_spectrum_max_peak_mz(spectrum));
+             spectrum->getMaxPeakIntensity()); // base is max
+      printf("Number of peaks:%d\n", spectrum->getNumPeaks());
+      printf("Minimum m/z:%.1f\n", spectrum->getMinPeakMz());
+      printf("Maximum m/z:%.1f\n", spectrum->getMaxPeakMz());
     
       for(charge_state_index=0; charge_state_index < charge_state_num; 
-	  ++charge_state_index){
-	possible_z = possible_z_array[charge_state_index];
-	printf("Charge state:%d\n", possible_z);
-	printf("Neutral mass:%.2f\n", 
-	       get_spectrum_neutral_mass(spectrum, possible_z));
-	printf("Charged mass:%.2f\n", get_spectrum_mass(spectrum, possible_z));
-	printf("M+H+ mass:%.2f\n", 
-	       get_spectrum_singly_charged_mass(spectrum, possible_z));
+          ++charge_state_index){
+
+        SpectrumZState& zstate = zstates_array[charge_state_index];
+        FLOAT_T charged_mass = spectrum->getPrecursorMz() * (FLOAT_T)zstate.getCharge();
+
+        printf("Charge state:%d\n", zstate.getCharge());
+        printf("Neutral mass:%.2f\n", zstate.getNeutralMass());
+        printf("Charged mass:%.2f\n", charged_mass);
+        printf("M+H+ mass:%.2f\n", zstate.getSinglyChargedMass());
       }
     }
-    free_spectrum(spectrum);
+    delete spectrum;
     num_found++;
   }
-  free_spectrum_collection(collection);
+  delete collection;
 
   carp(CARP_INFO, "Found %d spectra.\n", num_found);
   carp(CARP_INFO, "crux-get-ms2-spectrum finished.");

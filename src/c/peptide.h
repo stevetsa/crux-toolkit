@@ -16,7 +16,7 @@
 #include "crux-utils.h"
 #include "hash.h"
 #include "mass.h"
-#include "protein.h"
+#include "Protein.h"
 #include "objects.h"
 #include "carp.h"
 #include "peptide_constraint.h"
@@ -49,7 +49,7 @@ int get_peptide_sizeof(void);
 PEPTIDE_T* new_peptide(
   unsigned char length,     ///< The length of the peptide -in
   FLOAT_T peptide_mass,       ///< The neutral mass of the peptide -in
-  PROTEIN_T* parent_protein, ///< The parent_protein of this peptide -in
+  Protein* parent_protein, ///< The parent_protein of this peptide -in
   int start_idx ///< Start index of peptide in the protein sequence -in
   //PEPTIDE_TYPE_T peptide_type ///<  The type of cleavage(TRYPTIC, etc)
   );
@@ -120,13 +120,6 @@ void set_peptide_peptide_mass(
   );
 
 /** 
- * \returns the neutral mass of the peptide
- */
-FLOAT_T get_peptide_neutral_mass(
-  PEPTIDE_T* peptide ///< the query peptide -in
-  );
-
-/** 
  * \returns the mass of the peptide if it had charge "charge"
  */
 FLOAT_T get_peptide_charged_mass(
@@ -192,7 +185,7 @@ DATABASE_T* get_peptide_first_src_database(
 /**
  * returns a pointer to the peptide's first parent protein field of the peptide
  */
-PROTEIN_T* get_peptide_parent_protein(
+Protein* get_peptide_parent_protein(
   PEPTIDE_T* peptide  ///< the peptide to query the parent_protein -in
   );
 

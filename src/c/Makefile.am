@@ -32,38 +32,60 @@ AM_CXXFLAGS = -Wall -W -Werror  $(USEDOUBLES) $(USEDARWIN) $(SEARCH_ENABLED) \
 LIBFILES= \
   alphabet.cpp \
   alphabet.h \
+  analyze_psms.cpp \
+  analyze_psms.h \
   carp.cpp \
   carp.h \
+  ComputeQValues.cpp \
+  ComputeQValues.h \
+  CreateIndex.cpp \
+  CreateIndex.h \
   create_index.cpp \
   create_index.h \
   crux-utils.cpp \
   crux-utils.h \
   database.cpp \
   database.h \
+  CruxApplication.cpp \
+  CruxApplication.h \
+  CruxApplicationList.cpp \
+  CruxApplicationList.h \
   DelimitedFile.cpp \
   DelimitedFile.h \
   DelimitedFileReader.cpp \
   DelimitedFileReader.h \
-  MatchColumns.cpp \
-  MatchColumns.h \
-  MatchFileReader.cpp \
-  MatchFileReader.h \
+  DelimitedFileWriter.cpp \
+  DelimitedFileWriter.h \
+  FilteredSpectrumChargeIterator.cpp \
+  FilteredSpectrumChargeIterator.h \
   generate_peptides_iterator.cpp \
   generate_peptides_iterator.h \
   hash.cpp \
   hash.h \
   index.cpp \
   index.h \
-  ion.cpp \
-  ion.h \
-  ion_series.cpp \
-  ion_series.h \
+  Ion.cpp \
+  Ion.h \
+  IonConstraint.cpp \
+  IonConstraint.h \
+  IonFilteredIterator.cpp \
+  IonFilteredIterator.h \
+  IonSeries.cpp \
+  IonSeries.h \
   linked_list.cpp \
   linked_list.h \
   mass.cpp \
   mass.h \
   match.cpp \
   match.h \
+  MatchColumns.cpp \
+  MatchColumns.h \
+  MatchFileReader.cpp \
+  MatchFileReader.h \
+  MatchFileWriter.cpp \
+  MatchFileWriter.h \
+  MatchSearch.cpp \
+  MatchSearch.h \
   match_collection.cpp \
   match_collection.h \
   match_search.cpp \
@@ -73,8 +95,8 @@ LIBFILES= \
   modified_peptides_iterator.h \
   search.h \
   objects.h \
-  output-files.cpp \
-  output-files.h \
+  OutputFiles.cpp \
+  OutputFiles.h \
   parameter.cpp \
   parameter.h \
   parse_arguments.cpp \
@@ -89,25 +111,39 @@ LIBFILES= \
   peptide_modifications.h \
   peptide_src.cpp \
   peptide_src.h \
+  Percolator.cpp \
+  Percolator.h \
+  PrintProcessedSpectra.cpp \
+  PrintProcessedSpectra.h \
+  PrintVersion.cpp \
+  PrintVersion.h \
   print-processed-spectra.cpp \
   print-processed-spectra.h \
-  protein.cpp \
-  protein.h \
+  Protein.cpp \
+  Protein.h \
+  ProteinPeptideIterator.cpp \
+  ProteinPeptideIterator.h \
   protein_index.cpp \
   protein_index.h \
+  QRanker.cpp \
+  QRanker.h \
   q-value.cpp \
   q-value.h \
-  search-progress.h \
+  SearchProgress.h \
+  SequestSearch.cpp \
+  SequestSearch.h \
   sequest-search.cpp \
   sequest-search.h \
   scorer.cpp \
   scorer.h \
   sorter.cpp \
   sorter.h \
-  spectrum.cpp \
-  spectrum_collection.cpp \
-  spectrum_collection.h \
-  spectrum.h \
+  SpectrumCollection.cpp \
+  SpectrumCollection.h \
+  Spectrum.cpp \
+  Spectrum.h \
+  SpectrumZState.cpp \
+  SpectrumZState.h \
   utils.cpp \
   utils.h \
   version.h \

@@ -5,16 +5,16 @@
 
 class XLinkScorer {
  protected:
-  SPECTRUM_T* spectrum_;
+  Spectrum* spectrum_;
   SCORER_T* scorer_;
-  ION_CONSTRAINT_T* ion_constraint_;
+  IonConstraint* ion_constraint_;
   MatchCandidate* candidate_;
   int charge_;
-  ION_SERIES_T* ion_series_;
+  IonSeries* ion_series_;
   
  public:
   XLinkScorer();
-  XLinkScorer(SPECTRUM_T* spectrum, int charge);
+  XLinkScorer(Spectrum* spectrum, int charge);
   virtual ~XLinkScorer();
 
   FLOAT_T scoreCandidate(MatchCandidate* candidate);

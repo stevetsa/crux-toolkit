@@ -943,13 +943,15 @@ BOOLEAN_T delete_dir(char* dir) {
 
   //chdir(".."); // assumes the directory to delete is in cwd
   if( chdir(cwd) == -1 ){ 
+    free(cwd);
     return FALSE;
   }
   result = rmdir(dir);
   if(result == FALSE){
+    free(cwd);
     return FALSE;
   }
-  
+  free(cwd);
   return TRUE;
 }
 
@@ -1168,7 +1170,7 @@ int get_random_number_interval(
   int high ///< the number for higher bound -in
   )
 {  
-  return (rand() % (high - low + 1) + low);
+  return (random() % (high - low + 1) + low);
 }
 
 /**
@@ -1198,8 +1200,8 @@ void swap_quick(
   a[jdx] = temp;
 }
  
-int Random(int i, int j) {
-  return i + rand() % (j-i+1);
+long Random(int i, int j) {
+  return i + random() % (j-i+1);
 }
 
 void quick_sort(FLOAT_T a[], int left, int right) {
@@ -1277,7 +1279,7 @@ void fit_three_parameter_weibull(
   for (cur_shift = max_shift; cur_shift > min_shift ; cur_shift -= step){
 
     fit_two_parameter_weibull(data, fit_data_points, total_data_points, 
-			      cur_shift, &cur_eta, &cur_beta, &cur_correlation);
+                              cur_shift, &cur_eta, &cur_beta, &cur_correlation);
 
     if (cur_correlation > best_correlation){
       best_eta = cur_eta;
@@ -1484,10 +1486,10 @@ void initialize_run(
   if(strcmp(get_string_parameter_pointer("seed"), "time")== 0){
     time_t seconds; // use current time to seed
     time(&seconds); // Get value from sys clock and set seconds variable.
-    srand((unsigned int) seconds); // Convert seconds to a unsigned int
+    srandom((unsigned int) seconds); // Convert seconds to a unsigned int
   }
   else{
-    srand((unsigned int)atoi(get_string_parameter_pointer("seed")));
+    srandom((unsigned int)atoi(get_string_parameter_pointer("seed")));
   }
   
   // Create output directory 

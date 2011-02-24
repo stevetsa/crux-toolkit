@@ -12,18 +12,18 @@
 
 /*Crux Includes*/
 #include "utils.h"
-#include "spectrum.h"
+#include "Spectrum.h"
 #include "carp.h"
 #include "peptide_constraint.h"
 #include "peptide.h"
 #include "peptide_src.h"
-#include "protein.h"
+#include "Protein.h"
 #include "database.h"
 #include "parse_arguments.h"
 #include "parameter.h"
 #include "objects.h"
 #include "crux-utils.h"
-#include "ion.h"
+#include "Ion.h"
 
 // get rid of these
 //#define PARAM_ESTIMATION_SAMPLE_COUNT 500
@@ -37,8 +37,6 @@
 #define BONFERRONI_CUT_OFF_NP 0.01
 #define MIN_WEIBULL_SAMPLES 750 
 #define MIN_PRECURSORS 3
-
-typedef struct spectrum SPECTRUM_T;
 
 
 //HACK for getting protein ids.
@@ -173,7 +171,7 @@ BOOLEAN_T hhc_estimate_weibull_parameters_from_xcorrs(
   FLOAT_T* beta,
   FLOAT_T* shift,
   FLOAT_T* correlation,
-  SPECTRUM_T* spectrum,
+  Spectrum* spectrum,
   int charge
   );
 

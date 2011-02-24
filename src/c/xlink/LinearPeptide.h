@@ -37,8 +37,8 @@ class LinearPeptide : public MatchCandidate {
   virtual std::string getSequenceString();
   virtual FLOAT_T calcMass(MASS_TYPE_T mass_type);
   virtual MatchCandidate* shuffle();
-  virtual void predictIons(ION_SERIES_T* ion_series, int charge);
-  std::string getIonSequence(ION_T* ion);
+  virtual void predictIons(IonSeries* ion_series, int charge);
+  std::string getIonSequence(Ion* ion);
   virtual PEPTIDE_T* getPeptide(int peptide_idx);
   virtual int getNumMissedCleavages();
   virtual bool isModified();

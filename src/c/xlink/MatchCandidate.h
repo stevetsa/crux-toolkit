@@ -40,8 +40,8 @@ class MatchCandidate {
 
   virtual MatchCandidate* shuffle() = 0;
 
-  virtual void predictIons(ION_SERIES_T* ion_series, int charge)=0;
-  virtual std::string getIonSequence(ION_T* ion)=0;
+  virtual void predictIons(IonSeries* ion_series, int charge)=0;
+  virtual std::string getIonSequence(Ion* ion)=0;
   virtual PEPTIDE_T* getPeptide(int peptide_idx)=0;
 
 

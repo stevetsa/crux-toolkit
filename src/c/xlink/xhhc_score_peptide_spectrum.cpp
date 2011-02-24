@@ -3,8 +3,10 @@
 #include "xhhc_scorer.h"
 
 #include "objects.h"
+#include "IonConstraint.h"
 #include "scorer.h"
-#include "spectrum_collection.h"
+#include "SpectrumCollection.h"
+
 
 #include <math.h>
 #include <assert.h>
@@ -19,8 +21,9 @@
 #define NUM_OPTIONS 4
 
 
-double get_concat_score(char* peptideA, char* peptideB, int link_site, int charge, SPECTRUM_T* spectrum);
-void print_spectrum(SPECTRUM_T* spectrum, LinkedIonSeries& ion_series);
+double get_concat_score(char* peptideA, char* peptideB, int link_site, 
+                        int charge, Spectrum* spectrum);
+void print_spectrum(Spectrum* spectrum, LinkedIonSeries& ion_series);
 int main(int argc, char** argv){
 
   /* Verbosity level for set-up/command line reading */
@@ -89,14 +92,13 @@ int main(int argc, char** argv){
   }
 
   // read ms2 file
-  SPECTRUM_COLLECTION_T* collection = new_spectrum_collection(ms2_file);
-  SPECTRUM_T* spectrum = allocate_spectrum();
-  //cout << "lp " << lp << endl; 
+  SpectrumCollection* collection = new SpectrumCollection(ms2_file);
+
   // search for spectrum with correct scan number
-  if(!get_spectrum_collection_spectrum(collection, scan_num, spectrum)){
-    carp(CARP_ERROR, "failed to find spectrum with  scan_num: %d", scan_num);
-    free_spectrum_collection(collection);
-    free_spectrum(spectrum);
+  Spectrum* spectrum = collection->getSpectrum(scan_num);
+  if( spectrum == NULL ){
+    carp(CARP_ERROR, "Failed to find spectrum with scan_num: %d", scan_num);
+    delete collection;
     exit(1);
   }
   
@@ -179,40 +181,40 @@ int main(int argc, char** argv){
     carp(CARP_ERROR,"Unknown method");
   }
   // free heap
-  free_spectrum_collection(collection);
-  free_spectrum(spectrum);
+  delete collection;
+  delete spectrum;
 }
 
 
-double get_concat_score(char* peptideA, char* peptideB, int link_site, int charge, SPECTRUM_T* spectrum) {
+double get_concat_score(char* peptideA, char* peptideB, int link_site, int charge, Spectrum* spectrum) {
   string lpeptide = string(peptideA) + string(peptideB); 
   
-  ION_CONSTRAINT_T* ion_constraint = new_ion_constraint_smart(XCORR, charge);
+  IonConstraint* ion_constraint = IonConstraint::newIonConstraintSmart(XCORR, charge);
   
-  ION_SERIES_T* ion_series = new_ion_series(lpeptide.c_str(), charge, ion_constraint);
+  IonSeries* ion_series = new IonSeries(lpeptide.c_str(), charge, ion_constraint);
   
-  predict_ions(ion_series);
+  ion_series->predictIons();
   
   //modify ions.
-
-  ION_ITERATOR_T* ion_iterator = new_ion_iterator(ion_series);
-  
   
   //int pepA_begin = 0;
   int pepB_begin = string(peptideA).length();
   int llength = lpeptide.length();
   
-  while(ion_iterator_has_next(ion_iterator)){
-    ION_T* ion = ion_iterator_next(ion_iterator);
-      //check to see if if is the cterm of 1st peptide.
-      int ion_charge = get_ion_charge(ion);
-      int cleavage_idx = get_ion_cleavage_idx(ion);
-      ION_TYPE_T ion_type = get_ion_type(ion);
+  for (IonIterator ion_iterator = ion_series->begin();
+    ion_iterator != ion_series->end();
+    ++ion_iterator) {
 
-      //if contains cterm of 1st peptide, modify by -OH 
+    Ion* ion = *ion_iterator;
+    //check to see if if is the cterm of 1st peptide.
+    int ion_charge = ion->getCharge();
+    int cleavage_idx = ion->getCleavageIdx();
+    ION_TYPE_T ion_type = ion->getType();
+
+    //if contains cterm of 1st peptide, modify by -OH 
       
-      carp(CARP_DEBUG,"====================");
-      if (ion_type == B_ION) {
+    carp(CARP_DEBUG,"====================");
+    if (ion_type == B_ION) {
 	carp(CARP_DEBUG,"B-ion");
 	carp(CARP_DEBUG,"%s",lpeptide.substr(0,cleavage_idx).c_str());
       } else if (ion_type == Y_ION) {
@@ -266,24 +268,24 @@ double get_concat_score(char* peptideA, char* peptideB, int link_site, int charg
 
       //if it contains the cterm of the 1st peptide, modify by -OH
       if (cterm_1st) {
-	FLOAT_T old_mass = (get_ion_mass_z(ion) - MASS_H_MONO) * (FLOAT_T)ion_charge;
+	FLOAT_T old_mass = (ion->getMassZ() - MASS_H_MONO) * (FLOAT_T)ion_charge;
 	FLOAT_T new_mass = old_mass + MASS_H2O_MONO - MASS_H_MONO;
 	FLOAT_T new_mz = (new_mass + (FLOAT_T)ion_charge) / (FLOAT_T)ion_charge;
-	set_ion_mass_z(ion, new_mz);
+	ion->setMassZ(new_mz);
       }
       //if contains the nterm of 2nd peptide, modify by -H
       if (nterm_2nd) {
-	FLOAT_T old_mass = (get_ion_mass_z(ion) - MASS_H_MONO) * (FLOAT_T)ion_charge;
+	FLOAT_T old_mass = (ion->getMassZ() - MASS_H_MONO) * (FLOAT_T)ion_charge;
 	FLOAT_T new_mass = old_mass + MASS_H_MONO;
 	FLOAT_T new_mz = (new_mass + (FLOAT_T)ion_charge) / (FLOAT_T)ion_charge;
-	set_ion_mass_z(ion, new_mz);
+	ion->setMassZ(new_mz);
       }
       //if contains the link site, modify by link mass.
       if (has_link_site) {
-	FLOAT_T old_mass = (get_ion_mass_z(ion) - MASS_H_MONO) * (FLOAT_T)ion_charge;
+	FLOAT_T old_mass = (ion->getMassZ() - MASS_H_MONO) * (FLOAT_T)ion_charge;
 	FLOAT_T new_mass = old_mass + LinkedPeptide::linker_mass;
 	FLOAT_T new_mz = (new_mass + (FLOAT_T)ion_charge) / (FLOAT_T)ion_charge;
-	set_ion_mass_z(ion, new_mz);
+	ion->setMassZ(new_mz);
       }
     
 
@@ -303,14 +305,13 @@ double get_concat_score(char* peptideA, char* peptideB, int link_site, int charg
 
 }
 
-FLOAT_T* get_observed_raw(SPECTRUM_T* spectrum, int charge) {
+FLOAT_T* get_observed_raw(Spectrum* spectrum, int charge) {
   PEAK_T* peak = NULL;
-  PEAK_ITERATOR_T* peak_iterator = NULL;
   FLOAT_T peak_location = 0;
   int mz = 0;
   FLOAT_T intensity = 0;
   FLOAT_T bin_width = bin_width_mono;
-  FLOAT_T precursor_mz = get_spectrum_precursor_mz(spectrum);
+  FLOAT_T precursor_mz = spectrum->getPrecursorMz();
   FLOAT_T experimental_mass_cut_off = precursor_mz*charge + 50;
 
   // set max_mz and malloc space for the observed intensity array
@@ -330,16 +331,14 @@ FLOAT_T* get_observed_raw(SPECTRUM_T* spectrum, int charge) {
   // carp(CARP_INFO, "experimental_mass_cut_off: %.2f sp_max_mz: %.3f", experimental_mass_cut_off, scorer->sp_max_mz);
   FLOAT_T* observed = (FLOAT_T*)mycalloc((int)sp_max_mz, sizeof(FLOAT_T));
   
-  // create a peak iterator
-  peak_iterator = new_peak_iterator(spectrum);
-
   // DEBUG
   // carp(CARP_INFO, "max_peak_mz: %.2f, region size: %d",get_spectrum_max_peak_mz(spectrum), region_selector);
   
-  // while there are more peaks to iterate over..
-  // bin peaks, adjust intensties, find max for each region
-  while(peak_iterator_has_next(peak_iterator)){
-    peak = peak_iterator_next(peak_iterator);
+  for (PeakIterator peak_iterator = spectrum->begin();
+    peak_iterator != spectrum->end();
+    ++peak_iterator) {
+
+    peak = *peak_iterator;
     peak_location = get_peak_location(peak);
     
     // skip all peaks larger than experimental mass
@@ -348,7 +347,7 @@ FLOAT_T* get_observed_raw(SPECTRUM_T* spectrum, int charge) {
     }
     
     // skip all peaks within precursor ion mz +/- 15
-    if(peak_location < precursor_mz + 15 &&  peak_location > precursor_mz - 15){
+    if(peak_location < precursor_mz + 15 &&  peak_location > precursor_mz - 15) {
       continue;
     }
     
@@ -372,7 +371,7 @@ FLOAT_T* get_observed_raw(SPECTRUM_T* spectrum, int charge) {
 
 
 
-void print_spectrum(SPECTRUM_T* spectrum, LinkedIonSeries& ion_series) {
+void print_spectrum(Spectrum* spectrum, LinkedIonSeries& ion_series) {
 
 
       SCORER_T* scorer = new_scorer(XCORR);

@@ -4,11 +4,11 @@
 #include "check-peak.h"
 #include "mass.h"
 #include "objects.h"
-#include "spectrum.h"
+#include "Spectrum.h"
 #include "peak.h"
 #include "peptide.h"
 #include "peptide_src.h"
-#include "protein.h"
+#include "Protein.h"
 #include "database.h"
 #include "index.h"
 

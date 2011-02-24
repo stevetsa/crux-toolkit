@@ -2,7 +2,7 @@
 #include "LinearPeptide.h"
 #include "XLink.h"
 #include "modified_peptides_iterator.h"
-#include "ion_series.h"
+#include "IonSeries.h"
 
 #include <iostream>
 
@@ -104,7 +104,7 @@ MatchCandidate* LinearPeptide::shuffle() {
   return (MatchCandidate*)decoy;
 }
 
-void LinearPeptide::predictIons(ION_SERIES_T* ion_series, int charge) {
+void LinearPeptide::predictIons(IonSeries* ion_series, int charge) {
 
   char* seq = NULL;
   MODIFIED_AA_T* mod_seq = NULL;
@@ -115,16 +115,16 @@ void LinearPeptide::predictIons(ION_SERIES_T* ion_series, int charge) {
     seq = get_peptide_sequence(peptide_);
     mod_seq = get_peptide_modified_aa_sequence(peptide_);
   }
-  set_ion_series_charge(ion_series, charge);
-  update_ion_series(ion_series, seq, mod_seq);
-  predict_ions(ion_series);
+  ion_series->setCharge(charge);
+  ion_series->update(seq, mod_seq);
+  ion_series->predictIons();
   free(seq);
   free(mod_seq);
 
 }
 
-string LinearPeptide::getIonSequence(ION_T* ion) {
-  return get_ion_peptide_sequence(ion);
+string LinearPeptide::getIonSequence(Ion* ion) {
+  return ion->getPeptideSequence();
 }
 
 PEPTIDE_T* LinearPeptide::getPeptide(int peptide_idx) {

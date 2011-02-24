@@ -13,9 +13,11 @@
 
 #include <stdio.h>
 #include <dirent.h>
+#include <string>
 #include "objects.h"
+#include "Spectrum.h"
 #include "peptide.h"
-#include "ion.h"
+#include "Ion.h"
 
 /**
  * \returns An (empty) scorer object.
@@ -42,22 +44,22 @@ void free_scorer(
  */
 FLOAT_T score_spectrum_v_ion_series(
   SCORER_T* scorer,        ///< the scorer object -in
-  SPECTRUM_T* spectrum,    ///< the spectrum to score -in
-  ION_SERIES_T* ion_series ///< the ion series to score against the spectrum -in
+  Spectrum* spectrum,      ///< the spectrum to score -in
+  IonSeries* ion_series ///< the ion series to score against the spectrum -in
 );
 
 /**
  * Frees the single_ion_constraints array
  */
 void free_single_ion_constraints(
-  ION_CONSTRAINT_T** ion_constraints
+  IonConstraint** ion_constraints
 );
 
 /**
  * Creates the an array of ion constraints for GMTK models.
  * TODO do we need one for paired and single? Do we want an iterator?
  */
-ION_CONSTRAINT_T** single_ion_constraints(
+IonConstraint** single_ion_constraints(
     void
 );
 
@@ -66,8 +68,8 @@ ION_CONSTRAINT_T** single_ion_constraints(
  */
 FLOAT_T score_spectrum_v_spectrum(
   SCORER_T* scorer,           ///< the scorer object -in
-  SPECTRUM_T* first_spectrum, ///< the first spectrum to score -in
-  SPECTRUM_T* second_spectrum ///<  the second spectrum to score -in
+  Spectrum* first_spectrum,   ///< the first spectrum to score -in
+  Spectrum* second_spectrum   ///<  the second spectrum to score -in
 );
 
 /*************************************
@@ -307,8 +309,9 @@ int get_scorer_sp_b_y_ion_possible(
  * .
  */
 void get_processed_peaks(
-  SPECTRUM_T* spectrum, 
+  Spectrum* spectrum, 
   int charge,
+  SCORER_TYPE_T score_type,
   FLOAT_T** intensities, ///< pointer to array of intensities
   int* mz_bins);
 
@@ -318,7 +321,7 @@ void get_processed_peaks(
  * \returns TRUE if successful, else FLASE
  */
 BOOLEAN_T create_intensity_array_xcorr(
-  SPECTRUM_T* spectrum,    ///< the spectrum to score(observed) -in
+  Spectrum* spectrum,    ///< the spectrum to score(observed) -in
   SCORER_T* scorer,        ///< the scorer object -in/out
   int charge               ///< the peptide charge -in 
   );
@@ -338,7 +341,7 @@ FLOAT_T* get_intensity_array_observed(SCORER_T* scorer);
 
 BOOLEAN_T create_intensity_array_observed(
   SCORER_T* scorer,        ///< the scorer object -in/out
-  SPECTRUM_T* spectrum,    ///< the spectrum to score(observed) -in
+  Spectrum* spectrum,    ///< the spectrum to score(observed) -in
   int charge               ///< the peptide charge -in 
   );
 

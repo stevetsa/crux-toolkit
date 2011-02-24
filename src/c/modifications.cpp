@@ -263,6 +263,7 @@ char* modified_aa_to_string_with_masses(MODIFIED_AA_T aa,
     sprintf(return_string, "%c[%s]", modified_aa_to_char(aa), mass_string);
 
   }
+  free(mass_string);
   return return_string;
 }
 
@@ -454,7 +455,7 @@ int convert_to_mod_aa_seq(const char* sequence, MODIFIED_AA_T** mod_sequence){
     // apply the modification
     if( aa_mod == NULL ){
       carp(CARP_ERROR, "There is an unidentifiable modification in sequence "
-	   "<%s> at position %d.", sequence, seq_idx - 1);
+           "<%s> at position %d.", sequence, seq_idx - 1);
       return 0;
     }
 

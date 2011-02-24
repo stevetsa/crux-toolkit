@@ -4,10 +4,10 @@
 #include "xhhc.h"
 
 //CRUX includes
-#include "ion_series.h"
+#include "IonSeries.h"
 #include "scorer.h"
-#include "spectrum.h"
-#include "spectrum_collection.h"
+#include "Spectrum.h"
+#include "SpectrumCollection.h"
 
 // should this be somewhere else?
 #define bin_width_mono 1.0005079
@@ -73,7 +73,7 @@ class LinkedIonSeries {
 
 
 void hhc_predict_ions(
-  ION_SERIES_T* ion_series, ///< the ion series to predict ions for -in
+  IonSeries* ion_series, ///< the ion series to predict ions for -in
   FLOAT_T linker_mass,
   int linker_site);
 

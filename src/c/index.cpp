@@ -16,7 +16,7 @@
 #include "crux-utils.h"
 
 #include "peptide.h"
-#include "protein.h"
+#include "Protein.h"
 #include "index.h"
 #include "carp.h"
 #include "sorter.h"
@@ -681,6 +681,10 @@ void free_index(
   INDEX_T* index
   )
 {
+  if(index == NULL ){
+    return;
+  }
+
   if (index->num_pointers > 1){
     index->num_pointers--;
   } else {
@@ -1280,7 +1284,8 @@ BOOLEAN_T create_index(
                     
   // create database peptide_iterator
   peptide_iterator =
-    new_database_peptide_iterator(index->database, index->disk_constraint);
+    new_database_peptide_iterator(index->database, index->disk_constraint, 
+                                  false);// don't parse all pep into memory
 
   long int file_idx = 0;
   int low_mass = mass_limits[0];
@@ -1316,7 +1321,7 @@ BOOLEAN_T create_index(
 
     // dump peptide in bin or temporary matrix
     dump_peptide(file_array, file_idx, working_peptide, 
-		 peptide_array[file_idx], bin_count); 
+                 peptide_array[file_idx], bin_count); 
   }
 
   carp(CARP_INFO, "Printing index");
@@ -1333,8 +1338,8 @@ BOOLEAN_T create_index(
     }
     // sort bin
     if((file_array[bin_idx] = sort_bin(file_array[bin_idx], bin_idx, index, 
-				       peptide_count_array[bin_idx], 
-				       text_file)) == NULL){
+                                       peptide_count_array[bin_idx], 
+                                       text_file)) == NULL){
       carp(CARP_WARNING, "Failed to sort bin %i", bin_idx);
       fcloseall();
       return FALSE;
@@ -1488,14 +1493,14 @@ void set_index_search_constraint(
   
   if( search_min < index_min ){
     carp_once(CARP_WARNING, 
-	      "Minimum mass in the search range (%g) is below the index minimum (%g).",
-	      search_min, index_min);
+              "Minimum mass in the search range (%g) is below the index minimum (%g).",
+              search_min, index_min);
     carp_once(CARP_WARNING, "This warning will not be repeated.")
   }
   if( search_max > index_max ){
     carp_once(CARP_WARNING, 
-	      "Maximum mass in the search range (%g) is above the index maximum (%g).",
-	      search_max, index_max);
+              "Maximum mass in the search range (%g) is above the index maximum (%g).",
+              search_max, index_max);
     carp_once(CARP_WARNING, "This warning will not be repeated.")
   }
 }

@@ -1,3 +1,4 @@
+
 /**
  * \file objects.h 
  * $Revision: 1.62 $
@@ -7,6 +8,7 @@
 #define OBJECTS_H
 
 #include <stdio.h>
+#include <vector>
 
 #define QSORT_COMPARE_METHOD int(*)(const void*, const void*)
 
@@ -14,6 +16,8 @@
 class DelimitedFile;
 class DelimitedFileReader;
 class MatchFileReader;
+class SpectrumZState;
+
 
 
 class MatchCandidate;
@@ -39,10 +43,10 @@ enum _peak_sort_type {_PEAK_LOCATION, _PEAK_INTENSITY};
 typedef enum _peak_sort_type PEAK_SORT_TYPE_T;
 
 /**
- * \typedef SPECTRUM_T 
+ * \class Spectrum 
  * \brief A spectrum
  */
-typedef struct spectrum SPECTRUM_T;
+class Spectrum;
 
 /**
  * The enum for spectrum type (MS1, MS2, MS3)
@@ -65,7 +69,7 @@ typedef struct peak_iterator PEAK_ITERATOR_T;
  * \typedef SPECTRUM_COLLECTION_T 
  * \brief A collection of spectra
  */
-typedef struct spectrum_collection SPECTRUM_COLLECTION_T;
+class SpectrumCollection;
 
 /**
  * \typedef SPECTRUM_ITERATOR_T 
@@ -74,10 +78,10 @@ typedef struct spectrum_collection SPECTRUM_COLLECTION_T;
 typedef struct spectrum_iterator SPECTRUM_ITERATOR_T;
 
 /**
- * \typedef FILTERED_SPECTRUM_CHARGE_ITERATOR_T 
+ * \class FilteredSpectrumChargeIterator 
  * \brief An object to iterate over the spectra in a spectrum_collection
  */
-typedef struct filtered_spectrum_charge_iterator FILTERED_SPECTRUM_CHARGE_ITERATOR_T;
+class FilteredSpectrumChargeIterator;
 
 /**
  * \typedef PEPTIDE_T
@@ -190,16 +194,17 @@ typedef struct peptide_src PEPTIDE_SRC_T;
 
 
 /**
- * \typedef PROTEIN_T
+ * \class Protein
  * \brief A protein sequence
  */
-typedef struct protein PROTEIN_T;
+class Protein;
+
 
 /**
- * \typedef PROTEIN_PEPTIDE_ITERATOR_T
+ * \class ProteinPeptideIterator
  * \brief An object to iterate over the peptides in a protein sequence
  */
-typedef struct protein_peptide_iterator PROTEIN_PEPTIDE_ITERATOR_T;
+class ProteinPeptideIterator;
 
 /**
  * \typedef DATABASE_T
@@ -273,22 +278,22 @@ typedef struct index_filtered_peptide_iterator INDEX_FILTERED_PEPTIDE_ITERATOR_T
 typedef struct sorted_peptide_iterator SORTED_PEPTIDE_ITERATOR_T;
 
 /**
- * \typedef ION_T 
+ * \class Ion 
  * \brief An object to represent a (fragment) ion of a peptide
  */
-typedef struct ion ION_T;
+class Ion;
 
 /**
- * \typedef ION_SERIES_T 
+ * \class ION_SERIES_T 
  * \brief An object to represent a series of ions
  */
-typedef struct ion_series ION_SERIES_T;
+class IonSeries;
 
 /**
  * \typedef ION_CONSTRAINT_T
  * \brief An object to represent a constraint to be applied to ions
  */
-typedef struct ion_constraint ION_CONSTRAINT_T;
+class IonConstraint;
 
 /**
  * The enum for index type
@@ -354,7 +359,8 @@ typedef struct protein_index_iterator PROTEIN_INDEX_ITERATOR_T;
  * \typedef ION_ITERATOR_T
  * \brief An object to iterate over all ion objects in the ion_series
  */
-typedef struct ion_iterator ION_ITERATOR_T;
+//typedef struct ion_iterator ION_ITERATOR_T;
+typedef std::vector<Ion*>::iterator IonIterator;
 
 /**
  * \typedef ION_FILTERED_ITERATOR_T

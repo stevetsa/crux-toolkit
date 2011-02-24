@@ -1,7 +1,7 @@
 #include "xhhc_scorer.h"
 #include "xhhc.h"
 
-#include "spectrum.h"
+#include "Spectrum.h"
 
 #include <fstream>
 
@@ -17,7 +17,7 @@ Scorer::Scorer(FLOAT_T a_max_mz) {
 }
 
 
-int Scorer::get_matched_by_ions(SPECTRUM_T* spectrum,
+int Scorer::get_matched_by_ions(Spectrum* spectrum,
 				LinkedIonSeries& ion_series) {
   FLOAT_T bin_width = bin_width_mono;
   vector<LinkedPeptide>& ions = ion_series.ions();
@@ -27,7 +27,8 @@ int Scorer::get_matched_by_ions(SPECTRUM_T* spectrum,
   for (vector<LinkedPeptide>::iterator ion = ions.begin(); ion != ions.end(); ++ion) {
     if (ion -> get_mz(MONO) >= 400 && ion -> get_mz(MONO) <= 1200) {
     if (ion -> type() == B_ION || ion -> type() == Y_ION) {
-      PEAK_T* peak = get_nearest_peak(spectrum, ion -> get_mz(AVERAGE), bin_width);
+      PEAK_T* peak = spectrum->getNearestPeak(ion->get_mz(AVERAGE), 
+                                              bin_width);
       if (peak != NULL) {
 	ans++;
       }
@@ -38,7 +39,7 @@ int Scorer::get_matched_by_ions(SPECTRUM_T* spectrum,
 }
 
 float Scorer::score_spectrum_vs_series(
-      SPECTRUM_T* spectrum,
+      Spectrum* spectrum,
       LinkedIonSeries& ion_series
   ) {
     //SCORER_T* scorer = new_scorer(XCORR);
@@ -48,7 +49,7 @@ float Scorer::score_spectrum_vs_series(
   } 
  
 FLOAT_T Scorer::hhc_gen_score_xcorr(
-    SPECTRUM_T* spectrum,    ///< the spectrum to score -in
+    Spectrum* spectrum,    ///< the spectrum to score -in
     LinkedIonSeries& ion_series ///< the ion series to score against the spectrum -in
   )
   
@@ -225,11 +226,11 @@ bool Scorer::hhc_create_intensity_array_theoretical(
 
 
 FLOAT_T Scorer::getIonCurrentExplained(LinkedIonSeries& ion_series, 
-  SPECTRUM_T* spectrum, 
+  Spectrum* spectrum, 
   FLOAT_T& explained, 
   int& by_observed) {
 
-  max_mz = get_spectrum_max_peak_mz(spectrum);
+  max_mz = spectrum->getMaxPeakMz();
   FLOAT_T* theoretical = (FLOAT_T*)mycalloc((size_t)max_mz+1, sizeof(FLOAT_T));
   hhc_create_intensity_array_theoretical(ion_series, theoretical);
 
@@ -239,14 +240,14 @@ FLOAT_T Scorer::getIonCurrentExplained(LinkedIonSeries& ion_series,
   FLOAT_T bin_width = bin_width_mono;
 
   FLOAT_T ans = 0.0;
-  
-  PEAK_ITERATOR_T* peak_iter = new_peak_iterator(spectrum);
 
   map<int, bool> by_found;
 
-  while (peak_iterator_has_next(peak_iter)) {
+  for (PeakIterator peak_iter = spectrum->begin();
+    peak_iter != spectrum->end();
+    ++peak_iter) {
 
-    PEAK_T* peak = peak_iterator_next(peak_iter);
+    PEAK_T* peak = *peak_iter;
     FLOAT_T spec_mz = get_peak_location(peak);
     FLOAT_T spec_intensity = get_peak_intensity(peak);
     //for each peak in the spectrum, find the array index for the theoretical.
@@ -261,7 +262,6 @@ FLOAT_T Scorer::getIonCurrentExplained(LinkedIonSeries& ion_series,
       ans += spec_intensity;
     }
   }
-  free_peak_iterator(peak_iter);
   free(theoretical);
 
 
@@ -272,7 +272,7 @@ FLOAT_T Scorer::getIonCurrentExplained(LinkedIonSeries& ion_series,
 
 
 //creates three files for spectacle.pl: spectrums.out, theoretical.out, observed.out
-void Scorer::print_spectrums(FLOAT_T* theoretical, SPECTRUM_T* spectrum) {
+void Scorer::print_spectrums(FLOAT_T* theoretical, Spectrum* spectrum) {
    
   ofstream theoretical_file;
   ofstream observed_file;
@@ -294,19 +294,22 @@ void Scorer::print_spectrums(FLOAT_T* theoretical, SPECTRUM_T* spectrum) {
   carp(CARP_DEBUG, "min mz: %d, max mz: %d\n", max_mz);
   FLOAT_T average = 0;
 
-  PEAK_ITERATOR_T* peak_iter = new_peak_iterator(spectrum);
+  for (PeakIterator peak_iter = spectrum->begin();
+    peak_iter != spectrum->end();
+    ++peak_iter) {
 
-  while (peak_iterator_has_next(peak_iter)) {
-    average += get_peak_intensity(peak_iterator_next(peak_iter));
+    average += get_peak_intensity(*peak_iter);
   }
 
-  average = average / get_spectrum_num_peaks(spectrum);
+  average = average / spectrum->getNumPeaks();
   //cout << "AVERAGE " << average << endl;
   // make spectacle file for observed peaks
-  peak_iterator_reset(peak_iter);
+ 
+  for (PeakIterator peak_iter = spectrum->begin();
+    peak_iter != spectrum->end();
+    ++peak_iter) {
 
-  while (peak_iterator_has_next(peak_iter)) {
-    PEAK_T* peak = peak_iterator_next(peak_iter);
+    PEAK_T* peak = *peak_iter;
     FLOAT_T location = get_peak_location(peak);
     FLOAT_T intensity = get_peak_intensity(peak); 
     if (location > min_mz && location < max_mz) {
@@ -323,8 +326,6 @@ void Scorer::print_spectrums(FLOAT_T* theoretical, SPECTRUM_T* spectrum) {
     }
   }
   
-  free_peak_iterator(peak_iter);
-
 
   observed_file.close();
   // make spectacle file for theoretical peaks
@@ -335,7 +336,7 @@ void Scorer::print_spectrums(FLOAT_T* theoretical, SPECTRUM_T* spectrum) {
   while (i <= max_mz)  {
     if (((*index > 1 && !noflanks) || *index > 26) && i >= min_mz) {
         theoretical_file << i << "\t" << *index << "\tnolabel\tred" << endl;
-      PEAK_T* peak = get_nearest_peak(spectrum, i, 1);
+      PEAK_T* peak = spectrum->getNearestPeak(i, 1);
       if (peak != NULL) {
 	++match_count;
 	peak_colors[peak] = "green";

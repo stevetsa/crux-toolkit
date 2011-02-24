@@ -2,23 +2,24 @@
 #include <stdlib.h>
 #include <string.h>
 #include "check-peak.h"
-#include "spectrum.h"
-#include "spectrum_collection.h"
+#include "Spectrum.h"
+#include "SpectrumCollection.h"
 #include "peak.h"
 #include "crux-utils.h"
 #include "scorer.h"
 #include "objects.h"
 #include "parameter.h"
-#include "ion_series.h"
+#include "IonSeries.h"
+#include "IonConstraint.h"
 
 #define scan_num 16
 #define ms2_file "test.ms2"
 #define parameter_file "test_parameter_file"
 
 START_TEST (test_create){
-  SPECTRUM_T* spectrum = NULL;
-  SPECTRUM_COLLECTION_T * collection = NULL; ///<spectrum collection
-  ION_SERIES_T* ion_series = NULL;
+  Spectrum* spectrum = NULL;
+  SpectrumCollection* sp_collection = NULL; ///<spectrum collection
+  IonSeries* ion_series = NULL;
   SCORER_T* scorer = NULL;
   float score = 0;
 
@@ -35,20 +36,20 @@ START_TEST (test_create){
   int peptide_charge = get_int_parameter("charge");
 
   //set ion constraint to sequest settings
-  ION_CONSTRAINT_T* ion_constraint = new_ion_constraint_sequest_sp(peptide_charge);  
+  IonConstraint* ion_constraint = IonConstraint::newIonConstraintSequestSp(peptide_charge);  
   
   //create new ion series
-  ion_series = new_ion_series("AKLVKNMT", 2, ion_constraint);
+  ion_series = new IonSeries("AKLVKNMT", 2, ion_constraint);
 
   //now predict ions
-  predict_ions(ion_series);
+  ion_series->predictIons();
 
   //read ms2 file
-  collection = new_spectrum_collection(ms2_file);
-  spectrum = allocate_spectrum();
+  sp_collection = new SpectrumCollection(ms2_file);
+  spectrum = new Spectrum();
   
   //search for spectrum with correct scan number
-  fail_unless(get_spectrum_collection_spectrum(collection, scan_num, spectrum), "failed to find scan_num in ms3 file");
+  fail_unless(sp_collection->getSpectrum(scan_num) == NULL, "failed to find scan_num in ms3 file");
 
   //create new scorer
   scorer = new_scorer(SP);  
@@ -68,10 +69,10 @@ START_TEST (test_create){
   
   //free heap
   free_scorer(scorer);
-  free_ion_constraint(ion_constraint);
-  free_ion_series(ion_series);
-  free_spectrum_collection(collection);
-  free_spectrum(spectrum);
+  delete ion_constraint;
+  delete ion_series;
+  delete sp_collection;
+  delete spectrum;
 }
 END_TEST
 

@@ -6,24 +6,28 @@
 #ifndef MATCH_H
 #define MATCH_H
 
+#include "MatchFileWriter.h"
 #include <math.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
+#include <set>
+#include <map>
 #include <ctype.h>
 #include <float.h>
 #include <unistd.h>
 #include "carp.h"
 #include "parse_arguments.h"
-#include "spectrum.h"
-#include "spectrum_collection.h"
-#include "ion.h"
-#include "ion_series.h"
+#include "Spectrum.h"
+#include "SpectrumCollection.h"
+#include "Ion.h"
+#include "IonSeries.h"
 #include "crux-utils.h"
 #include "objects.h"
 #include "parameter.h"
 #include "scorer.h"
+
 
 /* Global variables */
 static const FLOAT_T NOT_SCORED = FLT_MIN;
@@ -250,6 +254,87 @@ void print_match_sqt(
   FILE* file      ///< output stream -out
 );
 
+
+
+/**
+ * \brief Print the match information in xml format to the given file
+ *
+ * Prints out the match information in the format described as pep xml.
+ * Fills out as much information as available.
+ *
+ */
+void print_match_xml(
+  MATCH_T* match,
+  FILE* output_file,
+  const BOOLEAN_T* scores_computed
+);
+
+
+/**
+ * \brief Counts the number of internal cleavages
+ *
+ */
+int get_num_internal_cleavage(
+  char* peptide_sequence, 
+  ENZYME_T enzyme
+);
+
+
+/**
+ * \brief Counts the number of terminal cleavage. Either 0, 1, or 2
+ *
+ */
+int get_num_terminal_cleavage(
+  char* peptide_sequence, 
+  char flanking_aas_prev,
+  char flanking_aas_next,
+  ENZYME_T enzyme
+);
+
+
+/**
+ * \brief prints both variable and static modifications for 
+ *  peptide sequence
+ *
+ */
+void print_modifications_xml(
+  char* mod_seq,
+  char* sequence,
+  FILE* output_file
+);
+
+/**
+ * \brief takes an empty mapping of index to mass
+ * of static mods and a full mapping of var mods
+ * to fill up the mapping of static mods
+ */
+void find_static_modifications(
+  std::map<int, double>& static_mods,
+  std::map<int, double>& var_mods,
+  char* sequence
+);
+
+/**
+ * \brief takes an empty mapping of index to mass
+ * and extract information from mod sequence fill
+ * up map
+ */
+void find_variable_modifications(
+ std::map<int, double>& mods,
+ char* mod_seq
+);
+
+
+/**
+ * \brief Takes a empty set of pairs of strings and a peptide
+ *  and fills the set with protein id paired with protein annotation
+ *
+ */
+void get_information_of_proteins(
+  std::set<std::pair<char*, char*> >& protein_info,
+  PEPTIDE_T* peptide
+);
+
 /**
  * \brief Print the match information in tab delimited format to the given file
  *
@@ -257,15 +342,11 @@ void print_match_sqt(
 void print_match_tab(
   MATCH_COLLECTION_T* collection,  ///< collection holding this match -in 
   MATCH_T* match,                  ///< the match to print -in  
-  FILE*    file,                   ///< output stream -out
+  MatchFileWriter*    file,                   ///< output stream -out
   int      scan_num,               ///< starting scan number -in
   FLOAT_T  spectrum_precursor_mz,  ///< m/z of spectrum precursor -in
-  FLOAT_T  spectrum_mass,          ///< spectrum neutral mass -in
-  int      num_matches,            ///< num matches in spectrum -in
-  int      charge,                 ///< charge -in
-  const BOOLEAN_T* scores_computed ///< scores_computed[TYPE] = T if match was scored for TYPE
+  int      num_matches            ///< num matches in spectrum -in
   );
-
 /*******************************************
  * match post_process extension
  ******************************************/
@@ -386,7 +467,7 @@ void set_match_rank(
 /**
  *\returns the spectrum in the match object
  */
-SPECTRUM_T* get_match_spectrum(
+Spectrum* get_match_spectrum(
   MATCH_T* match ///< the match to work -in  
   );
 
@@ -395,7 +476,7 @@ SPECTRUM_T* get_match_spectrum(
  */
 void set_match_spectrum(
   MATCH_T* match, ///< the match to work -out
-  SPECTRUM_T* spectrum  ///< the working spectrum -in
+  Spectrum* spectrum  ///< the working spectrum -in
   );
 
 /**
@@ -416,15 +497,33 @@ void set_match_peptide(
 /**
  * sets the match charge
  */
+
+void set_match_zstate(
+  MATCH_T* match,
+  SpectrumZState& zstate);
+
+
+SpectrumZState& get_match_zstate_(MATCH_T* match);
+
+
+/*
 void set_match_charge(
   MATCH_T* match, ///< the match to work -out
   int charge  ///< the charge of spectrum -in
   );
-
+*/
 /**
  * gets the match charge
  */
+
 int get_match_charge(
+  MATCH_T* match ///< the match to work -out
+  );
+
+/**
+ * gets the match neutral mass
+ */
+FLOAT_T get_match_neutral_mass(
   MATCH_T* match ///< the match to work -out
   );
 

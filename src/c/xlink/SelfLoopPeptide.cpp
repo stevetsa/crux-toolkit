@@ -3,8 +3,8 @@
 #include "XLinkPeptide.h"
 #include "XLink.h"
 
-#include "ion_series.h"
-#include "ion.h"
+#include "IonSeries.h"
+#include "Ion.h"
 
 #include <iostream>
 #include <sstream>
@@ -134,12 +134,12 @@ MatchCandidate* SelfLoopPeptide::shuffle() {
 
 }
 
-void SelfLoopPeptide::predictIons(ION_SERIES_T* ion_series, int charge) {
+void SelfLoopPeptide::predictIons(IonSeries* ion_series, int charge) {
   char* seq = linked_peptide_.getSequence();
   MODIFIED_AA_T* mod_seq = linked_peptide_.getModifiedSequence();
-  set_ion_series_charge(ion_series, charge);
-  update_ion_series(ion_series, seq, mod_seq);
-  predict_ions(ion_series);
+  ion_series->setCharge(charge);
+  ion_series->update(seq, mod_seq);
+  ion_series->predictIons();
   
   free(mod_seq);
 
@@ -150,18 +150,19 @@ void SelfLoopPeptide::predictIons(ION_SERIES_T* ion_series, int charge) {
 
   //iterate through the ions and modify the ones that have the linker 
   //attached.
-  vector<ION_T*> to_remove;
-  ION_ITERATOR_T* ion_iter = 
-    new_ion_iterator(ion_series);
+  vector<Ion*> to_remove;
 
-  while(ion_iterator_has_next(ion_iter)) {
-    ION_T* ion = ion_iterator_next(ion_iter);
+  for (IonIterator ion_iter = ion_series->begin();
+    ion_iter != ion_series->end();
+    ++ion_iter) {
+
+    Ion* ion = *ion_iter;
 
     bool keep_ion = false;
     bool modify_ion = false;
-    unsigned int cleavage_idx = get_ion_cleavage_idx(ion);
+    unsigned int cleavage_idx = ion->getCleavageIdx();
    
-    if (is_forward_ion_type(ion)) {
+    if (ion->isForwardType()) {
       if (cleavage_idx > first_site) {
         if (cleavage_idx <= second_site) {
           keep_ion = false;
@@ -189,12 +190,12 @@ void SelfLoopPeptide::predictIons(ION_SERIES_T* ion_series, int charge) {
 
     if (keep_ion) {
       if (modify_ion) {
-	FLOAT_T mass_z = get_ion_mass_z(ion);
-	int charge = get_ion_charge(ion);
+	FLOAT_T mass_z = ion->getMassZ();
+	int charge = ion->getCharge();
 	double mass = (mass_z -MASS_PROTON) * (double)charge;
 	mass += XLinkPeptide::getLinkerMass();
 	mass_z = (mass + MASS_PROTON * (double)charge) / (double)charge;
-	set_ion_mass_z(ion, mass_z);
+	ion->setMassZ(mass_z);
       }
     } else {
       to_remove.push_back(ion);
@@ -202,27 +203,24 @@ void SelfLoopPeptide::predictIons(ION_SERIES_T* ion_series, int charge) {
   }
 
   for (unsigned int idx=0;idx < to_remove.size();idx++) {
-    remove_ion_from_ion_series(ion_series, to_remove[idx]);
-    free_ion(to_remove[idx]);
+    ion_series->removeIon(to_remove[idx]);
+    delete to_remove[idx];
   }
-
-  free_ion_iterator(ion_iter);
-
 
 }
 
-string SelfLoopPeptide::getIonSequence(ION_T* ion) {
+string SelfLoopPeptide::getIonSequence(Ion* ion) {
   
 
-  string ion_sequence = get_ion_peptide_sequence(ion);
+  string ion_sequence = ion->getPeptideSequence();
 
-  unsigned int cleavage_idx = get_ion_cleavage_idx(ion);
+  unsigned int cleavage_idx = ion->getCleavageIdx();
 
   unsigned int first_site  = min(getLinkPos(0), getLinkPos(1));
   unsigned int second_site = max(getLinkPos(0), getLinkPos(1));
 
   bool is_linked = false;
-  if (is_forward_ion_type(ion)) {
+  if (ion->isForwardType()) {
     is_linked = (cleavage_idx > first_site);
   } else {
     is_linked = (cleavage_idx >= (ion_sequence.length() - second_site));
@@ -231,7 +229,7 @@ string SelfLoopPeptide::getIonSequence(ION_T* ion) {
   string subseq;
 
   //cerr<<"creating substring"<<endl;
-  if (is_forward_ion_type(ion)) {
+  if (ion->isForwardType()) {
     subseq = ion_sequence.substr(0, cleavage_idx);
   } else {
     subseq = ion_sequence.substr(ion_sequence.length() - cleavage_idx, ion_sequence.length());

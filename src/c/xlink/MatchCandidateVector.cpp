@@ -4,7 +4,7 @@
 #include "SelfLoopPeptide.h"
 #include "XLinkScorer.h"
 
-#include "spectrum.h"
+#include "Spectrum.h"
 
 #include <iostream>
 
@@ -19,13 +19,12 @@ using namespace std;
 
 void get_min_max_mass(
   FLOAT_T precursor_mz, 
-  int charge, 
+  SpectrumZState& zstate, 
   FLOAT_T window,
   WINDOW_TYPE_T precursor_window_type,
   FLOAT_T& min_mass, 
   FLOAT_T& max_mass) {
 
-  double mass = (precursor_mz - MASS_PROTON) * (double)charge;
   //cerr <<"mz: "
   //     <<precursor_mz
   //     <<" charge:"
@@ -34,18 +33,18 @@ void get_min_max_mass(
   //     <<" window:"<<window<<endl;
   if (precursor_window_type == WINDOW_MASS) {
     //cerr<<"WINDOW_MASS"<<endl;
-    min_mass = mass - window;
-    max_mass = mass + window;
+    min_mass = zstate.getNeutralMass() - window;
+    max_mass = zstate.getNeutralMass() + window;
   } else if (precursor_window_type == WINDOW_MZ) {
     //cerr<<"WINDOW_MZ"<<endl;
     double min_mz = precursor_mz - window;
     double max_mz = precursor_mz + window;
-    min_mass = (min_mz - MASS_PROTON) * (double)charge;
-    max_mass = (max_mz - MASS_PROTON) * (double)charge;
+    min_mass = (min_mz - MASS_PROTON) * (double)zstate.getCharge();
+    max_mass = (max_mz - MASS_PROTON) * (double)zstate.getCharge();
   } else if (precursor_window_type == WINDOW_PPM) {
     //cerr<<"WINDOW_PPM"<<endl;
-    min_mass = mass / (1.0 + window * 1e-6);
-    max_mass = mass / (1.0 - window * 1e-6);
+    min_mass = zstate.getNeutralMass() / (1.0 + window * 1e-6);
+    max_mass = zstate.getNeutralMass() / (1.0 - window * 1e-6);
   }
   
   //cerr<<"min:"<<min_mass<<" "<<"max: "<<max_mass<<endl;
@@ -54,21 +53,21 @@ void get_min_max_mass(
 
 void get_min_max_mass(
   FLOAT_T precursor_mz, 
-  int charge, 
+  SpectrumZState& zstate,
   BOOLEAN_T use_decoy_window,
   FLOAT_T& min_mass, 
   FLOAT_T& max_mass) {
   
   if (use_decoy_window) {
     get_min_max_mass(precursor_mz,
-		     charge,
+		     zstate,
 		     get_double_parameter("precursor-window-decoy"),
 		     get_window_type_parameter("precursor-window-type-decoy"),
 		     min_mass,
 		     max_mass);
   } else {
     get_min_max_mass(precursor_mz,
-		     charge,
+		     zstate,
 		     get_double_parameter("precursor-window"),
 		     get_window_type_parameter("precursor-window-type"),
 		     min_mass,
@@ -85,15 +84,16 @@ bool compareXCorr(MatchCandidate* mc1, MatchCandidate* mc2) {
 }
 
 MatchCandidateVector::MatchCandidateVector() {
-  charge_ = 0;
   scan_ = 0;
 }
 
 MatchCandidateVector::MatchCandidateVector(MatchCandidateVector& vector) : std::vector<MatchCandidate*>() {
   
-  charge_ = vector.charge_;
-  scan_ = vector.scan_;
+
   precursor_mz_ = vector.precursor_mz_;
+  zstate_ = vector.zstate_;
+  scan_ = vector.scan_;
+
   for (unsigned int idx=0;idx<vector.size();idx++) {
     MatchCandidate* currentCandidate = vector[idx];
     MatchCandidate* copyCandidate = NULL;
@@ -191,18 +191,23 @@ void MatchCandidateVector::addCandidates(
 
 
 MatchCandidateVector::MatchCandidateVector(
-  FLOAT_T precursor_mz, int charge, XLinkBondMap& bondmap,
-  INDEX_T* index, DATABASE_T* database, PEPTIDE_MOD_T** peptide_mods, 
-  int num_peptide_mods, BOOLEAN_T use_decoy_window) {
-  
-  charge_ = charge;
+  FLOAT_T precursor_mz, 
+  SpectrumZState& zstate,
+  XLinkBondMap& bondmap,
+  INDEX_T* index, 
+  DATABASE_T* database, 
+  PEPTIDE_MOD_T** peptide_mods, 
+  int num_peptide_mods, 
+  BOOLEAN_T use_decoy_window) {
+
   precursor_mz_ = precursor_mz;
 
+  zstate_ = zstate;
 
   FLOAT_T min_mass;
   FLOAT_T max_mass;
 
-  get_min_max_mass(precursor_mz, charge, use_decoy_window, min_mass, max_mass);
+  get_min_max_mass(precursor_mz, zstate, use_decoy_window, min_mass, max_mass);
 
   addCandidates(min_mass, max_mass, bondmap, index, database, peptide_mods, num_peptide_mods);
 }
@@ -224,18 +229,22 @@ void MatchCandidateVector::shuffle() {
 }
 
 void MatchCandidateVector::shuffle(MatchCandidateVector& decoy_vector) {
-  decoy_vector.charge_ = charge_;
+  decoy_vector.precursor_mz_ = precursor_mz_;
+  decoy_vector.zstate_ = zstate_;
   decoy_vector.scan_ = scan_;
   for (unsigned int idx=0;idx<size();idx++) {
     decoy_vector.add(at(idx)->shuffle());
   }
 }
 
-void MatchCandidateVector::scoreSpectrum(SPECTRUM_T* spectrum) {
+void MatchCandidateVector::scoreSpectrum(Spectrum* spectrum) {
 
   int max_ion_charge = get_max_ion_charge_parameter("max-ion-charge");
   
-  XLinkScorer scorer(spectrum, min(charge_, max_ion_charge));
+  XLinkScorer scorer(
+    spectrum, 
+    min(zstate_.getCharge(), max_ion_charge));
+
   for (unsigned int idx=0;idx<size();idx++) {
     scorer.scoreCandidate(at(idx));
   }
@@ -293,7 +302,7 @@ unsigned int MatchCandidateVector::getScan() {
 }
 
 int MatchCandidateVector::getCharge() {
-  return charge_;
+  return zstate_.getCharge();
 }
 
 FLOAT_T MatchCandidateVector::getPrecursorMZ() {
@@ -301,7 +310,7 @@ FLOAT_T MatchCandidateVector::getPrecursorMZ() {
 }
 
 FLOAT_T MatchCandidateVector::getSpectrumNeutralMass() {
-  return (precursor_mz_-MASS_PROTON)*(double)charge_;
+  return zstate_.getNeutralMass();
 }
 
 

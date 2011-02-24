@@ -1,7 +1,7 @@
 #include "XLinkScorer.h"
 #include "scorer.h"
-#include "ion.h"
-#include "ion_series.h"
+#include "Ion.h"
+#include "IonSeries.h"
 
 #include <iostream>
 
@@ -11,20 +11,20 @@ XLinkScorer::XLinkScorer() {
   //  scorer = new_scorer(XCORR);
 }
 
-XLinkScorer::XLinkScorer(SPECTRUM_T* spectrum, int charge) {
+XLinkScorer::XLinkScorer(Spectrum* spectrum, int charge) {
   scorer_ = new_scorer(XCORR);
   spectrum_ = spectrum;
   charge_ = charge;
   ion_constraint_ = 
-    new_ion_constraint_smart(XCORR, charge_);
+    IonConstraint::newIonConstraintSmart(XCORR, charge_);
   ion_series_ = 
-    new_ion_series_generic(ion_constraint_, charge_);
+    new IonSeries(ion_constraint_, charge_);
 }
 
 XLinkScorer::~XLinkScorer() {
   //carp(CARP_INFO, "XLinkScorer::~XLinkScorer()");
-  free(ion_series_);
-  free(ion_constraint_);
+  delete ion_series_;
+  delete ion_constraint_;
   free_scorer(scorer_);
   
 }

@@ -2,6 +2,7 @@
 #include <fstream>
 #include "check-match-collection.h"
 #include "match_collection.h"
+#include "MatchFileWriter.h"
 #include <vector>
 #include <cstdlib>
 #include <string>
@@ -27,14 +28,14 @@ int num_matches;
 // some unordered scores to use
 float scores[10] = { 78.2, 50, 23.3, 109, 34.5, 50, 45.6, 50, 38, 64};
 PEPTIDE_T* pep;
-PROTEIN_T* prot;
+Protein* prot;
 char protseq[] = "FAKESEQ";
 
 void match_collection_setup(){
   mc = new_empty_match_collection(FALSE); // not decoy
 
   // set up some matches with xcorrs and a peptide to add
-  prot = new_protein("prot", protseq, strlen(protseq), NULL, 0, 0, NULL);
+  prot = new Protein("prot", protseq, strlen(protseq), NULL, 0, 0, NULL);
   pep = new_peptide((unsigned char)strlen(protseq), 7.77, prot, 1);
   num_matches = 8;
   for(int i=0; i<num_matches; i++){
@@ -43,6 +44,7 @@ void match_collection_setup(){
     set_match_peptide(m, pep);
     match_list.push_back(m);    
   }
+  set_verbosity_level(CARP_ERROR);
 }
 
 void set_matches(MATCH_COLLECTION_T* mc, vector<MATCH_T*> matches){
@@ -55,13 +57,108 @@ void match_collection_teardown(){
   if( mc ){
     free_match_collection(mc); // frees the matches
   }
-  if( prot ) { free_protein(prot); }
+  if( prot ) { delete prot; }
   if( pep ) { free_peptide(pep); }
 
   for(size_t i=0; i<match_list.size(); i++){
     match_list[i] = NULL;
   }
 }
+
+// test a private helper function in match_collection.cpp
+void get_target_decoy_filenames(vector<string>& target_decoy_names,
+                                DIR* directory,
+                                SET_TYPE_T type);
+
+START_TEST(test_list_files){
+
+  // CASE: search files, one decoy file
+  create_output_directory("list-files-1", TRUE);
+  system("touch list-files-1/search.target.txt");
+  system("touch list-files-1/somefileroot.search.target.txt");
+  system("touch list-files-1/search.target.pep.xml");
+  system("touch list-files-1/search.decoy.txt");
+  system("touch list-files-1/somefileroot.search.decoy.txt");
+  system("touch list-files-1/search.decoy.pep.xml");
+  system("touch list-files-1/search.log.txt");
+
+  DIR* dir = opendir("list-files-1");
+  // for target,decoy
+  for(int type=0; type < 2; type++){
+    vector<string> found_names;
+    get_target_decoy_filenames( found_names, dir, (SET_TYPE_T)type);
+    fail_unless( found_names.size() == 2, "Should have found 2 filenames in "
+                 "list-files-1 for type %d but only found %d.", 
+                 type, found_names.size() );
+    // check each name
+    for(size_t i=0; i<found_names.size(); i++){
+      fail_unless( found_names[i].find("search") != string::npos,
+                   "Filename returned (%s) did not have 'search' in it.",
+                   found_names[i].c_str());
+    }
+  }
+  closedir( dir );
+
+  // CASE: sequest files, one decoy file
+  create_output_directory("list-files-2", TRUE);
+  system("touch list-files-2/sequest.decoy.pep.xml");
+  system("touch list-files-2/sequest.decoy.sqt");
+  system("touch list-files-2/sequest.decoy.txt");
+  system("touch list-files-2/sequest.log.txt");
+  system("touch list-files-2/sequest.target.pep.xml");
+  system("touch list-files-2/sequest.target.sqt");
+  system("touch list-files-2/sequest.target.txt");
+  system("touch list-files-2/somefileroot.sequest.decoy.txt");
+  system("touch list-files-2/somefileroot.sequest.target.txt");
+  
+  dir = opendir("list-files-2");
+  // for target,decoy
+  for(int type=0; type < 2; type++){
+    vector<string> found_names;
+    get_target_decoy_filenames( found_names, dir, (SET_TYPE_T)type);
+    fail_unless( found_names.size() == 2, "Should have found 2 filenames in "
+                 "list-files-2 for type %d but only found %d.", 
+                 type, found_names.size() );
+    // check each name
+    for(size_t i=0; i<found_names.size(); i++){
+      fail_unless( found_names[i].find("sequest") != string::npos,
+                   "Filename returned (%s) did not have 'sequest' in it.",
+                   found_names[i].c_str());
+    }
+  }
+  closedir( dir );
+
+  // CASE: search files, two decoys
+  create_output_directory("list-files-3", TRUE);
+  system("touch list-files-3/search.decoy-1.pep.xml");
+  system("touch list-files-3/search.decoy-1.txt");
+  system("touch list-files-3/search.decoy-2.pep.xml");
+  system("touch list-files-3/search.decoy-2.txt");
+  system("touch list-files-3/search.log.txt");
+  system("touch list-files-3/search.target.pep.xml");
+  system("touch list-files-3/search.target.txt");
+  system("touch list-files-3/somefileroot.search.decoy-1.txt");
+  system("touch list-files-3/somefileroot.search.decoy-2.txt");
+  system("touch list-files-3/somefileroot.search.target.txt");
+
+  dir = opendir("list-files-3");
+  // for target,decoy
+  for(int type=0; type < 3; type++){
+    vector<string> found_names;
+    get_target_decoy_filenames( found_names, dir, (SET_TYPE_T)type);
+    fail_unless( found_names.size() == 2, "Should have found 2 filenames in "
+                 "list-files-3 for type %d but only found %d.", 
+                 type, found_names.size() );
+    // check each name
+    for(size_t i=0; i<found_names.size(); i++){
+      fail_unless( found_names[i].find("search") != string::npos,
+                   "Filename returned (%s) did not have 'search' in it.",
+                   found_names[i].c_str());
+    }
+  }
+  closedir( dir );
+}
+END_TEST
 
 START_TEST(test_create){
   // TODO add more create tests
@@ -114,7 +211,7 @@ START_TEST(test_print_rank){
   // other items for printing to tab file
   int z = 1;
   vector<int> possible_z(z);
-  SPECTRUM_T* s = new_spectrum(7, 7, MS2, 7.77, possible_z, (char *)"fakename");
+  Spectrum* s = new Spectrum(7, 7, 7.77, possible_z, (char *)"fakename");
   const char* filename = "test-rank.txt";
 
   /* expected values
@@ -129,9 +226,12 @@ START_TEST(test_print_rank){
   */
 
   // try printing the top 3, should get 5 lines
-  FILE* fout = fopen(filename, "w");
+  unlink(filename);
+  MatchFileWriter* fout = new MatchFileWriter(filename);
+  fout->addColumnNames(SEARCH_COMMAND, false);
+  fout->writeHeader();
   print_match_collection_tab_delimited(fout, 3, mc, s, XCORR);
-  fclose(fout);
+  delete fout;
   sleep(2);  // wait to avoid NFS latency issues
 
   ifstream fin(filename, ifstream::in);
@@ -142,32 +242,18 @@ START_TEST(test_print_rank){
     count++;
   }
 
-  fail_unless( count == 5, 
-               "For top-match=3, there should have been 5 lines printed "
+  fail_unless( count == 6, 
+               "For top-match=3, there should have been 6 lines printed "
                "but there were %d.", count);
   fin.close();
 
   // try printing top 5, should still get 5 lines
-  fout = fopen(filename, "w");
+  unlink(filename);
+  fout = new MatchFileWriter(filename);
+  fout->addColumnNames(SEARCH_COMMAND, false);
+  fout->writeHeader();
   print_match_collection_tab_delimited(fout, 5, mc, s, XCORR);
-  fclose(fout);
-
-  fin.open(filename, ifstream::in);
-  count = -1; // it will count once after getting the eof
-  while( ! fin.eof() ) {
-    getline(fin, line);
-    count++;
-  }
-
-  fail_unless( count == 5, 
-               "For top-match=3, there should have been 5 lines printed "
-               "but there were %d.", count);
-  fin.close();
-
-  // try printing top 6, should get 6
-  fout = fopen(filename, "w");
-  print_match_collection_tab_delimited(fout, 6, mc, s, XCORR);
-  fclose(fout);
+  delete fout;
 
   fin.open(filename, ifstream::in);
   count = -1; // it will count once after getting the eof
@@ -177,7 +263,27 @@ START_TEST(test_print_rank){
   }
 
   fail_unless( count == 6, 
-               "For top-match=3, there should have been 5 lines printed "
+               "For top-match=3, there should have been 6 lines printed "
+               "but there were %d.", count);
+  fin.close();
+
+  // try printing top 6, should get 6
+  unlink(filename);
+  fout = new MatchFileWriter(filename);
+  fout->addColumnNames(SEARCH_COMMAND, false);
+  fout->writeHeader();
+  print_match_collection_tab_delimited(fout, 6, mc, s, XCORR);
+  delete fout;
+
+  fin.open(filename, ifstream::in);
+  count = -1; // it will count once after getting the eof
+  while( ! fin.eof() ) {
+    getline(fin, line);
+    count++;
+  }
+
+  fail_unless( count == 7, 
+               "For top-match=3, there should have been 7 lines printed "
                "but there were %d.", count);
   fin.close();
 
@@ -254,6 +360,7 @@ Suite* match_collection_suite(){
   Suite* s = suite_create("match_collection");
   // Test basic features
   TCase *tc_core = tcase_create("Core");
+  tcase_add_test(tc_core, test_list_files);
   tcase_add_test(tc_core, test_create);
   tcase_add_test(tc_core, test_set);
   tcase_add_test(tc_core, test_print_rank);

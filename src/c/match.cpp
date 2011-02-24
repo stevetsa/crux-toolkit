@@ -12,12 +12,14 @@
 #include <assert.h>
 #include <ctype.h>
 #include <unistd.h>
+#include <set>
+#include <map>
 #include "carp.h"
 #include "parse_arguments.h"
-#include "spectrum.h"
-#include "spectrum_collection.h"
-#include "ion.h"
-#include "ion_series.h"
+#include "ProteinPeptideIterator.h"
+#include "Spectrum.h"
+#include "Ion.h"
+#include "IonSeries.h"
 #include "crux-utils.h"
 #include "objects.h"
 #include "parameter.h"
@@ -63,7 +65,7 @@ using namespace std;
  *\brief An object that stores the score & rank for each peptide-spectrum match
  */
 struct match{
-  SPECTRUM_T* spectrum; ///< the spectrum we are scoring with
+  Spectrum* spectrum; ///< the spectrum we are scoring with
   PEPTIDE_T* peptide;  ///< the peptide we are scoring
   FLOAT_T match_scores[NUMBER_SCORER_TYPES]; 
     ///< array of scores, one for each type (index with SCORER_TYPE_T) 
@@ -81,7 +83,8 @@ struct match{
   DIGEST_T digest;
   //  PEPTIDE_TYPE_T overall_type; 
     ///< overall peptide trypticity, set in set_match_peptide, see README above
-  int charge; ///< the charge state of the match 
+  //int charge; ///< the charge state of the match 
+  SpectrumZState zstate_;
   // post_process match object features
   // only valid when post_process_match is TRUE
   BOOLEAN_T post_process_match; ///< Is this a post process match object?
@@ -138,7 +141,7 @@ void free_match(
       free_peptide(match->peptide);
     }
     if(match->post_process_match && match->spectrum !=NULL){
-      free_spectrum(match->spectrum);
+      delete match->spectrum;
     }
     if (match->peptide_sequence != NULL){
       free(match->peptide_sequence);
@@ -162,12 +165,12 @@ int compare_match_spectrum(
   MATCH_T** match_b  ///< the scond match -in
   ){
 
-  SPECTRUM_T* spec_a = get_match_spectrum((*match_a));
-  SPECTRUM_T* spec_b = get_match_spectrum((*match_b));
-  int scan_a = get_spectrum_first_scan(spec_a);
-  int scan_b = get_spectrum_first_scan(spec_b);
-  int charge_a = get_match_charge((*match_a));
-  int charge_b = get_match_charge((*match_b));
+  Spectrum* spec_a = get_match_spectrum((*match_a));
+  Spectrum* spec_b = get_match_spectrum((*match_b));
+  int scan_a = spec_a->getFirstScan();
+  int scan_b = spec_b->getFirstScan();
+  int charge_a = get_match_charge(*match_a);
+  int charge_b = get_match_charge(*match_b);
 
   if( scan_a < scan_b ){
     return -1;
@@ -307,7 +310,7 @@ int compare_match_percolator_qvalue(
     return 1;
   }
   else if((*match_b)->match_scores[PERCOLATOR_QVALUE]
-	  > (*match_a)->match_scores[PERCOLATOR_QVALUE]){
+          > (*match_a)->match_scores[PERCOLATOR_QVALUE]){
     return -1;
   }
   return compare_match_percolator_score(match_a, match_b);
@@ -536,9 +539,10 @@ void print_match_sqt(
   int precision = get_int_parameter("precision");
 
   // print match info
-  fprintf(file, "M\t%i\t%i\t%.4f\t%.2f\t%.*g\t%.*g\t%i\t%i\t%s\tU\n",
+  fprintf(file, "M\t%i\t%i\t%.*f\t%.2f\t%.*g\t%.*g\t%i\t%i\t%s\tU\n",
           get_match_rank(match, XCORR),
           get_match_rank(match, SP),
+          get_int_parameter("mass-precision"),
           get_peptide_peptide_mass(peptide),
           delta_cn,
           precision,
@@ -555,7 +559,7 @@ void print_match_sqt(
     new_peptide_src_iterator(peptide);
   PEPTIDE_SRC_T* peptide_src = NULL;
   char* protein_id = NULL;
-  PROTEIN_T* protein = NULL;
+  Protein* protein = NULL;
   const char* rand = "";
   if( match->null_peptide ){
     rand = "rand_";
@@ -564,7 +568,7 @@ void print_match_sqt(
   while(peptide_src_iterator_has_next(peptide_src_iterator)){
     peptide_src = peptide_src_iterator_next(peptide_src_iterator);
     protein = get_peptide_src_parent_protein(peptide_src);
-    protein_id = get_protein_id(protein);
+    protein_id = protein->getId();
     
     // print match info (locus line), add rand_ to locus name for decoys
     fprintf(file, "L\t%s%s\n", rand, protein_id);      
@@ -582,174 +586,155 @@ void print_match_sqt(
  */
 static void print_one_match_field(
   int      column_idx,             ///< Index of the column to print. -in
-  char*    float_format,           ///< Formatting string for floats. -in
   MATCH_COLLECTION_T* collection,  ///< collection holding this match -in 
   MATCH_T* match,                  ///< the match to print -in    
-  FILE*    output_file,            ///< output stream -out
+  MatchFileWriter*    output_file,            ///< output stream -out
   int      scan_num,               ///< starting scan number -in
   FLOAT_T  spectrum_precursor_mz,  ///< m/z of spectrum precursor -in
-  FLOAT_T  spectrum_mass,          ///< spectrum neutral mass -in
   int      num_matches,            ///< num matches in spectrum -in
-  int      charge,                 ///< charge -in
-  const BOOLEAN_T* scores_computed,///< scores_computed[TYPE] = T if match was scored for TYPE
   int      b_y_total,              ///< total b/y ions -in
   int      b_y_matched             ///< Number of b/y ions matched. -in
 ) {
 
   switch ((MATCH_COLUMNS_T)column_idx) {
   case SCAN_COL:
-    fprintf(output_file, "%d", scan_num);
+    output_file->setColumnCurrentRow((MATCH_COLUMNS_T)column_idx, scan_num);
     break;
   case CHARGE_COL:
-    fprintf(output_file, "%d", charge);
+    output_file->setColumnCurrentRow((MATCH_COLUMNS_T)column_idx, 
+                                      get_match_charge(match));
     break;
   case SPECTRUM_PRECURSOR_MZ_COL:
-    fprintf(output_file, "%.4f", spectrum_precursor_mz);
+    output_file->setColumnCurrentRow((MATCH_COLUMNS_T)column_idx, 
+                                     spectrum_precursor_mz);
     break;
   case SPECTRUM_NEUTRAL_MASS_COL:
-    fprintf(output_file, "%.4f", spectrum_mass);
+    output_file->setColumnCurrentRow((MATCH_COLUMNS_T)column_idx, 
+                                     get_match_neutral_mass(match));
     break;
   case PEPTIDE_MASS_COL:
     {
       PEPTIDE_T* peptide = get_match_peptide(match);
       double peptide_mass = get_peptide_peptide_mass(peptide);
-      fprintf(output_file, "%.6f", peptide_mass);
+      output_file->setColumnCurrentRow((MATCH_COLUMNS_T)column_idx, 
+                                       peptide_mass);
     }
     break;
   case DELTA_CN_COL:
     {
       FLOAT_T delta_cn = get_match_delta_cn(match);
       if( delta_cn == 0 ){// I hate -0, this prevents it
-	delta_cn = 0.0;
+        delta_cn = 0.0;
       }
-      fprintf(output_file, float_format, delta_cn);
+      output_file->setColumnCurrentRow((MATCH_COLUMNS_T)column_idx, delta_cn);
     }
     break;
   case SP_SCORE_COL:
-    if (scores_computed[SP] == TRUE) {
-      fprintf(output_file, float_format, get_match_score(match, SP));
-    }
+    output_file->setColumnCurrentRow((MATCH_COLUMNS_T)column_idx, 
+                                     get_match_score(match, SP));
     break;
   case SP_RANK_COL:
-    if (scores_computed[SP] == TRUE) {
-      fprintf(output_file, "%d", get_match_rank(match, SP));
-    }
+    output_file->setColumnCurrentRow((MATCH_COLUMNS_T)column_idx, 
+                                     get_match_rank(match, SP));
     break;
   case XCORR_SCORE_COL:
-    fprintf(output_file, float_format, get_match_score(match, XCORR));
+    output_file->setColumnCurrentRow((MATCH_COLUMNS_T)column_idx, 
+                                     get_match_score(match, XCORR));
     break;
   case XCORR_RANK_COL:
-    fprintf(output_file, "%d", get_match_rank(match, XCORR));
+    output_file->setColumnCurrentRow((MATCH_COLUMNS_T)column_idx, 
+                                     get_match_rank(match, XCORR));
     break;
   case PVALUE_COL:
-    if( scores_computed[LOGP_BONF_WEIBULL_XCORR] == TRUE ){ 
+    {
       double log_pvalue = get_match_score(match, LOGP_BONF_WEIBULL_XCORR);
       if (P_VALUE_NA == log_pvalue) {
-	fprintf(output_file, "NaN");
+        output_file->setColumnCurrentRow((MATCH_COLUMNS_T)column_idx, "NaN");
       }
       else {
-	fprintf(output_file, float_format, exp(-1 * log_pvalue));
+        output_file->setColumnCurrentRow((MATCH_COLUMNS_T)column_idx, 
+                                         exp(-1 * log_pvalue));
       }
     }
     break;
   case WEIBULL_QVALUE_COL:
-    if( scores_computed[LOGP_QVALUE_WEIBULL_XCORR] == TRUE ){ 
-      double weibull_qvalue = get_match_score(match, LOGP_QVALUE_WEIBULL_XCORR);
-      fprintf(output_file, float_format, weibull_qvalue);
-    }
+    output_file->setColumnCurrentRow((MATCH_COLUMNS_T)column_idx, 
+                             get_match_score(match, LOGP_QVALUE_WEIBULL_XCORR));
     break;
 #ifdef NEW_COLUMNS
   case WEIBULL_PEPTIDE_QVALUE_COL:
     if ((scores_computed[LOGP_QVALUE_WEIBULL_XCORR] == TRUE) &&
-	(match->best_per_peptide == TRUE)) {
+        (match->best_per_peptide == TRUE)) {
       double qvalue = get_match_score(match, LOGP_PEPTIDE_QVALUE_WEIBULL);
-      fprintf(output_file, float_format, qvalue);
+      output_file->setColumnCurrentRow((MATCH_COLUMNS_T)column_idx, qvalue);
     }
     break;
 #endif
   case DECOY_XCORR_QVALUE_COL:
-    if ((scores_computed[DECOY_XCORR_QVALUE]) && 
-	(match->null_peptide == FALSE)) {
-      fprintf(output_file, float_format, 
-	      get_match_score(match, DECOY_XCORR_QVALUE));
+    if (match->null_peptide == FALSE) {
+      output_file->setColumnCurrentRow((MATCH_COLUMNS_T)column_idx, 
+              get_match_score(match, DECOY_XCORR_QVALUE));
     }
     break;
 #ifdef NEW_COLUMNS
   case DECOY_XCORR_PEPTIDE_QVALUE_COL:
-    if ((scores_computed[DECOY_XCORR_QVALUE]) && 
-	(match->null_peptide == FALSE) &&
-	(match->best_per_peptide == TRUE)) {
-      fprintf(output_file, float_format, 
-	      get_match_score(match, DECOY_XCORR_PEPTIDE_QVALUE));
+    if ( (match->null_peptide == FALSE) && (match->best_per_peptide == TRUE)) {
+      output_file->setColumnCurrentRow((MATCH_COLUMNS_T)column_idx,
+              get_match_score(match, DECOY_XCORR_PEPTIDE_QVALUE));
     }
     break;
 #endif
   case PERCOLATOR_SCORE_COL:
-    if (scores_computed[PERCOLATOR_SCORE] == TRUE)  {
-      fprintf(output_file, float_format, 
-	      get_match_score(match, PERCOLATOR_SCORE));
-    }
+    output_file->setColumnCurrentRow((MATCH_COLUMNS_T)column_idx, 
+              get_match_score(match, PERCOLATOR_SCORE));
     break;
   case PERCOLATOR_RANK_COL:
-    if (scores_computed[PERCOLATOR_SCORE] == TRUE)  {
-      fprintf(output_file, "%d", get_match_rank(match, PERCOLATOR_SCORE));
-    }
+    output_file->setColumnCurrentRow((MATCH_COLUMNS_T)column_idx, 
+                                     get_match_rank(match, PERCOLATOR_SCORE));
     break;
   case PERCOLATOR_QVALUE_COL:
-    if (scores_computed[PERCOLATOR_SCORE] == TRUE)  {
-      fprintf(output_file, float_format,
-	      get_match_score(match, PERCOLATOR_QVALUE));
-    }
+    output_file->setColumnCurrentRow((MATCH_COLUMNS_T)column_idx, 
+                                     get_match_score(match, PERCOLATOR_QVALUE));
     break;
 #ifdef NEW_COLUMNS
   case PERCOLATOR_PEPTIDE_QVALUE_COL:
-    if ((scores_computed[PERCOLATOR_SCORE] == TRUE) &&
-	(match->best_per_peptide == TRUE)) {
-      fprintf(output_file, float_format,
-	      get_match_score(match, PERCOLATOR_PEPTIDE_QVALUE));
+    if ( match->best_per_peptide == TRUE) {
+    output_file->setColumnCurrentRow((MATCH_COLUMNS_T)column_idx, 
+              get_match_score(match, PERCOLATOR_PEPTIDE_QVALUE));
     }
     break;
 #endif
   case QRANKER_SCORE_COL:
-    if (scores_computed[QRANKER_SCORE] == TRUE) {
-      fprintf(output_file, float_format,
-	      get_match_score(match, QRANKER_SCORE));
-    }
+    output_file->setColumnCurrentRow((MATCH_COLUMNS_T)column_idx, 
+                                     get_match_score(match, QRANKER_SCORE));
     break;
   case QRANKER_QVALUE_COL:
-    if (scores_computed[QRANKER_SCORE] == TRUE) {
-      fprintf(output_file, float_format, 
-	      get_match_score(match, QRANKER_QVALUE));
-    }
+    output_file->setColumnCurrentRow((MATCH_COLUMNS_T)column_idx, 
+                                     get_match_score(match, QRANKER_QVALUE));
     break;
 #ifdef NEW_COLUMNS
   case QRANKER_PEPTIDE_QVALUE_COL:
-    if ((scores_computed[QRANKER_SCORE] == TRUE) &&
-	(match->best_per_peptide == TRUE)) {
-      fprintf(output_file, float_format, 
-	      get_match_score(match, QRANKER_PEPTIDE_QVALUE));
+    if (match->best_per_peptide == TRUE) {
+    output_file->setColumnCurrentRow((MATCH_COLUMNS_T)column_idx, 
+              get_match_score(match, QRANKER_PEPTIDE_QVALUE));
     }
     break;
 #endif
   case BY_IONS_MATCHED_COL:
-    if (scores_computed[SP] != 0){
-      fprintf(output_file, "%d", b_y_matched);
-    }
+    output_file->setColumnCurrentRow((MATCH_COLUMNS_T)column_idx, b_y_matched);
     break;
   case BY_IONS_TOTAL_COL:
-    fprintf(output_file, "%d", b_y_total);
+    output_file->setColumnCurrentRow((MATCH_COLUMNS_T)column_idx, b_y_total);
     break;
   case MATCHES_SPECTRUM_COL:
-    fprintf(output_file, "%d", num_matches);
+    output_file->setColumnCurrentRow((MATCH_COLUMNS_T)column_idx, num_matches);
     break;
   case SEQUENCE_COL:
     {
       // this should get the sequence from the match, not the peptide
       char* sequence = get_match_mod_sequence_str_with_masses(match, 
                            get_boolean_parameter("display-summed-mod-masses"));
-      if( sequence != NULL ){ // for post-search, no shuffled sequences
-	fprintf(output_file, "%s", sequence);
-      }
+      output_file->setColumnCurrentRow((MATCH_COLUMNS_T)column_idx, sequence);
       free(sequence);
     }
     break;
@@ -759,7 +744,11 @@ static void print_one_match_field(
       char* enzyme_string = enzyme_type_to_string(enzyme);
       DIGEST_T digestion = get_digest_type_parameter("digestion");
       char* digestion_string = digest_type_to_string(digestion);
-      fprintf(output_file, "%s-%s", enzyme_string, digestion_string);
+      string cleavage_str = enzyme_string;
+      cleavage_str += "-";
+      cleavage_str += digestion_string;
+      output_file->setColumnCurrentRow((MATCH_COLUMNS_T)column_idx, 
+                                       cleavage_str.c_str() );
       free(enzyme_string);
       free(digestion_string);
     }
@@ -768,43 +757,41 @@ static void print_one_match_field(
     {
       PEPTIDE_T* peptide = get_match_peptide(match);
       string protein_ids_string = get_protein_ids_peptide_locations(peptide);
-      fprintf(output_file, "%s", protein_ids_string.c_str());
+      output_file->setColumnCurrentRow((MATCH_COLUMNS_T)column_idx, 
+                                       protein_ids_string.c_str());
     }
     break;
   case FLANKING_AA_COL:
     {
       PEPTIDE_T* peptide = get_match_peptide(match);
       char* flanking_aas = get_flanking_aas(peptide);
-      fprintf(output_file, "%s", flanking_aas);
+      output_file->setColumnCurrentRow((MATCH_COLUMNS_T)column_idx, 
+                                       flanking_aas);
       free(flanking_aas);
     }
     break;
   case UNSHUFFLED_SEQUENCE_COL:
     if(match->null_peptide == TRUE){
       char* seq = get_peptide_unshuffled_sequence(match->peptide);
-      fprintf(output_file, "%s", seq);
+      output_file->setColumnCurrentRow((MATCH_COLUMNS_T)column_idx, seq);
       free(seq);
     }
     break;
   case ETA_COL:
-    if (scores_computed[LOGP_BONF_WEIBULL_XCORR]) {
-      fprintf(output_file, "%g", get_calibration_eta(collection));
-    }
+    output_file->setColumnCurrentRow((MATCH_COLUMNS_T)column_idx, 
+                                     get_calibration_eta(collection));
     break;
   case BETA_COL:
-    if (scores_computed[LOGP_BONF_WEIBULL_XCORR]) {
-      fprintf(output_file, "%g", get_calibration_beta(collection));
-    }
+    output_file->setColumnCurrentRow((MATCH_COLUMNS_T)column_idx, 
+                                     get_calibration_beta(collection));
     break;
   case SHIFT_COL:
-    if (scores_computed[LOGP_BONF_WEIBULL_XCORR]) {
-      fprintf(output_file, "%g", get_calibration_shift(collection));
-    }
+    output_file->setColumnCurrentRow((MATCH_COLUMNS_T)column_idx, 
+                                     get_calibration_shift(collection));
     break;
   case CORR_COL:
-    if (scores_computed[LOGP_BONF_WEIBULL_XCORR]) {
-      fprintf(output_file, "%g", get_calibration_corr(collection));
-    }
+    output_file->setColumnCurrentRow((MATCH_COLUMNS_T)column_idx, 
+                                     get_calibration_corr(collection));
     break;
   case NUMBER_MATCH_COLUMNS:
   case INVALID_COL:
@@ -814,19 +801,421 @@ static void print_one_match_field(
 }
 
 /**
+ * \ brief Print the match information in xml format to the given file. 
+ *
+ * Prints whatever score is available. Also prints out any modifications
+ * if any exist for this match. If more than one protein is mapped from the peptide,
+ * then those proteins are presented in an alternative_protein tag following the search
+ * hit tag
+ */
+void print_match_xml(
+  MATCH_T* match,                  ///< the match to print -in  
+  FILE*    output_file,            ///< output stream -out
+  const BOOLEAN_T* scores_computed ///< scores_computed[TYPE] = T if match was scored for TYPE
+  ){
+
+  if ( output_file == NULL ){
+    return;
+  }
+
+  if ( match == NULL ){
+    carp(CARP_ERROR, "Cannot print NULL match to xml file.");
+    return;
+  }
+
+  FLOAT_T spectrum_mass = get_match_neutral_mass(match);
+
+
+  FLOAT_T delta_cn = get_match_delta_cn(match);
+  
+  // filters matches with delta cn less than 0
+  if (delta_cn < 0 ){
+    return;
+  }
+  
+  if( delta_cn == 0 ){// I hate -0, this prevents it
+    delta_cn = 0.0;
+  }
+  
+  PEPTIDE_T* peptide = get_match_peptide(match);
+  ENZYME_T enzyme = get_enzyme_type_parameter("enzyme");
+  char* peptide_sequence = get_peptide_sequence(peptide);
+
+  double peptide_mass = get_peptide_peptide_mass(peptide);
+  
+
+  
+  // Get data
+  set<pair<char*, char*> > protein_info;
+  get_information_of_proteins(protein_info, peptide);
+
+  int ranking = -1;
+  if (scores_computed[XCORR]){
+    ranking = get_match_rank(match, XCORR);
+  }
+  char * flanking_aas = get_flanking_aas(peptide);
+  char * flanking_aas_iter = flanking_aas;
+  char * mod_seq = 
+    get_match_mod_sequence_str_with_masses(match, TRUE);
+  
+  char flanking_aas_prev = '\0';
+  char flanking_aas_next = '\0';
+  flanking_aas_prev = flanking_aas[0];
+  flanking_aas_next = flanking_aas[1];
+  
+
+  int num_missed_cleavages = get_num_internal_cleavage(peptide_sequence, enzyme);
+  
+  
+  // Get number of peptide termini consistent with cleavage 
+  int num_tol_term = get_num_terminal_cleavage(peptide_sequence, 
+                                               flanking_aas_prev,
+                                               flanking_aas_next,
+                                               enzyme);
+
+  
+  // Print out search hit only with the first protein
+  char* protein_annotation;
+  char* protein_id;
+  int mass_precision = get_int_parameter("mass-precision");
+  set<pair<char* , char*> >::iterator prot_iter = protein_info.begin();
+  protein_annotation = ((*prot_iter).second);
+  protein_id = ((*prot_iter).first);
+  fprintf(output_file, "    <search_hit hit_rank=\"%i\" peptide=\"%s\" "
+          "peptide_prev_aa=\"%c\" peptide_next_aa=\"%c\" protein=\"%s\" "
+          "num_tot_proteins=\"%i\" calc_neutral_pep_mass=\"%.*f\" "
+          "massdiff=\"%+.*f\" "
+          "num_tol_term=\"%i\" num_missed_cleavages=\"%i\"  is_rejected=\"%i\" ",
+          ranking, // -1 if unavailable, uses xcorr rank otherwise
+          peptide_sequence,
+          flanking_aas_prev,
+          flanking_aas_next,
+          protein_id,
+          (int) protein_info.size(),
+          mass_precision,
+          peptide_mass,
+          mass_precision,
+          spectrum_mass-peptide_mass,
+          num_tol_term, 
+          num_missed_cleavages, 
+          0
+          );
+  fprintf(output_file, "protein_descr=\"%s\">\n",
+          protein_annotation);
+  
+  
+  
+  
+  // print additional proteins in alternative_protein tags
+  while (++prot_iter != protein_info.end()){
+    flanking_aas_iter += strlen("XX,"); 
+    flanking_aas_prev = flanking_aas_iter[0];
+    flanking_aas_next = flanking_aas_iter[1];
+    num_tol_term = get_num_terminal_cleavage(peptide_sequence,
+                                             flanking_aas_prev,
+                                             flanking_aas_next,
+                                             enzyme);
+    protein_annotation = ((*prot_iter).second);
+    protein_id = ((*prot_iter).first);
+    fprintf(output_file, 
+            "        <alternative_protein protein=\"%s\" "
+            "protein_descr=\"%s\" "
+            "num_tol_term=\"%i\"  peptide_prev_aa=\"%c\" "
+            "peptide_next_aa=\"%c\"/> \n",
+            protein_id,
+            protein_annotation,
+            num_tol_term, 
+            flanking_aas_prev,
+            flanking_aas_next);
+  }
+  flanking_aas_iter = NULL;
+  free(flanking_aas);
+  
+  set<pair<char* , char*> >::iterator itr = protein_info.begin();
+  for(; itr != protein_info.end(); ++itr){
+    free((*itr).first);
+    free((*itr).second);
+  }
+  protein_info.clear();
+
+  // print modifications to the output file
+  print_modifications_xml(mod_seq,
+                      peptide_sequence,
+                      output_file);
+
+  free(mod_seq);
+  
+
+  // print all scores available
+  int precision = get_int_parameter("precision");
+  fprintf(output_file, 
+          "        <search_score name=\"delta_cn\" value=\"%.*f\" />\n",
+          precision, delta_cn);
+
+  if (scores_computed[PERCOLATOR_SCORE]){
+    fprintf(output_file, 
+            "        <search_score name=\"percolator_score\" value=\"%.*f\" />\n"
+            "        <search_score name=\"percolator_qvalue\" value=\"%.*f\" />\n",
+            precision, get_match_score(match, PERCOLATOR_SCORE),
+            precision, get_match_score(match, PERCOLATOR_QVALUE));
+    }
+  if (scores_computed[QRANKER_SCORE]){
+    fprintf(output_file, 
+            "        <search_score name=\"qranker_score\" value=\"%.*f\" />\n"
+            "        <search_score name=\"qranker_qvalue\" value=\"%.*f\" />\n",
+            precision, get_match_score(match, QRANKER_SCORE),
+            precision, get_match_score(match, QRANKER_QVALUE));
+  }
+  if (scores_computed[LOGP_QVALUE_WEIBULL_XCORR]){
+    fprintf(output_file, 
+            "        <search_score name=\"weibull est. p-value\" value=\"%.*f\" />\n",
+            precision, get_match_score(match, LOGP_QVALUE_WEIBULL_XCORR));
+  }
+  fprintf(output_file, 
+          "        <search_score name=\"xcorr_score\" value=\"%.*f\" />\n",
+          precision, get_match_score(match, XCORR));
+    
+  
+  fprintf(output_file, 
+          "    </search_hit>\n");
+  
+
+  free(peptide_sequence);
+}
+
+
+
+/**
+ * \brief prints both variable and static modifications for 
+ *  peptide sequence in xml format to the specificed output file
+ *
+ *
+ */
+void print_modifications_xml(
+  char* mod_seq,
+  char* pep_seq,
+  FILE* output_file
+){
+  map<int, double> var_mods;
+  map<int, double> static_mods;
+
+  // variable modifications
+  int mod_precision = get_int_parameter("mod-precision");
+  find_variable_modifications(var_mods, mod_seq);
+  if (!var_mods.empty()){
+    fprintf(output_file, 
+            "<modification_info modified_peptide=\"%s\">\n",
+            mod_seq);
+    for (map<int, double>::iterator it = var_mods.begin()
+           ; it != var_mods.end(); ++it){
+      fprintf(output_file, "<mod_aminoacid_mass position=\"%i\" mass=\"%.*f\"/>\n",
+              (*it).first,   //index
+              mod_precision, (*it).second); //mass
+    }
+    fprintf(output_file, "</modification_info>\n");
+  }
+
+  // static modifications
+  find_static_modifications(static_mods, var_mods, pep_seq);
+  if (!static_mods.empty()){
+    fprintf(output_file, "<modification_info modified_peptide=\"%s\">\n",
+            pep_seq);
+    for (map<int, double>::iterator it = static_mods.begin(); 
+         it != static_mods.end(); ++it){
+      fprintf(output_file, "<mod_aminoacid_mass position=\"%i\" mass=\"%.*f\"/>\n",
+              (*it).first,   //index
+              mod_precision, (*it).second); //mass
+    }
+    fprintf(output_file, "</modification_info>\n");
+  }
+
+  static_mods.clear();
+  var_mods.clear();
+
+}
+
+
+/**
+ * \brief takes an empty mapping of index to mass
+ * and extract information from mod sequence fill
+ * up map
+ */
+void find_variable_modifications(
+ map<int, double>& mods,
+ char* mod_seq
+){
+  
+    int seq_index = 1;
+    char* amino = mod_seq;
+    char* end = NULL;
+    char* start = NULL;
+    // Parse returned string to find modifications within
+    // brackets
+    while (*(amino) != '\0'){
+      if (*(amino+1) =='['){
+        start = amino+2;
+        end = amino+2;
+        while (*end != ']'){
+          end++;
+        }
+        char* mass  = (char *) mymalloc(sizeof(char)*(end-start+1));
+        strncpy(mass, start, end-start);
+        mass[end-start] = '\0';
+        mods[seq_index] = atof(mass);
+        amino = end;
+        free(mass);
+      }
+      seq_index++;
+      amino++;
+    }
+}
+
+/**
+ * \brief takes an empty mapping of index to mass
+ * of static mods and a full mapping of var mods
+ * to fill up the mapping of static mods
+ */
+void find_static_modifications(
+  map<int, double>& static_mods,
+  map<int, double>& var_mods,
+  char* peptide_sequence
+){
+  char* seq_iter = peptide_sequence;
+  
+  MASS_TYPE_T isotopic_type = get_mass_type_parameter("isotopic-mass");
+  
+  char aa[2];
+  aa[1] = '\0';
+  int seq_index = 1;
+  while ((*seq_iter) != '\0'){
+    *aa = (*seq_iter);
+    // write static mod if user requested static mod and also
+    // if there is no variable mod on the same character
+    if (get_double_parameter( (const char *)aa)!= 0 && 
+        var_mods.find(seq_index) == var_mods.end()){
+
+      double mass = get_mass_amino_acid(*seq_iter, isotopic_type);
+      static_mods[seq_index] = mass;
+    }
+    seq_iter++;
+    seq_index++;
+  }
+
+}
+
+
+/**
+ * \brief Counts the number of internal cleavages
+ *
+ */
+int get_num_internal_cleavage(char* peptide_sequence, ENZYME_T enzyme){
+  // get number of internal cleavages
+  int num_missed_cleavages = 0;
+  char * seq_iter = peptide_sequence;
+  
+  while (*(seq_iter+1) != '\0'){
+    if (ProteinPeptideIterator::validCleavagePosition(seq_iter, enzyme)){
+      num_missed_cleavages++;
+    }
+    seq_iter++;
+  }
+  return num_missed_cleavages;
+}
+
+
+/**
+ * \brief Counts the number of terminal cleavage. Either 0, 1, or 2
+ *
+ */
+int get_num_terminal_cleavage(
+  char* peptide_sequence, 
+  char flanking_aas_prev,
+  char flanking_aas_next,
+  ENZYME_T enzyme
+  ){
+
+  int num_tol_term = 0;
+  char cleavage[3];
+  cleavage[2] = '\0';
+  cleavage[0] = flanking_aas_prev;
+  cleavage[1] = peptide_sequence[0];
+  if (flanking_aas_prev == '-' ||
+      ProteinPeptideIterator::validCleavagePosition(cleavage, enzyme)){
+      num_tol_term++;
+  }
+  cleavage[0] = peptide_sequence[strlen(peptide_sequence)-1];
+  cleavage[1] = flanking_aas_next;
+  if (flanking_aas_next == '-' ||
+      ProteinPeptideIterator::validCleavagePosition(cleavage, enzyme)){
+    num_tol_term++;
+  }
+  return num_tol_term;
+}
+
+
+/**
+ * \brief Takes a empty set of pairs of strings and a peptide
+ *  and fills the set with protein id paired with protein annotation
+ *
+ */
+void get_information_of_proteins(
+  set<pair<char*, char*> >& protein_info,
+  PEPTIDE_T* peptide
+  ){
+  PEPTIDE_SRC_ITERATOR_T* peptide_src_iterator = 
+    new_peptide_src_iterator(peptide);
+  
+  std::ostringstream protein_field_stream;
+  // for each protein that the peptide maps, get its id and description
+  while(peptide_src_iterator_has_next(peptide_src_iterator)){
+    PEPTIDE_SRC_T* peptide_src = peptide_src_iterator_next(peptide_src_iterator);
+    Protein* protein = get_peptide_src_parent_protein(peptide_src);
+    char* protein_id = protein->getId();
+    char* protein_annotation = protein->getAnnotation();      
+    char* str_iter = protein_annotation;
+    // replaces double quotes with single quote in the description
+    while ( (*str_iter) != '\0' ){
+      if ((*str_iter) == '\"'){
+        (*str_iter) = '\'';
+      }
+      str_iter++;
+    }
+    // removes any tags existing in the description
+    char* str_iter_cur = protein_annotation;
+    str_iter = protein_annotation;
+    while ((*str_iter) != '\0'){
+      if ((*str_iter) == '<'){
+        str_iter++;
+        while (*(str_iter-1) != '>' && (*str_iter) != '\0'){
+          str_iter++;
+        }
+      }
+      (*str_iter_cur) = (*str_iter);
+      if ((*str_iter) !=  '\0'){
+        str_iter_cur++;
+        str_iter++;
+      }
+    }
+    
+    protein_info.insert(make_pair(protein_id, protein_annotation));
+  }
+  free_peptide_src_iterator(peptide_src_iterator);
+}
+                             
+
+
+
+/**
  * \brief Print the match information in tab delimited format to the given file
  *
  */
 void print_match_tab(
   MATCH_COLLECTION_T* collection,  ///< collection holding this match -in 
   MATCH_T* match,                  ///< the match to print -in  
-  FILE*    output_file,            ///< output stream -out
+  MatchFileWriter*    output_file,            ///< output stream -out
   int      scan_num,               ///< starting scan number -in
   FLOAT_T  spectrum_precursor_mz,  ///< m/z of spectrum precursor -in
-  FLOAT_T  spectrum_mass,          ///< spectrum neutral mass -in
-  int      num_matches,            ///< num matches in spectrum -in
-  int      charge,                 ///< charge -in
-  const BOOLEAN_T* scores_computed ///< scores_computed[TYPE] = T if match was scored for TYPE
+  int      num_matches            ///< num matches in spectrum -in
   ){
 
   // Usually because no decoy file to print to.
@@ -839,57 +1228,23 @@ void print_match_tab(
     return;
   }
 
-  // TODO (BF 27-Apr-10) This should no longer be a problem since we
-  // now read only .txt files
-  // NOTE (BF 12-Feb-08) Here is another ugly fix for post-analysis.
-  // Only the fraction matched is serialized.  The number possible can
-  // be calculated from the length of the sequence and the charge, but
-  // the charge of the match is not serialized and I'm not sure when
-  // it is set.  But I know it exists by here, so recalculate it.
   int b_y_total = get_match_b_y_ion_possible(match);
   int b_y_matched = get_match_b_y_ion_matched(match);
   
-  if( b_y_total == 0 ){
-    int factor = get_match_charge(match);
-    if( factor == 3 ){
-      factor = 2;  //there are +1 and +2 b/y ions for charge==3
-    }else{
-      factor = 1;
-    }
-    PEPTIDE_T* peptide = get_match_peptide(match);
-    b_y_total = (get_peptide_length(peptide)-1) * 2 * factor;
-    b_y_matched = (int)((get_match_b_y_ion_fraction_matched(match)) 
-			* b_y_total);
-  }
-
-
-  // Decide on formatting.
-  int precision = get_int_parameter("precision");
-  char float_format[16];
-  sprintf(float_format, "%%.%ig", precision);
-
   // Print tab delimited fields
   int column_idx;
   for (column_idx = 0; column_idx < NUMBER_MATCH_COLUMNS; column_idx++) {
     print_one_match_field(column_idx, 
-			  float_format,
-			  collection,
-			  match,
-			  output_file,
-			  scan_num,
-			  spectrum_precursor_mz,
-			  spectrum_mass,
-			  num_matches,
-			  charge,
-			  scores_computed,
-			  b_y_total,
-			  b_y_matched);
-    if (column_idx < NUMBER_MATCH_COLUMNS - 1) {
-      fprintf(output_file, "\t");
-    } else {
-      fprintf(output_file, "\n");
-    }
+                          collection,
+                          match,
+                          output_file,
+                          scan_num,
+                          spectrum_precursor_mz,
+                          num_matches,
+                          b_y_total,
+                          b_y_matched);
   }
+  output_file->writeRow();
 }
 
 /**
@@ -904,7 +1259,7 @@ void shuffle_matches(
     carp(CARP_ERROR, "Cannot shuffle null match array.");
     return;
   }
-  //  srand(time(NULL));
+  //  srandom(time(NULL));
 
   int match_idx = 0;
   for(match_idx = start_index; match_idx < end_index-1; match_idx++){
@@ -951,19 +1306,21 @@ double* get_match_percolator_features(
   int feature_count = 20;
   PEPTIDE_SRC_ITERATOR_T* src_iterator = NULL;
   PEPTIDE_SRC_T* peptide_src = NULL;
-  PROTEIN_T* protein = NULL;
+  Protein* protein = NULL;
   unsigned int protein_idx = 0;
   double* feature_array = (double*)mycalloc(feature_count, sizeof(double));
   FLOAT_T weight_diff = get_peptide_peptide_mass(match->peptide) -
-    get_spectrum_neutral_mass(match->spectrum, match->charge);
+    (match->zstate_.getNeutralMass());
 
   
   carp(CARP_DETAILED_DEBUG, "spec: %d, charge: %d", 
-    get_spectrum_first_scan(match -> spectrum),
-    match -> charge);
+    match->spectrum->getFirstScan(),
+    match -> zstate_.getCharge());
 
-  carp(CARP_DETAILED_DEBUG,"peptide mass:%f", get_peptide_peptide_mass(match -> peptide));
-  carp(CARP_DETAILED_DEBUG,"spectrum neutral mass:%f", get_spectrum_neutral_mass(match -> spectrum, match -> charge));
+  carp(CARP_DETAILED_DEBUG,"peptide mass:%f", 
+       get_peptide_peptide_mass(match->peptide));
+  carp(CARP_DETAILED_DEBUG,"spectrum neutral mass:%f", 
+       (match-> zstate_.getNeutralMass()));
 
   // Xcorr
   feature_array[0] = get_match_score(match, XCORR);
@@ -988,7 +1345,7 @@ double* get_match_percolator_features(
   // absdM
   feature_array[6] = fabsf(weight_diff);
   // Mass
-  feature_array[7] = get_spectrum_neutral_mass(match->spectrum, match->charge);
+  feature_array[7] = match->zstate_.getNeutralMass();
   // ionFrac
   feature_array[8] = match->b_y_ion_fraction_matched;
   // lnSM
@@ -1017,14 +1374,16 @@ double* get_match_percolator_features(
   // pepLen
   feature_array[13] = get_peptide_length(match->peptide);
   
+  int charge = match->zstate_.getCharge();
+
   // set charge
-  if(match->charge == 1){
+  if(charge == 1){
     feature_array[14] = TRUE;
   }
-  else if(match->charge == 2){
+  else if(charge == 2){
     feature_array[15] = TRUE;
   }
-  else if(match->charge == 3){
+  else if(charge == 3){
     feature_array[16] = TRUE;
   }
   
@@ -1041,8 +1400,8 @@ double* get_match_percolator_features(
     while(peptide_src_iterator_has_next(src_iterator)){
       peptide_src = peptide_src_iterator_next(src_iterator);
       protein = get_peptide_src_parent_protein(peptide_src);
-      protein_idx = get_protein_protein_idx(protein);
-      
+      protein_idx = protein->getProteinIdx();
+
       // numProt
       if(feature_array[18] < get_match_collection_protein_counter(
                               match_collection, protein_idx)){
@@ -1093,7 +1452,7 @@ MATCH_T* parse_match_tab_delimited(
   //TODO - FINISH and TEST
   MATCH_T* match = new_match();
 
-  SPECTRUM_T* spectrum = NULL;
+  Spectrum* spectrum = NULL;
   PEPTIDE_T* peptide = NULL;
 
   // this is a post_process match object
@@ -1107,9 +1466,7 @@ MATCH_T* parse_match_tab_delimited(
     return NULL;
   }
 
-  if ((result_file.getString(SP_SCORE_COL) == "") || 
-    (result_file.getString(SP_RANK_COL) == "")) {
-
+  if ((result_file.empty(SP_SCORE_COL)) || (result_file.empty(SP_RANK_COL))){
     match -> match_scores[SP] = NOT_SCORED;
     match -> match_rank[SP] = 0;
   } else {
@@ -1120,36 +1477,49 @@ MATCH_T* parse_match_tab_delimited(
   match -> match_scores[XCORR] = result_file.getFloat(XCORR_SCORE_COL);
   match -> match_rank[XCORR] = result_file.getInteger(XCORR_RANK_COL);
 
-  match -> match_scores[DECOY_XCORR_QVALUE] = result_file.getFloat(DECOY_XCORR_QVALUE_COL);
+  if (!result_file.empty(DECOY_XCORR_QVALUE_COL)){
+    match -> match_scores[DECOY_XCORR_QVALUE] = result_file.getFloat(DECOY_XCORR_QVALUE_COL);
+  }
   /* TODO I personally would like access to the raw p-value as well as the bonferonni corrected one (SJM).
   match -> match_scores[LOGP_WEIBULL_XCORR] = result_file.getFloat("logp weibull xcorr");
   */
-  match -> match_scores[LOGP_BONF_WEIBULL_XCORR] = -log(result_file.getFloat(PVALUE_COL));
-  
-  match -> match_scores[PERCOLATOR_QVALUE] = result_file.getFloat(PERCOLATOR_QVALUE_COL);
+  if (!result_file.empty(PVALUE_COL)){
+    match -> match_scores[LOGP_BONF_WEIBULL_XCORR] = -log(result_file.getFloat(PVALUE_COL));
+  }
+  if (!result_file.empty(PERCOLATOR_QVALUE_COL)){
+    match -> match_scores[PERCOLATOR_QVALUE] = result_file.getFloat(PERCOLATOR_QVALUE_COL);
+  }
+  if (!result_file.empty(PERCOLATOR_SCORE_COL)){
+    match -> match_scores[PERCOLATOR_SCORE] = result_file.getFloat(PERCOLATOR_SCORE_COL);
+    match -> match_rank[PERCOLATOR_SCORE] = result_file.getInteger(PERCOLATOR_RANK_COL);
+  }
+  if (!result_file.empty(WEIBULL_QVALUE_COL)){
+    match -> match_scores[LOGP_QVALUE_WEIBULL_XCORR] = result_file.getFloat(WEIBULL_QVALUE_COL);
+  }
+  if (!result_file.empty(QRANKER_SCORE_COL)){
+    match -> match_scores[QRANKER_SCORE] = result_file.getFloat(QRANKER_SCORE_COL);
+    match -> match_scores[QRANKER_QVALUE] = result_file.getFloat(QRANKER_QVALUE_COL);
+  }
 
-  match -> match_scores[PERCOLATOR_SCORE] = result_file.getFloat(PERCOLATOR_SCORE_COL);
-  match -> match_rank[PERCOLATOR_SCORE] = result_file.getInteger(PERCOLATOR_RANK_COL);
+  // get experiment size
+  match->ln_experiment_size = log(result_file.getInteger(MATCHES_SPECTRUM_COL));
 
-  match -> match_scores[LOGP_QVALUE_WEIBULL_XCORR] = result_file.getFloat(WEIBULL_QVALUE_COL);
-  
-  match -> match_scores[QRANKER_SCORE] = result_file.getFloat(QRANKER_SCORE_COL);
-  match -> match_scores[QRANKER_QVALUE] = result_file.getFloat(QRANKER_QVALUE_COL);
-
-   // parse spectrum
-  if((spectrum = parse_spectrum_tab_delimited(result_file))== NULL){
+  // parse spectrum
+  if((spectrum = Spectrum::parseTabDelimited(result_file))== NULL){
     carp(CARP_ERROR, "Failed to parse spectrum (tab delimited).");
   }
 
   // spectrum specific features
-  if (result_file.getString(BY_IONS_MATCHED_COL) == "") {
+  if (result_file.empty(BY_IONS_MATCHED_COL)){ 
     match -> b_y_ion_matched = 0;
-    match -> b_y_ion_possible = 0;
-    match -> b_y_ion_fraction_matched = 0.0;
   } else {
     match -> b_y_ion_matched = result_file.getInteger(BY_IONS_MATCHED_COL);
+  }
+  if (result_file.empty(BY_IONS_TOTAL_COL)) {
+      match -> b_y_ion_possible = 0;
+      match -> b_y_ion_fraction_matched = 0.0;
+  } else {
     match -> b_y_ion_possible = result_file.getInteger(BY_IONS_TOTAL_COL);
-
     match -> b_y_ion_fraction_matched = 
       (FLOAT_T)match -> b_y_ion_matched /
       (FLOAT_T)match -> b_y_ion_possible;
@@ -1381,7 +1751,7 @@ void set_match_rank(
 /**
  *\returns the spectrum in the match object
  */
-SPECTRUM_T* get_match_spectrum(
+Spectrum* get_match_spectrum(
   MATCH_T* match ///< the match to work -in  
   )
 {
@@ -1393,7 +1763,7 @@ SPECTRUM_T* get_match_spectrum(
  */
 void set_match_spectrum(
   MATCH_T* match, ///< the match to work -out
-  SPECTRUM_T* spectrum  ///< the working spectrum -in
+  Spectrum* spectrum  ///< the working spectrum -in
   )
 {
 
@@ -1452,12 +1822,29 @@ BOOLEAN_T get_match_null_peptide(
 /**
  * sets the match charge
  */
+/*
 void set_match_charge(
   MATCH_T* match, ///< the match to work -out
   int charge  ///< the charge of spectrum -in
   )
 {
   match->charge = charge;
+}
+*/
+
+void set_match_zstate(
+  MATCH_T* match,
+  SpectrumZState& zstate) {
+
+  match->zstate_ = zstate;
+
+}
+
+SpectrumZState& get_match_zstate(
+  MATCH_T* match) {
+
+  return match->zstate_;
+
 }
 
 /**
@@ -1467,8 +1854,25 @@ int get_match_charge(
   MATCH_T* match ///< the match to work -out
   )
 {
-  return match->charge;
+  return get_match_zstate(match).getCharge();
+
 }
+
+/**
+ * /returns the match neutral mass
+ */
+FLOAT_T get_match_neutral_mass(
+  MATCH_T* match ///< the match to work -out
+  )
+{
+  return get_match_zstate(match).getNeutralMass();
+
+}
+
+
+
+
+
 
 /**
  * sets the match delta_cn

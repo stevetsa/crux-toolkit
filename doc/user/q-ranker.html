@@ -51,17 +51,50 @@ protein index from which to retrieve proteins and peptides.</li>
 
 <li>
 &lt;search results directory&gt; &ndash; A folder in which all the PSM
-result files are located.  The program looks for files with names like
-'<code>&lt;fileroot&gt;.&lt;search&gt;.target.txt</code>' or
-'<code>&lt;fileroot&gt;.&lt;search&gt;.decoy.txt</code>', where
-'<code>&lt;search&gt;</code>' is either '<code>search</code>'
-(produced by <code>crux search-for-matches</code>) or
-'<code>sequest</code>' (produced by <code>crux sequest-search</code>).
-The search results should be from only one of the two search
-algorithms.  All such files in the given directory are analyzed
-jointly.</li>
+result files are located.  The program looks for files produced by 
+<code>crux search-for-matches</code> (ending in
+'<code>.search.target.txt</code>' or '<code>.search.decoy.txt</code>')
+or by <code>crux sequest-search</code> (ending in
+'<code>.sequest.target.txt</code>' or
+'<code>.sequest.decoy.txt</code>').  All such files in the given
+directory are analyzed jointly.  Note that the directory should not
+contain results from both types of search algorithms.</li>
 
 </ul>
+<b>Output:</b>
+<ul>
+  The program writes files to the folder <code>crux-output</code> by default.
+The name of the output folder can be set by the user using the <code>--output-dir</code> option.
+The following files will be created:</p>
+
+<li>
+<b>qranker.params.txt</b>:
+a file containing the name and value of all parameters/options for the current operation.  
+Not all parameters in the file may have been used in the operation.  
+The resulting file can be used with the <code>--parameter-file</code>
+option for other crux programs.
+</li>
+
+<li>
+<b>qranker.target.txt</b>: a tab-delimited text file containing the PSMs.
+See <a href="txt-format.html">txt file format</a> for a list of the
+fields.</li>
+
+<li>
+<b>qranker.target.pep.xml</b>: a file containing the PSMs in pepxml format. See
+<a href="http://tools.proteomecenter.org/wiki/index.php?title=Formats:pepXML">
+pep xml file format</a> for further reference. This file can be used as input 
+to some of the tools in the 
+<a href="http://tools.proteomecenter.org/wiki/index.php?title=Software:TPP">
+Transproteomic Pipeline</a>.
+</li>
+
+<li>
+<b>qranker.log.txt</b>: a log file containing a copy of all messages that were
+printed to stderr.
+</li>
+</ul>
+
 
 <b>Options:</b>
 
