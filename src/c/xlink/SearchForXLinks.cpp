@@ -13,7 +13,7 @@ SearchForXLinks::~SearchForXLinks() {
 
 
 int SearchForXLinks::main(int argc, char** argv) {
-  return xlink_search_main(argc, argv);
+  return xhhc_search_main(argc, argv);
 }
 
 string SearchForXLinks::getName() {
