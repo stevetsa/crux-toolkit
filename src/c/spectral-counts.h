@@ -29,6 +29,7 @@
 #include "FilteredSpectrumChargeIterator.h"
 #include "IonSeries.h"
 #include "IonConstraint.h"
+#include "OutputFiles.h"
 
 
 int spectral_counts_main(int argc, char** argv);

@@ -2714,8 +2714,9 @@ primary-ions=by
 neutral-losses=all
 
 # Perform parsimony analysis on the proteins and report a parsimony rank
-# column in output file.
-# Default=none. Can be <string>=none|simple|greedy
+# column in output file. Default=none. Can be
+# <string>=none|simple|greedy
+# Available for spectral-counts.
 parsimony=none
 
 # Which isotopes to use in calcuating peptide mass.

@@ -344,6 +344,10 @@ BOOLEAN_T valid_cleavage_position(
    ENZYME_T enzyme);
 
 
+/** 
+ * Comparison function for sorting proteins by protein id.
+ */
+bool protein_id_less_than(PROTEIN_T* protein_one, PROTEIN_T* protein_two);
 
 
 

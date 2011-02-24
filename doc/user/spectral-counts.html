@@ -23,7 +23,7 @@
 <b>Description:</b></p>
 <blockquote>
 <p>Given a collection of scored PSMs, produce a&nbsp;list
-of proteins ranked by their a specified score. Spectral-counts
+of proteins or peptides ranked by their a quantification score. Spectral-counts
 supports two types of quantification: Normalized Spectral Abundance
 Factor (NSAF) and Normalized Spectral Index (SI<sub>N</sub>). The
 NSAF method is from a 
@@ -147,8 +147,9 @@ each peptide to a single protein.
 
 <li>
 <code>--threshold &lt;double&gt; </code> &ndash;
-The&nbsp;q-value threshold (all PSMs with q-value higher than this will be
-ignored). Default = 0.01.
+Only consider PSMs with a q-value lower than this threshold.  The
+q-value may be in the file's 'percolator q-value' column, 'q-ranker
+q-value' column or 'decoy q-value (xcorr)' column. Default = 0.01.
 </li>
 
 <li>

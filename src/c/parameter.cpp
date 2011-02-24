@@ -793,8 +793,9 @@ void initialize_parameters(void){
        "true"); 
   set_parsimony_type_parameter("parsimony", PARSIMONY_NONE,
        "Perform parsimony analysis on the proteins and report "
-       "a parsimony rank column in output file." ,
+       "a parsimony rank column in output file. "
        "Default=none. Can be <string>=none|simple|greedy",
+       "Available for spectral-counts.",
        "true");
 		       
 

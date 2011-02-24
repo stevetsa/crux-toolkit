@@ -1421,6 +1421,15 @@ PROTEIN_T* get_protein_peptide_iterator_portein(
   return protein_peptide_iterator->protein;
 }
 
+/** 
+ * Comparison function for sorting proteins by protein id.
+ */
+bool protein_id_less_than(PROTEIN_T* protein_one, PROTEIN_T* protein_two){
+  int compare = strcmp(get_protein_id_pointer(protein_one), 
+                       get_protein_id_pointer(protein_two));
+  return (compare > 0);
+}
+
 /*
  * Local Variables:
  * mode: c

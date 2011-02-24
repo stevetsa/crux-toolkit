@@ -8,6 +8,8 @@
 #define OBJECTS_H
 
 #include <stdio.h>
+#include <set>
+#include <map>
 
 #define QSORT_COMPARE_METHOD int(*)(const void*, const void*)
 
@@ -603,6 +605,39 @@ typedef struct _linked_list_node LIST_POINTER_T;
  * MODIFIED_PEPTIDES_ITERATOR_T 
  */
 typedef struct modified_peptides_iterator_t MODIFIED_PEPTIDES_ITERATOR_T;
+
+/**
+ * \typedef peptideToScore
+ * \brief Mapping of peptide object to scores
+ */
+typedef std::map<PEPTIDE_T*, double, bool(*)(PEPTIDE_T*, PEPTIDE_T*) > PeptideToScore;
+//typedef std::map<PEPTIDE_T*, FLOAT_T, bool(*)(PEPTIDE_T*, PEPTIDE_T*) > PeptideToScore;
+
+/**
+ * \typedef ProteinToScore
+ * \brief Mapping of protein object to scores
+ */
+typedef std::map<PROTEIN_T*, double, bool(*)(PROTEIN_T*, PROTEIN_T*) > ProteinToScore;
+//typedef std::map<PROTEIN_T*, FLOAT_T, bool(*)(PROTEIN_T*, PROTEIN_T*) > ProteinToScore;
+
+/**
+ * \typedef MetaProtein
+ * \brief Collection of protein objects which contain exactly the same
+ * set of peptides.
+ */
+typedef std::set<PROTEIN_T*, bool(*)(PROTEIN_T*, PROTEIN_T*) > MetaProtein;
+
+/**
+ * \typedef ProteinToMeta
+ * \brief Mapping of Protein to MetaProtein to which it belongs
+ */
+typedef std::map<PROTEIN_T*, MetaProtein, bool(*)(PROTEIN_T*, PROTEIN_T*) > ProteinToMetaProtein;
+
+/**
+ * \typedef MetaToRank
+ * \brief Mapping of MetaProtein to ranks to the rank asigned to it
+ */
+typedef std::map<MetaProtein, int, bool(*)(MetaProtein, MetaProtein) > MetaToRank;
 
 #endif
 

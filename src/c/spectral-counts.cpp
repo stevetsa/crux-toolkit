@@ -3,21 +3,6 @@
 using namespace std;
 
 /**
- * \typedef peptideToScore
- * \brief Mapping of peptide object to scores
- */
-typedef map<PEPTIDE_T*, FLOAT_T, bool(*)(PEPTIDE_T*, PEPTIDE_T*)> PeptideToScore;
-/**
- * \typedef ProteinToScore
- * \brief Mapping of protein object to scores
- */
-typedef map<PROTEIN_T*, FLOAT_T, bool(*)(PROTEIN_T*, PROTEIN_T*)> ProteinToScore;
-/**
- * \typedef MetaProtein
- * \brief Collection of protein objects
- */
-typedef set<PROTEIN_T*, bool(*)(PROTEIN_T*, PROTEIN_T*)> MetaProtein;
-/**
  * \typedef PeptideSet
  * \brief Collection of peptide objects (not a meta-peptide)
  */
@@ -36,11 +21,6 @@ typedef map<PeptideSet, MetaProtein, bool(*)(PeptideSet, PeptideSet) > MetaMappi
  */
 typedef map<PROTEIN_T*, PeptideSet , bool(*)(PROTEIN_T*, PROTEIN_T*)> ProteinToPeptides;
 /**
- * \typedef MetaToRan
- * \brief Mapping of MetaProtein to ranks to the rank asigned to it
- */
-typedef map<MetaProtein, int, bool(*)(MetaProtein, MetaProtein)> MetaToRank;
-/**
  * \typedef MetaToScore
  * \brief Mapping of MetaProtein to the score assigned to it
  */
@@ -55,8 +35,8 @@ typedef map<PROTEIN_T*, MetaProtein, bool(*)(PROTEIN_T*, PROTEIN_T*)> ProteinToM
 void filter_matches(MATCH_COLLECTION_ITERATOR_T* match_collection_it,
                     set<MATCH_T*>& match_set);
 void get_peptide_scores(
-  set<MATCH_T*>*  matches, 
-  PeptideToScore* peptideToScore
+  set<MATCH_T*>&  matches, 
+  PeptideToScore& peptideToScore
 );
 void get_protein_scores(
   PeptideToScore* peptideToScore, 
@@ -72,7 +52,7 @@ void get_protein_to_meta_protein(
 );
 void get_meta_mapping(
   ProteinToPeptides* proteinToPeptides, 
-  MetaMapping* metaMapping
+  MetaMapping& metaMapping
 );
 void get_meta_ranks(
   MetaToScore* metaToScore, 
@@ -105,15 +85,11 @@ void print_peptide_results(
 void make_unique_mapping(
   PeptideToScore* peptideToScore
 );
-string meta_protein_to_string(MetaProtein s);
-string peps_to_string(PeptideSet s);
+void getSpectra(map<pair<int,int>, Spectrum*>& spectra);
 /* comparison function declarations */
-// TODO look in peptide and protein files for comparison functions
-bool compare_pep(PEPTIDE_T*, PEPTIDE_T*);
-bool compare_prot(PROTEIN_T*, PROTEIN_T*);
 bool compare_peptide_sets(PeptideSet, PeptideSet);
 bool compare_meta_proteins(MetaProtein, MetaProtein);
-bool compare_sets(
+bool sets_are_equal_size(
   pair<PeptideSet, MetaProtein>, 
   pair<PeptideSet, MetaProtein> 
 );
@@ -152,10 +128,9 @@ int spectral_counts_main(int argc, char** argv){
   initialize_run(SPECTRAL_COUNTS_COMMAND, argument_list, num_arguments,
 		 option_list, num_options, argc, argv);
 
-  // get output file name
-  char* output_dir = get_string_parameter("output-dir");
-  char* output_path = 
-    get_full_filename(output_dir, "spectral-count.target.txt");
+  // open output files
+  OutputFiles output(SPECTRAL_COUNTS_COMMAND);
+  output.writeHeaders();
 
   // get input file directory
   char* psm_file = get_string_parameter("input PSM");
@@ -177,8 +152,8 @@ int spectral_counts_main(int argc, char** argv){
        matches.size());
 
   // get a set of peptides
-  PeptideToScore peptideToScore(compare_pep);
-  get_peptide_scores(&matches, &peptideToScore);
+  PeptideToScore peptideToScore(peptide_less_than);
+  get_peptide_scores(matches, peptideToScore);
   if( get_boolean_parameter("unique-mapping") ){
     make_unique_mapping(&peptideToScore);
   }
@@ -188,12 +163,12 @@ int spectral_counts_main(int argc, char** argv){
   QUANT_LEVEL_TYPE_T quant_level =get_quant_level_type_parameter("quant-level");
   if( quant_level == PEPTIDE_QUANT_LEVEL ){ // peptide level
     normalize_peptide_scores(&peptideToScore);
-    print_peptide_results(&peptideToScore, output_path);
+    output.writeRankedPeptides(peptideToScore);
 
   } else if( quant_level == PROTEIN_QUANT_LEVEL ){ // protein level
-    ProteinToScore proteinToScore(compare_prot);
-    ProteinToPeptides proteinToPeptides(compare_prot);
-    ProteinToMetaProtein proteinToMeta(compare_prot);
+    ProteinToScore proteinToScore(protein_id_less_than);
+    ProteinToPeptides proteinToPeptides(protein_id_less_than);
+    ProteinToMetaProtein proteinToMeta(protein_id_less_than);
     MetaMapping metaMapping(compare_peptide_sets);
     MetaToScore metaToScore(compare_meta_proteins);
     MetaToRank metaToRank(compare_meta_proteins);
@@ -205,7 +180,7 @@ int spectral_counts_main(int argc, char** argv){
     PARSIMONY_TYPE_T parsimony = get_parsimony_type_parameter("parsimony");
     if( parsimony != PARSIMONY_NONE ){ //if parsimony is not none
       get_protein_to_peptides(&peptideToScore, &proteinToPeptides);
-      get_meta_mapping(&proteinToPeptides, &metaMapping);
+      get_meta_mapping(&proteinToPeptides, metaMapping);
       get_protein_to_meta_protein(&metaMapping, &proteinToMeta);
       carp(CARP_INFO, "Number of meta proteins %i", metaMapping.size());
       
@@ -216,15 +191,12 @@ int spectral_counts_main(int argc, char** argv){
       get_meta_ranks(&metaToScore, &metaToRank);
     }
     
-    print_protein_results(&proteinToScore,
-                          &metaToRank,
-                          &proteinToMeta,
-                          output_path);
+    output.writeRankedProteins(proteinToScore, metaToRank, proteinToMeta);
+
   } else {
     carp(CARP_FATAL, "Invalid quantification level.");
   }
   
-  free(output_dir);
   free(psm_file);
   free(path_info[1]);
   free(path_info[0]);
@@ -253,7 +225,7 @@ void get_protein_to_peptides(
       PEPTIDE_SRC_T* peptide_src = peptide_src_iterator_next(peptide_src_iterator);
       PROTEIN_T* protein = get_peptide_src_parent_protein(peptide_src);
       if (proteinToPeptides->find(protein) == proteinToPeptides->end()){
-	PeptideSet newset(compare_pep);
+	PeptideSet newset(peptide_less_than);
 	proteinToPeptides->insert(make_pair(protein, newset));
       }
       (*proteinToPeptides)[protein].insert(peptide);
@@ -418,49 +390,33 @@ int sum_match_intensity(MATCH_T* match,
 
 
 /**
- * For SIN, it will parse the spectra in the ms2 file to
- * find the total ion intensity from b and y ions without
- * h20 modifications. These ion intensities are summed
- * for each peptide.
+ * Generate a score for each peptide in the set of matches.  Store the
+ * scores in the peptideToScore object.
  *
- * For NSAF, it will sum up the number of matches for each
- * peptide.
+ * For SIN the score is the sum of intensites of b and y ions (without
+ * H2O modifications).  Intensites are taken from the .ms2 file.
+ *
+ * For NSAF, the score is the number of matches for each peptide.
  */
 void get_peptide_scores(
-		      set<MATCH_T*> * matches,
-		      PeptideToScore* peptideToScore
-		      ){
+  set<MATCH_T*>& matches, ///< get peptides from these matches
+  PeptideToScore& peptideToScore ///< store peptides and their scores here
+){
   
   MEASURE_TYPE_T measure = get_measure_type_parameter("measure");
-  char* ms2 = get_string_parameter("input-ms2");
   FLOAT_T bin_width = get_double_parameter("mz-bin-width");
   map<pair<int,int>, Spectrum*> spectra;
   
     
   // for SIN, parse out spectrum collection from ms2 fiel
   if( measure == MEASURE_SIN ){ 
-    IonSeries ion_series;
-    SpectrumCollection* spectrum_collection = new SpectrumCollection(ms2);
-    if (!spectrum_collection->parse()){
-      carp(CARP_FATAL, "Failed to parse ms2 file: %s", ms2);
-    } 
-    // get spectra from ms2 file
-    FilteredSpectrumChargeIterator* spectrum_iterator = 
-      new FilteredSpectrumChargeIterator(spectrum_collection);
-    while (spectrum_iterator->hasNext()){
-      int charge = 0;
-      Spectrum* spectrum = spectrum_iterator->next(&charge);
-      spectra.insert(make_pair(make_pair(spectrum->getFirstScan(), 
-                                         charge), spectrum));
-    }
-    carp(CARP_INFO, "Number of Spectra %i", spectra.size());
-    delete spectrum_iterator;
+    getSpectra(spectra);
   }
 
-  for(set<MATCH_T*>::iterator match_it = matches->begin();
-      match_it != matches->end(); ++match_it){
+  for(set<MATCH_T*>::iterator match_it = matches.begin();
+      match_it != matches.end(); ++match_it){
 
-    int match_intensity = 1; // for NSAF every match counted as 1
+    FLOAT_T match_intensity = 1; // for NSAF every match counted as 1
 
     MATCH_T* match = (*match_it);
     // for sin, calculate total ion intensity for match by
@@ -471,16 +427,38 @@ void get_peptide_scores(
 
     // add ion_intensity to peptide scores
     PEPTIDE_T* peptide = get_match_peptide(match);
-    if (peptideToScore->find(peptide) ==  peptideToScore->end()){
-      peptideToScore->insert(make_pair(peptide, 0.0));
+    if (peptideToScore.find(peptide) ==  peptideToScore.end()){
+      peptideToScore.insert(make_pair(peptide, 0.0));
     } 
-    (*peptideToScore)[peptide] += match_intensity;
+    peptideToScore[peptide] += match_intensity;
   }
 
-  free(ms2);
 }
 
 
+/**
+ * Parse spectra from the file given in the ms2-file parameter.  Store
+ * spectra indexed by a scan-number,charge pair.
+ */
+void getSpectra(map<pair<int,int>, Spectrum*>& spectra){
+  char* ms2 = get_string_parameter("input-ms2");
+  SpectrumCollection* spectrum_collection = new SpectrumCollection(ms2);
+  if (!spectrum_collection->parse()){
+    carp(CARP_FATAL, "Failed to parse ms2 file: %s", ms2);
+  } 
+  // get spectra from ms2 file
+  FilteredSpectrumChargeIterator* spectrum_iterator = 
+    new FilteredSpectrumChargeIterator(spectrum_collection);
+  while (spectrum_iterator->hasNext()){
+    int charge = 0;
+    Spectrum* spectrum = spectrum_iterator->next(&charge);
+    spectra.insert(make_pair(make_pair(spectrum->getFirstScan(), 
+                                       charge), spectrum));
+  }
+  carp(CARP_INFO, "Number of Spectra %i", spectra.size());
+  delete spectrum_iterator;
+  free(ms2);
+}
 
 /**
  * Create a set of matches, all with an XCORR rank == 1 and all of which
@@ -493,36 +471,36 @@ void filter_matches(MATCH_COLLECTION_ITERATOR_T* match_collection_it,
   MATCH_ITERATOR_T* match_iterator = NULL;
   MATCH_COLLECTION_T* match_collection = NULL;
   FLOAT_T threshold = get_double_parameter("threshold");
-  bool qualify = FALSE;
+  bool qualify = false;
   while (match_collection_iterator_has_next(match_collection_it)){
 
     
     match_collection = match_collection_iterator_next(match_collection_it);
     match_iterator = new_match_iterator(match_collection, XCORR, TRUE);
-
+    
     while(match_iterator_has_next(match_iterator)){
       MATCH_T* match = match_iterator_next(match_iterator);
-      qualify = FALSE;
+      qualify = false;
       if (get_match_rank(match, XCORR) != 1){
 	continue;
       }
       // find a qvalue score lower than threshold
       if (get_match_score(match, PERCOLATOR_QVALUE) != FLT_MIN &&
 	  get_match_score(match, PERCOLATOR_QVALUE) <= threshold)  {
-	qualify = TRUE;
+	qualify = true;
       } else if (get_match_score(match, QRANKER_QVALUE) != FLT_MIN &&
-	       get_match_score(match, QRANKER_QVALUE) <= threshold)  {
-	qualify = TRUE;
+                 get_match_score(match, QRANKER_QVALUE) <= threshold)  {
+	qualify = true;
       } else if (get_match_score(match, DECOY_XCORR_QVALUE) != FLT_MIN &&
 		 get_match_score(match, DECOY_XCORR_QVALUE) <= threshold)  {
-	qualify = TRUE;
+	qualify = true;
       } 
-      
-      if (qualify == TRUE){
-	  match_set.insert(match);
-	}
+
+      if (qualify == true){
+        match_set.insert(match);
       }
-    }
+    } // next match
+  } // next file
 }
 
 
@@ -536,7 +514,7 @@ void filter_matches(MATCH_COLLECTION_ITERATOR_T* match_collection_it,
  */
 void get_meta_mapping(
 		    ProteinToPeptides* proteinToPeptides,
-		    MetaMapping* metaMapping
+		    MetaMapping& metaMapping
 		    ){
   carp(CARP_INFO, "Creating a mapping of meta protein to peptides");
   int count = 0;
@@ -545,12 +523,12 @@ void get_meta_mapping(
     PROTEIN_T* protein = prot_it->first;
     PeptideSet pep_set = prot_it->second;
 
-    if (metaMapping->find(pep_set) == metaMapping->end()){
-      MetaProtein meta_protein(compare_prot);
+    if (metaMapping.find(pep_set) == metaMapping.end()){
+      MetaProtein meta_protein(protein_id_less_than);
       count++;
-      metaMapping->insert(make_pair(pep_set, meta_protein));
+      metaMapping.insert(make_pair(pep_set, meta_protein));
     }
-    (*metaMapping)[pep_set].insert(protein);
+    metaMapping[pep_set].insert(protein);
   }
 
 }
@@ -619,13 +597,12 @@ void get_meta_ranks(
 
 
 /**
- * Greedily finds a peptide to protein mapping where each
+ * Greedily finds a peptide-to-protein mapping where each
  * peptide is only mapped to a single meta-protein. 
  *
  * Would of been better to implement with priority queue w/
  * adjancency lists: O(n*log(n)) but input size should be
- * small enough where performance would not be an issue
- *
+ * small enough that performance should not be an issue.
  */
 void perform_parsimony_analysis(MetaMapping* metaMapping){
   carp(CARP_INFO, "Performing Greedy Parsimony analysis");
@@ -642,7 +619,7 @@ void perform_parsimony_analysis(MetaMapping* metaMapping){
   // greedy algorithm to pick off the meta proteins with
   // most peptide mappings
   while (!peps_vector.empty()){
-    sort(peps_vector.begin(), peps_vector.end(), compare_sets);
+    sort(peps_vector.begin(), peps_vector.end(), sets_are_equal_size);
     pair<PeptideSet, MetaProtein> node = peps_vector.back();
     peps_vector.pop_back();
     if (node.first.size() == 0){ break; }// do not enter anything without peptide sizes
@@ -653,10 +630,11 @@ void perform_parsimony_analysis(MetaMapping* metaMapping){
 	   iter= peps_vector.begin();
 	 iter != peps_vector.end(); ++iter){
       PeptideSet peptides = (*iter).first;
-      PeptideSet difference(compare_pep);
+      PeptideSet difference(peptide_less_than);
       set_difference(peptides.begin(), peptides.end(), 
 		     cur_peptides.begin(), cur_peptides.end(), 
-		     inserter(difference, difference.end()), compare_pep);
+		     inserter(difference, difference.end()), 
+                     peptide_less_than);
       (*iter).first = difference;
     }
   }
@@ -772,13 +750,7 @@ void make_unique_mapping(
   for (PeptideToScore::iterator it = peptideToScore->begin();
        it != peptideToScore->end(); ++it){
     PEPTIDE_T* peptide = it->first;
-    PEPTIDE_SRC_ITERATOR_T* peptide_src_iterator =
-      new_peptide_src_iterator(peptide);
-    int num_proteins = 0;
-    while(peptide_src_iterator_has_next(peptide_src_iterator)){
-      peptide_src_iterator_next(peptide_src_iterator);
-      if (++num_proteins > 1) break;
-    }
+    int num_proteins = get_peptide_num_peptide_src(peptide);
     if (num_proteins > 1){
       peptideToScore->erase(it);
     }
@@ -792,119 +764,77 @@ void make_unique_mapping(
 /* comparison and helper functions */
 
 /** 
- *Comparison function for comparing set of peptides.
+ * Compare two sets of peptides and return true if the first unshared
+ * peptide sequence in set one is lexically less than that in set
+ * two.
  */
 bool compare_peptide_sets(PeptideSet set_one, PeptideSet set_two){
-  PeptideSet pep_union(compare_pep);
-  for (PeptideSet::iterator it = set_one.begin(); it != set_one.end();
-       ++it){
-    PEPTIDE_T* peptide = (*it);
-    if (pep_union.find(peptide) == pep_union.end()){
-      pep_union.insert((*it));
-    }
+
+  // compare each peptides in the two (sorted) sets
+  PeptideSet::iterator iter1 = set_one.begin();
+  PeptideSet::iterator iter2 = set_two.begin();
+
+  while( iter1 != set_one.end() && iter2 != set_two.end() ){
+    int diff = tri_compare_peptide_sequence(*iter1, *iter2);
+    if( diff < 0 ){
+      return true;
+    } else if(diff > 0 ){
+      return false;
+    } // else they are equal, compare the next
+
+    ++iter1;
+    ++iter2;
   }
-  for (PeptideSet::iterator it = set_two.begin(); it != set_two.end();
-       ++it){
-    if (pep_union.find((*it)) == pep_union.end()){
-      pep_union.insert((*it));
-    }
-  }
-  
-  if (pep_union.size() == set_one.size() && set_one.size() == set_two.size()){
+
+  // all peptides were the same; are the sets the same size?
+  if( set_one.size() == set_two.size() ){
     return false;
-  } else {
-    string string_one = peps_to_string(set_one);
-    string string_two = peps_to_string(set_two);
-    return string_one.compare(string_two) > 0;
-  }
-}
-/** 
- * Comparison function for comparing the equality of two proteins
- * based on thier protein ids'
- */
-bool compare_prot(PROTEIN_T* protein_one, PROTEIN_T* protein_two){
-  int compare = strcmp(get_protein_id(protein_one), get_protein_id(protein_two));
-  if (compare == 0){
+  } else if( set_one.size() > set_two.size() ){
     return false;
-  } else {
-    return (compare > 0);
+  } else { // one < two
+    return true;
   }
 }
 
 /**
- * Comparison function for comparing the equality of two peptides
- * based on their sequence
- */
-bool compare_pep(PEPTIDE_T* peptide_one, PEPTIDE_T* peptide_two){
-  int compare = strcmp(get_peptide_sequence(peptide_one), get_peptide_sequence(peptide_two));
-  if (compare == 0){
-    return false;
-  } else {
-    return (compare > 0);
-  }
-}
-
-/**
- * Comparison function for comparing the equality of MetaProteins
- * based off if they have the same set of proteins
+ * Comparison function for MetaProteins.  MetaProtein one is less than
+ * MetaProtein two if the first non-matching protein id of one is less than
+ * that of two.  
+ * \returns True if one < two, false if one == two or one > two.
  */
 bool compare_meta_proteins(MetaProtein set_one, MetaProtein set_two){
-  MetaProtein prot_union(compare_prot);
-  for (MetaProtein::iterator it = set_one.begin(); it != set_one.end();
-       ++it){
-    if (prot_union.find((*it)) == prot_union.end()){
-      prot_union.insert((*it));
+
+  // compare each protein in the two (sorted) sets
+  MetaProtein::iterator iter1 = set_one.begin();
+  MetaProtein::iterator iter2 = set_two.begin();
+
+  while( iter1 != set_one.end() && iter2 != set_two.end() ){
+    bool one_less_than_two = protein_id_less_than(*iter1, *iter2);
+    bool two_less_than_one = protein_id_less_than(*iter1, *iter2);
+    // different proteins one is less than the other
+    if( one_less_than_two || two_less_than_one ){
+      return one_less_than_two;
     }
-  }
-  for (MetaProtein::iterator it = set_two.begin(); it != set_two.end();
-       ++it){
-    if (prot_union.find((*it)) == prot_union.end()){
-      prot_union.insert((*it));
-    }
-  }
-  
-  if (prot_union.size() == set_one.size() && set_one.size() == set_two.size()){
+    // else, they are the same, keep comparing
+    ++iter1;
+    ++iter2;
+  } 
+
+  // all proteins were the same, are the sets the same size?
+  if( set_one.size() == set_two.size() ){
     return false;
-  } else {
-    string string_one = meta_protein_to_string(set_one);
-    string string_two = meta_protein_to_string(set_two);
-    return string_one.compare(string_two) > 0;
+  } else if( set_one.size() > set_two.size() ){
+    return false;
+  } else { // one < two
+    return true;
   }
 }
 
 /**
- * returns a string of all peptide sequences separated
- * by space.
+ * Compare the size of the PeptideSets in the two given pairs.
+ * \returns True if the PeptideSets are the same size, else false.
  */
-string peps_to_string(PeptideSet s){
-  stringstream ss (stringstream::in | stringstream::out);
-  for (PeptideSet::iterator p_it = s.begin();
-       p_it != s.end(); ++p_it){
-    char* seq = get_peptide_sequence((*p_it));  
-    ss << seq << " ";
-    free(seq);
-  }
-  return ss.str();
-}
-
-/**
- * \returns A string of all protein ids separated by
- * space
- */
-string meta_protein_to_string(MetaProtein meta_protein){
-  stringstream ss (stringstream::in | stringstream::out);
-  for (MetaProtein::iterator p_it = meta_protein.begin();
-       p_it != meta_protein.end(); ++p_it){
-    ss << get_protein_id((*p_it)) << " ";
-  }
-  return ss.str();
-}
-
-/**
- *Comparison function that just compares the size
- * of PeptideSet
- */
-bool compare_sets(
+bool sets_are_equal_size(
   pair<PeptideSet, MetaProtein > peps_one , 
   pair<PeptideSet, MetaProtein > peps_two){
   return ((peps_one).first.size() < (peps_two).first.size());
