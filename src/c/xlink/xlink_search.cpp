@@ -52,7 +52,6 @@ int xlink_search_main(int argc, char** argv) {
     "xlink-include-linears",
     "xlink-include-deadends",
     "xlink-include-selfloops",
-    "use-flanking-peaks",
     "use-mgf"
   };
   int num_options = sizeof(option_list) / sizeof(char*);
@@ -70,7 +69,7 @@ int xlink_search_main(int argc, char** argv) {
   initialize_run(XLINK_SEARCH_MODS_COMMAND, argument_list, num_arguments,
 		 option_list, num_options, argc, argv);
   
-  carp(CARP_INFO, "Beginning crux xlink-search");
+  carp(CARP_INFO, "Beginning crux xlink-search-mods");
 
 
   //int num_missed_cleavages = 0;
@@ -244,7 +243,7 @@ int xlink_search_main(int argc, char** argv) {
   xlink_compute_qvalues();
 
   carp(CARP_INFO, "Elapsed time: %.3g s", wall_clock() / 1e6);
-  carp(CARP_INFO, "Finished crux search-for-xlinks.");
+  carp(CARP_INFO, "Finished crux search-for-xlink-mods.");
 
   return(0);
 }

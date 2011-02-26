@@ -41,7 +41,11 @@ libxlink_la_SOURCES = \
   xlink_search.cpp \
   xlink_assign_ions.cpp \
   xlink_compute_qvalues.cpp \
-  generate_xlink_peptides.cpp
+  generate_xlink_peptides.cpp \
+  XLinkSite.cpp \
+  XLinkSite.h \
+  XLinkBondMap.cpp \
+  XLinkBondMap.h
 
 
 

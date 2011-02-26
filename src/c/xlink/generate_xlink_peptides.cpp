@@ -130,7 +130,7 @@ int main(int argc, char** argv){
 
 
   XLinkBondMap bondmap;
-
+  //carp(CARP_INFO, "Creating candidate vector");
   MatchCandidateVector xlink_candidates(
     bondmap, 
     peptide_mods, 
@@ -138,7 +138,7 @@ int main(int argc, char** argv){
     index,
     database);
 
-
+  //carp(CARP_INFO, "Done creating candidate vector");
   int type_counts[3] = {0,0,0};
   int type_mod_counts[3] = {0,0,0};
 

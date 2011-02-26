@@ -492,12 +492,6 @@ void initialize_parameters(void){
       "Specify the location of the left edge of the "
       "first bin used to discretize the m/z axis. Default=0.68",
       "Available for crux-search-for-matches.", "true");
-  // initialize as -1, then set as bool after cmdline parsed
-  set_string_parameter("use-flanking-peaks", "unset",
-      "Include peaks +/- 1da around b/y ions in theoretical spectrum.  "
-      "sequest-search default=T. search-for-matches default=F.",
-      "Available in the paramter file for all search commands.",
-      "true");
   set_double_parameter("spectrum-min-mass", 0.0, 0, BILLION, 
       "Minimum mass of spectra to be searched. Default=0.",
       "Available for crux-search-for-matches.", "true");
@@ -859,12 +853,11 @@ void initialize_parameters(void){
       "Argument for xlink-score-spectrum.", "false");
 
   // **** search-xlink options ****
-  /*
   set_boolean_parameter("xcorr-use-flanks", TRUE,
       "Use flank peaks in xcorr theoretical spectrum",
       "Available for crux search-for-xlinks program (Default=T).",
       "true");
-  */
+
   set_boolean_parameter("xlink-include-linears", TRUE, 
       "Include linear peptides in the "
       "database.  Default=T.",
@@ -1171,35 +1164,6 @@ double get_mz_bin_offset() {
 }
 
 /**
- * Set the use-flanking-peaks parameter.  If the value was set by
- * user, set to that value.  Otherwise, set according to what command
- * is being run.  Defaults are F for search-for-matches and T for
- * others (sequest-search, search-for-xlinks).
- */
-void set_flanking_peaks(const char* exe_name){
-
-  const char* value = get_string_parameter_pointer("use-flanking-peaks");
-  // if it is the default value, it was not set by the user
-  if( strcmp(value, "unset") == 0 ){
-    if( strcmp(exe_name, "search-for-matches") == 0 ){
-      value = "FALSE";
-    } else {
-      value = "TRUE";
-    }
-  } else { // use the value set by the user
-    if( value[0] == 'T' || value[0] == 't' ){
-      value = "TRUE";
-    } else if( value[0] == 'F' || value[0] == 'f' ){
-      value = "FALSE";
-    } //else don't change, let check find error
-  }
-  // set the new value and change type to BOOLEAN_T
-  update_hash_value(parameters, "use-flanking-peaks", value);
-  update_hash_value(types, "use-flanking-peaks", (void*)"BOOLEAN_T");
-  check_option_type_and_bounds("use-flanking-peaks");
-}
-
-/**
  * Take the command line string from main, find the parameter file 
  * option (if present), parse it's values into the hash, and parse
  * the command line options and arguments into the hash.
@@ -1313,9 +1277,6 @@ BOOLEAN_T parse_cmd_line_into_params_hash(int argc,
   sprintf(value_str, "%i", max);
   update_hash_value(parameters, "psms-per-spectrum-reported", value_str);
 
-  set_flanking_peaks(exe_name);
-
-
   parameter_plasticity = FALSE;
 
   // Set m/z bin width based on mass type.
@@ -1325,7 +1286,7 @@ BOOLEAN_T parse_cmd_line_into_params_hash(int argc,
 }
 
 /**
- * Read the value given for cusom-enzyme and enter values into global
+ * Read the value given for custom-enzyme and enter values into global
  * params.  Correct syntax is [A-Z]|[A-Z] or {A-Z}|{A-Z}.  An X
  * indicates that any residue is legal. Sets pre/post_list size and
  * allocates memory for pre/post_cleavage_list.  Sets

@@ -230,27 +230,27 @@ void XLinkPeptide::addCandidates(
       */
       cur_aa_mods = this_aa_mods;
     }
-
+    //carp(CARP_INFO,"Calling addLinkablePeptides:%d",mod_idx);
     addLinkablePeptides(0, max_mass-linker_mass_, index, database,
 			peptide_mod, FALSE, bondmap, linkable_peptides);
-    
+    //carp(CARP_INFO,"Done calling addLinkablePeptides:%d",mod_idx);
     
   }//next peptide mod
 
   if (linkable_peptides.size() == 0) {
-    carp(CARP_DEBUG, "No linkable peptides found!");
+    carp(CARP_WARNING, "No linkable peptides found!");
     return;
   }
 
+  //carp(CARP_INFO,"Sorting by mass");
   //sort by increasing mass.
   sort(linkable_peptides.begin(),
        linkable_peptides.end(), 
        compareXLinkablePeptideMass);
   /*
   for (unsigned int idx=0;idx<linkable_peptides.size();idx++) {
-    char* seq = get_peptide_sequence(linkable_peptides[idx].getPeptide());
-    cerr <<linkable_peptides[idx].getMass()<<" "<<seq<<endl;
-    free(seq);
+    cerr <<linkable_peptides[idx].getMass()<<" "
+         <<linkable_peptides[idx].getModifiedSequenceString()<<endl;
   }
   */
   unsigned int first_idx = 0;
@@ -283,36 +283,37 @@ void XLinkPeptide::addCandidates(
 	continue;
       }
 
+      //carp(CARP_INFO,"Generating xlink candidates");
+
       //for every linkable site, generate the candidate if it is legal.
       for (unsigned int link1_idx=0;link1_idx < pep1.numLinkSites(); link1_idx++) {
 	for (unsigned int link2_idx=0;link2_idx < pep2.numLinkSites();link2_idx++) {
 	  //cerr<<"link1_idx:"<<link1_idx<<endl;
 	  //cerr<<"link2_idx:"<<link2_idx<<endl;
-	  int link1_site = pep1.getLinkSite(link1_idx);
-	  //cerr<<"link1_site:"<<link1_site<<endl;
-	  int link2_site = pep2.getLinkSite(link2_idx);
-	  //cerr<<"link2_site:"<<link2_site<<endl;
 	  //cerr<<"Testing link:"<<endl;
-	  if (bondmap.canLink(pep1, pep2, link1_site, link2_site)) {
+	  if (bondmap.canLink(pep1, pep2, link1_idx, link2_idx)) {
 	    //create the candidate
 	    MatchCandidate* newCandidate = 
 	      new XLinkPeptide(pep1, pep2, link1_idx, link2_idx);
             if (newCandidate->getNumMissedCleavages() <= max_missed_cleavages) {
               candidates.add(newCandidate);
+              //cerr<<"Adding candidate:"<<newCandidate -> getSequenceString()<<
+	      //" "<<newCandidate->getMass(MONO)<<endl;
             } else {
               delete newCandidate;
             }
-	    //cerr<<"Adding candidate:"<<newCandidate -> getSequenceString()<<
-	    //	" "<<newCandidate->getMass()<<" "<<min_mass<<" "<<max_mass<<endl;
+	    
 	  }
 	}
       } /* for link1_idx */
       last_idx--;
+      //carp(CARP_INFO,"Decremented last to:%d",last_idx);
       current_mass = first_mass + linkable_peptides[last_idx].getMass();
     }
 
     //start with the next candidate.
     first_idx++;
+    //carp(CARP_INFO,"Incremented first to:%d",first_idx);
   }
 
   //cerr <<"XLinkPeptide::addCandidates: done"<<endl;

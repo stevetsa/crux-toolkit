@@ -80,9 +80,7 @@ void SelfLoopPeptide::addCandidates(
 
     for (unsigned int link1_idx=0;link1_idx<pep.numLinkSites()-1;link1_idx++) {
       for (unsigned int link2_idx=link1_idx+1;link2_idx<pep.numLinkSites();link2_idx++) {
-	int link1_site = pep.getLinkSite(link1_idx);
-	int link2_site = pep.getLinkSite(link2_idx);
-	if (bondmap.canLink(pep, link1_site, link2_site)) {
+	if (bondmap.canLink(pep, link1_idx, link2_idx)) {
 	  //create the candidate.
 	  //cerr<<"Adding new selfloop peptide"<<endl;
 	  MatchCandidate* new_candidate = 
