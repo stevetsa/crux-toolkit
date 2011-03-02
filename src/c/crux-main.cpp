@@ -20,6 +20,9 @@
 #include "QRanker.h"
 #include "PrintProcessedSpectra.h"
 #include "SearchForXLinks.h"
+#include "SearchForMPSMS.h"
+#include "PredictMPSMIons.h"
+#include "ScoreMPSMSpectrum.h"
 #include "PrintVersion.h"
 
 /**
@@ -39,6 +42,9 @@ int main(int argc, char** argv){
   applications.add(new QRanker());
   applications.add(new PrintProcessedSpectra());
   applications.add(new SearchForXLinks());
+  applications.add(new SearchForMPSMS());
+  applications.add(new PredictMPSMIons());
+  applications.add(new ScoreMPSMSpectrum());
   applications.add(new PrintVersion());
 
   int ret = applications.main(argc, argv);

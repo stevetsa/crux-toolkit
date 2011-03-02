@@ -99,6 +99,27 @@ FLOAT_T SpectrumZState::getNeutralMass() {
   return neutral_mass_;
 }
 
+bool SpectrumZState::operator < (const SpectrumZState z) const {
+
+  if (charge_ == z.charge_) {
+    return neutral_mass_ < z.neutral_mass_;
+  } else {
+
+    return charge_ < z.charge_;
+  }
+}
+
+bool SpectrumZState::operator > (SpectrumZState& z) {
+
+  if (charge_ == z.charge_) {
+    return neutral_mass_ > z.neutral_mass_;
+  } else {
+    return charge_ > z.charge_;
+  }
+
+}
+
+
 /**
  * Local Variables:
  * mode: c

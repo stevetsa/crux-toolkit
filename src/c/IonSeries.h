@@ -62,14 +62,6 @@ class IonSeries {
     );
 
   /**
-   * user must ensure that there is enough space for this ion
-   * adds ion to ion_series' master ion_array and if B|Y ion to the specific ion_array
-   */
-  void addIon(
-    Ion* ion ///< ion to add -in
-  );
-
-  /**
    * helper function: add_ions
    * add all the ions to ion_series up to the max charge
    *\returns TRUE if successfully adds all ions, else FALSE
@@ -131,6 +123,13 @@ class IonSeries {
     int charge ///< The charge for this ion series -in
     );
 
+  /**
+   * user must ensure that there is enough space for this ion
+   * adds ion to ion_series' master ion_array and if B|Y ion to the specific ion_array
+   */
+  void addIon(
+    Ion* ion ///< ion to add -in
+    );
   
 /**
  * Updates an ion_series to a specific instance of a peptide sequence.
@@ -149,6 +148,10 @@ class IonSeries {
    */
   virtual ~IonSeries();
 
+
+  static void freeIonSeries(
+    IonSeries* ion_series,
+    bool free_ions);
 
   /**
    *Iterator access
@@ -235,6 +238,14 @@ class IonSeries {
     IonSeries* src,///< ion to copy from -in
     IonSeries* dest///< ion to copy to -out
     );
+
+  /**
+   * remove an ion from IonSeries, does not free ion.
+   */
+  void removeIon(
+    Ion* ion ///<ion to remove
+  );
+
 
   /*************************************
    * ION_SERIES_T: get and set methods

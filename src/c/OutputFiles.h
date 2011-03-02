@@ -43,6 +43,9 @@ class OutputFiles{
                           double* features,
                           int num_features);
 
+  MatchFileWriter* getFilePtr(int idx);
+  int getMatchesPerSpec();
+
  private:
   bool createFiles(FILE*** file_array_ptr,
                    const char* output_dir,

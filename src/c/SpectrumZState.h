@@ -82,8 +82,10 @@ class SpectrumZState {
   FLOAT_T getNeutralMass();
   
 
-
-
+  bool operator < (const SpectrumZState z) const;
+  bool operator > (SpectrumZState& z);
+  bool operator == (SpectrumZState& z);
+  bool operator != (SpectrumZState& z);
 
 
 };

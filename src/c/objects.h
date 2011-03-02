@@ -21,6 +21,7 @@ class MatchFileReader;
 class Spectrum;
 class SpectrumZState;
 
+class MPSM_MatchCollection;
 
 /**
  * \typedef PEAK_T 
@@ -142,7 +143,18 @@ enum _mass_type {AVERAGE, MONO, NUMBER_MASS_TYPES };
  */
 typedef enum _mass_type MASS_TYPE_T;
 
+/**
+ * The enum for retention time predictor
+ */
+enum _rtime_predictor_type {
+  RTP_INVALID,
+  RTP_KROKHIN,
+  RTP_PALMBALD,
+  RTP_AKLAMMER,
+  NUMBER_RTP_TYPES
+};  
 
+typedef enum _rtime_predictor_type RTP_TYPE_T;
 /**
  * The enum for window type for selecting peptides or assigning ions.
  */

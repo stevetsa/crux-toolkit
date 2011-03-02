@@ -1,6 +1,6 @@
 distdir = $(PACKAGE)_$(VERSION)
 
-SUBDIRS = ArrayLibrary MSToolkit percolator q-ranker xlink .
+SUBDIRS = ArrayLibrary MSToolkit percolator q-ranker xlink mpsm .
 
 # Crux can use either single or double precision floating poinnt.
 if USEDOUBLES
@@ -160,6 +160,7 @@ libcrux_la_CFLAGS = \
 
 libcrux_la_CXXFLAGS = \
   $(AM_CXXFLAGS) \
+  -I$(top_srcdir)/src/c/mpsm \
   -I$(top_srcdir)/src/c/MSToolkit \
   -I$(top_srcdir)/src/c/MSToolkit/RAMP \
   -I$(top_srcdir)/src/c/percolator/ \
@@ -201,12 +202,15 @@ crux_CXXFLAGS = \
   -I$(top_srcdir)/src/c/MSToolkit \
   -I$(top_srcdir)/src/c/percolator \
   -I$(top_srcdir)/src/c/q-ranker \
+  -I$(top_srcdir)/src/c/mpsm \
   -I$(top_srcdir)/src/c/xlink
 crux_LDADD = \
   $(AM_LDFLAGS) \
   -L$(top_builddir)/src/c/xlink \
   -lxlink \
   libcrux.la \
+  -L$(top_builddir)/src/c/mpsm \
+  -lmpsm \
   -lstdc++ \
   -L$(top_builddir)/src/c/ArrayLibrary \
   -L$(top_builddir)/src/c/MSToolkit \

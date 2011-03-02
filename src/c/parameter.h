@@ -21,6 +21,7 @@
 #include <string.h>
 #include <math.h>
 #include <limits.h>
+#include <string>
 #include "utils.h"
 #include "crux-utils.h"
 #include "carp.h"
@@ -78,7 +79,7 @@ enum parameter_type {
   ION_TYPE_P,        ///< parameters of type ION_TYPE_T
   ALGORITHM_TYPE_P,  ///< parameters of type ALGORITHM_TYPE_T
   WINDOW_TYPE_P,     ///< parameters of type WINDOW_TYPE_T
-
+  RTP_TYPE_P,     ///< parameters of type RTP_TYPE_T
   NUMBER_PARAMETER_TYPES  ///< leave this last, number of types
 };
 typedef enum parameter_type PARAMETER_TYPE_T;
@@ -145,6 +146,10 @@ int get_int_parameter(
   const char* name  ///< the name of the parameter looking for -in
   );
 
+std::vector<int> get_int_vector_parameter(
+  const char* name ///< the name of the parameter looking for -in
+  );
+
 /**
  * Searches through the list of parameters, looking for one whose
  * name matches the string.  This function returns the parameter value if the
@@ -165,6 +170,10 @@ double get_double_parameter(
  */
 char* get_string_parameter(
   const char* name  ///< the name of the parameter looking for -in
+  );
+
+std::vector<std::string> get_string_vector_parameter(
+  const char* name
   );
 
 /**
@@ -215,6 +224,10 @@ ENZYME_T get_enzyme_type_parameter(
   );
 
 WINDOW_TYPE_T get_window_type_parameter(
+  const char* name
+  );
+
+RTP_TYPE_T get_rtp_type_parameter(
   const char* name
   );
 

@@ -18,6 +18,8 @@
 #include <inttypes.h>
 
 
+static const bool owns_peptide = true;
+
 // At one point I need to reverse the endianness for pfile_create to work
   // Apparently that is no longer true. Hence 0 below.
   static const bool REVERSE_ENDIAN = 0;
@@ -99,7 +101,11 @@ void Ion::initBasicIon(
   type_ = type;
   cleavage_idx_ = cleavage_idx;
   charge_ = charge;
-  peptide_sequence_ = peptide;
+  if (owns_peptide) {
+    peptide_sequence_ = my_copy_string(peptide);
+  } else {
+    peptide_sequence_ = peptide;
+  }
   // TODO get mass type from param file
   peptide_mass_ = calc_sequence_mass(peptide, MONO); 
   peak_ = NULL;
@@ -213,7 +219,8 @@ Ion::Ion(
   // calculate and set ion mass/z
   if(!calcMassZWithMass(mass_type, base_mass, true)){
     carp(CARP_ERROR, "failed to calculate ion mass/z");
-  } 
+  }
+ 
 }
 
 
@@ -221,6 +228,10 @@ Ion::Ion(
  * frees A ION_T object
  */
 Ion::~Ion() {
+
+  if (owns_peptide && peptide_sequence_) {
+    free(peptide_sequence_);
+  }
 }
 
 /**
@@ -256,7 +267,17 @@ void Ion::print(
   for(mod_idx=0; mod_idx < MAX_MODIFICATIONS; ++mod_idx){
     fprintf(file,"\t%d", modification_counts_[mod_idx]);
   }
-  
+
+  if (isForwardType()) {
+    char temp = peptide_sequence_[cleavage_idx_];
+    peptide_sequence_[cleavage_idx_] = '\0';
+    fprintf(file,"\t%s",peptide_sequence_);
+    peptide_sequence_[cleavage_idx_] = temp;
+  } else {
+    int offset = strlen(peptide_sequence_) - cleavage_idx_;
+    fprintf(file,"\t%s",(peptide_sequence_+offset));
+  }
+
   fprintf(file,"\n");
 }
 
@@ -994,6 +1015,7 @@ void Ion::setPeptideSequence(
   char* peptide_sequence ///< the parent peptide's sequence of this ion -in 
   )
 {
+  carp(CARP_INFO,"peptide sequence set to:%s",peptide_sequence);
   peptide_sequence_ = peptide_sequence;
 }
 

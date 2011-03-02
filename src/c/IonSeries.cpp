@@ -200,6 +200,22 @@ IonSeries::~IonSeries()
 
 }
 
+void IonSeries::freeIonSeries(
+  IonSeries* ion_series,
+  bool free_ions) {
+
+  //empty the array, that should make sure that the
+  //ions aren't deleted.
+  
+  if (!free_ions) {
+    ion_series->ions_.clear();
+  }
+
+  delete ion_series;
+
+}
+
+
 /**
  * Iterator access
  */
@@ -225,7 +241,7 @@ void IonSeries::print(
   }
   
   // print header
-  fprintf(file, "m/z\tmass\tcharge\tion-series\tpeptide-bond-index\tNH3\tH2O\tISOTOPE\tFLANK\n");
+  fprintf(file, "m/z\tmass\tcharge\tion-series\tpeptide-bond-index\tNH3\tH2O\tISOTOPE\tFLANK\tSEQ\n");
   
   
   // print each ion in the ion series
@@ -967,6 +983,33 @@ void IonSeries::copy(
 
   dest->is_predicted_ = true;
 }
+
+/**
+ * remove an ion from IonSeries, does not free ion.
+ */
+void IonSeries::removeIon(
+  Ion* ion ///<ion to remove
+  ) {
+
+
+  IonIterator ion_iter;
+
+  for (ion_iter = begin();
+    ion_iter != end();
+    ++ion_iter) {
+
+    if (*ion_iter == ion) {
+      ions_.erase(ion_iter);
+      break;
+    }
+  }
+
+  if (ion_iter == end()) {
+    carp(CARP_ERROR,"Cannot find ion to delete!");
+  }
+
+}
+
 
 /*************************************
  * ION_SERIES_T: get and set methods

@@ -503,7 +503,7 @@ void set_match_zstate(
   SpectrumZState& zstate);
 
 
-SpectrumZState& get_match_zstate_(MATCH_T* match);
+SpectrumZState& get_match_zstate(MATCH_T* match);
 
 
 /*

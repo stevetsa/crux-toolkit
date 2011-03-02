@@ -522,7 +522,13 @@ void OutputFiles::writeMatchFeatures(
 }
 
 
+MatchFileWriter* OutputFiles::getFilePtr(int idx) {
+  return (delim_file_array_[idx]);
+}
 
+int OutputFiles::getMatchesPerSpec() {
+  return matches_per_spec_;
+}
 
 
 
