@@ -17,12 +17,14 @@ class ZStateIndex: public std::vector<SpectrumZState>{
   bool add(SpectrumZState& zstate);
   bool add(ZStateIndex zstates);
 
+  std::string getChargeString();
+
 
   int numZStates();
   
   bool operator == (ZStateIndex& z);
   bool operator != (ZStateIndex& z);
-  bool operator < (ZStateIndex& z);
+  bool operator < (const ZStateIndex& z) const;
   bool operator > (ZStateIndex& z);
 
   friend std::ostream& operator<<(std::ostream &os, ZStateIndex &obj);

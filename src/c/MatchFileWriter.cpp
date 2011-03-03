@@ -191,7 +191,8 @@ void MatchFileWriter::addColumnNames(COMMAND_T command, bool has_decoys){
       addColumnName(BY_IONS_TOTAL_COL);
     }
     break;
-
+  case SEARCH_MPSMS_COMMAND:
+    // TODO: implement
   case XLINK_SEARCH_COMMAND:
     // TODO: does search-for-xlinks use MatchFileWriter?
     break;
@@ -241,6 +242,7 @@ void MatchFileWriter::addColumnNames
   // search commands handled elsewhere
   case SEARCH_COMMAND:       ///< search-for-matches
   case SEQUEST_COMMAND:      ///< sequest-search
+  case SEARCH_MPSMS_COMMAND:
   case XLINK_SEARCH_COMMAND:
     addColumnNames(command, has_decoys);
     return;

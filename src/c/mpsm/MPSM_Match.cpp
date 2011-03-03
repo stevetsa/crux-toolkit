@@ -9,24 +9,22 @@
 using namespace std;
 
 bool MPSM_MatchCompare(MATCH_T* m1, MATCH_T* m2) {
-  int c1 = get_match_charge(m1);
-  int c2 = get_match_charge(m2);
 
-  if (c1 == c2) {
 
-    PEPTIDE_T* p1 = get_match_peptide(m1);
-    char* s1 = get_peptide_unshuffled_modified_sequence(p1);
-    string string_s1(s1);
-    free(s1);
-    PEPTIDE_T* p2 = get_match_peptide(m2);
-    char* s2 = get_peptide_unshuffled_modified_sequence(p2);
-    string string_s2(s2);
-    free(s2);
-    return string_s1 < string_s2;
-  } else {
-
-    return c1 < c2;
+  if (get_match_zstate(m1) != get_match_zstate(m2)) {
+    return get_match_zstate(m1) < get_match_zstate(m2);
   }
+
+  PEPTIDE_T* p1 = get_match_peptide(m1);
+  char* s1 = get_peptide_unshuffled_modified_sequence(p1);
+  string string_s1(s1);
+  free(s1);
+  PEPTIDE_T* p2 = get_match_peptide(m2);
+  char* s2 = get_peptide_unshuffled_modified_sequence(p2);
+  string string_s2(s2);
+  free(s2);
+  return string_s1 < string_s2;
+
 }
 
 
@@ -368,6 +366,53 @@ string MPSM_Match::getSRankString() {
   }
 
   return oss.str();
+
+}
+
+int MPSM_Match::getFirstScan() {
+
+  return getSpectrum()->getFirstScan();
+}
+
+string MPSM_Match::getChargeString() {
+  return getZStateIndex().getChargeString();
+}
+
+FLOAT_T MPSM_Match::getSpectrumPrecursorMZ() {
+  return getSpectrum()->getPrecursorMz();
+
+}
+
+string MPSM_Match::getPeptideMassString() {
+
+  vector<FLOAT_T> peptide_masses;
+  getPeptideMasses(peptide_masses);
+
+  return DelimitedFile::splice(peptide_masses, ',');
+  
+}
+
+string MPSM_Match::getNeutralMassString() {
+
+  vector<FLOAT_T> neutral_masses;
+  getSpectrumNeutralMasses(neutral_masses);
+  
+  return DelimitedFile::splice(neutral_masses, ',');
+
+}
+
+string MPSM_Match::getSequenceString() {
+  
+  vector<string> sequences;
+  getPeptideModifiedSequences(sequences);
+
+  return DelimitedFile::splice(sequences, ',');
+
+}
+
+int MPSM_Match::getMatchesPerSpectrum() {
+  
+  return getParent() -> numMatches();
 
 }
 

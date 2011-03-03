@@ -32,8 +32,8 @@ class MPSM_OutputFiles: public OutputFiles {
     void writeMatches(MPSM_ZStateMap& charge_map);
   protected:
     void writeMatches(std::vector<MPSM_MatchCollection>& mpsm_match_collections);
-    void writeMatches(FILE* file_ptr, MPSM_MatchCollection& mpsm_match_collection);
-    void writeMatch(FILE* file_ptr, MPSM_Match& mpsm_match);
+    void writeMatches(MatchFileWriter* file_ptr, MPSM_MatchCollection& mpsm_match_collection);
+    void writeMatch(MatchFileWriter* file_ptr, MPSM_Match& mpsm_match);
 };
 
 #endif //MPSM_OUTPUTFILES_H

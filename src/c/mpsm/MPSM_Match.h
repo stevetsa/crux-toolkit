@@ -96,6 +96,15 @@ class MPSM_Match {
 
   void predictIons(IonSeries* ion_series);
 
+  //Accessor functions for writing the match.
+  int getFirstScan();
+  std::string getChargeString();
+  FLOAT_T getSpectrumPrecursorMZ();
+  std::string getPeptideMassString();
+  std::string getNeutralMassString();
+  std::string getSequenceString();
+  int getMatchesPerSpectrum();
+
     
   FLOAT_T getScore(SCORER_TYPE_T match_mode);
   void setScore(SCORER_TYPE_T match_mode, FLOAT_T score);
@@ -108,6 +117,8 @@ class MPSM_Match {
   bool operator < (const MPSM_Match& match_obj) const;
   friend std::ostream& operator <<(std::ostream& os, MPSM_Match& match_obj);
   friend bool compareMPSM_Match(const MPSM_Match& c1, const MPSM_Match& c2);
+
+
 
 
 };

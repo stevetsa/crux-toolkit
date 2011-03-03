@@ -222,6 +222,7 @@ MATCH_COLLECTION_T* run_percolator_or_qranker(
       case QVALUE_COMMAND:
       case PROCESS_SPEC_COMMAND:
       case XLINK_SEARCH_COMMAND:
+      case SEARCH_MPSMS_COMMAND:
       case VERSION_COMMAND:
       case INVALID_COMMAND:
       case NUMBER_COMMAND_TYPES:

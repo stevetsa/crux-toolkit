@@ -46,6 +46,18 @@ class SearchForMPSMS: public CruxApplication {
     int mods_per_peptide
   );
 
+  bool extendChargeMap(
+    MPSM_ZStateMap& spsm_map,
+    MPSM_ZStateMap& current_mpsm_map,
+    int mpsm_level
+  );
+
+  bool extendMatch(
+    MPSM_Match& orig_mpsm,
+    MPSM_MatchCollection& spsm_matches,
+    MPSM_ZStateMap& new_mpsm_matches,
+    int match_collection_idx);
+  
 
  public:
 

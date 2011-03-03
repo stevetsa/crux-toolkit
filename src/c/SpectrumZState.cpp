@@ -119,6 +119,15 @@ bool SpectrumZState::operator > (SpectrumZState& z) {
 
 }
 
+bool SpectrumZState:: operator == (const SpectrumZState& z) const {
+
+  return ((charge_ == z.charge_) && (neutral_mass_ == z.neutral_mass_));
+}
+
+bool SpectrumZState::operator != (const SpectrumZState& z) const {
+  return !((*this) == z);
+}
+
 
 /**
  * Local Variables:

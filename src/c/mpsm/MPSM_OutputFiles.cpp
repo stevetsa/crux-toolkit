@@ -28,14 +28,14 @@ void MPSM_OutputFiles::writeMatches(MPSM_ZStateMap& charge_map) {
     iter != charge_map.end();
     ++iter) {
     ZStateIndex charge = iter -> first;
-    //cout <<"Printing matches for "<<charge<<endl;
+    cout <<"Printing matches for "<<charge<<endl;
 
     vector<MPSM_MatchCollection>& mpsm_match_collections = iter -> second;
 
     //if (charge.size() == 1) {
       for (int collection_idx = 0; collection_idx < mpsm_match_collections.size(); collection_idx++) {
         MatchFileWriter* file_ptr = getFilePtr(collection_idx);
-        //writeMatches(file_ptr, mpsm_match_collections[collection_idx]);
+        writeMatches(file_ptr, mpsm_match_collections[collection_idx]);
       }
     //} else {
     //  writeMatches(mpsm_match_collections);
@@ -47,7 +47,7 @@ void MPSM_OutputFiles::writeMatches(MPSM_ZStateMap& charge_map) {
 void MPSM_OutputFiles::writeMatches(vector<MPSM_MatchCollection>& mpsm_match_collections) {
   int collection_idx;
 
-  //cout <<"Size of collection:"<<mpsm_match_collections.size()<<endl;
+  cout <<"Size of collection:"<<mpsm_match_collections.size()<<endl;
 
   for (collection_idx = 0; collection_idx < mpsm_match_collections.size(); collection_idx++) {
     int file_idx;
@@ -61,15 +61,15 @@ void MPSM_OutputFiles::writeMatches(vector<MPSM_MatchCollection>& mpsm_match_col
     }
 
     //cout <<"collection_idx:"<<collection_idx<<" file_idx:"<<file_idx<<endl;
-
+    
     MatchFileWriter* file_ptr = getFilePtr(file_idx);
-    //writeMatches(file_ptr, mpsm_match_collections[collection_idx]);
+    writeMatches(file_ptr, mpsm_match_collections[collection_idx]);
     
   }
 }
 
 void MPSM_OutputFiles::writeMatches(
-  FILE* file_ptr, 
+  MatchFileWriter* file_ptr, 
   MPSM_MatchCollection& mpsm_match_collection) {
 
   bool do_sort = get_boolean_parameter("mpsm-do-sort");
@@ -98,16 +98,19 @@ void MPSM_OutputFiles::writeMatches(
 }
 
 void MPSM_OutputFiles::writeMatch(
-  FILE* file_ptr,
+  MatchFileWriter* file_ptr,
   MPSM_Match& mpsm_match) {
 
-  //cout <<"writeMatch:start()"<<endl;
-  ostringstream oss;
 
-  oss << mpsm_match;
+  file_ptr->setColumnCurrentRow(SCAN_COL, mpsm_match.getFirstScan());
+  file_ptr->setColumnCurrentRow(CHARGE_COL,  mpsm_match.getChargeString());    
+  file_ptr->setColumnCurrentRow(SPECTRUM_PRECURSOR_MZ_COL, mpsm_match.getSpectrumPrecursorMZ());
+  file_ptr->setColumnCurrentRow(SPECTRUM_NEUTRAL_MASS_COL, mpsm_match.getNeutralMassString());
+  file_ptr->setColumnCurrentRow(PEPTIDE_MASS_COL, mpsm_match.getPeptideMassString());
+  file_ptr->setColumnCurrentRow(XCORR_SCORE_COL, mpsm_match.getScore(XCORR));
+  file_ptr->setColumnCurrentRow(XCORR_RANK_COL, mpsm_match.getXCorrRank());
+  file_ptr->setColumnCurrentRow(MATCHES_SPECTRUM_COL, mpsm_match.getMatchesPerSpectrum());
+  file_ptr->setColumnCurrentRow(SEQUENCE_COL, mpsm_match.getSequenceString());
+  file_ptr->writeRow();
 
-  std::string string_value = oss.str();
-
-  fprintf(file_ptr, "%s\n", string_value.c_str());
-  //cout <<"writeMatch:end()"<<endl;
 }

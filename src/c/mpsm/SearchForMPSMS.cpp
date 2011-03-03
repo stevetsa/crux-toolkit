@@ -10,116 +10,6 @@
 
 using namespace std;
 
-
-/* Private functions */
-
-void SearchForMPSMS::search(
-  MPSM_ZStateMap& charge_spsm_map, 
-  MPSM_ZStateMap& charge_mpsm_map
-) {
-
-}
-
-
-int SearchForMPSMS::searchPepMods(
-  MATCH_COLLECTION_T* match_collection, ///< store PSMs here
-  BOOLEAN_T is_decoy,   ///< generate decoy peptides from index/db
-  INDEX_T* index,       ///< index to use for generating peptides
-  DATABASE_T* database, ///< db to use for generating peptides
-  Spectrum* spectrum,         ///< spectrum to search
-  SpectrumZState& zstate,       ///< seach spectrum at this charge state
-  PEPTIDE_MOD_T** peptide_mods, ///< list of peptide mods to apply
-  int num_peptide_mods, ///< how many p_mods to use from the list
-  BOOLEAN_T store_scores///< keep all scores for p-value estimation
-) {
-  
-  // set match_collection charge
-  set_match_collection_zstate(match_collection, zstate);
-
-  // get spectrum precursor mz
-  double mz = spectrum->getPrecursorMz();
-
-  int mod_idx = 0;
-
-  // assess scores after all pmods with x amods have been searched
-  int cur_aa_mods = 0;
-
-  // for each peptide mod
-  for(mod_idx=0; mod_idx<num_peptide_mods; mod_idx++){
-    // get peptide mod
-    PEPTIDE_MOD_T* peptide_mod = peptide_mods[mod_idx];
-
-    // is it time to assess matches?
-    int this_aa_mods = peptide_mod_get_num_aa_mods(peptide_mod);
-    
-    if( this_aa_mods > cur_aa_mods ){
-      carp(CARP_DEBUG, "Finished searching %i mods", cur_aa_mods);
-      BOOLEAN_T passes = isSearchComplete(match_collection, cur_aa_mods);
-      if( passes ){
-        carp(CARP_DETAILED_DEBUG, 
-             "Ending search with %i modifications per peptide", cur_aa_mods);
-        break;
-      }// else, search with more mods
-      cur_aa_mods = this_aa_mods;
-    }
-    
-    // get peptide iterator
-    MODIFIED_PEPTIDES_ITERATOR_T* peptide_iterator =
-      new_modified_peptides_iterator_from_zstate(mz,
-                                             zstate,
-                                             peptide_mod, 
-                                             is_decoy,
-                                             index,
-                                             database);
-    
-    
-    // score peptides
-    int added = add_matches(match_collection, 
-                            spectrum, 
-                            zstate, 
-                            peptide_iterator,
-                            is_decoy,
-                            store_scores,
-                            get_boolean_parameter("compute-sp"),
-                            FALSE // don't filtery by Sp
-                            );
-    
-    carp(CARP_DEBUG, "Added %i matches", added);
-
-    free_modified_peptides_iterator(peptide_iterator);
-    
-  }//next peptide mod
-
-  return mod_idx;
-
-}
-
-bool SearchForMPSMS::isSearchComplete(
-  MATCH_COLLECTION_T* matches, 
-  int mods_per_peptide) {
-
-  if( matches == NULL ){
-    return false;
-  }
-
-  // keep searching if no limits on how many mods per peptide
-  if( get_int_parameter("max-mods") == MAX_PEPTIDE_LENGTH ){
-    return false;
-  }
-  // stop searching if at max mods per peptide
-  if( mods_per_peptide == get_int_parameter("max-mods") ){ 
-    return true;
-  }
-
-  // test for minimun score found
-
-  return false;
-
-}
-
-
-
-
 SearchForMPSMS::SearchForMPSMS() {
 
 }
@@ -166,20 +56,9 @@ int SearchForMPSMS::main(int argc, char** argv) {
   const char* argument_list[] = {"ms2 file", "protein database"};
   int num_arguments = sizeof(argument_list) / sizeof(char*);
 
-  /* for debugging of parameter processing */
-  //set_verbosity_level( CARP_DETAILED_DEBUG );
-  set_verbosity_level( CARP_ERROR );
 
-  /* Set default values for parameters in parameter.c */
-  initialize_parameters();
-
-  /* Define optional and required command line arguments */
-  select_cmd_line_options( option_list, num_options );
-  select_cmd_line_arguments( argument_list, num_arguments);
-
-  /* Parse the command line, including the optional params file */
-  /* does sytnax, type, bounds checking and dies if neccessessary */
-  parse_cmd_line_into_params_hash(argc, argv, getName().c_str());
+  initialize_run(SEARCH_MPSMS_COMMAND, argument_list, num_arguments,
+                 option_list, num_options, argc, argv);
 
   /* Set verbosity */
   set_verbosity_level(get_int_parameter("verbosity"));
@@ -278,17 +157,17 @@ int SearchForMPSMS::main(int argc, char** argv) {
       current_spectrum = spectrum;
     }
 
-    carp(CARP_DEBUG, 
+    carp(CARP_INFO, 
       "processing spec %d charge:%d mass:%f", 
       spectrum->getFirstScan(), 
       zstate.getCharge(),
       zstate.getNeutralMass());
 
     if (spectrum != current_spectrum) {
-      carp(CARP_DEBUG, 
+      carp(CARP_INFO, 
         "Processed all charges for spec %d", 
         current_spectrum->getFirstScan());
-      carp(CARP_DEBUG, "Searching for mpsms");
+      carp(CARP_INFO, "Searching for mpsms");
       search(spsm_map, mpsm_map);
       mpsm_map.calcXCorrRanks();
       if (get_boolean_parameter("mpsm-do-sort")) {
@@ -306,6 +185,7 @@ int SearchForMPSMS::main(int argc, char** argv) {
       //output the spsms.
       //output_files.writeMatches(spsm_map);
       //cerr<< "writing matches";
+      carp(CARP_INFO, "writing matches:%d",mpsm_map.size());
       output_files.writeMatches(mpsm_map);
       //cerr<<"Clear map"<<endl;
       //clear map and clean up match collections.
@@ -464,3 +344,257 @@ string SearchForMPSMS::getDescription() {
     "be assigned to a spectrum "
     "scored by XCorr.";
 }
+
+
+
+
+/* Private functions */
+
+void SearchForMPSMS::search(
+  MPSM_ZStateMap& charge_spsm_map, 
+  MPSM_ZStateMap& charge_mpsm_map
+) {
+
+  charge_mpsm_map.clear();
+  
+  charge_mpsm_map = charge_spsm_map;
+
+  int max_peptides = min(charge_spsm_map.size(), (size_t)get_int_parameter("mpsm-max-peptides"));
+
+  carp(CARP_INFO,"Max possible peptides/spectrum:%d",max_peptides);
+
+  for (int npeptides = 2; npeptides <= max_peptides;npeptides++) {
+
+    carp(CARP_INFO, "Finding all %d-psm matches", npeptides);
+    bool added = extendChargeMap(charge_spsm_map,
+      charge_mpsm_map,
+      npeptides-1);
+
+    if (!added) {
+      break;
+    }
+
+  }
+
+
+}
+
+bool SearchForMPSMS::extendMatch(
+  MPSM_Match& orig_mpsm,
+  MPSM_MatchCollection& spsm_matches,
+  MPSM_ZStateMap& new_mpsm_matches,
+  int match_collection_idx) {
+
+
+  bool match_added = false;
+  
+  for (int idx=0;idx < spsm_matches.numMatches();idx++) {
+
+    MPSM_Match& match_to_add = spsm_matches[idx];
+
+    MPSM_Match new_match(orig_mpsm);
+    bool canadd = new_match.addMatch(match_to_add.getMatch(0));
+
+    cerr <<"New match:"<<new_match.getSequenceString()<<endl;
+    cerr <<"canAdd:"<<canadd<<endl;
+
+    if (canadd) {
+      new_mpsm_matches.insert(new_match, match_collection_idx);
+    }
+
+
+  }
+
+
+
+}
+  
+
+bool SearchForMPSMS::extendChargeMap(
+  MPSM_ZStateMap& spsm_map,
+  MPSM_ZStateMap& current_mpsm_map,
+  int mpsm_level) {
+
+  bool success = false;
+
+  MPSM_ZStateMap::iterator map_iter;
+  MPSM_ZStateMap::iterator map_iter2;
+
+  set<ZStateIndex> new_zstates;
+
+  for (map_iter = current_mpsm_map.begin();
+    map_iter != current_mpsm_map.end();
+    ++map_iter) {
+
+    ZStateIndex zstate_index = map_iter->first;
+    
+    carp(CARP_INFO,"mpsm_level:%d zstate size:%d",mpsm_level, zstate_index.size());
+    
+    if (zstate_index.size() == mpsm_level) {
+    
+      cerr << "Extending zstate:"<<zstate_index<<endl;
+        
+      vector<MPSM_MatchCollection>& mpsm_match_collections = map_iter -> second;
+      MPSM_MatchCollection& mpsm_target_match_collection =  mpsm_match_collections.at(0);
+
+      for (map_iter2 = spsm_map.begin();
+        map_iter2 != spsm_map.end();
+        ++map_iter2) {
+        ZStateIndex zstate_index2 = map_iter2->first;
+
+        ZStateIndex new_zstate_index(zstate_index);
+
+        if ((new_zstate_index.add(zstate_index2.at(0))) &&
+            (current_mpsm_map.find(new_zstate_index) == current_mpsm_map.end())) {
+
+          cerr << "With:"<<zstate_index2<<endl;
+          cerr << "New:"<<new_zstate_index<<endl;
+
+          current_mpsm_map.insert(new_zstate_index);
+
+          vector<MPSM_MatchCollection>& spsm_match_collections = map_iter2 -> second;
+          MPSM_MatchCollection& spsm_target_match_collection = spsm_match_collections.at(0);
+
+          for (int mpsm_idx = 0;
+            mpsm_idx < mpsm_target_match_collection.numMatches();
+            mpsm_idx++) {
+
+            MPSM_Match& mpsm_match = mpsm_target_match_collection[mpsm_idx];
+            cerr <<"Extending "<<mpsm_match.getSequenceString() <<endl;
+            success |= extendMatch(
+              mpsm_match, 
+              spsm_target_match_collection,
+              current_mpsm_map,
+              0);
+          }
+
+          if (success) {
+
+            for (int decoy_idx = 1; decoy_idx < spsm_match_collections.size();decoy_idx++) {
+              MPSM_MatchCollection& mpsm_decoy_match_collection = mpsm_match_collections.at(decoy_idx);
+              MPSM_MatchCollection& spsm_decoy_match_collection = spsm_match_collections.at(decoy_idx);
+
+              for (int mpsm_idx = 0;
+                mpsm_idx < mpsm_decoy_match_collection.numMatches();
+                mpsm_idx++) {
+
+                MPSM_Match& mpsm_match = mpsm_decoy_match_collection[mpsm_idx];
+                success |= extendMatch(
+                  mpsm_match,
+                  spsm_decoy_match_collection,
+                  current_mpsm_map,
+                  decoy_idx);
+              }
+
+            }
+
+          }
+
+
+
+        } /* if ((new_zstate_index */        
+      } /* for (map_iter2 */
+    } /* if zstate_index.size() == mpsm_level */
+  } /* for (map_iter */
+
+  return success;
+
+}
+
+
+int SearchForMPSMS::searchPepMods(
+  MATCH_COLLECTION_T* match_collection, ///< store PSMs here
+  BOOLEAN_T is_decoy,   ///< generate decoy peptides from index/db
+  INDEX_T* index,       ///< index to use for generating peptides
+  DATABASE_T* database, ///< db to use for generating peptides
+  Spectrum* spectrum,         ///< spectrum to search
+  SpectrumZState& zstate,       ///< seach spectrum at this charge state
+  PEPTIDE_MOD_T** peptide_mods, ///< list of peptide mods to apply
+  int num_peptide_mods, ///< how many p_mods to use from the list
+  BOOLEAN_T store_scores///< keep all scores for p-value estimation
+) {
+  
+  // set match_collection charge
+  set_match_collection_zstate(match_collection, zstate);
+
+  // get spectrum precursor mz
+  double mz = spectrum->getPrecursorMz();
+
+  int mod_idx = 0;
+
+  // assess scores after all pmods with x amods have been searched
+  int cur_aa_mods = 0;
+
+  // for each peptide mod
+  for(mod_idx=0; mod_idx<num_peptide_mods; mod_idx++){
+    // get peptide mod
+    PEPTIDE_MOD_T* peptide_mod = peptide_mods[mod_idx];
+
+    // is it time to assess matches?
+    int this_aa_mods = peptide_mod_get_num_aa_mods(peptide_mod);
+    
+    if( this_aa_mods > cur_aa_mods ){
+      carp(CARP_DEBUG, "Finished searching %i mods", cur_aa_mods);
+      BOOLEAN_T passes = isSearchComplete(match_collection, cur_aa_mods);
+      if( passes ){
+        carp(CARP_DETAILED_DEBUG, 
+             "Ending search with %i modifications per peptide", cur_aa_mods);
+        break;
+      }// else, search with more mods
+      cur_aa_mods = this_aa_mods;
+    }
+    
+    // get peptide iterator
+    MODIFIED_PEPTIDES_ITERATOR_T* peptide_iterator =
+      new_modified_peptides_iterator_from_zstate(mz,
+                                             zstate,
+                                             peptide_mod, 
+                                             is_decoy,
+                                             index,
+                                             database);
+    
+    
+    // score peptides
+    int added = add_matches(match_collection, 
+                            spectrum, 
+                            zstate, 
+                            peptide_iterator,
+                            is_decoy,
+                            store_scores,
+                            get_boolean_parameter("compute-sp"),
+                            FALSE // don't filtery by Sp
+                            );
+    
+    carp(CARP_DEBUG, "Added %i matches", added);
+
+    free_modified_peptides_iterator(peptide_iterator);
+    
+  }//next peptide mod
+
+  return mod_idx;
+
+}
+
+bool SearchForMPSMS::isSearchComplete(
+  MATCH_COLLECTION_T* matches, 
+  int mods_per_peptide) {
+
+  if( matches == NULL ){
+    return false;
+  }
+
+  // keep searching if no limits on how many mods per peptide
+  if( get_int_parameter("max-mods") == MAX_PEPTIDE_LENGTH ){
+    return false;
+  }
+  // stop searching if at max mods per peptide
+  if( mods_per_peptide == get_int_parameter("max-mods") ){ 
+    return true;
+  }
+
+  // test for minimun score found
+
+  return false;
+
+}
+
