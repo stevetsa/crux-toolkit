@@ -74,6 +74,8 @@ void MPSM_OutputFiles::writeMatches(
 
   bool do_sort = get_boolean_parameter("mpsm-do-sort");
 
+  int top_match = get_int_parameter("mpsm-top-match");
+
   for (int match_idx = 0;match_idx < mpsm_match_collection.numMatches(); match_idx++) {
     //cout <<"Match "<<match_idx<<" out of "<<n<<endl;
 
@@ -81,14 +83,16 @@ void MPSM_OutputFiles::writeMatches(
     current_match.setParent(&mpsm_match_collection);
     int rank = current_match.getXCorrRank();
     
+    
+
     if (do_sort) {
-      if (rank <= getMatchesPerSpec()) {
+      if (rank <= top_match) {
         writeMatch(file_ptr, current_match);
       } else {
         break;
       }
     } else {
-      if (match_idx < getMatchesPerSpec()) {
+      if (match_idx < top_match) {
         writeMatch(file_ptr, current_match);
       } else {
         break;
@@ -111,6 +115,8 @@ void MPSM_OutputFiles::writeMatch(
   file_ptr->setColumnCurrentRow(XCORR_RANK_COL, mpsm_match.getXCorrRank());
   file_ptr->setColumnCurrentRow(MATCHES_SPECTRUM_COL, mpsm_match.getMatchesPerSpectrum());
   file_ptr->setColumnCurrentRow(SEQUENCE_COL, mpsm_match.getSequenceString());
+  file_ptr->setColumnCurrentRow(NZSTATE_COL, mpsm_match.getSpectrum()->getNumZStates());
+
   file_ptr->writeRow();
 
 }

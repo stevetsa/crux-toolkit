@@ -793,6 +793,10 @@ static void print_one_match_field(
     output_file->setColumnCurrentRow((MATCH_COLUMNS_T)column_idx, 
                                      get_calibration_corr(collection));
     break;
+  case NZSTATE_COL:
+    output_file->setColumnCurrentRow((MATCH_COLUMNS_T)column_idx,
+        get_match_spectrum(match)->getNumZStates());
+    break;
   case NUMBER_MATCH_COLUMNS:
   case INVALID_COL:
     carp(CARP_FATAL, "Error in printing code (match.cpp).");

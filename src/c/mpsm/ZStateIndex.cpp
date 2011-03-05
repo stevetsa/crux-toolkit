@@ -43,7 +43,7 @@ bool ZStateIndex::add(SpectrumZState& zstate) {
 
 bool ZStateIndex::operator == (ZStateIndex& z) {
 
-  cerr <<"ZStateIndex::operator=="<<endl;
+  //cerr <<"ZStateIndex::operator=="<<endl;
   if (size() != z.size()) {
     return false;
   }
@@ -58,12 +58,12 @@ bool ZStateIndex::operator == (ZStateIndex& z) {
 }
 
 bool ZStateIndex::operator != (ZStateIndex& z) {
-  cerr <<"ZStateIndex::operator !="<<endl;
+  //cerr <<"ZStateIndex::operator !="<<endl;
   return !(*this == z);
 }
 
 bool ZStateIndex::operator < (const ZStateIndex& z) const {
-  cerr <<"ZStateIndex::operator <"<<endl;
+  //cerr <<"ZStateIndex::operator <"<<endl;
   if (size() != z.size()) {
     return size() < z.size();
   }
@@ -82,7 +82,7 @@ bool ZStateIndex::operator < (const ZStateIndex& z) const {
 }
 
 bool ZStateIndex::operator > (ZStateIndex& z) {
-  cerr <<"ZStateIndex::operator >"<<endl;
+  //cerr <<"ZStateIndex::operator >"<<endl;
   return false;
 }
 

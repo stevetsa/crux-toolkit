@@ -46,7 +46,7 @@ int SearchForMPSMS::main(int argc, char** argv) {
     "mpsm-top-n",
     "mpsm-do-sort",
     "rtime-predictor",
-    "top-match"
+    "mpsm-top-match"
   };
   int num_options = sizeof(option_list) / sizeof(char*);
 
@@ -394,9 +394,6 @@ bool SearchForMPSMS::extendMatch(
 
     MPSM_Match new_match(orig_mpsm);
     bool canadd = new_match.addMatch(match_to_add.getMatch(0));
-
-    cerr <<"New match:"<<new_match.getSequenceString()<<endl;
-    cerr <<"canAdd:"<<canadd<<endl;
 
     if (canadd) {
       new_mpsm_matches.insert(new_match, match_collection_idx);

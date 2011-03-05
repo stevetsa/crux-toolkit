@@ -105,8 +105,9 @@ void MatchFileWriter::setPrecision(){
       match_precision_[col_idx] = 6;
       break;
 
-
-
+    case NZSTATE_COL:
+      match_precision_[col_idx] = 0;
+    break;
     case NUMBER_MATCH_COLUMNS:
     case INVALID_COL:
       carp(CARP_FATAL, "Invalid match column type for setting precision.");
@@ -193,6 +194,9 @@ void MatchFileWriter::addColumnNames(COMMAND_T command, bool has_decoys){
     break;
   case SEARCH_MPSMS_COMMAND:
     // TODO: implement
+    //carp(CARP_INFO,"add NZSTATE_COL");
+    addColumnName(NZSTATE_COL);
+    break;
   case XLINK_SEARCH_COMMAND:
     // TODO: does search-for-xlinks use MatchFileWriter?
     break;
@@ -212,6 +216,7 @@ void MatchFileWriter::addColumnNames(COMMAND_T command, bool has_decoys){
   addColumnName(CLEAVAGE_TYPE_COL);
   addColumnName(PROTEIN_ID_COL);
   addColumnName(FLANKING_AA_COL);
+  addColumnName(NZSTATE_COL);
   if( has_decoys ){
     addColumnName(UNSHUFFLED_SEQUENCE_COL);
   }

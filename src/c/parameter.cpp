@@ -932,6 +932,12 @@ void initialize_parameters(void){
     "", 
     "true");
    
+
+  set_int_parameter("mpsm-top-match", 5, 1, BILLION,
+    "",
+    "",
+    "true");
+
   set_int_parameter("mpsm-max-peptides", 2, 1, 10,
       "maximum number of peptides to consider (1-10). Default 1.",
       "Available for crux search-for-mpsms ",
