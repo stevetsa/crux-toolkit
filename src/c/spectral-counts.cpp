@@ -72,16 +72,6 @@ void normalize_peptide_scores(
 void normalize_protein_scores(
   ProteinToScore* proteinToScore
 );
-void print_protein_results(
-  ProteinToScore* proteinToScore,
-  MetaToRank* metaToRank,
-  ProteinToMetaProtein* proteinToMeta,
-  char * pathToOutput
-);
-void print_peptide_results(
-  PeptideToScore* peptideToScore,
-  char * output_path
-);
 void make_unique_mapping(
   PeptideToScore* peptideToScore
 );
@@ -620,100 +610,6 @@ void perform_parsimony_analysis(MetaMapping* metaMapping){
 }
 
 
-
-/** 
- * Outputs the protein id and their corresponding quantifcation
- * score in a tab delimited format. Outputs the meta protein
- * rank if parsimony was called.
- */
-void print_protein_results(
-                           ProteinToScore* proteinToScore,
-                           MetaToRank* metaToRank,
-                           ProteinToMetaProtein* proteinToMeta,
-                           char * output_path)
-{
-  carp(CARP_INFO, "Outputting results");
-  ofstream targetFile;
-  targetFile.open(output_path);
-  bool isParsimony = (proteinToMeta->size() != 0);
-
-
-  vector<pair<FLOAT_T, PROTEIN_T*> > scoreToProtein;
-  for (ProteinToScore::iterator it = proteinToScore->begin(); 
-       it != proteinToScore->end(); ++it){
-    PROTEIN_T* protein = it->first;
-    FLOAT_T score = it->second;
-    scoreToProtein.push_back(make_pair(score, protein));
-  }
-  
-  /* sort and reverse the list */
-  sort(scoreToProtein.begin(), scoreToProtein.end());
-  reverse(scoreToProtein.begin(), scoreToProtein.end());
-
-  /* write header */
-  if (isParsimony){
-    targetFile << "ProteinId\tScore\tParsimonyRank" << endl;
-  } else {
-    targetFile << "ProteinId\tScore" << endl;
-  }
-
-  for (vector<pair<FLOAT_T, PROTEIN_T*> >::iterator
-	 it = scoreToProtein.begin(); 
-       it != scoreToProtein.end(); ++it){
-    FLOAT_T score = it->first;
-    PROTEIN_T* protein = it->second;
-    if (isParsimony){
-      MetaProtein metaProtein = (*proteinToMeta)[protein];
-      int rank = -1;
-      if (metaToRank->find(metaProtein) != metaToRank->end()){
-	rank = (*metaToRank)[metaProtein];
-      } 
-      targetFile << get_protein_id(protein) << "\t" 
-		 << score << "\t" <<rank << endl;
-    } else {
-      targetFile << get_protein_id(protein) << "\t" 
-		 << score << endl;
-    }
-  }
-  targetFile.close();
-}
-
-
-/**
- * Outputs the peptide sequence and its corresponding
- * score in a tab delimited format
- */
-void print_peptide_results(
-			 PeptideToScore* peptideToScore,
-			 char* output_path
-			 ){
-  carp(CARP_INFO, "Outputting results");
-  ofstream targetFile;
-  targetFile.open(output_path);
-  
-  vector<pair<FLOAT_T, PEPTIDE_T*> > scoreToPeptide;
-  for (PeptideToScore::iterator it = peptideToScore->begin();
-       it != peptideToScore->end(); ++it){
-    PEPTIDE_T* peptide = it->first;
-    FLOAT_T score = it->second;
-    scoreToPeptide.push_back(make_pair(score, peptide));
-  }
-  
-  targetFile << "PeptideSequence\tScore" << endl;
-  
-  sort(scoreToPeptide.begin(), scoreToPeptide.end());
-  reverse(scoreToPeptide.begin(), scoreToPeptide.end());
-  for (vector<pair<FLOAT_T, PEPTIDE_T*> >::iterator 
-	 it = scoreToPeptide.begin();
-       it != scoreToPeptide.end(); ++it){
-    PEPTIDE_T* peptide = it->second;
-    FLOAT_T score = it->first;
-    char* seq = get_peptide_sequence(peptide);
-    targetFile << seq << "\t"  << score << endl;
-    free(seq);
-  }
-  targetFile.close();
-}
 
 
 /**
