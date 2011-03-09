@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <set>
 #include <map>
+#include "utils.h"
 
 #define QSORT_COMPARE_METHOD int(*)(const void*, const void*)
 
@@ -611,7 +612,6 @@ typedef struct modified_peptides_iterator_t MODIFIED_PEPTIDES_ITERATOR_T;
  * \brief Mapping of peptide object to scores
  */
 typedef std::map<PEPTIDE_T*, double, bool(*)(PEPTIDE_T*, PEPTIDE_T*) > PeptideToScore;
-//typedef std::map<PEPTIDE_T*, FLOAT_T, bool(*)(PEPTIDE_T*, PEPTIDE_T*) > PeptideToScore;
 
 /**
  * \typedef ProteinToScore

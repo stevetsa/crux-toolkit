@@ -85,7 +85,7 @@ void print_peptide_results(
 void make_unique_mapping(
   PeptideToScore* peptideToScore
 );
-void getSpectra(map<pair<int,int>, Spectrum*>& spectra);
+
 /* comparison function declarations */
 bool compare_peptide_sets(PeptideSet, PeptideSet);
 bool compare_meta_proteins(MetaProtein, MetaProtein);
@@ -352,7 +352,7 @@ void normalize_protein_scores(ProteinToScore* proteinToScore){
  * \return The sum of unmodified b and y ions.
  */
 int sum_match_intensity(MATCH_T* match, 
-                        map<pair<int,int>, Spectrum*>& spectra,
+                        SpectrumCollection* spectra,
                         FLOAT_T bin_width)
 {
   int match_intensity = 0;
@@ -360,8 +360,8 @@ int sum_match_intensity(MATCH_T* match,
   MODIFIED_AA_T* modified_sequence = get_match_mod_sequence(match);
   int charge = get_match_charge(match);
   Spectrum* temp = get_match_spectrum(match);
-  int scan = temp -> getFirstScan();
-  Spectrum* spectrum = spectra[make_pair(scan, charge)];
+  int scan = temp->getFirstScan();
+  Spectrum* spectrum = spectra->getSpectrum(scan);
   Ion* ion;
   SCORER_TYPE_T score_type = XCORR;
   IonConstraint* ion_constraint = 
@@ -405,12 +405,12 @@ void get_peptide_scores(
   
   MEASURE_TYPE_T measure = get_measure_type_parameter("measure");
   FLOAT_T bin_width = get_double_parameter("mz-bin-width");
-  map<pair<int,int>, Spectrum*> spectra;
+  SpectrumCollection* spectra = NULL;
   
     
   // for SIN, parse out spectrum collection from ms2 fiel
   if( measure == MEASURE_SIN ){ 
-    getSpectra(spectra);
+    spectra = new SpectrumCollection(get_string_parameter_pointer("input-ms2"));
   }
 
   for(set<MATCH_T*>::iterator match_it = matches.begin();
@@ -433,31 +433,9 @@ void get_peptide_scores(
     peptideToScore[peptide] += match_intensity;
   }
 
-}
-
-
-/**
- * Parse spectra from the file given in the ms2-file parameter.  Store
- * spectra indexed by a scan-number,charge pair.
- */
-void getSpectra(map<pair<int,int>, Spectrum*>& spectra){
-  char* ms2 = get_string_parameter("input-ms2");
-  SpectrumCollection* spectrum_collection = new SpectrumCollection(ms2);
-  if (!spectrum_collection->parse()){
-    carp(CARP_FATAL, "Failed to parse ms2 file: %s", ms2);
-  } 
-  // get spectra from ms2 file
-  FilteredSpectrumChargeIterator* spectrum_iterator = 
-    new FilteredSpectrumChargeIterator(spectrum_collection);
-  while (spectrum_iterator->hasNext()){
-    int charge = 0;
-    Spectrum* spectrum = spectrum_iterator->next(&charge);
-    spectra.insert(make_pair(make_pair(spectrum->getFirstScan(), 
-                                       charge), spectrum));
+  if( measure == MEASURE_SIN ){ 
+    delete spectra;
   }
-  carp(CARP_INFO, "Number of Spectra %i", spectra.size());
-  delete spectrum_iterator;
-  free(ms2);
 }
 
 /**
@@ -465,7 +443,7 @@ void getSpectra(map<pair<int,int>, Spectrum*>& spectra){
  * have a qvalue score lower than user-specified threshold.
  */
 void filter_matches(MATCH_COLLECTION_ITERATOR_T* match_collection_it, 
-               set<MATCH_T*>& match_set )
+                    set<MATCH_T*>& match_set )
 {
   match_set.clear();
   MATCH_ITERATOR_T* match_iterator = NULL;
