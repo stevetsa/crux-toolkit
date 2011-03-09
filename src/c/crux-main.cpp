@@ -59,6 +59,9 @@ int main(int argc, char** argv){
   char* op_string = argv[1];
   COMMAND_T command = string_to_command_type(op_string);
 
+  // This is in anticipation of merging into the trunk where cmds are classes
+  SpectralCounts* spectral_counts_cmd = NULL;
+
   // call the appropriate function 
   // passing the command line minus the first token ('crux')
   switch(command){
@@ -67,7 +70,8 @@ int main(int argc, char** argv){
     break;
 
   case SPECTRAL_COUNTS_COMMAND:
-    spectral_counts_main(argc-1, argv+1);
+    spectral_counts_cmd = new SpectralCounts();
+    spectral_counts_cmd->main(argc-1, argv+1);
     break;
 
   case SEARCH_COMMAND:
