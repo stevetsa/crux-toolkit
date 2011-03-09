@@ -69,6 +69,8 @@ int SearchForMPSMS::main(int argc, char** argv) {
   // open ms2 file
   SpectrumCollection* spectra = new SpectrumCollection(ms2_file);
 
+  rtime_predictor_ = RetentionPredictor::createRetentionPredictor();
+
   rtime_threshold_ = get_boolean_parameter("rtime-threshold");
   rtime_all2_threshold_ = get_double_parameter("rtime-all2-threshold");
   rtime_all3_threshold_ = get_double_parameter("rtime-all3-threshold");
@@ -379,6 +381,38 @@ void SearchForMPSMS::search(
 
 }
 
+bool SearchForMPSMS::passRTimeThreshold(
+  MPSM_Match& match
+) {
+
+  FLOAT_T rtime_max_diff = rtime_predictor_ -> calcMaxDiff(match);
+  ZStateIndex& zstate_index = match.getZStateIndex();
+
+  
+  
+  bool ans = false;
+
+  if (rtime_threshold_) {
+    FLOAT_T fdiff = fabs(rtime_max_diff);
+    if (zstate_index.numCharge(2) == match.numMatches()) {
+      ans = fdiff <= rtime_all2_threshold_;
+    } else if (zstate_index.numCharge(3) == match.numMatches()) {
+      ans = fdiff <= rtime_all3_threshold_;
+    } else {
+      ans = fdiff <= rtime_default_threshold_;
+    }
+  } else {
+    ans = true;
+  }
+
+  if (ans) {
+    match.setRTimeMaxDiff(rtime_max_diff);
+  }
+
+  return ans;
+
+}
+
 bool SearchForMPSMS::extendMatch(
   MPSM_Match& orig_mpsm,
   MPSM_MatchCollection& spsm_matches,
@@ -394,15 +428,25 @@ bool SearchForMPSMS::extendMatch(
 
     MPSM_Match new_match(orig_mpsm);
     bool canadd = new_match.addMatch(match_to_add.getMatch(0));
-
-    if (canadd) {
-      new_mpsm_matches.insert(new_match, match_collection_idx);
+    if (!canadd) {
+      continue;
     }
 
+    bool visited = new_mpsm_matches.visited(new_match, match_collection_idx);
+    if (visited) {
+      continue;
+    }
 
+    bool pass_threshold = passRTimeThreshold(new_match);
+
+    if (pass_threshold) {
+      //cerr<<new_match<<":"<<new_match.getRTimeMaxDiff()<<endl;
+      new_mpsm_matches.insert(new_match, match_collection_idx);
+      match_added = true;
+    }
   }
 
-
+  return match_added;
 
 }
   
@@ -429,7 +473,7 @@ bool SearchForMPSMS::extendChargeMap(
     
     if (zstate_index.size() == mpsm_level) {
     
-      cerr << "Extending zstate:"<<zstate_index<<endl;
+      //cerr << "Extending zstate:"<<zstate_index<<endl;
         
       vector<MPSM_MatchCollection>& mpsm_match_collections = map_iter -> second;
       MPSM_MatchCollection& mpsm_target_match_collection =  mpsm_match_collections.at(0);
@@ -444,8 +488,8 @@ bool SearchForMPSMS::extendChargeMap(
         if ((new_zstate_index.add(zstate_index2.at(0))) &&
             (current_mpsm_map.find(new_zstate_index) == current_mpsm_map.end())) {
 
-          cerr << "With:"<<zstate_index2<<endl;
-          cerr << "New:"<<new_zstate_index<<endl;
+          //cerr << "With:"<<zstate_index2<<endl;
+          //cerr << "New:"<<new_zstate_index<<endl;
 
           current_mpsm_map.insert(new_zstate_index);
 
@@ -457,7 +501,7 @@ bool SearchForMPSMS::extendChargeMap(
             mpsm_idx++) {
 
             MPSM_Match& mpsm_match = mpsm_target_match_collection[mpsm_idx];
-            cerr <<"Extending "<<mpsm_match.getSequenceString() <<endl;
+            //cerr <<"Extending "<<mpsm_match.getSequenceString() <<endl;
             success |= extendMatch(
               mpsm_match, 
               spsm_target_match_collection,

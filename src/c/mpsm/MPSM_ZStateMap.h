@@ -22,6 +22,9 @@ class MPSM_ZStateMap : public std::map<ZStateIndex, std::vector<MPSM_MatchCollec
     void calcDeltaCN();
     void calcZScores();
     void calcXCorrRanks();
+    bool visited(MPSM_Match& match, int match_collection_idx);
+
+
     virtual ~MPSM_ZStateMap();
 
 

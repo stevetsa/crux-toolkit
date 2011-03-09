@@ -217,3 +217,27 @@ void MPSM_ZStateMap::calcXCorrRanks() {
 MPSM_ZStateMap::~MPSM_ZStateMap() {
   clearMap();
 }
+
+
+bool MPSM_ZStateMap::visited(
+  MPSM_Match& match, 
+  int match_collection_idx) {
+
+  ZStateIndex& zstate_index = match.getZStateIndex();
+
+  MPSM_ZStateMap:iterator find_iter = find(zstate_index);
+
+  if (find_iter == end()) {
+    vector<MPSM_MatchCollection> new_match_collections;
+    (*this)[zstate_index] = new_match_collections;
+  }
+
+  while (find_iter -> second.size() <= match_collection_idx) {
+    MPSM_MatchCollection new_collection;
+    find_iter->second.push_back(new_collection);
+  }
+
+  return find_iter->second.at(match_collection_idx).visited(match);
+
+
+}

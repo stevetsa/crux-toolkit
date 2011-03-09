@@ -797,6 +797,9 @@ static void print_one_match_field(
     output_file->setColumnCurrentRow((MATCH_COLUMNS_T)column_idx,
         get_match_spectrum(match)->getNumZStates());
     break;
+  case RTIME_MAX_DIFF_COL:
+    output_file->setColumnCurrentRow((MATCH_COLUMNS_T)column_idx, 0.0);
+    break;
   case NUMBER_MATCH_COLUMNS:
   case INVALID_COL:
     carp(CARP_FATAL, "Error in printing code (match.cpp).");

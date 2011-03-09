@@ -51,7 +51,8 @@ static const char* match_column_strings[NUMBER_MATCH_COLUMNS] = {
   "beta",
   "shift",
   "corr",
-  "nzstates"
+  "nzstates",
+  "rtime max diff"
 };
 
 /**

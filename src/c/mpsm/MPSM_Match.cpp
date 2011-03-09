@@ -27,6 +27,71 @@ bool MPSM_MatchCompare(MATCH_T* m1, MATCH_T* m2) {
 
 }
 
+bool MATCH_T_Compare2(MATCH_T* m1, MATCH_T* m2) {
+  if (get_match_charge(m1) != get_match_charge(m2)) {
+    return get_match_charge(m1) < get_match_charge(m2);
+  }
+
+  PEPTIDE_T* p1 = get_match_peptide(m1);
+  char* s1 = get_peptide_unshuffled_modified_sequence(p1);
+  string string_s1(s1);
+  free(s1);
+  PEPTIDE_T* p2 = get_match_peptide(m2);
+  char* s2 = get_peptide_unshuffled_modified_sequence(p2);
+  string string_s2(s2);
+  free(s2);
+  return string_s1 < string_s2;
+
+
+}
+
+bool compareMPSM_MatchVisited(const MPSM_Match& m1, const MPSM_Match& m2) {
+
+  if (m1.numMatches() != m2.numMatches()) {
+    return m1.numMatches() < m2.numMatches();
+  }
+
+  vector<MATCH_T*> matches_1(m1.matches_.begin(), m1.matches_.end());
+  
+  vector<MATCH_T*> matches_2(m2.matches_.begin(), m2.matches_.end());
+
+  sort(matches_1.begin(), matches_1.end(), MATCH_T_Compare2);      
+  sort(matches_2.begin(), matches_2.end(), MATCH_T_Compare2);
+
+  bool ans = false;
+
+  for (int idx=0;idx<matches_1.size();idx++) {
+      MATCH_T* submatch_m1 = matches_1.at(idx);
+      MATCH_T* submatch_m2 = matches_2.at(idx);
+
+      int charge1 = get_match_charge(submatch_m1);
+      int charge2 = get_match_charge(submatch_m2);
+
+      if (charge1 != charge2) {
+        ans = charge1 < charge2;
+        break;
+      }
+
+      PEPTIDE_T* p1 = get_match_peptide(submatch_m1);
+      char* s1 = get_peptide_unshuffled_modified_sequence(p1);
+      string string_s1(s1);
+      free(s1);
+      PEPTIDE_T* p2 = get_match_peptide(submatch_m2);
+      char* s2 = get_peptide_unshuffled_modified_sequence(p2);
+      string string_s2(s2);
+      free(s2);
+      
+      if (string_s1 != string_s2) {
+        ans = string_s1 < string_s2;
+        break;
+      }
+
+  }
+  return ans;
+  
+}
+
+
 
 SCORER_TYPE_T sort_mode;
 
@@ -66,12 +131,31 @@ MPSM_MatchCollection* MPSM_Match::getParent() {
   return parent_;
 }
 
+bool isMATCH_T_Equal(MATCH_T* m1, MATCH_T* m2) {
+  if (get_match_charge(m1) != get_match_charge(m2)) {
+    return false;
+  }
+  PEPTIDE_T* p1 = get_match_peptide(m1);
+  char* s1 = get_peptide_unshuffled_modified_sequence(p1);
+  string string_s1(s1);
+  free(s1);
+  
+  PEPTIDE_T* p2 = get_match_peptide(m2);
+  char* s2 = get_peptide_unshuffled_modified_sequence(p2);
+  string string_s2(s2);
+  free(s2);
+
+  return string_s1 == string_s2;
+}
+
+
 BOOLEAN_T MPSM_Match::addMatch(MATCH_T* match) {
 
   //check to make sure match doesn't already exist here.
   for (int idx=0;idx<matches_.size();idx++) {
-    if (matches_[idx] == match)
-      return FALSE;
+    if (isMATCH_T_Equal(matches_[idx], match)) {
+      return false;
+    }  
   }
   matches_.push_back(match);
   sort(matches_.begin(), matches_.end(), MPSM_MatchCompare);
@@ -80,7 +164,7 @@ BOOLEAN_T MPSM_Match::addMatch(MATCH_T* match) {
 
 
   invalidate();
-  return TRUE;
+  return true;
 }
 
 BOOLEAN_T MPSM_Match::isDecoy() {
@@ -145,7 +229,7 @@ bool MPSM_Match::isChargeHomogeneous() {
 
 
 
-MATCH_T* MPSM_Match::getMatch(int match_idx) {
+MATCH_T* MPSM_Match::getMatch(int match_idx) const {
   return matches_.at(match_idx);
 }
 
@@ -153,7 +237,7 @@ MATCH_T* MPSM_Match::operator[] (int match_idx) {
   return matches_[match_idx];
 }
 
-int MPSM_Match::numMatches() {
+int MPSM_Match::numMatches() const {
   return matches_.size();
 }
 
@@ -513,3 +597,9 @@ void MPSM_Match::sortMatches(vector<MPSM_Match>& matches, SCORER_TYPE_T match_mo
   sort(matches.begin(), matches.end(), compareMPSM_Match);
 }
 
+bool CompareMPSM_MatchVisited::operator() (
+  const MPSM_Match& m1, 
+  const MPSM_Match& m2) const {
+
+    return compareMPSM_MatchVisited(m1, m2);
+}

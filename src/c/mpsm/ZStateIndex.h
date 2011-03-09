@@ -21,6 +21,8 @@ class ZStateIndex: public std::vector<SpectrumZState>{
 
 
   int numZStates();
+
+  int numCharge(int c);
   
   bool operator == (ZStateIndex& z);
   bool operator != (ZStateIndex& z);

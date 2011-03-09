@@ -6,6 +6,8 @@
 using namespace std;
 
 
+
+
 MPSM_MatchCollection::MPSM_MatchCollection() {
   spsm_matches_ = NULL;
   sorted_ = false;
@@ -206,6 +208,17 @@ double MPSM_MatchCollection::getPredictedRTime(MPSM_Match& match) {
 
   
 }
+
+bool MPSM_MatchCollection::visited(
+  MPSM_Match& match
+  ) {
+
+  pair<set<MPSM_Match>::iterator,bool> ret;
+  ret = visited_.insert(match);
+  
+  return !ret.second;
+}
+
 
 
 ostream& operator<<(ostream& os, MPSM_MatchCollection& collection_obj) {

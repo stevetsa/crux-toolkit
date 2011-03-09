@@ -12,7 +12,7 @@
 #include "DelimitedFileReader.h"
 
 #include "MPSM_ZStateMap.h"
-
+#include "RetentionPredictor.h"
 
 #include <string>
 
@@ -23,6 +23,8 @@ class SearchForMPSMS: public CruxApplication {
   double rtime_all2_threshold_;
   double rtime_all3_threshold_;
   double rtime_default_threshold_;
+
+  RetentionPredictor* rtime_predictor_;
 
   void search(
     MPSM_ZStateMap& charge_spsm_map, 
@@ -57,7 +59,11 @@ class SearchForMPSMS: public CruxApplication {
     MPSM_MatchCollection& spsm_matches,
     MPSM_ZStateMap& new_mpsm_matches,
     int match_collection_idx);
+
   
+  bool passRTimeThreshold(
+    MPSM_Match& match
+  );
 
  public:
 

@@ -116,7 +116,7 @@ void MPSM_OutputFiles::writeMatch(
   file_ptr->setColumnCurrentRow(MATCHES_SPECTRUM_COL, mpsm_match.getMatchesPerSpectrum());
   file_ptr->setColumnCurrentRow(SEQUENCE_COL, mpsm_match.getSequenceString());
   file_ptr->setColumnCurrentRow(NZSTATE_COL, mpsm_match.getSpectrum()->getNumZStates());
-
+  file_ptr->setColumnCurrentRow(RTIME_MAX_DIFF_COL, mpsm_match.getRTimeMaxDiff());
   file_ptr->writeRow();
 
 }

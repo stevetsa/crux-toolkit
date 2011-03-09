@@ -88,6 +88,7 @@ void MatchFileWriter::setPrecision(){
     case PERCOLATOR_QVALUE_COL:
     case QRANKER_SCORE_COL:
     case QRANKER_QVALUE_COL:
+    case RTIME_MAX_DIFF_COL:
 #ifdef NEW_COLUMNS
     case WEIBULL_PEPTIDE_QVALUE_COL:      // NEW
     case DECOY_XCORR_PEPTIDE_QVALUE_COL:  // NEW
@@ -196,6 +197,7 @@ void MatchFileWriter::addColumnNames(COMMAND_T command, bool has_decoys){
     // TODO: implement
     //carp(CARP_INFO,"add NZSTATE_COL");
     addColumnName(NZSTATE_COL);
+    addColumnName(RTIME_MAX_DIFF_COL);
     break;
   case XLINK_SEARCH_COMMAND:
     // TODO: does search-for-xlinks use MatchFileWriter?
@@ -217,6 +219,8 @@ void MatchFileWriter::addColumnNames(COMMAND_T command, bool has_decoys){
   addColumnName(PROTEIN_ID_COL);
   addColumnName(FLANKING_AA_COL);
   addColumnName(NZSTATE_COL);
+  addColumnName(RTIME_MAX_DIFF_COL);
+
   if( has_decoys ){
     addColumnName(UNSHUFFLED_SEQUENCE_COL);
   }

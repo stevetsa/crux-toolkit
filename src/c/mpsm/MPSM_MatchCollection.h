@@ -18,6 +18,8 @@ protected:
 
   std::vector<MPSM_Match> matches_;
 
+  std::set<MPSM_Match,CompareMPSM_MatchVisited> visited_;
+
   double zscore_mean_;
   double zscore_std_;
   double xcorr_2_;
@@ -52,6 +54,9 @@ public:
   double getPredictedRTime(MPSM_Match& match);
 
   void calcXCorrRanks();
+
+  bool visited(MPSM_Match& match);
+
 
   friend std::ostream& operator<<(std::ostream& os, MPSM_MatchCollection& collection_obj);
 

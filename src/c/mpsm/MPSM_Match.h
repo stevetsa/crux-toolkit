@@ -5,6 +5,7 @@
 
 #include "ZStateIndex.h"
 
+
 #include <vector>
 
 
@@ -76,7 +77,7 @@ class MPSM_Match {
   bool isChargeHomogeneous();
 
 
-  MATCH_T* getMatch(int match_idx);
+  MATCH_T* getMatch(int match_idx) const;
   MATCH_T* operator [] (int match_idx);
 
   Spectrum* getSpectrum();
@@ -89,7 +90,7 @@ class MPSM_Match {
 
   double getSpectrumRTime();
   double getPredictedRTime();
-  int numMatches();
+  int numMatches() const;
 
 
   std::string getString();
@@ -117,10 +118,14 @@ class MPSM_Match {
   bool operator < (const MPSM_Match& match_obj) const;
   friend std::ostream& operator <<(std::ostream& os, MPSM_Match& match_obj);
   friend bool compareMPSM_Match(const MPSM_Match& c1, const MPSM_Match& c2);
+  friend bool compareMPSM_MatchVisited(const MPSM_Match& c1, const MPSM_Match& c2);
 
 
 
+};
 
+struct CompareMPSM_MatchVisited {
+  bool operator() (const MPSM_Match& m1, const MPSM_Match& m2) const;
 };
 
 #endif

@@ -113,3 +113,15 @@ std::istream& operator>>(std::istream &is, ZStateIndex &obj) {
   return is;
 }
 
+int ZStateIndex::numCharge(int c) {
+
+  int ans = 0;
+
+  for (int idx=0;idx<size();idx++) {
+    if (at(idx).getCharge() == c) {
+      ans++;
+    }
+  }
+  return ans;
+}
+
