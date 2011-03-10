@@ -1,22 +1,21 @@
 /**
  * \file SpectralCounts.h 
- * AUTHOR: Sean McIlwain
- * CREATE DATE: 6 December 2010
- * \brief Object for printing the crux version number.
- *****************************************************************************/
+ * AUTHOR: Barbara Frewen
+ * CREATE DATE: 8 March 2011
+ * \brief Object for running the spectral-counts command.
+ */
 #ifndef SPECRAL_COUNTS_H
 #define SPECRAL_COUNTS_H
 
 //#include "CruxApplication.h" // restore this line when merged into trunk
-#include "spectral-counts.h"
 #include <string>
 #include <vector>
 #include <map>
 #include <set>
 #include "utils.h"
 #include "objects.h"
-
-
+#include "SpectrumCollection.h"
+#include "OutputFiles.h"
 
 //class SpectralCounts: public CruxApplication { // for merge into trunk
 class SpectralCounts{
@@ -65,31 +64,41 @@ class SpectralCounts{
               bool(*)(PROTEIN_T*, PROTEIN_T*)> ProteinToMetaProtein;
   
   // private functions
-  void filter_matches(MATCH_COLLECTION_ITERATOR_T* match_collection_it,
-                      std::set<MATCH_T*>& match_set);
-  void get_peptide_scores(std::set<MATCH_T*>&  matches, 
-                          PeptideToScore& peptideToScore);
-  void get_protein_scores(PeptideToScore* peptideToScore,
-                          ProteinToScore* proteinToScore);
-  void get_protein_to_peptides(PeptideToScore* peptideToScore,
-                               ProteinToPeptides* proteinToPeptides);
-  void get_protein_to_meta_protein(MetaMapping* metaMapping,
-                                   ProteinToMetaProtein* proteinToMetaProtein);
-  void get_meta_mapping(ProteinToPeptides* proteinToPeptides,
-                        MetaMapping& metaMapping);
-  void get_meta_ranks(MetaToScore* metaToScore,
-                      MetaToRank* metaToRank);
-  void get_meta_scores(MetaMapping* metaMapping,
-                       ProteinToScore* proteinToScore,
-                       MetaToScore* metaToScore);
-  void perform_parsimony_analysis(MetaMapping* metaMapping);
-  void normalize_peptide_scores(PeptideToScore* peptideToScore);
-  void normalize_protein_scores(ProteinToScore* proteinToScore );
-  void make_unique_mapping(PeptideToScore* peptideToScore);
+  void get_parameter_values();
+  void filter_matches();
+  void get_peptide_scores();
+  void get_protein_scores();
+  void get_protein_to_peptides();
+  void get_protein_to_meta_protein();
+  void get_meta_mapping();
+  void get_meta_ranks();
+  void get_meta_scores();
+  void perform_parsimony_analysis();
+  void normalize_peptide_scores();
+  void normalize_protein_scores();
+  void make_unique_mapping();
   void getSpectra(std::map<std::pair<int,int>, Spectrum*>& spectra);
   int sum_match_intensity(MATCH_T* match,
-                          SpectrumCollection* spectra,
-                          FLOAT_T bin_width);
+                          SpectrumCollection* spectra);
+
+  // member variables
+  OutputFiles* output_;
+  std::string psm_file_;
+  FLOAT_T threshold_;
+  std::string database_name_;
+  bool unique_mapping_;
+  QUANT_LEVEL_TYPE_T quantitation_;
+  PARSIMONY_TYPE_T parsimony_;
+  MEASURE_TYPE_T measure_;
+  FLOAT_T bin_width_;
+  std::set<MATCH_T*> matches_;
+  PeptideToScore peptide_scores_;
+  ProteinToScore protein_scores_;
+  ProteinToPeptides protein_supporting_peptides_;
+  ProteinToMetaProtein protein_meta_protein_;
+  MetaMapping meta_mapping_;
+  MetaToScore meta_protein_scores_;
+  MetaToRank meta_protein_ranks_;
 
   // comparison function declarations
   static bool compare_peptide_sets(PeptideSet, PeptideSet);

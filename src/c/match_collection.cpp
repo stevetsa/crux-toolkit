@@ -3049,9 +3049,9 @@ void setup_match_collection_iterator(
  *\returns match_collection iterator instantiated from a result folder
  */
 MATCH_COLLECTION_ITERATOR_T* new_match_collection_iterator(
-  char* output_file_directory, 
+  const char* output_file_directory, 
     ///< the directory path where the PSM output files are located -in
-  char* fasta_file, 
+  const char* fasta_file, 
     ///< The name of the fasta file for peptides for match_collections. -in
   int* decoy_count
   )

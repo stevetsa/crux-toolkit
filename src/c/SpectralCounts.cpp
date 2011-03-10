@@ -7,13 +7,28 @@ using namespace std;
 /**
  * Default constructor.
  */
-SpectralCounts::SpectralCounts() {
+SpectralCounts::SpectralCounts() 
+  : output_(NULL), 
+    threshold_(0),
+    unique_mapping_(false),
+    quantitation_(PROTEIN_QUANT_LEVEL),
+    parsimony_(PARSIMONY_NONE),
+    measure_(MEASURE_SIN),
+    bin_width_(0),
+    peptide_scores_(peptide_less_than),
+    protein_scores_(protein_id_less_than),
+    protein_supporting_peptides_(protein_id_less_than),
+    protein_meta_protein_(protein_id_less_than),
+    meta_mapping_(compare_peptide_sets),
+    meta_protein_scores_(compare_meta_proteins),
+    meta_protein_ranks_(compare_meta_proteins){
 }
 
 /**
  * Default destructor.
  */
 SpectralCounts::~SpectralCounts() {
+  delete output_;
 }
 
 /**
@@ -50,82 +65,71 @@ int SpectralCounts::main(int argc, char** argv) {
   initialize_run(SPECTRAL_COUNTS_COMMAND, argument_list, num_arguments,
 		 option_list, num_options, argc, argv);
 
+  get_parameter_values(); // all the get_<type>_parameter calls here
+
   // open output files
-  OutputFiles output(SPECTRAL_COUNTS_COMMAND);
-  output.writeHeaders();
+  output_ = new OutputFiles(SPECTRAL_COUNTS_COMMAND);
+  output_->writeHeaders();
 
-  // get input file directory
-  char* psm_file = get_string_parameter("input PSM");
-  char** path_info = parse_filename_path(psm_file);
-  if( path_info[1] == NULL ){
-    path_info[1] = my_copy_string(".");
-  }
-
-  // create match collection
-  int decoy_count = 0;
-  char* database = get_string_parameter("protein database");
-  MATCH_COLLECTION_ITERATOR_T* match_collection_it 
-    = new_match_collection_iterator(path_info[1], database, &decoy_count);
-   
-  // get a set of matches that pass threshold
-  set<MATCH_T*> matches;
-  filter_matches(match_collection_it, matches);
+  // get a set of matches that pass the threshold
+  filter_matches();
   carp(CARP_INFO, "Number of matches passed the threshold %i", 
-       matches.size());
+       matches_.size());
 
   // get a set of peptides
-  PeptideToScore peptideToScore(peptide_less_than);
-  get_peptide_scores(matches, peptideToScore);
-  if( get_boolean_parameter("unique-mapping") ){
-    make_unique_mapping(&peptideToScore);
+  get_peptide_scores();
+  if( unique_mapping_ ){
+    make_unique_mapping();
   }
-  carp(CARP_INFO, "Number of Unique Peptides %i", peptideToScore.size());
+  carp(CARP_INFO, "Number of Unique Peptides %i", peptide_scores_.size());
 
   // quantify at either the peptide or protein level
-  QUANT_LEVEL_TYPE_T quant_level =get_quant_level_type_parameter("quant-level");
-  if( quant_level == PEPTIDE_QUANT_LEVEL ){ // peptide level
-    normalize_peptide_scores(&peptideToScore);
-    output.writeRankedPeptides(peptideToScore);
+  if( quantitation_ == PEPTIDE_QUANT_LEVEL ){ // peptide level
+    normalize_peptide_scores();
+    output_->writeRankedPeptides(peptide_scores_);
 
-  } else if( quant_level == PROTEIN_QUANT_LEVEL ){ // protein level
-    ProteinToScore proteinToScore(protein_id_less_than);
-    ProteinToPeptides proteinToPeptides(protein_id_less_than);
-    ProteinToMetaProtein proteinToMeta(protein_id_less_than);
-    MetaMapping metaMapping(compare_peptide_sets);
-    MetaToScore metaToScore(compare_meta_proteins);
-    MetaToRank metaToRank(compare_meta_proteins);
+  } else if( quantitation_ == PROTEIN_QUANT_LEVEL ){ // protein level
     
-    get_protein_scores(&peptideToScore, &proteinToScore);
-    normalize_protein_scores(&proteinToScore);
-    carp(CARP_INFO, "Number of Proteins %i", proteinToScore.size());
+    get_protein_scores();
+    normalize_protein_scores();
+    carp(CARP_INFO, "Number of Proteins %i", protein_scores_.size());
         
-    PARSIMONY_TYPE_T parsimony = get_parsimony_type_parameter("parsimony");
-    if( parsimony != PARSIMONY_NONE ){ //if parsimony is not none
-      get_protein_to_peptides(&peptideToScore, &proteinToPeptides);
-      get_meta_mapping(&proteinToPeptides, metaMapping);
-      get_protein_to_meta_protein(&metaMapping, &proteinToMeta);
-      carp(CARP_INFO, "Number of meta proteins %i", metaMapping.size());
+    if( parsimony_ != PARSIMONY_NONE ){ //if parsimony is not none
+      get_protein_to_peptides();
+      get_meta_mapping();
+      get_protein_to_meta_protein();
+      carp(CARP_INFO, "Number of meta proteins %i", meta_mapping_.size());
       
-      if( parsimony == PARSIMONY_GREEDY ){ //if parsimony is greedy
-	perform_parsimony_analysis(&metaMapping);
+      if( parsimony_ == PARSIMONY_GREEDY ){ //if parsimony is greedy
+	perform_parsimony_analysis();
       }
-      get_meta_scores(&metaMapping, &proteinToScore, &metaToScore);
-      get_meta_ranks(&metaToScore, &metaToRank);
+      get_meta_scores();
+      get_meta_ranks();
     }
     
-    output.writeRankedProteins(proteinToScore, metaToRank, proteinToMeta);
+    output_->writeRankedProteins(protein_scores_, meta_protein_ranks_, 
+                                 protein_meta_protein_);
 
   } else {
     carp(CARP_FATAL, "Invalid quantification level.");
   }
   
-  free(psm_file);
-  free(path_info[1]);
-  free(path_info[0]);
-  free(path_info);
-  free(database);
-
   return 0;
+}
+
+/**
+ * Collect all the parameter/option values we will need and store them
+ * as member variables.
+ */
+void SpectralCounts::get_parameter_values(){
+  psm_file_ = get_string_parameter_pointer("input PSM");
+  threshold_ = get_double_parameter("threshold");
+  database_name_ = get_string_parameter_pointer("protein database");
+  unique_mapping_ = get_boolean_parameter("unique-mapping");
+  quantitation_ = get_quant_level_type_parameter("quant-level");
+  parsimony_ = get_parsimony_type_parameter("parsimony");
+  measure_ = get_measure_type_parameter("measure");
+  bin_width_ = get_double_parameter("mz-bin-width");
 }
 
 /**
@@ -134,23 +138,22 @@ int SpectralCounts::main(int argc, char** argv) {
  * the set of identified peptides it maps to, into 
  * ProteinToPeptide
  */
-void SpectralCounts::get_protein_to_peptides(
-  PeptideToScore* peptideToScore,
-  ProteinToPeptides* proteinToPeptides
-){
-  for (PeptideToScore::iterator pep_it = peptideToScore->begin();
-       pep_it != peptideToScore->end(); ++pep_it){
+void SpectralCounts::get_protein_to_peptides(){
+  for (PeptideToScore::iterator pep_it = peptide_scores_.begin();
+       pep_it != peptide_scores_.end(); ++pep_it){
     PEPTIDE_T* peptide = pep_it->first;
     PEPTIDE_SRC_ITERATOR_T* peptide_src_iterator =
       new_peptide_src_iterator(peptide);
     while( peptide_src_iterator_has_next(peptide_src_iterator)) {
-      PEPTIDE_SRC_T* peptide_src = peptide_src_iterator_next(peptide_src_iterator);
+      PEPTIDE_SRC_T* peptide_src = 
+        peptide_src_iterator_next(peptide_src_iterator);
       PROTEIN_T* protein = get_peptide_src_parent_protein(peptide_src);
-      if (proteinToPeptides->find(protein) == proteinToPeptides->end()){
+      if (protein_supporting_peptides_.find(protein) == 
+          protein_supporting_peptides_.end()){
         PeptideSet newset(peptide_less_than);
-        proteinToPeptides->insert(make_pair(protein, newset));
+        protein_supporting_peptides_.insert(make_pair(protein, newset));
       }
-      (*proteinToPeptides)[protein].insert(peptide);
+      protein_supporting_peptides_[protein].insert(peptide);
     }
     free(peptide_src_iterator);
   }
@@ -163,19 +166,16 @@ void SpectralCounts::get_protein_to_peptides(
  * from MetaMapping
  *
  */
-void SpectralCounts::get_protein_to_meta_protein(
-                             MetaMapping* metaMap,
-                             ProteinToMetaProtein* proteinToMeta
-                             ){
+void SpectralCounts::get_protein_to_meta_protein(){
   // for every meta protein
-  for (MetaMapping::iterator meta_protein_it = metaMap->begin();
-       meta_protein_it != metaMap->end(); ++meta_protein_it){
+  for (MetaMapping::iterator meta_protein_it = meta_mapping_.begin();
+       meta_protein_it != meta_mapping_.end(); ++meta_protein_it){
     MetaProtein proteins = meta_protein_it->second;
     // for every protein in the meta protein
     for (MetaProtein::iterator proteins_it = proteins.begin();
          proteins_it != proteins.end(); ++proteins_it){
       // create a mapping of protein to meta protein
-      proteinToMeta->insert(make_pair((*proteins_it), proteins));
+      protein_meta_protein_.insert(make_pair((*proteins_it), proteins));
     }
   }
 }
@@ -185,14 +185,11 @@ void SpectralCounts::get_protein_to_meta_protein(
  * the scores of each peptide that belongs to a protein
  *
  */
-void SpectralCounts::get_protein_scores(
-                      PeptideToScore* peptideToScore,
-                      ProteinToScore* proteinToScore
-                      ){
+void SpectralCounts::get_protein_scores(){
 
   // iterate through each peptide
-  for (PeptideToScore::iterator pep_it = peptideToScore->begin();
-       pep_it != peptideToScore->end(); ++pep_it){
+  for (PeptideToScore::iterator pep_it = peptide_scores_.begin();
+       pep_it != peptide_scores_.end(); ++pep_it){
     PEPTIDE_T* peptide = pep_it->first;
     FLOAT_T pep_score = pep_it->second;
     PEPTIDE_SRC_ITERATOR_T* peptide_src_iterator =
@@ -200,10 +197,10 @@ void SpectralCounts::get_protein_scores(
     while( peptide_src_iterator_has_next(peptide_src_iterator)) {
       PEPTIDE_SRC_T* peptide_src = peptide_src_iterator_next(peptide_src_iterator);
       PROTEIN_T* protein = get_peptide_src_parent_protein(peptide_src);
-      if (proteinToScore->find(protein) == proteinToScore->end()){
-        proteinToScore->insert(make_pair(protein, 0.0));
+      if (protein_scores_.find(protein) == protein_scores_.end()){
+        protein_scores_.insert(make_pair(protein, 0.0));
       }
-      (*proteinToScore)[protein] += pep_score;
+      protein_scores_[protein] += pep_score;
     }
     free(peptide_src_iterator);
   }
@@ -215,20 +212,21 @@ void SpectralCounts::get_protein_scores(
  * of all scores and then by the peptide length
  *
  */
-void SpectralCounts::normalize_peptide_scores(PeptideToScore* peptideToScore){
+void SpectralCounts::normalize_peptide_scores()
+{
   carp(CARP_INFO, "Normalizing peptide scores");
   FLOAT_T total = 0.0;
 
   // calculate sum of all scores
-  for (PeptideToScore::iterator it = peptideToScore->begin();
-       it != peptideToScore->end(); ++it){
+  for (PeptideToScore::iterator it = peptide_scores_.begin();
+       it != peptide_scores_.end(); ++it){
     FLOAT_T score = it->second;
     total += score;
   }
 
   // normalize by sum of scores and length
-  for (PeptideToScore::iterator it = peptideToScore->begin();
-       it != peptideToScore->end(); ++it){
+  for (PeptideToScore::iterator it = peptide_scores_.begin();
+       it != peptide_scores_.end(); ++it){
     FLOAT_T score = it->second;
     PEPTIDE_T* peptide = it->first;
     it->second = score / total / get_peptide_length(peptide);
@@ -244,20 +242,20 @@ void SpectralCounts::normalize_peptide_scores(PeptideToScore* peptideToScore){
  *
  */
 
-void SpectralCounts::normalize_protein_scores(ProteinToScore* proteinToScore){
+ void SpectralCounts::normalize_protein_scores(){
   carp(CARP_INFO, "Normalizing protein scores");
   FLOAT_T total = 0.0;
 
   // calculate sum of all scores
-  for (ProteinToScore::iterator it = proteinToScore->begin();
-       it != proteinToScore->end(); ++it){
+  for (ProteinToScore::iterator it = protein_scores_.begin();
+       it != protein_scores_.end(); ++it){
     FLOAT_T score = it->second;
     total += score;
   }
 
   // normalize by sum of all scores and length
-  for (ProteinToScore::iterator it = proteinToScore->begin();
-       it != proteinToScore->end(); ++it){
+  for (ProteinToScore::iterator it = protein_scores_.begin();
+       it != protein_scores_.end(); ++it){
     FLOAT_T score = it->second;
     PROTEIN_T* protein = it->first;
     it->second = score / total / strlen(get_protein_sequence(protein));
@@ -271,8 +269,7 @@ void SpectralCounts::normalize_protein_scores(ProteinToScore* proteinToScore){
  * \return The sum of unmodified b and y ions.
  */
 int SpectralCounts::sum_match_intensity(MATCH_T* match,
-                        SpectrumCollection* spectra,
-                        FLOAT_T bin_width)
+                                        SpectrumCollection* spectra)
 {
   int match_intensity = 0;
   char* peptide_seq = get_match_sequence(match);
@@ -294,7 +291,7 @@ int SpectralCounts::sum_match_intensity(MATCH_T* match,
     if (ion -> getType() == B_ION || ion -> getType() == Y_ION){
       if (!ion->isModified()){
         PEAK_T* peak = spectrum->getNearestPeak(ion->getMassZ(),
-                                                bin_width);
+                                                bin_width_);
         if (peak != NULL){
           match_intensity += get_peak_intensity(peak);
         }
@@ -317,42 +314,36 @@ int SpectralCounts::sum_match_intensity(MATCH_T* match,
  *
  * For NSAF, the score is the number of matches for each peptide.
  */
-void SpectralCounts::get_peptide_scores(
-  set<MATCH_T*>& matches, ///< get peptides from these matches
-  PeptideToScore& peptideToScore ///< store peptides and their scores here
-){
-
-  MEASURE_TYPE_T measure = get_measure_type_parameter("measure");
-  FLOAT_T bin_width = get_double_parameter("mz-bin-width");
+void SpectralCounts::get_peptide_scores()
+{
   SpectrumCollection* spectra = NULL;
 
-
   // for SIN, parse out spectrum collection from ms2 fiel
-  if( measure == MEASURE_SIN ){
+  if( measure_ == MEASURE_SIN ){
     spectra = new SpectrumCollection(get_string_parameter_pointer("input-ms2"));
   }
 
-  for(set<MATCH_T*>::iterator match_it = matches.begin();
-      match_it != matches.end(); ++match_it){
+  for(set<MATCH_T*>::iterator match_it = matches_.begin();
+      match_it != matches_.end(); ++match_it){
 
     FLOAT_T match_intensity = 1; // for NSAF every match counted as 1
 
     MATCH_T* match = (*match_it);
     // for sin, calculate total ion intensity for match by
     // summing up peak intensities
-    if( measure == MEASURE_SIN ){
-      match_intensity = sum_match_intensity(match, spectra, bin_width);
+    if( measure_ == MEASURE_SIN ){
+      match_intensity = sum_match_intensity(match, spectra);
     }
 
     // add ion_intensity to peptide scores
     PEPTIDE_T* peptide = get_match_peptide(match);
-    if (peptideToScore.find(peptide) ==  peptideToScore.end()){
-      peptideToScore.insert(make_pair(peptide, 0.0));
+    if (peptide_scores_.find(peptide) ==  peptide_scores_.end()){
+      peptide_scores_.insert(make_pair(peptide, 0.0));
     }
-    peptideToScore[peptide] += match_intensity;
+    peptide_scores_[peptide] += match_intensity;
   }
 
-  if( measure == MEASURE_SIN ){
+  if( measure_ == MEASURE_SIN ){
     delete spectra;
   }
 }
@@ -362,14 +353,23 @@ void SpectralCounts::get_peptide_scores(
  * Create a set of matches, all with an XCORR rank == 1 and all of which
  * have a qvalue score lower than user-specified threshold.
  */
-void SpectralCounts::filter_matches(
-  MATCH_COLLECTION_ITERATOR_T* match_collection_it, ///< filter these matches
-  set<MATCH_T*>& match_set ) ///< store filtered matches here
+void SpectralCounts::filter_matches()
 {
-  match_set.clear();
+  // get input file directory
+  char** path_info = parse_filename_path(psm_file_.c_str());
+  if( path_info[1] == NULL ){
+    path_info[1] = my_copy_string(".");
+  }
+
+  // create match collection
+  int decoy_count = 0;
+  MATCH_COLLECTION_ITERATOR_T* match_collection_it 
+    = new_match_collection_iterator(path_info[1], 
+                                    database_name_.c_str(), &decoy_count);
+
+  matches_.clear();
   MATCH_ITERATOR_T* match_iterator = NULL;
   MATCH_COLLECTION_T* match_collection = NULL;
-  FLOAT_T threshold = get_double_parameter("threshold");
   bool qualify = false;
   while (match_collection_iterator_has_next(match_collection_it)){
     
@@ -384,21 +384,24 @@ void SpectralCounts::filter_matches(
       }
       // find a qvalue score lower than threshold
       if (get_match_score(match, PERCOLATOR_QVALUE) != FLT_MIN &&
-	  get_match_score(match, PERCOLATOR_QVALUE) <= threshold)  {
+	  get_match_score(match, PERCOLATOR_QVALUE) <= threshold_)  {
 	qualify = true;
       } else if (get_match_score(match, QRANKER_QVALUE) != FLT_MIN &&
-                 get_match_score(match, QRANKER_QVALUE) <= threshold)  {
+                 get_match_score(match, QRANKER_QVALUE) <= threshold_)  {
 	qualify = true;
       } else if (get_match_score(match, DECOY_XCORR_QVALUE) != FLT_MIN &&
-		 get_match_score(match, DECOY_XCORR_QVALUE) <= threshold)  {
+		 get_match_score(match, DECOY_XCORR_QVALUE) <= threshold_)  {
 	qualify = true;
       } 
 
       if (qualify == true){
-        match_set.insert(match);
+        matches_.insert(match);
       }
     } // next match
   } // next file
+  free(path_info[1]);
+  free(path_info[0]);
+  free(path_info);
 }
 
 /**
@@ -407,23 +410,20 @@ void SpectralCounts::filter_matches(
  * the meta protein
  *
  */
-void SpectralCounts::get_meta_mapping(
-                    ProteinToPeptides* proteinToPeptides,
-                    MetaMapping& metaMapping
-                    ){
+void SpectralCounts::get_meta_mapping(){
   carp(CARP_INFO, "Creating a mapping of meta protein to peptides");
   int count = 0;
-  for (ProteinToPeptides::iterator prot_it = proteinToPeptides->begin();
-       prot_it != proteinToPeptides->end(); ++prot_it){
+  for(ProteinToPeptides::iterator prot_it= protein_supporting_peptides_.begin();
+       prot_it != protein_supporting_peptides_.end(); ++prot_it){
     PROTEIN_T* protein = prot_it->first;
     PeptideSet pep_set = prot_it->second;
 
-    if (metaMapping.find(pep_set) == metaMapping.end()){
+    if (meta_mapping_.find(pep_set) == meta_mapping_.end()){
       MetaProtein meta_protein(protein_id_less_than);
       count++;
-      metaMapping.insert(make_pair(pep_set, meta_protein));
+      meta_mapping_.insert(make_pair(pep_set, meta_protein));
     }
-    metaMapping[pep_set].insert(protein);
+    meta_mapping_[pep_set].insert(protein);
   }
 
 }
@@ -435,23 +435,19 @@ void SpectralCounts::get_meta_mapping(
  * is a mapping of MetaProteins to the highest score
  *
  */
-void SpectralCounts::get_meta_scores(
-                   MetaMapping* metaMapping,
-                   ProteinToScore* proteinToScore,
-                   MetaToScore* metaToScore
-                   ){
+void SpectralCounts::get_meta_scores(){
   carp(CARP_INFO, "Finding scores of meta proteins");
-  for (MetaMapping::iterator meta_it = metaMapping->begin();
-       meta_it != metaMapping->end(); ++meta_it ){
+  for (MetaMapping::iterator meta_it = meta_mapping_.begin();
+       meta_it != meta_mapping_.end(); ++meta_it ){
     MetaProtein proteins = (*meta_it).second;
     FLOAT_T top_score = -1.0;
     for (MetaProtein::iterator protein_it = proteins.begin();
          protein_it != proteins.end(); ++protein_it){
       PROTEIN_T* protein = (*protein_it);
-      FLOAT_T score = (*proteinToScore)[protein];
+      FLOAT_T score = protein_scores_[protein];
       top_score = max(score, top_score);
     }
-    (*metaToScore).insert(make_pair(proteins, top_score));
+    meta_protein_scores_.insert(make_pair(proteins, top_score));
   }
 
 }
@@ -461,14 +457,11 @@ void SpectralCounts::get_meta_scores(
  * a mapping of set of peptides to rank
  *
  */
-void SpectralCounts::get_meta_ranks(
-                  MetaToScore* metaToScore,
-                  MetaToRank* metaToRank
-                  ){
+void SpectralCounts::get_meta_ranks(){
   carp(CARP_INFO, "Finding ranks of meta proteins");
   vector< pair<FLOAT_T, MetaProtein> > metaVector;
-  for (MetaToScore::iterator meta_it = metaToScore->begin();
-       meta_it != metaToScore->end(); ++meta_it){
+  for (MetaToScore::iterator meta_it = meta_protein_scores_.begin();
+       meta_it != meta_protein_scores_.end(); ++meta_it){
     MetaProtein proteins = (*meta_it).first;
     FLOAT_T score = (*meta_it).second;
     metaVector.push_back(make_pair(score, proteins));
@@ -481,7 +474,7 @@ void SpectralCounts::get_meta_ranks(
          vector_it = metaVector.begin();
        vector_it != metaVector.end(); ++vector_it){
     MetaProtein proteins = (*vector_it).second;
-    (*metaToRank).insert(make_pair(proteins, cur_rank));
+    meta_protein_ranks_.insert(make_pair(proteins, cur_rank));
     cur_rank++;
   }
 
@@ -495,14 +488,14 @@ void SpectralCounts::get_meta_ranks(
  * adjancency lists: O(n*log(n)) but input size should be
  * small enough that performance should not be an issue.
  */
-void SpectralCounts::perform_parsimony_analysis(MetaMapping* metaMapping){
+void SpectralCounts::perform_parsimony_analysis(){
   carp(CARP_INFO, "Performing Greedy Parsimony analysis");
   MetaMapping result(compare_peptide_sets);
   vector< pair<PeptideSet, MetaProtein > > peps_vector;
 
   // get all meta mappings into a vector 
-  for (MetaMapping::iterator meta_iter = (*metaMapping).begin();
-       meta_iter != (*metaMapping).end(); ++meta_iter){
+  for (MetaMapping::iterator meta_iter = meta_mapping_.begin();
+       meta_iter != meta_mapping_.end(); ++meta_iter){
     peps_vector.push_back((*meta_iter));
   }
 
@@ -529,24 +522,22 @@ void SpectralCounts::perform_parsimony_analysis(MetaMapping* metaMapping){
       (*iter).first = difference;
     }
   }
-  (*metaMapping) = result;
+  meta_mapping_ = result;
 }
 
 /**
  * Removes peptides from the map if the peptide
  * sequence belongs in more than one protein
  */
-void SpectralCounts::make_unique_mapping(
-                       PeptideToScore* peptideToScore
-                       ){
+void SpectralCounts::make_unique_mapping(){
   carp(CARP_INFO, "Filtering peptides that have more"
        "than one protein source");
-  for (PeptideToScore::iterator it = peptideToScore->begin();
-       it != peptideToScore->end(); ++it){
+  for (PeptideToScore::iterator it = peptide_scores_.begin();
+       it != peptide_scores_.end(); ++it){
     PEPTIDE_T* peptide = it->first;
     int num_proteins = get_peptide_num_peptide_src(peptide);
     if (num_proteins > 1){
-      peptideToScore->erase(it);
+      peptide_scores_.erase(it);
     }
   }
 
