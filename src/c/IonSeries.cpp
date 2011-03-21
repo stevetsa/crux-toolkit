@@ -145,10 +145,8 @@ void IonSeries::update(
   }
   
   // iterate over all ions, and free them
-  for (unsigned int idx=0;idx<ions_.size();idx++) {
-    delete ions_[idx];
-  }
-  ions_.clear();
+
+  clearIons(true);
   
   // initialize all specific_ions back to 0
   int ion_idx;
@@ -192,11 +190,7 @@ IonSeries::~IonSeries()
   // free constraint?
 
   // iterate over all ions, and free them
-
-  for (unsigned int idx=0;idx<ions_.size();idx++) {
-    delete ions_[idx];
-  }
-  ions_.clear();
+  clearIons(true);
 
 }
 
@@ -206,12 +200,24 @@ void IonSeries::freeIonSeries(
 
   //empty the array, that should make sure that the
   //ions aren't deleted.
-  
+ 
   if (!free_ions) {
     ion_series->ions_.clear();
   }
 
   delete ion_series;
+
+}
+
+void IonSeries::clearIons(bool free_ions) {
+    
+  if (free_ions) {
+    for (unsigned int idx=0;idx < ions_.size();idx++) {
+      delete ions_[idx];
+    }
+  }
+
+  ions_.clear();
 
 }
 

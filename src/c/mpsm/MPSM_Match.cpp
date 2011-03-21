@@ -8,41 +8,59 @@
 
 using namespace std;
 
+
+int compareSequences(MATCH_T* m1, MATCH_T* m2) {
+  PEPTIDE_T* p1 = get_match_peptide(m1);
+  PEPTIDE_T* p2 = get_match_peptide(m2);
+
+  int l1 = get_peptide_length(p1);
+  int l2 = get_peptide_length(p2);
+
+  char* s1 = get_peptide_sequence_pointer(p1);
+  char* s2 = get_peptide_sequence_pointer(p2);
+
+  int idx = 0;
+
+  while (idx < l1 && idx < l2) {
+  
+    if (s1[idx] < s2[idx]) {
+      return -1;
+    } else if (s1[idx] > s2[idx]) {
+      return 1;
+    }
+    //otherwise they are equal
+    idx++;
+  }
+  
+  if (l1 == l2) {
+    return 0;
+  } else if (l1 < l2) {
+    return -1;
+  } else {
+    return 1;
+  }
+
+
+}
+
 bool MPSM_MatchCompare(MATCH_T* m1, MATCH_T* m2) {
 
 
   if (get_match_zstate(m1) != get_match_zstate(m2)) {
     return get_match_zstate(m1) < get_match_zstate(m2);
+  } else {
+    return (compareSequences(m1, m2) == -1);
   }
-
-  PEPTIDE_T* p1 = get_match_peptide(m1);
-  char* s1 = get_peptide_unshuffled_modified_sequence(p1);
-  string string_s1(s1);
-  free(s1);
-  PEPTIDE_T* p2 = get_match_peptide(m2);
-  char* s2 = get_peptide_unshuffled_modified_sequence(p2);
-  string string_s2(s2);
-  free(s2);
-  return string_s1 < string_s2;
-
 }
+
+
 
 bool MATCH_T_Compare2(MATCH_T* m1, MATCH_T* m2) {
   if (get_match_charge(m1) != get_match_charge(m2)) {
     return get_match_charge(m1) < get_match_charge(m2);
+  } else {
+    return (compareSequences(m1, m2) == -1);
   }
-
-  PEPTIDE_T* p1 = get_match_peptide(m1);
-  char* s1 = get_peptide_unshuffled_modified_sequence(p1);
-  string string_s1(s1);
-  free(s1);
-  PEPTIDE_T* p2 = get_match_peptide(m2);
-  char* s2 = get_peptide_unshuffled_modified_sequence(p2);
-  string string_s2(s2);
-  free(s2);
-  return string_s1 < string_s2;
-
-
 }
 
 bool compareMPSM_MatchVisited(const MPSM_Match& m1, const MPSM_Match& m2) {
@@ -58,8 +76,6 @@ bool compareMPSM_MatchVisited(const MPSM_Match& m1, const MPSM_Match& m2) {
   sort(matches_1.begin(), matches_1.end(), MATCH_T_Compare2);      
   sort(matches_2.begin(), matches_2.end(), MATCH_T_Compare2);
 
-  bool ans = false;
-
   for (int idx=0;idx<matches_1.size();idx++) {
       MATCH_T* submatch_m1 = matches_1.at(idx);
       MATCH_T* submatch_m2 = matches_2.at(idx);
@@ -68,26 +84,19 @@ bool compareMPSM_MatchVisited(const MPSM_Match& m1, const MPSM_Match& m2) {
       int charge2 = get_match_charge(submatch_m2);
 
       if (charge1 != charge2) {
-        ans = charge1 < charge2;
+        return (charge1 < charge2);
         break;
       }
 
-      PEPTIDE_T* p1 = get_match_peptide(submatch_m1);
-      char* s1 = get_peptide_unshuffled_modified_sequence(p1);
-      string string_s1(s1);
-      free(s1);
-      PEPTIDE_T* p2 = get_match_peptide(submatch_m2);
-      char* s2 = get_peptide_unshuffled_modified_sequence(p2);
-      string string_s2(s2);
-      free(s2);
-      
-      if (string_s1 != string_s2) {
-        ans = string_s1 < string_s2;
-        break;
+      int compare = compareSequences(submatch_m1, submatch_m2);
+
+      if (compare != 0) {
+        return (compare == -1); //return whether the sequence in m1 < m2.
       }
 
   }
-  return ans;
+
+  return false; //all charges/sequences are equal, so not <.
   
 }
 
@@ -276,12 +285,17 @@ int MPSM_Match::getCharge(int match_idx) {
 
 FLOAT_T MPSM_Match::getScore(SCORER_TYPE_T match_mode) {
 
-  if (!xcorr_score_valid_) {
-    FLOAT_T score = MPSM_Scorer::score(*this, XCORR);
-    setScore(match_mode, score);
-    return score;
+  if (match_mode == XCORR) {
+    if (!xcorr_score_valid_) {
+      FLOAT_T score = MPSM_Scorer::score(*this, XCORR);
+      setScore(match_mode, score);
+      return score;
+    } else {
+      return xcorr_score_;
+    }
+  } else {
+    return MPSM_Scorer::score(*this, match_mode);
   }
-  return xcorr_score_;
 }
 
 void MPSM_Match::setScore(SCORER_TYPE_T match_mode, FLOAT_T score) {
@@ -499,6 +513,34 @@ int MPSM_Match::getMatchesPerSpectrum() {
   return getParent() -> numMatches();
 
 }
+
+FLOAT_T MPSM_Match::getXCorrSumDiff() {
+  
+  FLOAT_T ans = getScore(XCORR);
+
+  for (int idx=0;idx < matches_.size();idx++) {
+
+    ans -= get_match_score(matches_[idx], XCORR);
+  }
+
+  return ans;
+
+}
+
+FLOAT_T MPSM_Match::getXCorrMaxDiff() {
+
+  FLOAT_T max_score = get_match_score(matches_[0], XCORR);
+
+  for (int idx=1;idx < matches_.size();idx++) {
+    FLOAT_T current_score = get_match_score(matches_[idx], XCORR);
+    if (current_score > max_score) {
+      max_score = current_score;
+    }
+  }
+
+  return getScore(XCORR) - max_score;
+}
+
 
 
 ostream& operator <<(ostream& os, MPSM_Match& match_obj) {

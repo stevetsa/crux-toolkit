@@ -153,6 +153,8 @@ class IonSeries {
     IonSeries* ion_series,
     bool free_ions);
 
+  void clearIons(bool free_ions);
+
   /**
    *Iterator access
    */

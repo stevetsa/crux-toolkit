@@ -1,5 +1,6 @@
 #include "MPSM_MatchCollection.h"
 #include "RetentionPredictor.h"
+#include "MPSM_Scorer.h"
 
 #include <iostream>
 
@@ -76,13 +77,21 @@ int MPSM_MatchCollection::numMatches() {
 void MPSM_MatchCollection::sortByScore(SCORER_TYPE_T match_mode) {
   if (sorted_) return;
   //sort by score.
+  //cerr <<"Scoring"<<endl;
 
-  for (int i=0;i<numMatches();i++) {
-    matches_[i].getScore(match_mode);
+  if (matches_.size() == 0) {
+    sorted_ = true;
+    return;
   }
-
+  MPSM_Scorer scorer(matches_[0].getSpectrum(), matches_[0].getMaxCharge(), match_mode);
+  for (int i=0;i<numMatches();i++) {
+    FLOAT_T score = scorer.calcScore(matches_[i]);
+    matches_[i].setScore(match_mode, score);
+  }
+  //cerr <<"Sorting"<<endl;
   MPSM_Match::sortMatches(matches_, match_mode);
   sorted_ = true;
+  //cerr <<"Done"<<endl;
 }
 
 void MPSM_MatchCollection::calcDeltaCN() {
@@ -111,7 +120,7 @@ void MPSM_MatchCollection::calcXCorrRanks() {
     getMatch(0).setXCorrRank(1);
     return;
   }
-  int top_match = get_int_parameter("top-match");
+  int top_match = get_int_parameter("mpsm-top-match");
   if (!get_boolean_parameter("mpsm-do-sort")) {
     int n = min(numMatches(), top_match);
     for (int match_idx=0;match_idx < n; match_idx++) {

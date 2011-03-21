@@ -89,6 +89,8 @@ void MatchFileWriter::setPrecision(){
     case QRANKER_SCORE_COL:
     case QRANKER_QVALUE_COL:
     case RTIME_MAX_DIFF_COL:
+    case XCORR_SUM_DIFF_COL:
+    case XCORR_MAX_DIFF_COL:
 #ifdef NEW_COLUMNS
     case WEIBULL_PEPTIDE_QVALUE_COL:      // NEW
     case DECOY_XCORR_PEPTIDE_QVALUE_COL:  // NEW
@@ -105,7 +107,7 @@ void MatchFileWriter::setPrecision(){
     case CORR_COL:
       match_precision_[col_idx] = 6;
       break;
-
+    case PEPTIDES_SPECTRUM_COL:
     case NZSTATE_COL:
       match_precision_[col_idx] = 0;
     break;
@@ -198,6 +200,10 @@ void MatchFileWriter::addColumnNames(COMMAND_T command, bool has_decoys){
     //carp(CARP_INFO,"add NZSTATE_COL");
     addColumnName(NZSTATE_COL);
     addColumnName(RTIME_MAX_DIFF_COL);
+    addColumnName(PEPTIDES_SPECTRUM_COL);
+    addColumnName(SP_SCORE_COL);
+    addColumnName(XCORR_SUM_DIFF_COL);
+    addColumnName(XCORR_MAX_DIFF_COL);
     break;
   case XLINK_SEARCH_COMMAND:
     // TODO: does search-for-xlinks use MatchFileWriter?
@@ -213,6 +219,7 @@ void MatchFileWriter::addColumnNames(COMMAND_T command, bool has_decoys){
   addColumnName(DELTA_CN_COL);
   addColumnName(XCORR_SCORE_COL);
   addColumnName(XCORR_RANK_COL);
+  addColumnName(SP_SCORE_COL);
   addColumnName(MATCHES_SPECTRUM_COL);
   addColumnName(SEQUENCE_COL);
   addColumnName(CLEAVAGE_TYPE_COL);
@@ -220,6 +227,9 @@ void MatchFileWriter::addColumnNames(COMMAND_T command, bool has_decoys){
   addColumnName(FLANKING_AA_COL);
   addColumnName(NZSTATE_COL);
   addColumnName(RTIME_MAX_DIFF_COL);
+  addColumnName(XCORR_SUM_DIFF_COL);
+  addColumnName(XCORR_MAX_DIFF_COL);
+  addColumnName(PEPTIDES_SPECTRUM_COL);
 
   if( has_decoys ){
     addColumnName(UNSHUFFLED_SEQUENCE_COL);

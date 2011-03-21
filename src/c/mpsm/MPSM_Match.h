@@ -106,6 +106,10 @@ class MPSM_Match {
   std::string getSequenceString();
   int getMatchesPerSpectrum();
 
+  FLOAT_T getXCorrSumDiff();
+  FLOAT_T getXCorrMaxDiff();
+
+
     
   FLOAT_T getScore(SCORER_TYPE_T match_mode);
   void setScore(SCORER_TYPE_T match_mode, FLOAT_T score);

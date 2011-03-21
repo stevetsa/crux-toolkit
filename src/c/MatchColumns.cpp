@@ -52,7 +52,10 @@ static const char* match_column_strings[NUMBER_MATCH_COLUMNS] = {
   "shift",
   "corr",
   "nzstates",
-  "rtime max diff"
+  "rtime max diff",
+  "peptides/spectrum",
+  "xcorr sum diff",
+  "xcorr max diff"
 };
 
 /**
@@ -64,5 +67,9 @@ const char* get_column_header(
   if ((columnIndex < 0) || (columnIndex >= NUMBER_MATCH_COLUMNS)) {
     carp(CARP_FATAL, "Cannot access output column %d.\n", columnIndex);
   }
+  if (match_column_strings[columnIndex] == NULL) {
+    carp(CARP_FATAL, "Cannot access output column %d.\n", columnIndex);
+  }
+
   return(match_column_strings[columnIndex]);
 }

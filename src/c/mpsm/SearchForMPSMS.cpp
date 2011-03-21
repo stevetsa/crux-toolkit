@@ -171,14 +171,15 @@ int SearchForMPSMS::main(int argc, char** argv) {
         current_spectrum->getFirstScan());
       carp(CARP_INFO, "Searching for mpsms");
       search(spsm_map, mpsm_map);
+      cerr <<"Calculating xcorr ranks"<<endl;
       mpsm_map.calcXCorrRanks();
       if (get_boolean_parameter("mpsm-do-sort")) {
         //spsm_map.calcDeltaCN();
         //spsm_map.calcZScores();
         //spsm_map.sortMatches(XCORR);
-        //cerr<<"Calculating delta cn"<<endl;
+        cerr<<"Calculating delta cn"<<endl;
         mpsm_map.calcDeltaCN();
-        //cerr<<"Calculating zscores"<<endl;
+        cerr<<"Calculating zscores"<<endl;
         mpsm_map.calcZScores();
         //cerr<<"Calculating xcorr ranks"<<endl;
         

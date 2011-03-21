@@ -56,8 +56,14 @@ KrokhinRetentionPredictor::~KrokhinRetentionPredictor() {
 }
 
 FLOAT_T KrokhinRetentionPredictor::predictRTime(MATCH_T* match) {
+
+  PEPTIDE_T* peptide = get_match_peptide(match);
+  char* sequence = get_peptide_sequence(peptide);
+  int length = get_peptide_length(peptide);
+  /*
   char* sequence = get_match_sequence(match);
   int length = get_peptide_length(get_match_peptide(match));
+  */
   double ans = predictRTimeS(sequence, length);
   free(sequence);
   return ans;
@@ -81,12 +87,12 @@ FLOAT_T KrokhinRetentionPredictor::predictRTimeS(const char* sequence, int N) {
 
   double sum_Rc = 0.0;
   for (int idx=0;idx<N;idx++) {
-    sum_Rc += aa_rc_coef.find(sequence[idx]) -> second;
+    sum_Rc += aa_rc_coef[sequence[idx]];
   }
 
-  double Rc_1_Nt = aa_rc_nt_coef.find(sequence[0]) -> second;
-  double Rc_2_Nt = aa_rc_nt_coef.find(sequence[1]) -> second;
-  double Rc_3_Nt = aa_rc_nt_coef.find(sequence[2]) -> second;
+  double Rc_1_Nt = aa_rc_nt_coef[sequence[0]];
+  double Rc_2_Nt = aa_rc_nt_coef[sequence[1]];
+  double Rc_3_Nt = aa_rc_nt_coef[sequence[2]];
 
   double H = K_L * (sum_Rc + 0.42*Rc_1_Nt + 0.22*Rc_2_Nt + 0.05*Rc_3_Nt);
   

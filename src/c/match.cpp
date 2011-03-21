@@ -800,6 +800,15 @@ static void print_one_match_field(
   case RTIME_MAX_DIFF_COL:
     output_file->setColumnCurrentRow((MATCH_COLUMNS_T)column_idx, 0.0);
     break;
+  case PEPTIDES_SPECTRUM_COL:
+    output_file->setColumnCurrentRow((MATCH_COLUMNS_T)column_idx, 1);
+    break;
+  case XCORR_SUM_DIFF_COL:
+    output_file->setColumnCurrentRow((MATCH_COLUMNS_T)column_idx, 0);
+    break;
+  case XCORR_MAX_DIFF_COL:
+    output_file->setColumnCurrentRow((MATCH_COLUMNS_T)column_idx, 0);
+    break;
   case NUMBER_MATCH_COLUMNS:
   case INVALID_COL:
     carp(CARP_FATAL, "Error in printing code (match.cpp).");

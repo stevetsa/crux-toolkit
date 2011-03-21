@@ -117,6 +117,10 @@ void MPSM_OutputFiles::writeMatch(
   file_ptr->setColumnCurrentRow(SEQUENCE_COL, mpsm_match.getSequenceString());
   file_ptr->setColumnCurrentRow(NZSTATE_COL, mpsm_match.getSpectrum()->getNumZStates());
   file_ptr->setColumnCurrentRow(RTIME_MAX_DIFF_COL, mpsm_match.getRTimeMaxDiff());
+  file_ptr->setColumnCurrentRow(PEPTIDES_SPECTRUM_COL, mpsm_match.numMatches());
+  file_ptr->setColumnCurrentRow(SP_SCORE_COL, mpsm_match.getScore(SP));
+  file_ptr->setColumnCurrentRow(XCORR_SUM_DIFF_COL, mpsm_match.getXCorrSumDiff());
+  file_ptr->setColumnCurrentRow(XCORR_MAX_DIFF_COL, mpsm_match.getXCorrMaxDiff());
   file_ptr->writeRow();
 
 }

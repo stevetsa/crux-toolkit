@@ -34,16 +34,17 @@ PalmbaldRetentionPredictor::~PalmbaldRetentionPredictor() {
 }
 
 FLOAT_T PalmbaldRetentionPredictor::predictRTime(MATCH_T* match) {
-  char* sequence = get_match_sequence(match);
-  int sequence_length = strlen(sequence);
+
+  PEPTIDE_T* peptide = get_match_peptide(match);
+  int sequence_length = get_peptide_length(peptide);
+  char* sequence = get_peptide_sequence_pointer(peptide);
+
   double ans = t0;
 
   for (int idx=0;idx<sequence_length;idx++) {
 
-    ans += aa_coef.find(sequence[idx]) -> second;
+    ans += aa_coef[sequence[idx]];
   }
-
-  free(sequence);
 
   return ans;
 }

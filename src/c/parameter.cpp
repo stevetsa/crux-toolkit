@@ -958,19 +958,19 @@ void initialize_parameters(void){
     "Available for crux search-for-mpsms",
     "true");
 
-  set_double_parameter("rtime-all2-threshold", 8.4, 0, 1e6, 
+  set_double_parameter("rtime-all2-threshold", 8.4, -1, 1e6, 
       ""
       "",
       "",
       "true");
 
-  set_double_parameter("rtime-all3-threshold", 14.1, 0, 1e6, 
+  set_double_parameter("rtime-all3-threshold", 14.1, -1, 1e6, 
       ""
       "",
       "",
       "true");
 
-  set_double_parameter("rtime-default-threshold", 14.7, 0, 1e6, 
+  set_double_parameter("rtime-default-threshold", 14.7, -1, 1e6, 
       ""
       "",
       "",
