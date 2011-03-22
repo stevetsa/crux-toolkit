@@ -38,8 +38,7 @@ SpectrumCollection::SpectrumCollection() {
  * Instantiates a new spectrum_collection object from a filename. 
  * Does *NOT* parse all spectra in the file. 
  * This will be done lazily depending on the subsequent method
- * calls (parse_spectrum_collection get_spectrum_collection_spectrum).
- * Uses the scan-number option to determine which spectra to include.
+ * calls (parse() or  getSpectrum()).
  * \returns  SPECTRUM_COLLECTION_T
  */
 SpectrumCollection::SpectrumCollection(
@@ -308,7 +307,7 @@ bool SpectrumCollection::addSpectrumToEnd(
 {
   // set spectrum
   spectra_.push_back(spectrum);
-  num_charged_spectra_ += spectrum->getNumPossibleZ();
+  num_charged_spectra_ += spectrum->getNumZStates();
   return true;
 }
 
@@ -334,7 +333,7 @@ bool SpectrumCollection::addSpectrum(
 
   spectra_.insert(spectra_.begin()+add_index, spectrum);
 
-  num_charged_spectra_ += spectrum->getNumPossibleZ();
+  num_charged_spectra_ += spectrum->getNumZStates();
   return true;
 }
 
@@ -357,7 +356,7 @@ void SpectrumCollection::removeSpectrum(
     }
   }
   
-  num_charged_spectra_ -= spectrum->getNumPossibleZ();
+  num_charged_spectra_ -= spectrum->getNumZStates();
 
   delete spectra_[spectrum_index];
   spectra_[spectrum_index] = NULL;

@@ -3,6 +3,7 @@
 #include <iostream>
 
 #include "DelimitedFileReader.h"
+#include "DelimitedFile.h"
 
 #include "carp.h"
 #include "parameter.h"
@@ -21,16 +22,52 @@ void ExtractRows::printAvailableRows(DelimitedFileReader& infile) {
 }
 */
 
+template<typename TValue>
+bool passesThreshold(
+  TValue a,
+  TValue& b,
+  COMPARISON_T& comparison) {
+
+  switch (comparison) {
+    case COMPARISON_LT:
+      return a < b;
+    case COMPARISON_LTE:
+      return a <= b;
+    case COMPARISON_EQ:
+      return a == b;
+    case COMPARISON_GTE:
+      return a >= b;
+    case COMPARISON_GT:
+      return a > b;
+    case COMPARISON_NEQ:
+      return a != b;
+    case NUMBER_COMPARISONS:
+    case COMPARISON_INVALID:
+      carp(CARP_FATAL, "Invalid comparison type!");
+      return false;
+  }
+  return false;
+
+}
+
+
 int ExtractRows::main(int argc, char** argv) {
 
    /* Define optional command line arguments */
   const char* option_list[] = {
+    "header",
+    "comparison",
+    "column-type",
     "verbosity"
   };
   int num_options = sizeof(option_list) / sizeof(char*);
 
   /* Define required command line arguments */
-  const char* argument_list[] = {"tsv file", "column name", "column value"};
+  const char* argument_list[] = {
+    "tsv file", 
+    "column name", 
+    "column value"
+  };
   int num_arguments = sizeof(argument_list) / sizeof(char*);
 
     // Verbosity level for set-up/command line reading 
@@ -58,6 +95,11 @@ int ExtractRows::main(int argc, char** argv) {
   string column_value = 
     string(get_string_parameter_pointer("column value"));
 
+  COLTYPE_T column_type = get_column_type_parameter("column-type");
+  COMPARISON_T comparison = get_comparison_parameter("comparison");
+
+
+
   DelimitedFileReader delimited_file(delimited_filename, true);
   int column_idx = delimited_file.findColumn(column_name);
 
@@ -67,10 +109,50 @@ int ExtractRows::main(int argc, char** argv) {
       delimited_file.getAvailableColumnsString().c_str());
   }
 
-  cout << delimited_file.getHeaderString() << endl;
+  if (get_boolean_parameter("header")) {
+    cout << delimited_file.getHeaderString() << endl;
+  }
+
+ 
+
+  string column_value_str =
+    string(get_string_parameter_pointer("column value"));
+
+  int column_value_int = 0;
+  DelimitedFile::from_string(column_value_int, column_value_str);
+
+  FLOAT_T column_value_real = 0;
+  DelimitedFile::from_string(column_value_real, column_value_str);
+
 
   while (delimited_file.hasNext()) {
-    if (delimited_file.getString(column_idx) == column_value) {
+
+    bool passes = false;
+    switch(column_type) {
+      case COLTYPE_INT:
+        passes = passesThreshold(
+          delimited_file.getInteger(column_idx),
+          column_value_int, 
+          comparison);
+        break;
+      case COLTYPE_REAL:
+        passes = passesThreshold(
+          delimited_file.getFloat(column_idx),
+          column_value_real,
+          comparison);
+        break;
+      case COLTYPE_STRING:
+        passes = passesThreshold(
+          delimited_file.getString(column_idx),
+          column_value_str,
+          comparison);
+        break;
+      case NUMBER_COLTYPES:
+      case COLTYPE_INVALID:
+        carp(CARP_FATAL,"Unknown column type");
+    }
+    
+    if (passes) {
       cout << delimited_file.getString() << endl;
     }
     delimited_file.next();
@@ -79,6 +161,8 @@ int ExtractRows::main(int argc, char** argv) {
   return 0;
 
 }
+
+
 
 string ExtractRows::getName() {
   return "extract-rows";

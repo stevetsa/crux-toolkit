@@ -16,6 +16,7 @@
 #include <map>
 #include "carp.h"
 #include "parse_arguments.h"
+#include "ProteinPeptideIterator.h"
 #include "Spectrum.h"
 #include "Ion.h"
 #include "IonSeries.h"
@@ -82,7 +83,8 @@ struct match{
   DIGEST_T digest;
   //  PEPTIDE_TYPE_T overall_type; 
     ///< overall peptide trypticity, set in set_match_peptide, see README above
-  int charge; ///< the charge state of the match 
+  //int charge; ///< the charge state of the match 
+  SpectrumZState zstate_;
   // post_process match object features
   // only valid when post_process_match is TRUE
   BOOLEAN_T post_process_match; ///< Is this a post process match object?
@@ -167,8 +169,8 @@ int compare_match_spectrum(
   Spectrum* spec_b = get_match_spectrum((*match_b));
   int scan_a = spec_a->getFirstScan();
   int scan_b = spec_b->getFirstScan();
-  int charge_a = get_match_charge((*match_a));
-  int charge_b = get_match_charge((*match_b));
+  int charge_a = get_match_charge(*match_a);
+  int charge_b = get_match_charge(*match_b);
 
   if( scan_a < scan_b ){
     return -1;
@@ -557,7 +559,7 @@ void print_match_sqt(
     new_peptide_src_iterator(peptide);
   PEPTIDE_SRC_T* peptide_src = NULL;
   char* protein_id = NULL;
-  PROTEIN_T* protein = NULL;
+  Protein* protein = NULL;
   const char* rand = "";
   if( match->null_peptide ){
     rand = "rand_";
@@ -566,7 +568,7 @@ void print_match_sqt(
   while(peptide_src_iterator_has_next(peptide_src_iterator)){
     peptide_src = peptide_src_iterator_next(peptide_src_iterator);
     protein = get_peptide_src_parent_protein(peptide_src);
-    protein_id = get_protein_id(protein);
+    protein_id = protein->getId();
     
     // print match info (locus line), add rand_ to locus name for decoys
     fprintf(file, "L\t%s%s\n", rand, protein_id);      
@@ -589,9 +591,7 @@ static void print_one_match_field(
   MatchFileWriter*    output_file,            ///< output stream -out
   int      scan_num,               ///< starting scan number -in
   FLOAT_T  spectrum_precursor_mz,  ///< m/z of spectrum precursor -in
-  FLOAT_T  spectrum_mass,          ///< spectrum neutral mass -in
   int      num_matches,            ///< num matches in spectrum -in
-  int      charge,                 ///< charge -in
   int      b_y_total,              ///< total b/y ions -in
   int      b_y_matched             ///< Number of b/y ions matched. -in
 ) {
@@ -601,7 +601,8 @@ static void print_one_match_field(
     output_file->setColumnCurrentRow((MATCH_COLUMNS_T)column_idx, scan_num);
     break;
   case CHARGE_COL:
-    output_file->setColumnCurrentRow((MATCH_COLUMNS_T)column_idx, charge);
+    output_file->setColumnCurrentRow((MATCH_COLUMNS_T)column_idx, 
+                                      get_match_charge(match));
     break;
   case SPECTRUM_PRECURSOR_MZ_COL:
     output_file->setColumnCurrentRow((MATCH_COLUMNS_T)column_idx, 
@@ -609,7 +610,7 @@ static void print_one_match_field(
     break;
   case SPECTRUM_NEUTRAL_MASS_COL:
     output_file->setColumnCurrentRow((MATCH_COLUMNS_T)column_idx, 
-                                     spectrum_mass);
+                                     get_match_neutral_mass(match));
     break;
   case PEPTIDE_MASS_COL:
     {
@@ -792,6 +793,11 @@ static void print_one_match_field(
     output_file->setColumnCurrentRow((MATCH_COLUMNS_T)column_idx, 
                                      get_calibration_corr(collection));
     break;
+    // values only for spectral-counts
+  case SIN_SCORE_COL:
+  case NSAF_SCORE_COL:
+  case PARSIMONY_RANK_COL:
+    return;
   case NUMBER_MATCH_COLUMNS:
   case INVALID_COL:
     carp(CARP_FATAL, "Error in printing code (match.cpp).");
@@ -810,7 +816,6 @@ static void print_one_match_field(
 void print_match_xml(
   MATCH_T* match,                  ///< the match to print -in  
   FILE*    output_file,            ///< output stream -out
-  FLOAT_T  spectrum_mass,          ///< spectrum neutral mass -in
   const BOOLEAN_T* scores_computed ///< scores_computed[TYPE] = T if match was scored for TYPE
   ){
 
@@ -822,6 +827,9 @@ void print_match_xml(
     carp(CARP_ERROR, "Cannot print NULL match to xml file.");
     return;
   }
+
+  FLOAT_T spectrum_mass = get_match_neutral_mass(match);
+
 
   FLOAT_T delta_cn = get_match_delta_cn(match);
   
@@ -1111,7 +1119,7 @@ int get_num_internal_cleavage(char* peptide_sequence, ENZYME_T enzyme){
   char * seq_iter = peptide_sequence;
   
   while (*(seq_iter+1) != '\0'){
-    if (valid_cleavage_position(seq_iter, enzyme) == TRUE){
+    if (ProteinPeptideIterator::validCleavagePosition(seq_iter, enzyme)){
       num_missed_cleavages++;
     }
     seq_iter++;
@@ -1137,13 +1145,13 @@ int get_num_terminal_cleavage(
   cleavage[0] = flanking_aas_prev;
   cleavage[1] = peptide_sequence[0];
   if (flanking_aas_prev == '-' ||
-      valid_cleavage_position(cleavage, enzyme) == TRUE){
+      ProteinPeptideIterator::validCleavagePosition(cleavage, enzyme)){
       num_tol_term++;
   }
   cleavage[0] = peptide_sequence[strlen(peptide_sequence)-1];
   cleavage[1] = flanking_aas_next;
   if (flanking_aas_next == '-' ||
-      valid_cleavage_position(cleavage, enzyme) == TRUE){
+      ProteinPeptideIterator::validCleavagePosition(cleavage, enzyme)){
     num_tol_term++;
   }
   return num_tol_term;
@@ -1166,9 +1174,9 @@ void get_information_of_proteins(
   // for each protein that the peptide maps, get its id and description
   while(peptide_src_iterator_has_next(peptide_src_iterator)){
     PEPTIDE_SRC_T* peptide_src = peptide_src_iterator_next(peptide_src_iterator);
-    PROTEIN_T* protein = get_peptide_src_parent_protein(peptide_src);
-    char* protein_id = get_protein_id(protein);
-    char* protein_annotation = get_protein_annotation(protein);      
+    Protein* protein = get_peptide_src_parent_protein(peptide_src);
+    char* protein_id = protein->getId();
+    char* protein_annotation = protein->getAnnotation();      
     char* str_iter = protein_annotation;
     // replaces double quotes with single quote in the description
     while ( (*str_iter) != '\0' ){
@@ -1212,9 +1220,7 @@ void print_match_tab(
   MatchFileWriter*    output_file,            ///< output stream -out
   int      scan_num,               ///< starting scan number -in
   FLOAT_T  spectrum_precursor_mz,  ///< m/z of spectrum precursor -in
-  FLOAT_T  spectrum_mass,          ///< spectrum neutral mass -in
-  int      num_matches,            ///< num matches in spectrum -in
-  int      charge                  ///< charge -in
+  int      num_matches            ///< num matches in spectrum -in
   ){
 
   // Usually because no decoy file to print to.
@@ -1239,9 +1245,7 @@ void print_match_tab(
                           output_file,
                           scan_num,
                           spectrum_precursor_mz,
-                          spectrum_mass,
                           num_matches,
-                          charge,
                           b_y_total,
                           b_y_matched);
   }
@@ -1260,7 +1264,7 @@ void shuffle_matches(
     carp(CARP_ERROR, "Cannot shuffle null match array.");
     return;
   }
-  //  srand(time(NULL));
+  //  srandom(time(NULL));
 
   int match_idx = 0;
   for(match_idx = start_index; match_idx < end_index-1; match_idx++){
@@ -1307,21 +1311,21 @@ double* get_match_percolator_features(
   int feature_count = 20;
   PEPTIDE_SRC_ITERATOR_T* src_iterator = NULL;
   PEPTIDE_SRC_T* peptide_src = NULL;
-  PROTEIN_T* protein = NULL;
+  Protein* protein = NULL;
   unsigned int protein_idx = 0;
   double* feature_array = (double*)mycalloc(feature_count, sizeof(double));
   FLOAT_T weight_diff = get_peptide_peptide_mass(match->peptide) -
-    (match->spectrum)->getNeutralMass(match->charge);
+    (match->zstate_.getNeutralMass());
 
   
   carp(CARP_DETAILED_DEBUG, "spec: %d, charge: %d", 
     match->spectrum->getFirstScan(),
-    match -> charge);
+    match -> zstate_.getCharge());
 
   carp(CARP_DETAILED_DEBUG,"peptide mass:%f", 
        get_peptide_peptide_mass(match->peptide));
   carp(CARP_DETAILED_DEBUG,"spectrum neutral mass:%f", 
-       (match->spectrum)->getNeutralMass(match->charge));
+       (match-> zstate_.getNeutralMass()));
 
   // Xcorr
   feature_array[0] = get_match_score(match, XCORR);
@@ -1346,7 +1350,7 @@ double* get_match_percolator_features(
   // absdM
   feature_array[6] = fabsf(weight_diff);
   // Mass
-  feature_array[7] = match->spectrum->getNeutralMass(match->charge);
+  feature_array[7] = match->zstate_.getNeutralMass();
   // ionFrac
   feature_array[8] = match->b_y_ion_fraction_matched;
   // lnSM
@@ -1375,14 +1379,16 @@ double* get_match_percolator_features(
   // pepLen
   feature_array[13] = get_peptide_length(match->peptide);
   
+  int charge = match->zstate_.getCharge();
+
   // set charge
-  if(match->charge == 1){
+  if(charge == 1){
     feature_array[14] = TRUE;
   }
-  else if(match->charge == 2){
+  else if(charge == 2){
     feature_array[15] = TRUE;
   }
-  else if(match->charge == 3){
+  else if(charge == 3){
     feature_array[16] = TRUE;
   }
   
@@ -1399,7 +1405,7 @@ double* get_match_percolator_features(
     while(peptide_src_iterator_has_next(src_iterator)){
       peptide_src = peptide_src_iterator_next(src_iterator);
       protein = get_peptide_src_parent_protein(peptide_src);
-      protein_idx = get_protein_protein_idx(protein);
+      protein_idx = protein->getProteinIdx();
 
       // numProt
       if(feature_array[18] < get_match_collection_protein_counter(
@@ -1477,27 +1483,27 @@ MATCH_T* parse_match_tab_delimited(
   match -> match_rank[XCORR] = result_file.getInteger(XCORR_RANK_COL);
 
   if (!result_file.empty(DECOY_XCORR_QVALUE_COL)){
-    match -> match_scores[DECOY_XCORR_QVALUE] = result_file.getFloat(DECOY_XCORR_QVALUE_COL);
+    match->match_scores[DECOY_XCORR_QVALUE] = result_file.getFloat(DECOY_XCORR_QVALUE_COL);
   }
   /* TODO I personally would like access to the raw p-value as well as the bonferonni corrected one (SJM).
   match -> match_scores[LOGP_WEIBULL_XCORR] = result_file.getFloat("logp weibull xcorr");
   */
   if (!result_file.empty(PVALUE_COL)){
-    match -> match_scores[LOGP_BONF_WEIBULL_XCORR] = -log(result_file.getFloat(PVALUE_COL));
+    match->match_scores[LOGP_BONF_WEIBULL_XCORR] = -log(result_file.getFloat(PVALUE_COL));
   }
   if (!result_file.empty(PERCOLATOR_QVALUE_COL)){
-    match -> match_scores[PERCOLATOR_QVALUE] = result_file.getFloat(PERCOLATOR_QVALUE_COL);
+    match->match_scores[PERCOLATOR_QVALUE] = result_file.getFloat(PERCOLATOR_QVALUE_COL);
   }
   if (!result_file.empty(PERCOLATOR_SCORE_COL)){
-    match -> match_scores[PERCOLATOR_SCORE] = result_file.getFloat(PERCOLATOR_SCORE_COL);
-    match -> match_rank[PERCOLATOR_SCORE] = result_file.getInteger(PERCOLATOR_RANK_COL);
+    match->match_scores[PERCOLATOR_SCORE] = result_file.getFloat(PERCOLATOR_SCORE_COL);
+    match->match_rank[PERCOLATOR_SCORE] = result_file.getInteger(PERCOLATOR_RANK_COL);
   }
   if (!result_file.empty(WEIBULL_QVALUE_COL)){
-    match -> match_scores[LOGP_QVALUE_WEIBULL_XCORR] = result_file.getFloat(WEIBULL_QVALUE_COL);
+    match->match_scores[LOGP_QVALUE_WEIBULL_XCORR] = result_file.getFloat(WEIBULL_QVALUE_COL);
   }
   if (!result_file.empty(QRANKER_SCORE_COL)){
-    match -> match_scores[QRANKER_SCORE] = result_file.getFloat(QRANKER_SCORE_COL);
-    match -> match_scores[QRANKER_QVALUE] = result_file.getFloat(QRANKER_QVALUE_COL);
+    match->match_scores[QRANKER_SCORE] = result_file.getFloat(QRANKER_SCORE_COL);
+    match->match_scores[QRANKER_QVALUE] = result_file.getFloat(QRANKER_QVALUE_COL);
   }
 
   // get experiment size
@@ -1821,12 +1827,29 @@ BOOLEAN_T get_match_null_peptide(
 /**
  * sets the match charge
  */
+/*
 void set_match_charge(
   MATCH_T* match, ///< the match to work -out
   int charge  ///< the charge of spectrum -in
   )
 {
   match->charge = charge;
+}
+*/
+
+void set_match_zstate(
+  MATCH_T* match,
+  SpectrumZState& zstate) {
+
+  match->zstate_ = zstate;
+
+}
+
+SpectrumZState& get_match_zstate(
+  MATCH_T* match) {
+
+  return match->zstate_;
+
 }
 
 /**
@@ -1836,8 +1859,25 @@ int get_match_charge(
   MATCH_T* match ///< the match to work -out
   )
 {
-  return match->charge;
+  return get_match_zstate(match).getCharge();
+
 }
+
+/**
+ * /returns the match neutral mass
+ */
+FLOAT_T get_match_neutral_mass(
+  MATCH_T* match ///< the match to work -out
+  )
+{
+  return get_match_zstate(match).getNeutralMass();
+
+}
+
+
+
+
+
 
 /**
  * sets the match delta_cn

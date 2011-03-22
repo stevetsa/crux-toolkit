@@ -21,6 +21,7 @@
 #include "carp.h"
 #include <vector>
 #include <string>
+#include "DelimitedFile.h"
 #include "MatchFileReader.h"
 #include "MSToolkit/Spectrum.h"
 
@@ -56,8 +57,7 @@ Spectrum::Spectrum
  ) : 
    first_scan_(first_scan),
    last_scan_(last_scan),
-   precursor_mz_(precursor_mz),
-   possible_z_(possible_z),
+   precursor_mz_(precursor_mz), 
    min_peak_mz_(0),
    max_peak_mz_(0),
    total_energy_(0),
@@ -68,6 +68,14 @@ Spectrum::Spectrum
    has_mz_peak_array_(false)
  {
   mz_peak_array_ = NULL;
+
+  for (unsigned int idx=0;idx<possible_z.size();idx++) {
+    SpectrumZState zstate;
+    zstate.setMZ(precursor_mz, possible_z.at(idx));
+    zstates_.push_back(zstate);
+  }
+
+
 }
 
 /**
@@ -117,9 +125,9 @@ void Spectrum::print(FILE* file) ///< output file to print at -out
   }
   
   // print 'Z', 'D' line
-  for(size_t z_idx = 0; z_idx < possible_z_.size(); z_idx++){
-    fprintf(file, "Z\t%d\t%.*f\n", possible_z_[z_idx], mass_precision,
-            this->getSinglyChargedMass(possible_z_[z_idx]));
+  for(size_t z_idx = 0; z_idx < zstates_.size(); z_idx++){
+    fprintf(file, "Z\t%d\t%.*f\n", zstates_[z_idx].getCharge(), mass_precision,
+            zstates_[z_idx].getSinglyChargedMass());
     // are there any 'D' lines to print?
     if(z_idx < d_lines_v_.size() ){
       fprintf(file, "%s", d_lines_v_[z_idx].c_str());
@@ -141,7 +149,7 @@ void Spectrum::print(FILE* file) ///< output file to print at -out
  * max_mz_bin.  Only prints non-zero intensities.
  */
 void Spectrum::printProcessedPeaks(
-  int charge,           ///< print at this charge state
+  SpectrumZState& zstate,           ///< print at this charge state
   FLOAT_T* intensities, ///< intensities of new peaks
   int max_mz_bin,       ///< num_bins in intensities
   FILE* file){          ///< print to this file
@@ -161,15 +169,15 @@ void Spectrum::printProcessedPeaks(
   }
 
   // print 'Z', 'D' line
-  if( charge != 0 ){  // print only one charge state
-    fprintf(file, "Z\t%d\t%.*f\n", charge, mass_precision,
-            this->getSinglyChargedMass(charge));
+  if( zstate.getCharge() != 0 ){  // print only one charge state
+    fprintf(file, "Z\t%d\t%.*f\n", zstate.getCharge(), mass_precision,
+            zstate.getSinglyChargedMass());
     // TODO find associated Z line and print
   } else {  // print all charge states
 
-    for(size_t z_idx = 0; z_idx < possible_z_.size(); z_idx++){
-      fprintf(file, "Z\t%d\t%.*f\n", possible_z_[z_idx], mass_precision,
-              this->getSinglyChargedMass(possible_z_[z_idx]));
+    for(size_t z_idx = 0; z_idx < zstates_.size(); z_idx++){
+      fprintf(file, "Z\t%d\t%.*f\n", zstates_[z_idx].getCharge(), mass_precision,
+              zstates_[z_idx].getSinglyChargedMass());
       // are there any 'D' lines to print?
       if(z_idx < d_lines_v_.size()){
         fprintf(file, "%s", d_lines_v_[z_idx].c_str());
@@ -192,7 +200,7 @@ void Spectrum::printProcessedPeaks(
  */
 void Spectrum::printXml(
   FILE* file,           ///< output file to print at -out
-  int charge,            ///< charge used for the search -in
+  SpectrumZState& zstate,            ///< charge used for the search -in
   int index              ///< used to output index to file
   ){
   int start_scan = first_scan_;
@@ -210,7 +218,7 @@ void Spectrum::printXml(
   std::ostringstream spectrum_id;
   spectrum_id << filename << period << std::setw(5)  << std::setfill('0')
               << start_scan << period << std::setw(5) << std::setfill('0')
-              << last_scan << period <<charge ;
+              << last_scan << period << zstate.getCharge() ;
   fprintf(file, "    <spectrum_query spectrum=\"%s\" start_scan=\"%i\""
           " end_scan=\"%i\" precursor_neutral_mass=\"%.*f\""
           " assumed_charge=\"%i\" index=\"%i\">\n",
@@ -218,8 +226,8 @@ void Spectrum::printXml(
           start_scan,
           last_scan,
           get_int_parameter("mass-precision"),
-          this->getNeutralMass(charge),
-          charge,
+          zstate.getNeutralMass(),
+          zstate.getCharge(),
           index
           );
   if (name_ext_array != NULL){
@@ -241,18 +249,18 @@ void Spectrum::printXml(
 void Spectrum::printSqt(
   FILE* file,           ///< output file to print to -out
   int num_matches,      ///< number of peptides compared to this spec -in
-  int charge            ///< charge used for the search -in
+  SpectrumZState& zstate            ///< charge used for the search -in
   ){
 
   fprintf(file,
           "S\t%d\t%d\t%d\t%.1f\t%s\t%.*f\t%.2f\t%.*f\t%d\n", 
           first_scan_, 
           last_scan_,
-          charge, 
+          zstate.getCharge(), 
           0.0, // FIXME dummy <process time>
           "server", // FIXME dummy <server>
           get_int_parameter("mass-precision"),
-          this->getNeutralMass(charge), //this is used in search
+          zstate.getNeutralMass(), //this is used in search
           0.0, // FIXME dummy <total intensity>
           get_int_parameter("precision"),
           0.0, // FIXME dummy <lowest sp>
@@ -268,7 +276,7 @@ void Spectrum::printSqt(
  first_scan_(old_spectrum.first_scan_),
  last_scan_(old_spectrum.last_scan_),
  precursor_mz_(old_spectrum.precursor_mz_),
- possible_z_(old_spectrum.possible_z_),
+ zstates_(old_spectrum.zstates_),
  min_peak_mz_(old_spectrum.min_peak_mz_),
  max_peak_mz_(old_spectrum.max_peak_mz_),
  total_energy_(old_spectrum.total_energy_),
@@ -362,6 +370,8 @@ bool Spectrum::parseMgf
   bool peaks_found = FALSE;
   bool end_found = FALSE;
   
+  int charge = -1;
+
   carp(CARP_DEBUG, "parsing MGF Scan");
   
   while( (line_length = getline(&new_line, &buf_length, file)) != -1){
@@ -391,15 +401,13 @@ bool Spectrum::parseMgf
       this->last_scan_ = last_scan;
     } else if (strncmp(new_line, "CHARGE=",7) == 0) {
       //parse the charge line
-      int charge;
+ 
       char* plus_index = index(new_line,'+');
       *plus_index = '\0';
       carp(CARP_DETAILED_DEBUG,"Parsing %s",(new_line+7));
       charge = atoi(new_line+7);
       
       carp(CARP_DETAILED_DEBUG, "charge:%d", charge);
-      
-      this->possible_z_.push_back(charge);
       
       charge_found = true;
     } else if (strncmp(new_line, "PEPMASS=",8) == 0) {
@@ -425,6 +433,13 @@ bool Spectrum::parseMgf
   //TODO check to make sure we gleaned the information from
   //the headers.
   
+  if (pepmass_found && charge_found) {
+    SpectrumZState zstate;
+    zstate.setMZ(precursor_mz_, charge);
+    zstates_.push_back(zstate);
+  }
+
+
   //parse peak information
   do {
     if (strncmp(new_line, "END IONS", 8) == 0) {
@@ -755,9 +770,16 @@ bool Spectrum::parseZLine(char* line)  ///< 'Z' line to parse -in
    }  
 
 
-  possible_z_.push_back(charge);
+  SpectrumZState zstate;
+  zstate.setSinglyChargedMass(m_h_plus, charge);
+
+  zstates_.push_back(zstate);
+
   return true;
  }
+
+
+
 
 /**
  * FIXME currently does not parse D line, just copies the entire line
@@ -783,8 +805,60 @@ bool Spectrum::parseILine(char* line)  ///< 'I' line to parse -in
    line_str.erase( line_str.find_first_of("\r\n") );
    i_lines_v_.push_back(line_str);
 
-  return TRUE;
+   if (line_str.find("EZ") != string::npos) {
+     return parseEZLine(line_str);
+   }
+
+
+  return true;
 }
+
+/**
+ * Parses the 'EZ' line of the a spectrum
+ * \returns TRUE if success. FALSE is failure.
+ * 
+ */
+bool Spectrum::parseEZLine(string line_str) ///< 'EZ' line to parse -in
+{
+
+  vector<string> tokens;
+
+  DelimitedFile::tokenize(line_str, tokens, '\t');
+  
+  int charge;
+  FLOAT_T m_h_plus;
+  FLOAT_T rtime;
+  FLOAT_T area;
+
+  if (tokens.size() < 6) {
+    carp(CARP_FATAL,
+      "Failed to parse 'EZ' line %d/6 tokens:\n %s", 
+      tokens.size(),
+      line_str.c_str());
+    return false;
+  }
+
+  DelimitedFile::from_string(charge, tokens.at(2));
+  DelimitedFile::from_string(m_h_plus, tokens.at(3));
+  DelimitedFile::from_string(rtime, tokens.at(4));
+  DelimitedFile::from_string(area, tokens.at(5));
+
+  carp(CARP_DETAILED_DEBUG, "EZLine-Charge:%i", charge);
+  carp(CARP_DETAILED_DEBUG, "EZLine-M+H:%f", m_h_plus);
+  carp(CARP_DETAILED_DEBUG, "EZLine-RTime:%f", rtime);
+  carp(CARP_DETAILED_DEBUG, "EZLine-Area:%f", area);
+
+  SpectrumZState ezstate;
+  ezstate.setSinglyChargedMass(m_h_plus, charge);
+  ezstate.setRTime(rtime);
+  ezstate.setArea(area);
+
+  ezstates_.push_back(ezstate);
+
+  return true;
+
+}
+
 
 /**
  * Transfer values from an MSToolkit spectrum to the crux Spectrum.
@@ -796,7 +870,8 @@ bool Spectrum::parseMstoolkitSpectrum
   ) {
 
   // clear any existing values
-  possible_z_.clear();
+  zstates_.clear();
+
   free_peak_vector(peaks_);
   i_lines_v_.clear();
   d_lines_v_.clear();
@@ -821,24 +896,35 @@ bool Spectrum::parseMstoolkitSpectrum
   //add possible charge states.
   if(  mst_real_spectrum->sizeZ() > 0 ){
     for (int z_idx = 0; z_idx < mst_real_spectrum -> sizeZ(); z_idx++) {
-      possible_z_.push_back(mst_real_spectrum->atZ(z_idx).z);
+      SpectrumZState zstate;
+      zstate.setSinglyChargedMass(
+        mst_real_spectrum->atZ(z_idx).mz,
+        mst_real_spectrum->atZ(z_idx).z);
+      zstates_.push_back(zstate);
     }
   } else { // if no charge states detected, decide based on spectrum
     int charge = choose_charge(precursor_mz_, peaks_);
 
     // add either +1 or +2, +3
+    
     if( charge == 1 ){
-      possible_z_.push_back(1);
+      SpectrumZState zstate;
+      zstate.setMZ(precursor_mz_, 1);
+      zstates_.push_back(zstate);
+
     } else if( charge == 0 ){
-      possible_z_.push_back(2);
-      possible_z_.push_back(3);
+      SpectrumZState zstate;
+      zstate.setMZ(precursor_mz_, 2);
+      zstates_.push_back(zstate);
+      zstate.setMZ(precursor_mz_, 3);
+      zstates_.push_back(zstate);
     } else {
       carp(CARP_ERROR, "Could not determine charge state for spectrum %d.", 
            first_scan_);
     }
   }
 
-  return TRUE;
+  return true;
 }
 
 /**
@@ -1013,12 +1099,16 @@ double Spectrum::getTotalEnergy()
 
 /**
  * \returns A read-only reference to the vector of possible chare
- * states for this spectrum.
+ * states for this spectrum.  If EZ states are available, return those.
  */
-const vector<int>& Spectrum::getPossibleZ()
-{
-  return possible_z_;
+const vector<SpectrumZState>& Spectrum::getZStates() {
+  if (ezstates_.size() != 0) {
+    return ezstates_;
+  } else {
+    return zstates_;
+  }
 }
+
 
 /**
  *  Considers the spectrum-charge parameter and returns the
@@ -1026,6 +1116,7 @@ const vector<int>& Spectrum::getPossibleZ()
  *  spectrum: all of them or the one selected by the parameter.
  * /returns A vector of charge states to consider for this spectrum.
  */ 
+/*
 vector<int> Spectrum::getChargesToSearch(){
 
   vector<int> select_charges;
@@ -1047,13 +1138,50 @@ vector<int> Spectrum::getChargesToSearch(){
   }
   return select_charges;
 }
+*/
+vector<SpectrumZState> Spectrum::getZStatesToSearch() {
+
+  vector<SpectrumZState> select_zstates;
+  const char* charge_str = get_string_parameter_pointer("spectrum-charge");
+
+  
+  if( strcmp( charge_str, "all") == 0){ // return full array of charges
+    select_zstates = getZStates();
+  } else { // return a single charge state.
+
+    int param_charge = atoi(charge_str);
+    
+    if( (param_charge < 1) || (param_charge > MAX_CHARGE) ){
+      carp(CARP_FATAL, "spectrum-charge option must be 1,2,3,.. %d or 'all'.  "
+           "'%s' is not valid", MAX_CHARGE, charge_str);
+    }
+
+    for (unsigned int zstate_idx=0;zstate_idx < getNumZStates();zstate_idx++) {
+      if (getZState(zstate_idx).getCharge() == param_charge) {
+        select_zstates.push_back(getZState(zstate_idx));
+      }
+    }
+  }
+
+  return select_zstates;
+
+}
+
+/**
+ * \returns the ZState at the requested index
+ */
+const SpectrumZState& Spectrum::getZState(
+  int idx ///< the zstate index
+) {
+  return getZStates().at(idx);
+}
+
 
 /**
  * \returns The number of possible charge states of this spectrum.
  */
-int Spectrum::getNumPossibleZ()
-{
-  return (int)possible_z_.size();
+unsigned int Spectrum::getNumZStates() {
+  return getZStates().size();
 }
 
 /**
@@ -1073,33 +1201,6 @@ FLOAT_T Spectrum::getMaxPeakIntensity()
 
 
 /**
- * \returns The mass of the charged precursor ion, according to the formula 
- * mass = m/z * charge
- */
-FLOAT_T Spectrum::getMass(int charge) ///< the charge of precursor ion -in
-{
-  return (precursor_mz_ * charge);
-}
-
-/**
- * \returns The mass of the neutral precursor ion, according to the formula 
- * mass = m/z * charge - mass_H * charge
- */
-FLOAT_T Spectrum::getNeutralMass(int charge) ///< the charge of precursor ion -in
-{
-  return (this->getMass(charge) - MASS_PROTON * charge); // TESTME
-}
-
-/**
- * \returns The mass of the singly charged precursor ion, according to
- * the formula mass = m/z * charge - (mass_H * (charge - 1))
- */
-FLOAT_T Spectrum::getSinglyChargedMass(int charge) ///< charge of the precursor ion 
-{
-  return (this->getMass(charge) - MASS_PROTON*(charge-1));  // TESTME
-}
-
-/**
  * Parse the spectrum from the tab-delimited result file.
  *\returns The parsed spectrum, else returns NULL for failed parse.
  */
@@ -1114,7 +1215,16 @@ Spectrum* Spectrum::parseTabDelimited(
 
   spectrum->precursor_mz_ = file.getFloat(SPECTRUM_PRECURSOR_MZ_COL);
   //Is it okay to assign an individual spectrum object for each charge?
-  //add_possible_z(spectrum, file.getInteger("charge")); 
+
+  int charge = file.getInteger(CHARGE_COL);
+
+  FLOAT_T neutral_mass = file.getFloat(SPECTRUM_NEUTRAL_MASS_COL);
+  
+  SpectrumZState zstate;
+  zstate.setNeutralMass(neutral_mass, charge);
+
+  spectrum->zstates_.push_back(zstate);
+
 
   /*
   TODO : Implement these in the tab delimited file?

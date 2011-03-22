@@ -21,6 +21,7 @@
 #include "PrintProcessedSpectra.h"
 #include "SearchForXLinks.h"
 #include "ExtractColumns.h"
+#include "SpectralCounts.h"
 #include "ExtractRows.h"
 #include "PrintVersion.h"
 
@@ -44,6 +45,7 @@ int main(int argc, char** argv){
   
   applications.add(new ExtractColumns());
   applications.add(new ExtractRows());
+  applications.add(new SpectralCounts());
 
   applications.add(new PrintVersion());
 

@@ -8,6 +8,9 @@
 #define OBJECTS_H
 
 #include <stdio.h>
+#include <set>
+#include <map>
+#include "utils.h"
 
 #define QSORT_COMPARE_METHOD int(*)(const void*, const void*)
 
@@ -19,7 +22,8 @@ class IonFilteredIterator;
 class IonSeries;
 class MatchFileReader;
 class Spectrum;
-class FilteredSpectrumChargeIterator;
+class SpectrumZState;
+
 
 /**
  * \typedef PEAK_T 
@@ -39,10 +43,10 @@ enum _peak_sort_type {_PEAK_LOCATION, _PEAK_INTENSITY};
 typedef enum _peak_sort_type PEAK_SORT_TYPE_T;
 
 /**
- * \typedef SPECTRUM_COLLECTION_T 
+ * \class SpectrumCollection
  * \brief A collection of spectra
  */
-typedef struct spectrum_collection SPECTRUM_COLLECTION_T;
+class SpectrumCollection;
 
 /**
  * \typedef SPECTRUM_ITERATOR_T 
@@ -51,10 +55,10 @@ typedef struct spectrum_collection SPECTRUM_COLLECTION_T;
 typedef struct spectrum_iterator SPECTRUM_ITERATOR_T;
 
 /**
- * \typedef FILTERED_SPECTRUM_CHARGE_ITERATOR_T 
+ * \class FilteredSpectrumChargeIterator 
  * \brief An object to iterate over the spectra in a spectrum_collection
  */
-typedef struct filtered_spectrum_charge_iterator FILTERED_SPECTRUM_CHARGE_ITERATOR_T;
+class FilteredSpectrumChargeIterator;
 
 /**
  * \typedef PEPTIDE_T
@@ -153,6 +157,58 @@ enum _window_type {
   NUMBER_WINDOW_TYPES  
 };
 
+
+/**
+ * The enum for measure type for spectral counts
+ */
+enum _measure_type {
+  MEASURE_INVALID,
+  MEASURE_SIN,
+  MEASURE_NSAF,
+  NUMBER_MEASURE_TYPES
+};
+
+/**
+ * \typedef MEASURE_TYPE_T
+ * \brief The typedef for measure type (sin, nsaf)
+ */
+typedef enum _measure_type MEASURE_TYPE_T;
+
+/**
+ * The quantification level type for spectral counts
+ */
+enum _quant_level_type {
+  QUANT_LEVEL_INVALID,
+  PEPTIDE_QUANT_LEVEL,
+  PROTEIN_QUANT_LEVEL,
+  NUMBER_QUANT_LEVEL_TYPES
+};
+
+/**
+ * \typedef QUANT_LEVEL_TYPE_T
+ * \brief The typdef for quantificaiton level (peptide, protein)
+ */
+typedef enum _quant_level_type QUANT_LEVEL_TYPE_T;
+
+
+/**
+ * The enum for parsimony type for spectral counts
+ */
+enum _parsimony_type {
+  PARSIMONY_INVALID,
+  PARSIMONY_SIMPLE,
+  PARSIMONY_GREEDY,
+  PARSIMONY_NONE,
+  NUMBER_PARSIMONY_TYPES
+};
+
+/*
+ * \typedef PARSIMONY_TYPE_T
+ * \brief The typedef for parsimony type (simple, greedy, none)
+ */
+typedef enum _parsimony_type PARSIMONY_TYPE_T;
+
+
 /**
  * \typedef WINDOW_TYPE_T
  * \brief The typedef for window type (mass, mz, ppm);
@@ -167,16 +223,17 @@ typedef struct peptide_src PEPTIDE_SRC_T;
 
 
 /**
- * \typedef PROTEIN_T
+ * \class Protein
  * \brief A protein sequence
  */
-typedef struct protein PROTEIN_T;
+class Protein;
+
 
 /**
- * \typedef PROTEIN_PEPTIDE_ITERATOR_T
+ * \class ProteinPeptideIterator
  * \brief An object to iterate over the peptides in a protein sequence
  */
-typedef struct protein_peptide_iterator PROTEIN_PEPTIDE_ITERATOR_T;
+class ProteinPeptideIterator;
 
 /**
  * \typedef DATABASE_T
@@ -450,6 +507,7 @@ enum _command {
   SEQUEST_COMMAND,      ///< sequest-search
   QVALUE_COMMAND,       ///< compute-q-values
   PERCOLATOR_COMMAND,   ///< percolator
+  SPECTRAL_COUNTS_COMMAND, ///< spectral counts
   QRANKER_COMMAND,      ///< q-ranker
   PROCESS_SPEC_COMMAND, ///< print-processed-spectra
   XLINK_SEARCH_COMMAND, ///< search-for-xlinks
@@ -549,6 +607,77 @@ typedef struct _linked_list_node LIST_POINTER_T;
  * MODIFIED_PEPTIDES_ITERATOR_T 
  */
 typedef struct modified_peptides_iterator_t MODIFIED_PEPTIDES_ITERATOR_T;
+
+/**
+ * \enum _xlink_site_t (typedefed as XLINK_SITE_T)
+ * \brief An indication of the type of the crosslinking site that
+ * may occur in a peptide.
+ * Default is UNKNOWN.
+ */
+enum XLINK_SITE_T{
+  XLINKSITE_UNKNOWN,
+  XLINKSITE_NTERM,
+  XLINKSITE_ALL,
+  XLINKSITE_AA,
+  NUMBER_XLINKSITES
+};
+
+/**
+ * \enum COMPARISON_T
+ */
+enum COMPARISON_T{
+  COMPARISON_INVALID,
+  COMPARISON_LT,
+  COMPARISON_LTE,
+  COMPARISON_EQ,
+  COMPARISON_GTE,
+  COMPARISON_GT,
+  COMPARISON_NEQ,
+  NUMBER_COMPARISONS,
+};
+
+/**
+ * \enum COLTYPE_T
+ */
+enum COLTYPE_T{
+  COLTYPE_INVALID,
+  COLTYPE_INT,
+  COLTYPE_REAL,
+  COLTYPE_STRING,
+  NUMBER_COLTYPES
+};
+
+
+/**
+ * \typedef peptideToScore
+ * \brief Mapping of peptide object to scores
+ */
+typedef std::map<PEPTIDE_T*, FLOAT_T, bool(*)(PEPTIDE_T*, PEPTIDE_T*) > PeptideToScore;
+
+/**
+ * \typedef ProteinToScore
+ * \brief Mapping of protein object to scores
+ */
+typedef std::map<Protein*, FLOAT_T, bool(*)(Protein*, Protein*) > ProteinToScore;
+
+/**
+ * \typedef MetaProtein
+ * \brief Collection of protein objects which contain exactly the same
+ * set of peptides.
+ */
+typedef std::set<Protein*, bool(*)(Protein*, Protein*) > MetaProtein;
+
+/**
+ * \typedef ProteinToMeta
+ * \brief Mapping of Protein to MetaProtein to which it belongs
+ */
+typedef std::map<Protein*, MetaProtein, bool(*)(Protein*, Protein*) > ProteinToMetaProtein;
+
+/**
+ * \typedef MetaToRank
+ * \brief Mapping of MetaProtein to ranks to the rank asigned to it
+ */
+typedef std::map<MetaProtein, int, bool(*)(MetaProtein, MetaProtein) > MetaToRank;
 
 #endif
 

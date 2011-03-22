@@ -10,7 +10,7 @@
 #include "utils.h"
 #include "objects.h"
 #include "peptide.h"
-#include "protein.h"
+#include "Protein.h"
 #include "carp.h"
 #include "peptide_constraint.h"
 #include "sorter.h"
@@ -91,7 +91,7 @@ BOOLEAN_T protein_index_iterator_has_next(
  *
  *\return the next protein index in the protein index file
  */
-PROTEIN_T* protein_index_iterator_next(
+Protein* protein_index_iterator_next(
   PROTEIN_INDEX_ITERATOR_T* protein_index_iterator ///< the iterator of interest -in
 );
 
@@ -121,8 +121,8 @@ BOOLEAN_T create_binary_fasta_in_cur(
  * merge to one method
  */
 BOOLEAN_T create_binary_fasta_here(
-  char* fasta_filename,
-  char* binary_filename
+  const char* fasta_filename,
+  const char* binary_filename
 );
 
 /**
@@ -130,7 +130,7 @@ BOOLEAN_T create_binary_fasta_here(
  *\returns the binary fasta name which was created from the given fasta file
  */
 char* get_binary_fasta_name(
-  char* fasta_file  ///< input fasta file -in                            
+  const char* fasta_file  ///< input fasta file -in                            
   );
 
 

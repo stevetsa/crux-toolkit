@@ -42,6 +42,7 @@ LIBFILES= \
   CreateIndex.h \
   create_index.cpp \
   create_index.h \
+  crux-file-utils.h \
   crux-utils.cpp \
   crux-utils.h \
   database.cpp \
@@ -123,8 +124,10 @@ LIBFILES= \
   PrintVersion.h \
   print-processed-spectra.cpp \
   print-processed-spectra.h \
-  protein.cpp \
-  protein.h \
+  Protein.cpp \
+  Protein.h \
+  ProteinPeptideIterator.cpp \
+  ProteinPeptideIterator.h \
   protein_index.cpp \
   protein_index.h \
   QRanker.cpp \
@@ -140,10 +143,14 @@ LIBFILES= \
   scorer.h \
   sorter.cpp \
   sorter.h \
+  SpectralCounts.cpp \
+  SpectralCounts.h \
   SpectrumCollection.cpp \
   SpectrumCollection.h \
   Spectrum.cpp \
   Spectrum.h \
+  SpectrumZState.cpp \
+  SpectrumZState.h \
   utils.cpp \
   utils.h \
   version.h \

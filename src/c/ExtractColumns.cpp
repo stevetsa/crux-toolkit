@@ -16,6 +16,7 @@ int ExtractColumns::main(int argc, char** argv) {
 
    /* Define optional command line arguments */
   const char* option_list[] = {
+    "header",
     "verbosity"
   };
   int num_options = sizeof(option_list) / sizeof(char*);
@@ -63,11 +64,13 @@ int ExtractColumns::main(int argc, char** argv) {
     }
   }
 
-  cout << column_name_list[0];
-  for (unsigned int col_idx = 1;col_idx<column_name_list.size();col_idx++) {
-    cout <<"\t" << column_name_list[col_idx];
+  if (get_boolean_parameter("header")) {
+    cout << column_name_list[0];
+    for (unsigned int col_idx = 1;col_idx<column_name_list.size();col_idx++) {
+      cout <<"\t" << column_name_list[col_idx];
+    }
+    cout<<endl;
   }
-  cout<<endl;
 
   while(delimited_file.hasNext()) {
     int col_idx = column_indices[0];

@@ -28,14 +28,14 @@ int num_matches;
 // some unordered scores to use
 float scores[10] = { 78.2, 50, 23.3, 109, 34.5, 50, 45.6, 50, 38, 64};
 PEPTIDE_T* pep;
-PROTEIN_T* prot;
+Protein* prot;
 char protseq[] = "FAKESEQ";
 
 void match_collection_setup(){
   mc = new_empty_match_collection(FALSE); // not decoy
 
   // set up some matches with xcorrs and a peptide to add
-  prot = new_protein("prot", protseq, strlen(protseq), NULL, 0, 0, NULL);
+  prot = new Protein("prot", protseq, strlen(protseq), NULL, 0, 0, NULL);
   pep = new_peptide((unsigned char)strlen(protseq), 7.77, prot, 1);
   num_matches = 8;
   for(int i=0; i<num_matches; i++){
@@ -57,7 +57,7 @@ void match_collection_teardown(){
   if( mc ){
     free_match_collection(mc); // frees the matches
   }
-  if( prot ) { free_protein(prot); }
+  if( prot ) { delete prot; }
   if( pep ) { free_peptide(pep); }
 
   for(size_t i=0; i<match_list.size(); i++){
@@ -71,6 +71,7 @@ void get_target_decoy_filenames(vector<string>& target_decoy_names,
                                 SET_TYPE_T type);
 
 START_TEST(test_list_files){
+  initialize_parameters();
 
   // CASE: search files, one decoy file
   create_output_directory("list-files-1", TRUE);
@@ -86,6 +87,7 @@ START_TEST(test_list_files){
   // for target,decoy
   for(int type=0; type < 2; type++){
     vector<string> found_names;
+
     get_target_decoy_filenames( found_names, dir, (SET_TYPE_T)type);
     fail_unless( found_names.size() == 2, "Should have found 2 filenames in "
                  "list-files-1 for type %d but only found %d.", 
