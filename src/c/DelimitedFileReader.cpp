@@ -214,7 +214,7 @@ int DelimitedFileReader::findColumn(
 /**
  *\returns the name of the column
  */
-string& DelimitedFileReader::getColumnName(
+const string& DelimitedFileReader::getColumnName(
   unsigned int col_idx ///< the column index
   ) {
   return column_names_.at(col_idx);
@@ -223,12 +223,15 @@ string& DelimitedFileReader::getColumnName(
 /**
  *\returns the column_names
  */
-vector<string>& DelimitedFileReader::getColumnNames() {
+const vector<string>& DelimitedFileReader::getColumnNames() {
 
   return column_names_;
 }
 
-string& DelimitedFileReader::getString() {
+/**
+ * \returns the current row string
+ */
+const string& DelimitedFileReader::getString() {
   if (!has_current_) {
     carp(CARP_FATAL, "End of file!");
   }
@@ -239,7 +242,7 @@ string& DelimitedFileReader::getString() {
 /**
  *\returns the string value of the cell
  */
-string& DelimitedFileReader::getString(
+const string& DelimitedFileReader::getString(
   unsigned int col_idx ///< the column index
   ) {
 
@@ -247,9 +250,9 @@ string& DelimitedFileReader::getString(
 }
 
 /** 
- * gets a string value of the cell.
+ * \returns the string value of the cell.
  */
-string& DelimitedFileReader::getString(
+const string& DelimitedFileReader::getString(
   const char* column_name ///<the column name
   ) {
   int col_idx = findColumn(column_name);
@@ -259,12 +262,16 @@ string& DelimitedFileReader::getString(
   return getString(col_idx);
 }
 
-
+/**
+ * \returns the value of the cell
+ * using the current row
+ */ 
 template<typename TValue>
 TValue DelimitedFileReader::getValue(
   unsigned int col_idx ///< the column index 
   ) {
-  string& string_ans = getString(col_idx);
+
+  const string& string_ans = getString(col_idx);
   TValue type_ans;
   DelimitedFile::from_string<TValue>(type_ans, string_ans);
   return type_ans;
@@ -277,7 +284,7 @@ FLOAT_T DelimitedFileReader::getFloat(
   unsigned int col_idx ///< the column index
   ) {
   
-  string& string_ans = getString(col_idx);
+  const string& string_ans = getString(col_idx);
   if (string_ans == "Inf") {
 
     return numeric_limits<FLOAT_T>::infinity();
@@ -311,7 +318,7 @@ double DelimitedFileReader::getDouble(
   unsigned int col_idx ///< the column index 
   ) {
 
-  string& string_ans = getString(col_idx);
+  const string& string_ans = getString(col_idx);
   if (string_ans == "") {
 
     return 0.0;
@@ -382,7 +389,7 @@ void DelimitedFileReader::getStringVectorFromCell(
   char delimiter ///<the delimiter to use
   ) {
 
-  string& string_ans = getString(column_name);
+  const string& string_ans = getString(column_name);
 
   //get the list of strings separated by delimiter
   string_vector.clear();
@@ -509,6 +516,6 @@ void DelimitedFileReader::next() {
  * \returns whether there are more rows to 
  * iterate through
  */
-BOOLEAN_T DelimitedFileReader::hasNext() {
+bool DelimitedFileReader::hasNext() {
   return has_next_ || has_current_;
 }

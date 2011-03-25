@@ -1,17 +1,31 @@
+/**
+ * \file ExtractColumns.cpp 
+ * \brief Give a tab delimited file and a comma-separated list of column names
+ * print out a tab delimied file with only those columns
+ *****************************************************************************/
 #include "ExtractColumns.h"
 
 #include "DelimitedFile.h"
 
 using namespace std;
 
+
+/**
+ * \returns a blank ExtractRows object
+ */
 ExtractColumns::ExtractColumns() {
 
 }
 
+/**
+ * Destructor
+ */
 ExtractColumns::~ExtractColumns() {
 }
 
-
+/**
+ * main method for ExtractColumns
+ */
 int ExtractColumns::main(int argc, char** argv) {
 
    /* Define optional command line arguments */
@@ -64,6 +78,7 @@ int ExtractColumns::main(int argc, char** argv) {
     }
   }
 
+  //print out the header if desired
   if (get_boolean_parameter("header")) {
     cout << column_name_list[0];
     for (unsigned int col_idx = 1;col_idx<column_name_list.size();col_idx++) {
@@ -87,12 +102,25 @@ int ExtractColumns::main(int argc, char** argv) {
 
 }
 
+/**
+ * \returns the command name for ExtractColumns
+ */
 string ExtractColumns::getName() {
   return "extract-columns";
 }
 
+/**
+ * \returns the description for ExtractColumns
+ */
 string ExtractColumns::getDescription() {
 
-  return "prints a delimited file using only the columns specified from the original delimited file";
-
+  return "Prints a delimited file using only the columns specified from "
+         "the original delimited file";
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 2
+ * End:
+ */

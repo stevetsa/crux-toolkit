@@ -1,3 +1,9 @@
+/*************************************************************************//**
+ * \file ExtractRows.cpp
+ * \brief Given a tab delimited file and column name and value, print
+ * out all rows that pass the relation operator (default equals).
+ ****************************************************************************/
+
 #include "ExtractRows.h"
 
 #include <iostream>
@@ -10,18 +16,23 @@
 
 using namespace std;
 
+/**
+ * \returns a blank ExtractRows object
+ */
 ExtractRows::ExtractRows() {
 
 }
 
+/**
+ * Destructor
+ */
 ExtractRows::~ExtractRows() {
 }
 
-/*
-void ExtractRows::printAvailableRows(DelimitedFileReader& infile) {
-}
-*/
 
+/**
+ * Determines whether the a op b is true/false
+ */
 template<typename TValue>
 bool passesThreshold(
   TValue a,
@@ -50,7 +61,9 @@ bool passesThreshold(
 
 }
 
-
+/**
+ * main method for ExtractRows
+ */
 int ExtractRows::main(int argc, char** argv) {
 
    /* Define optional command line arguments */
@@ -83,7 +96,7 @@ int ExtractRows::main(int argc, char** argv) {
   // Parse the command line, including optional params file
   // Includes syntax, type, and bounds checking, dies on error 
   const char* cmd_name = this->getName().c_str();
-  char* full_cmd = cat_string("crux-util ", cmd_name);
+  char* full_cmd = cat_string("crux ", cmd_name);
   parse_cmd_line_into_params_hash(argc, argv, cmd_name);
   free(full_cmd);
 
@@ -162,14 +175,25 @@ int ExtractRows::main(int argc, char** argv) {
 
 }
 
-
-
+/**
+ * \returns the command name for ExtractRows
+ */
 string ExtractRows::getName() {
   return "extract-rows";
 }
 
+/**
+ * \returns the description for ExtractRows
+ */
 string ExtractRows::getDescription() {
 
-  return "prints out rows that match a particular column value";
+  return "Prints out rows that match a particular column value";
 
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 2
+ * End:
+ */

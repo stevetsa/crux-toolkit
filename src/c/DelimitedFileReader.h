@@ -82,7 +82,7 @@ class DelimitedFileReader {
    */
   virtual ~DelimitedFileReader();
 
-   /**
+  /**
    *\returns the number of rows, assuming a square matrix
    */
   unsigned int numRows();
@@ -141,46 +141,48 @@ class DelimitedFileReader {
   /**
    *\returns the name of the column
    */
-  std::string& getColumnName(
+  const std::string& getColumnName(
     unsigned int col_idx ///< the column index
   );
   
   /**
    *\returns the column_names
    */
-  std::vector<std::string>& getColumnNames();
+  const std::vector<std::string>& getColumnNames();
 
   /**
-   * get the current row string
+   * \returns the current row string
    */
-  std::string& getString();
-  
+  const std::string& getString();
 
   /**
-   * gets a string value of the cell
-   * uses the current_row_ as the row index
+   * \returns the string value of the cell
+   * using the current row
    */
-  std::string& getString(
+  const std::string& getString(
     const char* column_name ///<the column name
   );
 
   /**
-   * gets a string value of the cell
-   * uses the current_row_ as the row index
+   * \returns the string value of the cell
+   * using the current row
    */
-  std::string& getString(
+  const std::string& getString(
     unsigned int col_idx ///< the column index
   );
 
+  /**
+   * \returns the value of the cell
+   * using the current row
+   */ 
   template<typename TValue>
   TValue getValue(
     unsigned int col_idx ///< the column index
   );
 
-
   /**
-   * gets a double value from cell, checks for infinity
-   * uses the current_row_ as the row index
+   * \returns the double value of the cell, checks for infinity
+   * uses the current row
    */
   FLOAT_T getFloat(
     const char* column_name ///<the column name
@@ -191,7 +193,7 @@ class DelimitedFileReader {
   );
 
   /**
-   * gets a double value from cell, checks for infinity
+   * \returns the double value from cell, checks for infinity
    * uses the current_row_ as the row index
    */
   double getDouble(
@@ -270,17 +272,19 @@ class DelimitedFileReader {
    */
   void next();
 
-
   /**
    * \returns whether there are more rows to 
    * iterate through
    */
-  BOOLEAN_T hasNext();
+  bool hasNext();
 
-
+  /**
+   * converts a datatype to a string
+   */
   template<typename TValue>
   static std::string to_string(
-    TValue& value) {
+    TValue& value ///< the data to convert
+  ) {
 
     std::ostringstream oss;
     oss << std::setprecision(get_int_parameter("precision"));
