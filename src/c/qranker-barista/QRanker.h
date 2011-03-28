@@ -15,6 +15,7 @@ using namespace std;
 #include "DataSet.h"
 #include "PSMScores.h"
 #include "SQTParser.h"
+#include "TabDelimParser.h"
 #include "CruxApplication.h"
 
 class QRanker: public CruxApplication
@@ -38,10 +39,11 @@ public:
     void write_results(string filename, NeuralNet &net);
     void write_max_nets(string filename, NeuralNet *max_net);
     void write_unique_peptides(string filename, NeuralNet* max_net);
-    void write_num_psm_per_spectrum(string filename, NeuralNet* max_net);
+    void write_num_psm_per_spectrum(NeuralNet* max_net);
 
     inline void set_input_dir(string input_dir) {in_dir = input_dir; d.set_input_dir(input_dir);}
     inline void set_output_dir(string output_dir){out_dir = output_dir;}
+    int set_command_line_options(int argc, char **argv);
 
     virtual int main(int argc, char** argv);
     virtual std::string getName();
@@ -85,6 +87,7 @@ protected:
     string in_dir;
     string out_dir;
 
+    TabDelimParser pars;
 
 };
 

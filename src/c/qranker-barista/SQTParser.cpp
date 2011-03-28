@@ -2,16 +2,32 @@
 
 /******************************/
 
-SQTParser :: SQTParser(int capacity) : num_spectra(0),num_features(0),num_spec_features(0),
-				       num_psm(0),num_pos_psm(0),num_neg_psm(0),
-				       num_pep(0),num_pos_pep(0),num_neg_pep(0),
-				       num_prot(0),num_pos_prot(0),
-				       num_neg_prot(0),num_mixed_labels(0),psmind(0),
-				       x(0), xs(0), psmind_to_pepind(0), psmind_to_scan(0),
-				       psmind_to_charge(0), psmind_to_label(0), pepind_to_label(0),
-				       protind_to_label(0), protind_to_num_all_pep(0)
+SQTParser :: SQTParser() 
+  : num_mixed_labels(0),
+    num_features(0),
+    num_spec_features(0),
+    num_spectra(0),
+    num_psm(0),
+    num_pos_psm(0),
+    num_neg_psm(0),
+    num_pep(0),
+    num_pos_pep(0),
+    num_neg_pep(0),
+    num_prot(0),
+    num_pos_prot(0),
+    num_neg_prot(0),
+    psmind(0),
+    x(0), 
+    xs(0), 
+    psmind_to_pepind(0), 
+    psmind_to_scan(0),
+    psmind_to_charge(0), 
+    psmind_to_label(0), 
+    pepind_to_label(0),
+    protind_to_label(0), 
+    protind_to_num_all_pep(0)
 {
-  
+  int capacity = 10;
   m.xcorr_rank.reserve(capacity);
   m.sp_rank.reserve(capacity);
   m.calc_mass.reserve(capacity);
@@ -42,29 +58,42 @@ SQTParser :: SQTParser(int capacity) : num_spectra(0),num_features(0),num_spec_f
   
 }
 
+
 SQTParser :: ~SQTParser()
 {
-  
-  if(x)
-    delete[] x;
-  if(xs)
-    delete[] xs;
-  if(psmind_to_pepind)
-    delete[] psmind_to_pepind;
-  if(psmind_to_scan)
-    delete[] psmind_to_scan;
-  if(psmind_to_charge)
-    delete[] psmind_to_charge;
-  if(psmind_to_label)
-    delete[] psmind_to_label;
-  if(pepind_to_label)
-    delete[] pepind_to_label;
-  if(protind_to_label)
-    delete[] protind_to_label;
-  if(protind_to_num_all_pep)
-    delete[] protind_to_num_all_pep;
-  
+  clear();  
 }
+
+void SQTParser :: clear()
+{
+  clear_matches();
+  delete[] x; x = (double*)0;
+  delete[] xs; xs = (double*)0;
+  delete[] psmind_to_pepind; psmind_to_pepind = (int*)0;
+  delete[] psmind_to_scan; psmind_to_scan = (int*)0;
+  delete[] psmind_to_charge; psmind_to_charge = (int*)0;
+  delete[] psmind_to_label; psmind_to_label = (int*)0;
+  delete[] pepind_to_label; pepind_to_label = (int*)0;
+  delete[] protind_to_label; protind_to_label = (int*)0;
+  delete[] protind_to_num_all_pep; protind_to_num_all_pep = (int*)0;
+}
+
+
+void SQTParser :: clear_matches()
+{
+  m.xcorr_rank.clear();
+  m.sp_rank.clear();
+  m.calc_mass.clear();
+  m.delta_cn.clear();
+  m.xcorr_score.clear();
+  m.sp_score.clear();
+  m.num_ions_matched.clear();
+  m.num_total_ions.clear();
+  m.peptides.clear();
+  m.num_proteins_in_match.clear();
+  m.proteins.clear();
+}
+
 
 void SQTParser :: erase_matches()
 {
@@ -591,7 +620,6 @@ void SQTParser :: read_sqt_file(ifstream &is, string &decoy_prefix, int final_hi
       is >> tempstr;
     }
   int num_hits;
-  int cn = 0;
   while(!is.eof())
     {
       assert(tempstr.compare("S") == 0);
@@ -736,7 +764,7 @@ void SQTParser :: clean_up(string dir)
   ostringstream fname;
       
   //fname << out_dir << "/summary.txt";
-  //   ofstream f_summary(fname.str().c_str());
+  //ofstream f_summary(fname.str().c_str());
 
   fname << dir << "/psm.txt";
   remove(fname.str().c_str());
@@ -880,21 +908,25 @@ void SQTParser :: digest_database(ifstream &f_db, enzyme e)
 int SQTParser :: run()
 {
   //parse database
-  ifstream f_db(db_name.c_str());
-  if(!f_db.is_open())
+  for(unsigned int i = 0; i < db_file_names.size(); i++)
     {
-      cout << "could not open database file: " << db_name << endl;
-      return 0;
+      db_name = db_file_names[i];
+      ifstream f_db(db_name.c_str());
+      if(!f_db.is_open())
+	{
+	  cout << "could not open database file: " << db_name << endl;
+	  return 0;
+	}
+      cout << "digesting database " << db_name << endl;
+      digest_database(f_db, e);
+      f_db.close();
     }
-  cout << "digesting database\n";
-  digest_database(f_db, e);
-  f_db.close();
-  int pass;
 
+  int pass;
   //input sqt file
   cout << "parsing files:\n";
   int num_files_read = 0;
-  for(int i = 0; i < sqt_file_names.size(); i++)
+  for(unsigned int i = 0; i < sqt_file_names.size(); i++)
     {
       string fname = sqt_file_names[i];
       cout << fname << endl;
@@ -924,7 +956,7 @@ int SQTParser :: run()
   f_psm.open(fname.str().c_str());
   fname.str("");
     
-  for(int i = 0; i < sqt_file_names.size(); i++)
+  for(unsigned int i = 0; i < sqt_file_names.size(); i++)
     {
       if(num_spec_features>0)
 	{
@@ -932,10 +964,7 @@ int SQTParser :: run()
 	  //prepare to generate spectrum features
 	  sfg.clear();
 	  sfg.open_ms2_file_for_reading(ms2_fn);
-	  //sfg.read_processed_ms2_file();
 	  sfg.read_ms2_file();
-	  //sfg.save_spec_positions(out_dir);
-	  //sfg.load_spec_positions(out_dir);
 	  sfg.initialize_aa_tables();
 	}
       //second pass
@@ -959,218 +988,135 @@ int SQTParser :: run()
   return 1;
 }
 
-
-int SQTParser :: set_command_line_options(int argc, char *argv[])
+void SQTParser :: read_list_of_files(string &list, vector<string> &fnames)
 {
-  bool found_db = false;
-  bool found_indir = false;
-  bool found_outdir = false;
-  bool found_indir_ms2 = false;
-
-  int arg = 1;
-  while (arg < argc)
+  ifstream f(list.c_str());
+  string str;
+  f >> str;
+  
+  if(!f.eof())
     {
-      string str = argv[arg];
-      //found database
-      if(str.find("database") != string::npos)
-	{
-	  int pos = str.find("=");
-	  if(pos == string::npos)
-	    {
-	      cout << "wrong option format: --database=<database>\n";
-	      return 0;
-	    }
-	  string db_name = str.substr(pos+1,str.size());
-	  cout << "database file name: " << db_name << endl;
-	  found_db = true;
-	  set_db_name(db_name);
-	}
-      //found input dir
-      if(str.find("input_dir_sqt") != string::npos)
-	{
-	  int pos = str.find("=");
-	  if(pos == string::npos)
-	    {
-	      cout << "wrong option format: --input_dir=<input directory>\n";
-	      return 0;
-	    }
-	  string in_dir = str.substr(pos+1,str.size());
-	  cout << "input directory sqt: " << in_dir << endl;
-	  found_indir = true;
-	  set_input_dir(in_dir);
-	}
-      //found input dir ms2
-      if(str.find("input_dir_ms2") != string::npos)
-	{
-	  int pos = str.find("=");
-	  if(pos == string::npos)
-	    {
-	      cout << "wrong option format: --input_dir_ms2=<input directory_ms2>\n";
-	      return 0;
-	    }
-	  string in_dir = str.substr(pos+1,str.size());
-	  cout << "input directory ms2: " << in_dir << endl;
-	  found_indir_ms2 = true;
-	  set_input_dir_ms2(in_dir);
-	}
-
-      //found output dir
-      if(str.find("output_dir") != string::npos)
-	{
-	  int pos = str.find("=");
-	  if(pos == string::npos)
-	    {
-	      cout << "wrong option format: --output_dir=<output directory>\n";
-	      return 0;
-	    }
-	  string out_dir = str.substr(pos+1,str.size());
-	  cout << "output directory: " << out_dir << endl;
-	  found_outdir = true;
-	  set_output_dir(out_dir);
-	}
-      //found enzyme
-      if(str.find("enzyme") != string::npos)
-	{
-	  if(str.find("elastase") != string::npos)
-	    {
-	      e = ELASTASE_ENZ;
-	      cout << "found enzyme: elastase" << endl;
-	    }
-	  else if (str.find("chymotrypsin") != string::npos)
-	    {
-	      e = CHYMOTRYPSIN_ENZ;
-	      cout << "found enzyme: chymotrypsin" << endl;
-	    }
-	  else if (str.find("trypsin") != string::npos)
-	    {
-	      e = TRYPSIN_ENZ;
-	      cout << "found enzyme: trypsin" << endl;
-	    }
-	  else
-	    cout << "warning: could not determine enzyme, will assume trypsin\n";
-	}
-      //found decoy prefix
-      if(str.find("decoy") != string::npos)
-	{
-	  int pos = str.find("=");
-	  if(pos == string::npos)
-	    cout << "warning: wrong option format: --decoy_prefix=<decoy prefix>, will assume random_\n";
-
-	  string prefix = str.substr(pos+1,str.size());
-	  cout << "decoy prefix: " << prefix << endl;
-	  set_decoy_prefix(prefix);
-	}
-
-      arg++;
+      fnames.push_back(str);
+      f >> str;
     }
+  f.close();
+}
 
-  if(!found_db)
+
+int SQTParser :: check_files(vector <string> &filenames)
+{
+  ifstream ftry;
+  for(unsigned int i = 0; i < filenames.size(); i++)
     {
-      cout << "database name was not specified, to run barista:\n barista --database=<> --input_dir=<> --output_dir=<>\n";
-      return 0;
+      string fname = filenames[i];
+      ftry.open(fname.c_str());
+      if(!ftry.is_open())
+	{
+	  cout << "could not open file " << fname << endl;
+	  return 0;
+	}
+      ftry.close();
     }
-  if(!found_indir)
-    {
-      cout << "input directory with sqt files was not specified, to run barista:\n barista --database=<> --input_dir=<> --output_dir=<>\n";
-      return 0;
-    }
-  if(!found_indir)
-    {
-      cout << "input directory with ms2 files was not specified, to run barista:\n barista --database=<> --input_dir=<> --output_dir=<>\n";
-      return 0;
-    }
-  if(!found_outdir)
-    {
-      cout << "output directory was not specified, to run barista:\n barista --database=<> --input_dir=<> --output_dir=<>\n";
-      return 0;
-    }
+  return 1;
+}
 
+
+int SQTParser :: set_input_sources(string &db_source, string &sqt_source, string &ms2_source)
+{
   DIR *dp;
   struct dirent *dirp;
-  if((dp  = opendir(in_dir.c_str())) == NULL)
-    {
-      cout << "reading files in directory " << in_dir  << " failed " << endl;
-      return 0;
-    }
+
+  if(db_source.find("fasta") != string :: npos)
+    db_file_names.push_back(db_source);
+  else if(db_source.find(".txt") != string :: npos)
+    read_list_of_files(db_source, db_file_names);
   else
     {
+      if((dp  = opendir(db_source.c_str())) == NULL)
+	{
+	  cout << "reading files in directory " << db_source  << " failed " << endl;
+	  return 0;
+	}
       int cn = 0;
       while ((dirp = readdir(dp)) != NULL) 
 	{
 	  string fname = string(dirp->d_name);
-	  int pos = fname.find(".sqt"); 
+	  if(fname.find("fasta") != string::npos)
+	    {
+	      ostringstream fstr;
+	      fstr << db_source <<"/" << fname;
+	      string dbname = fstr.str();
+	      db_file_names.push_back(dbname);
+	      cout << "found " << dbname << endl;
+	      cn++;
+	    }
+	}
+      closedir(dp);
+      if(cn<1)
+	{
+	  cout << "did not find any .fasta files in " << db_source << " directory " << endl;
+	  return 0;
+	}
+    }
+    
+  if(db_source.find("sqt") != string :: npos)
+    {
+      sqt_file_names.push_back(sqt_source);
+      if(ms2_source.find("ms2") == string::npos)
+	{
+	  cout << "expecting ms2 file to accompany the sqt file\n";
+	  return 0;
+	}
+      ms2_file_names.push_back(ms2_source);
+    }
+  else if(db_source.find(".txt") != string :: npos)
+    {
+      read_list_of_files(sqt_source, sqt_file_names);
+      read_list_of_files(ms2_source, ms2_file_names);
+      if(ms2_file_names.size() != sqt_file_names.size())
+	{
+	  cout << " the number of sqt and ms2 files does not match: each sqt file should be accompaned by ms2 file" << endl;
+	  return 0;
+	}
+    }
+  else
+    {
+      if((dp  = opendir(sqt_source.c_str())) == NULL)
+	{
+	  cout << "reading files in directory " << sqt_source  << " failed " << endl;
+	  return 0;
+	}
+      int cn = 0;
+      while ((dirp = readdir(dp)) != NULL) 
+	{
+	  string fname = string(dirp->d_name);
+	  size_t pos = fname.find(".sqt"); 
 	  if(pos != string::npos)
 	    {
 	      string prefix = fname.substr(0,pos);
 	      ostringstream fstr;
-	      fstr << in_dir <<"/" << fname;
+	      fstr << sqt_source <<"/" << fname;
 	      string sqtname = fstr.str();
 	      fstr.str("");
-	      fstr << in_dir_ms2 <<"/" << prefix << ".ms2";
+	      fstr << ms2_source <<"/" << prefix << ".ms2";
 	      string ms2name = fstr.str();
-	      ifstream ftry;
-	      ftry.open(sqtname.c_str());
-	      if(!ftry.is_open())
-		{
-		  cout << "could not open sqt file " << sqtname << endl;
-		  return 0;
-		}
-	      ftry.close();
-	      ftry.open(ms2name.c_str());
-	      if(!ftry.is_open())
-		{
-		  cout << "could not open ms2 file " << ms2name << " corresponding to sqt file " << sqtname << endl;
-		  return 0;
-		}
-	      ftry.close();
 	      sqt_file_names.push_back(sqtname);
 	      ms2_file_names.push_back(ms2name);
 	      cout << "found " << sqtname <<  " " << ms2name << endl;
 	      cn++;
 	    }
-      }
+	}
       closedir(dp);
       if(cn<1)
 	{
-	  cout << "did not find any sqt files in " << in_dir << " directory " << endl;
+	  cout << "did not find any .sqt files in " << sqt_source << " directory " << endl;
 	  return 0;
 	}
     }
-  
-  //try openning the outdir to make sure that it is available for writing 
-  DIR *dp1;
-  dp1  = opendir(out_dir.c_str());
-  if(dp1 == NULL)
-    {
-      cout << "could not open the output directory " << out_dir  << " for writing " << endl;
-      return 0;
-    }
-  closedir(dp1);
+
+
   return 1;
 }
 
-/*
-int main(int argc, char *argv[])
-{
-  int capacity = 10;
-  SQTParser *sqtp = new SQTParser(capacity);
-  
-  if(!sqtp->set_command_line_options(argc,argv))
-    {
-      delete sqtp;
-      return 0;
-    }
-  //num of spec features
-  //sqtp->set_num_spec_features(0);
-      
-  if(!sqtp->run())
-    {
-      delete sqtp;
-      return 0;
-    }
-  
-  delete sqtp;
-  return 1;
 
-}
-*/
+

@@ -1,6 +1,6 @@
 #include "QRanker.h"
 
-QRanker::QRanker() : selectionfdr(0.01), seed(0), num_hu(5),mu(0.005),weightDecay(0.000)
+QRanker::QRanker() :  seed(0),selectionfdr(0.01),num_hu(5),mu(0.005),weightDecay(0.000)
 {
 }
 
@@ -12,12 +12,10 @@ int QRanker :: getOverFDR(PSMScores &set, NeuralNet &n, double fdr)
 {
   double *r;
   double* featVec;
-  int label = 0;
 
-  for(unsigned int i = 0; i < set.size(); i++)
+  for(int i = 0; i < set.size(); i++)
     {
       featVec = d.psmind2features(set[i].psmind);
-      label = set[i].label;
       r = n.fprop(featVec);
       set[i].score = r[0];
 
@@ -29,12 +27,10 @@ void QRanker :: getMultiFDR(PSMScores &set, NeuralNet &n, vector<double> &qvalue
 {
   double *r;
   double* featVec;
-  int label = 0;
    
-  for(unsigned int i = 0; i < set.size(); i++)
+  for(int i = 0; i < set.size(); i++)
     {
       featVec = d.psmind2features(set[i].psmind);
-      label = set[i].label;
       r = n.fprop(featVec);
       set[i].score = r[0];
     }
@@ -69,7 +65,7 @@ void QRanker :: write_results(string filename, NeuralNet &net)
   testset.clear();
   thresholdset.clear();
   PSMScores::fillFeaturesFull(fullset, d);
-  int r = getOverFDR(fullset,net, qvals[4]);
+  getOverFDR(fullset,net, qvals[4]);
  
   f1 << "psm ind" << "\t" << "q-value" << "\t" << "scan" << "\t" << "charge" << "\t" << "peptide" << endl;
   for(int i = 0; i < fullset.size(); i++)
@@ -126,7 +122,7 @@ void QRanker :: write_unique_peptides(string filename, NeuralNet* max_net)
       int r = getOverFDR(testset,net, qvals[count]);
       set<int> peps;
       int cn = 0;
-      for(unsigned int i = 0; i < testset.size();i++)
+      for(int i = 0; i < testset.size();i++)
 	{
 	  if(testset[i].label == 1)
 	    {
@@ -143,7 +139,7 @@ void QRanker :: write_unique_peptides(string filename, NeuralNet* max_net)
 
       int r1 = getOverFDR(trainset,net, qvals[count]);
       cn = 0;
-      for(unsigned int i = 0; i < trainset.size();i++)
+      for(int i = 0; i < trainset.size();i++)
 	{
 	  if(trainset[i].label == 1)
 	    {
@@ -164,7 +160,7 @@ void QRanker :: write_unique_peptides(string filename, NeuralNet* max_net)
 }
 
 
-void QRanker :: write_num_psm_per_spectrum(string filename, NeuralNet* max_net)
+void QRanker :: write_num_psm_per_spectrum(NeuralNet* max_net)
 {
   //write out the results of the general net
   //ostringstream s1;
@@ -177,7 +173,7 @@ void QRanker :: write_num_psm_per_spectrum(string filename, NeuralNet* max_net)
       
   map<int,set<int> > scan_to_pepinds;
   int cn = 0;
-  for(unsigned int i = 0; i < trainset.size();i++)
+  for(int i = 0; i < trainset.size();i++)
     {
       if(trainset[i].label == 1)
 	{
@@ -204,7 +200,7 @@ void QRanker :: write_num_psm_per_spectrum(string filename, NeuralNet* max_net)
       int cnt =  (it->second).size();
       counts[cnt]++;
     }
-  for(int i = 0; i < counts.size();i++)
+  for(unsigned int i = 0; i < counts.size();i++)
     cout << i << " " << counts[i] << endl;
 
   //f1.close();
@@ -216,10 +212,9 @@ void QRanker :: write_num_psm_per_spectrum(string filename, NeuralNet* max_net)
 void QRanker :: train_net_hinge(PSMScores &set, int interval)
 {
   double *r;
-  double *featVec;
   int label;
   double *gc = new double[1];
-  for(unsigned int i = 0; i < set.size(); i++)
+  for(int i = 0; i < set.size(); i++)
     { 
       unsigned int ind;
       ind = rand()%(interval);
@@ -243,19 +238,18 @@ void QRanker :: train_net_ranking(PSMScores &set, int interval)
   double *r2;
   double diff = 0;
   int label = 1;
-  double *featVec;
   double *gc = new double[1];
 
-  for(unsigned int i = 0; i < set.size(); i++)
+  for(int i = 0; i < set.size(); i++)
     { 
-      unsigned int ind1, ind2;
+      int ind1, ind2;
       int label_flag = 1;
       //get the first index
       if(interval == 0)
 	ind1 = 0;
       else
 	ind1 = rand()%(interval);
-      if(ind1<0 || ind1>set.size()-1) continue;
+      if(ind1>set.size()-1) continue;
       if(set[ind1].label == 1)
 	label_flag = -1;
       else
@@ -265,7 +259,7 @@ void QRanker :: train_net_ranking(PSMScores &set, int interval)
       while(1)
 	{
 	  ind2 = rand()%(interval);
-	  if(ind2<0 || ind2>set.size()-1) continue;
+	  if(ind2>set.size()-1) continue;
 	  if(set[ind2].label == label_flag) break;
 	  if(cn > 1000)
 	    {
@@ -446,6 +440,7 @@ void QRanker::train_many_nets()
 
   train_many_target_nets();  
  
+  /*
   //write out the results of the target net
   cerr << "target net results: ";
   ostringstream s2;
@@ -471,7 +466,7 @@ void QRanker::train_many_nets()
 
   //write_num_psm_per_spectrum("test.txt", max_net_targ);
   write_results(s2.str(),net);
-
+  */
   delete [] max_net_gen;
   delete [] max_net_targ;
   delete [] nets;
@@ -490,8 +485,7 @@ int QRanker::run( ) {
   string summary_fn = "summary.txt";
   string psm_fn = "psm.txt";
   
-  d.load_data(summary_fn, psm_fn);
-  //d.load_data();
+  d.load_psm_data_for_training(summary_fn, psm_fn);
   d.normalize_psms();
   PSMScores::fillFeaturesSplit(trainset, testset, d, 0.5);
   thresholdset = trainset;
@@ -501,10 +495,11 @@ int QRanker::run( ) {
 
 
 //int main(int argc, char **argv){
+/*
 int QRanker::main(int argc, char **argv) {
   int capacity(10);
   SQTParser sqtp(capacity);
-  
+    
   if(!sqtp.set_command_line_options(argc,argv))
     return 0;
   //num of spec features
@@ -522,6 +517,38 @@ int QRanker::main(int argc, char **argv) {
   sqtp.clean_up(dir);
   
   return 0;
+}   
+*/
+
+int QRanker::set_command_line_options(int argc, char **argv)
+{
+  vector<string> fnames;
+  int arg = 1;
+  while(arg < argc)
+    {
+      fnames.push_back(argv[arg]);
+      arg++;
+    }
+  string out_dir = "crux-output";
+  pars.set_output_dir(out_dir);
+  if(!pars.run(fnames))
+    return 0;
+  pars.clear();
+  return 1;
+}
+
+
+int QRanker::main(int argc, char **argv) {
+
+  if(!set_command_line_options(argc, argv))
+    return 0;
+  string dir = pars.get_output_dir();
+
+  set_input_dir(dir);
+  set_output_dir(dir);
+  run();
+    
+  return 1;
 }   
 
 

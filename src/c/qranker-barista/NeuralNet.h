@@ -14,7 +14,11 @@ using namespace std;
 class State
 {
  public:
- State():x((double*)0), len_x(0), dx((double*)0), len_dx(0) {}
+ State() 
+   : len_x(0), 
+   len_dx(0),
+   x((double*)0),  
+   dx((double*)0)  {}
   inline void resize(int n) {clear(); x = new double[n]; len_x=n; dx = new double[n]; len_dx = n;}
   inline void resize_dx(int n) {clear(); dx = new double[n]; len_dx = n;}
   inline void resize_x(int n) {clear(); x = new double[n]; len_x = n;}
@@ -55,9 +59,15 @@ public:
 class Linear
 {
  public:
- Linear(): num_neurons(0),num_features(0),
-    has_bias(1), w(0),bias(0),dw(0),dbias(0),
-    num_refs(0){}
+ Linear(): 
+   num_neurons(0),
+   num_features(0),
+   has_bias(1),
+   num_refs(0),
+   w(0),
+   bias(0),
+   dw(0),
+   dbias(0) {}
   ~Linear() {clear();}
   void init(int m, int n, int has_b);
   void resize(int m, int n, int has_b);

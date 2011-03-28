@@ -35,9 +35,9 @@ void BipartiteGraph::create_bipartite_graph(map<int, set<int> > data)
       for(set<int>::iterator itp = s.begin(); itp != s.end(); itp++)
 	t.push_back(*itp);
       sort(t.begin(),t.end());
-      assert(t.size() == ranges[i].len);
+      assert((int)t.size() == ranges[i].len);
       ranges[i].p = pos;
-      for (int k = 0; k < t.size(); k++)
+      for (unsigned int k = 0; k < t.size(); k++)
 	{
 	  indices[pos] = t[k];
 	  pos++;

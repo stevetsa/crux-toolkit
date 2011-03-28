@@ -43,9 +43,11 @@ class SQTParser{
     num_spec_features(0), num_pep(0),num_pos_pep(0), num_neg_pep(0),num_prot(0),num_pos_prot(0),num_neg_prot(0),
    num_mixed_labels(0),psmind(0){}
   */
-  SQTParser(int capacity);
+  SQTParser();
   ~SQTParser();
+  void clear();
   int run();
+  void clear_matches();
   void erase_matches();
   inline void set_num_features(int nf) {num_features = nf;}
   inline void set_num_spec_features(int nsf) {num_spec_features = nsf;}
@@ -58,8 +60,10 @@ class SQTParser{
   inline void set_db_name(string database){db_name = database;}
   inline void set_decoy_prefix(string prefix){decoy_prefix = prefix;}
   inline void set_enzyme(enzyme enz){e = enz;}
-  int set_command_line_options(int argc, char *argv[]);
-  
+  int set_input_sources(string &db_source, string &sqt_source, string &ms2_source);
+  void read_list_of_files(string &list, vector<string> &fnames);
+  int check_files(vector <string> &filenames);
+
   void read_sqt_file(ifstream &is, string &decoy_prefix, int final_hits_per_spectrum, enzyme enz, int pass);
   int parse_sqt_spectrum_matches(ifstream &is, sqt_match &m);
   void read_S_line(ifstream &is, sqt_match &m);
@@ -148,6 +152,7 @@ class SQTParser{
   string db_name;
   vector<string> sqt_file_names;
   vector<string> ms2_file_names;
+  vector<string> db_file_names;
 
   ofstream f_psm;
   ofstream f_spec_feat;

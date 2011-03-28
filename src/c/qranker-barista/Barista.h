@@ -22,9 +22,22 @@ using namespace std;
 class Barista : public CruxApplication
 {
  public:
- Barista() : seed(0), selectionfdr(0.01), num_features(0), num_hu(3), mu(0.05), weightDecay(0.0), alpha(0.3),
-    max_peptides(0), max_psms_in_prot(0), net_clones(0),nepochs(15), max_fdr(0), max_fdr_psm(0),
-    max_fdr_pep(0), verbose(0){}
+  Barista() 
+    : verbose(0), 
+    seed(0), 
+    selectionfdr(0.01), 
+    nepochs(15), 
+    num_features(0), 
+    num_hu(3), 
+    mu(0.05),
+    weightDecay(0.0), 
+    alpha(0.3),
+    max_psms_in_prot(0),
+    net_clones(0),
+    max_fdr(0),
+    max_peptides(0),   
+    max_fdr_psm(0),
+    max_fdr_pep(0){}
   ~Barista(){delete[] net_clones; net_clones = 0;}
   int set_command_line_options(int argc, char *argv[]);
   void setup_for_training(int trn_to_tst);
@@ -74,6 +87,7 @@ class Barista : public CruxApplication
   double check_gradients_hinge_one_net(int protind, int label);
   double check_gradients_hinge_clones(int protind, int label);
  protected:
+  SQTParser sqtp;
   int verbose;
   Dataset d;
   string in_dir;
@@ -83,11 +97,12 @@ class Barista : public CruxApplication
   int nepochs;
 
   NeuralNet net;
+  int num_features;
   int num_hu;
   double mu;
   double weightDecay;
   double alpha;
-  int num_features;
+
 
   int max_psms_in_prot;
   NeuralNet *net_clones;

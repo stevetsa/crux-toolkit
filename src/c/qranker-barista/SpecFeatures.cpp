@@ -217,14 +217,14 @@ void SpecFeaturesGenerator :: shift_peaks()
   vector<double> sums;
   sums.resize(peaks.size(),0.0);
   
-  for(int idx = 0; idx < peaks.size(); idx++)
+  for(unsigned int idx = 0; idx < peaks.size(); idx++)
     {
       for(int sub_idx = idx-max_xcorr_offset; sub_idx <= idx+max_xcorr_offset; sub_idx++)
 	if(sub_idx > -1 && sub_idx < peaks.size())
 	  sums[idx] += peaks[sub_idx];
     }
 #endif
-  for(int idx = 0; idx < peaks.size(); idx++)
+  for(unsigned int idx = 0; idx < peaks.size(); idx++)
     peaks[idx] -= (sums[idx]/(max_xcorr_offset*2.0+1));
 
 }
@@ -234,7 +234,7 @@ void SpecFeaturesGenerator :: normalize_each_region(double max_intensity_overall
 {
   int region_idx = 0;
   double max_intensity = max_intensity_per_region[region_idx];
-  for (int i = 0; i < peaks.size(); i++)
+  for (int i = 0; i < (int)peaks.size(); i++)
     {
     
       if(i >= (region_idx+1)*region_selector && (region_idx+1)<num_regions)
@@ -275,7 +275,7 @@ void SpecFeaturesGenerator :: process_observed_spectrum()
   }
   */
 
-  if(peaks.size() != max_mz)
+  if((int)peaks.size() != max_mz)
     peaks.resize(max_mz);
   peaks.assign(peaks.size(),0);
 
@@ -283,7 +283,7 @@ void SpecFeaturesGenerator :: process_observed_spectrum()
   assert(mz_values.size() == intens_values.size());
   double max_peak_location = 0.0;
   double max_peak_intensity = 0.0;
-  for(int i = 0; i < mz_values.size(); i++)
+  for(unsigned int i = 0; i < mz_values.size(); i++)
     {
       double peak_location = mz_values[i];
       if(peak_location < experimental_mass_cut_off)
@@ -297,7 +297,7 @@ void SpecFeaturesGenerator :: process_observed_spectrum()
   vector<double> max_peak_intensity_per_region;
   max_peak_intensity_per_region.resize(num_regions,0.0);
   
-  for(int i = 0; i < mz_values.size(); i++)
+  for(unsigned int i = 0; i < mz_values.size(); i++)
     {
       double peak_location = mz_values[i];
       double peak_intensity = intens_values[i];
@@ -368,7 +368,7 @@ void SpecFeaturesGenerator :: read_ms2_file()
 	    {
 	      scan_to_rtime[first_scan] = rtime;
 	      ostringstream spec;
-	      for(int k = 0; k < all_charges_of_spec.size();k++)
+	      for(unsigned int k = 0; k < all_charges_of_spec.size();k++)
 		{
 		  int ch = all_charges_of_spec[k];
 		  spec << first_scan << "." << ch;
@@ -385,7 +385,7 @@ void SpecFeaturesGenerator :: read_ms2_file()
     {
       scan_to_rtime[first_scan] = rtime;
       ostringstream spec;
-      for(int k = 0; k < all_charges_of_spec.size();k++)
+      for(unsigned int k = 0; k < all_charges_of_spec.size();k++)
 	{
 	  int ch = all_charges_of_spec[k];
 	  spec << first_scan << "." << ch;
@@ -411,7 +411,7 @@ void SpecFeaturesGenerator :: get_processed_observed_spectrum(string &spec)
   //cout << pos_in_file << endl;
   f_ms2.seekg(pos_in_file,ios::beg);
   
-  if(peaks.size() < max_mz)
+  if((int)peaks.size() < max_mz)
     peaks.resize(max_mz);
   peaks.assign(peaks.size(),0);
   string tempstr;
@@ -433,7 +433,7 @@ void SpecFeaturesGenerator :: get_observed_spectrum(string &spec)
   read_spectrum(tempstr);
   ostringstream spec_read;
   int flag = 0;
-  for(int i = 0; i < all_charges_of_spec.size();i++)
+  for(unsigned int i = 0; i < all_charges_of_spec.size();i++)
     {
       int ch = all_charges_of_spec[i];
       spec_read << first_scan << "." << ch;
@@ -449,7 +449,7 @@ void SpecFeaturesGenerator :: get_observed_spectrum(string &spec)
 }
 
 
-void SpecFeaturesGenerator :: clear_tspec(double **tspec,int num_features, int max_mz)
+void SpecFeaturesGenerator :: clear_tspec(double **tspec,int num_features)
 {
   if(tspec)
     {
@@ -507,7 +507,6 @@ void SpecFeaturesGenerator :: get_spec_features_m3(int scan, int ch , string &pe
   
   double mz = 0;
   int idx = 0;
-  int offset;
   double fragment_mass;
   
   //start from the beginning of the peptide and do the B-ION
@@ -612,7 +611,6 @@ void SpecFeaturesGenerator :: get_spec_features_m6(int scan, int ch, string &pep
   
   double mz = 0;
   int idx = 0;
-  int offset;
   double fragment_mass;
   
   //start from the beginning of the peptide and do the B-ION
@@ -722,7 +720,6 @@ void SpecFeaturesGenerator :: get_spec_features_m7(int scan, int ch, string &pep
   
   double mz = 0;
   int idx = 0;
-  int offset;
   double fragment_mass;
   
   //start from the beginning of the peptide and do the B-ION

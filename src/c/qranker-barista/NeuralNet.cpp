@@ -348,24 +348,73 @@ double* NeuralNet :: get_weights(int mod)
 {
   if(mod == 1)
     return lin1.get_weights();
-  if(mod == 2)
-    return lin2.get_weights();
+  else if(mod == 2)
+    {
+      if(is_linear)
+	{
+	  cout << "neural net was initialized with only 1 layer, layer " << mod << " does not exits" << endl;
+	  return 0;
+	}
+      return lin2.get_weights();
+    }
+  else
+    {
+      if(is_linear)
+	cout << "neural net was initialized with only 1 layer, ";
+      else
+	cout << "neural net was initialized with 2 layers, ";
+      cout << "layer " << mod << "does not exist" << endl;
+      return 0;
+    }
+
 }
 
 double* NeuralNet :: get_dweights(int mod)
 {
   if(mod == 1)
     return lin1.get_dweights();
-  if(mod == 2)
-    return lin2.get_dweights();
+  else if(mod == 2)
+    {
+      if(is_linear)
+	{
+	  cout << "neural net was initialized with only 1 layer, layer " << mod << " does not exits" << endl;
+	  return 0;
+	}
+      return lin2.get_dweights();
+    }
+  else
+    {
+      if(is_linear)
+	cout << "neural net was initialized with only 1 layer, ";
+      else
+	cout << "neural net was initialized with 2 layers, ";
+      cout << "layer " << mod << "does not exist" << endl;
+      return 0;
+    }
 }
 
 double* NeuralNet :: get_bias(int mod)
 {
   if(mod == 1)
     return lin1.get_bias();
-  if(mod == 2)
+  else if(mod == 2)
+    {
+      if(is_linear)
+	{
+	  cout << "neural net was initialized with only 1 layer, layer " << mod << " does not exits" << endl;
+	  return 0;
+	}
     return lin2.get_bias();
+    }
+  else
+    {
+      if(is_linear)
+	cout << "neural net was initialized with only 1 layer, ";
+      else
+	cout << "neural net was initialized with 2 layers, ";
+      cout << "layer " << mod << "does not exist" << endl;
+      return 0;
+    }
 }
 
 double* NeuralNet :: get_dbias(int mod)
@@ -373,12 +422,28 @@ double* NeuralNet :: get_dbias(int mod)
   if(mod == 1)
     return lin1.get_dbias();
   if(mod == 2)
-    return lin2.get_dbias();
+    {
+      if(is_linear)
+	{
+	  cout << "neural net was initialized with only 1 layer, layer " << mod << " does not exits" << endl;
+	  return 0;
+	}
+      return lin2.get_dbias();
+    }
+  else
+    {
+      if(is_linear)
+	cout << "neural net was initialized with only 1 layer, ";
+      else
+	cout << "neural net was initialized with 2 layers, ";
+      cout << "layer " << mod << "does not exist" << endl;
+      return 0;
+    }
 }
 
 /********************************************************************/
 
-double check_gradients(NeuralNet &n, double *x, int y)
+double check_gradients(NeuralNet &n, double *x)
 {
   double sum = 0.0;
   

@@ -19,7 +19,9 @@ class Dataset
   ~Dataset();
   void load_data();
   void load_data(string &summary_fn, string &psm_fn);
+  void load_psm_data_for_training(string &summary_fn, string &psm_fn);
   void load_prot_data();
+  
   inline void set_input_dir(string input_dir){in_dir = input_dir;}
   void normalize_psms();
   

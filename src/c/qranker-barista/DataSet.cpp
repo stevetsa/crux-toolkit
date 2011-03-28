@@ -257,6 +257,47 @@ void Dataset :: load_data(string &summary_fn, string &psm_fn)
 
 
 
+void Dataset :: load_psm_data_for_training(string &summary_fn, string &psm_fn)
+{
+  ostringstream fname;
+  fname << in_dir << "/" << summary_fn;
+  ifstream f_summary(fname.str().c_str());
+  f_summary >> num_features;
+  f_summary >> num_psms;
+  f_summary >> num_pos_psms;
+  f_summary >> num_neg_psms;
+  f_summary.close();
+  fname.str("");
+
+  //psm features
+  long begin,end;
+  fname << in_dir << "/" << psm_fn;
+  ifstream f_psm_feat(fname.str().c_str(),ios::binary);
+  if (0) {
+    begin = f_psm_feat.tellg();
+    f_psm_feat.seekg(0,ios::end);
+    end = f_psm_feat.tellg();
+    int psm_count = (end-begin)/(num_features*sizeof(double));
+    assert(psm_count == num_psms);
+    f_psm_feat.seekg(0,ios::beg);
+  }
+  psmind_to_features = new double[num_psms*num_features];
+  f_psm_feat.read((char*)psmind_to_features,sizeof(double)*num_psms*num_features);
+  f_psm_feat.close();
+  fname.str("");
+
+  //psmind_to_label
+  fname << in_dir << "/psmind_to_label.txt";
+  ifstream f_psmind_to_label(fname.str().c_str(),ios::binary);
+  psmind_to_label = new int[num_psms];
+  f_psmind_to_label.read((char*)psmind_to_label,sizeof(int)*num_psms);
+  f_psmind_to_label.close();
+  fname.str("");
+
+}
+
+
+
 void Dataset :: normalize_psms()
 {
   for (int i = 0; i < num_features; i++)
@@ -286,7 +327,7 @@ void Dataset :: normalize_psms()
 	  sm += psmind_to_features[num_features*j+i]*psmind_to_features[num_features*j+i];
 	}
      
-      //cout << i << " " << sm/num_psms << endl;
+      cout << i << " " << sm/num_psms << endl;
     }
 }
 

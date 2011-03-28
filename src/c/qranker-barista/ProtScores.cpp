@@ -141,7 +141,7 @@ void ProtScores :: fillProteinsSplit(ProtScores& train,ProtScores& test,Dataset 
   train.scores.resize(num_trn,s);
   test.scores.resize(num_tst,s);
 
-  for(int i = 0; i < assignment_array.size();i++)
+  for(unsigned int i = 0; i < assignment_array.size();i++)
     {
       if(assignment_array[i] == 1)
 	{
@@ -206,11 +206,11 @@ bool ProtScores :: is_subset(Dataset &d, int protind1, int protind2)
     }
   if(only2.size() == 0)
     return true;
-  for(int i = 0; i < only2.size(); i++)
+  for(unsigned int i = 0; i < only2.size(); i++)
     {
       string pep2 = d.ind2pep(only2[i]);
       string p2;
-      int pos = pep2.find('.');
+      size_t pos = pep2.find('.');
       if(pos > 0 && pos != string::npos)
 	p2 = pep2.substr(pos+1,pep2.size());
       pos = p2.find('.');
@@ -228,7 +228,7 @@ bool ProtScores :: is_subset(Dataset &d, int protind1, int protind2)
 	  if(pos > 0 && pos != string::npos)
 	    p1 = p1.substr(0,pos);
 	  
-	  int ix1 = 0; int ix2 = 0;
+	  unsigned int ix1 = 0; unsigned int ix2 = 0;
 	  while(ix1 < p1.size() && ix2 < p2.size())
 	    {
 	      char c1 = p1.at(ix1);
@@ -259,7 +259,7 @@ bool ProtScores :: is_subset(Dataset &d, int protind1, int protind2)
 
 void ProtScores :: make_meta_set(Dataset &d)
 {
-  for(int i = 0; i < scores.size(); i++)
+  for(unsigned int i = 0; i < scores.size(); i++)
     {
       int protind = scores[i].protind;
       int num_pep = d.protind2num_pep(protind);
@@ -274,7 +274,7 @@ void ProtScores :: make_meta_set(Dataset &d)
   vector<int> processed;
   processed.resize(d.get_num_proteins(),0);
 
-  for(int i = 0; i < scores.size();i++)
+  for(unsigned int i = 0; i < scores.size();i++)
     {
       int protind1 = scores[i].protind;
       if(processed[protind1] == 1)
@@ -315,7 +315,7 @@ void ProtScores :: make_meta_set(Dataset &d)
       assert(flag == 1);
     }
   
-  for(int i = 0; i < scores.size(); i++)
+  for(unsigned int i = 0; i < scores.size(); i++)
     {
       int protind = scores[i].protind;
       if(used_prot[protind] == 1)
@@ -326,9 +326,9 @@ void ProtScores :: make_meta_set(Dataset &d)
 	}
     }
   
-  for(int i = 0; i < scores.size(); i++)
+  for(unsigned int i = 0; i < scores.size(); i++)
     {
-      for(int k = 0; k < scores[i].subset_protinds.size(); k++)
+      for(unsigned int k = 0; k < scores[i].subset_protinds.size(); k++)
 	{
 	  int protind = scores[i].subset_protinds[k];
 	  assert(used_prot[protind] == 1);

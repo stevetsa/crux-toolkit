@@ -26,12 +26,12 @@ double Barista :: check_gradients_hinge_one_net(int protind, int label)
       max_psm_inds.push_back(max_ind);
       max_psm_scores.push_back(max_sc);
     }
-  assert(max_psm_inds.size() == num_pep);
-  assert(max_psm_scores.size() == num_pep);
+  assert((int)max_psm_inds.size() == num_pep);
+  assert((int)max_psm_scores.size() == num_pep);
   
   double sm = 0.0;
   double n = pow(num_pep,alpha);
-  for(int i = 0; i < max_psm_inds.size() ; i++)
+  for(unsigned int i = 0; i < max_psm_inds.size() ; i++)
     sm+= max_psm_scores[i];
   sm /= n;
 
@@ -43,7 +43,6 @@ double Barista :: check_gradients_hinge_one_net(int protind, int label)
   for(int i = 0; i < num_pep; i++)
     {
       int pepind = pepinds[i];
-      int num_psms = d.pepind2num_psm(pepind);
       int *psminds = d.pepind2psminds(pepind);
       int max_psm_ind = psminds[max_psm_inds[i]];
       double *feat = d.psmind2features(max_psm_ind);
@@ -83,7 +82,7 @@ double Barista :: check_gradients_hinge_one_net(int protind, int label)
 	}
       double sm1 = 0.0;
       double n = pow(num_pep,alpha);
-      for(int i = 0; i < max_psm_inds.size() ; i++)
+      for(unsigned int i = 0; i < max_psm_inds.size() ; i++)
 	sm1 += max_psm_scores[i];
       sm1 /= n;
       
@@ -124,7 +123,7 @@ double Barista :: check_gradients_hinge_one_net(int protind, int label)
 	}
       double sm1 = 0.0;
       double n = pow(num_pep,alpha);
-      for(int i = 0; i < max_psm_inds.size() ; i++)
+      for(unsigned int i = 0; i < max_psm_inds.size() ; i++)
 	sm1 += max_psm_scores[i];
       sm1 /= n;
 
@@ -164,7 +163,7 @@ double Barista :: check_gradients_hinge_one_net(int protind, int label)
 	}
       double sm1 = 0.0;
       double n = pow(num_pep,alpha);
-      for(int i = 0; i < max_psm_inds.size() ; i++)
+      for(unsigned int i = 0; i < max_psm_inds.size() ; i++)
 	sm1 += max_psm_scores[i];
       sm1 /= n;
 
@@ -204,7 +203,7 @@ double Barista :: check_gradients_hinge_one_net(int protind, int label)
 	}
       double sm1 = 0.0;
       double n = pow(num_pep,alpha);
-      for(int i = 0; i < max_psm_inds.size() ; i++)
+      for(unsigned int i = 0; i < max_psm_inds.size() ; i++)
 	sm1 += max_psm_scores[i];
       sm1 /= n;
 
@@ -289,7 +288,7 @@ int Barista :: getOverFDRPSM(PSMScores &s, NeuralNet &n,double fdr)
 {
   double* featVec;
   int label = 0;
-  for(unsigned int i = 0; i < s.size(); i++)
+  for(int i = 0; i < s.size(); i++)
     {
       featVec = d.psmind2features(s[i].psmind);
       label = s[i].label;
@@ -304,7 +303,7 @@ int Barista :: getOverFDRPSM(PSMScores &s, NeuralNet &n,double fdr)
       cout << "psm over fdr: num psms " << overFDR << endl;
       int cn = 0;
       set<int> peptides;
-      for(unsigned int i = 0; i < s.size(); i++)
+      for(int i = 0; i < s.size(); i++)
 	{
 	  if(s[i].label == 1)
 	    cn++;
@@ -322,7 +321,6 @@ double Barista :: get_peptide_score(int pepind, NeuralNet &n)
   int num_psm = d.pepind2num_psm(pepind);
   int *psminds = d.pepind2psminds(pepind);
   double max_sc = -100000000.0;
-  int max_ind = 0;
   for(int i = 0; i < num_psm; i++)
     {
       int psmind = psminds[i];
@@ -339,10 +337,9 @@ int Barista :: getOverFDRPep(PepScores &s, NeuralNet &n,double fdr)
 {
   int pepind = 0;
   int label = 0;
-  for(unsigned int i = 0; i < s.size(); i++)
+  for(int i = 0; i < s.size(); i++)
     {
       pepind = s[i].pepind;
-      label = s[i].label;
       double sc = get_peptide_score(pepind,n);
       s[i].score = sc;
     }
@@ -356,7 +353,7 @@ int Barista :: getOverFDRPep(PepScores &s, NeuralNet &n,double fdr)
       set<int> proteins_neg;
       int pep_pos = 0;
       int pep_neg = 0;
-      for(unsigned int i = 0; i < s.size(); i++)
+      for(int i = 0; i < s.size(); i++)
 	{
 	  label = s[i].label;
 	  if(label == 1)
@@ -434,10 +431,9 @@ int Barista :: getOverFDRProtParsimonious(ProtScores &set, NeuralNet &n, double 
   used_peptides.clear();
   used_peptides.resize(total_num_pep,0);
   double r = 0.0;
-  for(unsigned int i = 0; i < set.size(); i++)
+  for(int i = 0; i < set.size(); i++)
     {
       int protind = set[i].protind;
-      int label = set[i].label;
       r = get_protein_score_parsimonious(protind,n);
       set[i].score = r;
     }
@@ -460,7 +456,7 @@ void Barista :: write_results_prot(string &out_dir, int fdr)
 	  f_res << "protein group " << cn+1  << " q=" << trainset[i].q << endl;
 	  int protind = trainset[i].protind;
 	  f_res << d.ind2prot(protind) << " ";
-	  for(int j = 0; j < trainset[i].subset_protinds.size(); j++)
+	  for(unsigned int j = 0; j < trainset[i].subset_protinds.size(); j++)
 	    {
 	      int ind = trainset[i].subset_protinds[j];
 	      if(d.protind2label(ind) == 1)
@@ -514,7 +510,7 @@ void Barista :: report_all_results()
 void Barista :: get_pep_seq(string &pep, string &seq, string &n, string &c)
 {
   string tmp;
-  int pos;
+  size_t pos;
   
   pos = pep.find(".");
   if(pos != string::npos)
@@ -544,7 +540,7 @@ void Barista :: write_results_prot_xml(ofstream &os)
 	  os << "  <score>" << trainset[i].score << "</score>" << endl;
 	  os << "  <protein_ids>" << endl;
 	  os << "   <protein_id>" << d.ind2prot(protind) << "</protein_id>" <<endl;
-	  for(int j = 0; j < trainset[i].subset_protinds.size(); j++)
+	  for(unsigned int j = 0; j < trainset[i].subset_protinds.size(); j++)
 	    {
 	      int ind = trainset[i].subset_protinds[j];
 	      if(d.protind2label(ind) == 1)
@@ -678,7 +674,7 @@ void Barista :: report_all_results_xml()
 /*************************************************************************/
 void Barista :: report_prot_fdr_counts(vector<double> &qvals, ofstream &of)
 {
-  for(int count = 0; count < qvals.size(); count++)
+  for(unsigned int count = 0; count < qvals.size(); count++)
     {
       double q = qvals[count];
       if(trainset.size() > 0)
@@ -701,7 +697,7 @@ void Barista :: report_prot_fdr_counts(vector<double> &qvals, ofstream &of)
 
 void Barista :: report_psm_fdr_counts(vector<double> &qvals, ofstream &of)
 {
-  for(int count = 0; count < qvals.size(); count++)
+  for(unsigned int count = 0; count < qvals.size(); count++)
     {
       double q = qvals[count];
       if(psmtrainset.size() > 0)
@@ -725,7 +721,7 @@ void Barista :: report_psm_fdr_counts(vector<double> &qvals, ofstream &of)
 
 void Barista :: report_pep_fdr_counts(vector<double> &qvals, ofstream &of)
 {
-  for(int count = 0; count < qvals.size(); count++)
+  for(unsigned int count = 0; count < qvals.size(); count++)
     {
       double q = qvals[count];
       if(peptrainset.size() > 0)
@@ -828,7 +824,6 @@ double Barista :: get_protein_score(int protind, NeuralNet &n)
 double Barista :: get_protein_score_max(int protind, NeuralNet &n)
 {
   int num_pep = d.protind2num_pep(protind);
-  int num_all_pep = d.protind2num_all_pep(protind);
   int *pepinds = d.protind2pepinds(protind);
   double sm = 0.0;
   double div = 1;
@@ -837,8 +832,6 @@ double Barista :: get_protein_score_max(int protind, NeuralNet &n)
   for (int i = 0; i < num_pep; i++)
     {
       int pepind = pepinds[i];
-      int num_psms = d.pepind2num_psm(pepind);
-      int *psminds = d.pepind2psminds(pepind);
       double pep_sc = get_peptide_score(pepind,n);
       scores.push_back(pep_sc);
     }
@@ -852,10 +845,9 @@ double Barista :: get_protein_score_max(int protind, NeuralNet &n)
 int Barista :: getOverFDRProtMax(ProtScores &set, NeuralNet &n, double fdr)
 {
   double r = 0.0;
-  for(unsigned int i = 0; i < set.size(); i++)
+  for(int i = 0; i < set.size(); i++)
     {
       int protind = set[i].protind;
-      int label = set[i].label;
       r = get_protein_score_max(protind,n);
       set[i].score = r;
     }
@@ -866,10 +858,9 @@ int Barista :: getOverFDRProtMax(ProtScores &set, NeuralNet &n, double fdr)
 int Barista :: getOverFDRProt(ProtScores &set, NeuralNet &n, double fdr)
 {
   double r = 0.0;
-  for(unsigned int i = 0; i < set.size(); i++)
+  for(int i = 0; i < set.size(); i++)
     {
       int protind = set[i].protind;
-      int label = set[i].label;
       r = get_protein_score(protind,n);
       set[i].score = r;
     }
@@ -908,12 +899,12 @@ double Barista :: get_protein_score(int protind)
       max_psm_inds.push_back(max_ind);
       max_psm_scores.push_back(max_sc);
     }
-  assert(max_psm_inds.size() == num_pep);
-  assert(max_psm_scores.size() == num_pep);
+  assert((int)max_psm_inds.size() == num_pep);
+  assert((int)max_psm_scores.size() == num_pep);
   
   double sm = 0.0;
   double n = pow(num_all_pep,alpha);
-  for(int i = 0; i < max_psm_inds.size() ; i++)
+  for(unsigned int i = 0; i < max_psm_inds.size() ; i++)
     sm+= max_psm_scores[i];
   sm /= n;
   return sm;
@@ -933,9 +924,6 @@ void Barista :: calc_gradients(int protind, int label)
     {
       int pepind = pepinds[i];
       int num_psms = d.pepind2num_psm(pepind);
-      int *psminds = d.pepind2psminds(pepind);
-      int max_psm_ind = psminds[max_psm_inds[i]];
-      double *feat = d.psmind2features(max_psm_ind);
       int clone_ind = psm_count+max_psm_inds[i];
       net_clones[clone_ind].bprop(gc);
       psm_count += num_psms;
@@ -1191,46 +1179,6 @@ void Barista :: setup_for_training(int trn_to_tst)
 }
 
 
-void Barista :: clean_up()
-{
-  DIR *dp;
-  struct dirent *dirp;
-  if((dp  = opendir(out_dir.c_str())) == NULL)
-    {
-      cout << "openning " << out_dir  << " failed " << endl;
-      return;
-    }
-  else
-    {
-      
-      while ((dirp = readdir(dp)) != NULL) 
-	{
-	  string fname = string(dirp->d_name);
-	  if(fname.find("barista.target.") == string::npos)
-	    {
-	      if(fname.find("txt") != string::npos)
-		{
-		  int delete_flag = 0;
-		  if(fname.find("_to_") != string::npos)
-		    delete_flag = 1;
-		  if(fname.find("summary") != string::npos)
-		    delete_flag = 1;
-		  if(fname.find("psm") != string::npos)
-		    delete_flag = 1;
-		  if(delete_flag)
-		    {
-		      //cout << "deleting " << fname << endl;
-		      ostringstream fstr;
-		      fstr << out_dir <<"/" << fname;
-		      remove(fstr.str().c_str());
-		    }
-		}
-	    }
-      }
-      closedir(dp);
-    }
-}
-
 int Barista :: run()
 {
   setup_for_training(2);
@@ -1277,7 +1225,7 @@ int Barista :: run_tries()
 
 int Barista :: run_tries_multi_task()
 {
-  setup_for_training(3);
+  setup_for_training(2);
   srand(seed);
   
   int tries = 3;
@@ -1291,7 +1239,6 @@ int Barista :: run_tries_multi_task()
       mu = mu_choices[k];
       net.make_random();
       train_net_multi_task(selectionfdr, psmtrainset.size());
-      //train_net(selectionfdr, trainset.size());
     }
     
   //net.copy(max_net_prot);
@@ -1309,132 +1256,86 @@ int Barista :: run_tries_multi_task()
 
 
 
-
 int Barista :: set_command_line_options(int argc, char *argv[])
 {
+  string db_source;
+  string sqt_source;
+  string ms2_source;
+
   int arg = 1;
   while (arg < argc)
     {
+      
       string str = argv[arg];
-      //found input dir
-      if(str.find("target") != string::npos)
+      //parse the options
+      if(str.find("--") != string::npos)
 	{
-	  int pos = str.find("=");
-	  if(pos == string::npos)
+	  //found enzyme
+	  if(str.find("enzyme") != string::npos)
 	    {
-	      cout << "wrong option format: --target_qvalue=<q-value threshold>\n";
-	      cout << "setting target q-value to default 0.01.\n";
+	      size_t pos = str.find("=");
+	      if(pos == string::npos)
+		cout << "warning: wrong option format: --enzyme=<enzyme>, will assume trypsin\n";
+	      string enzyme = str.substr(pos+1,str.size());
+	      cout << "enzyme: " << enzyme << endl;
+	      //sqtp.set_decoy_prefix(prefix);
 	    }
-	  string qv_str = str.substr(pos+1,str.size());
+	  //found decoy prefix
+	  if(str.find("decoy") != string::npos)
+	    {
+	      size_t pos = str.find("=");
+	      if(pos == string::npos)
+		cout << "warning: wrong option format: --decoy_prefix=<decoy prefix>, will assume random_\n";
+	      string prefix = str.substr(pos+1,str.size());
+	      cout << "decoy prefix: " << prefix << endl;
+	      sqtp.set_decoy_prefix(prefix);
+	    }
+	}
+      else
+	{
+	  break;
 	  
-	  istringstream qv(qv_str);
-	  qv >> selectionfdr;
-	  cout << "target q-value threshold: " << selectionfdr << endl;
 	}
       arg++;
     }
-  return 1;
-
-}
-
-
-/*
-int Barista :: set_command_line_options(int argc, char *argv[])
-{
-  bool found_indir = false;
-  bool found_outdir = false;
-  int arg = 1;
-  while (arg < argc)
+  if(argc-arg < 3)
     {
-      string str = argv[arg];
-      //found input dir
-      if(str.find("input_dir") != string::npos)
-	{
-	  int pos = str.find("=");
-	  if(pos == string::npos)
-	    {
-	      cout << "wrong option format: --input_dir=<input directory>\n";
-	      return 0;
-	    }
-	  string in_dir = str.substr(pos+1,str.size());
-	  cout << "input directory: " << in_dir << endl;
-	  found_indir = true;
-	  set_input_dir(in_dir);
-	}
-      //found output dir
-      if(str.find("output_dir") != string::npos)
-	{
-	  int pos = str.find("=");
-	  if(pos == string::npos)
-	    {
-	      cout << "wrong option format: --output_dir=<output directory>\n";
-	      return 0;
-	    }
-	  string out_dir = str.substr(pos+1,str.size());
-	  cout << "output directory: " << out_dir << endl;
-	  found_outdir = true;
-	  set_output_dir(out_dir);
-	}
-      arg++;
-    }
-
-    if(!found_indir)
-    {
-      cout << "input directory was not specified, to run barista:\n barista --database=<> --input_dir=<> --output_dir=<>\n";
+      cout << "Incorrect input format: to run barista\n barista database-source sqt-file-source ms2-file-source" << endl;
       return 0;
     }
-  if(!found_outdir)
-    {
-      cout << "output directory was not specified, to run barista:\n barista --database=<> --input_dir=<> --output_dir=<>\n";
-      return 0;
-    }
-
-  DIR *dp;
-  struct dirent *dirp;
-  if((dp  = opendir(in_dir.c_str())) == NULL)
-    {
-      cout << "reading files in directory " << in_dir  << " failed " << endl;
-      return 0;
-    }
-  //try openning the outdir to make sure that it is available for writing 
-  DIR *dp1;
-  dp1  = opendir(out_dir.c_str());
-  if(dp1 == NULL)
-    {
-      cout << "could not open the output directory " << out_dir  << " for writing " << endl;
-      return 0;
-    }
-  closedir(dp1);
+  db_source = argv[arg];
+  arg++;
+  sqt_source = argv[arg];
+  arg++;
+  ms2_source = argv[arg];
+  cout << "database source " << db_source << " sqt source " << sqt_source << " ms2 source " << ms2_source << endl;
+  if(!sqtp.set_input_sources(db_source, sqt_source, ms2_source))
+    return 0;
+  sqtp.set_output_dir("crux-output");
 
   return 1;
-
+  
 }
-*/
 
 
 
 int Barista::main(int argc, char **argv) {
  //int main(int argc, char **argv){
-  int capacity(10);
-  SQTParser sqtp(capacity);
-
-  if(!sqtp.set_command_line_options(argc,argv))
-      return 0;
+  
+  if(!set_command_line_options(argc,argv))
+    return 0;
   //num of spec features
-  //sqtp.set_num_spec_features(0);
+  sqtp.set_num_spec_features(0);
   
   if(!sqtp.run())
     return 0;
+  sqtp.clear();
   string dir = sqtp.get_output_dir();
-
-  Barista bar;
-  bar.set_input_dir(dir);
-  bar.set_output_dir(dir);
-  //bar.set_command_line_options(argc,argv);
-  //bar.run();
-  bar.run_tries_multi_task();
-  //bar.clean_up();
-  //sqtp.clean_up(dir);
+  
+  set_input_dir(dir);
+  set_output_dir(dir);
+  run_tries_multi_task();
+  sqtp.clean_up(dir);
   
   return 1;
 }   

@@ -45,7 +45,7 @@ class SpecFeaturesGenerator
 
   void get_observed_spectrum(string &spec);
   void get_processed_observed_spectrum(string &spec);
-  void clear_tspec(double **tspec,int num_features, int max_mz);
+  void clear_tspec(double **tspec,int num_features);
   void allocate_tspec(double ***tspec, int num_features, int max_mz);
   void zero_out_tspec(double **tspec, int num_features, int max_mz);
   void add_intensity(double *tspec, int bin, double intensity);
