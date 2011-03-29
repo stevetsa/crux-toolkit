@@ -55,7 +55,8 @@ static const char* match_column_strings[NUMBER_MATCH_COLUMNS] = {
   "rtime max diff",
   "peptides/spectrum",
   "xcorr sum diff",
-  "xcorr max diff"
+  "xcorr max diff",
+  "bullseye min ratio"
 };
 
 /**

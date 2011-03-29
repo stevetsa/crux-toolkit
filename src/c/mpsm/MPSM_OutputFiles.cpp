@@ -121,6 +121,7 @@ void MPSM_OutputFiles::writeMatch(
   file_ptr->setColumnCurrentRow(SP_SCORE_COL, mpsm_match.getScore(SP));
   file_ptr->setColumnCurrentRow(XCORR_SUM_DIFF_COL, mpsm_match.getXCorrSumDiff());
   file_ptr->setColumnCurrentRow(XCORR_MAX_DIFF_COL, mpsm_match.getXCorrMaxDiff());
+  file_ptr->setColumnCurrentRow(MZ1_AREA_RATIO_COL, mpsm_match.getAreaRatio());
   file_ptr->writeRow();
 
 }

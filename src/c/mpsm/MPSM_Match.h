@@ -109,6 +109,8 @@ class MPSM_Match {
   FLOAT_T getXCorrSumDiff();
   FLOAT_T getXCorrMaxDiff();
 
+  FLOAT_T getAreaRatio();
+
 
     
   FLOAT_T getScore(SCORER_TYPE_T match_mode);

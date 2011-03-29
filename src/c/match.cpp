@@ -809,6 +809,8 @@ static void print_one_match_field(
   case XCORR_MAX_DIFF_COL:
     output_file->setColumnCurrentRow((MATCH_COLUMNS_T)column_idx, 0);
     break;
+  case MZ1_AREA_RATIO_COL:
+    return;
   case NUMBER_MATCH_COLUMNS:
   case INVALID_COL:
     carp(CARP_FATAL, "Error in printing code (match.cpp).");

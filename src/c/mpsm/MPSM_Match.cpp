@@ -2,6 +2,8 @@
 #include "MPSM_MatchCollection.h"
 #include "MPSM_Scorer.h"
 
+#include "SpectrumZState.h"
+
 #include <iostream>
 
 #include "DelimitedFile.h"
@@ -539,6 +541,38 @@ FLOAT_T MPSM_Match::getXCorrMaxDiff() {
   }
 
   return getScore(XCORR) - max_score;
+}
+
+FLOAT_T MPSM_Match::getAreaRatio() {
+
+  if (matches_.size() == 1) { 
+    return 1.0;
+  }
+
+  double sum = 0.0;
+
+  double min_area = -1;
+
+  bool min_unset = true;
+
+  for (unsigned int idx=0;idx<matches_.size();idx++) {
+    
+    SpectrumZState& current_zstate = 
+      get_match_zstate(matches_[idx]);
+
+    FLOAT_T area = current_zstate.getArea();
+
+    if ((min_unset) || (area < min_area)) {
+      min_area = area;
+      min_unset = false;
+    }
+
+    sum += area;
+  }
+
+  if (sum == 0.0) return 1;
+
+  return min_area / sum * (FLOAT_T)matches_.size();
 }
 
 

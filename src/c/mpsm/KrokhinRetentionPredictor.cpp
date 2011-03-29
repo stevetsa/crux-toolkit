@@ -58,14 +58,10 @@ KrokhinRetentionPredictor::~KrokhinRetentionPredictor() {
 FLOAT_T KrokhinRetentionPredictor::predictRTime(MATCH_T* match) {
 
   PEPTIDE_T* peptide = get_match_peptide(match);
-  char* sequence = get_peptide_sequence(peptide);
+  char* sequence = get_peptide_sequence_pointer(peptide);
   int length = get_peptide_length(peptide);
-  /*
-  char* sequence = get_match_sequence(match);
-  int length = get_peptide_length(get_match_peptide(match));
-  */
+
   double ans = predictRTimeS(sequence, length);
-  free(sequence);
   return ans;
 }
 
