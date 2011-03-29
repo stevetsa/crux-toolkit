@@ -78,6 +78,27 @@ void SQTParser :: clear()
   delete[] protind_to_num_all_pep; protind_to_num_all_pep = (int*)0;
 }
 
+void SQTParser :: set_enzyme(string &enz)
+{
+  if(enz.find("elastase") != string::npos)
+    {
+      e = ELASTASE_ENZ;
+      cout << "set enzyme: elastase" << endl;
+    }
+  else if (enz.find("chymotrypsin") != string::npos)
+    {
+      e = CHYMOTRYPSIN_ENZ;
+      cout << "set enzyme: chymotrypsin" << endl;
+    }
+  else if (enz.find("trypsin") != string::npos)
+    {
+      e = TRYPSIN_ENZ;
+      cout << "set enzyme: trypsin" << endl;
+    }
+  else
+    cout << "warning: could not determine enzyme, will assume trypsin\n";
+}
+
 
 void SQTParser :: clear_matches()
 {

@@ -1261,11 +1261,10 @@ int Barista :: set_command_line_options(int argc, char *argv[])
   string db_source;
   string sqt_source;
   string ms2_source;
-
+  string output_directory = "crux-output";
   int arg = 1;
   while (arg < argc)
     {
-      
       string str = argv[arg];
       //parse the options
       if(str.find("--") != string::npos)
@@ -1273,22 +1272,26 @@ int Barista :: set_command_line_options(int argc, char *argv[])
 	  //found enzyme
 	  if(str.find("enzyme") != string::npos)
 	    {
-	      size_t pos = str.find("=");
-	      if(pos == string::npos)
-		cout << "warning: wrong option format: --enzyme=<enzyme>, will assume trypsin\n";
-	      string enzyme = str.substr(pos+1,str.size());
+	      arg++;
+	      string enzyme = argv[arg];
 	      cout << "enzyme: " << enzyme << endl;
-	      //sqtp.set_decoy_prefix(prefix);
+	      sqtp.set_enzyme(enzyme);
 	    }
 	  //found decoy prefix
 	  if(str.find("decoy") != string::npos)
 	    {
-	      size_t pos = str.find("=");
-	      if(pos == string::npos)
-		cout << "warning: wrong option format: --decoy_prefix=<decoy prefix>, will assume random_\n";
-	      string prefix = str.substr(pos+1,str.size());
-	      cout << "decoy prefix: " << prefix << endl;
-	      sqtp.set_decoy_prefix(prefix);
+	      arg++;
+	      string decoy_prefix = argv[arg];
+	      cout << "decoy prefix: " << decoy_prefix << endl;
+	      sqtp.set_decoy_prefix(decoy_prefix);
+	    }
+	  //found output directory
+	  if(str.find("output") != string::npos)
+	    {
+	      arg++;
+	      output_directory = argv[arg];
+	      cout << "output_directory: " << output_directory << endl;
+	      sqtp.set_decoy_prefix(decoy_prefix);
 	    }
 	}
       else
@@ -1311,7 +1314,9 @@ int Barista :: set_command_line_options(int argc, char *argv[])
   cout << "database source " << db_source << " sqt source " << sqt_source << " ms2 source " << ms2_source << endl;
   if(!sqtp.set_input_sources(db_source, sqt_source, ms2_source))
     return 0;
-  sqtp.set_output_dir("crux-output");
+  sqtp.set_output_dir(output_directory);
+  set_input_dir(output_directory);
+  set_output_dir(output_directory);
 
   return 1;
   
@@ -1330,12 +1335,9 @@ int Barista::main(int argc, char **argv) {
   if(!sqtp.run())
     return 0;
   sqtp.clear();
-  string dir = sqtp.get_output_dir();
-  
-  set_input_dir(dir);
-  set_output_dir(dir);
+ 
   run_tries_multi_task();
-  sqtp.clean_up(dir);
+  sqtp.clean_up(out_dir);
   
   return 1;
 }   
