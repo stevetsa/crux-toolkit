@@ -17,6 +17,9 @@
 #include <netinet/in.h>
 #include <inttypes.h>
 
+#include <iostream>
+
+using namespace std;
 
 static const bool owns_peptide = true;
 
@@ -230,6 +233,7 @@ Ion::Ion(
 Ion::~Ion() {
 
   if (owns_peptide && peptide_sequence_) {
+    //cerr <<"Freeing peptide_sequence"<<endl;
     free(peptide_sequence_);
   }
 }
@@ -850,6 +854,9 @@ void Ion::copy(
   char* peptide_sequence ///< the peptide sequence that the dest should refer to -in
   )
 {
+
+  //cerr <<"copyIon: start"<<endl;
+
   dest->type_ = src->type_;
   dest->cleavage_idx_ = src->cleavage_idx_;
   dest->charge_ = src->charge_;
@@ -861,8 +868,17 @@ void Ion::copy(
   }
   
   dest->ion_mass_z_ = src->ion_mass_z_;
-  dest->peptide_sequence_ = peptide_sequence;
+
+  if (owns_peptide) {
+  dest->peptide_sequence_ = my_copy_string(peptide_sequence);
+  } else {
+    dest->peptide_sequence_ = peptide_sequence;
+  }
   dest->peptide_mass_ = src->peptide_mass_;
+  //dest->owns_peptide_ = false;
+
+
+
 }
 
 

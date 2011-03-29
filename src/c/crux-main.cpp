@@ -23,6 +23,7 @@
 #include "SearchForMPSMS.h"
 #include "PredictMPSMIons.h"
 #include "ScoreMPSMSpectrum.h"
+#include "SpectralCounts.h"
 #include "PrintVersion.h"
 
 /**
@@ -45,6 +46,7 @@ int main(int argc, char** argv){
   applications.add(new SearchForMPSMS());
   applications.add(new PredictMPSMIons());
   applications.add(new ScoreMPSMSpectrum());
+  applications.add(new SpectralCounts());
   applications.add(new PrintVersion());
 
   int ret = applications.main(argc, argv);

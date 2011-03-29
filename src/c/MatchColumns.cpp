@@ -57,6 +57,9 @@ static const char* match_column_strings[NUMBER_MATCH_COLUMNS] = {
   "xcorr sum diff",
   "xcorr max diff",
   "bullseye min ratio"
+  "SIN",
+  "NSAF",
+  "parsimony rank"
 };
 
 /**

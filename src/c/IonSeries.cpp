@@ -22,10 +22,13 @@
 #include "IonFilteredIterator.h"
 #include "Spectrum.h"
 
+#include <iostream>
+
 static const int BINARY_GMTK = 1;
 static const int PRINT_NULL_IONS = 1;
 static const int MIN_FRAMES = 3;
 
+using namespace std;
 
 
 /**
@@ -178,6 +181,7 @@ void IonSeries::update(
  */
 IonSeries::~IonSeries()
 {
+  //cerr<<"IonSeries::~IonSeries:begin()"<<endl;
   if(peptide_){
     free(peptide_);
   }
@@ -189,14 +193,17 @@ IonSeries::~IonSeries()
   }
   // free constraint?
 
+  
   // iterate over all ions, and free them
   clearIons(true);
-
+  //cerr<<"IonSeries::~IonSeries:done()"<<endl;
 }
 
 void IonSeries::freeIonSeries(
   IonSeries* ion_series,
   bool free_ions) {
+
+  //cerr <<"IonSeries::freeIonSeries(): begin()"<<endl;
 
   //empty the array, that should make sure that the
   //ions aren't deleted.
@@ -207,18 +214,21 @@ void IonSeries::freeIonSeries(
 
   delete ion_series;
 
+  //cerr <<"IonSeries::freeIonSeries(): done."<<endl;
+
 }
 
 void IonSeries::clearIons(bool free_ions) {
-    
+  //cerr <<"IonSeries::clearIons: begin()"<<endl;  
   if (free_ions) {
     for (unsigned int idx=0;idx < ions_.size();idx++) {
+      //cerr <<"delete ions_["<<idx<<"] out of "<<ions_.size()<<endl;
       delete ions_[idx];
     }
   }
-
+  //cerr <<"IonSeries::clear"<<endl;
   ions_.clear();
-
+  //cerr <<"IonSeries::clearIons(): end()"<<endl;
 }
 
 

@@ -42,6 +42,12 @@ class OutputFiles{
   void writeMatchFeatures(MATCH_T* match, 
                           double* features,
                           int num_features);
+  void writeRankedProteins(ProteinToScore& proteinToScore,
+                           MetaToRank& metaToRank,
+                           ProteinToMetaProtein& proteinToMeta);
+  void writeRankedPeptides(PeptideToScore& peptideToScore);
+
+
 
   MatchFileWriter* getFilePtr(int idx);
   int getMatchesPerSpec();
