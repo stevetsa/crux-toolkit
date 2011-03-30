@@ -31,7 +31,7 @@ class TabDelimParser{
   void first_pass(ifstream &fin);
   void second_pass(ifstream &fin, int label);
   void allocate_feature_space();
-  void extract_psm_features(vector<string> & tokens, double *x);
+  void extract_psm_features(int psmind, vector<string> & tokens, double *x);
   void save_data_in_binary(string out_dir);
   void clean_up(string dir);
 
@@ -48,6 +48,10 @@ class TabDelimParser{
   int* psmind_to_pepind;
   double *psmind_to_neutral_mass;
   double *psmind_to_peptide_mass;
+  //double *psmind_to_xcorr;
+  //double *psmind_to_sp;
+  
+
 
   //peptide info
   map<string,int> pep_to_ind;

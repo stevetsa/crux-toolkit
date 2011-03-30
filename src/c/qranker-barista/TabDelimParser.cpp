@@ -1,6 +1,39 @@
 #include "TabDelimParser.h"
 
 /******************************/
+/* tokens are
+0. scan
+1. charge
+2. spectrum precursor mz
+3. spectrum neutral mass   
+4. peptide mass    
+5. delta_cn        
+6. sp score        
+7. xcorr score     
+8. xcorr rank      
+9. matches/spectrum        
+10. sequence        
+11. cleavage type   
+12. protein id      
+13. flanking aa     
+14. nzstates        
+15. rtime max diff  
+16. peptides/spectrum       
+17. xcorr sum diff  
+18. xcorr max diff
+*/
+
+const static int scan_col_idx = 0;
+const static int charge_col_idx = 1;
+const static int spectrum_mz_col_idx = 2;
+const static int spectrum_mass_col_idx = 3;
+const static int peptide_mass_col_idx = 4;
+const static int sp_score_col_idx = 6;
+const static int xcorr_score_col_idx = 7;
+const static int matches_spectrum_col_idx = 9;
+const static int sequence_col_idx = 10;
+
+const static int max_charge=6;
 
 TabDelimParser :: TabDelimParser() 
   : 	num_mixed_labels(0),     
@@ -24,7 +57,7 @@ TabDelimParser :: TabDelimParser()
 {
   
   //num_psm_features
-  num_features = 17;
+  num_features = 19;
   
   //final_hits_per_spectrum
   fhps = 3;
@@ -57,27 +90,6 @@ TabDelimParser :: ~TabDelimParser()
   clear();
 }
 
-/* tokens are
-0. scan
-1. charge
-2. spectrum precursor mz
-3. spectrum neutral mass   
-4. peptide mass    
-5. delta_cn        
-6. sp score        
-7. xcorr score     
-8. xcorr rank      
-9. matches/spectrum        
-10. sequence        
-11. cleavage type   
-12. protein id      
-13. flanking aa     
-14. nzstates        
-15. rtime max diff  
-16. peptides/spectrum       
-17. xcorr sum diff  
-18. xcorr max diff
-*/
 
 
 
@@ -113,7 +125,7 @@ void TabDelimParser :: first_pass(ifstream &fin)
       if(tokens.size() > 1)
 	{
 	  //get all peptides and fill pep_to_ind tables
-	  string peps = tokens[10];
+	  string peps = tokens[sequence_col_idx];
 	  get_tokens(peps,peptides,delim2);
 	  
 	  for(unsigned int i = 0; i < peptides.size(); i++)
@@ -174,36 +186,104 @@ void TabDelimParser :: allocate_feature_space()
 }
 
 
-void TabDelimParser :: extract_psm_features(vector<string> & tokens, double *x)
-{
+void TabDelimParser :: extract_psm_features(
+  int psmind, 
+  vector<string> & tokens, 
+  double *x
+  ) {
+  //cerr <<"extracting features for psm:"<<psmind<<endl;
   memset(x,0,sizeof(double)*num_features);
-  //log rank by Sp
 
-  //deltaLCN
+  int num_sequences = psmind_to_num_pep[psmind];
+  int psm_offset = psmind_to_ofst[psmind];
 
-  //deltaCN
+  double xcorr = atof(tokens[xcorr_score_col_idx].c_str());
+  double sp = atof(tokens[sp_score_col_idx].c_str());
+  double log_sp_rank = 0; //TODO
+  double by_ion_fraction_matched = 0;
 
-  //xcorr score
-  x[3] = atof(tokens[7].c_str());
-  //sp score
-  
-  //matched ions/predicted ions
-  
-  //observed mass
-  
-  //peptide length
-  
-  //charge
-  
-  //whether n-terminus and c-terminus have proper cleavage sites
-  
-  // missed cleavages
-  
-  // number of sequence_comparisons
+  double avg_neutral_mass = 0.0;
+  double max_neutral_mass = -1.0;
 
-  //difference between measured and calculated mass
+  double avg_weight_diff = 0.0;
+  double max_weight_diff = -1.0;
 
-  // absolute value of difference between measured and calculated mass
+  double avg_sequence_length = 0;
+  double max_sequence_length = -1.0;
+
+  double avg_missed_cleavages = 0;
+  double max_missed_cleavages = 0;
+
+  int charge_count[max_charge];
+  for (int idx = 0; idx < max_charge;idx++) {
+    charge_count[idx] = 0;
+  }
+
+  for (int idx = 0; idx < num_sequences;idx++) {
+
+    double neutral_mass = psmind_to_neutral_mass[psm_offset+idx];
+    double peptide_mass = psmind_to_peptide_mass[psm_offset+idx];
+    int charge = min(psmind_to_charge[psm_offset+idx], max_charge);
+
+    string& sequence = ind_to_pep[psmind_to_pepind[psm_offset+idx]];
+
+    double weight_diff = fabs(neutral_mass - peptide_mass);
+    
+    avg_weight_diff += weight_diff;
+    max_weight_diff = max(max_weight_diff, weight_diff);
+
+    avg_neutral_mass += neutral_mass;
+    max_neutral_mass = max(max_neutral_mass, neutral_mass);
+    
+    avg_sequence_length += sequence.length();
+    max_sequence_length = max(max_sequence_length, (double)sequence.length());
+
+    charge_count[min(max_charge,charge)-1]++;
+
+  }
+
+  avg_weight_diff = avg_weight_diff / (double)num_sequences;
+  avg_neutral_mass = avg_neutral_mass / (double)num_sequences;
+  avg_sequence_length = avg_sequence_length / (double)num_sequences;
+
+  double ave_artd = 0; //TODO
+  double max_artd = 0; //TODO
+
+  double ln_experiment_size = logf(atof(tokens[matches_spectrum_col_idx].c_str()));
+  
+  //cerr << "Setting feature values"<<endl;
+
+  x[0]  = xcorr;
+  x[1]  = sp;
+  x[2]  = log_sp_rank;
+  x[3]  = by_ion_fraction_matched;
+  x[4]  = avg_weight_diff;
+  x[5]  = max_weight_diff;
+  x[6]  = avg_neutral_mass;
+  x[7]  = max_neutral_mass;
+  x[8]  = ln_experiment_size;
+  x[9]  = avg_missed_cleavages;
+  x[10] = max_missed_cleavages;
+  x[11] = avg_sequence_length;
+  x[12] = max_sequence_length;
+  x[13] = num_sequences;
+  x[14] = ave_artd;
+  x[15] = max_artd;
+  x[13] = charge_count[0];
+  x[14] = charge_count[1];
+  x[15] = charge_count[2];
+  x[16] = charge_count[3];
+  x[17] = charge_count[4];
+  x[18] = charge_count[5];
+
+  /*
+  cerr << psmind;
+  for (int idx=0;idx < num_features;idx++) {
+    cerr << " " << x[idx];
+  }
+  cerr<<endl;
+  */
+  //cerr <<"Done extracting features"<<endl;
 
 }
 
@@ -227,10 +307,7 @@ void TabDelimParser :: second_pass(ifstream &fin, int label)
   
       if(tokens.size() > 1)
 	{
-	  //extract features
-	  extract_psm_features(tokens, x);
-	  f_psm.write((char*)x, sizeof(double)*num_features);
-
+	  
 	  //fill in tables
 
 	  //get the scan
@@ -275,6 +352,11 @@ void TabDelimParser :: second_pass(ifstream &fin, int label)
 	  psmind_to_ofst[psmind] = curr_ofst;
 	  
 	  psmind_to_label[psmind] = label;
+
+          //extract features
+	  extract_psm_features(psmind, tokens, x);
+	  f_psm.write((char*)x, sizeof(double)*num_features);
+
 	  if(label == 1)
 	    num_pos_psm++;
 	  else
@@ -282,7 +364,11 @@ void TabDelimParser :: second_pass(ifstream &fin, int label)
 
 	  //augment counters
 	  curr_ofst+= peptides.size();
-	  psmind++;  
+	  psmind++;
+
+  
+
+  
 	}
     }
 }
@@ -364,12 +450,13 @@ void TabDelimParser :: save_data_in_binary(string out_dir)
 
 void TabDelimParser :: clean_up(string dir)
 {
-
+  
+  cerr <<"Inside clean_up"<<endl;
   ostringstream fname;
       
   //fname << out_dir << "/summary.txt";
   //ofstream f_summary(fname.str().c_str());
-
+  
   fname << dir << "/psm.txt";
   remove(fname.str().c_str());
   fname.str("");
@@ -467,7 +554,9 @@ int TabDelimParser :: run(vector<string> &filenames)
     }
   f_psm.close();
   cout << psmind << " " << num_pos_psm << " " << num_neg_psm << endl;
+  cerr <<"Saving data "<<out_dir<<endl;
   save_data_in_binary(out_dir);
+  cerr <<"Returning"<<endl;
   return 1;
 }
 
