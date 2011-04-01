@@ -33,6 +33,8 @@ public:
     void static fillFeaturesSplit(PSMScores& train,PSMScores& test,Dataset &d, double ratio);
     void static fillFeaturesFull(PSMScores& full,Dataset &d);
     inline int size(){return scores.size();}
+    inline void add_psm(PSMScoreHolder &psm){scores.push_back(psm);}
+    void calc_factor();
 protected:
     int neg,pos,posNow;
     vector<PSMScoreHolder> scores;

@@ -382,9 +382,9 @@ void TabDelimParser :: save_data_in_binary(string out_dir)
   fname << out_dir << "/summary.txt";
   ofstream f_summary(fname.str().c_str());
   //psm info
-  f_summary << num_features << " " << num_psm << " " << num_pos_psm << " " << num_neg_psm << endl;
+  f_summary << num_features << " " << num_psm << " " << num_pos_psm << " " << num_neg_psm << " " << num_pep_in_all_psms << endl;
   //peptide info
-  f_summary << num_pep << endl;
+  //f_summary << num_pep << endl;
   f_summary.close();
   fname.str("");
   
@@ -393,6 +393,20 @@ void TabDelimParser :: save_data_in_binary(string out_dir)
   ofstream f_psmind_to_pepind(fname.str().c_str(),ios::binary);
   f_psmind_to_pepind.write((char*)psmind_to_pepind,sizeof(int)*num_pep_in_all_psms);
   f_psmind_to_pepind.close();
+  fname.str("");
+
+  //psmind_to_neutral_mass
+  fname << out_dir << "/psmind_to_neutral_mass.txt";
+  ofstream f_psmind_to_neutral_mass(fname.str().c_str(),ios::binary);
+  f_psmind_to_neutral_mass.write((char*)psmind_to_neutral_mass,sizeof(double)*num_pep_in_all_psms);
+  f_psmind_to_neutral_mass.close();
+  fname.str("");
+
+  //psmind_to_peptide_mass
+  fname << out_dir << "/psmind_to_peptide_mass.txt";
+  ofstream f_psmind_to_peptide_mass(fname.str().c_str(),ios::binary);
+  f_psmind_to_peptide_mass.write((char*)psmind_to_peptide_mass,sizeof(double)*num_pep_in_all_psms);
+  f_psmind_to_peptide_mass.close();
   fname.str("");
 
   //psmind_to_num_pep

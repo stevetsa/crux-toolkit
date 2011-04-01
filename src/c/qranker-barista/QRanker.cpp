@@ -66,13 +66,159 @@ void QRanker :: write_results(string filename, NeuralNet &net)
   thresholdset.clear();
   PSMScores::fillFeaturesFull(fullset, d);
   getOverFDR(fullset,net, qvals[4]);
- 
-  f1 << "psm ind" << "\t" << "q-value" << "\t" << "scan" << "\t" << "charge" << "\t" << "peptide" << endl;
+  
+  d.load_psm_data_for_reporting_results();
+
+
+  f1 << "scan" << "\t" << "charge" << "\t" << "spectrum neutral mass" << "\t" << "peptide mass" << "\t" << "q-ranker score" << "\t" << "q-ranker q-value" << "\t" << "peptide sequence" << endl;
   for(int i = 0; i < fullset.size(); i++)
     {
       int psmind = fullset[i].psmind;
-      int pepind = d.psmind2pepind(psmind);
-      f1 << psmind << "\t" << fullset[i].q << "\t" << d.psmind2scan(psmind) << "\t" << d.psmind2charge(psmind) << "\t" << d.ind2pep(pepind) << endl;
+      int num_pep = d.psmind2num_pep(psmind);
+      
+      //write scan
+      f1 << d.psmind2scan(psmind) << "\t";
+      //write charges
+      int *charges = d.psmind2charges(psmind);
+      f1 << charges[0];
+      for(int k = 1; k < num_pep; k++)
+	{
+	  f1 << ",";
+	  int ch = charges[k];
+	  f1 << ch; 
+	}
+      f1 << "\t";
+      //write neutral_mass
+      double* neutral_mass = d.psmind2neutral_mass(psmind);
+      f1 << neutral_mass[0];
+      for(int k = 1; k < num_pep; k++)
+	{
+	  f1 << ",";
+	  double m = neutral_mass[k];
+	  f1 << m; 
+	}
+      f1 << "\t";
+
+      //write peptide mass
+      double* peptide_mass = d.psmind2peptide_mass(psmind);
+      f1 << peptide_mass[0];
+      for(int k = 1; k < num_pep; k++)
+	{
+	  f1 << ",";
+	  double m = peptide_mass[k];
+	  f1 << m; 
+	}
+      f1 << "\t";
+      f1 << fullset[i].score << "\t" << fullset[i].q << "\t";
+
+      //write peptide sequence
+      int *pepinds = d.psmind2pepinds(psmind);
+      f1 << d.ind2pep(pepinds[0]);
+      for(int k = 1; k < num_pep; k++)
+	{
+	  f1 << ",";
+	  f1 << d.ind2pep(pepinds[k]); 
+	}
+      f1 << endl;
+      
+    }
+  f1.close();
+}
+
+
+void QRanker :: write_results_max(string filename, NeuralNet &net)
+{
+  //write out the results of the general net
+  ostringstream s1;
+  s1 << filename << ".txt";
+  ofstream f1(s1.str().c_str());
+  trainset.clear();
+  testset.clear();
+  thresholdset.clear();
+  PSMScores::fillFeaturesFull(fullset, d);
+  getOverFDR(fullset,net, qvals[4]);
+  
+  d.load_psm_data_for_reporting_results();
+
+  set<int> scans_target;
+  set<int> scans_decoy;
+  
+  for(int i = 0; i < fullset.size(); i++)
+    {
+      int scan = d.psmind2scan(fullset[i].psmind);
+      if(fullset[i].label == 1)
+	{
+	  if(scans_target.find(scan) == scans_target.end())
+	    {
+	      fullset_max.add_psm(fullset[i]);
+	      scans_target.insert(scan);
+	    }
+	}
+      else
+	{
+	  if(scans_decoy.find(scan) == scans_decoy.end())
+	    {
+	      fullset_max.add_psm(fullset[i]);
+	      scans_decoy.insert(scan);
+	    }
+	}
+    }
+  fullset_max.calc_factor();
+  getOverFDR(fullset_max,net, qvals[4]);
+
+  f1 << "scan" << "\t" << "charge" << "\t" << "spectrum neutral mass" << "\t" << "peptide mass" << "\t" << "q-ranker score" << "\t" << "q-ranker q-value" << "\t" << "peptide sequence" << endl;
+  for(int i = 0; i < fullset_max.size(); i++)
+    {
+      if(fullset_max[i].label == 1)
+	{
+	  int psmind = fullset_max[i].psmind;
+	  int num_pep = d.psmind2num_pep(psmind);
+	  
+	  //write scan
+	  f1 << d.psmind2scan(psmind) << "\t";
+	  //write charges
+	  int *charges = d.psmind2charges(psmind);
+	  f1 << charges[0];
+	  for(int k = 1; k < num_pep; k++)
+	    {
+	      f1 << ",";
+	      int ch = charges[k];
+	      f1 << ch; 
+	    }
+	  f1 << "\t";
+	  //write neutral_mass
+	  double* neutral_mass = d.psmind2neutral_mass(psmind);
+	  f1 << neutral_mass[0];
+	  for(int k = 1; k < num_pep; k++)
+	    {
+	      f1 << ",";
+	      double m = neutral_mass[k];
+	      f1 << m; 
+	    }
+	  f1 << "\t";
+	  
+	  //write peptide mass
+	  double* peptide_mass = d.psmind2peptide_mass(psmind);
+	  f1 << peptide_mass[0];
+	  for(int k = 1; k < num_pep; k++)
+	    {
+	      f1 << ",";
+	      double m = peptide_mass[k];
+	      f1 << m; 
+	    }
+	  f1 << "\t";
+	  f1 << fullset_max[i].score << "\t" << fullset_max[i].q << "\t";
+	  
+	  //write peptide sequence
+	  int *pepinds = d.psmind2pepinds(psmind);
+	  f1 << d.ind2pep(pepinds[0]);
+	  for(int k = 1; k < num_pep; k++)
+	    {
+	      f1 << ",";
+	      f1 << d.ind2pep(pepinds[k]); 
+	    }
+	  f1 << endl;
+	}
     }
   f1.close();
 }
@@ -169,24 +315,29 @@ void QRanker :: write_num_psm_per_spectrum(NeuralNet* max_net)
   
   int count = 5; 
   net = max_net[count];
-  int r = getOverFDR(trainset,net, qvals[count]);
+  int r = getOverFDR(fullset_max,net, qvals[count]);
       
   map<int,set<int> > scan_to_pepinds;
   int cn = 0;
-  for(int i = 0; i < trainset.size();i++)
+  for(int i = 0; i < fullset_max.size();i++)
     {
-      if(trainset[i].label == 1)
+      if(fullset_max[i].label == 1)
 	{
 	  cn++;
-	  int pepind = d.psmind2pepind(trainset[i].psmind);
-	  int scan = d.psmind2scan(trainset[i].psmind);
-	  if(scan_to_pepinds.find(scan) == scan_to_pepinds.end())
+	  int psmind = fullset_max[i].psmind;
+	  int *pepinds = d.psmind2pepinds(psmind);
+	  int num_pep = d.psmind2num_pep(psmind);
+	  for(int k = 0; k < num_pep; k++)
 	    {
-	      set<int> peps;
-	      scan_to_pepinds[scan] = peps;
+	      int pepind = pepinds[k];
+	      int scan = d.psmind2scan(psmind);
+	      if(scan_to_pepinds.find(scan) == scan_to_pepinds.end())
+		{
+		  set<int> peps;
+		  scan_to_pepinds[scan] = peps;
+		}
+	      (scan_to_pepinds[scan]).insert(pepind);
 	    }
-	  (scan_to_pepinds[scan]).insert(pepind);
-	  
 	}
       if(cn > r) break;
     }
@@ -302,6 +453,7 @@ void QRanker :: train_many_general_nets()
   interval = trainset.size();
   for(int i=0;i<switch_iter;i++) {
     train_net_ranking(trainset, interval);
+    
        
     //record the best result
     getMultiFDR(thresholdset,net,qvals);
@@ -440,14 +592,7 @@ void QRanker::train_many_nets()
 
   train_many_target_nets();  
  
-  /*
-  //write out the results of the target net
-  cerr << "target net results: ";
-  ostringstream s2;
-  s2 << res_prefix;
-  cout << s2.str() << endl;
-  //write_max_nets(s2.str(), max_net_targ);
-  //write_unique_peptides(s2.str(), max_net_targ);
+  
 
   //choose the best net for the selectionfdr
   int max_fdr = 0;
@@ -464,9 +609,15 @@ void QRanker::train_many_nets()
     }
   net = max_net_targ[ind];
 
-  //write_num_psm_per_spectrum("test.txt", max_net_targ);
-  write_results(s2.str(),net);
-  */
+  
+  //write out the results of the target net
+  cerr << "target net results: ";
+  ostringstream s2;
+  s2 << res_prefix;
+  cout << s2.str() << endl;
+  write_results_max(s2.str(),net);
+  write_num_psm_per_spectrum(max_net_targ);
+
   delete [] max_net_gen;
   delete [] max_net_targ;
   delete [] nets;

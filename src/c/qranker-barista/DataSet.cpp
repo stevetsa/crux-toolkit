@@ -1,12 +1,16 @@
 #include "DataSet.h"
 
 Dataset::Dataset() 
-  : num_psms(0), num_pos_psms(0), num_neg_psms(0), 
-    psmind_to_features((double*)0), 
+  : num_psms(0), num_pos_psms(0), num_neg_psms(0), num_features(0),num_all_pep_in_psms(0), 
+    psmind_to_features((double*)0),
     psmind_to_label((int*)0),
     psmind_to_pepind((int*)0),
+    psmind_to_num_pep(0),
+    psmind_to_ofst(0),
     psmind_to_scan(0),
     psmind_to_charge(0),
+    psmind_to_neutral_mass(0),
+    psmind_to_peptide_mass(0),
     protind_to_label(0),
     protind_to_num_all_pep(0)
 {
@@ -17,6 +21,10 @@ Dataset::~Dataset()
   delete[] psmind_to_features;
   delete[] psmind_to_label;
   delete[] psmind_to_pepind;
+  delete[] psmind_to_num_pep;
+  delete[] psmind_to_ofst;
+  delete[] psmind_to_neutral_mass;
+  delete[] psmind_to_peptide_mass;
   delete[] psmind_to_scan;
   delete[] psmind_to_charge;
   delete[] protind_to_label;
@@ -293,6 +301,94 @@ void Dataset :: load_psm_data_for_training(string &summary_fn, string &psm_fn)
   f_psmind_to_label.read((char*)psmind_to_label,sizeof(int)*num_psms);
   f_psmind_to_label.close();
   fname.str("");
+
+}
+
+
+void Dataset :: load_psm_data_for_reporting_results()
+{
+  ostringstream fname;
+  fname << in_dir << "/" << "summary.txt";
+  ifstream f_summary(fname.str().c_str());
+  f_summary >> num_features;
+  f_summary >> num_psms;
+  f_summary >> num_pos_psms;
+  f_summary >> num_neg_psms;
+  f_summary >> num_all_pep_in_psms;
+  f_summary.close();
+  fname.str("");
+
+  //psmind_to_pepind
+  fname << in_dir << "/psmind_to_pepind.txt";
+  ifstream f_psmind_to_pepind(fname.str().c_str(),ios::binary);
+  psmind_to_pepind = new int[num_all_pep_in_psms];
+  f_psmind_to_pepind.read((char*)psmind_to_pepind,sizeof(int)*num_all_pep_in_psms);
+  f_psmind_to_pepind.close();
+  fname.str("");
+  //psmind_to_num_pep
+  fname << in_dir << "/psmind_to_num_pep.txt";
+  ifstream f_psmind_to_num_pep(fname.str().c_str(),ios::binary);
+  psmind_to_num_pep = new int[num_psms];
+  f_psmind_to_num_pep.read((char*)psmind_to_num_pep,sizeof(int)*num_psms);
+  f_psmind_to_num_pep.close();
+  fname.str("");
+  //psmind_to_ofst
+  fname << in_dir << "/psmind_to_ofst.txt";
+  ifstream f_psmind_to_ofst(fname.str().c_str(),ios::binary);
+  psmind_to_ofst = new int[num_psms];
+  f_psmind_to_ofst.read((char*)psmind_to_ofst,sizeof(int)*num_psms);
+  f_psmind_to_ofst.close();
+  fname.str("");
+  
+
+  //psmind_to_scan
+  fname << in_dir << "/psmind_to_scan.txt";
+  ifstream f_psmind_to_scan(fname.str().c_str(),ios::binary);
+  psmind_to_scan = new int[num_psms];
+  f_psmind_to_scan.read((char*)psmind_to_scan,sizeof(int)*num_psms);
+  f_psmind_to_scan.close();
+  fname.str("");
+  //psmind_to_charge
+  fname << in_dir << "/psmind_to_charge.txt";
+  ifstream f_psmind_to_charge(fname.str().c_str(),ios::binary);
+  psmind_to_charge = new int[num_all_pep_in_psms];
+  f_psmind_to_charge.read((char*)psmind_to_charge,sizeof(int)*num_all_pep_in_psms);
+  f_psmind_to_charge.close();
+  fname.str("");
+
+
+  
+  //ind_to_pep
+  fname << in_dir << "/ind_to_pep.txt";
+  ifstream f_ind_to_pep(fname.str().c_str(),ios::binary);
+  int ind;
+  while(!f_ind_to_pep.eof())
+    {
+      string pep;
+      f_ind_to_pep >> ind;
+      f_ind_to_pep >> pep;
+      ind_to_pep[ind] = pep;
+    }
+  f_ind_to_pep.close();
+  fname.str("");
+
+  //psmind_to_neutral_mass
+  fname << in_dir << "/psmind_to_neutral_mass.txt";
+  ifstream f_psmind_to_neutral_mass(fname.str().c_str(),ios::binary);
+  psmind_to_neutral_mass = new double[num_all_pep_in_psms];
+  f_psmind_to_neutral_mass.read((char*)psmind_to_neutral_mass,sizeof(double)*num_all_pep_in_psms);
+  f_psmind_to_neutral_mass.close();
+  fname.str("");
+
+  //psmind_to_peptide_mass
+  fname << in_dir << "/psmind_to_peptide_mass.txt";
+  ifstream f_psmind_to_peptide_mass(fname.str().c_str(),ios::binary);
+  psmind_to_peptide_mass = new double[num_all_pep_in_psms];
+  f_psmind_to_peptide_mass.read((char*)psmind_to_peptide_mass,sizeof(double)*num_all_pep_in_psms);
+  f_psmind_to_peptide_mass.close();
+  fname.str("");
+
+
 
 }
 

@@ -20,6 +20,7 @@ class Dataset
   void load_data();
   void load_data(string &summary_fn, string &psm_fn);
   void load_psm_data_for_training(string &summary_fn, string &psm_fn);
+  void load_psm_data_for_reporting_results();
   void load_prot_data();
   
   inline void set_input_dir(string input_dir){in_dir = input_dir;}
@@ -29,7 +30,13 @@ class Dataset
   inline int psmind2label(int psmind){return psmind_to_label[psmind];}
   inline int psmind2scan(int psmind){return psmind_to_scan[psmind];}
   inline int psmind2charge(int psmind){return psmind_to_charge[psmind];}
+  inline int* psmind2charges(int psmind){return (psmind_to_charge+psmind_to_ofst[psmind]);}
   inline int psmind2pepind(int psmind){return psmind_to_pepind[psmind];}
+  inline int* psmind2pepinds(int psmind){return (psmind_to_pepind+psmind_to_ofst[psmind]);}
+  inline int psmind2num_pep(int psmind){return psmind_to_num_pep[psmind];}
+  inline double* psmind2neutral_mass(int psmind){return (psmind_to_neutral_mass+psmind_to_ofst[psmind]);}
+  inline double* psmind2peptide_mass(int psmind){return (psmind_to_peptide_mass+psmind_to_ofst[psmind]);}
+
   inline string ind2pep(int ind){return ind_to_pep[ind];}
   inline int get_num_psms(){return num_psms;}
   inline int get_num_features(){return num_features;}
@@ -55,11 +62,16 @@ class Dataset
   int num_pos_psms;
   int num_neg_psms;
   int num_features;
+  int num_all_pep_in_psms;
   double* psmind_to_features;
   int* psmind_to_label;
   int *psmind_to_pepind;
+  int *psmind_to_num_pep;
+  int *psmind_to_ofst;
   int *psmind_to_scan;
   int *psmind_to_charge;
+  double *psmind_to_neutral_mass;
+  double *psmind_to_peptide_mass;
   map <int, string> ind_to_pep;
 
 

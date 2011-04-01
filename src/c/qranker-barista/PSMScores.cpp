@@ -37,6 +37,20 @@ void PSMScores::clear()
   pos=neg=posNow = 0;
 }
 
+void PSMScores :: calc_factor()
+{
+  cout << scores.size() << endl;
+  for(unsigned int i = 0; i < scores.size(); i++)
+    {
+      if(scores[i].label == 1)
+	pos++;
+      else
+	neg++;
+    }
+  factor = (double)pos/(double)neg;
+  cout << pos << " " << neg << " " << factor << endl;
+}
+
 
 /**
  * Percentage of target scores that are drawn according to the null.
