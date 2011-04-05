@@ -32,7 +32,7 @@ const static int sp_score_col_idx = 6;
 const static int xcorr_score_col_idx = 7;
 const static int matches_spectrum_col_idx = 9;
 const static int sequence_col_idx = 10;
-
+const static int rtime_max_diff_col_idx = 15;
 const static int max_charge=6;
 
 TabDelimParser :: TabDelimParser() 
@@ -57,7 +57,7 @@ TabDelimParser :: TabDelimParser()
 {
   
   //num_psm_features
-  num_features = 19;
+  num_features = 22;
   
   //final_hits_per_spectrum
   fhps = 3;
@@ -194,6 +194,10 @@ void TabDelimParser :: extract_psm_features(
   //cerr <<"extracting features for psm:"<<psmind<<endl;
   memset(x,0,sizeof(double)*num_features);
 
+  for (int idx=0;idx<tokens.size();idx++) {
+    //cerr<<"token["<<idx<<"]="<<tokens[idx]<<endl;
+  }
+
   int num_sequences = psmind_to_num_pep[psmind];
   int psm_offset = psmind_to_ofst[psmind];
 
@@ -246,8 +250,10 @@ void TabDelimParser :: extract_psm_features(
   avg_neutral_mass = avg_neutral_mass / (double)num_sequences;
   avg_sequence_length = avg_sequence_length / (double)num_sequences;
 
-  double ave_artd = 0; //TODO
-  double max_artd = 0; //TODO
+  double ave_artd = 0; 
+  double max_artd = 0;//fabs(atof(tokens[rtime_max_diff_col_idx].c_str()));
+
+  //cerr<<"Max artd:"<<max_artd<<endl;
 
   double ln_experiment_size = logf(atof(tokens[matches_spectrum_col_idx].c_str()));
   
@@ -255,8 +261,8 @@ void TabDelimParser :: extract_psm_features(
 
   x[0]  = xcorr;
   x[1]  = sp;
-  x[2]  = log_sp_rank;
-  x[3]  = by_ion_fraction_matched;
+  //x[2]  = log_sp_rank;
+  //x[3]  = by_ion_fraction_matched;
   x[4]  = avg_weight_diff;
   x[5]  = max_weight_diff;
   x[6]  = avg_neutral_mass;
@@ -267,14 +273,14 @@ void TabDelimParser :: extract_psm_features(
   x[11] = avg_sequence_length;
   x[12] = max_sequence_length;
   x[13] = num_sequences;
-  x[14] = ave_artd;
+  //x[14] = ave_artd;
   x[15] = max_artd;
-  x[13] = charge_count[0];
-  x[14] = charge_count[1];
-  x[15] = charge_count[2];
-  x[16] = charge_count[3];
-  x[17] = charge_count[4];
-  x[18] = charge_count[5];
+  x[16] = (double)charge_count[0]/(double)num_sequences;
+  x[17] = (double)charge_count[1]/(double)num_sequences;
+  x[18] = (double)charge_count[2]/(double)num_sequences;
+  x[19] = (double)charge_count[3]/(double)num_sequences;
+  x[20] = (double)charge_count[4]/(double)num_sequences;
+  x[21] = (double)charge_count[5]/(double)num_sequences;
 
   /*
   cerr << psmind;

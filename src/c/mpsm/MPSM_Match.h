@@ -72,6 +72,9 @@ class MPSM_Match {
   void setRTimeMaxDiff(FLOAT_T rtime_max_diff);
   FLOAT_T getRTimeMaxDiff();
 
+  FLOAT_T getRTimeAveDiff();
+
+
   ZStateIndex& getZStateIndex();
 
   bool isChargeHomogeneous();

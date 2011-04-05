@@ -1,6 +1,6 @@
 #include "QRanker.h"
 
-QRanker::QRanker() :  seed(0),selectionfdr(0.01),num_hu(5),mu(0.005),weightDecay(0.000)
+QRanker::QRanker() :  seed(0),selectionfdr(0.01),num_hu(5),mu(0.005),weightDecay(0.0000)
 {
 }
 
@@ -166,7 +166,7 @@ void QRanker :: write_results_max(string filename, NeuralNet &net)
   fullset_max.calc_factor();
   getOverFDR(fullset_max,net, qvals[4]);
 
-  f1 << "scan" << "\t" << "charge" << "\t" << "spectrum neutral mass" << "\t" << "peptide mass" << "\t" << "q-ranker score" << "\t" << "q-ranker q-value" << "\t" << "peptide sequence" << endl;
+  f1 << "scan" << "\t" << "charge" << "\t" << "spectrum neutral mass" << "\t" << "peptide mass" << "\t" << "q-ranker score" << "\t" << "q-ranker q-value" << "\t" << "sequence" << endl;
   for(int i = 0; i < fullset_max.size(); i++)
     {
       if(fullset_max[i].label == 1)

@@ -360,6 +360,13 @@ FLOAT_T MPSM_Match::getRTimeMaxDiff() {
   return rtime_max_diff_;
 }
 
+FLOAT_T MPSM_Match::getRTimeAveDiff() {
+  
+  return 0;
+
+}
+
+
 string MPSM_Match::getString() {
   string ans;
 
