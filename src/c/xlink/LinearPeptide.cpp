@@ -87,6 +87,20 @@ FLOAT_T LinearPeptide::calcMass(MASS_TYPE_T mass_type) {
   if (peptide_ == NULL) {
     return calc_sequence_mass(sequence_,mass_type);
   } else {
+  //  carp(CARP_INFO,"Calculating modified peptide mass");
+
+
+   //FLOAT_T ans1 = calc_modified_peptide_mass(peptide_, mass_type);
+    
+  //  char* seq = get_peptide_sequence(peptide_);
+
+  //  FLOAT_T ans2 = calc_sequence_mass(seq,mass_type);
+  //  free(seq);
+
+ //   FLOAT_T ans3 = get_peptide_peptide_mass(peptide_);
+
+ //   carp(CARP_INFO,"%s %f %f %f",sequence_,ans1,ans2,ans3);
+    
     return calc_modified_peptide_mass(peptide_, mass_type);
   }
 }
@@ -109,8 +123,8 @@ void LinearPeptide::predictIons(IonSeries* ion_series, int charge) {
   char* seq = NULL;
   MODIFIED_AA_T* mod_seq = NULL;
   if (peptide_ == NULL) {
-    seq = sequence_;
-    mod_seq = NULL; 
+    seq = my_copy_string(sequence_);
+    convert_to_mod_aa_seq(seq, &mod_seq); 
   } else {
     seq = get_peptide_sequence(peptide_);
     mod_seq = get_peptide_modified_aa_sequence(peptide_);
@@ -124,7 +138,15 @@ void LinearPeptide::predictIons(IonSeries* ion_series, int charge) {
 }
 
 string LinearPeptide::getIonSequence(Ion* ion) {
-  return ion->getPeptideSequence();
+
+  string seq_str = string(sequence_);
+
+  int cleavage_idx = ion->getCleavageIdx();
+  if (ion->isForwardType() == B_ION) {
+    return seq_str.substr(0,cleavage_idx);
+  } else {
+    return seq_str.substr(seq_str.length()-cleavage_idx,seq_str.length());
+  }
 }
 
 PEPTIDE_T* LinearPeptide::getPeptide(int peptide_idx) {

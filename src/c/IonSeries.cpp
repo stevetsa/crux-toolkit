@@ -1000,13 +1000,14 @@ void IonSeries::removeIon(
 
     if (*ion_iter == ion) {
       ions_.erase(ion_iter);
-      break;
+      return;
     }
+
+    
+
   }
 
-  if (ion_iter == end()) {
-    carp(CARP_ERROR,"Cannot find ion to delete!");
-  }
+  carp(CARP_ERROR, "Cannot find ion to delete:%i", ion);
 
 }
 

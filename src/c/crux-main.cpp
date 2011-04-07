@@ -21,6 +21,7 @@
 #include "PrintProcessedSpectra.h"
 #include "SearchForXLinks.h"
 #include "SearchForXLinksMods.h"
+#include "ExtractScanNeutralMass.h"
 #include "PrintVersion.h"
 
 /**
@@ -41,6 +42,7 @@ int main(int argc, char** argv){
   applications.add(new PrintProcessedSpectra());
   applications.add(new SearchForXLinks());
   applications.add(new SearchForXLinksMods());
+  applications.add(new ExtractScanNeutralMass());
   applications.add(new PrintVersion());
 
   int ret = applications.main(argc, argv);

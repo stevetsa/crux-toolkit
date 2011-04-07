@@ -173,7 +173,16 @@ void XLinkPeptide::addLinkablePeptides(double min_mass, double max_mass,
   while (modified_peptides_iterator_has_next(peptide_iterator)) {
     PEPTIDE_T* peptide = modified_peptides_iterator_next(peptide_iterator);
     vector<int> link_sites;
+    /*
+    char* seq= get_peptide_modified_sequence_with_masses(peptide, FALSE);
+
+    cerr <<"Finding sites for :"<<seq<<":";
+
+    free(seq);
+    */
     XLinkablePeptide::findLinkSites(peptide, bondmap, link_sites);
+
+    //cerr << link_sites.size() << endl;
 
     if (link_sites.size() > 0) {
       XLinkablePeptide xlinkable_peptide(peptide, link_sites);
@@ -231,6 +240,9 @@ void XLinkPeptide::addCandidates(
       cur_aa_mods = this_aa_mods;
     }
     //carp(CARP_INFO,"Calling addLinkablePeptides:%d",mod_idx);
+
+    //carp(CARP_INFO,"max mass-linker_mass:%f", (max_mass-linker_mass_));
+
     addLinkablePeptides(0, max_mass-linker_mass_, index, database,
 			peptide_mod, FALSE, bondmap, linkable_peptides);
     //carp(CARP_INFO,"Done calling addLinkablePeptides:%d",mod_idx);
@@ -252,6 +264,7 @@ void XLinkPeptide::addCandidates(
     cerr <<linkable_peptides[idx].getMass()<<" "
          <<linkable_peptides[idx].getModifiedSequenceString()<<endl;
   }
+  cerr << "======================================="<<endl;
   */
   unsigned int first_idx = 0;
   unsigned int last_idx = linkable_peptides.size()-1;

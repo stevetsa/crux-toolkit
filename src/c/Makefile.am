@@ -57,6 +57,8 @@ LIBFILES= \
   DelimitedFileReader.h \
   DelimitedFileWriter.cpp \
   DelimitedFileWriter.h \
+  ExtractScanNeutralMass.cpp \
+  ExtractScanNeutralMass.h \
   FilteredSpectrumChargeIterator.cpp \
   FilteredSpectrumChargeIterator.h \
   generate_peptides_iterator.cpp \

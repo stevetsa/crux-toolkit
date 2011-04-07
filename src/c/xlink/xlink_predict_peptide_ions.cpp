@@ -11,6 +11,23 @@
 #define NUM_OPTIONS 4
 using namespace std;
 
+int modified_aa_string_length(
+  MODIFIED_AA_T* aa_string) {
+
+  if (aa_string == NULL) {
+    return 0;
+  }
+
+  int ans = 0;
+
+  while (aa_string[ans] != MOD_SEQ_NULL) {
+    ans++;
+  }
+
+  return ans;
+}
+
+
 int main(int argc, char** argv) {
 
   char* peptideA = NULL;
@@ -26,13 +43,15 @@ int main(int argc, char** argv) {
   set_verbosity_level(CARP_ERROR);
   
   /* Define optional command line arguments */
-  int num_options = NUM_OPTIONS;
-  const char* option_list[NUM_OPTIONS] = {
+  
+  const char* option_list[] = {
     "verbosity",
     "version",
     "xcorr-use-flanks",
-    "print-theoretical-spectrum"
+    "print-theoretical-spectrum",
+    "parameter-file"
   };
+  int num_options = sizeof(option_list) / sizeof(char*);
 
   /* Define required command line arguments */
   int num_arguments = NUM_ARGUMENTS;
@@ -79,7 +98,25 @@ int main(int argc, char** argv) {
 
   MatchCandidate* linked_peptide = NULL;
 
-  cout <<"creating peptide"<<endl;
+  cerr <<"creating peptide"<<endl;
+
+  cerr <<"Converting peptideA to MOD_AA"<<endl;
+
+  MODIFIED_AA_T* mod_seqA = NULL;
+
+  int len = strlen(peptideA);
+
+  convert_to_mod_aa_seq(peptideA, &mod_seqA);
+
+  cerr<<"Length of modified string:"<<modified_aa_string_length(mod_seqA)<<endl;
+
+  //convert back.
+  
+  char* temp = 
+    modified_aa_string_to_string_with_masses(mod_seqA, modified_aa_string_length(mod_seqA), FALSE);
+
+  cerr <<"orig:"<<peptideA<<":"<<len<<" convert:"<<temp<<":"<<strlen(temp)<<endl;
+
 
   if (string(peptideB) == string("NULL")) {
     if (posA == -1 || posB == -1) {
@@ -94,12 +131,12 @@ int main(int argc, char** argv) {
     linked_peptide = new XLinkPeptide(peptideA, peptideB, posA-1, posB-1);
   }
 
-  cout << "Printing stuff"<<endl;
-  cout << "precursor: " << linked_peptide -> getSequenceString() << endl;
-  cout << "mass:" << linked_peptide -> getMass(MONO)<<" "<< linked_peptide -> getMass(AVERAGE) <<endl;;
-  cout << "charge:" << charge << endl;
-  cout << "link mass:"<< linker_mass << endl;
-  cout << "print_spectrum:"<< print_spectrum << endl;
+  cerr << "Printing stuff"<<endl;
+  cerr << "precursor: " << linked_peptide -> getSequenceString() << endl;
+  cerr << "mass:" << linked_peptide -> getMass(MONO)<<" "<< linked_peptide -> getMass(AVERAGE) <<endl;;
+  cerr << "charge:" << charge << endl;
+  cerr << "link mass:"<< linker_mass << endl;
+  cerr << "print_spectrum:"<< print_spectrum << endl;
 
   int max_charge = min(get_max_ion_charge_parameter("max-ion-charge"), charge);
 
@@ -108,6 +145,13 @@ int main(int argc, char** argv) {
   IonSeries* ion_series = new IonSeries(ion_constraint, charge);
 
   linked_peptide->predictIons(ion_series, charge);
+
+  cout << "mz\t" 
+       << "mass\t"
+       << "charge\t"
+       << "cleavage idx\t"
+       << "sequence\t"
+       << "ion type" << endl;
 
   for (IonIterator ion_iter = ion_series->begin();
     ion_iter != ion_series->end();
@@ -119,11 +163,27 @@ int main(int argc, char** argv) {
     int charge = ion->getCharge();
     string sequence = linked_peptide->getIonSequence(ion);
     int cleavage_idx = ion->getCleavageIdx();
+    ION_TYPE_T ion_type = ion->getType();
+
+    string ion_type_string = "";
+    switch (ion_type) {
+      case B_ION:
+        ion_type_string = "b";
+        break;
+      case Y_ION:
+        ion_type_string = "y";
+        break;
+      default:
+        ion_type_string = "u";
+    }
+  
+
     cout << mz << "\t"
 	 << mass << "\t"
 	 << charge << "\t"
          << cleavage_idx << "\t"
-	 << sequence << endl;
+	 << sequence << "\t" 
+         << ion_type_string << endl;
   }
 
 

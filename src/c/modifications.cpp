@@ -306,7 +306,7 @@ char* modified_aa_string_to_string_with_masses(
   int precision = get_int_parameter("mod-precision");
   // max total length = #aas + ( #mods * (strlen("[000.,]")+precision) ) + '/0'
   int buffer_size = length + (count * (9 + precision)) + 1;
-  char* return_string = (char*)mymalloc(buffer_size * sizeof(char));
+  char* return_string = (char*)mycalloc(buffer_size,sizeof(char));
   char* return_str_ptr = return_string;
   for(int mod_str_idx = 0; mod_str_idx<length; mod_str_idx++){
 
@@ -316,7 +316,7 @@ char* modified_aa_string_to_string_with_masses(
     return_str_ptr += strlen(cur_mod);
     free(cur_mod);
   }
-
+  //*return_str_ptr = '\0';
   return return_string;
 }
 
@@ -465,7 +465,7 @@ int convert_to_mod_aa_seq(const char* sequence, MODIFIED_AA_T** mod_sequence){
   } // next character in given sequence
 
   // null terminate
-  new_sequence[seq_idx] = MOD_SEQ_NULL;
+  new_sequence[mod_idx] = MOD_SEQ_NULL;
 
   //  return new_sequence;
   *mod_sequence = new_sequence;

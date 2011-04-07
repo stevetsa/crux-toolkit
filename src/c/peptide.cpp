@@ -959,6 +959,7 @@ FLOAT_T calc_modified_peptide_mass(
   ) {
 
   if (peptide->modified_seq == NULL) {
+    carp(CARP_DETAILED_DEBUG,"Peptide not modified return sequence mass");
     return calc_peptide_mass(peptide, mass_type);
   }
 
