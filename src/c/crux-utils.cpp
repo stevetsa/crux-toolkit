@@ -261,6 +261,49 @@ char* rtp_type_to_string(RTP_TYPE_T type) {
 
 
 
+/**
+ * The string version of column types
+ */ 
+static const char* column_type_strings[NUMBER_COLTYPES] =
+  {"invalid", "int", "real", "string"};
+
+COLTYPE_T string_to_column_type(char* name) {
+  int coltype_int = convert_enum_type_str(
+    name, 
+    -10,
+    column_type_strings,
+    NUMBER_COLTYPES);
+
+  if (coltype_int < 0) {
+    coltype_int = 0;
+  }
+
+  return (COLTYPE_T)coltype_int;
+
+}
+
+/**
+ * The string version of comparison types
+ */
+static const char* comparison_type_strings[NUMBER_COMPARISONS] =
+  {"invalid", "lt", "lte", "eq", "gte", "gt", "neq"};
+
+COMPARISON_T string_to_comparison(char* name) {
+  int comparison_int = convert_enum_type_str(
+    name,
+    -10,
+    comparison_type_strings,
+    NUMBER_COMPARISONS);
+
+  if (comparison_int < 0) {
+    comparison_int = 0;
+  }
+
+  return (COMPARISON_T)comparison_int;
+  
+}
+
+
 
 /**
  * The string version of peptide cleavage type
