@@ -1291,14 +1291,11 @@ int Barista :: set_command_line_options(int argc, char *argv[])
 	      arg++;
 	      output_directory = argv[arg];
 	      cout << "output_directory: " << output_directory << endl;
-	      sqtp.set_decoy_prefix(decoy_prefix);
+	      sqtp.set_decoy_prefix(output_directory);
 	    }
 	}
       else
-	{
-	  break;
-	  
-	}
+	break;
       arg++;
     }
   if(argc-arg < 3)

@@ -1047,11 +1047,15 @@ int SQTParser :: set_input_sources(string &db_source, string &sqt_source, string
   DIR *dp;
   struct dirent *dirp;
 
-  if(db_source.find("fasta") != string :: npos)
-    db_file_names.push_back(db_source);
-  else if(db_source.find(".txt") != string :: npos)
-    read_list_of_files(db_source, db_file_names);
-  else
+  int intStat;
+  struct stat stFileInfo;
+  intStat = stat(db_source.c_str(), &stFileInfo);
+  if(intStat != 0)
+    {
+      cout << "file " << db_source << " does not exist" << endl;
+      return 0;
+    }
+  if((stFileInfo.st_mode & S_IFMT) == S_IFDIR)
     {
       if((dp  = opendir(db_source.c_str())) == NULL)
 	{
@@ -1079,30 +1083,23 @@ int SQTParser :: set_input_sources(string &db_source, string &sqt_source, string
 	  return 0;
 	}
     }
-    
-  if(db_source.find("sqt") != string :: npos)
-    {
-      sqt_file_names.push_back(sqt_source);
-      if(ms2_source.find("ms2") == string::npos)
-	{
-	  cout << "expecting ms2 file to accompany the sqt file\n";
-	  return 0;
-	}
-      ms2_file_names.push_back(ms2_source);
-    }
-  else if(db_source.find(".txt") != string :: npos)
-    {
-      read_list_of_files(sqt_source, sqt_file_names);
-      read_list_of_files(ms2_source, ms2_file_names);
-      if(ms2_file_names.size() != sqt_file_names.size())
-	{
-	  cout << " the number of sqt and ms2 files does not match: each sqt file should be accompaned by ms2 file" << endl;
-	  return 0;
-	}
-    }
   else
     {
-      if((dp  = opendir(sqt_source.c_str())) == NULL)
+      if(db_source.find("fasta") != string :: npos)
+	db_file_names.push_back(db_source);
+      else 
+	read_list_of_files(db_source, db_file_names);
+    }
+ 
+  intStat = stat(sqt_source.c_str(), &stFileInfo);
+  if(intStat != 0)
+    {
+      cout << "file " << sqt_source << " does not exist" << endl;
+      return 0;
+    }
+  if((stFileInfo.st_mode & S_IFMT) == S_IFDIR)
+    {
+            if((dp  = opendir(sqt_source.c_str())) == NULL)
 	{
 	  cout << "reading files in directory " << sqt_source  << " failed " << endl;
 	  return 0;
@@ -1134,6 +1131,28 @@ int SQTParser :: set_input_sources(string &db_source, string &sqt_source, string
 	  return 0;
 	}
     }
+  else
+    {
+      if(sqt_source.find("sqt") != string :: npos)
+	{
+	  sqt_file_names.push_back(sqt_source);
+	  if(ms2_source.find("ms2") == string::npos)
+	    {
+	      cout << "expecting ms2 file to accompany the sqt file\n";
+	      return 0;
+	    }
+	  ms2_file_names.push_back(ms2_source);
+	}
+      else 
+	{
+	  read_list_of_files(sqt_source, sqt_file_names);
+	  read_list_of_files(ms2_source, ms2_file_names);
+	  if(ms2_file_names.size() != sqt_file_names.size())
+	    {
+	      cout << " the number of sqt and ms2 files does not match: each sqt file should be accompaned by ms2 file" << endl;
+	      return 0;
+	    }
+	}
 
 
   return 1;
