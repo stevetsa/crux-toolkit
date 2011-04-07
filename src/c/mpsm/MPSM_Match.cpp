@@ -203,18 +203,12 @@ void MPSM_Match::setRTime(int match_idx, FLOAT_T rtime) {
 
 void MPSM_Match::invalidate() {
 
-  xcorr_score_valid_ = false;
   zstate_valid_ = false;
-  /*
-  for (int idx=0;idx < numMatches();idx++) {
-    if (rtimes.size() <= idx) {
-      rtimes.push_back(0);
-      has_rtime.push_back(false);
-    } else {
-      has_rtime[idx] = false;
-    }
+
+  for (int idx=0;idx < NUMBER_SCORER_TYPES;idx++) {
+    have_match_score_[idx] = false;
+    have_match_rank_[idx] = false;
   }
-  */
 }
 
 
@@ -287,29 +281,48 @@ int MPSM_Match::getCharge(int match_idx) {
 
 FLOAT_T MPSM_Match::getScore(SCORER_TYPE_T match_mode) {
 
-  if (match_mode == XCORR) {
-    if (!xcorr_score_valid_) {
-      FLOAT_T score = MPSM_Scorer::score(*this, XCORR);
-      setScore(match_mode, score);
-      return score;
-    } else {
-      return xcorr_score_;
-    }
-  } else {
-    return MPSM_Scorer::score(*this, match_mode);
+  if (!have_match_score_[match_mode]) {
+
+    setScore(match_mode, MPSM_Scorer::score(*this, XCORR));
   }
+
+  return match_scores_[match_mode];
+}
+
+FLOAT_T MPSM_Match::getScoreConst(SCORER_TYPE_T match_mode) const {
+
+  if (!have_match_score_[match_mode]) {
+    carp(CARP_FATAL," Dont have score for %d",(int)match_mode);
+  }
+
+  return match_scores_[match_mode];
+
 }
 
 void MPSM_Match::setScore(SCORER_TYPE_T match_mode, FLOAT_T score) {
 
-  if (match_mode != XCORR) {
-    carp(CARP_FATAL,"Score type not implemented for mpsms!");
-  }
-
-  xcorr_score_ = score;
-  xcorr_score_valid_ = true;
+  match_scores_[match_mode] = score;
+  have_match_score_[match_mode] = true;
 
 }
+
+
+void MPSM_Match::setRank(SCORER_TYPE_T match_mode, int rank) {
+  
+  match_rank_[match_mode] = rank; 
+  have_match_rank_[match_mode] = true;
+}
+
+int MPSM_Match::getRank(SCORER_TYPE_T match_mode) {
+  if (!have_match_rank_[match_mode]) {
+
+    carp(CARP_FATAL,"Don't have match rank for %d!",(int)match_mode);
+
+  }
+
+  return match_rank_[match_mode];
+}
+
 
 void MPSM_Match::getSpectrumNeutralMasses(vector<FLOAT_T>& neutral_masses) {
 
@@ -448,18 +461,6 @@ double MPSM_Match::getSpectrumRTime() {
 
 double MPSM_Match::getPredictedRTime() {
   return (parent_ -> getPredictedRTime(*this));
-}
-
-void MPSM_Match::setXCorrRank(int xcorr_rank) {
-  xcorr_rank_ = xcorr_rank;
-}
-
-int MPSM_Match::getXCorrRank() {
-  if (numMatches() == 1) {
-    return get_match_rank(getMatch(0), XCORR);
-  } else {
-    return xcorr_rank_;
-  }
 }
 
 string MPSM_Match::getSRankString() {
@@ -617,7 +618,7 @@ ostream& operator <<(ostream& os, MPSM_Match& match_obj) {
   if (get_boolean_parameter("mpsm-do-sort")) {
     xcorr_score = match_obj.getScore(XCORR);
   } else {
-    xcorr_score = match_obj.xcorr_score_;
+    xcorr_score = 0;//match_obj.xcorr_score_;
   }
   //int xcorr_rank = match_obj.getScore(XCORR_RANK);
   
@@ -643,7 +644,7 @@ ostream& operator <<(ostream& os, MPSM_Match& match_obj) {
      /*<< "TODO"*/ << "\t" //sp score
      /*<< "TODO"*/ << "\t" //sp rank
      << xcorr_score << "\t" //xcorr score
-     << match_obj.getXCorrRank() << "\t" //xcorr rank.
+     << match_obj.getRank(XCORR) << "\t" //xcorr rank.
      /*<< "TODO"*/ << "\t" //p-value
      << match_obj.getZScore() << "\t" //Weibull est. q-value
      /*<< "TODO"*/ << "\t" //decoy q-value (xcorr)
@@ -671,7 +672,8 @@ ostream& operator <<(ostream& os, MPSM_Match& match_obj) {
 }
 
 bool compareMPSM_Match(const MPSM_Match& c1, const MPSM_Match& c2) {
-  return c1.xcorr_score_ > c2.xcorr_score_;
+
+  return c1.getScoreConst(sort_mode) > c2.getScoreConst(sort_mode);
 }
 
 

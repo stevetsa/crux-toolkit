@@ -171,16 +171,16 @@ int SearchForMPSMS::main(int argc, char** argv) {
         current_spectrum->getFirstScan());
       carp(CARP_INFO, "Searching for mpsms");
       search(spsm_map, mpsm_map);
-      cerr <<"Calculating xcorr ranks"<<endl;
-      mpsm_map.calcXCorrRanks();
+      cerr <<"Calculating xcorr,sp ranks"<<endl;
+      mpsm_map.calcRanks();
       if (get_boolean_parameter("mpsm-do-sort")) {
         //spsm_map.calcDeltaCN();
         //spsm_map.calcZScores();
         //spsm_map.sortMatches(XCORR);
         cerr<<"Calculating delta cn"<<endl;
-        mpsm_map.calcDeltaCN();
+        //mpsm_map.calcDeltaCN();
         cerr<<"Calculating zscores"<<endl;
-        mpsm_map.calcZScores();
+        //mpsm_map.calcZScores();
         //cerr<<"Calculating xcorr ranks"<<endl;
         
       }
@@ -298,13 +298,13 @@ int SearchForMPSMS::main(int argc, char** argv) {
 
   //process last spectrum.
   search(spsm_map, mpsm_map);
-  mpsm_map.calcXCorrRanks();
+  mpsm_map.calcRanks();
   if (get_boolean_parameter("mpsm-do-sort")) { 
     mpsm_map.sortMatches(XCORR);
   //print out map
   //output the spsms.
-    mpsm_map.calcDeltaCN();
-    mpsm_map.calcZScores();
+    //mpsm_map.calcDeltaCN();
+    //mpsm_map.calcZScores();
   }
   //output_files.writeMatches(spsm_map);
   output_files.writeMatches(mpsm_map);

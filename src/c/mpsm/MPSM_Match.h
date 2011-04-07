@@ -5,7 +5,8 @@
 
 #include "ZStateIndex.h"
 
-
+#include <bitset>
+#include <map>
 #include <vector>
 
 
@@ -19,16 +20,11 @@ class MPSM_Match {
   std::vector<MATCH_T*> matches_; //the matches that the multi-match is from.
 
     
+  FLOAT_T match_scores_[NUMBER_SCORER_TYPES];
+  std::map<SCORER_TYPE_T, int> match_rank_;
+  std::bitset<NUMBER_SCORER_TYPES> have_match_score_;
+  std::bitset<NUMBER_SCORER_TYPES> have_match_rank_;
 
-  FLOAT_T xcorr_score_;
-  int xcorr_rank_;
-  FLOAT_T xcorr_score_valid_;
-    
-
-    /*
-    FLOAT_T match_scores_[_SCORE_TYPE_NUM];
-    bool match_scores_valid_[_SCORE_TYPE_NUM];
-    */
   bool zstate_valid_;
 
   ZStateIndex zstate_index_;
@@ -55,8 +51,12 @@ class MPSM_Match {
 
   double getDeltaCN();
   double getZScore();
-  void setXCorrRank(int xcorr_rank);
-  int getXCorrRank();
+  //void setXCorrRank(int xcorr_rank);
+  //int getXCorrRank();
+
+  void setRank(SCORER_TYPE_T match_mode, int rank);
+  int getRank(SCORER_TYPE_T match_mode);
+
 
   virtual ~MPSM_Match();
 
@@ -117,6 +117,7 @@ class MPSM_Match {
 
     
   FLOAT_T getScore(SCORER_TYPE_T match_mode);
+  FLOAT_T getScoreConst(SCORER_TYPE_T match_mode) const;
   void setScore(SCORER_TYPE_T match_mode, FLOAT_T score);
   void getSpectrumNeutralMasses(std::vector<FLOAT_T>& neutral_masses);
   void getPeptideMasses(std::vector<FLOAT_T>& peptide_masses);

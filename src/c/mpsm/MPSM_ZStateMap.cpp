@@ -197,7 +197,7 @@ void MPSM_ZStateMap::calcZScores() {
   }
 }
 
-void MPSM_ZStateMap::calcXCorrRanks() {
+void MPSM_ZStateMap::calcRanks() {
 
   for (MPSM_ZStateMap::iterator iter = begin();
     iter != end();
@@ -208,7 +208,8 @@ void MPSM_ZStateMap::calcXCorrRanks() {
       collection_idx < match_collections.size();
       collection_idx++) {
 
-      match_collections[collection_idx].calcXCorrRanks();
+      match_collections[collection_idx].calcRanks(SP);
+      match_collections[collection_idx].calcRanks(XCORR);
     }
   }
 }

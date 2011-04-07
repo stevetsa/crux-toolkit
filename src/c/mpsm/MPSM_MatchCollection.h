@@ -53,7 +53,7 @@ public:
   double getSpectrumRTime();
   double getPredictedRTime(MPSM_Match& match);
 
-  void calcXCorrRanks();
+  void calcRanks(SCORER_TYPE_T scorer_type);
 
   bool visited(MPSM_Match& match);
 

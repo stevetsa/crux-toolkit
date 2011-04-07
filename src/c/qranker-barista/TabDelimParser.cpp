@@ -9,18 +9,19 @@
 4. peptide mass    
 5. delta_cn        
 6. sp score        
-7. xcorr score     
-8. xcorr rank      
-9. matches/spectrum        
-10. sequence        
-11. cleavage type   
-12. protein id      
-13. flanking aa     
-14. nzstates        
-15. rtime max diff  
-16. peptides/spectrum       
-17. xcorr sum diff  
-18. xcorr max diff
+7. sp rank
+8. xcorr score     
+9. xcorr rank      
+10. matches/spectrum        
+11. sequence        
+12. cleavage type   
+13. protein id      
+14. flanking aa     
+15. nzstates        
+16. rtime max diff  
+17. peptides/spectrum       
+18. xcorr sum diff  
+19. xcorr max diff
 */
 
 const static int scan_col_idx = 0;
@@ -29,11 +30,12 @@ const static int spectrum_mz_col_idx = 2;
 const static int spectrum_mass_col_idx = 3;
 const static int peptide_mass_col_idx = 4;
 const static int sp_score_col_idx = 6;
-const static int xcorr_score_col_idx = 7;
-const static int matches_spectrum_col_idx = 9;
-const static int sequence_col_idx = 10;
-const static int rtime_max_diff_col_idx = 15;
-const static int max_charge=6;
+const static int sp_rank_col_idx = 7;
+const static int xcorr_score_col_idx = 8;
+const static int matches_spectrum_col_idx = 10;
+const static int sequence_col_idx = 11;
+const static int rtime_max_diff_col_idx = 16;
+const static int max_charge=7;
 
 TabDelimParser :: TabDelimParser() 
   : 	num_mixed_labels(0),     
@@ -146,7 +148,7 @@ void TabDelimParser :: first_pass(ifstream &fin)
 		  pep_ind = pep_to_ind[pep];
 		  string p = ind_to_pep[pep_ind];
 		  if(pep.compare(p) != 0)
-		    cout << "warning : did not find peptide in ind_to_pep_table\n"; 
+		    cout << "warning : did not find peptide "<< pep << " in ind_to_pep_table\n"; 
 		}
 	    }
 	  num_pep_in_all_psms += peptides.size();
@@ -194,7 +196,7 @@ void TabDelimParser :: extract_psm_features(
   //cerr <<"extracting features for psm:"<<psmind<<endl;
   memset(x,0,sizeof(double)*num_features);
 
-  for (int idx=0;idx<tokens.size();idx++) {
+  for (unsigned int idx=0;idx<tokens.size();idx++) {
     //cerr<<"token["<<idx<<"]="<<tokens[idx]<<endl;
   }
 
@@ -203,7 +205,7 @@ void TabDelimParser :: extract_psm_features(
 
   double xcorr = atof(tokens[xcorr_score_col_idx].c_str());
   double sp = atof(tokens[sp_score_col_idx].c_str());
-  double log_sp_rank = 0; //TODO
+  double log_sp_rank = logf(atof(tokens[sp_rank_col_idx].c_str()));
   double by_ion_fraction_matched = 0;
 
   double avg_neutral_mass = 0.0;
@@ -261,7 +263,7 @@ void TabDelimParser :: extract_psm_features(
 
   x[0]  = xcorr;
   x[1]  = sp;
-  //x[2]  = log_sp_rank;
+  x[2]  = log_sp_rank;
   //x[3]  = by_ion_fraction_matched;
   x[4]  = avg_weight_diff;
   x[5]  = max_weight_diff;
@@ -317,23 +319,23 @@ void TabDelimParser :: second_pass(ifstream &fin, int label)
 	  //fill in tables
 
 	  //get the scan
-	  int scan = atoi(tokens[0].c_str());
+	  int scan = atoi(tokens[scan_col_idx].c_str());
 	  psmind_to_scan[psmind] = scan;
 
 	  //get charges
-	  string ch = tokens[1];
+	  string ch = tokens[charge_col_idx];
 	  get_tokens(ch, charge_str,delim2);
 	  for(unsigned int i = 0; i < charge_str.size(); i++)
 	    psmind_to_charge[curr_ofst+i] = atoi(charge_str[i].c_str());
 	  
 	  //get spectrum neutral mass
-	  string neut_mass = tokens[3];
+	  string neut_mass = tokens[spectrum_mass_col_idx];
 	  get_tokens(neut_mass, spectrum_neutral_mass_str,delim2);
 	  for(unsigned int i = 0; i < spectrum_neutral_mass_str.size(); i++)
 	    psmind_to_neutral_mass[curr_ofst+i] = atof(spectrum_neutral_mass_str[i].c_str());
 	  
 	  //get peptide mass
-	  string pep_mass = tokens[4];
+	  string pep_mass = tokens[peptide_mass_col_idx];
 	  get_tokens(pep_mass, peptide_mass_str,delim2);
 	  vector<double> peptide_mass;
 	  peptide_mass.resize(peptide_mass_str.size(),0);
@@ -341,7 +343,7 @@ void TabDelimParser :: second_pass(ifstream &fin, int label)
 	    psmind_to_peptide_mass[curr_ofst+i] = atof(peptide_mass_str[i].c_str());
 		  
 	  //get all peptides
-	  string peps = tokens[10];
+	  string peps = tokens[sequence_col_idx];
 	  get_tokens(peps,peptides,delim2);
 	  for(unsigned int i = 0; i < peptides.size(); i++)
 	    {
@@ -349,7 +351,7 @@ void TabDelimParser :: second_pass(ifstream &fin, int label)
 	      int pep_ind = -1;
 	      //add peptide to pep_to_ind and ind_to_pep maps
 	      if(pep_to_ind.find(pep) == pep_to_ind.end())
-		cout << "warning : did not find peptide in ind_to_pep_table\n"; 
+		cout << "warning : did not find peptide "<< pep<< " in ind_to_pep_table\n"; 
 	      else
 		pep_ind = pep_to_ind[pep];
 	      psmind_to_pepind[curr_ofst+i] = pep_ind;

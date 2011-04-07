@@ -206,6 +206,7 @@ void MatchFileWriter::addColumnNames(COMMAND_T command, bool has_decoys){
     addColumnName(RTIME_MAX_DIFF_COL);
     addColumnName(PEPTIDES_SPECTRUM_COL);
     addColumnName(SP_SCORE_COL);
+    addColumnName(SP_RANK_COL);
     addColumnName(XCORR_SUM_DIFF_COL);
     addColumnName(XCORR_MAX_DIFF_COL);
     addColumnName(MZ1_AREA_RATIO_COL);
@@ -246,6 +247,7 @@ void MatchFileWriter::addColumnNames(COMMAND_T command, bool has_decoys){
   addColumnName(XCORR_SCORE_COL);
   addColumnName(XCORR_RANK_COL);
   addColumnName(SP_SCORE_COL);
+  addColumnName(SP_RANK_COL);
   addColumnName(MATCHES_SPECTRUM_COL);
   addColumnName(SEQUENCE_COL);
   addColumnName(CLEAVAGE_TYPE_COL);

@@ -110,45 +110,43 @@ void MPSM_MatchCollection::calcDeltaCN() {
   }
 }
 
-void MPSM_MatchCollection::calcXCorrRanks() {
-
+void MPSM_MatchCollection::calcRanks(SCORER_TYPE_T scorer_type) {
   if (numMatches() == 0) {
     return;
   }
-  //all single peptide match ranks are already calculated.
-  if (getMatch(0).numMatches() == 1) {
-    getMatch(0).setXCorrRank(1);
-    return;
-  }
-  int top_match = get_int_parameter("mpsm-top-match");
-  if (!get_boolean_parameter("mpsm-do-sort")) {
-    int n = min(numMatches(), top_match);
-    for (int match_idx=0;match_idx < n; match_idx++) {
-      getMatch(match_idx).setXCorrRank(match_idx+1);
+/*
+  else if (getMatch(0).numMatches() == 1) {
+    //all single peptide match ranks are already calculated.
+    for (int idx=0;idx < numMatches();idx++) {
+      int rank = get_match_rank(getMatch(idx).getMatch(0), scorer_type);
+      getMatch(idx).setRank(scorer_type, rank);
     }
-  } else {
+  }*/ else {
+    int top_match = 0;
 
-    sortByScore(XCORR);
+    if (scorer_type == XCORR) {
+      top_match = get_int_parameter("mpsm-top-match");
+    }  
+    sortByScore(scorer_type);
     
     int cur_rank = 1;
-    FLOAT_T cur_score = getMatch(0).getScore(XCORR);
-    getMatch(0).setXCorrRank(cur_rank);
-    for (int match_idx = 1;match_idx < numMatches();match_idx++) {
-      FLOAT_T this_score = getMatch(match_idx).getScore(XCORR);
+    FLOAT_T cur_score = getMatch(0).getScore(scorer_type);
+    getMatch(0).setRank(scorer_type, cur_rank);
+
+    for (int match_idx = 1; match_idx < numMatches();match_idx++) {
+      FLOAT_T this_score = getMatch(match_idx).getScore(scorer_type);
       if (this_score != cur_score) {
         cur_score = this_score;
         cur_rank++;
       }
-      getMatch(match_idx).setXCorrRank(cur_rank);
-      if (cur_rank > top_match) break;
+      getMatch(match_idx).setRank(scorer_type, cur_rank);
+      if ((scorer_type == XCORR) && (cur_rank > top_match)) break;
     }
+
   }
 
-  
-
-
-
 }
+
 
 
 double MPSM_MatchCollection::calcDeltaCNMatch(double xcorr) {

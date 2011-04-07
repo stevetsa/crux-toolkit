@@ -81,7 +81,7 @@ void MPSM_OutputFiles::writeMatches(
 
     MPSM_Match& current_match = mpsm_match_collection.getMatch(match_idx);
     current_match.setParent(&mpsm_match_collection);
-    int rank = current_match.getXCorrRank();
+    int rank = current_match.getRank(XCORR);
     
     
 
@@ -112,13 +112,14 @@ void MPSM_OutputFiles::writeMatch(
   file_ptr->setColumnCurrentRow(SPECTRUM_NEUTRAL_MASS_COL, mpsm_match.getNeutralMassString());
   file_ptr->setColumnCurrentRow(PEPTIDE_MASS_COL, mpsm_match.getPeptideMassString());
   file_ptr->setColumnCurrentRow(XCORR_SCORE_COL, mpsm_match.getScore(XCORR));
-  file_ptr->setColumnCurrentRow(XCORR_RANK_COL, mpsm_match.getXCorrRank());
+  file_ptr->setColumnCurrentRow(XCORR_RANK_COL, mpsm_match.getRank(XCORR));
   file_ptr->setColumnCurrentRow(MATCHES_SPECTRUM_COL, mpsm_match.getMatchesPerSpectrum());
   file_ptr->setColumnCurrentRow(SEQUENCE_COL, mpsm_match.getSequenceString());
   file_ptr->setColumnCurrentRow(NZSTATE_COL, mpsm_match.getSpectrum()->getNumZStates());
   file_ptr->setColumnCurrentRow(RTIME_MAX_DIFF_COL, mpsm_match.getRTimeMaxDiff());
   file_ptr->setColumnCurrentRow(PEPTIDES_SPECTRUM_COL, mpsm_match.numMatches());
   file_ptr->setColumnCurrentRow(SP_SCORE_COL, mpsm_match.getScore(SP));
+  file_ptr->setColumnCurrentRow(SP_RANK_COL, mpsm_match.getRank(SP));
   file_ptr->setColumnCurrentRow(XCORR_SUM_DIFF_COL, mpsm_match.getXCorrSumDiff());
   file_ptr->setColumnCurrentRow(XCORR_MAX_DIFF_COL, mpsm_match.getXCorrMaxDiff());
   file_ptr->setColumnCurrentRow(MZ1_AREA_RATIO_COL, mpsm_match.getAreaRatio());
