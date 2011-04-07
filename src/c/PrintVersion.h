@@ -15,14 +15,39 @@
 class PrintVersion: public CruxApplication {
 
  public:
-
+  /**
+   * \returns a blank PrintVersion object
+   */
   PrintVersion();
+  
+  /**
+   * Destructor
+   */
   ~PrintVersion();
+
+  /**
+   * main method for PrintVersion
+   */
   virtual int main(int argc, char** argv);
+
+  /**
+   * \returns the command name for PrintVersion
+   */
   virtual std::string getName();
+
+  /**
+   * \returns the description for PrintVersion
+   */
   virtual std::string getDescription();
 
 };
 
 
 #endif
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 2
+ * End:
+ */

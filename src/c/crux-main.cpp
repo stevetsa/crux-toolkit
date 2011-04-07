@@ -22,6 +22,9 @@
 #include "SearchForXLinks.h"
 #include "SearchForXLinksMods.h"
 #include "ExtractScanNeutralMass.h"
+#include "ExtractColumns.h"
+#include "SpectralCounts.h"
+#include "ExtractRows.h"
 #include "PrintVersion.h"
 
 /**
@@ -43,7 +46,15 @@ int main(int argc, char** argv){
   applications.add(new SearchForXLinks());
   applications.add(new SearchForXLinksMods());
   applications.add(new ExtractScanNeutralMass());
+  
+  applications.add(new ExtractColumns());
+  applications.add(new ExtractRows());
+  applications.add(new SpectralCounts());
+
   applications.add(new PrintVersion());
+
+
+
 
   int ret = applications.main(argc, argv);
   return ret;

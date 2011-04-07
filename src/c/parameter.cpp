@@ -23,9 +23,10 @@ static const FLOAT_T SMART_MZ_OFFSET = 0.68;
 
 static const char* parameter_type_strings[NUMBER_PARAMETER_TYPES] = { 
   "INT_ARG", "DOUBLE_ARG", "STRING_ARG", "MASS_TYPE_T", "DIGEST_T", 
-  "ENZYME_T", //"PEPTIDE_TYPE_T", 
+  "ENZYME_T", 
   "BOOLEAN_T", "SORT_TYPE_T", "SCORER_TYPE_T", "ION_TYPE_T",
-  "ALGORITHM_TYPE_T", "WINDOW_TYPE_T"};
+  "ALGORITHM_TYPE_T", "WINDOW_TYPE_T", "MEASURE_TYPE_T", 
+  "PARSIMONY_TYPE_T", "QUANT_LEVEL_TYPE_T"};
 
 //one hash for parameter values, one for usage statements, one for types
 // all hashes keyed on parameter/option name
@@ -198,6 +199,27 @@ BOOLEAN_T set_ion_type_parameter(
  const char* filenotes,
  const char* foruser);
 
+BOOLEAN_T set_parsimony_type_parameter(
+  const char* name, ///< the name of the parameter looking for -in
+  PARSIMONY_TYPE_T set_value, ///< the value to be set -in
+  const char* usage, ///< string to print in usage statement
+  const char* filenotes, ///<additional infor for param file
+  const char* foruser); 
+
+BOOLEAN_T set_quant_level_parameter(
+  const char* name, ///< the name of the parameter looking for -in
+  QUANT_LEVEL_TYPE_T set_value, ///< the value to be set -in
+  const char* usage, ///< string to print in usage statement
+  const char* filenotes, ///<additional infor for param file
+  const char* foruser); 
+
+BOOLEAN_T set_measure_type_parameter(
+  const char* name, ///< the name of the parameter looking for -in
+  MEASURE_TYPE_T set_value, ///< the value to be set -in
+  const char* usage, ///< string to print in usage statement
+  const char* filenotes, ///<additional infor for param file
+  const char* foruser);
+ 
 BOOLEAN_T select_cmd_line(  
   const char** option_names, ///< list of options to be allowed for main -in
   int    num_options,  ///< number of optons in that list -in
@@ -730,6 +752,48 @@ void initialize_parameters(void){
       "modifications. Default=0.",
       "Only available for crux-predict-peptide-ions.", "true");
 
+
+  // ***** spectral-counts aguments *****
+  set_string_parameter("input PSMs", NULL,
+       "Name of file in text format which holds match results.",
+       "For quantify to retrieve scores for protein and peptides.",
+       "false");
+  // also uses "protein database"
+
+  // ***** spectral-counts options *****
+   set_string_parameter("input-ms2", NULL,
+       "MS2 file corresponding to the psm file. Required for SIN.",
+       "Available for spectral-counts with measure=SIN.",
+       "true");
+  set_double_parameter("threshold", 0.01, 0, 1, 
+       "The p-value or q-value threshold. Default=0.01.",
+       "Available for spectral-counts.  All PSMs with q-value higher than "
+       "this will be ignored.",
+       "true");
+  set_measure_type_parameter("measure", MEASURE_NSAF,
+       "Type of analysis to make on the match results: (NSAF|SIN|EMPAI). "
+       "Default=NSAF. ", 
+       "Available for spectral-counts.  NSAF is Normalized Spectral "
+       "Abundance Factor, SIN is Spectral Index Normalized and EMPAI is "
+       "Exponentially Modified Protein Abundance Index",
+       "true");
+  set_boolean_parameter("unique-mapping", FALSE,
+       "Ignore peptides with multiple mappings to proteins (T,F). Default=F.",
+       "Available for spectral-counts.",
+       "true");
+  set_quant_level_parameter("quant-level", PROTEIN_QUANT_LEVEL,
+       "Quantification at protein or peptide level (PROTEIN,PEPTIDE). "
+       "Default=PROTEIN.",
+       "Available for spectral-counts and either NSAF and SIN.",
+       "true"); 
+  set_parsimony_type_parameter("parsimony", PARSIMONY_NONE,
+       "Perform parsimony analysis on the proteins and report "
+       "a parsimony rank column in output file. "
+       "Default=none. Can be <string>=none|simple|greedy",
+       "Available for spectral-counts.",
+       "true");
+		       
+
   // ***** static mods *****
   set_double_parameter("A", 0.0, -100, BILLION, 
       "Change the mass of all amino acids 'A' by the given amount.",
@@ -905,6 +969,43 @@ void initialize_parameters(void){
       "Weibull parameters.  Default=4000.",
       "Available for crux search-for-xlinks", "true");
 
+  /* crux-util parameters */
+  set_string_parameter("tsv file", NULL,
+    "Path to a delimited file",
+    "Available for the delimited utility programs", "false");
+
+  set_string_parameter("column names", NULL,
+    "List of column names separated by a comma",
+    "Available for the delimited utility", "false");
+
+  set_string_parameter("column name", NULL,
+    "Name of the column to do the operation on",
+    "Available for the delimited utility programs", "false");
+
+  set_string_parameter("column value", NULL,
+    "value of the column",
+    "Available for the delimited utility programs", "false");
+
+  set_boolean_parameter("header", TRUE,
+    "Print the header line of the tsv file. Default=T.",
+    "Available for crux extract-columns and extract-rows",
+    "true");
+
+  set_string_parameter("column-type","string",
+    "Specifies the data type the column contains "
+    "(int|real|string) Default: string",
+    "Available for crux extract-rows",
+    "true");
+
+  set_string_parameter("comparison", "eq",
+    "Specifies the operator that is used to compare an "
+    "entry in the specified column to the value given "
+    "on the command line.  (eq|gt|gte|lt|lte). "
+    "Default: string-equal.",
+    "Available for crux extract-rows",
+    "true");
+
+  
   // now we have initialized the parameters
   parameter_initialized = TRUE;
   usage_initialized = TRUE;
@@ -1432,6 +1533,14 @@ void check_parameter_consistency(){
     free(val_str);
     update_hash_value(parameters, "missed-cleavages", (void*)"TRUE");
   }
+
+  // spectral counts SIN requires an MS2 file
+  if( get_measure_type_parameter("measure") == MEASURE_SIN ){
+    if( strcmp(get_string_parameter_pointer("input-ms2"), "__NULL_STR") == 0 ){
+      carp(CARP_FATAL, "The SIN computation for spectral-counts requires "
+           "that the --input-ms2 option specify a file.");
+    }
+  }
 }
 
 
@@ -1451,7 +1560,6 @@ BOOLEAN_T check_option_type_and_bounds(const char* name){
   char* max_str = (char*)get_hash_value(max_values, name);
 
   MASS_TYPE_T mass_type;
-  //PEPTIDE_TYPE_T pep_type;
   SORT_TYPE_T sort_type;
   SCORER_TYPE_T scorer_type;
   ALGORITHM_TYPE_T algorithm_type;
@@ -1568,10 +1676,37 @@ BOOLEAN_T check_option_type_and_bounds(const char* name){
               "Must be (mass, mz, ppm)", value_str, name);
     }
     break;
+  case MEASURE_TYPE_P:
+    carp(CARP_DETAILED_DEBUG, "found measure type param, value '%s'",
+	 value_str);
+    if (string_to_measure_type(value_str) == MEASURE_INVALID){
+      success = FALSE;
+      sprintf(die_str, "Illegal measure type '%s' for option '%s'. "
+	      "Must be (NSAF, SIN, EMPAI)", value_str, name);
+    }
+    break;
+  case PARSIMONY_TYPE_P:
+    carp(CARP_DETAILED_DEBUG, "found parsimony type param, value '%s'",
+     value_str);
+    if (string_to_parsimony_type(value_str) == PARSIMONY_INVALID){
+      success = FALSE;
+      sprintf(die_str, "Illegal parsimony type '%s' for option '%s'. "
+	      "Must be (none, simple, greedy)", value_str, name);
+    }
+    break;
+  case QUANT_LEVEL_TYPE_P:
+    carp(CARP_DETAILED_DEBUG, "found quant level type param, value");// '%s'",
+    //	 value_str);
+    if (string_to_quant_level_type(value_str) == QUANT_LEVEL_INVALID){
+      success = FALSE;
+      sprintf(die_str, "Illegal quantitation level type '%s' for option '%s'. "
+	      "Must be (peptide, protein)", value_str, name);
+    }
+    break;
   case NUMBER_PARAMETER_TYPES:
     carp(CARP_FATAL, "Your param type '%s' wasn't found (code %i)", 
         type_str, (int)param_type);
-  }
+  } // end switch
 
   if( ! success ){
     carp(CARP_FATAL, die_str);
@@ -2103,6 +2238,37 @@ WINDOW_TYPE_T get_window_type_parameter(
   return param_value;
 }
 
+PARSIMONY_TYPE_T get_parsimony_type_parameter(
+  const char* name
+  ){
+  char * param_value_str = (char*)get_hash_value(parameters, name);
+  PARSIMONY_TYPE_T param_value =
+    string_to_parsimony_type(param_value_str);
+  
+  return param_value;
+}
+
+QUANT_LEVEL_TYPE_T get_quant_level_type_parameter(
+  const char* name
+  ){
+  char * param_value_str = (char*)get_hash_value(parameters, name);
+  QUANT_LEVEL_TYPE_T param_value =
+    string_to_quant_level_type(param_value_str);
+  
+  return param_value;
+}
+
+
+MEASURE_TYPE_T get_measure_type_parameter(
+  const char* name
+  ){
+  char * param_value_str = (char*)get_hash_value(parameters, name);
+  MEASURE_TYPE_T param_value =
+    string_to_measure_type(param_value_str);
+  
+  return param_value;
+}
+
 int get_max_ion_charge_parameter(
   const char* name
   ){
@@ -2119,7 +2285,6 @@ int get_max_ion_charge_parameter(
     return ans;
   }
 }
-
 
 SORT_TYPE_T get_sort_type_parameter(const char* name){
   char* param_value_str = (char*)get_hash_value(parameters, name);
@@ -2165,11 +2330,27 @@ ION_TYPE_T get_ion_type_parameter(const char* name){
 
   if(!success){
     carp(CARP_FATAL, 
-   "Ion_type parameter %s ahs the value %s which is not of the correct type.",
+   "Ion_type parameter %s has the value %s which is not of the correct type.",
          name, param_value_str);
   }
   return param_value;
 }
+
+COLTYPE_T get_column_type_parameter(const char* name){
+  char* param_value_str = (char*)get_hash_value(parameters, name);
+  COLTYPE_T param_value = string_to_column_type(param_value_str);
+
+  return param_value;
+}
+
+COMPARISON_T get_comparison_parameter(const char* name) {
+  char* param_value_str = (char*)get_hash_value(parameters, name);
+  COMPARISON_T param_value = string_to_comparison(param_value_str);
+
+  return param_value;
+}
+
+
 /**************************************************
  *   SETTERS (private)
  **************************************************
@@ -2430,6 +2611,91 @@ BOOLEAN_T set_window_type_parameter(
   return result;
 
 }
+
+BOOLEAN_T set_measure_type_parameter(
+  const char* name, ///< the name of the parameter looking for -in
+  MEASURE_TYPE_T set_value, ///< the value to be set -in
+  const char* usage, ///< string to print in usage statement
+  const char* filenotes, ///<additional infor for param file
+  const char* foruser 
+  ){
+  BOOLEAN_T result = TRUE;
+
+  // check if parameters can be changed
+  if(!parameter_plasticity){
+    carp(CARP_ERROR, "can't change parameters once they are confirmed");
+    return FALSE;
+  }
+  
+  /* stringify the value */
+  char* value_str = measure_type_to_string(set_value);
+  
+  result = add_or_update_hash(parameters, name, value_str);
+  result = add_or_update_hash(usages, name, usage);
+  result = add_or_update_hash(file_notes, name, filenotes);
+  result = add_or_update_hash(for_users, name, foruser);
+  result = add_or_update_hash(types, name, "MEASURE_TYPE_T");
+  free(value_str);
+  return result;
+  
+}
+
+BOOLEAN_T set_parsimony_type_parameter(
+  const char* name, ///< the name of the parameter looking for -in
+  PARSIMONY_TYPE_T set_value, ///< the value to be set -in
+  const char* usage, ///< string to print in usage statement
+  const char* filenotes, ///<additional infor for param file
+  const char* foruser 
+  ){
+  BOOLEAN_T result = TRUE;
+
+  // check if parameters can be changed
+  if(!parameter_plasticity){
+    carp(CARP_ERROR, "can't change parameters once they are confirmed");
+    return FALSE;
+  }
+  
+  /* stringify the value */
+  char* value_str = parsimony_type_to_string(set_value);
+  
+  result = add_or_update_hash(parameters, name, value_str);
+  result = add_or_update_hash(usages, name, usage);
+  result = add_or_update_hash(file_notes, name, filenotes);
+  result = add_or_update_hash(for_users, name, foruser);
+  result = add_or_update_hash(types, name, "PARSIMONY_TYPE_T");
+  free(value_str);
+  return result;
+  
+}
+
+BOOLEAN_T set_quant_level_parameter(
+  const char* name, ///< the name of the parameter looking for -in
+  QUANT_LEVEL_TYPE_T set_value, ///< the value to be set -in
+  const char* usage, ///< string to print in usage statement
+  const char* filenotes, ///<additional infor for param file
+  const char* foruser 
+  ){
+  BOOLEAN_T result = TRUE;
+
+  // check if parameters can be changed
+  if(!parameter_plasticity){
+    carp(CARP_ERROR, "can't change parameters once they are confirmed");
+    return FALSE;
+  }
+  
+  /* stringify the value */
+  char* value_str = quant_level_type_to_string(set_value);
+  
+  result = add_or_update_hash(parameters, name, value_str);
+  result = add_or_update_hash(usages, name, usage);
+  result = add_or_update_hash(file_notes, name, filenotes);
+  result = add_or_update_hash(for_users, name, foruser);
+  result = add_or_update_hash(types, name, "QUANT_LEVEL_TYPE_T");
+  free(value_str);
+  return result;
+  
+}
+  
 
 BOOLEAN_T set_sort_type_parameter(
   const char* name,

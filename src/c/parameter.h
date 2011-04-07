@@ -78,6 +78,9 @@ enum parameter_type {
   ION_TYPE_P,        ///< parameters of type ION_TYPE_T
   ALGORITHM_TYPE_P,  ///< parameters of type ALGORITHM_TYPE_T
   WINDOW_TYPE_P,     ///< parameters of type WINDOW_TYPE_T
+  MEASURE_TYPE_P,    ///< parameters of type MEASURE_TYPE_T
+  PARSIMONY_TYPE_P,  ///< parameters of type PARSIMONY_TYPE_T
+  QUANT_LEVEL_TYPE_P,///< parameters of type QUANT_LEVEL_TYPE_T
 
   NUMBER_PARAMETER_TYPES  ///< leave this last, number of types
 };
@@ -218,6 +221,18 @@ WINDOW_TYPE_T get_window_type_parameter(
   const char* name
   );
 
+PARSIMONY_TYPE_T get_parsimony_type_parameter(
+  const char* name
+  );
+
+QUANT_LEVEL_TYPE_T get_quant_level_type_parameter(
+  const char* name
+  );
+
+MEASURE_TYPE_T get_measure_type_parameter(
+  const char* name
+  );
+
 int get_max_ion_charge_parameter(
   const char* name
   );
@@ -226,6 +241,13 @@ double get_mz_bin_width();
  
 double get_mz_bin_offset();
 
+COLTYPE_T get_column_type_parameter(
+  const char* name
+  );
+
+COMPARISON_T get_comparison_parameter(
+  const char* name
+  );
 
 /**
  * \brief prints all parameters except mods into the output stream

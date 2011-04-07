@@ -147,6 +147,133 @@ char* window_type_to_string(WINDOW_TYPE_T type){
   return type_str;
 }
 
+/**
+ * The string version of parsimony types
+ */
+static const char* parsimony_type_strings[NUMBER_PARSIMONY_TYPES] =
+  {"invalid", "simple", "greedy", "none"};
+
+PARSIMONY_TYPE_T string_to_parsimony_type(char* name){
+  int parsimony_int = convert_enum_type_str(name, -10,
+					    parsimony_type_strings,
+					    NUMBER_PARSIMONY_TYPES);
+  if ( parsimony_int < 0 ){
+    parsimony_int = 0;
+  }
+
+  return (PARSIMONY_TYPE_T)parsimony_int;
+}
+
+
+char * parsimony_type_to_string(PARSIMONY_TYPE_T type){
+  if ( (int)type > NUMBER_PARSIMONY_TYPES){
+    return NULL;
+  }
+
+  char * type_str = my_copy_string(parsimony_type_strings[type]);
+  
+  return type_str;
+}
+
+
+
+/**
+ * The string version of measure types
+ */
+static const char* measure_type_strings[NUMBER_MEASURE_TYPES] =
+  {"invalid", "SIN", "NSAF", "EMPAI"};
+
+MEASURE_TYPE_T string_to_measure_type(char* name){
+  int measure_int = convert_enum_type_str(name, -10,
+					    measure_type_strings,
+					    NUMBER_PARSIMONY_TYPES);
+  if ( measure_int < 0 ){
+    measure_int = 0;
+  }
+  
+  return (MEASURE_TYPE_T)measure_int;
+}
+
+
+char * measure_type_to_string(MEASURE_TYPE_T type){
+  if ( (int)type > NUMBER_MEASURE_TYPES){
+    return NULL;
+  }
+
+  char * type_str = my_copy_string(measure_type_strings[type]);
+  
+  return type_str;
+}
+
+/**
+ * The string version of quantification level  types
+ */
+static const char* quant_level_type_strings[NUMBER_QUANT_LEVEL_TYPES] =
+  {"invalid", "peptide", "protein"};
+
+QUANT_LEVEL_TYPE_T string_to_quant_level_type(char* name){
+  int quant_int = convert_enum_type_str(name, -10,
+					    quant_level_type_strings,
+					    NUMBER_QUANT_LEVEL_TYPES);
+  if ( quant_int < 0 ){
+    quant_int = 0;
+  }
+  
+  return (QUANT_LEVEL_TYPE_T)quant_int;
+}
+
+
+char * quant_level_type_to_string(QUANT_LEVEL_TYPE_T type){
+  if ( (int)type > NUMBER_QUANT_LEVEL_TYPES){
+    return NULL;
+  }
+
+  char * type_str = my_copy_string(quant_level_type_strings[type]);
+  
+  return type_str;
+}
+
+/**
+ * The string version of column types
+ */ 
+static const char* column_type_strings[NUMBER_COLTYPES] =
+  {"invalid", "int", "real", "string"};
+
+COLTYPE_T string_to_column_type(char* name) {
+  int coltype_int = convert_enum_type_str(
+    name, 
+    -10,
+    column_type_strings,
+    NUMBER_COLTYPES);
+
+  if (coltype_int < 0) {
+    coltype_int = 0;
+  }
+
+  return (COLTYPE_T)coltype_int;
+
+}
+
+/**
+ * The string version of comparison types
+ */
+static const char* comparison_type_strings[NUMBER_COMPARISONS] =
+  {"invalid", "lt", "lte", "eq", "gte", "gt", "neq"};
+
+COMPARISON_T string_to_comparison(char* name) {
+  int comparison_int = convert_enum_type_str(
+    name,
+    -10,
+    comparison_type_strings,
+    NUMBER_COMPARISONS);
+
+  if (comparison_int < 0) {
+    comparison_int = 0;
+  }
+
+  return (COMPARISON_T)comparison_int;
+  
+}
 
 
 
@@ -278,8 +405,8 @@ BOOLEAN_T algorithm_type_to_string(ALGORITHM_TYPE_T type, char* type_str){
 
 static const char* command_type_file_strings[NUMBER_COMMAND_TYPES] =
   { "invalid", "index", "search", "sequest", "qvalues", "percolator", 
-    "qranker", "processed-spectra", "search-for-xlinks", 
-    "search-for-xlinks-mods","version"
+    "spectral-counts","qranker", "processed-spectra", "search-for-xlinks",
+	"search-for-xlinks-mods","version"
   };
 /**
  * Conversion of COMMAND_T to the base filename used for that
@@ -309,7 +436,7 @@ const char* command_type_to_file_string_ptr(COMMAND_T type){
 
 static const char* command_type_command_line_strings[NUMBER_COMMAND_TYPES] =
   { "invalid", "create-index", "search-for-matches", "sequest-search",
-    "compute-q-values", "percolator", "q-ranker", "print-processed-spectra",
+    "compute-q-values", "percolator","spectral-counts", "q-ranker", 
     "search-for-xlinks", "search-for-xlinks-mods", "version"
   };
 /**

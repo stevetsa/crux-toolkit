@@ -59,6 +59,10 @@ LIBFILES= \
   DelimitedFileWriter.h \
   ExtractScanNeutralMass.cpp \
   ExtractScanNeutralMass.h \
+  ExtractColumns.cpp \
+  ExtractColumns.h \
+  ExtractRows.cpp \
+  ExtractRows.h \
   FilteredSpectrumChargeIterator.cpp \
   FilteredSpectrumChargeIterator.h \
   generate_peptides_iterator.cpp \
@@ -141,6 +145,8 @@ LIBFILES= \
   scorer.h \
   sorter.cpp \
   sorter.h \
+  SpectralCounts.cpp \
+  SpectralCounts.h \
   SpectrumCollection.cpp \
   SpectrumCollection.h \
   Spectrum.cpp \
