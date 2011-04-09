@@ -57,9 +57,12 @@ void QRanker :: printNetResults(vector<int> &scores)
 
 void QRanker :: write_results(string filename, NeuralNet &net)
 {
+
+  
   //write out the results of the general net
   ostringstream s1;
   s1 << filename << ".txt";
+  //cout <<"Writing to :"<<s1.str()<<endl;
   ofstream f1(s1.str().c_str());
   trainset.clear();
   testset.clear();
@@ -67,15 +70,27 @@ void QRanker :: write_results(string filename, NeuralNet &net)
   PSMScores::fillFeaturesFull(fullset, d);
   getOverFDR(fullset,net, qvals[4]);
   
+
+  cout <<"HERE"<<endl;
   d.load_psm_data_for_reporting_results();
 
 
-  f1 << "scan" << "\t" << "charge" << "\t" << "spectrum neutral mass" << "\t" << "peptide mass" << "\t" << "q-ranker score" << "\t" << "q-ranker q-value" << "\t" << "peptide sequence" << endl;
+  f1 << "scan" << "\t" 
+     << "charge" << "\t" 
+     << "spectrum neutral mass" << "\t" 
+     << "peptide mass" << "\t" 
+     << "q-ranker score" << "\t" 
+     << "q-ranker q-value" << "\t" 
+     << "sequence" << "\t" 
+     << "target/decoy"<<endl;
+
   for(int i = 0; i < fullset.size(); i++)
     {
+      //cout<<"Writing "<<i<<endl;
       int psmind = fullset[i].psmind;
+      //cout<<"psmind:"<<psmind<<endl;
       int num_pep = d.psmind2num_pep(psmind);
-      
+      //cout<<"num_pep:"<<num_pep<<endl;
       //write scan
       f1 << d.psmind2scan(psmind) << "\t";
       //write charges
@@ -119,10 +134,13 @@ void QRanker :: write_results(string filename, NeuralNet &net)
 	  f1 << ",";
 	  f1 << d.ind2pep(pepinds[k]); 
 	}
+      f1 << "\t" << fullset[i].label;
       f1 << endl;
       
     }
+  //cout<<"Done writing"<<endl;
   f1.close();
+  //cout<<"Done..."<<endl;
 }
 
 
@@ -315,16 +333,16 @@ void QRanker :: write_num_psm_per_spectrum(NeuralNet* max_net)
   
   int count = 5; 
   net = max_net[count];
-  int r = getOverFDR(fullset_max,net, qvals[count]);
+  int r = getOverFDR(fullset,net, qvals[count]);
       
   map<int,set<int> > scan_to_pepinds;
   int cn = 0;
-  for(int i = 0; i < fullset_max.size();i++)
+  for(int i = 0; i < fullset.size();i++)
     {
-      if(fullset_max[i].label == 1)
+      if(fullset[i].label == 1)
 	{
 	  cn++;
-	  int psmind = fullset_max[i].psmind;
+	  int psmind = fullset[i].psmind;
 	  int *pepinds = d.psmind2pepinds(psmind);
 	  int num_pep = d.psmind2num_pep(psmind);
 	  for(int k = 0; k < num_pep; k++)
@@ -615,7 +633,8 @@ void QRanker::train_many_nets()
   ostringstream s2;
   s2 << res_prefix;
   cout << s2.str() << endl;
-  write_results_max(s2.str(),net);
+  write_results(s2.str(),net);
+  //write_results_max(s2.str(),net);
   write_num_psm_per_spectrum(max_net_targ);
 
   delete [] max_net_gen;

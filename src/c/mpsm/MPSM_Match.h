@@ -32,6 +32,10 @@ class MPSM_Match {
     
   FLOAT_T rtime_max_diff_;
 
+  FLOAT_T b_y_ion_matched_;
+  FLOAT_T b_y_ion_possible_;
+  FLOAT_T b_y_ion_fraction_matched_;
+
   /*
   std::vector<bool> has_rtime;
   std::vector<FLOAT_T> rtimes;
@@ -99,6 +103,16 @@ class MPSM_Match {
   std::string getString();
 
   void predictIons(IonSeries* ion_series);
+
+  void setBYIonPossible(int b_y_ion_possible);
+  int getBYIonPossible();
+
+  void setBYIonMatched(int b_y_ion_matched);
+  int getBYIonMatched();
+
+  void setBYIonFractionMatched(FLOAT_T b_y_ion_fraction_matched);
+  FLOAT_T getBYIonFractionMatched();
+
 
   //Accessor functions for writing the match.
   int getFirstScan();

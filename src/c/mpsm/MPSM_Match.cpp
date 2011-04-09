@@ -281,9 +281,9 @@ int MPSM_Match::getCharge(int match_idx) {
 
 FLOAT_T MPSM_Match::getScore(SCORER_TYPE_T match_mode) {
 
-  if (!have_match_score_[match_mode]) {
 
-    setScore(match_mode, MPSM_Scorer::score(*this, XCORR));
+  if (!have_match_score_[match_mode]) {
+    setScore(match_mode, MPSM_Scorer::score(*this, match_mode));
   }
 
   return match_scores_[match_mode];
@@ -321,6 +321,31 @@ int MPSM_Match::getRank(SCORER_TYPE_T match_mode) {
   }
 
   return match_rank_[match_mode];
+}
+
+void MPSM_Match::setBYIonPossible(int b_y_ion_possible) {
+  b_y_ion_possible_ = b_y_ion_possible;
+}
+
+int MPSM_Match::getBYIonPossible() {
+
+  return b_y_ion_possible_;
+}
+
+void MPSM_Match::setBYIonMatched(int b_y_ion_matched) {
+  b_y_ion_matched_ = b_y_ion_matched;
+}
+
+int MPSM_Match::getBYIonMatched() {
+  return b_y_ion_matched_;
+}
+
+void MPSM_Match::setBYIonFractionMatched(FLOAT_T b_y_ion_fraction_matched) {
+  b_y_ion_fraction_matched_ = b_y_ion_fraction_matched;
+}
+
+FLOAT_T MPSM_Match::getBYIonFractionMatched() {
+  return b_y_ion_fraction_matched_;
 }
 
 

@@ -96,6 +96,15 @@ FLOAT_T MPSM_Scorer::calcScore(
 
   FLOAT_T score = score_spectrum_v_ion_series(scorer_, spectrum_, ion_series);
 
+
+  if (scorer_type_ == SP) {
+    mpsm_match.setBYIonPossible(get_scorer_sp_b_y_ion_possible(scorer_));
+    mpsm_match.setBYIonMatched(get_scorer_sp_b_y_ion_matched(scorer_));
+    mpsm_match.setBYIonFractionMatched(get_scorer_sp_b_y_ion_fraction_matched(scorer_));
+  }
+
+  
+
   delete ion_series;
   
   return score;
@@ -125,6 +134,13 @@ FLOAT_T MPSM_Scorer::score(
   createIonSeries(mpsm_match, ion_series);
 
   FLOAT_T score = score_spectrum_v_ion_series(scorer, spectrum, ion_series);
+
+
+  if (match_mode == SP) {
+    mpsm_match.setBYIonPossible(get_scorer_sp_b_y_ion_possible(scorer));
+    mpsm_match.setBYIonMatched(get_scorer_sp_b_y_ion_matched(scorer));
+    mpsm_match.setBYIonFractionMatched(get_scorer_sp_b_y_ion_fraction_matched(scorer));
+  }
 
 
   //clean up.

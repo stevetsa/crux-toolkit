@@ -120,9 +120,12 @@ void MPSM_OutputFiles::writeMatch(
   file_ptr->setColumnCurrentRow(PEPTIDES_SPECTRUM_COL, mpsm_match.numMatches());
   file_ptr->setColumnCurrentRow(SP_SCORE_COL, mpsm_match.getScore(SP));
   file_ptr->setColumnCurrentRow(SP_RANK_COL, mpsm_match.getRank(SP));
+  file_ptr->setColumnCurrentRow(BY_IONS_MATCHED_COL, mpsm_match.getBYIonMatched());
+  file_ptr->setColumnCurrentRow(BY_IONS_TOTAL_COL, mpsm_match.getBYIonPossible());
   file_ptr->setColumnCurrentRow(XCORR_SUM_DIFF_COL, mpsm_match.getXCorrSumDiff());
   file_ptr->setColumnCurrentRow(XCORR_MAX_DIFF_COL, mpsm_match.getXCorrMaxDiff());
   file_ptr->setColumnCurrentRow(MZ1_AREA_RATIO_COL, mpsm_match.getAreaRatio());
+ 
   file_ptr->writeRow();
 
 }

@@ -2,26 +2,29 @@
 
 /******************************/
 /* tokens are
-0. scan
-1. charge
-2. spectrum precursor mz
-3. spectrum neutral mass   
-4. peptide mass    
-5. delta_cn        
-6. sp score        
-7. sp rank
-8. xcorr score     
-9. xcorr rank      
-10. matches/spectrum        
-11. sequence        
-12. cleavage type   
-13. protein id      
-14. flanking aa     
-15. nzstates        
-16. rtime max diff  
-17. peptides/spectrum       
-18. xcorr sum diff  
-19. xcorr max diff
+0       scan
+1       charge
+2       spectrum precursor m/z
+3       spectrum neutral mass
+4       peptide mass
+5       delta_cn
+6       sp score
+7       sp rank
+8       xcorr score
+9       xcorr rank
+10      b/y ions matched
+11      b/y ions total
+12      matches/spectrum
+13      sequence
+14      cleavage type
+15      protein id
+16      flanking aa
+17      nzstates
+18      rtime max diff
+19      peptides/spectrum
+20      xcorr sum diff
+21      xcorr max diff
+22      bullseye min ratioSIN
 */
 
 const static int scan_col_idx = 0;
@@ -32,9 +35,11 @@ const static int peptide_mass_col_idx = 4;
 const static int sp_score_col_idx = 6;
 const static int sp_rank_col_idx = 7;
 const static int xcorr_score_col_idx = 8;
-const static int matches_spectrum_col_idx = 10;
-const static int sequence_col_idx = 11;
-const static int rtime_max_diff_col_idx = 16;
+const static int by_matched_col_idx = 10;
+const static int by_total_col_idx = 11;
+const static int matches_spectrum_col_idx = 12;
+const static int sequence_col_idx = 13;
+const static int rtime_max_diff_col_idx = 18;
 const static int max_charge=7;
 
 TabDelimParser :: TabDelimParser() 
@@ -195,18 +200,28 @@ void TabDelimParser :: extract_psm_features(
   ) {
   //cerr <<"extracting features for psm:"<<psmind<<endl;
   memset(x,0,sizeof(double)*num_features);
-
+  /*
+  cerr << psmind;
   for (unsigned int idx=0;idx<tokens.size();idx++) {
-    //cerr<<"token["<<idx<<"]="<<tokens[idx]<<endl;
+    cerr<<" " << tokens[idx];
   }
-
+  cerr<<endl;
+  */
+  int label = psmind_to_label[psmind];
+  
   int num_sequences = psmind_to_num_pep[psmind];
   int psm_offset = psmind_to_ofst[psmind];
 
   double xcorr = atof(tokens[xcorr_score_col_idx].c_str());
   double sp = atof(tokens[sp_score_col_idx].c_str());
   double log_sp_rank = logf(atof(tokens[sp_rank_col_idx].c_str()));
-  double by_ion_fraction_matched = 0;
+
+  double by_total = atof(tokens[by_total_col_idx].c_str());
+  double by_matched = atof(tokens[by_matched_col_idx].c_str());
+  //cerr<<"by_matched:"<<by_matched<<endl;
+  //cerr<<"by_total:"<<by_total<<endl;
+
+  double by_ion_fraction_matched = by_matched/by_total;
 
   double avg_neutral_mass = 0.0;
   double max_neutral_mass = -1.0;
@@ -253,7 +268,13 @@ void TabDelimParser :: extract_psm_features(
   avg_sequence_length = avg_sequence_length / (double)num_sequences;
 
   double ave_artd = 0; 
-  double max_artd = 0;//fabs(atof(tokens[rtime_max_diff_col_idx].c_str()));
+
+  int col_idx = rtime_max_diff_col_idx;
+  if (label == -1) {
+    col_idx ++;
+  }
+
+  double max_artd = fabs(atof(tokens[col_idx].c_str()));
 
   //cerr<<"Max artd:"<<max_artd<<endl;
 
@@ -264,7 +285,7 @@ void TabDelimParser :: extract_psm_features(
   x[0]  = xcorr;
   x[1]  = sp;
   x[2]  = log_sp_rank;
-  //x[3]  = by_ion_fraction_matched;
+  x[3]  = by_ion_fraction_matched;
   x[4]  = avg_weight_diff;
   x[5]  = max_weight_diff;
   x[6]  = avg_neutral_mass;
@@ -275,14 +296,14 @@ void TabDelimParser :: extract_psm_features(
   x[11] = avg_sequence_length;
   x[12] = max_sequence_length;
   x[13] = num_sequences;
-  //x[14] = ave_artd;
-  x[15] = max_artd;
-  x[16] = (double)charge_count[0]/(double)num_sequences;
-  x[17] = (double)charge_count[1]/(double)num_sequences;
-  x[18] = (double)charge_count[2]/(double)num_sequences;
-  x[19] = (double)charge_count[3]/(double)num_sequences;
-  x[20] = (double)charge_count[4]/(double)num_sequences;
-  x[21] = (double)charge_count[5]/(double)num_sequences;
+  x[14] = ave_artd;
+  x[15] = 0;//max_artd;
+  x[16] = charge_count[0];
+  x[17] = charge_count[1];
+  x[18] = charge_count[2];
+  x[19] = charge_count[3];
+  x[20] = charge_count[4];
+  x[21] = charge_count[5];
 
   /*
   cerr << psmind;

@@ -207,9 +207,12 @@ void MatchFileWriter::addColumnNames(COMMAND_T command, bool has_decoys){
     addColumnName(PEPTIDES_SPECTRUM_COL);
     addColumnName(SP_SCORE_COL);
     addColumnName(SP_RANK_COL);
+    addColumnName(BY_IONS_MATCHED_COL);
+    addColumnName(BY_IONS_TOTAL_COL);
     addColumnName(XCORR_SUM_DIFF_COL);
     addColumnName(XCORR_MAX_DIFF_COL);
     addColumnName(MZ1_AREA_RATIO_COL);
+  
     break;
   case XLINK_SEARCH_COMMAND:
     // TODO: does search-for-xlinks use MatchFileWriter?
@@ -248,6 +251,8 @@ void MatchFileWriter::addColumnNames(COMMAND_T command, bool has_decoys){
   addColumnName(XCORR_RANK_COL);
   addColumnName(SP_SCORE_COL);
   addColumnName(SP_RANK_COL);
+  addColumnName(BY_IONS_MATCHED_COL);
+  addColumnName(BY_IONS_TOTAL_COL);
   addColumnName(MATCHES_SPECTRUM_COL);
   addColumnName(SEQUENCE_COL);
   addColumnName(CLEAVAGE_TYPE_COL);
