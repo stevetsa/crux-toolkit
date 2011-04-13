@@ -249,6 +249,9 @@ void SQTParser :: add_matches_to_tables(sqt_match &m, string &decoy_prefix, int 
 	    }
 	  
 	}
+      //remember the file a psm belongs to
+      psmind_to_fname[num_psm] = cur_fname;
+
        //augment num psms
       num_psm++;
       if (label == 1)
@@ -257,7 +260,6 @@ void SQTParser :: add_matches_to_tables(sqt_match &m, string &decoy_prefix, int 
 	num_neg_psm++;
     }
   num_spectra++;
-
 }
 
 
@@ -461,7 +463,6 @@ void SQTParser :: extract_features(sqt_match &m, string &decoy_prefix, int hits_
 	    }
 
 	  //write out features
-	  x[3] = 0.0;
 	  f_psm.write((char*)x, sizeof(double)*num_features);
 	  f_psm.write((char*)xs, sizeof(double)*num_spec_features);
 
@@ -699,6 +700,14 @@ void SQTParser :: save_data_in_binary(string out_dir)
   f_psmind_to_label.close();
   fname.str("");
 
+  //psmind_to_fname
+  fname << out_dir << "/psmind_to_fname.txt";
+  ofstream f_psmind_to_fname(fname.str().c_str(),ios::binary);
+  for(map<int,string>::iterator it = psmind_to_fname.begin(); it != psmind_to_fname.end(); it++)
+    f_psmind_to_fname << it->first << " " << it->second << "\n";
+  f_psmind_to_fname.close();
+  fname.str("");
+
   //pepind_to_label
   fname << out_dir << "/pepind_to_label.txt";
   ofstream f_pepind_to_label(fname.str().c_str(),ios::binary);
@@ -809,6 +818,11 @@ void SQTParser :: clean_up(string dir)
 
   //psmind_to_label
   fname << out_dir << "/psmind_to_label.txt";
+  remove(fname.str().c_str());
+  fname.str("");
+
+  //psmind_to_fname
+  fname << out_dir << "/psmind_to_fname.txt";
   remove(fname.str().c_str());
   fname.str("");
 
@@ -949,12 +963,12 @@ int SQTParser :: run()
   int num_files_read = 0;
   for(unsigned int i = 0; i < sqt_file_names.size(); i++)
     {
-      string fname = sqt_file_names[i];
-      cout << fname << endl;
-      ifstream f_sqt(fname.c_str());
+      cur_fname = sqt_file_names[i];
+      cout << cur_fname << endl;
+      ifstream f_sqt(cur_fname.c_str());
       if(!f_sqt.is_open())
 	{
-	  cout << "could not open sqt file: " << fname << endl;
+	  cout << "could not open sqt file: " << cur_fname << endl;
 	  continue;
 	}
       //first pass
@@ -984,14 +998,15 @@ int SQTParser :: run()
 	  string ms2_fn = ms2_file_names[i];
 	  //prepare to generate spectrum features
 	  sfg.clear();
-	  sfg.open_ms2_file_for_reading(ms2_fn);
+	  if(!sfg.open_ms2_file_for_reading(ms2_fn))
+	    return 0;
 	  sfg.read_ms2_file();
 	  sfg.initialize_aa_tables();
 	}
       //second pass
       pass = 2;
-      string fname = sqt_file_names[i];
-      ifstream f_sqt(fname.c_str());
+      cur_fname = sqt_file_names[i];
+      ifstream f_sqt(cur_fname.c_str());
       read_sqt_file(f_sqt, decoy_prefix, fhps,e,pass);
       f_sqt.close();
       
@@ -1099,7 +1114,7 @@ int SQTParser :: set_input_sources(string &db_source, string &sqt_source, string
     }
   if((stFileInfo.st_mode & S_IFMT) == S_IFDIR)
     {
-            if((dp  = opendir(sqt_source.c_str())) == NULL)
+      if((dp  = opendir(sqt_source.c_str())) == NULL)
 	{
 	  cout << "reading files in directory " << sqt_source  << " failed " << endl;
 	  return 0;
@@ -1153,8 +1168,8 @@ int SQTParser :: set_input_sources(string &db_source, string &sqt_source, string
 	      return 0;
 	    }
 	}
-
-
+    }  
+    
   return 1;
 }
 

@@ -23,7 +23,11 @@ class Barista : public CruxApplication
 {
  public:
   Barista() 
-    : verbose(0), 
+    : verbose(0),
+    skip_cleanup_flag(0),
+    in_dir(""), 
+    out_dir(""), 
+    fileroot(""), 
     seed(0), 
     selectionfdr(0.01), 
     nepochs(15), 
@@ -41,6 +45,7 @@ class Barista : public CruxApplication
   ~Barista(){delete[] net_clones; net_clones = 0;}
   int set_command_line_options(int argc, char *argv[]);
   void setup_for_training(int trn_to_tst);
+  void setup_for_reporting_results();
   int run();
   int run_tries();
   int run_tries_multi_task();
@@ -65,6 +70,10 @@ class Barista : public CruxApplication
   void write_results_peptides_xml(ofstream &os);
   void write_results_psm_xml(ofstream &os);
   void report_all_results_xml();
+  void write_results_prot_tab(ofstream &os);
+  void write_results_peptides_tab(ofstream &os);
+  void write_results_psm_tab(ofstream &os);
+  void report_all_results_tab();
   void report_prot_fdr_counts(vector<double> &qvals, ofstream &of);
   void report_psm_fdr_counts(vector<double> &qvals, ofstream &of);
   void report_pep_fdr_counts(vector<double> &qvals, ofstream &of);
@@ -89,9 +98,11 @@ class Barista : public CruxApplication
  protected:
   SQTParser sqtp;
   int verbose;
+  int skip_cleanup_flag;
   Dataset d;
   string in_dir;
   string out_dir;
+  string fileroot;
   int seed;
   double selectionfdr;
   int nepochs;

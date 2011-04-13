@@ -672,6 +672,165 @@ void Barista :: report_all_results_xml()
 }
 
 /*************************************************************************/
+void Barista :: write_results_prot_tab(ofstream &os)
+{
+  os << "group number" << "\t" << "q-value" << "\t" << "barista score" << "\t";
+  os << "proteins" << "\t" << "peptides-scan.charge" << endl;
+  int cn = 0;
+  for(int i = 0; i < trainset.size(); i++)
+    {
+      if(trainset[i].label == 1)
+	{
+	  cn++;
+	  //write out proteins
+	  int protind = trainset[i].protind;
+	  os << cn << "\t";
+	  os << trainset[i].q << "\t";
+	  os << trainset[i].score << "\t";
+	  os << d.ind2prot(protind); 
+	  for(unsigned int j = 0; j < trainset[i].subset_protinds.size(); j++)
+	    {
+	      int ind = trainset[i].subset_protinds[j];
+	      if(d.protind2label(ind) == 1)
+		os << "," << d.ind2prot(ind);
+	    }
+	  os << "\t";
+	
+	  //write out peptides
+	  int num_pep = d.protind2num_pep(protind);
+	  int *pepinds = d.protind2pepinds(protind);
+	  //write the first one
+	  int pepind = pepinds[0];
+	  string pep = d.ind2pep(pepind);
+	  string seq, n, c;
+	  get_pep_seq(pep, seq, n, c);
+	  int psmind = pepind_to_max_psmind[pepind];
+	  if(psmind > -1)
+	    os << seq <<  "-" << d.psmind2scan(psmind) << "." << d.psmind2charge(psmind);
+	  else
+	    cout << "waning: did not assign peptide max psmind\n";
+	  for( int j = 1; j < num_pep; j++)
+	    {
+	      pepind = pepinds[j];
+	      pep = d.ind2pep(pepind);
+	      get_pep_seq(pep, seq, n, c);
+	      psmind = pepind_to_max_psmind[pepind];
+	      if(psmind > -1)
+		os << "," << seq <<  "-" << d.psmind2scan(psmind) << "." << d.psmind2charge(psmind);
+	      else
+		cout << "waning: did not assign peptide max psmind\n";
+	    }
+	  os << endl;
+	}
+    }
+
+}
+
+void Barista :: write_results_peptides_tab(ofstream &os)
+{
+  os << "peptide" << "\t" << "q-value" << "/t" << "barista_score" << "/t";
+  os << "spectrum_scan" << "/t" << "spectrum_charge" << endl;
+  int cn = 0;
+  for(int i = 0; i < peptrainset.size(); i++)
+    {
+      if(peptrainset[i].label == 1)
+	{
+	  cn++;
+	  //write out proteins
+	  int pepind = peptrainset[i].pepind;
+	  string pep = d.ind2pep(pepind);
+	  string seq, n, c;
+	  get_pep_seq(pep, seq, n, c);
+	  os << seq << "\t";
+	  os << peptrainset[i].q << "\t";
+	  os << peptrainset[i].score << "\t";
+	  //write out peptides
+	  int psmind = pepind_to_max_psmind[pepind];
+	  if(psmind > -1)
+	    os << d.psmind2scan(psmind) << "\t" << d.psmind2charge(psmind);
+	  else
+	    cout << "waning: did not assign peptide max psmind\n";
+	  os << endl;
+	}
+    }
+}
+
+void Barista :: write_results_psm_tab(ofstream &os)
+{
+  os << "psmind" << "\t" << "q-value" << "\t" << "barista_score" << "\t";
+  os << "charge" << "\t" << "scan" << "\t" << "peptide" << "\t" << "filename" << endl;
+ int cn = 0;
+  for(int i = 0; i < psmtrainset.size(); i++)
+    {
+      if(psmtrainset[i].label == 1)
+	{
+	  cn++;
+	  //write out proteins
+	  int psmind = psmtrainset[i].psmind;
+	  os << psmind << "\t";
+	  os << psmtrainset[i].q << "\t";
+	  os << psmtrainset[i].score << "\t";
+	  os << d.psmind2scan(psmind) << "\t";
+	  os << d.psmind2charge(psmind) << "\t";
+	  int pepind = d.psmind2pepind(psmind);
+	  string pep = d.ind2pep(pepind);
+	  string seq, n,c;
+	  get_pep_seq(pep,seq,n,c);
+	  os << seq << "\t";
+	  os << d.psmind2fname(psmind) << endl;
+	}
+    }
+}
+
+void Barista :: setup_for_reporting_results()
+{
+  d.load_psm_data_for_reporting_results();
+  d.load_prot_data_for_reporting_results();
+
+  trainset.clear();
+  testset.clear();
+  ProtScores::fillProteinsFull(trainset, d);
+  cout << "finished training, making parsimonious protein set\n";
+  trainset.make_meta_set(d);
+  
+  int fdr_trn = getOverFDRProtParsimonious(trainset,max_net_prot,selectionfdr);
+  cout << "total proteins parsimonious at q<" << selectionfdr << ": " << fdr_trn << endl;
+  int fdr_trn_psm = getOverFDRPSM(psmtrainset, max_net_psm, selectionfdr); 
+  cout << "peptides at q< " << selectionfdr << ": " << getOverFDRPep(peptrainset, max_net_pep, selectionfdr) << endl;
+  cout << "psms at q< " << selectionfdr << ": " << fdr_trn_psm << endl;
+
+}
+
+
+void Barista :: report_all_results_tab()
+{
+  setup_for_reporting_results();
+
+  ofstream of;
+  ostringstream fname;
+  fname << out_dir << "/" << fileroot << "barista.target.proteins.txt";
+  of.open(fname.str().c_str());
+  write_results_prot_tab(of);
+  of.close();
+  fname.str("");
+  
+  fname << out_dir << "/" << fileroot << "barista.target.peptides.txt";
+  of.open(fname.str().c_str());
+  write_results_peptides_tab(of);
+  of.close();
+  fname.str("");
+
+  fname << out_dir << "/" << fileroot << "barista.target.psms.txt";
+  of.open(fname.str().c_str());
+  write_results_psm_tab(of);
+  of.close();
+  fname.str("");
+  
+}
+
+
+
+/*************************************************************************/
 void Barista :: report_prot_fdr_counts(vector<double> &qvals, ofstream &of)
 {
   for(unsigned int count = 0; count < qvals.size(); count++)
@@ -1118,12 +1277,9 @@ void Barista :: train_net_multi_task(double selectionfdr, int interval)
 
 void Barista :: setup_for_training(int trn_to_tst)
 {
-  string summary_fn = "summary.txt";
-  string psm_fn = "psm.txt";
-
-  d.load_data(summary_fn, psm_fn);
+  d.load_psm_data_for_training();
   d.normalize_psms();
-  d.load_prot_data();
+  d.load_prot_data_for_training();
   if(trn_to_tst)
     ProtScores::fillProteinsSplit(trainset, testset, d, trn_to_tst);
   else
@@ -1215,10 +1371,8 @@ int Barista :: run_tries()
       net.make_random();
       train_net(selectionfdr, trainset.size());
     }
-    
-  report_all_fdr_counts();
-
-   return 0;
+  
+  return 0;
 
 }
 
@@ -1248,7 +1402,8 @@ int Barista :: run_tries_multi_task()
   train_net_multi_task(selectionfdr, interval);
   
   //report_all_results_xml();
-  report_all_fdr_counts();
+  //report_all_fdr_counts();
+  report_all_results_tab();
 
    return 0;
 
@@ -1262,7 +1417,10 @@ int Barista :: set_command_line_options(int argc, char *argv[])
   string sqt_source;
   string ms2_source;
   string output_directory = "crux-output";
+  string dir_with_tables = "";
+  int found_dir_with_tables = 0;
   int arg = 1;
+  
   while (arg < argc)
     {
       string str = argv[arg];
@@ -1291,30 +1449,88 @@ int Barista :: set_command_line_options(int argc, char *argv[])
 	      arg++;
 	      output_directory = argv[arg];
 	      cout << "output_directory: " << output_directory << endl;
-	      sqtp.set_decoy_prefix(output_directory);
+	      set_output_dir(output_directory);
+	    }
+	  //found fileroot
+	  if(str.find("fileroot") != string::npos)
+	    {
+	      arg++;
+	      fileroot = argv[arg];
+	      cout << "fileroot: " << fileroot << endl;
+	    }
+	  //no cleanup
+	  if(str.find("skip") != string::npos)
+	    {
+	      arg++;
+	      string opt = argv[arg];
+	      if (opt.compare("T") == 0)
+		{
+		  skip_cleanup_flag = 1;
+		  cout << "will not do cleanup" << endl;
+		}
+	    }
+	  //
+	  if(str.find("dir_with_tables") != string::npos)
+	    {
+	      arg++;
+	      dir_with_tables = argv[arg];
+	      found_dir_with_tables = 1;
+	      cout << "found directory with preprocessed data: " << dir_with_tables << endl;
 	    }
 	}
       else
 	break;
       arg++;
     }
-  if(argc-arg < 3)
-    {
-      cout << "Incorrect input format: to run barista\n barista database-source sqt-file-source ms2-file-source" << endl;
-      return 0;
-    }
-  db_source = argv[arg];
-  arg++;
-  sqt_source = argv[arg];
-  arg++;
-  ms2_source = argv[arg];
-  cout << "database source " << db_source << " sqt source " << sqt_source << " ms2 source " << ms2_source << endl;
-  if(!sqtp.set_input_sources(db_source, sqt_source, ms2_source))
-    return 0;
-  sqtp.set_output_dir(output_directory);
-  set_input_dir(output_directory);
-  set_output_dir(output_directory);
 
+  if(found_dir_with_tables)
+    {
+      DIR *dp;
+      if((dp = opendir(dir_with_tables.c_str())) == NULL)
+	{
+	  cout << " could not open directory " << dir_with_tables << " for reading" << endl;
+	  return 0;
+	}
+      ostringstream fn;
+      fn << dir_with_tables << "/" << "psm.txt";
+      ifstream f_try(fn.str().c_str());
+      if(!f_try.is_open())
+	{
+	  cout << "given directory does not seem to contain preprocessed data" << endl;
+	  return 0;
+	}
+      f_try.close();
+
+
+      sqtp.set_output_dir(dir_with_tables);
+      set_input_dir(dir_with_tables);
+      set_output_dir(output_directory);
+    }
+  else
+    {
+      if(argc-arg < 3)
+	{
+	  cout << "Incorrect input format: to run barista\n barista database-source sqt-file-source ms2-file-source" << endl;
+	  return 0;
+	}
+      db_source = argv[arg];
+      arg++;
+      sqt_source = argv[arg];
+      arg++;
+      ms2_source = argv[arg];
+      cout << "database source " << db_source << " sqt source " << sqt_source << " ms2 source " << ms2_source << endl;
+      if(!sqtp.set_input_sources(db_source, sqt_source, ms2_source))
+	return 0;
+      sqtp.set_output_dir(output_directory);
+      set_input_dir(output_directory);
+      set_output_dir(output_directory);
+      
+      //num of spec features
+      sqtp.set_num_spec_features(7);
+      if(!sqtp.run())
+	return 0;
+      sqtp.clear();
+    }
   return 1;
   
 }
@@ -1323,18 +1539,13 @@ int Barista :: set_command_line_options(int argc, char *argv[])
 
 int Barista::main(int argc, char **argv) {
  //int main(int argc, char **argv){
-  
+    
   if(!set_command_line_options(argc,argv))
     return 0;
-  //num of spec features
-  sqtp.set_num_spec_features(0);
   
-  if(!sqtp.run())
-    return 0;
-  sqtp.clear();
- 
   run_tries_multi_task();
-  sqtp.clean_up(out_dir);
+  if(skip_cleanup_flag != 1)
+    sqtp.clean_up(out_dir);
   
   return 1;
 }   

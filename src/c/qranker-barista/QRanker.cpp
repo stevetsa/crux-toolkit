@@ -481,11 +481,8 @@ int QRanker::run( ) {
   ostringstream res;
   res << out_dir << "/qranker_output";
   res_prefix = res.str();
-  
-  string summary_fn = "summary.txt";
-  string psm_fn = "psm.txt";
-  
-  d.load_psm_data_for_training(summary_fn, psm_fn);
+    
+  d.load_psm_data_for_training();
   d.normalize_psms();
   PSMScores::fillFeaturesSplit(trainset, testset, d, 0.5);
   thresholdset = trainset;

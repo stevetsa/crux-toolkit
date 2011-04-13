@@ -19,8 +19,11 @@ class Dataset
   ~Dataset();
   void load_data();
   void load_data(string &summary_fn, string &psm_fn);
-  void load_psm_data_for_training(string &summary_fn, string &psm_fn);
+  void load_psm_data_for_training();
+  void load_psm_data_for_reporting_results();
   void load_prot_data();
+  void load_prot_data_for_training();
+  void load_prot_data_for_reporting_results();
   
   inline void set_input_dir(string input_dir){in_dir = input_dir;}
   void normalize_psms();
@@ -30,7 +33,8 @@ class Dataset
   inline int psmind2scan(int psmind){return psmind_to_scan[psmind];}
   inline int psmind2charge(int psmind){return psmind_to_charge[psmind];}
   inline int psmind2pepind(int psmind){return psmind_to_pepind[psmind];}
-  inline string ind2pep(int ind){return ind_to_pep[ind];}
+  inline string& psmind2fname(int psmind){return psmind_to_fname[psmind];}
+  inline string& ind2pep(int ind){return ind_to_pep[ind];}
   inline int get_num_psms(){return num_psms;}
   inline int get_num_features(){return num_features;}
 
@@ -42,7 +46,7 @@ class Dataset
   inline int* pepind2protinds(int pepind){return pepind_to_protinds.get_range_indices(pepind);}
 
   inline int get_num_proteins(){return num_prot;}
-  inline string ind2prot(int ind){return ind_to_prot[ind];}
+  inline string& ind2prot(int ind){return ind_to_prot[ind];}
   inline int protind2label(int protind){return protind_to_label[protind];}
   inline int protind2num_pep(int protind){return protind_to_pepinds.get_range_length(protind);}
   inline int* protind2pepinds(int protind){return protind_to_pepinds.get_range_indices(protind);}
@@ -61,6 +65,7 @@ class Dataset
   int *psmind_to_scan;
   int *psmind_to_charge;
   map <int, string> ind_to_pep;
+  map <int, string> psmind_to_fname;
 
 
   int num_pep;

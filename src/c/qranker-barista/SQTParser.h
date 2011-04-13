@@ -155,6 +155,9 @@ class SQTParser{
   vector<string> ms2_file_names;
   vector<string> db_file_names;
 
+  string cur_fname;
+  map<int,string> psmind_to_fname;
+
   ofstream f_psm;
   ofstream f_spec_feat;
   ofstream f_psm_spec_feat;

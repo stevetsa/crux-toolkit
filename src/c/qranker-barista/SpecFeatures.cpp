@@ -20,6 +20,17 @@ void SpecFeaturesGenerator :: clear()
     f_ms2.close();
 }
 
+int SpecFeaturesGenerator :: open_ms2_file_for_reading(string &ms2_filename)
+{
+  f_ms2.open(ms2_filename.c_str());
+  if(!f_ms2.is_open())
+    {
+      cout << "could not open file " << ms2_filename << " for reading" << endl;
+      return 0;
+    }
+  return 1;
+}
+
 void SpecFeaturesGenerator :: save_spec_positions(string &out_dir)
 {
   ostringstream fname;

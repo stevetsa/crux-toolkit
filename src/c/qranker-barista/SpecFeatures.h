@@ -27,7 +27,7 @@ class SpecFeaturesGenerator
   SpecFeaturesGenerator();
   ~SpecFeaturesGenerator();
   void clear();
-  inline void open_ms2_file_for_reading(string &ms2_filename){f_ms2.open(ms2_filename.c_str());}
+  int open_ms2_file_for_reading(string &ms2_filename);
 
   void read_ms2_file();
   void read_spectrum(string &tempstr);
