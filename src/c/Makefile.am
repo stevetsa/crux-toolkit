@@ -95,6 +95,8 @@ LIBFILES= \
   modifications.h \
   modified_peptides_iterator.cpp \
   modified_peptides_iterator.h \
+  Ms2SpectrumCollection.cpp \
+  Ms2SpectrumCollection.h \
   objects.h \
   OutputFiles.cpp \
   OutputFiles.h \
@@ -139,6 +141,8 @@ LIBFILES= \
   SpectralCounts.h \
   SpectrumCollection.cpp \
   SpectrumCollection.h \
+  SpectrumCollectionFactory.cpp \
+  SpectrumCollectionFactory.h \
   Spectrum.cpp \
   Spectrum.h \
   SpectrumZState.cpp \
