@@ -9,9 +9,9 @@
 
 /**
  * Instantiates a SpectrumCollection based on the extension of the
- * given file and the use-mstoolkit option.
+ * given file and the use-mstoolkit and msgf options.
  */
-SpectrumCollection* new_spectrum_collection(const char* filename){
+SpectrumCollection* SpectrumCollectionFactory::create(const char* filename){
 
   // for now, just produces one kind of collection
   Ms2SpectrumCollection* collection = new Ms2SpectrumCollection(filename);

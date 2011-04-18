@@ -92,7 +92,7 @@ int main(int argc, char** argv){
   }
 
   // read ms2 file
-  SpectrumCollection* collection = new_spectrum_collection(ms2_file);
+  SpectrumCollection* collection = SpectrumCollectionFactory::create(ms2_file);
 
   // search for spectrum with correct scan number
   Spectrum* spectrum = collection->getSpectrum(scan_num);

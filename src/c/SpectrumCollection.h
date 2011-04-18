@@ -76,7 +76,7 @@ class SpectrumCollection {
   /**
    * Default destructor.
    */
-  ~SpectrumCollection();
+  virtual ~SpectrumCollection();
 
  
   SpectrumIterator begin();

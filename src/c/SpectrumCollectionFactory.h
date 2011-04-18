@@ -15,8 +15,12 @@
  * Instantiates a SpectrumCollection based on the extension of the
  * given file and the use-mstoolkit option.
  */
-SpectrumCollection* new_spectrum_collection(const char* filename);
+class SpectrumCollectionFactory {
 
+ public:
+  static SpectrumCollection* create(const char* filename);
+
+};
 
 /*
  * Local Variables:

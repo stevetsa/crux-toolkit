@@ -143,7 +143,7 @@ int xlink_search_main(int argc, char** argv) {
 
   carp(CARP_INFO,"Loading Spectra");
   Spectrum* spectrum = new Spectrum();
-  SpectrumCollection* spectra = new_spectrum_collection(ms2_file);
+  SpectrumCollection* spectra = SpectrumCollectionFactory::create(ms2_file);
   spectra->parse();
 
   FilteredSpectrumChargeIterator* spectrum_iterator =

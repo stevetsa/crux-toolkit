@@ -45,7 +45,7 @@ START_TEST (test_create){
   ion_series->predictIons();
 
   //read ms2 file
-  sp_collection = new_spectrum_collection(ms2_file);
+  sp_collection = SpectrumCollectionFactory::create(ms2_file);
   spectrum = new Spectrum();
   
   //search for spectrum with correct scan number

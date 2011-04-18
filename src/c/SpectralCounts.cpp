@@ -351,7 +351,7 @@ void SpectralCounts::getPeptideScores()
 
   // for SIN, parse out spectrum collection from ms2 fiel
   if( measure_ == MEASURE_SIN ){
-    spectra = new_spectrum_collection(get_string_parameter_pointer("input-ms2"));
+    spectra = SpectrumCollectionFactory::create(get_string_parameter_pointer("input-ms2"));
   }
 
   for(set<MATCH_T*>::iterator match_it = matches_.begin();
