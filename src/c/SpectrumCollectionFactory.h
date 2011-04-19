@@ -9,7 +9,6 @@
 #define SPECTRUM_COLLECTION_FACTORY_H
 
 #include "SpectrumCollection.h"
-#include "Ms2SpectrumCollection.h"
 
 /**
  * Instantiates a SpectrumCollection based on the extension of the

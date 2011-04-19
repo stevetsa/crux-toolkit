@@ -91,12 +91,14 @@ LIBFILES= \
   MatchSearch.h \
   match_collection.cpp \
   match_collection.h \
+  MGFSpectrumCollection.cpp \
+  MGFSpectrumCollection.h \
   modifications.cpp \
   modifications.h \
   modified_peptides_iterator.cpp \
   modified_peptides_iterator.h \
-  Ms2SpectrumCollection.cpp \
-  Ms2SpectrumCollection.h \
+  MS2SpectrumCollection.cpp \
+  MS2SpectrumCollection.h \
   objects.h \
   OutputFiles.cpp \
   OutputFiles.h \

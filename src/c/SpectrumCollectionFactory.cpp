@@ -5,16 +5,22 @@
  * \brief Return a SpectrumCollection object of the appropriate
  * derived class.
  */
+#include "parameter.h"
 #include "SpectrumCollectionFactory.h"
-
+#include "MS2SpectrumCollection.h"
+#include "MGFSpectrumCollection.h"
 /**
  * Instantiates a SpectrumCollection based on the extension of the
  * given file and the use-mstoolkit and msgf options.
  */
 SpectrumCollection* SpectrumCollectionFactory::create(const char* filename){
+  SpectrumCollection* collection = NULL;
 
-  // for now, just produces one kind of collection
-  Ms2SpectrumCollection* collection = new Ms2SpectrumCollection(filename);
+  if( has_extension(filename, ".mgf") || get_boolean_parameter("use-mgf") ){
+    collection = new MGFSpectrumCollection(filename);
+  } else {
+    collection = new MS2SpectrumCollection(filename);
+  }
   return collection;
 }
 

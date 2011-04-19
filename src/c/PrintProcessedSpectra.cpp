@@ -10,7 +10,7 @@
  */
 
 #include "PrintProcessedSpectra.h"
-#include "Ms2SpectrumCollection.h"
+#include "MS2SpectrumCollection.h"
 
 using namespace std;
 
@@ -41,8 +41,7 @@ int PrintProcessedSpectra::main(int argc, char** argv) {
   int num_options = sizeof(option_list) / sizeof(char*);
 
   // Define required command line arguments
-  const char* argument_list[] = { "ms2 file", 
-                                              "output file"}; 
+  const char* argument_list[] = { "ms2 file", "output file"}; 
   int num_arguments = sizeof(argument_list) / sizeof(char*);
   
   initialize(argument_list, 
@@ -64,7 +63,7 @@ int PrintProcessedSpectra::main(int argc, char** argv) {
                                          output_dir,
                                          overwrite);
   // open input file
-  Ms2SpectrumCollection* spectra = new Ms2SpectrumCollection(input_ms2_name);
+  MS2SpectrumCollection* spectra = new MS2SpectrumCollection(input_ms2_name);
   if( spectra == NULL ){
     carp(CARP_FATAL, "Could not read spectra from %s.", input_ms2_name);
   }
