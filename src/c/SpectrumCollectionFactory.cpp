@@ -8,6 +8,7 @@
 #include "parameter.h"
 #include "SpectrumCollectionFactory.h"
 #include "MS2SpectrumCollection.h"
+#include "MSToolkitSpectrumCollection.h"
 #include "MGFSpectrumCollection.h"
 /**
  * Instantiates a SpectrumCollection based on the extension of the
@@ -18,6 +19,9 @@ SpectrumCollection* SpectrumCollectionFactory::create(const char* filename){
 
   if( has_extension(filename, ".mgf") || get_boolean_parameter("use-mgf") ){
     collection = new MGFSpectrumCollection(filename);
+  } else if( has_extension(filename, ".mzXML") 
+             || get_boolean_parameter("use-mstoolkit") ) {
+    collection = new MSToolkitSpectrumCollection(filename);
   } else {
     collection = new MS2SpectrumCollection(filename);
   }

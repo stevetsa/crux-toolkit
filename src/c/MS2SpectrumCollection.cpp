@@ -153,7 +153,7 @@ bool MS2SpectrumCollection::getSpectrum(
 /**
  * Parses a single spectrum from a spectrum_collection with first scan
  * number equal to first_scan. Use binary search
- * \returns TRUE if the spectrum with. FALSE is failure.
+ * \returns The spectrum data from file or NULL.
  */
 Spectrum* MS2SpectrumCollection::getSpectrum(
   int first_scan      ///< The first scan of the spectrum to retrieve -in

@@ -99,6 +99,8 @@ LIBFILES= \
   modified_peptides_iterator.h \
   MS2SpectrumCollection.cpp \
   MS2SpectrumCollection.h \
+  MSToolkitSpectrumCollection.cpp \
+  MSToolkitSpectrumCollection.h \
   objects.h \
   OutputFiles.cpp \
   OutputFiles.h \
