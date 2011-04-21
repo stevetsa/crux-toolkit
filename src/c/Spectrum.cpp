@@ -873,28 +873,83 @@ bool Spectrum::parseMstoolkitSpectrum
       zstates_.push_back(zstate);
     }
   } else { // if no charge states detected, decide based on spectrum
-    int charge = choose_charge(precursor_mz_, peaks_);
-
-    // add either +1 or +2, +3
-    
-    if( charge == 1 ){
-      SpectrumZState zstate;
-      zstate.setMZ(precursor_mz_, 1);
-      zstates_.push_back(zstate);
-
-    } else if( charge == 0 ){
-      SpectrumZState zstate;
-      zstate.setMZ(precursor_mz_, 2);
-      zstates_.push_back(zstate);
-      zstate.setMZ(precursor_mz_, 3);
-      zstates_.push_back(zstate);
-    } else {
-      carp(CARP_ERROR, "Could not determine charge state for spectrum %d.", 
-           first_scan_);
-    }
+    setZStates();
   }
 
   return true;
+}
+
+/**
+ * Transfer values from a proteowizard SpectrumInfo object to the
+ * crux spectrum.
+ */
+bool Spectrum::parsePwizSpecInfo(const pwiz::msdata::SpectrumInfo& pwiz_info){
+  // clear any existing values
+  zstates_.clear();
+  ezstates_.clear();
+  free_peak_vector(peaks_);
+  i_lines_v_.clear();
+  d_lines_v_.clear();
+  if( mz_peak_array_ ){ free(mz_peak_array_); }
+
+  // assign new values
+  first_scan_ = pwiz_info.scanNumber;
+  last_scan_ = pwiz_info.scanNumber;
+  total_energy_ = pwiz_info.totalIonCurrent;
+  
+  // get peaks
+  int num_peaks = pwiz_info.data.size();
+  for(int peak_idx = 0; peak_idx < num_peaks; peak_idx++){
+    PEAK_T* peak = new_peak(pwiz_info.data.at(peak_idx).mz,
+                            pwiz_info.data.at(peak_idx).intensity);
+    peaks_.push_back(peak);
+  }
+  has_peaks_ = true;
+
+  // get precursor m/z and charge
+  if( pwiz_info.precursors.size() == 1 ){  
+    precursor_mz_ = pwiz_info.precursors[0].mz;
+    cerr << "charge state for scan " << first_scan_ << " is " << pwiz_info.precursors[0].charge << endl;
+    if( pwiz_info.precursors[0].charge == 0 ){
+      setZStates(); //do choose charge and add +1 or +2,+3
+    } else {
+      cerr << "setting charge as 1" << endl;
+      SpectrumZState zstate;
+      zstate.setMZ(precursor_mz_, pwiz_info.precursors[0].charge);
+      zstates_.push_back(zstate);
+    }
+  } // else what does it mean to have more than one precursor?
+
+  // TODO what do I look up for accurate masses?
+
+  return true;
+}
+
+/**
+ * Add the appropriate ZStates based on the precursor_mz_ and peaks
+ * fields.  Uses choose_charge to select +1 or +2 and +3.
+ */
+void Spectrum::setZStates(){
+
+  int charge = choose_charge(precursor_mz_, peaks_);
+  cerr << "in setZState, choose charge returned " << charge << endl;  
+  // add either +1 or +2, +3
+  
+  if( charge == 1 ){
+    SpectrumZState zstate;
+    zstate.setMZ(precursor_mz_, 1);
+    zstates_.push_back(zstate);
+    
+  } else if( charge == 0 ){
+    SpectrumZState zstate;
+    zstate.setMZ(precursor_mz_, 2);
+    zstates_.push_back(zstate);
+    zstate.setMZ(precursor_mz_, 3);
+    zstates_.push_back(zstate);
+  } else {
+    carp(CARP_ERROR, "Could not determine charge state for spectrum %d.", 
+         first_scan_);
+  }
 }
 
 /**

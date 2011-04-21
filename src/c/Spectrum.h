@@ -14,6 +14,7 @@
 #include "peak.h"
 
 #include "MSToolkit/Spectrum.h"
+#include "pwiz/data/msdata/SpectrumInfo.hpp"
 #include "SpectrumZState.h"
 
 /**
@@ -120,6 +121,12 @@ class Spectrum{
      FLOAT_T location  ///< the location of the peak that has been added -in
      );
 
+  /**
+   * Add the appropriate ZStates based on the precursor_mz_ and peaks
+   * fields.  Uses choose_charge to select +1 or +2 and +3.
+   */
+  void setZStates();
+
  public:
   /**
    * Default constructor.
@@ -221,6 +228,12 @@ class Spectrum{
    */
   bool parseMstoolkitSpectrum(MSToolkit::Spectrum* mst_spectrum, 
                                 const char* filename = NULL);
+
+  /**
+   * Transfer values from a proteowizard SpectrumInfo object to the
+   * crux spectrum.
+   */
+  bool parsePwizSpecInfo(const pwiz::msdata::SpectrumInfo& pwiz_info);
 
   /**
    * Parse the spectrum from the tab-delimited result file
