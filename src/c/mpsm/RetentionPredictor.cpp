@@ -2,6 +2,7 @@
 #include "PalmbaldRetentionPredictor.h"
 #include "KrokhinRetentionPredictor.h"
 #include "AKlammerRetentionPredictor.h"
+#include "AKlammerStaticRetentionPredictor.h"
 
 #include "parameter.h"
 
@@ -64,7 +65,7 @@ RetentionPredictor* RetentionPredictor::createRetentionPredictor() {
       return new PalmbaldRetentionPredictor();
     case RTP_AKLAMMER:
       carp(CARP_DEBUG,"creating aklammer retention predictor");
-      return new AKlammerRetentionPredictor();
+      return new AKlammerStaticRetentionPredictor();
     case RTP_INVALID:
     default:
       carp(CARP_FATAL,"Invalid retention time predictor");

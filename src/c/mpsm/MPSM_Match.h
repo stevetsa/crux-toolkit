@@ -122,6 +122,8 @@ class MPSM_Match {
   std::string getNeutralMassString();
   std::string getSequenceString();
   int getMatchesPerSpectrum();
+  std::string getProteinIdsString();
+
 
   FLOAT_T getXCorrSumDiff();
   FLOAT_T getXCorrMaxDiff();

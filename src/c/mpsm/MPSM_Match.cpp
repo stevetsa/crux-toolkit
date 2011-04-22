@@ -549,6 +549,20 @@ int MPSM_Match::getMatchesPerSpectrum() {
 
 }
 
+string MPSM_Match::getProteinIdsString() {
+
+  vector<string> protein_ids;
+
+  for (int idx=0;idx < matches_.size();idx++) {
+    PEPTIDE_T* peptide = get_match_peptide(matches_[idx]);
+    protein_ids.push_back(get_protein_ids_peptide_locations(peptide));
+    
+
+  }
+  return DelimitedFile::splice(protein_ids,';');
+}
+
+
 FLOAT_T MPSM_Match::getXCorrSumDiff() {
   
   FLOAT_T ans = getScore(XCORR);

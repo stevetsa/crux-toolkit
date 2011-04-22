@@ -28,6 +28,7 @@
 #include "SpectralCounts.h"
 #include "ExtractRows.h"
 #include "PrintVersion.h"
+#include "AssignIonsMPSMSpectrum.h"
 
 /**
  * The starting point for crux.  Prints a general usage statement when
@@ -50,6 +51,8 @@ int main(int argc, char** argv){
   applications.add(new SearchForMPSMS());
   applications.add(new PredictMPSMIons());
   applications.add(new ScoreMPSMSpectrum());
+  applications.add(new AssignIonsMPSMSpectrum());
+
   
   applications.add(new ExtractColumns());
   applications.add(new ExtractRows());

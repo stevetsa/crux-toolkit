@@ -24,7 +24,7 @@ protected:
   double zscore_std_;
   double xcorr_2_;
   bool sorted_;
-
+  SCORER_TYPE_T sort_mode_;
 public:
 
   MPSM_MatchCollection();

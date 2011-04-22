@@ -82,6 +82,9 @@ void QRanker :: write_results(string filename, NeuralNet &net)
      << "q-ranker score" << "\t" 
      << "q-ranker q-value" << "\t" 
      << "sequence" << "\t" 
+     << "rtime max diff" << "\t"
+     << "peptides/spectrum" << "\t"
+     << "nzstates" << "\t"
      << "target/decoy"<<endl;
 
   for(int i = 0; i < fullset.size(); i++)
@@ -134,8 +137,24 @@ void QRanker :: write_results(string filename, NeuralNet &net)
 	  f1 << ",";
 	  f1 << d.ind2pep(pepinds[k]); 
 	}
+
+      //write rtime_max_diff
+      double rtime_max_diff = d.psmind2rtime_max_diff(psmind);
+      f1 << "\t" << rtime_max_diff;
+      
+      //write peptides/spectrum
+      double peptides_spectrum = d.psmind2num_pep(psmind);
+      f1 << "\t" << peptides_spectrum;
+
+      //write nzstates
+      int nzstates = d.psmind2nzstates(psmind);
+      f1 << "\t" << nzstates;
+
+      //write label
       f1 << "\t" << fullset[i].label;
       f1 << endl;
+
+
       
     }
   //cout<<"Done writing"<<endl;

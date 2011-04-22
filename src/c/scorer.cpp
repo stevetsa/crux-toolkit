@@ -115,6 +115,7 @@ struct scorer {
   /// used for xcorr
   FLOAT_T* observed; ///< used for Xcorr: observed spectrum intensity array
   FLOAT_T* theoretical; ///< used for Xcorr: theoretical spectrum intensity array
+  bool use_flanks; ///< used for Xcorr: use flanking peaks in the theoretical spectrum
 };
 
 int ion_counter=0;

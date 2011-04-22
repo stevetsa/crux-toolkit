@@ -11,6 +11,8 @@ Dataset::Dataset()
     psmind_to_charge(0),
     psmind_to_neutral_mass(0),
     psmind_to_peptide_mass(0),
+    psmind_to_rtime_max_diff(0),
+    psmind_to_nzstates(0),
     protind_to_label(0),
     protind_to_num_all_pep(0)
 {
@@ -25,6 +27,8 @@ Dataset::~Dataset()
   delete[] psmind_to_ofst;
   delete[] psmind_to_neutral_mass;
   delete[] psmind_to_peptide_mass;
+  delete[] psmind_to_rtime_max_diff;
+  delete[] psmind_to_nzstates;
   delete[] psmind_to_scan;
   delete[] psmind_to_charge;
   delete[] protind_to_label;
@@ -386,6 +390,23 @@ void Dataset :: load_psm_data_for_reporting_results()
   psmind_to_peptide_mass = new double[num_all_pep_in_psms];
   f_psmind_to_peptide_mass.read((char*)psmind_to_peptide_mass,sizeof(double)*num_all_pep_in_psms);
   f_psmind_to_peptide_mass.close();
+  fname.str("");
+
+
+  //psmind_to_rtime_max_diff
+  fname << in_dir << "/psmind_to_rtime_max_diff.txt";
+  ifstream f_psmind_to_rtime_max_diff(fname.str().c_str(),ios::binary);
+  psmind_to_rtime_max_diff = new double[num_psms];
+  f_psmind_to_rtime_max_diff.read((char*)psmind_to_rtime_max_diff,sizeof(double)*num_psms);
+  f_psmind_to_rtime_max_diff.close();
+  fname.str("");
+
+  //psmind_to_nzstates
+  fname << in_dir << "/psmind_to_nzstates.txt";
+  ifstream f_psmind_to_nzstates(fname.str().c_str(),ios::binary);
+  psmind_to_nzstates = new int[num_psms];
+  f_psmind_to_nzstates.read((char*)psmind_to_nzstates,sizeof(int)*num_psms);
+  f_psmind_to_nzstates.close();
   fname.str("");
 
 

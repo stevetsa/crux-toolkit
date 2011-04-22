@@ -39,6 +39,7 @@ int SearchForMPSMS::main(int argc, char** argv) {
     "precursor-window",
     "precursor-window-type",
     "mpsm-max-peptides",
+    "rtime-predictor",
     "rtime-threshold",
     "rtime-all2-threshold",
     "rtime-all3-threshold",
@@ -173,6 +174,7 @@ int SearchForMPSMS::main(int argc, char** argv) {
       search(spsm_map, mpsm_map);
       cerr <<"Calculating xcorr,sp ranks"<<endl;
       mpsm_map.calcRanks();
+      mpsm_map.sortMatches(XCORR);
       if (get_boolean_parameter("mpsm-do-sort")) {
         //spsm_map.calcDeltaCN();
         //spsm_map.calcZScores();
@@ -422,8 +424,15 @@ bool SearchForMPSMS::extendMatch(
 
 
   bool match_added = false;
-  
-  for (int idx=0;idx < spsm_matches.numMatches();idx++) {
+
+  //spsm_matches.sortByScore(XCORR);
+  int top_n = min(spsm_matches.numMatches(),get_int_parameter("mpsm-top-n"));
+
+  if (top_n < 0) {
+    top_n = spsm_matches.numMatches();
+  }
+
+  for (int idx=0;idx < top_n;idx++) {
 
     MPSM_Match& match_to_add = spsm_matches[idx];
 
@@ -497,8 +506,14 @@ bool SearchForMPSMS::extendChargeMap(
           vector<MPSM_MatchCollection>& spsm_match_collections = map_iter2 -> second;
           MPSM_MatchCollection& spsm_target_match_collection = spsm_match_collections.at(0);
 
+          mpsm_target_match_collection.sortByScore(XCORR);
+          spsm_target_match_collection.sortByScore(XCORR);
+
+          int top_n = min(get_int_parameter("mpsm-top-n"), mpsm_target_match_collection.numMatches());
+          if (top_n < 0) { top_n = mpsm_target_match_collection.numMatches();}
+
           for (int mpsm_idx = 0;
-            mpsm_idx < mpsm_target_match_collection.numMatches();
+            mpsm_idx < top_n;
             mpsm_idx++) {
 
             MPSM_Match& mpsm_match = mpsm_target_match_collection[mpsm_idx];
@@ -516,8 +531,15 @@ bool SearchForMPSMS::extendChargeMap(
               MPSM_MatchCollection& mpsm_decoy_match_collection = mpsm_match_collections.at(decoy_idx);
               MPSM_MatchCollection& spsm_decoy_match_collection = spsm_match_collections.at(decoy_idx);
 
+
+              mpsm_decoy_match_collection.sortByScore(XCORR);
+              spsm_decoy_match_collection.sortByScore(XCORR);
+
+              top_n = min(get_int_parameter("mpsm-top-n"), mpsm_decoy_match_collection.numMatches());
+              if (top_n < 0) { top_n = mpsm_decoy_match_collection.numMatches();}
+
               for (int mpsm_idx = 0;
-                mpsm_idx < mpsm_decoy_match_collection.numMatches();
+                mpsm_idx < top_n;
                 mpsm_idx++) {
 
                 MPSM_Match& mpsm_match = mpsm_decoy_match_collection[mpsm_idx];

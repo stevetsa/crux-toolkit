@@ -39,11 +39,19 @@ class DelimitedFileReader {
   std::vector<std::string> data_; //the current vectorized data.
   std::vector<std::string> column_names_; //the column names.
 
+  char delimiter_; //the delimiter to use.
+
   unsigned int current_row_; //current row count
   bool has_next_;
   bool has_current_;
   bool has_header_;
-  std::fstream* file_ptr_;
+
+  bool owns_stream_;
+
+  //std::fstream* file_ptr_;
+  std::istream* istream_ptr_;
+
+  std::streampos istream_begin_;
 
   std::string file_name_;
 
@@ -52,6 +60,7 @@ class DelimitedFileReader {
 
   bool column_mismatch_warned_;
 
+  void loadData();
 
  public:
   /**
@@ -64,7 +73,8 @@ class DelimitedFileReader {
    * data specified by file_name.
    */  
   DelimitedFileReader(
-    const char *file_name, ///< the path of the file to read 
+    const char *file_name, ///< the path of the file to read
+    char delimiter='\t', ///< the delimiter to use (default tab).
     bool hasHeader=true ///< indicate whether header exists
   );
 
@@ -74,7 +84,13 @@ class DelimitedFileReader {
    */
   DelimitedFileReader(
     const std::string& file_name, ///< the path of the file  to read
+    char delimiter='\t', ///< the delimiter to use (default tab)
     bool hasHeader=true ///< indicates whether header exists
+  );
+
+  DelimitedFileReader(
+    std::istream* istream_ptr, ///< the stream to be read
+    bool hasHeader=true ///<indicates whether header exists
   );
 
   /**

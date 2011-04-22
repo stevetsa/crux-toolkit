@@ -36,6 +36,8 @@ class Dataset
   inline int psmind2num_pep(int psmind){return psmind_to_num_pep[psmind];}
   inline double* psmind2neutral_mass(int psmind){return (psmind_to_neutral_mass+psmind_to_ofst[psmind]);}
   inline double* psmind2peptide_mass(int psmind){return (psmind_to_peptide_mass+psmind_to_ofst[psmind]);}
+  inline double psmind2rtime_max_diff(int psmind){return (psmind_to_rtime_max_diff[psmind]);}
+  inline int psmind2nzstates(int psmind){return (psmind_to_nzstates[psmind]);}
 
   inline string ind2pep(int ind){return ind_to_pep[ind];}
   inline int get_num_psms(){return num_psms;}
@@ -54,6 +56,7 @@ class Dataset
   inline int protind2num_pep(int protind){return protind_to_pepinds.get_range_length(protind);}
   inline int* protind2pepinds(int protind){return protind_to_pepinds.get_range_indices(protind);}
   inline int protind2num_all_pep(int protind){return protind_to_num_all_pep[protind];}
+
   //returns false if not subset, true if yes, subset
   inline bool is_prot_subset(int protind1, int protind2){return protind_to_pepinds.is_subset(protind1, protind2);}
 
@@ -72,6 +75,8 @@ class Dataset
   int *psmind_to_charge;
   double *psmind_to_neutral_mass;
   double *psmind_to_peptide_mass;
+  double *psmind_to_rtime_max_diff;
+  int *psmind_to_nzstates;
   map <int, string> ind_to_pep;
 
 

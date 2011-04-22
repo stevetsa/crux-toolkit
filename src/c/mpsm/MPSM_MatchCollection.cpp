@@ -75,11 +75,12 @@ int MPSM_MatchCollection::numMatches() {
 }
 
 void MPSM_MatchCollection::sortByScore(SCORER_TYPE_T match_mode) {
-  if (sorted_) return;
+  if (sorted_ && sort_mode_ == match_mode) return;
   //sort by score.
   //cerr <<"Scoring"<<endl;
 
   if (matches_.size() == 0) {
+    sort_mode_ = match_mode;
     sorted_ = true;
     return;
   }
@@ -91,6 +92,7 @@ void MPSM_MatchCollection::sortByScore(SCORER_TYPE_T match_mode) {
   //cerr <<"Sorting"<<endl;
   MPSM_Match::sortMatches(matches_, match_mode);
   sorted_ = true;
+  sort_mode_ = match_mode;
   //cerr <<"Done"<<endl;
 }
 

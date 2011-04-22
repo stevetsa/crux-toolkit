@@ -16,10 +16,14 @@ libmpsm_la_SOURCES = \
   RetentionPredictor.h \
   AKlammerRetentionPredictor.cpp \
   AKlammerRetentionPredictor.h \
+  AKlammerStaticRetentionPredictor.cpp \
+  AKlammerStaticRetentionPredictor.h \
   KrokhinRetentionPredictor.h \
   KrokhinRetentionPredictor.cpp \
   PalmbaldRetentionPredictor.cpp \
   PalmbaldRetentionPredictor.h \
+  AssignIonsMPSMSpectrum.h \
+  AssignIonsMPSMSpectrum.cpp \
   ScoreMPSMSpectrum.h \
   ScoreMPSMSpectrum.cpp \
   SearchForMPSMS.h \

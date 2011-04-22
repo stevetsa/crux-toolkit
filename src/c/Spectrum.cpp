@@ -1020,6 +1020,43 @@ PEAK_T* Spectrum::getNearestPeak(
 }
 
 /**
+ * \returns The PEAK_T within 'max' of 'mz' in 'spectrum'
+ * that is the maximum intensity.
+ * NULL if no peak within 'max'
+ * This should lazily create the data structures within the
+ * spectrum object that it needs.
+ */
+PEAK_T* Spectrum::getMaxIntensityPeak(
+  FLOAT_T mz, ///< the mz of the peak to find
+  FLOAT_T max ///< the maximum distance to get intensity -in
+  ) {
+
+  FLOAT_T max_intensity = -BILLION;
+  PEAK_T* peak = NULL;
+  PEAK_T* max_intensity_peak = NULL;
+  int peak_idx;
+
+  for (PeakIterator peak_iter = begin();
+    peak_iter != end();
+    ++peak_iter) {
+
+    PEAK_T* peak = *peak_iter;
+    FLOAT_T peak_mz = get_peak_location(peak);
+    FLOAT_T distance = fabs(mz - peak_mz);
+    FLOAT_T intensity = get_peak_intensity(peak);
+    if ((distance <= max) && (intensity > max_intensity)){
+      max_intensity_peak = peak;
+      max_intensity = intensity;
+    }
+  }
+  return max_intensity_peak;
+
+
+
+}
+
+
+/**
  * Updates num_peaks, min_peak_mz, max_peak_mz, total_energy.
  */
 void Spectrum::updateFields(

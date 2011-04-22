@@ -7,6 +7,9 @@
 
 #include <fstream>
 
+#include <iostream>
+#include <string>
+
 #include "carp.h"
 #include "DelimitedFile.h"
 
@@ -17,7 +20,9 @@ using namespace std;
  */  
 DelimitedFileReader::DelimitedFileReader() {
   num_rows_valid_ = false;
-  file_ptr_ = NULL;
+  istream_ptr_ = NULL;
+  delimiter_ = '\t';
+  owns_stream_ = false;
 }
 
 /**
@@ -26,11 +31,13 @@ DelimitedFileReader::DelimitedFileReader() {
  */  
 DelimitedFileReader::DelimitedFileReader(
   const char *file_name, ///< the path of the file to read 
+  char delimiter, ///< the delimiter to use (default tab)
   bool hasHeader ///< indicate whether header exists
   ){
 
-  file_ptr_ = NULL;
+  istream_ptr_ = NULL;
   num_rows_valid_ = false;
+  delimiter_ = delimiter;
   loadData(file_name, hasHeader);
 }
 
@@ -40,22 +47,42 @@ DelimitedFileReader::DelimitedFileReader(
  */
 DelimitedFileReader::DelimitedFileReader(
     const string& file_name, ///< the path of the file  to read
+    char delimiter, ///< the delimiter to use (default tab)
     bool hasHeader ///< indicates whether header exists
   ){
 
-  file_ptr_ = NULL;
+  istream_ptr_ = NULL;
+  delimiter_ = delimiter;
   loadData(file_name, hasHeader);
 }
+
+/**
+ * \returns a DelimitedFileReader object and loads the tab-delimted
+ * data specified by istream.
+ */
+DelimitedFileReader::DelimitedFileReader(
+    istream* istream_ptr,
+    bool has_header ///< indicated whether header exists
+) {
+
+  istream_ptr_ = istream_ptr;
+  istream_begin_ = istream_ptr->tellg();
+
+  has_header_ = has_header;
+  owns_stream_ = false;
+
+  loadData();
+
+}
+
 
 /**
  * Destructor
  */
 DelimitedFileReader::~DelimitedFileReader() {
 
-  if (file_ptr_ != NULL) {
-
-    file_ptr_ -> close();
-    delete file_ptr_;
+  if (istream_ptr_ != NULL && owns_stream_) {
+    delete istream_ptr_;
   }
 }
 
@@ -67,23 +94,31 @@ unsigned int DelimitedFileReader::numRows() {
   if (!num_rows_valid_) {
 
     num_rows_ = 0;
-    fstream temp_file(file_name_.c_str(), ios::in);
 
-    string temp_string;
 
-    bool has_next = getline(temp_file, temp_string) != NULL;
+    streampos last_pos = istream_ptr_->tellg();
+
+    istream_ptr_->seekg(istream_begin_);
+    
+    string temp_str;
+    bool has_next = getline(*istream_ptr_,temp_str) != NULL;
+
+    //bool has_next = !istream_ptr_->eof();
+
     while (has_next) {
-
       num_rows_++;
-      has_next = getline(temp_file, temp_string) != NULL;      
+      has_next = getline(*istream_ptr_, temp_str) != NULL;
+      //bool has_next = !istream_ptr_->eof();
     }
     
     if (has_header_) {
       num_rows_--;
     }
     num_rows_valid_ = true;
-  }
 
+    istream_ptr_->seekg(last_pos);
+
+  }
   return num_rows_;
 }
  
@@ -103,7 +138,7 @@ string DelimitedFileReader::getAvailableColumnsString() {
   ostringstream oss;
   oss << "Available columns:"<<endl;
   for (unsigned int col_idx=0;col_idx<numCols();col_idx++) {
-    oss << "  " << getColumnName(col_idx) << endl;
+    oss << col_idx << "  " << getColumnName(col_idx) << endl;
   }
 
   string ans = oss.str();
@@ -130,6 +165,41 @@ string DelimitedFileReader::getHeaderString() {
 }
 
 
+void DelimitedFileReader::loadData() {
+
+  if (!istream_ptr_->good()) {
+    carp(CARP_ERROR, "Stream is not good!");
+    carp(CARP_ERROR, "EOF:%i", istream_ptr_ -> eof());
+    carp(CARP_ERROR, "Fail:%i", istream_ptr_ -> fail());
+    carp(CARP_ERROR, "Bad:%i", istream_ptr_ -> bad());
+    carp(CARP_FATAL, "Exiting....");
+  }
+  current_row_ = 0;
+  num_rows_valid_ = false;
+
+  column_names_.clear();
+  column_mismatch_warned_ = false;
+  istream_begin_ = istream_ptr_->tellg(); 
+
+  has_next_ = getline(*istream_ptr_, next_data_string_) != NULL;
+  
+  if (has_header_) {
+    if (has_next_) {
+      DelimitedFile::tokenize(next_data_string_, column_names_, delimiter_);
+      has_next_ = getline(*istream_ptr_, next_data_string_) != NULL;
+    }
+    else {
+      carp(CARP_WARNING,"No data/headers found!");
+      return;
+    }
+  }
+
+  if (has_next_) {
+    next();
+  }
+
+}
+
 /**
  * clears the current data and column names,
  * parses the header if it exists,
@@ -144,33 +214,11 @@ void DelimitedFileReader::loadData(
 
   file_name_ = string(file_name);
   has_header_ = hasHeader;
-  num_rows_valid_ = false;
-  column_names_.clear();
-  file_ptr_ = new fstream(file_name, ios::in);
-  current_row_ = 0;
-  column_mismatch_warned_ = false;
 
-  if (!file_ptr_ -> is_open()) {
-    carp(CARP_ERROR, "Opening %s or reading failed", file_name);
-    return;
-  }
+  istream_ptr_ = new ifstream(file_name, ios::in);
+  owns_stream_ = true;
+  loadData();
 
-  has_next_ = getline(*file_ptr_, next_data_string_) != NULL;
-
-  if (hasHeader) {
-    if (has_next_) {
-      DelimitedFile::tokenize(next_data_string_, column_names_, '\t');
-      has_next_ = getline(*file_ptr_, next_data_string_) != NULL;
-    }
-    else {
-      carp(CARP_WARNING,"No data/headers found!");
-      return;
-    }
-  } 
-
-  if (has_next_) {
-    next();
-  }
 }
 
 /**
@@ -257,7 +305,10 @@ const string& DelimitedFileReader::getString(
   ) {
   int col_idx = findColumn(column_name);
   if (col_idx == -1) {
-    carp(CARP_FATAL, "Cannot find column %s", column_name);
+    carp(CARP_FATAL, "Cannot find column %s\n" 
+                     "Available Columns:%s\n",
+                      column_name, getAvailableColumnsString().c_str());
+
   }
   return getString(col_idx);
 }
@@ -306,7 +357,9 @@ FLOAT_T DelimitedFileReader::getFloat(
   
   int col_idx = findColumn(column_name);
   if (col_idx == -1) {
-    carp(CARP_FATAL, "Cannot find column %s", column_name);
+    carp(CARP_FATAL, "Cannot find column %s\n" 
+                     "Available Columns:%s\n",
+                     column_name, getAvailableColumnsString().c_str());
   }
   return getFloat(col_idx);
 }
@@ -344,7 +397,9 @@ double DelimitedFileReader::getDouble(
 
   int col_idx = findColumn(column_name);
   if (col_idx == -1) {
-    carp(CARP_FATAL, "Cannot find column %s", column_name);
+    carp(CARP_FATAL, "Cannot find column %s\n" 
+                     "Available Columns:%s\n",
+                     column_name, getAvailableColumnsString().c_str());
   }
   return getDouble(col_idx);
 }
@@ -467,12 +522,10 @@ void DelimitedFileReader::getDoubleVectorFromCell(
  * resets the file pointer to the beginning of the file.
  */
 void DelimitedFileReader::reset() {
-
-  if (file_ptr_ != NULL) {
-    file_ptr_ -> close();
-    delete file_ptr_;
-  }
-  loadData(file_name_, has_header_);
+  cerr <<"reset(): setting stream to:"<<istream_begin_<<endl;
+  istream_ptr_->clear();
+  istream_ptr_->seekg(0, ios::beg);
+  loadData();
   
 }
 
@@ -485,7 +538,7 @@ void DelimitedFileReader::next() {
     current_row_++;
     current_data_string_ = next_data_string_;
     //parse next_data_string_ into data_
-    DelimitedFile::tokenize(next_data_string_, data_, '\t');
+    DelimitedFile::tokenize(next_data_string_, data_, delimiter_);
 
     //make sure data has the right number of columns for the header.
     if (data_.size() < column_names_.size()) {
@@ -505,7 +558,7 @@ void DelimitedFileReader::next() {
     }
 
     //read next line
-    has_next_ = getline(*file_ptr_, next_data_string_) != NULL;
+    has_next_ = getline(*istream_ptr_, next_data_string_) != NULL;
     has_current_ = true;
   } else {
     has_current_ = false;

@@ -50,8 +50,8 @@ class TabDelimParser{
   double *psmind_to_peptide_mass;
   //double *psmind_to_xcorr;
   //double *psmind_to_sp;
-  
-
+  double *psmind_to_rtime_max_diff;
+  int *psmind_to_nzstates;
 
   //peptide info
   map<string,int> pep_to_ind;

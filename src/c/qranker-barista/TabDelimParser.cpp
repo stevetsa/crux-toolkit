@@ -39,6 +39,7 @@ const static int by_matched_col_idx = 10;
 const static int by_total_col_idx = 11;
 const static int matches_spectrum_col_idx = 12;
 const static int sequence_col_idx = 13;
+const static int nzstates_col_idx = 17;
 const static int rtime_max_diff_col_idx = 18;
 const static int max_charge=7;
 
@@ -88,6 +89,7 @@ void TabDelimParser :: clear()
   delete[] psmind_to_pepind; psmind_to_pepind = (int*)0;
   delete[] psmind_to_neutral_mass; psmind_to_neutral_mass = (double*)0;
   delete[] psmind_to_peptide_mass; psmind_to_peptide_mass = (double*)0;
+  delete[] psmind_to_rtime_max_diff; psmind_to_rtime_max_diff = (double*)0;
 }
 
 
@@ -185,6 +187,12 @@ void TabDelimParser :: allocate_feature_space()
   psmind_to_peptide_mass = new double[num_pep_in_all_psms];
   memset(psmind_to_peptide_mass,0,sizeof(double)*num_pep_in_all_psms);
 
+  psmind_to_rtime_max_diff = new double[num_psm];
+  memset(psmind_to_rtime_max_diff, 0, sizeof(int)*num_psm);
+
+  psmind_to_nzstates = new int[num_psm];
+  memset(psmind_to_nzstates, 0, sizeof(int)*num_psm);
+
   psmind_to_scan = new int[num_psm];
   memset(psmind_to_scan,0,sizeof(int)*num_psm);
   psmind_to_label = new int[num_psm];
@@ -269,12 +277,8 @@ void TabDelimParser :: extract_psm_features(
 
   double ave_artd = 0; 
 
-  int col_idx = rtime_max_diff_col_idx;
-  if (label == -1) {
-    col_idx ++;
-  }
 
-  double max_artd = fabs(atof(tokens[col_idx].c_str()));
+  double max_artd = fabs(psmind_to_rtime_max_diff[psmind]);//fabs(atof(tokens[col_idx].c_str()));
 
   //cerr<<"Max artd:"<<max_artd<<endl;
 
@@ -342,6 +346,19 @@ void TabDelimParser :: second_pass(ifstream &fin, int label)
 	  //get the scan
 	  int scan = atoi(tokens[scan_col_idx].c_str());
 	  psmind_to_scan[psmind] = scan;
+
+          //get the max_rtime_diff;
+          int col_offset = 0;
+          if (label == -1) {
+            col_offset = 1;
+          }
+
+          double rtime_max_diff = atof(tokens[rtime_max_diff_col_idx+col_offset].c_str());
+          psmind_to_rtime_max_diff[psmind] = rtime_max_diff;
+
+          //get nzstates;
+          int nzstates = atoi(tokens[nzstates_col_idx+col_offset].c_str());
+          psmind_to_nzstates[psmind] = nzstates;
 
 	  //get charges
 	  string ch = tokens[charge_col_idx];
@@ -445,6 +462,20 @@ void TabDelimParser :: save_data_in_binary(string out_dir)
   f_psmind_to_num_pep.close();
   fname.str("");
 
+  //psmind_to_max_rtime_diff
+  fname << out_dir << "/psmind_to_rtime_max_diff.txt";
+  ofstream f_psmind_to_rtime_max_diff(fname.str().c_str(),ios::binary);
+  f_psmind_to_rtime_max_diff.write((char*)psmind_to_rtime_max_diff,sizeof(double)*num_psm);
+  f_psmind_to_rtime_max_diff.close();
+  fname.str("");
+
+  //psmind_to_nzstates
+  fname << out_dir << "/psmind_to_nzstates.txt";
+  ofstream f_psmind_to_nzstates(fname.str().c_str(), ios::binary);
+  f_psmind_to_nzstates.write((char*)psmind_to_nzstates, sizeof(int)*psmind);
+  f_psmind_to_nzstates.close();
+  fname.str("");
+
   //psmind_to_ofst
   fname << out_dir << "/psmind_to_ofst.txt";
   ofstream f_psmind_to_ofst(fname.str().c_str(),ios::binary);
@@ -516,6 +547,16 @@ void TabDelimParser :: clean_up(string dir)
 
   //psmind_to_num_pep
   fname << out_dir << "/psmind_to_ofst.txt";
+  remove(fname.str().c_str());
+  fname.str("");
+
+  //psmind_to_max_rtime_diff
+  fname << out_dir << "/psmind_to_max_rtime_diff.txt";
+  remove(fname.str().c_str());
+  fname.str("");
+
+  //psmind_to_nzstates
+  fname << out_dir << "/psmind_to_nzstates.txt";
   remove(fname.str().c_str());
   fname.str("");
 
