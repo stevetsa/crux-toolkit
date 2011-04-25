@@ -142,7 +142,7 @@ void MPSM_MatchCollection::calcRanks(SCORER_TYPE_T scorer_type) {
         cur_rank++;
       }
       getMatch(match_idx).setRank(scorer_type, cur_rank);
-      if ((scorer_type == XCORR) && (cur_rank > top_match)) break;
+      //if ((scorer_type == XCORR) && (cur_rank > top_match)) break;
     }
 
   }

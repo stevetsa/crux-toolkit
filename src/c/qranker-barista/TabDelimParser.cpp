@@ -39,6 +39,7 @@ const static int by_matched_col_idx = 10;
 const static int by_total_col_idx = 11;
 const static int matches_spectrum_col_idx = 12;
 const static int sequence_col_idx = 13;
+const static int protein_id_col_idx = 15;
 const static int nzstates_col_idx = 17;
 const static int rtime_max_diff_col_idx = 18;
 const static int max_charge=7;
@@ -278,10 +279,11 @@ void TabDelimParser :: extract_psm_features(
   double ave_artd = 0; 
 
 
-  double max_artd = fabs(psmind_to_rtime_max_diff[psmind]);//fabs(atof(tokens[col_idx].c_str()));
+  double max_artd = 0;//fabs(psmind_to_rtime_max_diff[psmind]);//fabs(atof(tokens[col_idx].c_str()));
 
-  //cerr<<"Max artd:"<<max_artd<<endl;
-
+  if (max_artd != 0) {
+    //cerr<<"Max artd:"<<max_artd<<endl;
+  }
   double ln_experiment_size = logf(atof(tokens[matches_spectrum_col_idx].c_str()));
   
   //cerr << "Setting feature values"<<endl;
@@ -301,7 +303,7 @@ void TabDelimParser :: extract_psm_features(
   x[12] = max_sequence_length;
   x[13] = num_sequences;
   x[14] = ave_artd;
-  x[15] = 0;//max_artd;
+  x[15] = max_artd;
   x[16] = charge_count[0];
   x[17] = charge_count[1];
   x[18] = charge_count[2];
@@ -333,6 +335,8 @@ void TabDelimParser :: second_pass(ifstream &fin, int label)
   vector<string> peptide_mass_str;
   string delim1 = "\t";
   string delim2 = ",";
+  int psm_label;
+
   while(!fin.eof())
     {
       getline(fin,line);
@@ -396,8 +400,16 @@ void TabDelimParser :: second_pass(ifstream &fin, int label)
 	    }
 	  psmind_to_num_pep[psmind] = peptides.size();
 	  psmind_to_ofst[psmind] = curr_ofst;
+
+          psm_label = label;
+          string protein_id = tokens[protein_id_col_idx];
+          //cerr <<"Protein id:"<<protein_id<<endl;
+          if (protein_id.find(decoy_prefix) != string::npos) {
+            psm_label = -1;
+          }
+
 	  
-	  psmind_to_label[psmind] = label;
+	  psmind_to_label[psmind] = psm_label;
 
           //extract features
 	  extract_psm_features(psmind, tokens, x);

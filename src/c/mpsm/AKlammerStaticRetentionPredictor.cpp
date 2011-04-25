@@ -19,15 +19,32 @@ AKlammerStaticRetentionPredictor::AKlammerStaticRetentionPredictor() {
 AKlammerStaticRetentionPredictor::~AKlammerStaticRetentionPredictor() {
 }
 
+FLOAT_T AKlammerStaticRetentionPredictor::predictRTimeS(const char* sequence) {
+  return predictRTimeS(sequence, strlen(sequence));
+}
+
+FLOAT_T AKlammerStaticRetentionPredictor::predictRTimeS(const char* sequence, int N) {
+
+  string sequence_str(sequence,N);
+  FLOAT_T mass = calc_sequence_mass(sequence_str.c_str(), MONO);
+  
+  return predictRTimeS(sequence, N, mass);
+
+}
+
 
 FLOAT_T AKlammerStaticRetentionPredictor::predictRTime(MATCH_T* match) {
-
   PEPTIDE_T* peptide = get_match_peptide(match);
   int length = get_peptide_length(peptide);
-
-  char* sequence = get_peptide_sequence_pointer(peptide);
-
+  const char* sequence = get_peptide_sequence_pointer(peptide);
   FLOAT_T mass = get_peptide_peptide_mass(peptide);
+  return predictRTimeS(sequence, length, mass);
+}
+
+FLOAT_T AKlammerStaticRetentionPredictor::predictRTimeS(
+  const char* sequence, 
+  int length, 
+  FLOAT_T mass) {
 
   double ans = 0.0;
 

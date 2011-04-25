@@ -67,8 +67,6 @@ class MPSM_Match {
 
   BOOLEAN_T addMatch(MATCH_T* match);
 
-  BOOLEAN_T isDecoy();
-
   BOOLEAN_T hasRTime(int match_idx);
   FLOAT_T getRTime(int match_idx);
   void setRTime(int match_idx, FLOAT_T rtime);
@@ -129,7 +127,7 @@ class MPSM_Match {
   FLOAT_T getXCorrMaxDiff();
 
   FLOAT_T getAreaRatio();
-
+  bool isDecoy();
 
     
   FLOAT_T getScore(SCORER_TYPE_T match_mode);

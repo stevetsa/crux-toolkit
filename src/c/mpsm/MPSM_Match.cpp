@@ -178,14 +178,17 @@ BOOLEAN_T MPSM_Match::addMatch(MATCH_T* match) {
   return true;
 }
 
-BOOLEAN_T MPSM_Match::isDecoy() {
+bool MPSM_Match::isDecoy() {
   //If one of the matches is null, then this is a null mpsm.
   for (int idx = 0; idx < matches_.size(); idx++) {
     if (get_match_null_peptide(matches_[idx])) {
-      return TRUE;
+      return true;
+    }
+    if (getProteinIdsString().find("random_") != string::npos) {
+      return true;
     }
   }
-  return FALSE;
+  return false;
 }
 
 

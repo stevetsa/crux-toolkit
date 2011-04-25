@@ -25,8 +25,9 @@ class AKlammerStaticRetentionPredictor: public RetentionPredictor {
 
   virtual FLOAT_T predictRTime(MATCH_T* match);
   
-  
- 
+  FLOAT_T predictRTimeS(const char* sequence);
+  FLOAT_T predictRTimeS(const char* sequence, int N);
+  FLOAT_T predictRTimeS(const char* sequence, int N, FLOAT_T mass);
 
 };
 

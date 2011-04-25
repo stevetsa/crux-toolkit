@@ -67,7 +67,7 @@ static const int B_Y_HEIGHT = 50;
 /**
  * Relative height of flanking peaks.
  */
-static const int FLANK_HEIGHT = 25;
+static const int FLANK_HEIGHT = 0;//25;
 /**
  * Relative height of neutral loss peaks.
  */
