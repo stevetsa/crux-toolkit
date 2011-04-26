@@ -160,7 +160,7 @@ string DelimitedFileReader::getHeaderString() {
   ostringstream oss;
   oss << getColumnName(0);
   for (unsigned int col_idx=1;col_idx<numCols();col_idx++) {
-    oss << "\t" << getColumnName(col_idx);
+    oss << delimiter_ << getColumnName(col_idx);
   }
   
   string ans = oss.str();
