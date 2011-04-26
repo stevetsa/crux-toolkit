@@ -26,6 +26,8 @@ class SpectralCounts: public CruxApplication {
   virtual int main(int argc, char** argv);
   virtual std::string getName();
   virtual std::string getDescription();
+  virtual COMMAND_T getCommand();
+  virtual bool needsOutputDirectory();
 
  private:
   // internally-used types
@@ -80,6 +82,7 @@ class SpectralCounts: public CruxApplication {
   void getSpectra(std::map<std::pair<int,int>, Spectrum*>& spectra);
   FLOAT_T sumMatchIntensity(MATCH_T* match,
                           SpectrumCollection* spectra);
+  SCORER_TYPE_T get_qval_type(MATCH_COLLECTION_T* match_collection);
 
   // member variables
   OutputFiles* output_;

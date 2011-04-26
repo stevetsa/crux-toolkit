@@ -2,6 +2,7 @@
 #include "crux-utils.h"
 #include "OutputFiles.h"
 #include "ProteinPeptideIterator.h"
+#include "SpectrumCollectionFactory.h"
 
 using namespace std;
 
@@ -31,6 +32,8 @@ SpectralCounts::SpectralCounts()
 SpectralCounts::~SpectralCounts() {
   delete output_;
 }
+
+
 
 /**
  * Given a collection of scored PSMs, print a list of proteins
@@ -62,13 +65,13 @@ int SpectralCounts::main(int argc, char** argv) {
   int num_options = sizeof(option_list) / sizeof(char*);
   int num_arguments = sizeof(argument_list) / sizeof(char*);
 
-  initialize_run(SPECTRAL_COUNTS_COMMAND, argument_list, num_arguments,
-		 option_list, num_options, argc, argv);
+  initialize(argument_list, num_arguments,
+             option_list, num_options, argc, argv);
 
   getParameterValues(); // all the get_<type>_parameter calls here
 
   // open output files
-  output_ = new OutputFiles(SPECTRAL_COUNTS_COMMAND);
+  output_ = new OutputFiles(this);
   output_->writeHeaders();
 
   // get a set of matches that pass the threshold
@@ -348,7 +351,7 @@ void SpectralCounts::getPeptideScores()
 
   // for SIN, parse out spectrum collection from ms2 fiel
   if( measure_ == MEASURE_SIN ){
-    spectra = new SpectrumCollection(get_string_parameter_pointer("input-ms2"));
+    spectra = SpectrumCollectionFactory::create(get_string_parameter_pointer("input-ms2"));
   }
 
   for(set<MATCH_T*>::iterator match_it = matches_.begin();
@@ -412,6 +415,13 @@ void SpectralCounts::filterMatches()
     match_collection = match_collection_iterator_next(match_collection_it);
     match_iterator = new_match_iterator(match_collection, XCORR, TRUE);
     
+    // figure out which qvalue we are using
+    SCORER_TYPE_T qval_type = get_qval_type(match_collection);
+    if( qval_type == INVALID_SCORER_TYPE ){
+      carp(CARP_FATAL, "The matches in %s do not have q-values from percolator,"
+           " q-ranker, or compute-q-values.\n", psm_file_.c_str());
+    }
+
     while(match_iterator_has_next(match_iterator)){
       MATCH_T* match = match_iterator_next(match_iterator);
       qualify = false;
@@ -419,18 +429,8 @@ void SpectralCounts::filterMatches()
 	continue;
       }
       // find a qvalue score lower than threshold
-      if (get_match_score(match, PERCOLATOR_QVALUE) != FLT_MIN &&
-	  get_match_score(match, PERCOLATOR_QVALUE) <= threshold_)  {
-	qualify = true;
-      } else if (get_match_score(match, QRANKER_QVALUE) != FLT_MIN &&
-                 get_match_score(match, QRANKER_QVALUE) <= threshold_)  {
-	qualify = true;
-      } else if (get_match_score(match, DECOY_XCORR_QVALUE) != FLT_MIN &&
-		 get_match_score(match, DECOY_XCORR_QVALUE) <= threshold_)  {
-	qualify = true;
-      } 
-
-      if (qualify == true){
+      if (get_match_score(match, qval_type) != FLT_MIN &&
+	  get_match_score(match, qval_type) <= threshold_)  {
         matches_.insert(match);
       }
     } // next match
@@ -438,6 +438,27 @@ void SpectralCounts::filterMatches()
   free(path_info[1]);
   free(path_info[0]);
   free(path_info);
+}
+
+/**
+ * Figures out which kind of q-value was scored for this match collection.
+ * \returns PERCOLATOR_QVALUE, QRANKER_QVALUE, or DECOY_XCORR_QVALUE
+ * if any of those were scored or INVALID_SCORER_TYPE if none were scored. 
+ */
+SCORER_TYPE_T SpectralCounts::get_qval_type(
+  MATCH_COLLECTION_T* match_collection){
+  SCORER_TYPE_T scored_type = INVALID_SCORER_TYPE;
+
+  if(get_match_collection_scored_type(match_collection, PERCOLATOR_QVALUE)){
+    scored_type =  PERCOLATOR_QVALUE;
+  } else if(get_match_collection_scored_type(match_collection, QRANKER_QVALUE)){
+    scored_type = QRANKER_QVALUE;
+  } else if(get_match_collection_scored_type(match_collection, 
+                                             DECOY_XCORR_QVALUE)){
+    scored_type = DECOY_XCORR_QVALUE;
+  }
+
+  return scored_type;
 }
 
 /**
@@ -595,6 +616,13 @@ string SpectralCounts::getDescription() {
     "Rank proteins or peptides according to one of two quantification methods.";
 }
 
+COMMAND_T SpectralCounts::getCommand() {
+  return SPECTRAL_COUNTS_COMMAND;
+}
+
+bool SpectralCounts::needsOutputDirectory() {
+  return true;
+}
 
 
 // static comparison functions
