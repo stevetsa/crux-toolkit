@@ -115,8 +115,6 @@ int ExtractRows::main(int argc, char** argv) {
     cout << delimited_file.getHeaderString() << endl;
   }
 
- 
-
   string column_value_str =
     string(get_string_parameter_pointer("column value"));
 

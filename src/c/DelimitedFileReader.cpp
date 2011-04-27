@@ -101,24 +101,22 @@ unsigned int DelimitedFileReader::numRows() {
 
     streampos last_pos = istream_ptr_->tellg();
 
-    istream_ptr_->seekg(istream_begin_);
+    istream_ptr_->clear();
+    istream_ptr_->seekg(istream_begin_, ios::beg);
     
     string temp_str;
     bool has_next = getline(*istream_ptr_,temp_str) != NULL;
 
-    //bool has_next = !istream_ptr_->eof();
-
     while (has_next) {
       num_rows_++;
       has_next = getline(*istream_ptr_, temp_str) != NULL;
-      //bool has_next = !istream_ptr_->eof();
     }
     
     if (has_header_) {
       num_rows_--;
     }
     num_rows_valid_ = true;
-
+    istream_ptr_->clear();
     istream_ptr_->seekg(last_pos);
 
   }
@@ -172,6 +170,7 @@ void DelimitedFileReader::loadData() {
 
   if (!istream_ptr_->good()) {
     carp(CARP_ERROR, "Stream is not good!");
+    carp(CARP_ERROR, "Filename:%s", file_name_.c_str());
     carp(CARP_ERROR, "EOF:%i", istream_ptr_ -> eof());
     carp(CARP_ERROR, "Fail:%i", istream_ptr_ -> fail());
     carp(CARP_ERROR, "Bad:%i", istream_ptr_ -> bad());
