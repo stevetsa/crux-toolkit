@@ -19,7 +19,7 @@ class MatchCandidateVector : public std::vector<MatchCandidate*> {
   SpectrumZState zstate_;
   int scan_;
   FLOAT_T precursor_mz_;
-
+  Spectrum* spectrum_;
 
   void addCandidates(
     FLOAT_T min_mass,
@@ -62,6 +62,8 @@ class MatchCandidateVector : public std::vector<MatchCandidate*> {
 
   void scoreSpectrum(Spectrum* spectrum);
   void sortByXCorr();
+  void sortBySP();
+  void setRanks();
   void fitWeibull(FLOAT_T& shift, 
 		  FLOAT_T& eta, 
 		  FLOAT_T& beta, 

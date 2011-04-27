@@ -39,6 +39,48 @@ FLOAT_T MatchCandidate::getXCorr() {
   return xcorr_;
 }
 
+void MatchCandidate::setSP(FLOAT_T sp) {
+  sp_ = sp;
+}
+
+FLOAT_T MatchCandidate::getSP() {
+  return sp_;
+}
+
+void MatchCandidate::setBYIonsMatched(FLOAT_T by_ions_matched) {
+  by_ions_matched_ = by_ions_matched;
+}
+
+int MatchCandidate::getBYIonsMatched() {
+  return by_ions_matched_;
+}
+
+void MatchCandidate::setBYIonsTotal(FLOAT_T by_ions_total) {
+  by_ions_total_ = by_ions_total;
+}
+
+int MatchCandidate::getBYIonsTotal() {
+  return by_ions_total_;
+}
+
+void MatchCandidate::setSPRank(int sp_rank) {
+  sp_rank_ = sp_rank;
+
+}
+
+int MatchCandidate::getSPRank() {
+  return sp_rank_;
+}
+
+void MatchCandidate::setXCorrRank(int xcorr_rank) {
+  xcorr_rank_ = xcorr_rank;
+}
+
+int MatchCandidate::getXCorrRank() {
+  return xcorr_rank_;
+}
+
+
 string MatchCandidate::getProteinIdString(int peptide_idx) {
   PEPTIDE_T* peptide = this -> getPeptide(peptide_idx);
 
@@ -77,22 +119,17 @@ string MatchCandidate::getResultHeader() {
       << "peptide mass mono" << "\t"
       << "peptide mass average" << "\t"
       << "mass error(ppm)" << "\t"
+      << "sp score" << "\t"
+      << "sp rank" << "\t"
+      << "b/y ions matched" << "\t"
+      << "b/y ions total" << "\t"
       << "xcorr score" << "\t"
       << "xcorr rank" << "\t"
       << "p-value" << "\t"
       << "matches/spectrum" << "\t"
       << "sequence" << "\t"
       << "protein id(loc) 1"<< "\t"
-      << "protein id(loc) 2" << "\t"
-      << "by total" << "\t"
-      << "by observable (0-1200)" << "\t"
-      << "by observable bin (0-1200)" << "\t"
-      << "by observable (0-max)" << "\t"
-      << "by obsrevable bin (0-max)" << "\t"
-      << "by observed bin" << "\t"
-      << "ion current total" << "\t"
-      << "ion current observed" << "\t"
-      << "ions observable bin (0-1200)";
+      << "protein id(loc) 2";
 
   return oss.str();
 }
@@ -109,22 +146,17 @@ std::string MatchCandidate::getResultString() {
      << this->getMass(MONO) << "\t"
      << this->getMass(AVERAGE) << "\t"
      << this->getPPMError() << "\t"
-     << xcorr_ << "\t" //xcorr score
-     << ""/*xcorr_rank_*/ << "\t"
+     << this->getSP() << "\t"
+     << this->getSPRank() << "\t"
+     << this->getBYIonsMatched() << "\t"
+     << this->getBYIonsTotal() << "\t"
+     << this->getXCorr() << "\t"
+     << this->getXCorrRank() << "\t"
      << pvalue_ << "\t"
      << parent_->size() << "\t"
      << this->getSequenceString() << "\t"
      << this->getProteinIdString(0) << "\t"   //protein id(loc) 1
-     << this->getProteinIdString(1) << "\t"   //protein id(loc) 2
-     << "" << "\t"   // by total
-     << "" << "\t"   // by observable (0-1200)
-     << "" << "\t"   // by observable bin (0-1200)
-     << "" << "\t"   // by observable (0-max)
-     << "" << "\t"   // by observable bin (0-max)
-     << "" << "\t"   // by observed bin
-     << "" << "\t"   // ion current total
-     << "" << "\t"   // ion current observed
-     << "";   // ions observable bin (0-1200)
+     << this->getProteinIdString(1);  //protein id(loc) 2
   string out_string = ss.str();
   return out_string;
 }

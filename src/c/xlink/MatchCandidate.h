@@ -23,6 +23,12 @@ class MatchCandidate {
   MatchCandidateVector* parent_;
   FLOAT_T xcorr_;
   int xcorr_rank_;
+  FLOAT_T sp_;
+  int sp_rank_;
+
+  int by_ions_matched_;
+  int by_ions_total_;
+
   FLOAT_T pvalue_;
   bool mass_calculated_[NUMBER_MASS_TYPES];
   FLOAT_T mass_[NUMBER_MASS_TYPES];
@@ -54,6 +60,21 @@ class MatchCandidate {
   void setXCorr(FLOAT_T xcorr);
   FLOAT_T getXCorr();
 
+  void setXCorrRank(int xcorr_rank);
+  int getXCorrRank();
+
+  void setSP(FLOAT_T sp);
+  FLOAT_T getSP();
+
+  void setSPRank(int sp_rank);
+  int getSPRank();
+
+  void setBYIonsMatched(FLOAT_T by_ion_matched);
+  int getBYIonsMatched();
+
+  void setBYIonsTotal(FLOAT_T by_ion_total);
+  int getBYIonsTotal();
+
   virtual int getNumMissedCleavages() = 0;
 
   virtual bool isModified() = 0;
@@ -64,6 +85,8 @@ class MatchCandidate {
   FLOAT_T getPPMError();
   std::string getProteinIdString(int peptide_idx);
   void setParent(MatchCandidateVector* parent);
+
+  
 
 
 };

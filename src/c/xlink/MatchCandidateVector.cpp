@@ -83,6 +83,10 @@ bool compareXCorr(MatchCandidate* mc1, MatchCandidate* mc2) {
   return mc1->getXCorr() > mc2->getXCorr(); 
 }
 
+bool compareSP(MatchCandidate* mc1, MatchCandidate* mc2) {
+  return mc1->getSP() > mc2->getSP();
+}
+
 MatchCandidateVector::MatchCandidateVector() {
   scan_ = 0;
 }
@@ -253,6 +257,43 @@ void MatchCandidateVector::scoreSpectrum(Spectrum* spectrum) {
 void MatchCandidateVector::sortByXCorr() {
   sort(begin(), end(), compareXCorr);
 }
+
+void MatchCandidateVector::sortBySP() {
+  sort(begin(), end(), compareSP);
+}
+
+
+void MatchCandidateVector::setRanks() {
+  sortBySP();
+
+  int current_rank = 1;
+  FLOAT_T last_score = at(0)->getSP();
+  at(0)->setSPRank(current_rank);
+
+  for (unsigned int candidate_idx = 1; candidate_idx < size() ; candidate_idx++) {
+    FLOAT_T current_score = at(candidate_idx)->getSP();
+    if (last_score != current_score) {
+      current_rank++;
+      last_score = current_score;
+    }
+    at(candidate_idx)->setSPRank(current_rank);
+  }
+
+  sortByXCorr();
+
+  current_rank = 1;
+  last_score = at(0)->getXCorr();
+  at(0)->setXCorrRank(current_rank);
+  for (unsigned int candidate_idx = 1; candidate_idx < size(); candidate_idx++) {
+    FLOAT_T current_score = at(candidate_idx)->getXCorr();
+    if (last_score != current_score) {
+      current_rank++;
+      last_score = current_score;
+    }
+    at(candidate_idx)->setXCorrRank(current_rank);
+  }
+}
+
 
 void MatchCandidateVector::fitWeibull(
   FLOAT_T& shift, 
