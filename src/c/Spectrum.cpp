@@ -378,6 +378,7 @@ bool Spectrum::parseMgf
       scan_title_str = new_line_str;
 
     } else if (new_line_str.find("SCANS=") == 0) {
+
       //format is SCANS=X-Y where X and Y are integers
       scans_found = true;
       string scans_str = new_line_str.substr(6, new_line_str.length());
@@ -386,10 +387,16 @@ bool Spectrum::parseMgf
       vector<string> tokens;
       DelimitedFile::tokenize(scans_str, tokens, '-');
       DelimitedFile::from_string(first_scan_, tokens[0]);
- 
+
       if (tokens.size() > 1) {
         DelimitedFile::from_string(last_scan_,tokens[1]);
+      } else {
+        last_scan_ = first_scan_;
       }
+      carp(CARP_DETAILED_DEBUG,
+        "first scan:%i last scan:%i",
+        first_scan_,last_scan_);
+
     } else if (new_line_str.find("CHARGE=") == 0) {
 
       //parse the charge line
@@ -453,27 +460,24 @@ bool Spectrum::parseMgf
       //we are done parsing this charged spectrum.
       end_found = true;
       break;
+    }
+#ifdef USE_DOUBLES
+    else if(sscanf(new_line,"%lf %lf", &location_mz, &intensity) == 2)
+#else
+    else if(sscanf(new_line,"%f %f", &location_mz, &intensity) == 2)
+#endif
+    {
+      carp(CARP_DETAILED_DEBUG,"adding peak %lf %lf",
+        (double)location_mz, 
+        (double)intensity);
+      //add the peak to the spectrum object
+      addPeak(intensity, location_mz);
     } else {
-
-      vector<string> tokens;
-      DelimitedFile::tokenize(new_line_str, tokens, ' ');
-      if (tokens.size() >= 2) {
-        DelimitedFile::from_string(location_mz, tokens[0]);
-        DelimitedFile::from_string(intensity, tokens[1]);
-        
-        carp(CARP_DETAILED_DEBUG,"adding peak %lf %lf",
-          (double)location_mz, 
-          (double)intensity);
-        //add the peak to the spectrum object
-        addPeak(intensity, location_mz);
-      } else {
-        //file format error.
-        carp(CARP_ERROR,
-          "File format error\n"
-          "At line: %s",
-           new_line);
-      }
-    
+      //file format error.
+      carp(CARP_ERROR,
+        "File format error\n"
+        "At line: %s",
+         new_line);
     }
   } while( (line_length = getline(&new_line, &buf_length, file)) != -1);
   
