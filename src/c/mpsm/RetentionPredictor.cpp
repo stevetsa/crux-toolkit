@@ -3,6 +3,7 @@
 #include "KrokhinRetentionPredictor.h"
 #include "AKlammerRetentionPredictor.h"
 #include "AKlammerStaticRetentionPredictor.h"
+#include "NullRetentionPredictor.h"
 
 #include "parameter.h"
 
@@ -38,7 +39,7 @@ double RetentionPredictor::calcMaxDiff(MPSM_Match& mpsm_match) {
   for (int idx1 = 0;idx1 < rtimes.size()-1;idx1++) {
     for (int idx2 = idx1 + 1;idx2 < rtimes.size();idx2++) {
 
-      double current_diff = rtimes[idx1] - rtimes[idx2];
+      double current_diff = rtimes[idx2] - rtimes[idx1];
 
       if (fabs(current_diff) > fabs(max_diff)) {
         max_diff = current_diff;
@@ -68,7 +69,8 @@ RetentionPredictor* RetentionPredictor::createRetentionPredictor() {
       return new AKlammerStaticRetentionPredictor();
     case RTP_INVALID:
     default:
-      carp(CARP_FATAL,"Invalid retention time predictor");
+      carp(CARP_WARNING,"Invalid retention time predictor: returning null");
+      return new NullRetentionPredictor();
       
   }
 }

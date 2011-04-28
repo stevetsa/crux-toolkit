@@ -595,36 +595,192 @@ FLOAT_T MPSM_Match::getXCorrMaxDiff() {
 
 FLOAT_T MPSM_Match::getAreaRatio() {
 
-  if (matches_.size() == 1) { 
+  if (matches_.size() <= 1) { 
     return 1.0;
   }
 
-  double sum = 0.0;
+  FLOAT_T ans = get_match_zstate(matches_.at(1)).getArea() / 
+               get_match_zstate(matches_.at(0)).getArea();
 
-  double min_area = -1;
+  return ans;
 
-  bool min_unset = true;
-
-  for (unsigned int idx=0;idx<matches_.size();idx++) {
-    
-    SpectrumZState& current_zstate = 
-      get_match_zstate(matches_[idx]);
-
-    FLOAT_T area = current_zstate.getArea();
-
-    if ((min_unset) || (area < min_area)) {
-      min_area = area;
-      min_unset = false;
-    }
-
-    sum += area;
-  }
-
-  if (sum == 0.0) return 1;
-
-  return min_area / sum * (FLOAT_T)matches_.size();
 }
 
+FLOAT_T MPSM_Match::getMZ1RTimeDiff() {
+
+  if (matches_.size() <= 1) {
+    return 0.0;
+  }
+  //cerr << get_match_zstate(matches_.at(1)).getRTime() << endl;
+  //cerr << get_match_zstate(matches_.at(0)).getRTime() << endl;
+  FLOAT_T ans = get_match_zstate(matches_.at(1)).getRTime() -
+                get_match_zstate(matches_.at(0)).getRTime();
+
+  return ans;
+}
+
+void MPSM_Match::getMatchedIons(
+  vector<map<PEAK_T*, vector<Ion*> > >& matched_peak_to_ion_vec) {
+
+  FLOAT_T mz_tolerance = 1.0;//get_double_parameter("mz-bin-width");
+
+
+  int max_charge = min(getMaxCharge(), 
+    get_max_ion_charge_parameter("max-ion-charge"));
+
+  vector<IonSeries*> ion_series_vec;
+  vector<IonConstraint*> ion_constraints;
+
+  //cerr <<"Creating ion serieses"<<endl;
+
+  for (int seq_idx=0;seq_idx < numMatches();seq_idx++) {
+
+    IonConstraint* ion_constraint = new IonConstraint(
+      get_mass_type_parameter("fragment-mass"),
+      min(getCharge(seq_idx), max_charge),
+      BY_ION,
+      false);
+
+    ion_constraints.push_back(ion_constraint);
+
+    char* sequence = getSequence(seq_idx);
+    
+    IonSeries* ion_series = new IonSeries(
+      sequence,
+      getCharge(seq_idx),
+      ion_constraints.at(seq_idx));
+
+    ion_series->predictIons();
+
+    ion_series_vec.push_back(ion_series);
+
+    //free(sequence);
+
+  }
+  map<PEAK_T*, vector<Ion*> >::iterator find_iter;
+
+  vector<int> num_matched_ions;
+
+  //cerr <<"Assigning ions"<<endl;
+
+  for (int seq_idx = 0; seq_idx < numMatches();seq_idx++) {
+
+    //cerr <<"Sequence:"<<peptide_sequences[seq_idx]<<endl;
+    
+    num_matched_ions.push_back(0);
+    //For each ion, find the max_intensity peak with in the the 
+    map<PEAK_T*, vector<Ion*> > temp;
+    matched_peak_to_ion_vec.push_back(temp);
+    map<PEAK_T*, vector<Ion*> > &matched_peak_to_ion = matched_peak_to_ion_vec.at(seq_idx);
+
+    IonSeries* current_ion_series = ion_series_vec.at(seq_idx);
+
+    for (IonIterator ion_iter = current_ion_series -> begin();
+      ion_iter != current_ion_series->end();
+      ++ion_iter) {
+
+      Ion* ion = *ion_iter;
+
+      PEAK_T* peak = getSpectrum()->getMaxIntensityPeak(ion->getMassZ(), mz_tolerance);
+      if (peak != NULL) {  
+        num_matched_ions[seq_idx]++;
+        find_iter = matched_peak_to_ion.find(peak);
+
+        if (find_iter == matched_peak_to_ion.end()) {
+          vector<Ion*> temp_ions;
+          matched_peak_to_ion[peak] = temp_ions;
+        }
+
+        matched_peak_to_ion[peak].push_back(ion);
+      }
+    }
+    //cerr <<"Peaks Matched:"<<matched_peak_to_ion.size()<<endl;
+
+    //free the ion_series.
+    //cerr <<"Free ion series"<<endl;
+    delete current_ion_series;
+    //and the constraint
+    //cerr <<"Free ion constraint"<<endl;
+    delete ion_constraints.at(seq_idx);
+    
+
+  }
+
+}
+
+void MPSM_Match::getMatchedIonIntensities(
+     double& total_ion_intensity,
+     double& ion_intensity1,
+     double& ion_intensity2,
+     double& ion_intensity12) {
+
+  total_ion_intensity = getSpectrum()->getTotalEnergy();
+
+
+  vector<map<PEAK_T*, vector<Ion*> > > matched_peak_to_ion_vec;
+  getMatchedIons(matched_peak_to_ion_vec);
+
+  ion_intensity1 = 0.0;
+
+  map<PEAK_T*, vector<Ion*> >::iterator peak_iter;
+
+  set<PEAK_T*> all_assigned_peaks;
+  
+  //cerr <<"Summing up intensities"<<endl;
+  for (peak_iter = matched_peak_to_ion_vec.at(0).begin();
+    peak_iter != matched_peak_to_ion_vec.at(0).end();
+    ++peak_iter) {
+    
+    PEAK_T* peak = peak_iter->first;
+    all_assigned_peaks.insert(peak_iter->first);
+    ion_intensity1 += get_peak_intensity(peak);
+
+  }
+  //cerr <<"ion1:"<<ion_intensity1<<endl;
+  ion_intensity2 = 0.0;
+  if (matched_peak_to_ion_vec.size() > 1) {
+
+    for (peak_iter = matched_peak_to_ion_vec.at(1).begin();
+      peak_iter != matched_peak_to_ion_vec.at(1).end();
+      ++peak_iter) {
+      PEAK_T* peak = peak_iter->first;
+      all_assigned_peaks.insert(peak_iter->first);
+      ion_intensity2 += get_peak_intensity(peak);
+    }
+  }
+  //cerr <<"Ion2:"<<ion_intensity2<<endl;
+  ion_intensity12 = 0;
+  
+  for (set<PEAK_T*>::iterator iter = all_assigned_peaks.begin();
+    iter != all_assigned_peaks.end();
+    ++iter) {
+
+    PEAK_T* peak = *iter;
+    ion_intensity12 += get_peak_intensity(peak);
+  }
+  //cerr <<"Ion12:"<<ion_intensity12<<endl;
+}
+
+
+
+FLOAT_T MPSM_Match::getTICRatio() {
+  
+  if (matches_.size() <=1) {
+    return 1.0;
+  }
+
+  double total_tic;
+  double tic_1=1;
+  double tic_2=1;
+  double tic_12;
+
+
+  getMatchedIonIntensities(total_tic, tic_1, tic_2, tic_12);
+
+  double ratio = tic_2 / tic_1;
+  //cerr <<"TIC ratio:"<<ratio<<endl;
+  return ratio;
+}
 
 
 ostream& operator <<(ostream& os, MPSM_Match& match_obj) {

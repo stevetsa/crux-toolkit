@@ -94,7 +94,7 @@ class SpectrumZState {
   /**
    * \returns The retention time for this z-state
    */
-  FLOAT_T getRTime();
+  FLOAT_T getRTime() const;
 
   /**
    * Sets the area for this z-state

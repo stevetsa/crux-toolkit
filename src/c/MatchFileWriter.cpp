@@ -93,6 +93,8 @@ void MatchFileWriter::setPrecision(){
     case XCORR_SUM_DIFF_COL:
     case XCORR_MAX_DIFF_COL:
     case MZ1_AREA_RATIO_COL:
+    case MZ1_RTIME_DIFF_COL:
+    case TIC_RATIO_COL:
     case SIN_SCORE_COL:
     case NSAF_SCORE_COL:
 #ifdef NEW_COLUMNS
@@ -212,7 +214,8 @@ void MatchFileWriter::addColumnNames(COMMAND_T command, bool has_decoys){
     addColumnName(XCORR_SUM_DIFF_COL);
     addColumnName(XCORR_MAX_DIFF_COL);
     addColumnName(MZ1_AREA_RATIO_COL);
-  
+    addColumnName(MZ1_RTIME_DIFF_COL);
+    addColumnName(TIC_RATIO_COL);
     break;
   case XLINK_SEARCH_COMMAND:
     // TODO: does search-for-xlinks use MatchFileWriter?
@@ -264,6 +267,8 @@ void MatchFileWriter::addColumnNames(COMMAND_T command, bool has_decoys){
   addColumnName(XCORR_MAX_DIFF_COL);
   addColumnName(PEPTIDES_SPECTRUM_COL);
   addColumnName(MZ1_AREA_RATIO_COL);
+  addColumnName(MZ1_RTIME_DIFF_COL);
+  addColumnName(TIC_RATIO_COL);
 
   if( has_decoys ){
     addColumnName(UNSHUFFLED_SEQUENCE_COL);

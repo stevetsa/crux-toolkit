@@ -146,7 +146,7 @@ void SpectrumZState::setRTime(
 /**
  * \returns The retention time for this z-state
  */
-FLOAT_T SpectrumZState::getRTime() {
+FLOAT_T SpectrumZState::getRTime() const {
   return rtime_;
 }
 

@@ -20,6 +20,8 @@ libmpsm_la_SOURCES = \
   AKlammerStaticRetentionPredictor.h \
   KrokhinRetentionPredictor.h \
   KrokhinRetentionPredictor.cpp \
+  NullRetentionPredictor.h \
+  NullRetentionPredictor.cpp \
   PalmbaldRetentionPredictor.cpp \
   PalmbaldRetentionPredictor.h \
   AssignIonsMPSMSpectrum.h \

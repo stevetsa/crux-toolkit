@@ -111,6 +111,16 @@ class MPSM_Match {
   void setBYIonFractionMatched(FLOAT_T b_y_ion_fraction_matched);
   FLOAT_T getBYIonFractionMatched();
 
+  void getMatchedIons(
+    std::vector<std::map<PEAK_T*, std::vector<Ion*> > >& matched_peak_to_ion_vec);
+
+  void getMatchedIonIntensities(
+    double& total_ion_intensity,
+    double& ion_intensity1,
+    double& ion_intensity2,
+    double& ion_intensity12);
+
+  FLOAT_T getTICRatio();
 
   //Accessor functions for writing the match.
   int getFirstScan();
@@ -121,6 +131,9 @@ class MPSM_Match {
   std::string getSequenceString();
   int getMatchesPerSpectrum();
   std::string getProteinIdsString();
+  FLOAT_T getMZ1RTimeDiff();
+  
+  
 
 
   FLOAT_T getXCorrSumDiff();

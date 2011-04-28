@@ -151,6 +151,7 @@ typedef enum _mass_type MASS_TYPE_T;
  */
 enum _rtime_predictor_type {
   RTP_INVALID,
+  RTP_NULL,
   RTP_KROKHIN,
   RTP_PALMBALD,
   RTP_AKLAMMER,
