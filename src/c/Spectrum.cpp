@@ -211,7 +211,7 @@ void Spectrum::printXml(
   if (filepath == NULL){
     filename = "NA";
   } else {
-    name_ext_array = parse_filename_path_extension(filepath, ".ms2");
+    name_ext_array = parse_filename_path_extension(filepath, NULL);
     filename = name_ext_array[0];
   }
   const char* period = ".";
@@ -303,39 +303,16 @@ void Spectrum::printSqt(
 }
 
 /**
- * Parses a spectrum from a file, either mgf or ms2.
- */
- Spectrum* Spectrum::newSpectrumFromFile(FILE* file, const char* filename)
-{
-  if (get_boolean_parameter("use-mgf")) {
-    return Spectrum::newSpectrumMgf(file, filename);
-  } else {
-    return Spectrum::newSpectrumMs2(file, filename);
-  }
-}
-
-/**
- * Parses a spectrum from a file, either mgf or ms2.
- */
-bool Spectrum::parseFile(FILE* file, const char* filename)
-{
-  if (get_boolean_parameter("use-mgf")) {
-    return this->parseMgf(file, filename);
-  } else {
-    return this->parseMs2(file, filename);
-  }
-}
-
-/**
  * Parses a spectrum from an .mgf file
  * \returns A newly allocated spectrum or NULL on error or EOF.
  */
 Spectrum* Spectrum::newSpectrumMgf
 (FILE* file, ///< the input file stream -in
+ int scan_num, ///< assign the spectrum this scan number
  const char* filename) ///< filename of the spectrum
 {
   Spectrum* spectrum = new Spectrum();
-  if( spectrum->parseMgf(file, filename) ){
+  if( spectrum->parseMgf(file, scan_num, filename) ){
     return spectrum;
   } else {
     delete spectrum;
@@ -344,39 +321,43 @@ Spectrum* Spectrum::newSpectrumMgf
 }
 
 /**
- * Parses a spectrum from an .mgf file
+ * Parses a spectrum from an .mgf file, assigning it the given scan
+ * number.
  * \returns True if successfully parsed or false on error or EOF.
  */
-// TODO: figure out a better way to handle spectrum count.  
-// MGF doesn't really have
-// a defined format for this.  If it does, then the programs that output 
-// MGF don't always conform to this format. SJM
 bool Spectrum::parseMgf
 (FILE* file, ///< the input file stream -in
+ int scan_num, ///< scan number to give this spectrum
  const char* filename) ///< filename of the spectrum
 {
   // TODO: delete any existing peaks
-  static int spec_count = 1;
   char* new_line = NULL;
+  string new_line_str = "";
+
   int line_length;
   size_t buf_length = 0;
   FLOAT_T location_mz;
   FLOAT_T intensity;
   
-  bool begin_found = FALSE;
-  bool title_found = FALSE;
-  bool charge_found = FALSE;
-  bool pepmass_found = FALSE;
-  bool peaks_found = FALSE;
-  bool end_found = FALSE;
-  
+  bool begin_found = false;
+  bool title_found = false;
+  bool charge_found = false;
+  bool pepmass_found = false;
+  bool peaks_found = false;
+  bool end_found = false;
+  bool scans_found = false;
+
+  string scan_title_str="";
   int charge = -1;
 
   carp(CARP_DEBUG, "parsing MGF Scan");
   
   while( (line_length = getline(&new_line, &buf_length, file)) != -1){
+
+    new_line_str = string(new_line);
     //scan until BEGIN IONS
-    if (strncmp(new_line, "BEGIN IONS", 10) == 0) {
+
+    if (new_line_str.find("BEGIN IONS") == 0) {
       begin_found = true;
       break;
     }
@@ -389,44 +370,63 @@ bool Spectrum::parseMgf
   
   //scan for the header fields
   while( (line_length = getline(&new_line, &buf_length, file)) != -1){
-    if (strncmp(new_line, "TITLE=",6) == 0) {
+    new_line_str = string(new_line);
+
+    if (new_line_str.find("TITLE=") == 0) {
+
       title_found = true;
-      int first_scan = spec_count;
-      int last_scan = spec_count;
-      //  TODO : figure out what to do here, the format is dependent 
-      // upon the machine i think
-      // parse the title line
+      scan_title_str = new_line_str;
+
+    } else if (new_line_str.find("SCANS=") == 0) {
+      //format is SCANS=X-Y where X and Y are integers
+      scans_found = true;
+      string scans_str = new_line_str.substr(6, new_line_str.length());
       
-      this->first_scan_ = first_scan;
-      this->last_scan_ = last_scan;
-    } else if (strncmp(new_line, "CHARGE=",7) == 0) {
-      //parse the charge line
+      carp(CARP_DETAILED_DEBUG, "parsing scans:%s",scans_str.c_str());
+      vector<string> tokens;
+      DelimitedFile::tokenize(scans_str, tokens, '-');
+      DelimitedFile::from_string(first_scan_, tokens[0]);
  
-      char* plus_index = index(new_line,'+');
-      *plus_index = '\0';
-      carp(CARP_DETAILED_DEBUG,"Parsing %s",(new_line+7));
-      charge = atoi(new_line+7);
-      
+      if (tokens.size() > 1) {
+        DelimitedFile::from_string(last_scan_,tokens[1]);
+      }
+    } else if (new_line_str.find("CHARGE=") == 0) {
+
+      //parse the charge line
+      int plus_index = new_line_str.find("+");
+      string charge_str = new_line_str.substr(7,plus_index);
+      carp(CARP_DETAILED_DEBUG,"Parsing charge:%s",charge_str.c_str());
+      DelimitedFile::from_string(charge, charge_str);
       carp(CARP_DETAILED_DEBUG, "charge:%d", charge);
-      
       charge_found = true;
-    } else if (strncmp(new_line, "PEPMASS=",8) == 0) {
-      //parse the pepmass line
+
+    } else if (new_line_str.find("PEPMASS=") == 0) {
+
+      //format is "PEPMASS=mz intensity" intensity is optional..
+
       FLOAT_T pepmass;
-      carp(CARP_DETAILED_DEBUG, "Parsing %s",(new_line+8));
-      pepmass = atof(new_line+8);
-      carp(CARP_DETAILED_DEBUG, "pepmass:%f",pepmass);
+      string pepmass_str = new_line_str.substr(8, new_line_str.length());
+      carp(CARP_DETAILED_DEBUG, "Parsing pepmass %s", pepmass_str.c_str());
+      vector<string> tokens;
+      DelimitedFile::tokenize(pepmass_str, tokens, ' ');
+      DelimitedFile::from_string(pepmass, tokens[0]);
+      carp(CARP_DETAILED_DEBUG, "pepmass:%f", pepmass);
       //TODO - check to see if this is correct.
-      this->precursor_mz_ = pepmass;
+      precursor_mz_ = pepmass;
       pepmass_found = true;
-    } else if (isdigit(new_line[0])) {
+
+    } else if (isdigit(new_line_str.at(0))) {
+
       //no more header lines, peak information is up
       peaks_found = true;
       break;
+
     } else if (strcmp(new_line, "END IONS") == 0) {
+
       //we found the end of the ions without any peaks.
       carp(CARP_WARNING,"No peaks found for mgf spectrum");
       return true;
+
     }
   }
   
@@ -439,33 +439,43 @@ bool Spectrum::parseMgf
     zstates_.push_back(zstate);
   }
 
+  if (!scans_found) {
+    //TODO - try to parse scan information from title.  
+    //Otherwise use passed in scan count.
+    first_scan_ = scan_num;
+    last_scan_ = scan_num;
+  }
 
   //parse peak information
   do {
-    if (strncmp(new_line, "END IONS", 8) == 0) {
+    new_line_str = string(new_line);  
+    if (new_line_str.find("END IONS") == 0) {
       //we are done parsing this charged spectrum.
       end_found = true;
       break;
-    }
-#ifdef USE_DOUBLES
-    else if(sscanf(new_line,"%lf %lf", &location_mz, &intensity) == 2)
-#else
-    else if(sscanf(new_line,"%f %f", &location_mz, &intensity) == 2)
-#endif
-    {
-      carp(CARP_DETAILED_DEBUG,"adding peak %f %f",location_mz, intensity);
-      //add the peak to the spectrum object
-      this->addPeak(intensity, location_mz);
     } else {
-      //file format error.
-      carp(CARP_ERROR,
-           "File format error\n"
-           "At line: %s",
+
+      vector<string> tokens;
+      DelimitedFile::tokenize(new_line_str, tokens, ' ');
+      if (tokens.size() >= 2) {
+        DelimitedFile::from_string(location_mz, tokens[0]);
+        DelimitedFile::from_string(intensity, tokens[1]);
+        
+        carp(CARP_DETAILED_DEBUG,"adding peak %lf %lf",
+          (double)location_mz, 
+          (double)intensity);
+        //add the peak to the spectrum object
+        addPeak(intensity, location_mz);
+      } else {
+        //file format error.
+        carp(CARP_ERROR,
+          "File format error\n"
+          "At line: %s",
            new_line);
+      }
+    
     }
   } while( (line_length = getline(&new_line, &buf_length, file)) != -1);
-  
-  spec_count++;
   
   if (end_found) {
     //we successfully parsed this spectrum.

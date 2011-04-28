@@ -40,8 +40,6 @@ LIBFILES= \
   ComputeQValues.h \
   CreateIndex.cpp \
   CreateIndex.h \
-  create_index.cpp \
-  create_index.h \
   crux-file-utils.h \
   crux-utils.cpp \
   crux-utils.h \
@@ -95,12 +93,16 @@ LIBFILES= \
   MatchSearch.h \
   match_collection.cpp \
   match_collection.h \
-  match_search.cpp \
+  MGFSpectrumCollection.cpp \
+  MGFSpectrumCollection.h \
   modifications.cpp \
   modifications.h \
   modified_peptides_iterator.cpp \
   modified_peptides_iterator.h \
-  search.h \
+  MS2SpectrumCollection.cpp \
+  MS2SpectrumCollection.h \
+  MSToolkitSpectrumCollection.cpp \
+  MSToolkitSpectrumCollection.h \
   objects.h \
   OutputFiles.cpp \
   OutputFiles.h \
@@ -124,8 +126,6 @@ LIBFILES= \
   PrintProcessedSpectra.h \
   PrintVersion.cpp \
   PrintVersion.h \
-  print-processed-spectra.cpp \
-  print-processed-spectra.h \
   Protein.cpp \
   Protein.h \
   ProteinPeptideIterator.cpp \
@@ -139,8 +139,6 @@ LIBFILES= \
   SearchProgress.h \
   SequestSearch.cpp \
   SequestSearch.h \
-  sequest-search.cpp \
-  sequest-search.h \
   scorer.cpp \
   scorer.h \
   sorter.cpp \
@@ -149,6 +147,8 @@ LIBFILES= \
   SpectralCounts.h \
   SpectrumCollection.cpp \
   SpectrumCollection.h \
+  SpectrumCollectionFactory.cpp \
+  SpectrumCollectionFactory.h \
   Spectrum.cpp \
   Spectrum.h \
   SpectrumZState.cpp \

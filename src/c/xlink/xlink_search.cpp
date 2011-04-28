@@ -3,6 +3,7 @@
 //#include "xhhc_search.h"
 #include "xlink_compute_qvalues.h"
 
+#include "SearchForXLinksMods.h"
 #include "MatchCandidate.h"
 #include "MatchCandidateVector.h"
 #include "XLinkBondMap.h"
@@ -12,6 +13,7 @@
 //CRUX INCLUDES
 #include "objects.h"
 #include "FilteredSpectrumChargeIterator.h"
+#include "SpectrumCollectionFactory.h"
 
 
 #include <algorithm>
@@ -66,7 +68,8 @@ int xlink_search_main(int argc, char** argv) {
 
   int num_arguments = sizeof(argument_list) / sizeof(char*);
 
-  initialize_run(XLINK_SEARCH_MODS_COMMAND, argument_list, num_arguments,
+  SearchForXLinksMods search;
+  search.initialize(argument_list, num_arguments,
 		 option_list, num_options, argc, argv);
   
   carp(CARP_INFO, "Beginning crux xlink-search-mods");
@@ -107,7 +110,7 @@ int xlink_search_main(int argc, char** argv) {
 
   carp(CARP_INFO,"Loading Spectra");
   Spectrum* spectrum = new Spectrum();
-  SpectrumCollection* spectra = new SpectrumCollection(ms2_file);
+  SpectrumCollection* spectra = SpectrumCollectionFactory::create(ms2_file);
   spectra->parse();
 
   FilteredSpectrumChargeIterator* spectrum_iterator =

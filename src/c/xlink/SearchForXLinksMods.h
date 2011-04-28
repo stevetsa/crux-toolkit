@@ -23,6 +23,13 @@ class SearchForXLinksMods: public CruxApplication {
   virtual std::string getName();
   virtual std::string getDescription();
 
+  /**
+   * \returns the enum of the application, default MISC_COMMAND
+   */
+  virtual COMMAND_T getCommand();
+
+  virtual bool needsOutputDirectory();
+
 };
 
 

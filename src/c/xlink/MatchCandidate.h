@@ -69,10 +69,10 @@ class MatchCandidate {
   void setSPRank(int sp_rank);
   int getSPRank();
 
-  void setBYIonsMatched(FLOAT_T by_ion_matched);
+  void setBYIonsMatched(int by_ions_matched);
   int getBYIonsMatched();
 
-  void setBYIonsTotal(FLOAT_T by_ion_total);
+  void setBYIonsTotal(int by_ions_total);
   int getBYIonsTotal();
 
   virtual int getNumMissedCleavages() = 0;

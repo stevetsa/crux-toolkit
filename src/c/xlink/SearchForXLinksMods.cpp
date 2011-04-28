@@ -28,3 +28,14 @@ string SearchForXLinksMods::getDescription() {
     "scored by XCorr. This code also searches with "
     "post-translational modifications";
 }
+/**
+ * \returns the enum of the application, default MISC_COMMAND
+ */
+COMMAND_T SearchForXLinksMods::getCommand() {
+  return XLINK_SEARCH_MODS_COMMAND;
+}
+
+bool SearchForXLinksMods::needsOutputDirectory() {
+  return true;
+}
+

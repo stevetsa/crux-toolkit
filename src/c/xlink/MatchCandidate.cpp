@@ -47,7 +47,7 @@ FLOAT_T MatchCandidate::getSP() {
   return sp_;
 }
 
-void MatchCandidate::setBYIonsMatched(FLOAT_T by_ions_matched) {
+void MatchCandidate::setBYIonsMatched(int by_ions_matched) {
   by_ions_matched_ = by_ions_matched;
 }
 
@@ -55,7 +55,7 @@ int MatchCandidate::getBYIonsMatched() {
   return by_ions_matched_;
 }
 
-void MatchCandidate::setBYIonsTotal(FLOAT_T by_ions_total) {
+void MatchCandidate::setBYIonsTotal(int by_ions_total) {
   by_ions_total_ = by_ions_total;
 }
 

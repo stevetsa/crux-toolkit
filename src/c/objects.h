@@ -565,7 +565,7 @@ enum _command {
   XLINK_SEARCH_COMMAND,      ///< search-for-xlinks
   XLINK_SEARCH_MODS_COMMAND, ///< search-for-xlinks-mods
   VERSION_COMMAND,      ///< just print the version number
-
+  MISC_COMMAND,         ///< miscellaneous command
   NUMBER_COMMAND_TYPES  ///< always keep this last so the value
                         /// changes as cmds are added
 };
