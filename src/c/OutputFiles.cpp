@@ -42,7 +42,7 @@ OutputFiles::OutputFiles(CruxApplication* program_name)
 
   // TODO (BF oct-21-09): consider moving this logic to parameter.c
   COMMAND_T command = application_->getCommand();
-  if( command != SEARCH_COMMAND && command != SEQUEST_COMMAND ){
+  if( command != SEARCH_COMMAND && command != SEQUEST_COMMAND && command != SEARCH_MPSMS_COMMAND){
     num_files_ = 1;
   }
 
