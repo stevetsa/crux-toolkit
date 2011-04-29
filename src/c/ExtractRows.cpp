@@ -68,6 +68,7 @@ int ExtractRows::main(int argc, char** argv) {
 
    /* Define optional command line arguments */
   const char* option_list[] = {
+    "delimiter",
     "header",
     "comparison",
     "column-type",
@@ -83,23 +84,11 @@ int ExtractRows::main(int argc, char** argv) {
   };
   int num_arguments = sizeof(argument_list) / sizeof(char*);
 
-    // Verbosity level for set-up/command line reading 
-  set_verbosity_level(CARP_WARNING);
+  /* Initialize the application */
+  initialize(argument_list, num_arguments,
+    option_list, num_options, argc, argv);
 
-  // Initialize parameter.c and set default values
-  initialize_parameters();
-
-  // Define optional and required arguments 
-  select_cmd_line_options(option_list, num_options);
-  select_cmd_line_arguments(argument_list, num_arguments);
-
-  // Parse the command line, including optional params file
-  // Includes syntax, type, and bounds checking, dies on error 
-  const char* cmd_name = this->getName().c_str();
-  char* full_cmd = cat_string("crux ", cmd_name);
-  parse_cmd_line_into_params_hash(argc, argv, cmd_name);
-  free(full_cmd);
-
+  /* Get parameters */
   const char* delimited_filename = 
     get_string_parameter_pointer("tsv file");
 
@@ -110,10 +99,10 @@ int ExtractRows::main(int argc, char** argv) {
 
   COLTYPE_T column_type = get_column_type_parameter("column-type");
   COMPARISON_T comparison = get_comparison_parameter("comparison");
+  char delimiter = get_delimiter_parameter("delimiter");
 
 
-
-  DelimitedFileReader delimited_file(delimited_filename, true);
+  DelimitedFileReader delimited_file(delimited_filename, true, delimiter);
   int column_idx = delimited_file.findColumn(column_name);
 
   if (column_idx == -1) {
@@ -125,8 +114,6 @@ int ExtractRows::main(int argc, char** argv) {
   if (get_boolean_parameter("header")) {
     cout << delimited_file.getHeaderString() << endl;
   }
-
- 
 
   string column_value_str =
     string(get_string_parameter_pointer("column value"));

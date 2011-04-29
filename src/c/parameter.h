@@ -194,6 +194,10 @@ MASS_TYPE_T get_mass_type_parameter(
  const char* name
  );
 
+char get_delimiter_parameter(
+  const char* name
+  );
+
 SORT_TYPE_T get_sort_type_parameter(
  const char* name
  );

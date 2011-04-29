@@ -67,7 +67,7 @@ static const int B_Y_HEIGHT = 50;
 /**
  * Relative height of flanking peaks.
  */
-static const int FLANK_HEIGHT = 0;//25;
+static int FLANK_HEIGHT = 25;
 /**
  * Relative height of neutral loss peaks.
  */
@@ -115,7 +115,6 @@ struct scorer {
   /// used for xcorr
   FLOAT_T* observed; ///< used for Xcorr: observed spectrum intensity array
   FLOAT_T* theoretical; ///< used for Xcorr: theoretical spectrum intensity array
-  bool use_flanks; ///< used for Xcorr: use flanking peaks in the theoretical spectrum
 };
 
 int ion_counter=0;
@@ -179,6 +178,9 @@ SCORER_T* new_scorer(
     scorer->initialized = FALSE;
   }
 
+  if( get_boolean_parameter("use-flanking-peaks") == FALSE ){
+    FLANK_HEIGHT = 0;
+  }
   return scorer;
 }
 

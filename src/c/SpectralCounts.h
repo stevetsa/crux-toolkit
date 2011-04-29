@@ -26,6 +26,8 @@ class SpectralCounts: public CruxApplication {
   virtual int main(int argc, char** argv);
   virtual std::string getName();
   virtual std::string getDescription();
+  virtual COMMAND_T getCommand();
+  virtual bool needsOutputDirectory();
 
  private:
   // internally-used types
@@ -63,22 +65,24 @@ class SpectralCounts: public CruxApplication {
               bool(*)(Protein*, Protein*)> ProteinToMetaProtein;
   
   // private functions
-  void get_parameter_values();
-  void filter_matches();
-  void get_peptide_scores();
-  void get_protein_scores();
-  void get_protein_to_peptides();
-  void get_protein_to_meta_protein();
-  void get_meta_mapping();
-  void get_meta_ranks();
-  void get_meta_scores();
-  void perform_parsimony_analysis();
-  void normalize_peptide_scores();
-  void normalize_protein_scores();
-  void make_unique_mapping();
+  void getParameterValues();
+  void filterMatches();
+  void getPeptideScores();
+  void getProteinScores();
+  void getProteinToPeptides();
+  void getProteinToMetaProtein();
+  void getMetaMapping();
+  void getMetaRanks();
+  void getMetaScores();
+  void performParsimonyAnalysis();
+  void normalizePeptideScores();
+  void normalizeProteinScores();
+  void computeEmpai();
+  void makeUniqueMapping();
   void getSpectra(std::map<std::pair<int,int>, Spectrum*>& spectra);
-  FLOAT_T sum_match_intensity(MATCH_T* match,
+  FLOAT_T sumMatchIntensity(MATCH_T* match,
                           SpectrumCollection* spectra);
+  SCORER_TYPE_T get_qval_type(MATCH_COLLECTION_T* match_collection);
 
   // member variables
   OutputFiles* output_;
@@ -100,10 +104,10 @@ class SpectralCounts: public CruxApplication {
   MetaToRank meta_protein_ranks_;
 
   // comparison function declarations
-  static bool compare_peptide_sets(PeptideSet, PeptideSet);
-  static bool compare_meta_proteins(MetaProtein, MetaProtein);
-  static bool sets_are_equal_size(std::pair<PeptideSet, MetaProtein>,
-                                  std::pair<PeptideSet, MetaProtein>);
+  static bool comparePeptideSets(PeptideSet, PeptideSet);
+  static bool compareMetaProteins(MetaProtein, MetaProtein);
+  static bool setsAreEqualSize(std::pair<PeptideSet, MetaProtein>,
+                               std::pair<PeptideSet, MetaProtein>);
  
 }; // class
 

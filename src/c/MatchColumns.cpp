@@ -61,6 +61,7 @@ static const char* match_column_strings[NUMBER_MATCH_COLUMNS] = {
   "tic ratio",
   "SIN",
   "NSAF",
+  "EMPAI",
   "parsimony rank"
 };
 

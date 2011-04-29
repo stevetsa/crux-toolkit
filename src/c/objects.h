@@ -178,6 +178,7 @@ enum _measure_type {
   MEASURE_INVALID,
   MEASURE_SIN,
   MEASURE_NSAF,
+  MEASURE_EMPAI,
   NUMBER_MEASURE_TYPES
 };
 
@@ -526,7 +527,7 @@ enum _command {
   XLINK_SEARCH_COMMAND, ///< search-for-xlinks
   SEARCH_MPSMS_COMMAND,  ///< search-for-mpsms  
   VERSION_COMMAND,      ///< just print the version number
-
+  MISC_COMMAND,         ///< miscellaneous command
   NUMBER_COMMAND_TYPES  ///< always keep this last so the value
                         /// changes as cmds are added
 };

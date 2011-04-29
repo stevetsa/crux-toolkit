@@ -28,17 +28,17 @@ DelimitedFileReader::DelimitedFileReader() {
 /**
  * \returns a DelimitedFileReader object and loads the tab-delimited
  * data specified by file_name.
- */  
+ */ 
 DelimitedFileReader::DelimitedFileReader(
-  const char *file_name, ///< the path of the file to read 
-  char delimiter, ///< the delimiter to use (default tab)
-  bool hasHeader ///< indicate whether header exists
-  ){
+  const char *file_name, ///< the path of the file to read
+  bool has_header, ///< indicates whether the header exists (default true).
+  char delimiter ///< the delimiter to use (default tab).
+  ) {
 
   istream_ptr_ = NULL;
   num_rows_valid_ = false;
   delimiter_ = delimiter;
-  loadData(file_name, hasHeader);
+  loadData(file_name, has_header);
 }
 
 /** 
@@ -46,14 +46,14 @@ DelimitedFileReader::DelimitedFileReader(
  * data specified by file_name.
  */
 DelimitedFileReader::DelimitedFileReader(
-    const string& file_name, ///< the path of the file  to read
-    char delimiter, ///< the delimiter to use (default tab)
-    bool hasHeader ///< indicates whether header exists
-  ){
+  const std::string& file_name, ///< the path of the file  to read
+  bool has_header, ///< indicates whether the header exists (default true).
+  char delimiter ///< the delimiter to use (default tab)
+  ) {
 
   istream_ptr_ = NULL;
   delimiter_ = delimiter;
-  loadData(file_name, hasHeader);
+  loadData(file_name, has_header);
 }
 
 /**
@@ -61,13 +61,16 @@ DelimitedFileReader::DelimitedFileReader(
  * data specified by istream.
  */
 DelimitedFileReader::DelimitedFileReader(
-    istream* istream_ptr,
-    bool has_header ///< indicated whether header exists
-) {
+  std::istream* istream_ptr, ///< the stream to be read
+  bool has_header, ///<indicates whether header exists
+  char delimiter ///< the delimiter to use (default tab)
+  ) {
 
+  
   istream_ptr_ = istream_ptr;
   istream_begin_ = istream_ptr->tellg();
 
+  delimiter_ = delimiter;
   has_header_ = has_header;
   owns_stream_ = false;
 
@@ -98,24 +101,22 @@ unsigned int DelimitedFileReader::numRows() {
 
     streampos last_pos = istream_ptr_->tellg();
 
-    istream_ptr_->seekg(istream_begin_);
+    istream_ptr_->clear();
+    istream_ptr_->seekg(istream_begin_, ios::beg);
     
     string temp_str;
     bool has_next = getline(*istream_ptr_,temp_str) != NULL;
 
-    //bool has_next = !istream_ptr_->eof();
-
     while (has_next) {
       num_rows_++;
       has_next = getline(*istream_ptr_, temp_str) != NULL;
-      //bool has_next = !istream_ptr_->eof();
     }
     
     if (has_header_) {
       num_rows_--;
     }
     num_rows_valid_ = true;
-
+    istream_ptr_->clear();
     istream_ptr_->seekg(last_pos);
 
   }
@@ -157,7 +158,7 @@ string DelimitedFileReader::getHeaderString() {
   ostringstream oss;
   oss << getColumnName(0);
   for (unsigned int col_idx=1;col_idx<numCols();col_idx++) {
-    oss << "\t" << getColumnName(col_idx);
+    oss << delimiter_ << getColumnName(col_idx);
   }
   
   string ans = oss.str();
@@ -169,6 +170,7 @@ void DelimitedFileReader::loadData() {
 
   if (!istream_ptr_->good()) {
     carp(CARP_ERROR, "Stream is not good!");
+    carp(CARP_ERROR, "Filename:%s", file_name_.c_str());
     carp(CARP_ERROR, "EOF:%i", istream_ptr_ -> eof());
     carp(CARP_ERROR, "Fail:%i", istream_ptr_ -> fail());
     carp(CARP_ERROR, "Bad:%i", istream_ptr_ -> bad());
@@ -176,7 +178,7 @@ void DelimitedFileReader::loadData() {
   }
   current_row_ = 0;
   num_rows_valid_ = false;
-
+  has_current_ = false;
   column_names_.clear();
   column_mismatch_warned_ = false;
   istream_begin_ = istream_ptr_->tellg(); 
@@ -196,7 +198,7 @@ void DelimitedFileReader::loadData() {
 
   if (has_next_) {
     next();
-  }
+  } 
 
 }
 
@@ -209,14 +211,20 @@ void DelimitedFileReader::loadData() {
  */
 void DelimitedFileReader::loadData(
   const char *file_name, ///< the file path
-  bool hasHeader ///< header indicator
+  bool has_header ///< header indicator
   ) {
 
   file_name_ = string(file_name);
-  has_header_ = hasHeader;
+  has_header_ = has_header;
 
-  istream_ptr_ = new ifstream(file_name, ios::in);
-  owns_stream_ = true;
+  //special case, if filename is '-', then use standard input.
+  if (file_name_ == "-") {
+    istream_ptr_ = &cin;
+    owns_stream_ = false;
+  } else {
+    istream_ptr_ = new ifstream(file_name, ios::in);
+    owns_stream_ = true;
+  }
   loadData();
 
 }
@@ -226,10 +234,10 @@ void DelimitedFileReader::loadData(
  */
 void DelimitedFileReader::loadData(
   const string& file, ///< the file path
-  bool hasHeader ///< header indicator
+  bool has_header ///< header indicator
   ) {
 
-  loadData(file.c_str(), hasHeader);
+  loadData(file.c_str(), has_header);
 }
 
 /**
@@ -293,6 +301,14 @@ const string& DelimitedFileReader::getString() {
 const string& DelimitedFileReader::getString(
   unsigned int col_idx ///< the column index
   ) {
+
+  if (col_idx >= data_.size()) {
+    carp(CARP_FATAL, 
+      "col idx:%i is out of bounds! (0,%i,%i)",
+      col_idx, 
+      (column_names_.size()-1),
+      (data_.size()-1));
+  }
 
   return data_.at(col_idx);
 }
@@ -522,9 +538,8 @@ void DelimitedFileReader::getDoubleVectorFromCell(
  * resets the file pointer to the beginning of the file.
  */
 void DelimitedFileReader::reset() {
-  cerr <<"reset(): setting stream to:"<<istream_begin_<<endl;
   istream_ptr_->clear();
-  istream_ptr_->seekg(0, ios::beg);
+  istream_ptr_->seekg(istream_begin_, ios::beg);
   loadData();
   
 }
@@ -538,8 +553,7 @@ void DelimitedFileReader::next() {
     current_row_++;
     current_data_string_ = next_data_string_;
     //parse next_data_string_ into data_
-    DelimitedFile::tokenize(next_data_string_, data_, delimiter_);
-
+    DelimitedFile::tokenize(current_data_string_, data_, delimiter_);
     //make sure data has the right number of columns for the header.
     if (data_.size() < column_names_.size()) {
       if (!column_mismatch_warned_) {

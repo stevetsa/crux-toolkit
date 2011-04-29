@@ -62,6 +62,14 @@ class IonSeries {
     );
 
   /**
+   * user must ensure that there is enough space for this ion
+   * adds ion to ion_series' master ion_array and if B|Y ion to the specific ion_array
+   */
+  void addIon(
+    Ion* ion ///< ion to add -in
+  );
+
+  /**
    * helper function: add_ions
    * add all the ions to ion_series up to the max charge
    *\returns TRUE if successfully adds all ions, else FALSE
@@ -123,13 +131,6 @@ class IonSeries {
     int charge ///< The charge for this ion series -in
     );
 
-  /**
-   * user must ensure that there is enough space for this ion
-   * adds ion to ion_series' master ion_array and if B|Y ion to the specific ion_array
-   */
-  void addIon(
-    Ion* ion ///< ion to add -in
-    );
   
 /**
  * Updates an ion_series to a specific instance of a peptide sequence.
