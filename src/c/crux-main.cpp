@@ -18,6 +18,7 @@
 #include "ComputeQValues.h"
 #include "Percolator.h"
 #include "QRanker.h"
+#include "Barista.h"
 #include "PrintProcessedSpectra.h"
 #include "SearchForXLinks.h"
 #include "SearchForXLinksMods.h"
@@ -42,6 +43,7 @@ int main(int argc, char** argv){
   applications.add(new ComputeQValues());
   applications.add(new Percolator());
   applications.add(new QRanker());
+  applications.add(new Barista());
   applications.add(new PrintProcessedSpectra());
   applications.add(new SearchForXLinks());
   applications.add(new SearchForXLinksMods());
@@ -52,7 +54,7 @@ int main(int argc, char** argv){
   applications.add(new SpectralCounts());
 
   applications.add(new PrintVersion());
-
+  
 
 
 

@@ -1,6 +1,6 @@
 distdir = $(PACKAGE)_$(VERSION)
 
-SUBDIRS = ArrayLibrary MSToolkit percolator q-ranker xlink .
+SUBDIRS = ArrayLibrary MSToolkit percolator q-ranker xlink qranker-barista .
 
 # Crux can use either single or double precision floating poinnt.
 if USEDOUBLES
@@ -24,9 +24,9 @@ else
   SEARCH_ENABLED = 
 endif
 
-AM_CFLAGS = -Wall -W -Werror $(USEDOUBLES) $(USEDARWIN) $(SEARCH_ENABLED) \
+AM_CFLAGS = -Wall -W $(USEDOUBLES) $(USEDARWIN) $(SEARCH_ENABLED) \
             -D_LARGEFILE_SOURCE=1 -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE
-AM_CXXFLAGS = -Wall -W -Werror  $(USEDOUBLES) $(USEDARWIN) $(SEARCH_ENABLED) \
+AM_CXXFLAGS = -Wall -W  $(USEDOUBLES) $(USEDARWIN) $(SEARCH_ENABLED) \
             -D_LARGEFILE_SOURCE=1 -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE
 
 LIBFILES= \
@@ -132,8 +132,6 @@ LIBFILES= \
   ProteinPeptideIterator.h \
   protein_index.cpp \
   protein_index.h \
-  QRanker.cpp \
-  QRanker.h \
   q-value.cpp \
   q-value.h \
   SearchProgress.h \
@@ -164,6 +162,7 @@ libcrux_la_CFLAGS = \
   $(AM_CFLAGS) \
   -I$(top_srcdir)/src/c/MSToolkit \
   -I$(top_srcdir)/src/c/percolator/ \
+  -I$(top_srcdir)/src/c/qranker-barista/ \
   -I$(top_srcdir)/src/c/q-ranker/
 
 libcrux_la_CXXFLAGS = \
@@ -171,6 +170,7 @@ libcrux_la_CXXFLAGS = \
   -I$(top_srcdir)/src/c/MSToolkit \
   -I$(top_srcdir)/src/c/MSToolkit/RAMP \
   -I$(top_srcdir)/src/c/percolator/ \
+  -I$(top_srcdir)/src/c/qranker-barista/ \
   -I$(top_srcdir)/src/c/q-ranker/
 
 libcrux_la_SOURCES = $(LIBFILES)
@@ -210,7 +210,9 @@ crux_CXXFLAGS = \
   -I$(top_srcdir)/src/c/MSToolkit \
   -I$(top_srcdir)/src/c/percolator \
   -I$(top_srcdir)/src/c/q-ranker \
-  -I$(top_srcdir)/src/c/xlink
+  -I$(top_srcdir)/src/c/xlink \
+  -I$(top_srcdir)/src/c/qranker-barista
+
 crux_LDADD = \
   $(AM_LDFLAGS) \
   -L$(top_builddir)/src/c/xlink \
@@ -221,9 +223,11 @@ crux_LDADD = \
   -L$(top_builddir)/src/c/MSToolkit \
   -L$(top_builddir)/src/c/percolator \
   -L$(top_builddir)/src/c/q-ranker \
+  -L$(top_builddir)/src/c/qranker-barista \
   -lm \
   -lpercolator \
   -lqranker \
+  -lqranker_barista \
   -lmstoolkit \
   -lArrayLibrary
 
