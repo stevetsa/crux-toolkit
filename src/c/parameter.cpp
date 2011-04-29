@@ -9,6 +9,9 @@
 #include "crux-utils.h"
 #include "parameter.h"
 
+#include "DelimitedFile.h"
+
+using namespace std;
 
 //TODO:  in all set, change result=add_... to result= result && add_...
 
@@ -2097,6 +2100,26 @@ int get_int_parameter(
   return value;
 }
 
+vector<int> get_int_vector_parameter(
+  const char* name
+  ) {
+
+  vector<int> ans;
+  
+  vector<string> sans = get_string_vector_parameter(name);
+
+  for (unsigned int idx=0;idx<sans.size();idx++) {
+
+    int ival;
+    DelimitedFile::from_string(ival,sans[idx]);
+    ans.push_back(ival);
+  }
+
+
+  return ans;
+}
+
+
 
 /**
  * Searches through the list of parameters, looking for one whose
@@ -2190,6 +2213,20 @@ char* get_string_parameter(
 
   return my_copy_string(string_value);
 }
+
+vector<string> get_string_vector_parameter(
+  const char* name
+  ) {
+
+  vector<string> ans;
+
+  string value(get_string_parameter_pointer(name));
+
+  DelimitedFile::tokenize(value, ans, ',');
+
+  return ans;
+}
+
 
 // TODO (BF 04-Feb-08): Should we delete this since it allows caller
 //      to change the value of a parameter?
