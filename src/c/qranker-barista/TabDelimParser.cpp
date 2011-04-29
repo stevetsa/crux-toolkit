@@ -20,11 +20,15 @@ TabDelimParser :: TabDelimParser()
 	num_pep_in_all_psms(0),
 	curr_ofst(0),
 	psmind(0),
-	x(0)
+	x(0),
+	num_xlink_features(0)
 {
   
   //num_psm_features
   num_features = 17;
+  //num_xlink_features
+  num_xlink_features = 17;
+
   
   //final_hits_per_spectrum
   fhps = 3;
@@ -468,6 +472,305 @@ int TabDelimParser :: run(vector<string> &filenames)
   f_psm.close();
   cout << psmind << " " << num_pos_psm << " " << num_neg_psm << endl;
   save_data_in_binary(out_dir);
+  return 1;
+}
+
+/*******************************************xlinking functions*************************************/
+
+
+/* xlink tokens
+ * 0. scan    
+ * 1. charge  
+ * 2. spectrum precursor m/z  
+ * 3. spectrum neutral mass   
+ * 4. peptide mass mono       
+ * 5. peptide mass average    
+ * 6. mass error(ppm) 
+ * 7. sp score        
+ * 8. sp rank 
+ * 9. b/y ions matched        
+ * 10. b/y ions total  
+ * 11. xcorr score     
+ * 12. xcorr rank      
+ * 13. p-value 
+ * 14. matches/spectrum        
+ * 15. sequence        
+ * 16. protein id(loc) 1       
+ * 17. protein id(loc) 2
+ */
+
+
+void TabDelimParser :: first_pass_xlink(ifstream &fin)
+{
+  string line;
+  vector<string> tokens;
+  vector<string> subtokens;
+  vector<string> peptides;
+  string delim1 = "\t";
+  string delim2 = ",";
+  string delim3 = " ";
+  while(!fin.eof())
+    {
+      getline(fin,line);
+      get_tokens(line, tokens, delim1);
+      
+      if(tokens.size() > 1)
+	{
+	  //get all peptides and fill tables
+	  string pep_and_loc = tokens[15];
+	  get_tokens(pep_and_loc,subtokens,delim3);
+	  string peps = subtokens[0];
+	  get_tokens(peps,peptides,delim2);
+	  psmind_to_peptide1[num_psm] = peptides[0];
+	  psmind_to_peptide2[num_psm] = peptides[1];
+	  psmind_to_loc[num_psm] = subtokens[1];
+	  //proteins
+	  psmind_to_protein1[num_psm] = tokens[16];
+	  psmind_to_protein2[num_psm] = tokens[17];
+	  
+	  num_psm++;
+	}
+    }
+}
+
+
+void TabDelimParser :: allocate_feature_space_xlink()
+{
+  //space for feature vector
+  x = new double[num_xlink_features];
+  memset(x,0,sizeof(double)*num_xlink_features);
+
+  psmind_to_label = new int[num_psm];
+  memset(psmind_to_label,0,sizeof(int)*num_psm);
+
+}
+
+
+void TabDelimParser :: extract_xlink_features(vector<string> & tokens, double *x)
+{
+  memset(x,0,sizeof(double)*num_xlink_features);
+  //log rank by Sp
+  x[0]=atof(tokens[8].c_str());
+  //deltaLCN
+
+  //deltaCN
+
+  //xcorr score
+  x[3] = atof(tokens[11].c_str());
+  //sp score
+  x[4] = atof(tokens[7].c_str());
+  //matched ions/predicted ions
+  
+  //observed mass
+  
+  //peptide length
+  
+  //charge
+  
+  //whether n-terminus and c-terminus have proper cleavage sites
+  
+  // missed cleavages
+  
+  // number of sequence_comparisons
+
+  //difference between measured and calculated mass
+
+  // absolute value of difference between measured and calculated mass
+
+}
+
+
+
+void TabDelimParser :: second_pass_xlink(ifstream &fin, int label)
+{
+  string line;
+  vector<string> tokens;
+  
+  vector<string> peptides;
+  vector<string> charge_str;
+  vector<string> spectrum_neutral_mass_str;
+  vector<string> peptide_mass_str;
+  string delim1 = "\t";
+  string delim2 = ",";
+  while(!fin.eof())
+    {
+      getline(fin,line);
+      get_tokens(line, tokens, delim1);
+  
+      if(tokens.size() > 1)
+	{
+	  //extract features
+	  extract_xlink_features(tokens, x);
+	  f_psm.write((char*)x, sizeof(double)*num_features);
+		  
+	  psmind_to_label[psmind] = label;
+	  if(label == 1)
+	    num_pos_psm++;
+	  else
+	    num_neg_psm++;
+
+	  //augment counters
+	  psmind++;  
+	}
+    }
+}
+
+
+void TabDelimParser :: save_data_in_binary_xlink(string out_dir)
+{
+  ostringstream fname;
+  //write out data summary
+  fname << out_dir << "/summary.txt";
+  ofstream f_summary(fname.str().c_str());
+  //psm info
+  f_summary << num_xlink_features << " " << num_psm << " " << num_pos_psm << " " << num_neg_psm << endl;
+  f_summary.close();
+  fname.str("");
+
+  //psmind_to_label
+  fname << out_dir << "/psmind_to_label.txt";
+  ofstream f_psmind_to_label(fname.str().c_str(),ios::binary);
+  f_psmind_to_label.write((char*)psmind_to_label,sizeof(int)*num_psm);
+  f_psmind_to_label.close();
+  fname.str("");
+  
+  //psmind_to_peptide1
+  fname << out_dir << "/psmind_to_peptide1.txt";
+  ofstream f_psmind_to_peptide1(fname.str().c_str(),ios::binary);
+  for(map<int,string>::iterator it = psmind_to_peptide1.begin(); it != psmind_to_peptide1.end(); it++)
+    f_psmind_to_peptide1 << it->first << " " << it->second << "\n";
+  f_psmind_to_peptide1.close();
+  fname.str("");
+  
+  //psmind_to_peptide2
+  fname << out_dir << "/psmind_to_peptide2.txt";
+  ofstream f_psmind_to_peptide2(fname.str().c_str(),ios::binary);
+  for(map<int,string>::iterator it = psmind_to_peptide2.begin(); it != psmind_to_peptide2.end(); it++)
+    f_psmind_to_peptide2 << it->first << " " << it->second << "\n";
+  f_psmind_to_peptide2.close();
+  fname.str("");
+
+  //psmind_to_loc
+  fname << out_dir << "/psmind_to_loc.txt";
+  ofstream f_psmind_to_loc(fname.str().c_str(),ios::binary);
+  for(map<int,string>::iterator it = psmind_to_loc.begin(); it != psmind_to_loc.end(); it++)
+    f_psmind_to_loc << it->first << " " << it->second << "\n";
+  f_psmind_to_loc.close();
+  fname.str("");
+
+  //psmind_to_peptide1
+  fname << out_dir << "/psmind_to_protein1.txt";
+  ofstream f_psmind_to_protein1(fname.str().c_str(),ios::binary);
+  for(map<int,string>::iterator it = psmind_to_protein1.begin(); it != psmind_to_protein1.end(); it++)
+    f_psmind_to_protein1 << it->first << " " << it->second << "\n";
+  f_psmind_to_protein1.close();
+  fname.str("");
+  
+  //psmind_to_peptide2
+  fname << out_dir << "/psmind_to_protein2.txt";
+  ofstream f_psmind_to_protein2(fname.str().c_str(),ios::binary);
+  for(map<int,string>::iterator it = psmind_to_protein2.begin(); it != psmind_to_protein2.end(); it++)
+    f_psmind_to_protein2 << it->first << " " << it->second << "\n";
+  f_psmind_to_protein2.close();
+  fname.str("");
+
+}
+
+
+void TabDelimParser :: clean_up_xlink(string dir)
+{
+
+  ostringstream fname;
+      
+  //fname << out_dir << "/summary.txt";
+  //ofstream f_summary(fname.str().c_str());
+
+  fname << dir << "/psm.txt";
+  remove(fname.str().c_str());
+  fname.str("");
+
+  //psmind_to_label
+  fname << out_dir << "/psmind_to_label.txt";
+  remove(fname.str().c_str());
+  fname.str("");
+
+  //psmind_to_peptide1
+  fname << out_dir << "/psmind_to_peptide1.txt";
+  remove(fname.str().c_str());
+  fname.str("");
+
+  //psmind_to_peptide2
+  fname << out_dir << "/psmind_to_peptide2.txt";
+  remove(fname.str().c_str());
+  fname.str("");
+
+  //psmind_to_loc
+  fname << out_dir << "/psmind_to_loc.txt";
+  remove(fname.str().c_str());
+  fname.str("");
+
+  //psmind_to_protein1
+  fname << out_dir << "/psmind_to_protein1.txt";
+  remove(fname.str().c_str());
+  fname.str("");
+
+  //psmind_to_protein2
+  fname << out_dir << "/psmind_to_protein2.txt";
+  remove(fname.str().c_str());
+  fname.str("");
+
+}
+
+
+
+int TabDelimParser :: run_on_xlink(vector<string> &filenames)
+{
+  string line;
+  for(unsigned int i = 0; i < filenames.size(); i++)
+    {
+      string fname = filenames[i];
+      cout << fname << endl;
+      ifstream fin(fname.c_str());
+      if(!fin.is_open())
+	{
+	  cout << "could not open " << fname << " for reading" << endl;
+	  return 0;
+	}
+      getline(fin,line);
+      first_pass_xlink(fin);
+      fin.close();
+    
+    }
+  cout << num_psm  << endl;
+  allocate_feature_space_xlink();
+    
+  ostringstream fname;
+  fname << out_dir << "/psm.txt";
+  f_psm.open(fname.str().c_str());
+  fname.str("");
+
+  int label = 0;
+  for(unsigned int i = 0; i < filenames.size(); i++)
+    {
+      string fname = filenames[i];
+      cout << fname << endl;
+      ifstream fin(fname.c_str());
+      if(!fin.is_open())
+	{
+	  cout << "could not open " << fname << " for reading" << endl;
+	  return 0;
+	}
+      getline(fin,line);
+      if(i == 0)
+	label = 1;
+      else
+	label = -1;
+      second_pass_xlink(fin,label);
+      fin.close();
+    }
+  f_psm.close();
+  cout << psmind << " " << num_pos_psm << " " << num_neg_psm << endl;
+  save_data_in_binary_xlink(out_dir);
   return 1;
 }
 

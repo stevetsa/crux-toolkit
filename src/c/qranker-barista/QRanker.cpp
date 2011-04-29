@@ -491,31 +491,6 @@ int QRanker::run( ) {
 }
 
 
-//int main(int argc, char **argv){
-/*
-int QRanker::main(int argc, char **argv) {
-  int capacity(10);
-  SQTParser sqtp(capacity);
-    
-  if(!sqtp.set_command_line_options(argc,argv))
-    return 0;
-  //num of spec features
-  sqtp.set_num_spec_features(0);
-  if(!sqtp.run())
-    return 0;
-  string dir = sqtp.get_output_dir();
-
-
-  QRanker qRanker;
-  qRanker.set_input_dir(dir);
-  qRanker.set_output_dir(dir);
-  qRanker.run();
-  
-  sqtp.clean_up(dir);
-  
-  return 0;
-}   
-*/
 
 int QRanker::set_command_line_options(int argc, char **argv)
 {
@@ -528,7 +503,7 @@ int QRanker::set_command_line_options(int argc, char **argv)
     }
   string out_dir = "crux-output";
   pars.set_output_dir(out_dir);
-  if(!pars.run(fnames))
+  if(!pars.run_on_xlink(fnames))
     return 0;
   pars.clear();
   return 1;

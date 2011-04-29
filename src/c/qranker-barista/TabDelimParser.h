@@ -27,6 +27,7 @@ class TabDelimParser{
   inline void set_output_dir(string &dir){out_dir = dir;}
   inline string& get_output_dir(){return out_dir;}
   int run(vector<string> &filenames);
+
   void get_tokens(string &line, vector<string>&tokens, string &delim);
   void first_pass(ifstream &fin);
   void second_pass(ifstream &fin, int label);
@@ -34,7 +35,14 @@ class TabDelimParser{
   void extract_psm_features(vector<string> & tokens, double *x);
   void save_data_in_binary(string out_dir);
   void clean_up(string dir);
-
+  /*******************************************************/
+  int run_on_xlink(vector<string> &filenames);
+  void first_pass_xlink(ifstream &fin);
+  void second_pass_xlink(ifstream &fin, int label);
+  void allocate_feature_space_xlink();
+  void extract_xlink_features(vector<string> & tokens, double *x);
+  void save_data_in_binary_xlink(string out_dir);
+  void clean_up_xlink(string dir);
  protected:
   //auxiliary variables
   int num_mixed_labels;
@@ -81,6 +89,14 @@ class TabDelimParser{
   int max_len;
   //min peptide length to be considered
   int min_len;
+  
+  /************xlink-specific*************/
+  int num_xlink_features;
+  map<int,string> psmind_to_peptide1;
+  map<int,string> psmind_to_peptide2;
+  map<int,string> psmind_to_loc;
+  map<int,string> psmind_to_protein1;
+  map<int,string> psmind_to_protein2;
   
 };
 
