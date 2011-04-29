@@ -222,6 +222,7 @@ MATCH_COLLECTION_T* run_percolator_or_qranker(
           pi0);
         break;
       case QRANKER_COMMAND:
+        /*
         qcInitiate(
             (NSet)get_match_collection_iterator_number_collections(
                      match_collection_iterator), 
@@ -229,6 +230,7 @@ MATCH_COLLECTION_T* run_percolator_or_qranker(
             num_spectra, 
             feature_names, 
             pi0);
+        */
         break;
       case INDEX_COMMAND:
       case SEARCH_COMMAND:
@@ -262,6 +264,7 @@ MATCH_COLLECTION_T* run_percolator_or_qranker(
         }
         break;
       case QRANKER_COMMAND:
+        /*
         if(verbosity < CARP_ERROR){
           qcSetVerbosity(0);
         }    
@@ -271,6 +274,7 @@ MATCH_COLLECTION_T* run_percolator_or_qranker(
         else{
           qcSetVerbosity(5);
         }
+        */
         break;
       default:
         carp(CARP_FATAL, "Unknown command type.");
@@ -294,9 +298,11 @@ MATCH_COLLECTION_T* run_percolator_or_qranker(
                       features);
         break;
       case QRANKER_COMMAND:
+        /*
         qcRegisterPSM((SetType)set_idx,
                       get_match_sequence_sqt(match),
                       features);
+        */
         break;
       default:
         carp(CARP_FATAL, "Unknown command type.");
@@ -330,6 +336,7 @@ MATCH_COLLECTION_T* run_percolator_or_qranker(
     pcCleanUp();
     break;
   case QRANKER_COMMAND:
+    /*
     qcExecute(!get_boolean_parameter("no-xval")); 
     qcGetScores(results_score, results_q); 
     fill_result_to_match_collection(
@@ -337,6 +344,7 @@ MATCH_COLLECTION_T* run_percolator_or_qranker(
     fill_result_to_match_collection(
         target_match_collection, results_score, QRANKER_SCORE, FALSE);
     qcCleanUp();
+    */
     break;
   default:
     carp(CARP_FATAL, "Unknown command type.");

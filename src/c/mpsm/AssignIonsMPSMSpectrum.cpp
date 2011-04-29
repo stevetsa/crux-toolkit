@@ -10,7 +10,7 @@
 #include "peak.h"
 
 #include "DelimitedFile.h"
-
+#include "SpectrumCollectionFactory.h"
 #include "MPSM_Scorer.h"
 
 using namespace std;
@@ -89,7 +89,8 @@ int AssignIonsMPSMSpectrum::main(int argc, char** argv) {
 
   //get spectrum
   
-  SpectrumCollection* collection = new SpectrumCollection(ms2_filename);
+  SpectrumCollection* collection = 
+    SpectrumCollectionFactory::create(ms2_filename);
 
   Spectrum* spectrum = collection->getSpectrum(scan_number);
 

@@ -7,6 +7,7 @@
 #include "Ion.h"
 #include "IonSeries.h"
 #include "IonConstraint.h"
+#include "SpectrumCollectionFactory.h"
 
 #include "DelimitedFile.h"
 
@@ -84,7 +85,8 @@ int ScoreMPSMSpectrum::main(int argc, char** argv) {
 
   //get spectrum
   
-  SpectrumCollection* collection = new SpectrumCollection(ms2_filename);
+  SpectrumCollection* collection = 
+    SpectrumCollectionFactory::create(ms2_filename);
 
   Spectrum* spectrum = collection->getSpectrum(scan_number);
 

@@ -10,7 +10,7 @@
 #include "OutputFiles.h"
 #include "q-value.h"
 #include "PercolatorCInterface.h"
-#include "QRankerCInterface.h"
+//#include "QRankerCInterface.h"
 
 /**
  * \brief Takes a directory containing PSM files and a protein index

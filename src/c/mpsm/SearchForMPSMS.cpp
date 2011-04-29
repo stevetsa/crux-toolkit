@@ -7,6 +7,7 @@
 #include "SearchProgress.h"
 
 #include "SpectrumCollection.h"
+#include "SpectrumCollectionFactory.h"
 
 using namespace std;
 
@@ -58,8 +59,8 @@ int SearchForMPSMS::main(int argc, char** argv) {
   int num_arguments = sizeof(argument_list) / sizeof(char*);
 
 
-  initialize_run(SEARCH_MPSMS_COMMAND, argument_list, num_arguments,
-                 option_list, num_options, argc, argv);
+  initialize(argument_list, num_arguments,
+             option_list, num_options, argc, argv);
 
   /* Set verbosity */
   set_verbosity_level(get_int_parameter("verbosity"));
@@ -68,7 +69,7 @@ int SearchForMPSMS::main(int argc, char** argv) {
   const char* ms2_file = get_string_parameter_pointer("ms2 file");
 
   // open ms2 file
-  SpectrumCollection* spectra = new SpectrumCollection(ms2_file);
+  SpectrumCollection* spectra = SpectrumCollectionFactory::create(ms2_file);
 
   rtime_predictor_ = RetentionPredictor::createRetentionPredictor();
 
@@ -108,7 +109,7 @@ int SearchForMPSMS::main(int argc, char** argv) {
   }
   
   /* Prepare output files */
-  MPSM_OutputFiles output_files(SEARCH_COMMAND); 
+  MPSM_OutputFiles output_files(this); 
   output_files.writeHeaders(num_proteins);
   // TODO (BF oct-21-09): consider adding pvalue file to OutputFiles
   FILE* decoy_pvalue_file = NULL;
@@ -662,3 +663,23 @@ bool SearchForMPSMS::isSearchComplete(
 
 }
 
+/**
+ * \returns the file stem of the application, default getName.
+ */
+string SearchForMPSMS::getFileStem() {
+  return "search";
+}
+
+/**
+ * \returns the enum of the application, default MISC_COMMAND
+ */
+COMMAND_T SearchForMPSMS::getCommand() {
+  return SEARCH_MPSMS_COMMAND;
+}
+
+/**
+ * \returns whether the application needs the output directory or not. (default false).
+ */
+bool SearchForMPSMS::needsOutputDirectory() {
+  return true;
+}

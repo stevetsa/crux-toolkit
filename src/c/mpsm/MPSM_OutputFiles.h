@@ -25,7 +25,7 @@ class MPSM_OutputFiles: public OutputFiles {
 
   public:
     
-    MPSM_OutputFiles(COMMAND_T program_name): OutputFiles(program_name){};
+    MPSM_OutputFiles(CruxApplication* application): OutputFiles(application){};
     
 
 

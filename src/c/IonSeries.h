@@ -61,13 +61,6 @@ class IonSeries {
     int peptide_length ///< the length of the peptide
     );
 
-  /**
-   * user must ensure that there is enough space for this ion
-   * adds ion to ion_series' master ion_array and if B|Y ion to the specific ion_array
-   */
-  void addIon(
-    Ion* ion ///< ion to add -in
-  );
 
   /**
    * helper function: add_ions
@@ -130,6 +123,14 @@ class IonSeries {
     IonConstraint* constraint, ///< The constraints which the ions in this series obey.
     int charge ///< The charge for this ion series -in
     );
+
+  /**
+   * user must ensure that there is enough space for this ion
+   * adds ion to ion_series' master ion_array and if B|Y ion to the specific ion_array
+   */
+  void addIon(
+    Ion* ion ///< ion to add -in
+  );
 
   
 /**

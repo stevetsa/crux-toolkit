@@ -69,7 +69,7 @@ class SpectrumZState {
   /**
    * \returns the m+h charged mass for this z-state
    */
-  FLOAT_T getSinglyChargedMass();
+  FLOAT_T getSinglyChargedMass() const;
 
   /**
    * Sets the neutral mass for this z-state
@@ -82,7 +82,7 @@ class SpectrumZState {
   /**
    * \returns The neutral mass for this z-state
    */
-  FLOAT_T getNeutralMass();
+  FLOAT_T getNeutralMass() const;
   
   /** 
    * Sets the retention time for this z-state
@@ -106,7 +106,7 @@ class SpectrumZState {
   /**
    * \returns The area for this z-state
    */
-  FLOAT_T getArea();
+  FLOAT_T getArea() const;
 
   bool operator < (const SpectrumZState z) const;
   bool operator > (SpectrumZState& z);

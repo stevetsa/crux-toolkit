@@ -160,7 +160,7 @@ libcrux_la_CFLAGS = \
   $(AM_CFLAGS) \
   -I$(top_srcdir)/src/c/MSToolkit \
   -I$(top_srcdir)/src/c/percolator/ \
-  -I$(top_srcdir)/src/c/q-ranker/
+  -I$(top_srcdir)/src/c/qranker-barista/
 
 libcrux_la_CXXFLAGS = \
   $(AM_CXXFLAGS) \
@@ -168,7 +168,7 @@ libcrux_la_CXXFLAGS = \
   -I$(top_srcdir)/src/c/MSToolkit \
   -I$(top_srcdir)/src/c/MSToolkit/RAMP \
   -I$(top_srcdir)/src/c/percolator/ \
-  -I$(top_srcdir)/src/c/q-ranker/
+  -I$(top_srcdir)/src/c/qranker-barista/
 
 libcrux_la_SOURCES = $(LIBFILES)
 
