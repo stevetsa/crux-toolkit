@@ -26,13 +26,15 @@ public:
     vector<PSMScoreHolder>::iterator end() {return scores.end();}    
     static double pi0;
     double factor;
-
+    
+    void calc_factor();
     int calcOverFDR(double fdr);
     void calcMultiOverFDR(vector<double> &fdr, vector<int> &overFDR);
     inline PSMScoreHolder& operator[](int ix){return scores[ix];}    
     void static fillFeaturesSplit(PSMScores& train,PSMScores& test,Dataset &d, double ratio);
     void static fillFeaturesFull(PSMScores& full,Dataset &d);
     inline int size(){return scores.size();}
+    inline void add_psm(PSMScoreHolder &psm){scores.push_back(psm);}
 protected:
     int neg,pos,posNow;
     vector<PSMScoreHolder> scores;

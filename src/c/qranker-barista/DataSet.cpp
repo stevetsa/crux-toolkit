@@ -309,13 +309,6 @@ void Dataset :: load_psm_data_for_reporting_results()
   f_summary.close();
   fname.str("");
 
-  //psmind_to_pepind
-  fname << in_dir << "/psmind_to_pepind.txt";
-  ifstream f_psmind_to_pepind(fname.str().c_str(),ios::binary);
-  psmind_to_pepind = new int[num_psms];
-  f_psmind_to_pepind.read((char*)psmind_to_pepind,sizeof(int)*num_psms);
-  f_psmind_to_pepind.close();
-  fname.str("");
   //psmind_to_scan
   fname << in_dir << "/psmind_to_scan.txt";
   ifstream f_psmind_to_scan(fname.str().c_str(),ios::binary);
@@ -331,33 +324,78 @@ void Dataset :: load_psm_data_for_reporting_results()
   f_psmind_to_charge.close();
   fname.str("");
 
-  //ind_to_pep
-  fname << in_dir << "/ind_to_pep.txt";
-  ifstream f_ind_to_pep(fname.str().c_str(),ios::binary);
-  int ind;
-  while(!f_ind_to_pep.eof())
+  
+  int psmind;
+  //psmind_to_peptide1
+  fname << in_dir << "/psmind_to_peptide1.txt";
+  ifstream f_psmind_to_peptide1(fname.str().c_str(),ios::binary);
+  while(!f_psmind_to_peptide1.eof())
     {
       string pep;
-      f_ind_to_pep >> ind;
-      f_ind_to_pep >> pep;
-      ind_to_pep[ind] = pep;
+      f_psmind_to_peptide1 >> psmind;
+      f_psmind_to_peptide1 >> pep;
+      psmind_to_peptide1[psmind] = pep;
     }
-  f_ind_to_pep.close();
+  f_psmind_to_peptide1.close();
+  fname.str("");
+  
+  
+  //psmind_to_peptide2
+  fname << in_dir << "/psmind_to_peptide2.txt";
+  ifstream f_psmind_to_peptide2(fname.str().c_str(),ios::binary);
+  while(!f_psmind_to_peptide2.eof())
+    {
+      string pep;
+      f_psmind_to_peptide2 >> psmind;
+      f_psmind_to_peptide2 >> pep;
+      psmind_to_peptide2[psmind] = pep;
+    }
+  f_psmind_to_peptide2.close();
+  fname.str("");
+  
+  //psmind_to_loc
+  fname << in_dir << "/psmind_to_loc.txt";
+  ifstream f_psmind_to_loc(fname.str().c_str(),ios::binary);
+  while(!f_psmind_to_loc.eof())
+    {
+      string loc;
+      f_psmind_to_loc >> psmind;
+      f_psmind_to_loc >> loc;
+      psmind_to_loc[psmind] = loc;
+    }
+  f_psmind_to_loc.close();
   fname.str("");
 
-  //psmind_to_fname
-  fname << in_dir << "/psmind_to_fname.txt";
-  ifstream f_psmind_to_fname(fname.str().c_str(),ios::binary);
-  int psmind;
-  while(!f_psmind_to_fname.eof())
+  
+  //psmind_to_protein1
+  fname << in_dir << "/psmind_to_protein1.txt";
+  ifstream f_psmind_to_protein1(fname.str().c_str(),ios::binary);
+  while(!f_psmind_to_protein1.eof())
     {
-      string filename;
-      f_psmind_to_fname >> psmind;
-      f_psmind_to_fname >> filename;
-      psmind_to_fname[psmind] = filename;
+      string prot;
+      f_psmind_to_protein1 >> psmind;
+      f_psmind_to_protein1 >> prot;
+      psmind_to_protein1[psmind] = prot;
     }
-  f_psmind_to_fname.close();
+  f_psmind_to_protein1.close();
   fname.str("");
+  
+  //psmind_to_protein2
+  fname << in_dir << "/psmind_to_protein2.txt";
+  ifstream f_psmind_to_protein2(fname.str().c_str(),ios::binary);
+  
+  while(!f_psmind_to_protein2.eof())
+    {
+      string prot;
+      
+      f_psmind_to_protein2 >> psmind;
+      f_psmind_to_protein2 >> prot;
+      psmind_to_protein2[psmind] = prot;
+    }
+  
+    f_psmind_to_protein2.close();
+  fname.str("");
+  
 }
 
 
@@ -450,7 +488,6 @@ void Dataset :: load_prot_data_for_reporting_results()
   f_summary.close();
   fname.str("");
 
-
   //ind_to_prot
   fname << in_dir << "/ind_to_prot.txt";
   ifstream f_ind_to_prot(fname.str().c_str(),ios::binary);
@@ -465,6 +502,7 @@ void Dataset :: load_prot_data_for_reporting_results()
     }
   f_ind_to_prot.close();
   fname.str("");
+
 
 }
 
@@ -500,14 +538,3 @@ void Dataset :: normalize_psms()
     }
 }
 
-/*
-int main()
-{
-  Dataset* d = new Dataset();
-  
-  d->set_input_dir("yeast");
-  d->load_prot_data();
-  //d->normalize_psms();
-  return 0;
-}
-*/

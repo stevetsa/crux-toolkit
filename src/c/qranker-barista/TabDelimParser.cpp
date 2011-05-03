@@ -27,11 +27,11 @@ TabDelimParser :: TabDelimParser()
   //num_psm_features
   num_features = 17;
   //num_xlink_features
-  num_xlink_features = 17;
+  num_xlink_features = 10;
 
   
   //final_hits_per_spectrum
-  fhps = 3;
+  fhps = 1;
   //decoy prefix
   decoy_prefix = "random_";
   //max peptide length to be considered
@@ -87,7 +87,7 @@ TabDelimParser :: ~TabDelimParser()
 
 void TabDelimParser :: get_tokens(string &line, vector<string>&tokens, string &delim)
 {
-  tokens.erase(tokens.begin(), tokens.end());
+  tokens.erase(tokens.begin(),tokens.end());
   string tmp = line;
   string tok;
   size_t pos = tmp.find(delim);
@@ -522,12 +522,13 @@ void TabDelimParser :: first_pass_xlink(ifstream &fin)
 	  string peps = subtokens[0];
 	  get_tokens(peps,peptides,delim2);
 	  psmind_to_peptide1[num_psm] = peptides[0];
-	  psmind_to_peptide2[num_psm] = peptides[1];
+	  if(peptides.size() > 1)
+	    psmind_to_peptide2[num_psm] = peptides[1];
 	  psmind_to_loc[num_psm] = subtokens[1];
 	  //proteins
 	  psmind_to_protein1[num_psm] = tokens[16];
-	  psmind_to_protein2[num_psm] = tokens[17];
-	  
+	  if(tokens[17].size()>0)
+	    psmind_to_protein2[num_psm] = tokens[17];
 	  num_psm++;
 	}
     }
@@ -542,6 +543,11 @@ void TabDelimParser :: allocate_feature_space_xlink()
 
   psmind_to_label = new int[num_psm];
   memset(psmind_to_label,0,sizeof(int)*num_psm);
+  psmind_to_scan = new int[num_psm];
+  memset(psmind_to_scan,0,sizeof(int)*num_psm);
+  psmind_to_charge = new int[num_psm];
+  memset(psmind_to_charge,0,sizeof(int)*num_psm);
+
 
 }
 
@@ -549,34 +555,33 @@ void TabDelimParser :: allocate_feature_space_xlink()
 void TabDelimParser :: extract_xlink_features(vector<string> & tokens, double *x)
 {
   memset(x,0,sizeof(double)*num_xlink_features);
-  //log rank by Sp
-  x[0]=atof(tokens[8].c_str());
-  //deltaLCN
-
-  //deltaCN
-
+  
   //xcorr score
-  x[3] = atof(tokens[11].c_str());
+  x[0] = atof(tokens[11].c_str());
+  //x[0] = atof(tokens[13].c_str());
+  
+  //log rank by Sp
+  x[1]=log(atof(tokens[8].c_str()));
+  //deltaCN
+  x[2] = 0.0;
+  
+  //difference between measured and calculated mass
+  x[3] = atof(tokens[4].c_str())-atof(tokens[3].c_str());
+  // absolute value of difference between measured and calculated mass
+  x[4] = fabs(x[3]);
   //sp score
-  x[4] = atof(tokens[7].c_str());
+  x[5] = atof(tokens[7].c_str());
   //matched ions/predicted ions
-  
+  x[6] = atof(tokens[9].c_str())/atof(tokens[10].c_str());
   //observed mass
-  
-  //peptide length
-  
+  //x[7] = atof(tokens[3].c_str());
   //charge
-  
+  //x[8] = atof(tokens[1].c_str());
+  // number of sequence_comparisons
+  //x[9] = atof(tokens[14].c_str());
   //whether n-terminus and c-terminus have proper cleavage sites
-  
   // missed cleavages
   
-  // number of sequence_comparisons
-
-  //difference between measured and calculated mass
-
-  // absolute value of difference between measured and calculated mass
-
 }
 
 
@@ -601,8 +606,12 @@ void TabDelimParser :: second_pass_xlink(ifstream &fin, int label)
 	{
 	  //extract features
 	  extract_xlink_features(tokens, x);
-	  f_psm.write((char*)x, sizeof(double)*num_features);
+	  f_psm.write((char*)x, sizeof(double)*num_xlink_features);
 		  
+	  //record charge and scan
+	  psmind_to_scan[psmind] = atof(tokens[0].c_str());
+	  psmind_to_charge[psmind] = atof(tokens[1].c_str());
+
 	  psmind_to_label[psmind] = label;
 	  if(label == 1)
 	    num_pos_psm++;
@@ -632,6 +641,20 @@ void TabDelimParser :: save_data_in_binary_xlink(string out_dir)
   ofstream f_psmind_to_label(fname.str().c_str(),ios::binary);
   f_psmind_to_label.write((char*)psmind_to_label,sizeof(int)*num_psm);
   f_psmind_to_label.close();
+  fname.str("");
+  
+  //psmind_to_scan
+  fname << out_dir << "/psmind_to_scan.txt";
+  ofstream f_psmind_to_scan(fname.str().c_str(),ios::binary);
+  f_psmind_to_scan.write((char*)psmind_to_scan,sizeof(int)*num_psm);
+  f_psmind_to_scan.close();
+  fname.str("");
+
+  //psmind_to_charge
+  fname << out_dir << "/psmind_to_charge.txt";
+  ofstream f_psmind_to_charge(fname.str().c_str(),ios::binary);
+  f_psmind_to_charge.write((char*)psmind_to_charge,sizeof(int)*num_psm);
+  f_psmind_to_charge.close();
   fname.str("");
   
   //psmind_to_peptide1
@@ -693,6 +716,16 @@ void TabDelimParser :: clean_up_xlink(string dir)
   fname << out_dir << "/psmind_to_label.txt";
   remove(fname.str().c_str());
   fname.str("");
+  
+  //psmind_to_scan
+  fname << out_dir << "/psmind_to_scan.txt";
+  remove(fname.str().c_str());
+  fname.str("");
+  
+  //psmind_to_charge
+  fname << out_dir << "/psmind_to_charge.txt";
+  remove(fname.str().c_str());
+  fname.str("");
 
   //psmind_to_peptide1
   fname << out_dir << "/psmind_to_peptide1.txt";
@@ -741,6 +774,7 @@ int TabDelimParser :: run_on_xlink(vector<string> &filenames)
       fin.close();
     
     }
+
   cout << num_psm  << endl;
   allocate_feature_space_xlink();
     

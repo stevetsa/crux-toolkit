@@ -78,6 +78,68 @@ void QRanker :: write_results(string filename, NeuralNet &net)
 }
 
 
+void QRanker :: write_results_max(string filename, NeuralNet &net)
+{
+  //write out the results of the general net
+  ostringstream s1;
+  s1 << filename << ".txt";
+  ofstream f1(s1.str().c_str());
+  trainset.clear();
+  testset.clear();
+  thresholdset.clear();
+  PSMScores::fillFeaturesFull(fullset, d);
+  getOverFDR(fullset,net, qvals[4]);
+  
+  d.load_psm_data_for_reporting_results();
+
+  set<int> scans_target;
+  set<int> scans_decoy;
+  
+  for(int i = 0; i < fullset.size(); i++)
+    {
+      int scan = d.psmind2scan(fullset[i].psmind);
+      if(fullset[i].label == 1)
+	{
+	  if(scans_target.find(scan) == scans_target.end())
+	    {
+	      fullset_max.add_psm(fullset[i]);
+	      scans_target.insert(scan);
+	    }
+	}
+      else
+	{
+	  if(scans_decoy.find(scan) == scans_decoy.end())
+	    {
+	      fullset_max.add_psm(fullset[i]);
+	      scans_decoy.insert(scan);
+	    }
+	}
+    }
+  fullset_max.calc_factor();
+  getOverFDR(fullset_max,net, qvals[4]);
+
+  f1 << "scan" << "\t" << "charge" << "\t" << "q-ranker score" << "\t" << "q-ranker q-value" << "\t" << "peptide sequences (loc)" <<"\t" << "protein loc1" << "\t" << "protein loc2" << endl;
+  for(int i = 0; i < fullset_max.size(); i++)
+    {
+      if(fullset_max[i].label == 1)
+	{
+	  int psmind = fullset_max[i].psmind;
+	  //write scan
+	  f1 << d.psmind2scan(psmind) << "\t";
+	  //write charges
+	  f1 << d.psmind2charge(psmind) << "\t";
+	  f1 << fullset_max[i].score << "\t" << fullset_max[i].q << "\t";
+	  //write peptide sequence
+	  f1 << d.psmind2peptide1(psmind);
+	  if(d.psmind2peptide2(psmind) != "")
+	    f1 << "," << d.psmind2peptide2(psmind); 
+	  f1 << " " << d.psmind2loc(psmind) << "\t";
+	  f1 << d.psmind2protein1(psmind) << "\t" << d.psmind2protein2(psmind) << endl;
+	}
+    }
+  f1.close();
+}
+
 
 void QRanker :: write_max_nets(string filename, NeuralNet* max_net)
 {
@@ -404,7 +466,7 @@ void QRanker::train_many_nets()
     }
   
   //set the linear flag: 1 if linear, 0 otherwise
-  int lf = 0; num_hu = 5;
+  int lf = 0; num_hu = 1;
   if(num_hu == 1)
     lf = 1;
   //set whether there is bias in the linear units: 1 if yes, 0 otherwise
@@ -440,15 +502,6 @@ void QRanker::train_many_nets()
 
   train_many_target_nets();  
  
-  /*
-  //write out the results of the target net
-  cerr << "target net results: ";
-  ostringstream s2;
-  s2 << res_prefix;
-  cout << s2.str() << endl;
-  //write_max_nets(s2.str(), max_net_targ);
-  //write_unique_peptides(s2.str(), max_net_targ);
-
   //choose the best net for the selectionfdr
   int max_fdr = 0;
   int fdr = 0;
@@ -464,9 +517,6 @@ void QRanker::train_many_nets()
     }
   net = max_net_targ[ind];
 
-  //write_num_psm_per_spectrum("test.txt", max_net_targ);
-  write_results(s2.str(),net);
-  */
   delete [] max_net_gen;
   delete [] max_net_targ;
   delete [] nets;
@@ -477,16 +527,24 @@ void QRanker::train_many_nets()
 int QRanker::run( ) {
   srand(seed);
   cout << "reading data\n";
-  
-  ostringstream res;
-  res << out_dir << "/qranker_output";
-  res_prefix = res.str();
     
   d.load_psm_data_for_training();
   d.normalize_psms();
   PSMScores::fillFeaturesSplit(trainset, testset, d, 0.5);
   thresholdset = trainset;
   train_many_nets();
+  
+  //write out the results of the target net
+  ostringstream res;
+  res << out_dir << "/qranker_output";
+  res_prefix = res.str();
+  
+  cerr << "target net results: ";
+  ostringstream s2;
+  s2 << res_prefix;
+  cout << s2.str() << endl;
+    
+  write_results_max(s2.str(),net);
   return 0;
 }
 

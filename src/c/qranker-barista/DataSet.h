@@ -38,6 +38,14 @@ class Dataset
   inline int get_num_psms(){return num_psms;}
   inline int get_num_features(){return num_features;}
 
+  /************xlink specific****************************************/
+  inline string& psmind2peptide1(int psmind){return psmind_to_peptide1[psmind];}
+  inline string psmind2peptide2(int psmind){if(psmind_to_peptide2.find(psmind) != psmind_to_peptide2.end()) return psmind_to_peptide2[psmind];else return "";}
+  inline string& psmind2loc(int psmind){return psmind_to_loc[psmind];}
+  inline string& psmind2protein1(int psmind){return psmind_to_protein1[psmind];}
+  inline string psmind2protein2(int psmind){if(psmind_to_protein2.find(psmind) != psmind_to_protein2.end()) return psmind_to_protein2[psmind];else return "";}
+  /**********************************************************************/
+
   inline int get_num_peptides(){return num_pep;}
   inline int pepind2num_psm(int pepind){return pepind_to_psminds.get_range_length(pepind);}
   inline int* pepind2psminds(int pepind){return pepind_to_psminds.get_range_indices(pepind);}
@@ -84,6 +92,13 @@ class Dataset
   map <int, string> ind_to_prot;
 
   string in_dir;
+
+  /************xlink specific************/
+  map<int,string> psmind_to_peptide1;
+  map<int,string> psmind_to_peptide2;
+  map<int,string> psmind_to_loc;
+  map<int,string> psmind_to_protein1;
+  map<int,string> psmind_to_protein2;
 };
 
 
