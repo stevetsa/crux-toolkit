@@ -1,6 +1,6 @@
 #include "QRanker.h"
 
-QRanker::QRanker() :  seed(0),selectionfdr(0.01),num_hu(5),mu(0.005),weightDecay(0.000)
+QRanker::QRanker() :  seed(20),selectionfdr(0.01),num_hu(5),mu(0.001),weightDecay(0.0000)
 {
 }
 
@@ -435,8 +435,8 @@ void QRanker :: train_many_target_nets()
 
 void QRanker::train_many_nets()
 {
-  switch_iter =30;
-  niter = 40;
+  switch_iter = 1000;
+  niter = 1010;
    
   num_qvals = 14;
   qvals.resize(num_qvals,0.0);

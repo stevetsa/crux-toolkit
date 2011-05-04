@@ -61,6 +61,8 @@ LIBFILES= \
   ExtractColumns.h \
   ExtractRows.cpp \
   ExtractRows.h \
+  FilterSpectraByFragments.cpp \
+  FilterSpectraByFragments.h \
   FilteredSpectrumChargeIterator.cpp \
   FilteredSpectrumChargeIterator.h \
   generate_peptides_iterator.cpp \

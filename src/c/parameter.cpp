@@ -925,6 +925,8 @@ void initialize_parameters(void){
       "Score method for xlink {composite, modification, concatenated}. Default=composite.",
       "Argument for xlink-score-spectrum.", "false");
 
+  set_string_parameter("fragment-masses", NULL, "","","true");
+
   // **** search-xlink options ****
   set_boolean_parameter("xcorr-use-flanks", TRUE,
       "Use flank peaks in xcorr theoretical spectrum",
@@ -2121,6 +2123,9 @@ vector<int> get_int_vector_parameter(
 
 
 
+
+
+
 /**
  * Searches through the list of parameters, looking for one whose
  * name matches the string.  This function returns the parameter value if the
@@ -2173,6 +2178,27 @@ double get_double_parameter(
   
   carp(CARP_FATAL, "parameter name: %s, doesn't exist", name);
 }
+
+vector<double> get_double_vector_parameter(
+  const char* name
+  ) {
+
+  vector<double> ans;
+  
+  vector<string> sans = get_string_vector_parameter(name);
+
+  for (unsigned int idx=0;idx<sans.size();idx++) {
+
+    double dval;
+    DelimitedFile::from_string(dval,sans[idx]);
+    ans.push_back(dval);
+  }
+
+
+  return ans;
+}
+
+
 
 /**
  * \brief Get the value of a parameter whose type is char*

@@ -24,6 +24,7 @@
 #include "SearchForXLinksMods.h"
 #include "ExtractScanNeutralMass.h"
 #include "ExtractColumns.h"
+#include "FilterSpectraByFragments.h"
 #include "SpectralCounts.h"
 #include "ExtractRows.h"
 #include "PrintVersion.h"
@@ -47,6 +48,7 @@ int main(int argc, char** argv){
   applications.add(new PrintProcessedSpectra());
   applications.add(new SearchForXLinks());
   applications.add(new SearchForXLinksMods());
+  applications.add(new FilterSpectraByFragments());
   applications.add(new ExtractScanNeutralMass());
   
   applications.add(new ExtractColumns());

@@ -498,6 +498,20 @@ int TabDelimParser :: run(vector<string> &filenames)
  * 16. protein id(loc) 1       
  * 17. protein id(loc) 2
  */
+const static int scan_idx=0;
+const static int charge_idx=1;
+const static int spectrum_mz_idx=2;
+const static int spectrum_mass_idx=3;
+const static int peptide_mass_idx=4;
+const static int sp_score_idx=7;
+const static int sp_rank_idx=8;
+const static int by_matched_idx=9;
+const static int by_total_idx=10;
+const static int xcorr_idx=11;
+const static int pvalue_idx=13;
+const static int matches_idx=14;
+const static int sequence_idx=15;
+
 
 
 void TabDelimParser :: first_pass_xlink(ifstream &fin)
@@ -557,31 +571,36 @@ void TabDelimParser :: extract_xlink_features(vector<string> & tokens, double *x
   memset(x,0,sizeof(double)*num_xlink_features);
   
   //xcorr score
-  x[0] = atof(tokens[11].c_str());
-  //x[0] = atof(tokens[13].c_str());
+  x[0] = atof(tokens[xcorr_idx].c_str());
+  //x[0] = atof(tokens[pvalue_idx].c_str());
   
   //log rank by Sp
-  x[1]=log(atof(tokens[8].c_str()));
+  x[1]=log(atof(tokens[sp_rank_idx].c_str()));
   //deltaCN
-  x[2] = 0.0;
+  //x[2] = -log(atof(tokens[pvalue_idx].c_str()));
   
   //difference between measured and calculated mass
-  x[3] = atof(tokens[4].c_str())-atof(tokens[3].c_str());
+  x[3] = atof(tokens[spectrum_mass_idx].c_str())-atof(tokens[peptide_mass_idx].c_str());
   // absolute value of difference between measured and calculated mass
-  x[4] = fabs(x[3]);
+  x[4] = fabs(atof(tokens[spectrum_mass_idx].c_str())-atof(tokens[peptide_mass_idx].c_str()));
   //sp score
-  x[5] = atof(tokens[7].c_str());
+  x[5] = atof(tokens[sp_score_idx].c_str());
   //matched ions/predicted ions
-  x[6] = atof(tokens[9].c_str())/atof(tokens[10].c_str());
+  x[6] = atof(tokens[by_matched_idx].c_str())/atof(tokens[by_total_idx].c_str());
   //observed mass
-  //x[7] = atof(tokens[3].c_str());
+  x[7] = atof(tokens[spectrum_mass_idx].c_str());
   //charge
-  //x[8] = atof(tokens[1].c_str());
+  x[8] = atof(tokens[charge_idx].c_str());
   // number of sequence_comparisons
-  //x[9] = atof(tokens[14].c_str());
+  x[9] = log(atof(tokens[matches_idx].c_str()));
   //whether n-terminus and c-terminus have proper cleavage sites
   // missed cleavages
-  
+/*
+  for (int i=0;i<10;i++) {
+    cerr << x[i] << " ";
+  }
+  cerr <<endl;
+*/  
 }
 
 
