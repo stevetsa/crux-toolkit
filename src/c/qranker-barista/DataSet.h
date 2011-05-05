@@ -39,10 +39,10 @@ class Dataset
   inline int get_num_features(){return num_features;}
 
   /************xlink specific****************************************/
-  inline string& psmind2peptide1(int psmind){return psmind_to_peptide1[psmind];}
+  inline string psmind2peptide1(int psmind){if(psmind_to_peptide1.find(psmind) != psmind_to_peptide1.end()) return psmind_to_peptide1[psmind];else return "";}
   inline string psmind2peptide2(int psmind){if(psmind_to_peptide2.find(psmind) != psmind_to_peptide2.end()) return psmind_to_peptide2[psmind];else return "";}
-  inline string& psmind2loc(int psmind){return psmind_to_loc[psmind];}
-  inline string& psmind2protein1(int psmind){return psmind_to_protein1[psmind];}
+  inline string psmind2loc(int psmind){if(psmind_to_loc.find(psmind) != psmind_to_loc.end()) return psmind_to_loc[psmind];else return "";}
+  inline string psmind2protein1(int psmind){if(psmind_to_protein1.find(psmind) != psmind_to_protein1.end()) return psmind_to_protein1[psmind];else return "";}
   inline string psmind2protein2(int psmind){if(psmind_to_protein2.find(psmind) != psmind_to_protein2.end()) return psmind_to_protein2[psmind];else return "";}
   /**********************************************************************/
 

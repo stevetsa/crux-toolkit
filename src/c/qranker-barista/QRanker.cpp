@@ -1,6 +1,6 @@
 #include "QRanker.h"
 
-QRanker::QRanker() :  seed(20),selectionfdr(0.01),num_hu(5),mu(0.001),weightDecay(0.0000)
+QRanker::QRanker() :  seed(20),selectionfdr(0.01),num_hu(5),mu(0.005),weightDecay(0.0000)
 {
 }
 
@@ -132,8 +132,10 @@ void QRanker :: write_results_max(string filename, NeuralNet &net)
 	  //write peptide sequence
 	  f1 << d.psmind2peptide1(psmind);
 	  if(d.psmind2peptide2(psmind) != "")
-	    f1 << "," << d.psmind2peptide2(psmind); 
-	  f1 << " " << d.psmind2loc(psmind) << "\t";
+	    f1 << "," << d.psmind2peptide2(psmind);
+	  if(d.psmind2loc(psmind) != "")
+	    f1 << " " << d.psmind2loc(psmind);
+	  f1 << "\t";
 	  f1 << d.psmind2protein1(psmind) << "\t" << d.psmind2protein2(psmind) << endl;
 	}
     }

@@ -533,14 +533,20 @@ void TabDelimParser :: first_pass_xlink(ifstream &fin)
 	  //get all peptides and fill tables
 	  string pep_and_loc = tokens[15];
 	  get_tokens(pep_and_loc,subtokens,delim3);
-	  string peps = subtokens[0];
-	  get_tokens(peps,peptides,delim2);
-	  psmind_to_peptide1[num_psm] = peptides[0];
-	  if(peptides.size() > 1)
-	    psmind_to_peptide2[num_psm] = peptides[1];
-	  psmind_to_loc[num_psm] = subtokens[1];
+	  if(subtokens.size() > 0)
+	    {
+	      string peps = subtokens[0];
+	      get_tokens(peps,peptides,delim2);
+	      if(peptides.size() > 0)
+		psmind_to_peptide1[num_psm] = peptides[0];
+	      if(peptides.size() > 1)
+		psmind_to_peptide2[num_psm] = peptides[1];
+	    }
+	  if(subtokens.size() > 1)
+	    psmind_to_loc[num_psm] = subtokens[1];
 	  //proteins
-	  psmind_to_protein1[num_psm] = tokens[16];
+	  if(tokens[16].size() > 0)
+	    psmind_to_protein1[num_psm] = tokens[16];
 	  if(tokens[17].size()>0)
 	    psmind_to_protein2[num_psm] = tokens[17];
 	  num_psm++;
