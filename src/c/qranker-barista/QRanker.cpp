@@ -1,6 +1,6 @@
 #include "QRanker.h"
 
-QRanker::QRanker() :  seed(20),selectionfdr(0.01),num_hu(5),mu(0.005),weightDecay(0.0000)
+QRanker::QRanker() :  seed(1),selectionfdr(0.01),num_hu(5),mu(0.005),weightDecay(0.0000)
 {
 }
 
@@ -558,7 +558,19 @@ int QRanker::set_command_line_options(int argc, char **argv)
   int arg = 1;
   while(arg < argc)
     {
-      fnames.push_back(argv[arg]);
+      string  str = argv[arg]; 
+      size_t pos = str.find("=");
+      if(pos != string::npos)
+	{
+	  if(str.find("seed") != string::npos)
+	    {
+	      string tmp = str.substr(pos+1, str.size());
+	      cout << "found seed " << tmp << endl;
+	      seed = atoi(tmp.c_str());
+	    }
+	}
+      else
+	fnames.push_back(argv[arg]);
       arg++;
     }
   string out_dir = "crux-output";
