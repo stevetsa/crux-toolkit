@@ -151,6 +151,8 @@ LIBFILES= \
   Spectrum.h \
   SpectrumZState.cpp \
   SpectrumZState.h \
+  StatColumn.cpp \
+  StatColumn.h \
   utils.cpp \
   utils.h \
   version.h \

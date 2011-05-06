@@ -24,6 +24,7 @@
 #include "SpectralCounts.h"
 #include "ExtractRows.h"
 #include "PrintVersion.h"
+#include "StatColumn.h"
 
 /**
  * The starting point for crux.  Prints a general usage statement when
@@ -45,6 +46,7 @@ int main(int argc, char** argv){
   
   applications.add(new ExtractColumns());
   applications.add(new ExtractRows());
+  applications.add(new StatColumn());
   applications.add(new SpectralCounts());
 
   applications.add(new PrintVersion());
