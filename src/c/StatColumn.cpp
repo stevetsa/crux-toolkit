@@ -11,7 +11,7 @@ using namespace std;
 
 
 /**
- * \returns a blank ExtractRows object
+ * \returns a blank StatColumn object
  */
 StatColumn::StatColumn() {
 
