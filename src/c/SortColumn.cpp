@@ -81,8 +81,7 @@ int SortColumn::main(int argc, char** argv) {
   vector<boost::fdostream*> temp_file_streams;
   vector<string> temp_filenames;
 
-  DelimitedFile* temp_delimited = new DelimitedFile();
-  temp_delimited->setDelimiter(delimiter_);
+  DelimitedFile* temp_delimited = new DelimitedFile(delimiter_);
   for (unsigned int col_idx=0;col_idx < delimited_file.numCols();col_idx++) {
     temp_delimited->addColumn(delimited_file.getColumnName(col_idx));
   }
@@ -123,8 +122,7 @@ int SortColumn::main(int argc, char** argv) {
       temp_file_descriptors.push_back(fd);
       temp_filenames.push_back(temp_filename);
       delete(temp_delimited);
-      temp_delimited = new DelimitedFile();
-      temp_delimited->setDelimiter(delimiter_);
+      temp_delimited = new DelimitedFile(delimiter_);
       for (unsigned int col_idx = 0;col_idx < delimited_file.numCols();col_idx++) {
         temp_delimited->setString(col_idx, new_row, delimited_file.getString(col_idx));
       }
