@@ -2,8 +2,8 @@
  * \file StatColumn.h 
  * AUTHOR: Sean McIlwain
  * CREATE DATE: 6 December 2010
- * \brief Give a tab delimited file and a comma-separated list of column names
- * print out a tab delimied file with only those columns
+ * \brief Given a delimited file and a column-name, print out statistics
+ * for that column (n, min, max, sum, average, median).
  *****************************************************************************/
 #ifndef STATCOLUMN_H
 #define STATCOLUMN_H
@@ -15,10 +15,17 @@
 
 class StatColumn: public CruxApplication {
 
+ protected:
+  string delimited_filename_;
+  string column_name_string_;
+  char delimiter_;
+  bool header_;
+
+
  public:
 
   /**
-   * \returns a blank ExtractRows object
+   * \returns a blank StatColumn object
    */
   StatColumn();
 

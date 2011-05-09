@@ -968,6 +968,12 @@ void initialize_parameters(void){
       "Available for crux search-for-xlinks", "true");
 
   /* crux-util parameters */
+
+  set_boolean_parameter("ascending", TRUE,
+    "Sort in ascending order.  Otherwise, descending. "
+    "Default: True.",
+    "Availabel for sort-by-column", "true");
+
   set_string_parameter("tsv file", NULL,
     "Path to a delimited file (-) for standard input",
     "Available for the delimited utility programs", "false");

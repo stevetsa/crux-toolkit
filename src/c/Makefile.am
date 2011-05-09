@@ -61,6 +61,7 @@ LIBFILES= \
   ExtractRows.h \
   FilteredSpectrumChargeIterator.cpp \
   FilteredSpectrumChargeIterator.h \
+  fdstream.hpp \
   generate_peptides_iterator.cpp \
   generate_peptides_iterator.h \
   hash.cpp \
@@ -139,6 +140,8 @@ LIBFILES= \
   SequestSearch.h \
   scorer.cpp \
   scorer.h \
+  SortColumn.cpp \
+  SortColumn.h \
   sorter.cpp \
   sorter.h \
   SpectralCounts.cpp \

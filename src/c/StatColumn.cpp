@@ -1,7 +1,7 @@
 /**
  * \file StatColumn.cpp 
- * \brief Give a tab delimited file and a comma-separated list of column names
- * print out a tab delimied file with only those columns
+ * \brief Given a delimited file and a column-name, print out statistics
+ * for that column (n, min, max, sum, average, median).
  *****************************************************************************/
 #include "StatColumn.h"
 
@@ -44,20 +44,21 @@ int StatColumn::main(int argc, char** argv) {
   initialize(argument_list, num_arguments,
     option_list, num_options, argc, argv);
 
-  const char* delimited_filename = get_string_parameter_pointer("tsv file");
+  delimited_filename_ = 
+    string(get_string_parameter_pointer("tsv file"));
 
-  string column_name_string = 
+  column_name_string_ = 
     string(get_string_parameter_pointer("column name"));
 
-  char delimiter = get_delimiter_parameter("delimiter");
+  delimiter_ = get_delimiter_parameter("delimiter");
 
-  DelimitedFileReader delimited_file(delimited_filename, true, delimiter);
+  DelimitedFileReader delimited_file(delimited_filename_, true, delimiter_);
   
-  int col_idx = delimited_file.findColumn(column_name_string);
+  int col_idx = delimited_file.findColumn(column_name_string_);
 
   if (col_idx == -1) {
     carp(CARP_ERROR,"column not found:%s\n\n%s", 
-      column_name_string.c_str(),
+      column_name_string_.c_str(),
       delimited_file.getAvailableColumnsString().c_str());
     return(-1);
   }
@@ -94,13 +95,16 @@ int StatColumn::main(int argc, char** argv) {
   }
 
   //print out the header
-  cout <<"N\tMin\tMax\tSum\tAverage\tMedian"<<endl;
-  
-  cout << data.size() << "\t";
-  cout << min << "\t";
-  cout << max << "\t";
-  cout << sum << "\t";
-  cout << average << "\t";
+
+  if (header_) {
+    cout <<"N\tMin\tMax\tSum\tAverage\tMedian"<<endl;
+  }
+
+  cout << data.size() << delimiter_;
+  cout << min << delimiter_;
+  cout << max << delimiter_;
+  cout << sum << delimiter_;
+  cout << average << delimiter_;
   cout << median << endl;
 
   return 0;
