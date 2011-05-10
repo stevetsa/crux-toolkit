@@ -16,15 +16,16 @@
 
 <B>Description:</B>
 <p>
-Given a delimited filename and a column name, 
-sort the delimited file's rows by the column values.
+Sort the rows of a tab-delimited file according to the values in a
+specified column.
 </p>
 
 <B>Input:</B>
 <UL>
 
 <li>
-&lt;tsv&nbsp;filename&gt; &ndash; A delimited file with column headers.
+&lt;tsv&nbsp;filename&gt; &ndash; A tab-delimited file, with column
+headers in the first row.  Use "-" to read from standard input. 
 </li>
 	
 <li>
@@ -36,8 +37,8 @@ sort the delimited file's rows by the column values.
 <B>Output:</B>
 
 <ul>
-The program outputs to standard output the delimited file whose rows
-are sorted by the requested column.
+The program prints to standard output a copy of the given file, with
+rows sorted according to the values in the specified column.
 </ul>
 
 <B>Options:</B>
@@ -45,8 +46,9 @@ are sorted by the requested column.
 <UL>
 
 <li>
-<code>--delimiter &lt;char | tab&gt;</code> &ndash; Specifies the input and 
-output delimiter to use when processing the delimited file. Default tab.
+<code>--delimiter &lt;char&gt;|tab</code> &ndash; Specify the input
+and output delimiter to use when processing the delimited file.
+Default=tab.</li>
 
 <li>
 <code>--header T|F</code> &ndash; Print the header line of the file,
@@ -61,8 +63,8 @@ in addition to the rows that match.  Default=T.
 </li>
 
 <li>
-<code>--ascending T|F</code> &ndash; If T sort the file in ascending order, 
-otherwise descending. Default=T.
+<code>--ascending T|F</code> &ndash; Sort the file in ascending (T) or
+descending (F) order. Default=T.</li>
 
 <LI>
 <code>--verbosity &lt;0-100&gt;</code> &ndash; Specify the verbosity of the

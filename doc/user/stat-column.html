@@ -16,16 +16,16 @@
 
 <B>Description:</B>
 <p>
-Given a tab-delimited filename and a column name with numerical fields, 
-collect summary statistics on the column.
-</p>
+Given a tab-delimited file, collect summary statistics on the values
+within a specified column.  The specified column must contain numeric
+values.</p>
 
 <B>Input:</B>
 <UL>
 
 <li>
-&lt;tsv&nbsp;filename&gt; &ndash; A delimited file with column headers.
-(-) for standard input. 
+&lt;tsv&nbsp;filename&gt; &ndash; A tab-delimited file, with column
+headers in the first row.  Use "-" to read from standard input. 
 </li>
 	
 <li>
@@ -37,8 +37,9 @@ collect summary statistics on the column.
 <B>Output:</B>
 
 <ul>
-The program prints to standard output format the number of rows, the
-min, max, sum, average, and median of the data for the requested column.
+The program prints to standard output the number of rows, the minimum,
+maximum, sum, average, and median of the data values in the specified
+column.
 </ul>
 
 <B>Options:</B>
@@ -47,8 +48,10 @@ min, max, sum, average, and median of the data for the requested column.
 
 <li>
 
-<code>--delimiter &lt;char | tab&gt;</code> &ndash; Specifies the input 
-and output delimiter to use when processing the delimited file. Default tab.
+<li>
+<code>--delimiter &lt;char&gt;|tab</code> &ndash; Specify the input
+and output delimiter to use when processing the delimited file.
+Default=tab.</li>
 
 <li>
 <code>--header T|F</code> &ndash; Print the header line of the file,
