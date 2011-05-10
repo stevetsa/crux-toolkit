@@ -1,23 +1,23 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
 <HTML>
 <HEAD>
-<TITLE>extract-columns</TITLE>
+<TITLE>sort-by-column</TITLE>
 </HEAD>
 <BODY>
 <blockquote>
-<H1 ALIGN=CENTER>extract-columns</H1>
+<H1 ALIGN=CENTER>sort-by-column</H1>
 
 <B>Usage:</B>
 
 <blockquote>
-<code>crux extract-columns [options] &nbsp;&lt;tsv&nbsp;filename&gt; 
-  &nbsp;&lt;column&nbsp;name&nbsp;list&gt; </code>
+<code>crux sort-by-column [options] &nbsp;&lt;tsv&nbsp;filename&gt; 
+  &nbsp;&lt;column&nbsp;name&gt;&nbsp;&lt;column&nbsp;value&gt; </code>
 </blockquote>
 
 <B>Description:</B>
 <p>
-Given a delimited filename and a comma-delimited list of column
-names, extract the requested columns.
+Given a delimited filename and a column name, 
+sort the delimited file's rows by the column values.
 </p>
 
 <B>Input:</B>
@@ -25,12 +25,10 @@ names, extract the requested columns.
 
 <li>
 &lt;tsv&nbsp;filename&gt; &ndash; A delimited file with column headers.
-(-) for standard input. 
 </li>
 	
 <li>
-&lt;column&nbsp;name&nbsp;list&gt; &ndash; A comma delimited list of
-columns name to extract.
+&lt;column name&gt; &ndash; A column name
 </li>
 
 </UL>
@@ -38,9 +36,8 @@ columns name to extract.
 <B>Output:</B>
 
 <ul>
-The program prints to standard output format the requested columns in
-tab-delimited format.  The order of the columns printed matches that
-of the input column list.
+The program outputs to standard output the delimited file whose rows
+are sorted by the requested column.
 </ul>
 
 <B>Options:</B>
@@ -53,7 +50,19 @@ output delimiter to use when processing the delimited file. Default tab.
 
 <li>
 <code>--header T|F</code> &ndash; Print the header line of the file,
-in addition to the columns that match.  Default=T.</code>
+in addition to the rows that match.  Default=T.
+</li>
+
+<li>
+<code>--column-type int|real|string</code> &ndash; Specify the data
+ type of the column, either an integer (<code>int</code>), 
+ a floating point number (<code>real</code>), or
+ a <code>string</code>. The default value is <code>string</code>.
+</li>
+
+<li>
+<code>--ascending T|F</code> &ndash; If T sort the file in ascending order, 
+otherwise descending. Default=T.
 
 <LI>
 <code>--verbosity &lt;0-100&gt;</code> &ndash; Specify the verbosity of the

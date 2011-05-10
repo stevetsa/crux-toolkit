@@ -1008,8 +1008,8 @@ void initialize_parameters(void){
   set_string_parameter("comparison", "eq",
     "Specifies the operator that is used to compare an "
     "entry in the specified column to the value given "
-    "on the command line.  (eq|gt|gte|lt|lte). "
-    "Default: string-equal.",
+    "on the command line.  (eq|gt|gte|lt|lte|neq). "
+    "Default: eq.",
     "Available for crux extract-rows",
     "true");
 

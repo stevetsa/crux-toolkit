@@ -16,7 +16,7 @@
 
 <B>Description:</B>
 <p>
-Given a tab-delimited filename, a column name and a column cell value, 
+Given a delimited filename, a column name and a column cell value, 
 extract the rows that have the matching values for that column.
 </p>
 
@@ -24,7 +24,8 @@ extract the rows that have the matching values for that column.
 <UL>
 
 <li>
-&lt;tsv&nbsp;filename&gt; &ndash; A tab-delimited file with column headers.
+&lt;tsv&nbsp;filename&gt; &ndash; A delimited file with column headers.
+(-) for standard input. 
 </li>
 	
 <li>
@@ -41,13 +42,18 @@ extract the rows that have the matching values for that column.
 
 <ul>
 The program prints to standard output the rows for which the value
-observed in the specified column of the tab-delimited input file
+observed in the specified column of the delimited input file
 match the <code>&lt;column value&gt;</code> given on the command line.
 </ul>
 
 <B>Options:</B>
 
 <UL>
+
+<li>
+<code>--delimiter &lt;char | tab&gt;</code> &ndash; Specifies the 
+input and output delimiter to use when processing the delimited file. 
+Default tab.
 
 <li>
 <code>--header T|F</code> &ndash; Print the header line of the file,
