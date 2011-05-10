@@ -569,14 +569,17 @@ int QRanker::set_command_line_options(int argc, char **argv)
 	  if(str.find("seed") != string::npos) {
 	    cout << "found seed " << tmp << endl;
 	    seed = atoi(tmp.c_str());
-	  } else if (str.find("switch_iter") != string::npos) {
+	  } else if (str.find("switch-iter") != string::npos) {
             cout << "found switch_iter "<< tmp << endl;
             switch_iter = atoi(tmp.c_str());
           } else if (str.find("niter") != string::npos) {
+            cout << "found niter "<<tmp<<endl;
             niter = atoi(tmp.c_str());
           } else if (str.find("mu") != string::npos) {
+            cout << "found mu "<<tmp<<endl;
             mu = atof(tmp.c_str());
           } else if (str.find("wd") != string::npos) {
+            cout << "found wd "<<tmp<<endl;
             weightDecay = atof(tmp.c_str());
           }
 	}

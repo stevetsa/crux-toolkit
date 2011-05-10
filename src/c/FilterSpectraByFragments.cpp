@@ -38,7 +38,7 @@ bool FilterSpectraByFragments::hasFragments(
     frag_idx < mz_fragment_list.size();
     ++frag_idx) {
     
-    PEAK_T* peak = spectrum->getNearestPeak(mz_fragment_list[frag_idx], mz_tolerance);
+    Peak* peak = spectrum->getNearestPeak(mz_fragment_list[frag_idx], mz_tolerance);
     if (peak == NULL) {
       return false;
     }
