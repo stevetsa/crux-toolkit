@@ -437,8 +437,6 @@ void QRanker :: train_many_target_nets()
 
 void QRanker::train_many_nets()
 {
-  switch_iter = 1000;
-  niter = 1010;
    
   num_qvals = 14;
   qvals.resize(num_qvals,0.0);
@@ -556,23 +554,39 @@ int QRanker::set_command_line_options(int argc, char **argv)
 {
   vector<string> fnames;
   int arg = 1;
+
+  switch_iter = 20;
+  niter = 40;
+
+
   while(arg < argc)
     {
       string  str = argv[arg]; 
       size_t pos = str.find("=");
       if(pos != string::npos)
 	{
-	  if(str.find("seed") != string::npos)
-	    {
-	      string tmp = str.substr(pos+1, str.size());
-	      cout << "found seed " << tmp << endl;
-	      seed = atoi(tmp.c_str());
-	    }
+          string tmp = str.substr(pos+1, str.size());
+	  if(str.find("seed") != string::npos) {
+	    cout << "found seed " << tmp << endl;
+	    seed = atoi(tmp.c_str());
+	  } else if (str.find("switch_iter") != string::npos) {
+            cout << "found switch_iter "<< tmp << endl;
+            switch_iter = atoi(tmp.c_str());
+          } else if (str.find("niter") != string::npos) {
+            niter = atoi(tmp.c_str());
+          } else if (str.find("mu") != string::npos) {
+            mu = atof(tmp.c_str());
+          } else if (str.find("wd") != string::npos) {
+            weightDecay = atof(tmp.c_str());
+          }
 	}
       else
 	fnames.push_back(argv[arg]);
       arg++;
     }
+
+  niter = max(switch_iter, niter);
+
   string out_dir = "crux-output";
   pars.set_output_dir(out_dir);
   if(!pars.run_on_xlink(fnames))

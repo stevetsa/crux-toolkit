@@ -136,9 +136,9 @@ void Spectrum::print(FILE* file) ///< output file to print at -out
 
   // print peaks
   for(int peak_idx = 0; peak_idx < (int)peaks_.size(); ++peak_idx){
-    fprintf(file, "%.2f %.*f\n", 
-            get_peak_location(peaks_[peak_idx]),
+    fprintf(file, "%.*f %.10f\n",
             mass_precision,
+            get_peak_location(peaks_[peak_idx]),
             get_peak_intensity(peaks_[peak_idx]));
   }
 }

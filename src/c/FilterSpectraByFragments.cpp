@@ -64,7 +64,7 @@ int FilterSpectraByFragments::main(int argc, char** argv) {
   int num_options = sizeof(option_list) / sizeof(char*);
 
   // Define required command line arguments
-  const char* argument_list[] = { "ms2 file", "fragment-masses"}; 
+  const char* argument_list[] = { "ms2 file", "fragment-masses", "mz-bin-width"}; 
   int num_arguments = sizeof(argument_list) / sizeof(char*);
   
   initialize(argument_list, 
@@ -78,7 +78,7 @@ int FilterSpectraByFragments::main(int argc, char** argv) {
   char* output_ms2_name = get_string_parameter("output file");
   prefix_fileroot_to_name(&output_ms2_name);
 
-  FLOAT_T mz_tolerance = 1.0;
+  double mz_tolerance = get_double_parameter("mz-bin-width");
   vector<double> mz_fragment_list = get_double_vector_parameter("fragment-masses");
 
 
