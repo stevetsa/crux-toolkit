@@ -11,7 +11,7 @@
 <B>Usage:</B>
 
 <blockquote>
-<code>crux hardklor [options] &lt;spectra&gt;</code>
+<code>crux bullseye [options] &lt;MS&nbsp;spectra&gt; &lt;MS/MS&nbsp;spectra&gt;</code>
 </blockquote>
 
 <B>Description:</B>
@@ -34,18 +34,18 @@ Data"</a>. <i>Journal of Proteome Research</i>. 9(2):1138-43, 2010.
 
 <p>
 Bullseye attempts to match monoisotopic mass measurements, from
-identified persistent peptide isotope distributions (PPIDs), to MS/MS
-spectra. In complex samples, it is not unsual for multiple PPIDs to be
-found near an MS/MS spectrum. In those cases Bullseye will assign both
-mass measurements to the spectrum. In an .ms2 file format, multiple Z
-line entries will be made for the scan number.</p>
+identified PPIDs, to MS/MS spectra. In complex samples, it is not
+unsual for multiple PPIDs to be found near an MS/MS spectrum. In those
+cases, Bullseye will assign both mass measurements to the spectrum. In
+a .ms2 file, multiple Z line entries will be made for the scan
+number.</p>
 
 <p>
 It may be possible to reduce the number of scans with multiple PPIDs
 by adjusting Bullseye's parameters. For example, reducing the
-retention time tolerance ("-t") or reducing the tolerance for
-persistent peptides ("-r") will reduce the chances of multiple PPIDs
-being assigned.</p>
+retention time tolerance ("--retention-tolerance") or reducing the
+tolerance for persistent peptides ("--persist-tolerance") will reduce
+the chances of multiple PPIDs being assigned.</p>
 
 </blockquote>
 
@@ -148,15 +148,15 @@ above this minimum mass in daltons.  Default = 600.</li>
 
 <li>
 <code>--exact-tolerance &lt;num&gt;</code> &ndash; Set the tolerance
-(+/- ppm) for exact match searches.  Default = 10.</li>
+(&plusmn;ppm) for exact match searches.  Default = 10.</li>
 
 <li>
 <code>--persist-tolerance &lt;num&gt;</code> &ndash; Set the tolerance
-(+/- ppm) for finding persistent peptides.  Default = 5.</li>
+(&plusmn;ppm) for finding persistent peptides.  Default = 5.</li>
 
 <li>
-<code>--retetion-tolerance &lt;num&gt;</code> &ndash; Set the
-tolerance (+/- minutes) around the retention time over which a peptide
+<code>--retention-tolerance &lt;num&gt;</code> &ndash; Set the
+tolerance (&plusmn;minutes) around the retention time over which a peptide
 can be matched to the MS/MS spectrum.  Default = 0.5.</li>
 
 <li>
