@@ -174,39 +174,37 @@ trypsin.</li>
 
 <li>
 <code>--decoy-prefix &lt;string&gt;</code> &ndash; specifies the
-prefix of the protein names that indicates a decoy.
-</li>
+prefix of the protein names that indicates a decoy.</li>
 
 <li>
-<code>--fileroot &lt;string&gt;</code> &ndash; 
+<code>--fileroot &lt;string&gt;</code> &ndash;
 The <code>fileroot</code> string will be added as a prefix to all
-output file names. Default = none.
-</li>
-
+output file names. Default = none.</li>
 
 <li>
-<code>--output-dir &lt;filename&gt;</code> &ndash; 
+<code>--output-dir &lt;directory&gt;</code> &ndash; 
 The name of the directory where output files will be created.
-Default = crux-output.
-</li>
+Default = crux-output.</li>
 
 <li>
 <code>--skip-cleanup &lt;T/F&gt;</code> &ndash; Barista analysis
-consists of preprocessing data and creating lookup tables which are
-then used during training. This option allows keeping the tables after
-the analysis and doing training directly by specifying the
---dir-with-tables option (see below). Default = F.
-</li>
-
+begins with a pre-processsing step that creates a set of lookup tables
+which are then used during training. Normally, these lookup tables are
+deleted at the end of the Barista analysis, but setting this option
+to <code>T</code> prevents the deletion of these tables.
+Subsequently, the Barista analysis can be repeated more efficiently by
+specifying the <code>--re-run</code> option (see below). Default =
+F.</li>
 
 <li>
-<code>--dir-with-tables &lt;filename&gt;</code> &ndash; The name of
-the directory where the lookup tables with preprocessed data are
-located. By default the tables are stored in the output directory.
-</li>
-
+<code>--re-run &lt;directory&gt;</code> &ndash; Re-run a previous
+Barista analysis using a previously computed set up lookup tables.
+For this option to work, the <code>--skip-cleanup</code> must have
+been set to true when Barista was run the first time.</li>
 
 <hr></hr>
+
+</ul>
 
 <a href="crux.html">Crux home</a>
 
