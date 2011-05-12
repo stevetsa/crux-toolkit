@@ -169,14 +169,6 @@ peptide distributions that can be combined to estimate the observed
 data at any given spectrum segment. The default value is 3.</li>
 
 <li>
-<code>--hardklor-dat &lt;Hardkl&ouml;r DAT file&gt;</code> &ndash;
-Provide the full path and file name of the Hardkl&ouml;r data file
-(typically Hardklor.dat) to be used in the analysis. This flag must be
-set globally at the top of a config file if the data file to be used
-is not in the working directory. (FIXME: Fix issue described in the
-previous sentence.)</li>
-
-<li>
 <code>--intersection T|F</code> &ndash; When set to true, set peak
 detection to intersection mode. Spectra are analyzed for peaks in
 overlapping segments. When intersection mode is set, peaks are only
@@ -196,11 +188,6 @@ enrichment. Two or more modifications can be combined into the same
 model and separated by spaces: "B2 0.5B1". This parameter can also be
 used redundantly to include multiple alternative averagine models in a
 single analysis.</li>
-
-<li>
-<code>--mercury-dat &lt;Mercury DAT file&gt;</code> &ndash; Provide
-the full path and file name of the Mercury data file (typically
-ISOTOPE.DAT) to be used in the analysis.</li>
 
 <li>
 <code>--mzxml-filter MS1|MS2|MS2|none</code> &ndash; Set a filter for
