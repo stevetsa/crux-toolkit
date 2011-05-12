@@ -84,24 +84,14 @@ programs.
 </li>
 
 <li>
-<b>bullseye.match.ms2</b>: a file containing the fragmentation
+<b>bullseye.pid.&lt;format&gt;</b>: a file containing the fragmentation
 spectra for which accurate masses were successfully inferred,
-in <a href="FIXME">MS2 format</a>.</li>
+in the user-specified <a href="FIXME">spectrum format</a>.</li>
 
 <li>
-<b>bullseye.no-match.ms2</b>: a file containing the fragmentation
+<b>bullseye.no-pid.&lt;format&gt></b>: a file containing the fragmentation
 spectra for which accurate masses were not inferred,
-in <a href="FIXME">MS2 format</a>.</li>
-
-<li>
-<b>bullseye.match.mgf</b>: a file containing the fragmentation spectra
-for which accurate masses were successfully inferred,
-in <a href="FIXME">MGF format</a>.</li>
-
-<li>
-<b>bullseye.no-match.mgf</b>: a file containing the fragmentation
-spectra for which accurate masses were not inferred,
-in <a href="FIXME">MGF format</a>.</li>
+in the user-specified <a href="FIXME">spectrum format</a>.</li>
 
 <li>
 <b>bullseye.log.txt</b>: a log file containing a copy of all messages
@@ -159,6 +149,10 @@ above this minimum mass in daltons.  Default = 600.</li>
 <code>--retention-tolerance &lt;num&gt;</code> &ndash; Set the
 tolerance (&plusmn;minutes) around the retention time over which a peptide
 can be matched to the MS/MS spectrum.  Default = 0.5.</li>
+
+<li>
+<code>--spectrum-format &lt;ms2|cms2|mgf|mzxml|FIXME&gt;</code> &ndash;
+The format to write the output spectra to.  Default = FIXME
 
 <li>
 <code>--parameter-file &lt;filename&gt;</code> &ndash; A file
