@@ -86,14 +86,14 @@ programs.
 <li>
 <b>bullseye.pid.&lt;format&gt;</b>: a file containing the
 fragmentation spectra for which accurate masses were successfully
-inferred.  The file format is specified using
-the <code>--spectrum-format</code> option.</a>.</li>
+inferred.  Unless otherwise specified (with
+the <code>--spectrum-format</code> option), the output file format is
+the same as the input MS/MS file format.</li>
 
 <li>
 <b>bullseye.no-pid.&lt;format&gt></b>: a file containing the
-fragmentation spectra for which accurate masses were not inferred.
-The file format is specified using the <code>--spectrum-format</code>
-option.</a>.</li>
+fragmentation spectra for which accurate masses were not
+inferred.</li>
 
 <li>
 <b>bullseye.log.txt</b>: a log file containing a copy of all messages
@@ -153,8 +153,9 @@ tolerance (&plusmn;minutes) around the retention time over which a peptide
 can be matched to the MS/MS spectrum.  Default = 0.5.</li>
 
 <li>
-<code>--spectrum-format &lt;ms2|cms2|mgf|mzxml|FIXME&gt;</code> &ndash;
-The format to write the output spectra to.  Default = FIXME
+<code>--spectrum-format &lt;ms2|cms2|mgf|mzxml|FIXME&gt;</code>
+&ndash; The format to write the output spectra to.  By default, the
+spectra will be output in the same format as the MS/MS input.</li>
 
 <li>
 <code>--parameter-file &lt;filename&gt;</code> &ndash; A file
