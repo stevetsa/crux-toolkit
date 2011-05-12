@@ -1,6 +1,6 @@
 /**
  * \file PWIZSpectrumCollection.cpp
- * AUTHOR: Chris Park
+ * AUTHOR: Barbara Frewen
  * CREATE DATE: 21 April 2011
  * \brief Class to read spectra files using the proteowizard library.
  */
@@ -8,7 +8,6 @@
 #include "crux-utils.h"
 #include "parameter.h"
 #include "pwiz/data/msdata/MSDataFile.hpp"
-//#include "pwiz/analysis/spectrum_processing/SpectrumListFactory.hpp"
 #include "pwiz/data/msdata/SpectrumInfo.hpp"
 
 /**
@@ -66,17 +65,13 @@ bool PWIZSpectrumCollection::parse() {
     pwiz::msdata::SpectrumPtr spectrum = all_spectra->spectrum(spec_idx, 
                                                                get_peaks);
 
-    // this seems to be an easier way to access spec data
-    auto_ptr<pwiz::msdata::SpectrumInfo> spec_info(new pwiz::msdata::SpectrumInfo());
-    spec_info->pwiz::msdata::SpectrumInfo::update(*spectrum, get_peaks);
-
     // skip if not ms2
-    if( spec_info->msLevel != 2 ){
+    if( spectrum->cvParam(pwiz::msdata::MS_ms_level).valueAs<int>() != 2 ){
       continue;
     }
 
     // check that scan number is in range
-    int scan_number = spec_info->scanNumber;
+    int scan_number = pwiz::msdata::id::valueAs<int>(spectrum->id, "scan"); 
     if( scan_number < first_scan ){
       continue;
     } else if( scan_number > last_scan ){
@@ -84,10 +79,10 @@ bool PWIZSpectrumCollection::parse() {
     }
 
     Spectrum* crux_spectrum = new Spectrum();
-    crux_spectrum->parsePwizSpecInfo(*spec_info);
+    crux_spectrum->parsePwizSpecInfo(spectrum);
 
     this->addSpectrumToEnd(crux_spectrum);
-    //?delete spec_info;
+    //?delete spectrum?;
   }
 
   delete reader;

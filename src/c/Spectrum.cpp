@@ -26,6 +26,7 @@
 #include "MSToolkit/Spectrum.h"
 
 using namespace std;
+namespace pzd = pwiz::msdata;
 
 /**
  * Default constructor.
@@ -883,7 +884,7 @@ bool Spectrum::parseMstoolkitSpectrum
  * Transfer values from a proteowizard SpectrumInfo object to the
  * crux spectrum.
  */
-bool Spectrum::parsePwizSpecInfo(const pwiz::msdata::SpectrumInfo& pwiz_info){
+bool Spectrum::parsePwizSpecInfo(const pzd::SpectrumPtr& pwiz_spectrum){
   // clear any existing values
   zstates_.clear();
   ezstates_.clear();
@@ -893,33 +894,60 @@ bool Spectrum::parsePwizSpecInfo(const pwiz::msdata::SpectrumInfo& pwiz_info){
   if( mz_peak_array_ ){ free(mz_peak_array_); }
 
   // assign new values
-  first_scan_ = pwiz_info.scanNumber;
-  last_scan_ = pwiz_info.scanNumber;
-  total_energy_ = pwiz_info.totalIonCurrent;
+  first_scan_ = pzd::id::valueAs<int>(pwiz_spectrum->id, "scan");
+  last_scan_ = first_scan_;
+  total_energy_ = 
+   pwiz_spectrum->cvParam(pzd::MS_total_ion_current).valueAs<double>();
   
   // get peaks
-  int num_peaks = pwiz_info.data.size();
+  int num_peaks = pwiz_spectrum->defaultArrayLength;
+  vector<double>& mzs = pwiz_spectrum->getMZArray()->data;
+  vector<double>& intensities = pwiz_spectrum->getIntensityArray()->data;
   for(int peak_idx = 0; peak_idx < num_peaks; peak_idx++){
-    PEAK_T* peak = new_peak(pwiz_info.data.at(peak_idx).mz,
-                            pwiz_info.data.at(peak_idx).intensity);
+    PEAK_T* peak = new_peak(intensities[peak_idx], mzs[peak_idx]);
     peaks_.push_back(peak);
   }
   has_peaks_ = true;
 
   // get precursor m/z and charge
-  if( pwiz_info.precursors.size() == 1 ){  
-    precursor_mz_ = pwiz_info.precursors[0].mz;
-    cerr << "charge state for scan " << first_scan_ << " is " << pwiz_info.precursors[0].charge << endl;
-    if( pwiz_info.precursors[0].charge == 0 ){
-      setZStates(); //do choose charge and add +1 or +2,+3
-    } else {
-      cerr << "setting charge as 1" << endl;
-      SpectrumZState zstate;
-      zstate.setMZ(precursor_mz_, pwiz_info.precursors[0].charge);
-      zstates_.push_back(zstate);
-    }
-  } // else what does it mean to have more than one precursor?
+  // is there exactly one precursor?
+  if( pwiz_spectrum->precursors.size() != 1 ){  
+    carp(CARP_FATAL, 
+         "Spectrum %d has more than one precursor.", first_scan_);
+  }
+  // each charge state stored in a separate selectedIon
+  // is there at least one selected ion?
+  vector<pzd::SelectedIon> ions = pwiz_spectrum->precursors[0].selectedIons;
+  if( ions.empty() ){
+    carp(CARP_FATAL, "No selected ions in spectrum %d.", first_scan_);
+  }
+  // can we get the isolation window as the precursor m/z?
+  pzd::IsolationWindow iso_window = pwiz_spectrum->precursors[0].isolationWindow;
+  double iw = iso_window.cvParam(pzd::MS_isolation_window_target_m_z).valueAs<double>();
+  // for now..
+  precursor_mz_ = ions[0].cvParam(pzd::MS_selected_ion_m_z).valueAs<double>();
 
+  for(size_t ion_idx = 0; ion_idx < ions.size(); ion_idx++){
+    int charge = ions[ion_idx].cvParam(pzd::MS_charge_state).valueAs<int>();
+    int possible_charge = ions[ion_idx].cvParam(pzd::MS_charge_state).valueAs<int>();
+    FLOAT_T ion_mz = ions[ion_idx].cvParam(pzd::MS_selected_ion_m_z).valueAs<FLOAT_T>();
+ 
+    cerr << "scan " << first_scan_ << " charge " << charge << " possible charge " << possible_charge << " mz " << ion_mz << endl;
+
+  // there is no precursor mass saved in pwiz, if it was there from bullseye
+  // it was converted into m/z
+    if( possible_charge > 0 ){
+      SpectrumZState zstate;
+      zstate.setMZ(ion_mz, possible_charge);
+    } else if( charge > 0 ){
+      SpectrumZState zstate;
+      zstate.setMZ(ion_mz, charge);
+    } else if( charge == 0 && possible_charge == 0 ){
+      setZStates(); //do choose charge and add +1 or +2,+3
+    }
+  }
+
+  cout << "precursor m/z for spec " << first_scan_ << " is " << precursor_mz_ << " and iso window is " << iw << endl;
   // TODO what do I look up for accurate masses?
 
   return true;

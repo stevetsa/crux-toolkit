@@ -230,10 +230,10 @@ class Spectrum{
                                 const char* filename = NULL);
 
   /**
-   * Transfer values from a proteowizard SpectrumInfo object to the
+   * Transfer values from a proteowizard Spectrum object to the
    * crux spectrum.
    */
-  bool parsePwizSpecInfo(const pwiz::msdata::SpectrumInfo& pwiz_info);
+  bool parsePwizSpecInfo(const pwiz::msdata::SpectrumPtr& pwiz_spectrum);
 
   /**
    * Parse the spectrum from the tab-delimited result file
