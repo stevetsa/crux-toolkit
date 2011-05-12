@@ -174,7 +174,8 @@ libcrux_la_CXXFLAGS = \
   -I$(top_srcdir)/src/c/MSToolkit \
   -I$(top_srcdir)/src/c/MSToolkit/RAMP \
   -I$(top_srcdir)/src/c/percolator/ \
-  -I$(top_srcdir)/src/c/q-ranker/
+  -I$(top_srcdir)/src/c/q-ranker/ \
+  -I$(top_srcdir)/src/external/
 
 libcrux_la_SOURCES = $(LIBFILES)
 

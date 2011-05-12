@@ -972,7 +972,7 @@ void initialize_parameters(void){
   set_boolean_parameter("ascending", TRUE,
     "Sort in ascending order.  Otherwise, descending. "
     "Default: True.",
-    "Availabel for sort-by-column", "true");
+    "Available for sort-by-column", "true");
 
   set_string_parameter("tsv file", NULL,
     "Path to a delimited file (-) for standard input",

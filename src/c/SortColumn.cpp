@@ -77,6 +77,14 @@ int SortColumn::main(int argc, char** argv) {
 
   col_sort_idx_ = (unsigned int)col_sort_idx;
 
+  /*
+   * So to be able to handle sorting large files without reading the
+   * whole file into memory, we implement a divide-then-merge approach.  
+   * Meaning that we read in a maximum number of rows, sort these, 
+   * then write out the sorted delimited file to a temporary file.  
+   * After processing all of the rows in the original file, we then
+   * merge all the temporary files created, printing out the full sorted file.  
+   */
   vector<int> temp_file_descriptors;
   vector<boost::fdostream*> temp_file_streams;
   vector<string> temp_filenames;
@@ -86,6 +94,12 @@ int SortColumn::main(int argc, char** argv) {
     temp_delimited->addColumn(delimited_file.getColumnName(col_idx));
   }
 
+  //Maximum number of rows to read before sorting then saving to a temporary file.
+  //In the future, we can set this number to be based upon how much memory
+  //is available on the system.  We want to make it large enough so that we
+  //don't have to create/merge too many temporary files, but small enough so
+  //that sort-by-column doesn't crash from not enough memory or affect the
+  //other processes on the computer.
   int max_rows = 200000;
 
   int current_count = 0;
@@ -96,20 +110,19 @@ int SortColumn::main(int argc, char** argv) {
     for (unsigned int col_idx = 0;col_idx < delimited_file.numCols();col_idx++) {
       temp_delimited->setString(col_idx, new_row, delimited_file.getString(col_idx));
     }
-  
 
     current_count++;
 
     if (current_count >= max_rows) {
-      cerr <<"Sorting "<<max_rows<<" rows"<<endl;
+      carp(CARP_DEBUG, "Sorting %i rows", max_rows);
       sortDelimited(temp_delimited);
 
       char ctemp_filename[50] = "SortColumn_XXXXXX";
     
       int fd=mkstemp(ctemp_filename);
       if (fd == -1) {
-        cerr <<"Error creating temp file!"<<endl;
-        cerr <<string(strerror(errno))<<endl;
+        carp(CARP_ERROR, "Error creating temp file!\n "
+                         "Error: %s", strerror(errno));
         return(-1);
       }
       
@@ -122,16 +135,22 @@ int SortColumn::main(int argc, char** argv) {
       temp_file_descriptors.push_back(fd);
       temp_filenames.push_back(temp_filename);
       delete(temp_delimited);
+
+      //create a new delimited file.
       temp_delimited = new DelimitedFile(delimiter_);
+
       for (unsigned int col_idx = 0;col_idx < delimited_file.numCols();col_idx++) {
         temp_delimited->setString(col_idx, new_row, delimited_file.getString(col_idx));
       }
+      //reset to count so that we can read in the next batch of rows.
       current_count = 0;
   
     }
 
     delimited_file.next();
-  }
+  } 
+
+  //done reading the file, now print out the sorted version.
 
   if (temp_file_descriptors.size() == 0) {
 
@@ -141,16 +160,18 @@ int SortColumn::main(int argc, char** argv) {
     delete temp_delimited;
   } else {
 
-    //sort the current and save to a file. 
+    //sort the current and save to a temporary file. 
     sortDelimited(temp_delimited);
     char ctemp_filename[50] = "SortColumn_XXXXXX";
 
     int fd = mkstemp(ctemp_filename);
+
     if (fd == -1) {
-      cerr <<"Error creating temp file!"<<endl;
-      cerr <<string(strerror(errno))<<endl;
-      exit(-1);
+      carp(CARP_ERROR, "Error creating temp file!\n "
+                       "Error: %s", strerror(errno));
+        return(-1);
     }
+
     string temp_filename(ctemp_filename);
 
     boost::fdostream* out = new boost::fdostream(fd);
@@ -165,7 +186,7 @@ int SortColumn::main(int argc, char** argv) {
       temp_file_streams[i]->flush();
     }
 
-    //merge the temporary files together
+    //merge the temporary files together, printing out the merged output.
     mergeDelimitedFiles(temp_filenames);
   }
   
@@ -221,17 +242,23 @@ void SortColumn::sortDelimited(
 
 /**
  * merges a list of sorted delimited files and prints 
- * out the resulting sorted file.
+ * out the resulting sorted file.  This method accomplishes this
+ * by testing the current row of each temporary file against
+ * the others.  If it's compare value is the smallest (or largest when descending)
+ * then printout that temporary file's row and advance the next row.
+ * Keep iterating until all rows for all temporary files are printed out.
  */
 void SortColumn::mergeDelimitedFiles(
   vector<string>& temp_filenames
   ) {
 
+  //open the temporary delimited files using a reader.
   vector<DelimitedFileReader*> delimited_files;
   for (unsigned int idx=0;idx < temp_filenames.size();idx++) {
     delimited_files.push_back(new DelimitedFileReader(temp_filenames[idx], delimiter_));
   }
   
+  //print out the header if requested.
   if (header_) {
     cout << delimited_files[0]->getHeaderString() << endl;
   }
@@ -240,6 +267,8 @@ void SortColumn::mergeDelimitedFiles(
 
   do {
     best_idx = -1;
+    //find the temporary file whose current row's column value is the
+    //smallest or largest.
     for (unsigned int idx = 0;idx < delimited_files.size();idx++) {
       if (delimited_files[idx]->hasNext()) {
         if (best_idx == -1) {
@@ -254,11 +283,14 @@ void SortColumn::mergeDelimitedFiles(
         }
       }
   
+      //if a best was found, print out the row and advance to the
+      //next row.
       if (best_idx != -1) {
         cout << delimited_files[best_idx]->getString()<<endl;
         delimited_files[best_idx]->next();
       }
     }
+    //iterate until all rows of all temporary files are printed out.
   } while (best_idx != -1);
 
   for (unsigned int idx=0;idx<temp_filenames.size();idx++) {
@@ -267,7 +299,7 @@ void SortColumn::mergeDelimitedFiles(
 }
 
 /**
- * /returns the result of comparing two file(s) current row and column: 
+ * \returns the result of comparing two file(s) current row and column: 
  * 1 : file1 > file2
  * -1 : file1 < file2
  * 0 : file1 = file2
