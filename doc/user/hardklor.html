@@ -89,10 +89,13 @@ used to predict the protein or peptide.</li>
 <li>
 <b>s/n</b>: The signal-to-noise threshold, i.e., the relative
 abundance a peak must exceed in the spectrum window to be considered
-in the scoring algorithm.</li>
+in the scoring algorithm.  Note that this is a local noise threshold
+for the area of the spectrum that the peptide was identified in</li>
 <li>
-<b>modifications</b>: Deviations to the averagine model. If there are
-no modifications, then the column is marked with an underscore.</li>
+<b>modifications</b>: Deviations to the averagine model.  Only
+modifications specified by the user are considered.  If no
+modifications are found in a particular PPID, then the column is
+marked with an underscore.</li>
 <li>
 <b>dotp</b>: The dot product score applies to all predictions in a
 given spectrum window. Thus, if two protein or peptide predictions
