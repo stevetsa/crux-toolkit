@@ -65,10 +65,40 @@ programs.
 </li>
 
 <li>
-<b>hardklor.mono.txt</b>: a tab-delimited text file containing a list
-of peptide or protein isotope distributions, their monoisotopic
-masses, charge states, and other helpful information. <b>FIXME: Be
-more specific.</b></li>
+<b>hardklor.mono.txt</b>: a tab-delimited text file containing one
+line for each isotope distribution.  The columns appear in the
+following order:</li>
+
+<ol>
+<li>
+<b>scan</b>: The scan number assigned to this spectrum in the input
+file.</li>
+<li>
+<b>retention time</b>: The time (in seconds) at which the spectrum
+was collected.</li>
+<li>
+<b>mass</b>: The uncharged monoisotopic mass of the protein or
+peptide.</li>
+<li>
+<b>charge</b>: The inferred charge state of the protein or peptide.</li>
+<li>
+<b>intensity</b>: The intensity of the base isotope peak of the model
+used to predict the protein or peptide.</li>
+<li>
+<b>m/z</b>: The m/z of the base peak.</li>
+<li>
+<b>s/n</b>: The signal-to-noise threshold, i.e., the relative
+abundance a peak must exceed in the spectrum window to be considered
+in the scoring algorithm.</li>
+<li>
+<b>modifications</b>: Deviations to the averagine model. If there are
+no modifications, then the column is marked with an underscore.</li>
+<li>
+<b>dotp</b>: The dot product score applies to all predictions in a
+given spectrum window. Thus, if two protein or peptide predictions
+share the same spectrum window, then they have a single dot product
+score that is the score of their combined peaks. </li>
+</ol>
 
 <li>
 <b>hardklor.log.txt</b>: a log file containing a copy of all messages
