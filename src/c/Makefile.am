@@ -65,7 +65,6 @@ LIBFILES= \
   FilterSpectraByFragments.h \
   FilteredSpectrumChargeIterator.cpp \
   FilteredSpectrumChargeIterator.h \
-  fdstream.hpp \
   generate_peptides_iterator.cpp \
   generate_peptides_iterator.h \
   hash.cpp \
