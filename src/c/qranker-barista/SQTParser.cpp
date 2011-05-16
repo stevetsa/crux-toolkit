@@ -441,8 +441,10 @@ void SQTParser :: extract_features(sqt_match &m, string &decoy_prefix, int hits_
 	  ostringstream scan_stream;
 	  scan_stream << m.scan << "." << m.charge;
 	  string scan_str = scan_stream.str();
-	  if((m.scan %1000) == 0 && i == 0)
-	    cout << scan_str << endl; 
+	  //if((m.scan %10000) == 0 && i == 0)
+	  //cout << scan_str << endl;
+	  if(psmind % 5000 == 0)
+	    cout << "PMS number " << psmind << endl;
 	  string peptide = m.peptides[i];
 	  int pos = peptide.find(".");
 	  string pept = peptide.substr(pos+1,peptide.size());
@@ -999,13 +1001,18 @@ int SQTParser :: run()
 	  //prepare to generate spectrum features
 	  sfg.clear();
 	  if(!sfg.open_ms2_file_for_reading(ms2_fn))
-	    return 0;
+	    {
+	      cout << "could not open ms2 file " << ms2_fn << " for reading" << endl;
+	      return 0;
+	    }
+	  cout << "reading file " << ms2_fn << endl;
 	  sfg.read_ms2_file();
 	  sfg.initialize_aa_tables();
 	}
       //second pass
       pass = 2;
       cur_fname = sqt_file_names[i];
+      cout << "extracting features from file " << cur_fname << endl;
       ifstream f_sqt(cur_fname.c_str());
       read_sqt_file(f_sqt, decoy_prefix, fhps,e,pass);
       f_sqt.close();
@@ -1013,10 +1020,10 @@ int SQTParser :: run()
     }
   f_psm.close();
   
-  cout << "num_spectra " << num_spectra << endl;
-  cout << "num_psm " << num_psm << " pos " << num_pos_psm << " neg " << num_neg_psm << "\n";
-  cout << "num_pep " << num_pep << " pos " << num_pos_pep << " neg " << num_neg_pep << "\n";
-  cout << "num_prot " << num_prot << " pos " << num_pos_prot << " neg " << num_neg_prot << "\n";
+  cout << "Number of spectra: " << num_spectra << endl;
+  cout << "Number of PSMs: " << "total " << num_psm << " positives " << num_pos_psm << " negatives " << num_neg_psm << "\n";
+  cout << "Number of peptides: " << "total " << num_pep << " positives " << num_pos_pep << " negatives " << num_neg_pep << "\n";
+  cout << "Number of proteins: " << "total " << num_prot << " positives " << num_pos_prot << " negatives " << num_neg_prot << "\n";
 
   //save the data
   save_data_in_binary(out_dir);
@@ -1056,6 +1063,76 @@ int SQTParser :: check_files(vector <string> &filenames)
   return 1;
 }
 
+int SQTParser :: set_output_dir(string &output_dir, int overwrite_flag, string &forbidden_prefix)
+{
+  int intStat;
+  struct stat stFileInfo;
+  intStat = stat(output_dir.c_str(), &stFileInfo);
+  if(intStat != 0)
+    {
+      cout << "creating output directory " << output_dir << endl;
+      int dir_access = S_IRWXU + S_IRWXG + S_IRWXO;
+      if (mkdir(output_dir.c_str(), dir_access)) {
+	// mkdir failed
+	cout << "unable to create output directory " << output_dir << endl;
+	return 0;
+      }
+    }
+  else
+    {
+      DIR *dp;
+      struct dirent *dirp;
+      //is this a directory?
+      if((stFileInfo.st_mode & S_IFMT) == S_IFDIR)
+	{
+	  if((dp  = opendir(output_dir.c_str())) == NULL)
+	    cout << "reading files in directory " << output_dir  << " failed, will overwrite them" << endl;
+	  else
+	    {
+	      if(overwrite_flag == 0)
+		{
+		  //look if the directory contains the files with forbidden prefix
+		  while ((dirp = readdir(dp)) != NULL) 
+		    {
+		      string fname = string(dirp->d_name);
+		      if(fname.find(forbidden_prefix) != string::npos)
+			{
+			  cout << "Barista output already exists in " << output_dir << " directory and cannot be overwritten. ";
+			  cout << "Please use --overwrite T to replace or specify a different output directory." << endl;
+			  return 0;
+			}
+		    }
+		}
+	      closedir(dp);
+	    }    
+	}
+      //it is not a directory
+      else
+	{
+	  cout << "File " << output_dir << " already exists, but it not a directory" << endl;
+	  if(overwrite_flag == 1)
+	    {
+	      cout << "Creating output directory " << output_dir << endl;
+	      remove(output_dir.c_str());
+	      int dir_access = S_IRWXU + S_IRWXG + S_IRWXO;
+	      if (mkdir(output_dir.c_str(), dir_access)) {
+		// mkdir failed
+		cout << "Unable to create output directory " << output_dir << endl;
+		return 0;
+	      }
+	    }
+	  else
+	    {
+	      cout << "File " << output_dir << " cannot be overwritten. Please use --overwrite T to replace or specify a different output directory." << endl;
+	      return 0;
+	    }
+	}
+    }
+  
+  out_dir = output_dir;
+  return 1;
+}
+
 
 int SQTParser :: set_input_sources(string &db_source, string &sqt_source, string &ms2_source)
 {
@@ -1070,6 +1147,7 @@ int SQTParser :: set_input_sources(string &db_source, string &sqt_source, string
       cout << "file " << db_source << " does not exist" << endl;
       return 0;
     }
+  //is this a directory?
   if((stFileInfo.st_mode & S_IFMT) == S_IFDIR)
     {
       if((dp  = opendir(db_source.c_str())) == NULL)
@@ -1087,7 +1165,7 @@ int SQTParser :: set_input_sources(string &db_source, string &sqt_source, string
 	      fstr << db_source <<"/" << fname;
 	      string dbname = fstr.str();
 	      db_file_names.push_back(dbname);
-	      cout << "found " << dbname << endl;
+	      //cout << "found " << dbname << endl;
 	      cn++;
 	    }
 	}
@@ -1135,7 +1213,7 @@ int SQTParser :: set_input_sources(string &db_source, string &sqt_source, string
 	      string ms2name = fstr.str();
 	      sqt_file_names.push_back(sqtname);
 	      ms2_file_names.push_back(ms2name);
-	      cout << "found " << sqtname <<  " " << ms2name << endl;
+	      //cout << "found " << sqtname <<  " " << ms2name << endl;
 	      cn++;
 	    }
 	}

@@ -53,7 +53,7 @@ class SQTParser{
   inline void set_num_features(int nf) {num_features = nf;}
   inline void set_num_spec_features(int nsf) {num_spec_features = nsf;}
   inline int get_num_features() const {return num_features;}
-  inline void set_output_dir(string output_dir){out_dir = output_dir;}
+  int set_output_dir(string &output_dir, int overwrite_flag, string &forbidden_prefix);
   inline string& get_output_dir(){return out_dir;}
   inline void set_input_dir(string input_dir){in_dir = input_dir;}
   inline void set_input_dir_ms2(string input_dir){in_dir_ms2 = input_dir;}

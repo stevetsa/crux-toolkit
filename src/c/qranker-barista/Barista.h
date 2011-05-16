@@ -25,6 +25,7 @@ class Barista : public CruxApplication
   Barista() 
     : verbose(0),
     skip_cleanup_flag(0),
+    overwrite_flag(0),
     in_dir(""), 
     out_dir(""), 
     fileroot(""), 
@@ -99,6 +100,7 @@ class Barista : public CruxApplication
   SQTParser sqtp;
   int verbose;
   int skip_cleanup_flag;
+  int overwrite_flag;
   Dataset d;
   string in_dir;
   string out_dir;

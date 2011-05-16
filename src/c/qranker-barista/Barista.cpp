@@ -1448,8 +1448,23 @@ int Barista :: set_command_line_options(int argc, char *argv[])
 	    {
 	      arg++;
 	      output_directory = argv[arg];
-	      cout << "output_directory: " << output_directory << endl;
 	      set_output_dir(output_directory);
+	    }
+	  //found overwrite directory
+	  if(str.find("overwrite") != string::npos)
+	    {
+	      arg++;
+	      string opt = argv[arg];
+	      if (opt.compare("T") == 0)
+		{
+		  overwrite_flag = 1;
+		  cout << "existing files will be overwritten" << endl;
+		}
+	      else
+		{
+		  overwrite_flag = 0;
+		  cout << "existing files will not be overwritten" << endl;
+		}
 	    }
 	  //found fileroot
 	  if(str.find("fileroot") != string::npos)
@@ -1482,7 +1497,8 @@ int Barista :: set_command_line_options(int argc, char *argv[])
 	break;
       arg++;
     }
-
+  
+  string forbidden_prefix = "barista";
   if(found_dir_with_tables)
     {
       DIR *dp;
@@ -1501,8 +1517,7 @@ int Barista :: set_command_line_options(int argc, char *argv[])
 	}
       f_try.close();
 
-
-      sqtp.set_output_dir(dir_with_tables);
+      sqtp.set_output_dir(dir_with_tables, overwrite_flag, forbidden_prefix);
       set_input_dir(dir_with_tables);
       set_output_dir(output_directory);
     }
@@ -1518,19 +1533,27 @@ int Barista :: set_command_line_options(int argc, char *argv[])
       sqt_source = argv[arg];
       arg++;
       ms2_source = argv[arg];
-      cout << "database source " << db_source << " sqt source " << sqt_source << " ms2 source " << ms2_source << endl;
+      cout << "database source: " << db_source << endl; 
+      cout << "sqt source: " << sqt_source << endl; 
+      cout << "ms2 source: " << ms2_source << endl;
+
       if(!sqtp.set_input_sources(db_source, sqt_source, ms2_source))
 	return 0;
-      sqtp.set_output_dir(output_directory);
+      sqtp.set_output_dir(output_directory, overwrite_flag, forbidden_prefix);
       set_input_dir(output_directory);
       set_output_dir(output_directory);
+      cout << "output_directory: " << output_directory << endl;
       
       //num of spec features
       sqtp.set_num_spec_features(7);
       if(!sqtp.run())
 	return 0;
       sqtp.clear();
+      
     }
+  
+  
+
   return 1;
   
 }
@@ -1541,13 +1564,13 @@ int Barista::main(int argc, char **argv) {
  //int main(int argc, char **argv){
     
   if(!set_command_line_options(argc,argv))
-    return 0;
+    return 1;
   
   run_tries_multi_task();
   if(skip_cleanup_flag != 1)
     sqtp.clean_up(out_dir);
   
-  return 1;
+  return 0;
 }   
 
 string Barista::getName() {
