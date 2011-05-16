@@ -154,13 +154,19 @@ document</a>.</li>
 <li>
 <b>barista.target.psm.txt</b>: a tab-delimited file containing a
 ranked list of target peptide-spectrum matches with the associated
-Barista scores and q-values.  The following columns are included: scan
-of spectrum in the peptide-spectrum match, charge of spectrum in the
-peptide-spectrum match, peptide in the peptide-spectrum match, Barista
-score, decoy q-value, the filename where each psm was found.  The
-semantics of these columns are explained
-in <a href="txt-format.html">this document</a>.</li>
-
+Barista scores and q-values.  The following columns are included:
+<ol>
+<li>psmind: FIXME</li>
+<li>q-value: The minimal PSM-level false discovery rate at which this
+  PSM is deemed significnt.  This q-value is computed FIXME.</li>
+<li>barista score: The score assigned to the PSM by Barista.  Higher
+  values correspond to more confident identifications.</code>
+<li>charge: the inferred charge state</li>
+<li>scan: the scan number</li>
+<li>peptide: the peptide sequence</li>
+<li>filename: name of the file in which the PSM appears</li>
+</ol>
+</li>
 </ul>
 
 <b>Options:</b>
