@@ -135,7 +135,7 @@ void Spectrum::print(FILE* file) ///< output file to print at -out
 
   // print peaks
   for(int peak_idx = 0; peak_idx < (int)peaks_.size(); ++peak_idx){
-    fprintf(file, "%.*f %.10f\n",
+    fprintf(file, "%.*f %.4f\n",
             mass_precision,
             peaks_[peak_idx]->getLocation(),
             peaks_[peak_idx]->getIntensity());
@@ -492,12 +492,6 @@ bool Spectrum::parseMgf
     carp(CARP_ERROR, "Pepmass or charge not found!");
   }
 
-  if (!scans_found) {
-    //TODO - try to parse scan information from title.  
-    //Otherwise use passed in scan count.
-    first_scan_ = scan_num;
-    last_scan_ = scan_num;
-  }
 
 
   //parse peak information

@@ -52,24 +52,13 @@ typedef enum _peak_sort_type PEAK_SORT_TYPE_T;
 class Spectrum;
 
 /**
- * The enum for spectrum type (MS1, MS2, MS3)
- */
-enum _spectrum_type { MS1, MS2, MS3 };
-
-/**
- * \typedef SPECTRUM_TYPE_T 
- * \brief The typedef for spectrum type (MS1, MS2, MS3)
- */
-typedef enum _spectrum_type SPECTRUM_TYPE_T;
-
-/**
- * \typedef PEAK_ITERATOR_T 
+ * \typedef PeakIterator
  * \brief An object to iterate over the peaks in a spectrum
  */
-typedef struct peak_iterator PEAK_ITERATOR_T;
+typedef std::vector<Peak*>::const_iterator PeakIterator;
 
 /**
- * \typedef SPECTRUM_COLLECTION_T 
+ * \class SpectrumCollection
  * \brief A collection of spectra
  */
 class SpectrumCollection;
@@ -412,17 +401,16 @@ typedef struct protein_index PROTEIN_INDEX_T;
 typedef struct protein_index_iterator PROTEIN_INDEX_ITERATOR_T;
 
 /**
- * \typedef ION_ITERATOR_T
- * \brief An object to iterate over all ion objects in the ion_series
+ * \typedef IonIterator
+  * \brief An object to iterate over all ion objects in the ion_series
  */
-//typedef struct ion_iterator ION_ITERATOR_T;
 typedef std::vector<Ion*>::iterator IonIterator;
 
 /**
- * \typedef ION_FILTERED_ITERATOR_T
+ * \class IonFilteredIterator
  * \brief An object to iterate over ion objects that meet constraint in the ion_series
  */
-typedef struct ion_filtered_iterator ION_FILTERED_ITERATOR_T;
+class IonFilteredIterator;
 
 /**
  *\typedef LOSS_LIMIT_T

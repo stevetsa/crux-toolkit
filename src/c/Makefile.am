@@ -65,6 +65,7 @@ LIBFILES= \
   FilterSpectraByFragments.h \
   FilteredSpectrumChargeIterator.cpp \
   FilteredSpectrumChargeIterator.h \
+  fdstream.hpp \
   generate_peptides_iterator.cpp \
   generate_peptides_iterator.h \
   hash.cpp \
@@ -141,6 +142,8 @@ LIBFILES= \
   SequestSearch.h \
   scorer.cpp \
   scorer.h \
+  SortColumn.cpp \
+  SortColumn.h \
   sorter.cpp \
   sorter.h \
   SpectralCounts.cpp \
@@ -153,6 +156,8 @@ LIBFILES= \
   Spectrum.h \
   SpectrumZState.cpp \
   SpectrumZState.h \
+  StatColumn.cpp \
+  StatColumn.h \
   utils.cpp \
   utils.h \
   version.h \
@@ -173,7 +178,8 @@ libcrux_la_CXXFLAGS = \
   -I$(top_srcdir)/src/c/MSToolkit/RAMP \
   -I$(top_srcdir)/src/c/percolator/ \
   -I$(top_srcdir)/src/c/qranker-barista/ \
-  -I$(top_srcdir)/src/c/q-ranker/
+  -I$(top_srcdir)/src/c/q-ranker/ \
+  -I$(top_srcdir)/src/external/
 
 libcrux_la_SOURCES = $(LIBFILES)
 
