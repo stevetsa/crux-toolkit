@@ -208,7 +208,7 @@ overlapping segments. When intersection mode is set, peaks are only
 accepted if they appear in two overlapping segments. Default = T.</li>
 
 <li>
-<code>--mod &lt;string&gt;</code> &ndash; Include alternative
+<code>--averagine-mod &lt;string&gt;</code> &ndash; Include alternative
 averagine models in the analysis that incorporate additional atoms or
 isotopic enrichments. Modifications are represented as text
 strings. Inclusion of additional atoms in the model is done using by
@@ -218,7 +218,7 @@ enrichment (as a decimal) followed by the atom being enriched and an
 index of the isotope. For example, 0.75H1 specifies 75% enrichment of
 the first heavy isotope of hydrogen. In other words, 75% deuterium
 enrichment. Two or more modifications can be combined into the same
-model and separated by spaces: "B2 0.5B1". This parameter can also be
+model and separated by colons: "B2:0.5B1". This parameter can also be
 used redundantly to include multiple alternative averagine models in a
 single analysis.</li>
 
@@ -239,10 +239,14 @@ spectrum segment. The default value is 10.</li>
 
 <li>
 <code>--resolution &lt;double&gt; fticr|orbi|tof|qit</code> &ndash;
-Set the resolution of the observed spectra at m/z 400. The user must
-specify a resolution followed by a mass spectrometer code. Valid codes
-are fticr, orbi, tof, and qit. The default settings are 100000
-fticr.</li>
+Set the resolution of the observed spectra at m/z 400. Used in
+conjunction with <code>--instrument</code> The default is 100000.</li>
+
+<li>
+<code>--instrument fticr|orbi|tof|qit</code> &ndash;
+Type of instrument on which the data was collected.  Used in
+conjuction with <code>--resolution</code>.  The default is fticr.</li>
+
 
 <li>
 <code>--smooth &lt;int&gt;</code> &ndash; Apply polynomial
@@ -281,7 +285,7 @@ union mode is set, peaks are accepted regardless of whether they
 appear in one segment or two overlapping segments. Default = F.</li>
 
 <li>
-<code>--mz-window &lt;double&gt; &lt;double&gt;</code> &ndash; Restrict
+<code>--mz-window &lt;double&gt;-&lt;double&gt;</code> &ndash; Restrict
 analysis to only a small window in each segment (in m/z). The user
 must specify the starting and ending m/z values between which the
 analysis will be performed. By default the whole spectrum is
