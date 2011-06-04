@@ -1,0 +1,461 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <Keyword>Win32Proj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+    <IncludePath>C:\Users\Charles\Documents\Visual Studio 2010\Projects\crux-trunk\src\c\xlink;C:\Users\Charles\Documents\Visual Studio 2010\Projects\crux-trunk\src\c\q-ranker;C:\Users\Charles\Documents\Visual Studio 2010\Projects\crux-trunk\src\c\percolator;C:\Users\Charles\Documents\Visual Studio 2010\Projects\crux-trunk\src\c\MSToolkit\zLib;C:\Users\Charles\Documents\Visual Studio 2010\Projects\crux-trunk\src\c\MSToolkit\RAMP;C:\Users\Charles\Documents\Visual Studio 2010\Projects\crux-trunk\src\c\MSToolkit;C:\Users\Charles\Documents\Visual Studio 2010\Projects\crux-trunk\src\c\ArrayLibrary;C:\Users\Charles\Documents\Visual Studio 2010\Projects\crux-trunk\src\c;$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;USE_DOUBLES;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <Optimization>Disabled</Optimization>
+    </ClCompile>
+    <Link>
+      <TargetMachine>MachineX86</TargetMachine>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Console</SubSystem>
+      <AdditionalDependencies>libc;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <TargetMachine>MachineX86</TargetMachine>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="src\c\alphabet.cpp" />
+    <ClCompile Include="src\c\analyze_psms.cpp" />
+    <ClCompile Include="src\c\arraylibrary\Arithmetic.cpp" />
+    <ClCompile Include="src\c\arraylibrary\Array.cpp" />
+    <ClCompile Include="src\c\arraylibrary\ArrayTypes.cpp" />
+    <ClCompile Include="src\c\arraylibrary\MatrixFunctions.cpp" />
+    <ClCompile Include="src\c\arraylibrary\Numerical.cpp" />
+    <ClCompile Include="src\c\arraylibrary\OrderedArray.cpp" />
+    <ClCompile Include="src\c\arraylibrary\PackedArray.cpp" />
+    <ClCompile Include="src\c\arraylibrary\PackedMatrix.cpp" />
+    <ClCompile Include="src\c\arraylibrary\PackedSetFunctions.cpp" />
+    <ClCompile Include="src\c\arraylibrary\PackedVec.cpp" />
+    <ClCompile Include="src\c\arraylibrary\Random.cpp" />
+    <ClCompile Include="src\c\arraylibrary\SparseArray.cpp" />
+    <ClCompile Include="src\c\arraylibrary\VectorFunctions.cpp" />
+    <ClCompile Include="src\c\carp.cpp" />
+    <ClCompile Include="src\c\ComputeQValues.cpp" />
+    <ClCompile Include="src\c\CreateIndex.cpp" />
+    <ClCompile Include="src\c\crux-main.cpp" />
+    <ClCompile Include="src\c\crux-utils.cpp" />
+    <ClCompile Include="src\c\CruxApplication.cpp" />
+    <ClCompile Include="src\c\CruxApplicationList.cpp" />
+    <ClCompile Include="src\c\cuda\crux_cuda.c" />
+    <ClCompile Include="src\c\database.cpp" />
+    <ClCompile Include="src\c\DelimitedFile.cpp" />
+    <ClCompile Include="src\c\DelimitedFileReader.cpp" />
+    <ClCompile Include="src\c\DelimitedFileWriter.cpp" />
+    <ClCompile Include="src\c\drafts\peptide.c" />
+    <ClCompile Include="src\c\ExtractColumns.cpp" />
+    <ClCompile Include="src\c\ExtractRows.cpp" />
+    <ClCompile Include="src\c\FilteredSpectrumChargeIterator.cpp" />
+    <ClCompile Include="src\c\generate_peptides.cpp" />
+    <ClCompile Include="src\c\generate_peptides_iterator.cpp" />
+    <ClCompile Include="src\c\get_ms2_spectrum.cpp" />
+    <ClCompile Include="src\c\hash.cpp" />
+    <ClCompile Include="src\c\index.cpp" />
+    <ClCompile Include="src\c\Ion.cpp" />
+    <ClCompile Include="src\c\IonConstraint.cpp" />
+    <ClCompile Include="src\c\IonFilteredIterator.cpp" />
+    <ClCompile Include="src\c\IonSeries.cpp" />
+    <ClCompile Include="src\c\linked_list.cpp" />
+    <ClCompile Include="src\c\mass.cpp" />
+    <ClCompile Include="src\c\match.cpp" />
+    <ClCompile Include="src\c\MatchColumns.cpp" />
+    <ClCompile Include="src\c\MatchFileReader.cpp" />
+    <ClCompile Include="src\c\MatchFileWriter.cpp" />
+    <ClCompile Include="src\c\MatchSearch.cpp" />
+    <ClCompile Include="src\c\match_collection.cpp" />
+    <ClCompile Include="src\c\MGFSpectrumCollection.cpp" />
+    <ClCompile Include="src\c\modifications.cpp" />
+    <ClCompile Include="src\c\modified_peptides_iterator.cpp" />
+    <ClCompile Include="src\c\MS2SpectrumCollection.cpp" />
+    <ClCompile Include="src\c\MSToolkitSpectrumCollection.cpp" />
+    <ClCompile Include="src\c\mstoolkit\CMSReader.cpp" />
+    <ClCompile Include="src\c\mstoolkit\CSpectrum.cpp" />
+    <ClCompile Include="src\c\mstoolkit\MSConvertFile.cpp" />
+    <ClCompile Include="src\c\mstoolkit\MSObject.cpp" />
+    <ClCompile Include="src\c\mstoolkit\MSReader.cpp" />
+    <ClCompile Include="src\c\mstoolkit\MSSingleScan.cpp" />
+    <ClCompile Include="src\c\mstoolkit\MSTDemo.cpp" />
+    <ClCompile Include="src\c\mstoolkit\ramp\ramp.cpp" />
+    <ClCompile Include="src\c\mstoolkit\ramp\ramp_base64.cpp" />
+    <ClCompile Include="src\c\mstoolkit\Spectrum.cpp" />
+    <ClCompile Include="src\c\mstoolkit\zlib\adler32.c" />
+    <ClCompile Include="src\c\mstoolkit\zlib\compress.c" />
+    <ClCompile Include="src\c\mstoolkit\zlib\crc32.c" />
+    <ClCompile Include="src\c\mstoolkit\zlib\deflate.c" />
+    <ClCompile Include="src\c\mstoolkit\zlib\gzio.c" />
+    <ClCompile Include="src\c\mstoolkit\zlib\infback.c" />
+    <ClCompile Include="src\c\mstoolkit\zlib\inffast.c" />
+    <ClCompile Include="src\c\mstoolkit\zlib\inflate.c" />
+    <ClCompile Include="src\c\mstoolkit\zlib\inftrees.c" />
+    <ClCompile Include="src\c\mstoolkit\zlib\trees.c" />
+    <ClCompile Include="src\c\mstoolkit\zlib\uncompr.c" />
+    <ClCompile Include="src\c\mstoolkit\zlib\zutil.c" />
+    <ClCompile Include="src\c\OutputFiles.cpp" />
+    <ClCompile Include="src\c\parameter.cpp" />
+    <ClCompile Include="src\c\parse_arguments.cpp" />
+    <ClCompile Include="src\c\peak.cpp" />
+    <ClCompile Include="src\c\peptide.cpp" />
+    <ClCompile Include="src\c\peptide_constraint.cpp" />
+    <ClCompile Include="src\c\peptide_modifications.cpp" />
+    <ClCompile Include="src\c\peptide_src.cpp" />
+    <ClCompile Include="src\c\Percolator.cpp" />
+    <ClCompile Include="src\c\percolator\BaseSpline.cpp" />
+    <ClCompile Include="src\c\percolator\Caller.cpp" />
+    <ClCompile Include="src\c\percolator\DataSet.cpp" />
+    <ClCompile Include="src\c\percolator\Globals.cpp" />
+    <ClCompile Include="src\c\percolator\LogisticRegression.cpp" />
+    <ClCompile Include="src\c\percolator\Normalizer.cpp" />
+    <ClCompile Include="src\c\percolator\Option.cpp" />
+    <ClCompile Include="src\c\percolator\PercolatorCInterface.cpp" />
+    <ClCompile Include="src\c\percolator\PosteriorEstimator.cpp" />
+    <ClCompile Include="src\c\percolator\qvality_main.cpp" />
+    <ClCompile Include="src\c\percolator\ResultHolder.cpp" />
+    <ClCompile Include="src\c\percolator\SanityCheck.cpp" />
+    <ClCompile Include="src\c\percolator\Scores.cpp" />
+    <ClCompile Include="src\c\percolator\SqtSanityCheck.cpp" />
+    <ClCompile Include="src\c\percolator\StdvNormalizer.cpp" />
+    <ClCompile Include="src\c\percolator\UniNormalizer.cpp" />
+    <ClCompile Include="src\c\predict_peptide_ions.cpp" />
+    <ClCompile Include="src\c\PrintProcessedSpectra.cpp" />
+    <ClCompile Include="src\c\PrintVersion.cpp" />
+    <ClCompile Include="src\c\Protein.cpp" />
+    <ClCompile Include="src\c\ProteinPeptideIterator.cpp" />
+    <ClCompile Include="src\c\protein_index.cpp" />
+    <ClCompile Include="src\c\q-ranker\BaseSpline.cpp" />
+    <ClCompile Include="src\c\q-ranker\Caller.cpp" />
+    <ClCompile Include="src\c\q-ranker\DataSet.cpp" />
+    <ClCompile Include="src\c\q-ranker\DescriptionOfCorrect.cpp" />
+    <ClCompile Include="src\c\q-ranker\FeatureNames.cpp" />
+    <ClCompile Include="src\c\q-ranker\Globals.cpp" />
+    <ClCompile Include="src\c\q-ranker\LogisticRegression.cpp" />
+    <ClCompile Include="src\c\q-ranker\Net.cpp" />
+    <ClCompile Include="src\c\q-ranker\Normalizer.cpp" />
+    <ClCompile Include="src\c\q-ranker\Option.cpp" />
+    <ClCompile Include="src\c\q-ranker\PosteriorEstimator.cpp" />
+    <ClCompile Include="src\c\q-ranker\PSMDescription.cpp" />
+    <ClCompile Include="src\c\q-ranker\QRankerCInterface.cpp" />
+    <ClCompile Include="src\c\q-ranker\qvality_main.cpp" />
+    <ClCompile Include="src\c\q-ranker\ResultHolder.cpp" />
+    <ClCompile Include="src\c\q-ranker\SanityCheck.cpp" />
+    <ClCompile Include="src\c\q-ranker\Scores.cpp" />
+    <ClCompile Include="src\c\q-ranker\SqtSanityCheck.cpp" />
+    <ClCompile Include="src\c\q-ranker\StdvNormalizer.cpp" />
+    <ClCompile Include="src\c\q-ranker\TrainNet.cpp" />
+    <ClCompile Include="src\c\q-ranker\UniNormalizer.cpp" />
+    <ClCompile Include="src\c\q-value.cpp" />
+    <ClCompile Include="src\c\QRanker.cpp" />
+    <ClCompile Include="src\c\scorer.cpp" />
+    <ClCompile Include="src\c\SequestSearch.cpp" />
+    <ClCompile Include="src\c\sorter.cpp" />
+    <ClCompile Include="src\c\SpectralCounts.cpp" />
+    <ClCompile Include="src\c\Spectrum.cpp" />
+    <ClCompile Include="src\c\SpectrumCollection.cpp" />
+    <ClCompile Include="src\c\SpectrumCollectionFactory.cpp" />
+    <ClCompile Include="src\c\SpectrumZState.cpp" />
+    <ClCompile Include="src\c\test\unit-tests\crux-unit-tests.c" />
+    <ClCompile Include="src\c\utils.cpp" />
+    <ClCompile Include="src\c\xlink\AccurateMonoMass.cpp" />
+    <ClCompile Include="src\c\xlink\SearchForXLinks.cpp" />
+    <ClCompile Include="src\c\xlink\xhhc.cpp" />
+    <ClCompile Include="src\c\xlink\xhhc_ion_series.cpp" />
+    <ClCompile Include="src\c\xlink\xhhc_make_histogram.cpp" />
+    <ClCompile Include="src\c\xlink\xhhc_predict_peptide_ions.cpp" />
+    <ClCompile Include="src\c\xlink\xhhc_scorer.cpp" />
+    <ClCompile Include="src\c\xlink\xhhc_score_peptide_spectrum.cpp" />
+    <ClCompile Include="src\c\xlink\xhhc_search.cpp" />
+    <ClCompile Include="src\c\xlink\XLinkBondMap.cpp" />
+    <ClCompile Include="src\c\xlink\XLinkSite.cpp" />
+    <ClCompile Include="src\c\xlink\xlink_assign_ions.cpp" />
+    <ClCompile Include="src\c\xlink\xlink_compute_qvalues.cpp" />
+    <ClCompile Include="src\external\MSObject.cpp" />
+    <ClCompile Include="src\external\MSReader.cpp" />
+    <ClCompile Include="src\external\MSTDemo.cpp" />
+    <ClCompile Include="src\external\ramp\base64.c" />
+    <ClCompile Include="src\external\ramp\ramp.c" />
+    <ClCompile Include="src\external\Spectrum.cpp" />
+    <ClCompile Include="src\external\zlib\adler32.c" />
+    <ClCompile Include="src\external\zlib\compress.c" />
+    <ClCompile Include="src\external\zlib\crc32.c" />
+    <ClCompile Include="src\external\zlib\deflate.c" />
+    <ClCompile Include="src\external\zlib\gzio.c" />
+    <ClCompile Include="src\external\zlib\infback.c" />
+    <ClCompile Include="src\external\zlib\inffast.c" />
+    <ClCompile Include="src\external\zlib\inflate.c" />
+    <ClCompile Include="src\external\zlib\inftrees.c" />
+    <ClCompile Include="src\external\zlib\trees.c" />
+    <ClCompile Include="src\external\zlib\uncompr.c" />
+    <ClCompile Include="src\external\zlib\zutil.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="src\c\test\cppunit-tests\cppunit-1.12.1\examples\msvc6\cppunittestapp\res\CppUnitTestApp.rc2" />
+    <None Include="src\c\test\cppunit-tests\cppunit-1.12.1\examples\msvc6\hostapp\res\HostApp.rc2" />
+    <None Include="src\c\test\cppunit-tests\cppunit-1.12.1\src\msvc6\dsplugin\DSPlugIn.rgs" />
+    <None Include="src\c\test\cppunit-tests\cppunit-1.12.1\src\msvc6\dsplugin\res\DSPlugIn.rc2" />
+    <None Include="src\c\test\cppunit-tests\cppunit-1.12.1\src\msvc6\testpluginrunner\res\TestPlugInRunner.rc2" />
+    <None Include="src\c\test\cppunit-tests\cppunit-1.12.1\src\msvc6\testrunner\res\TestRunner.rc2" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\c\alphabet.h" />
+    <ClInclude Include="src\c\analyze_psms.h" />
+    <ClInclude Include="src\c\arraylibrary\Arithmetic.h" />
+    <ClInclude Include="src\c\arraylibrary\Array.h" />
+    <ClInclude Include="src\c\arraylibrary\ArrayLibrary.h" />
+    <ClInclude Include="src\c\arraylibrary\ArrayTypes.h" />
+    <ClInclude Include="src\c\arraylibrary\MatrixFunctions.h" />
+    <ClInclude Include="src\c\arraylibrary\Numerical.h" />
+    <ClInclude Include="src\c\arraylibrary\OrderedArray.h" />
+    <ClInclude Include="src\c\arraylibrary\PackedArray.h" />
+    <ClInclude Include="src\c\arraylibrary\PackedMatrix.h" />
+    <ClInclude Include="src\c\arraylibrary\PackedSetFunctions.h" />
+    <ClInclude Include="src\c\arraylibrary\PackedVec.h" />
+    <ClInclude Include="src\c\arraylibrary\Random.h" />
+    <ClInclude Include="src\c\arraylibrary\SparseArray.h" />
+    <ClInclude Include="src\c\arraylibrary\VectorFunctions.h" />
+    <ClInclude Include="src\c\carp.h" />
+    <ClInclude Include="src\c\ComputeQValues.h" />
+    <ClInclude Include="src\c\CreateIndex.h" />
+    <ClInclude Include="src\c\crux-file-utils.h" />
+    <ClInclude Include="src\c\crux-main.h" />
+    <ClInclude Include="src\c\crux-utils.h" />
+    <ClInclude Include="src\c\CruxApplication.h" />
+    <ClInclude Include="src\c\CruxApplicationList.h" />
+    <ClInclude Include="src\c\database.h" />
+    <ClInclude Include="src\c\DelimitedFile.h" />
+    <ClInclude Include="src\c\DelimitedFileReader.h" />
+    <ClInclude Include="src\c\DelimitedFileWriter.h" />
+    <ClInclude Include="src\c\ExtractColumns.h" />
+    <ClInclude Include="src\c\ExtractRows.h" />
+    <ClInclude Include="src\c\FilteredSpectrumChargeIterator.h" />
+    <ClInclude Include="src\c\generate_peptides_iterator.h" />
+    <ClInclude Include="src\c\hash.h" />
+    <ClInclude Include="src\c\index.h" />
+    <ClInclude Include="src\c\Ion.h" />
+    <ClInclude Include="src\c\IonConstraint.h" />
+    <ClInclude Include="src\c\IonFilteredIterator.h" />
+    <ClInclude Include="src\c\IonSeries.h" />
+    <ClInclude Include="src\c\linked_list.h" />
+    <ClInclude Include="src\c\mass.h" />
+    <ClInclude Include="src\c\match.h" />
+    <ClInclude Include="src\c\MatchColumns.h" />
+    <ClInclude Include="src\c\MatchFileReader.h" />
+    <ClInclude Include="src\c\MatchFileWriter.h" />
+    <ClInclude Include="src\c\MatchSearch.h" />
+    <ClInclude Include="src\c\match_collection.h" />
+    <ClInclude Include="src\c\modifications.h" />
+    <ClInclude Include="src\c\modified_peptides_iterator.h" />
+    <ClInclude Include="src\c\MS2SpectrumCollection.h" />
+    <ClInclude Include="src\c\MSToolkitSpectrumCollection.h" />
+    <ClInclude Include="src\c\mstoolkit\CSpectrum.h" />
+    <ClInclude Include="src\c\mstoolkit\MSObject.h" />
+    <ClInclude Include="src\c\mstoolkit\MSReader.h" />
+    <ClInclude Include="src\c\mstoolkit\MSToolkitTypes.h" />
+    <ClInclude Include="src\c\mstoolkit\ramp\ramp.h" />
+    <ClInclude Include="src\c\mstoolkit\ramp\ramp_base64.h" />
+    <ClInclude Include="src\c\mstoolkit\Spectrum.h" />
+    <ClInclude Include="src\c\mstoolkit\zlib\crc32.h" />
+    <ClInclude Include="src\c\mstoolkit\zlib\deflate.h" />
+    <ClInclude Include="src\c\mstoolkit\zlib\inffast.h" />
+    <ClInclude Include="src\c\mstoolkit\zlib\inffixed.h" />
+    <ClInclude Include="src\c\mstoolkit\zlib\inflate.h" />
+    <ClInclude Include="src\c\mstoolkit\zlib\inftrees.h" />
+    <ClInclude Include="src\c\mstoolkit\zlib\trees.h" />
+    <ClInclude Include="src\c\mstoolkit\zlib\zconf.h" />
+    <ClInclude Include="src\c\mstoolkit\zlib\zlib.h" />
+    <ClInclude Include="src\c\objects.h" />
+    <ClInclude Include="src\c\OutputFiles.h" />
+    <ClInclude Include="src\c\parameter.h" />
+    <ClInclude Include="src\c\parse_arguments.h" />
+    <ClInclude Include="src\c\peak.h" />
+    <ClInclude Include="src\c\peptide.h" />
+    <ClInclude Include="src\c\peptide_constraint.h" />
+    <ClInclude Include="src\c\peptide_modifications.h" />
+    <ClInclude Include="src\c\peptide_src.h" />
+    <ClInclude Include="src\c\Percolator.h" />
+    <ClInclude Include="src\c\percolator\BaseSpline.h" />
+    <ClInclude Include="src\c\percolator\Caller.h" />
+    <ClInclude Include="src\c\percolator\DataSet.h" />
+    <ClInclude Include="src\c\percolator\Globals.h" />
+    <ClInclude Include="src\c\percolator\IntraSetRelation.h" />
+    <ClInclude Include="src\c\percolator\LogisticRegression.h" />
+    <ClInclude Include="src\c\percolator\Normalizer.h" />
+    <ClInclude Include="src\c\percolator\Option.h" />
+    <ClInclude Include="src\c\percolator\PercolatorCInterface.h" />
+    <ClInclude Include="src\c\percolator\PosteriorEstimator.h" />
+    <ClInclude Include="src\c\percolator\ResultHolder.h" />
+    <ClInclude Include="src\c\percolator\SanityCheck.h" />
+    <ClInclude Include="src\c\percolator\Scores.h" />
+    <ClInclude Include="src\c\percolator\SetHandler.h" />
+    <ClInclude Include="src\c\percolator\SqtSanityCheck.h" />
+    <ClInclude Include="src\c\percolator\ssl.h" />
+    <ClInclude Include="src\c\percolator\StdvNormalizer.h" />
+    <ClInclude Include="src\c\percolator\Transform.h" />
+    <ClInclude Include="src\c\percolator\UniNormalizer.h" />
+    <ClInclude Include="src\c\PrintProcessedSpectra.h" />
+    <ClInclude Include="src\c\PrintVersion.h" />
+    <ClInclude Include="src\c\Protein.h" />
+    <ClInclude Include="src\c\ProteinPeptideIterator.h" />
+    <ClInclude Include="src\c\protein_index.h" />
+    <ClInclude Include="src\c\q-ranker\BaseSpline.h" />
+    <ClInclude Include="src\c\q-ranker\Caller.h" />
+    <ClInclude Include="src\c\q-ranker\config.h" />
+    <ClInclude Include="src\c\q-ranker\DataSet.h" />
+    <ClInclude Include="src\c\q-ranker\FeatureNames.h" />
+    <ClInclude Include="src\c\q-ranker\Globals.h" />
+    <ClInclude Include="src\c\q-ranker\IntraSetRelation.h" />
+    <ClInclude Include="src\c\q-ranker\LogisticRegression.h" />
+    <ClInclude Include="src\c\q-ranker\Net.h" />
+    <ClInclude Include="src\c\q-ranker\Normalizer.h" />
+    <ClInclude Include="src\c\q-ranker\Option.h" />
+    <ClInclude Include="src\c\q-ranker\PercolatorCommon.h" />
+    <ClInclude Include="src\c\q-ranker\PosteriorEstimator.h" />
+    <ClInclude Include="src\c\q-ranker\PSMDescription.h" />
+    <ClInclude Include="src\c\q-ranker\QRankerCInterface.h" />
+    <ClInclude Include="src\c\q-ranker\ResultHolder.h" />
+    <ClInclude Include="src\c\q-ranker\SanityCheck.h" />
+    <ClInclude Include="src\c\q-ranker\Scores.h" />
+    <ClInclude Include="src\c\q-ranker\SetHandler.h" />
+    <ClInclude Include="src\c\q-ranker\SqtSanityCheck.h" />
+    <ClInclude Include="src\c\q-ranker\ssl.h" />
+    <ClInclude Include="src\c\q-ranker\StdvNormalizer.h" />
+    <ClInclude Include="src\c\q-ranker\Transform.h" />
+    <ClInclude Include="src\c\q-ranker\UniNormalizer.h" />
+    <ClInclude Include="src\c\q-value.h" />
+    <ClInclude Include="src\c\QRanker.h" />
+    <ClInclude Include="src\c\scorer.h" />
+    <ClInclude Include="src\c\SequestSearch.h" />
+    <ClInclude Include="src\c\sorter.h" />
+    <ClInclude Include="src\c\SpectralCounts.h" />
+    <ClInclude Include="src\c\Spectrum.h" />
+    <ClInclude Include="src\c\SpectrumCollection.h" />
+    <ClInclude Include="src\c\SpectrumCollectionFactory.h" />
+    <ClInclude Include="src\c\SpectrumZState.h" />
+    <ClInclude Include="src\c\test\cppunit-tests\cppunit-1.12.1\examples\clockerplugin\Timer.h" />
+    <ClInclude Include="src\c\test\cppunit-tests\cppunit-1.12.1\examples\cppunittest\assertion_traitsTest.h" />
+    <ClInclude Include="src\c\test\cppunit-tests\cppunit-1.12.1\examples\cppunittest\BaseTestCase.h" />
+    <ClInclude Include="src\c\test\cppunit-tests\cppunit-1.12.1\examples\cppunittest\FailureException.h" />
+    <ClInclude Include="src\c\test\cppunit-tests\cppunit-1.12.1\examples\cppunittest\OrthodoxTest.h" />
+    <ClInclude Include="src\c\test\cppunit-tests\cppunit-1.12.1\examples\cppunittest\OutputSuite.h" />
+    <ClInclude Include="src\c\test\cppunit-tests\cppunit-1.12.1\examples\cppunittest\ToolsSuite.h" />
+    <ClInclude Include="src\c\test\cppunit-tests\cppunit-1.12.1\examples\hierarchy\BoardGame.h" />
+    <ClInclude Include="src\c\test\cppunit-tests\cppunit-1.12.1\examples\hierarchy\BoardGameTest.h" />
+    <ClInclude Include="src\c\test\cppunit-tests\cppunit-1.12.1\examples\msvc6\cppunittestapp\Resource.h" />
+    <ClInclude Include="src\c\test\cppunit-tests\cppunit-1.12.1\examples\msvc6\hostapp\MainFrm.h" />
+    <ClInclude Include="src\c\test\cppunit-tests\cppunit-1.12.1\examples\msvc6\hostapp\Resource.h" />
+    <ClInclude Include="src\c\test\cppunit-tests\cppunit-1.12.1\include\cppunit\AdditionalMessage.h" />
+    <ClInclude Include="src\c\test\cppunit-tests\cppunit-1.12.1\include\cppunit\Asserter.h" />
+    <ClInclude Include="src\c\test\cppunit-tests\cppunit-1.12.1\include\cppunit\BriefTestProgressListener.h" />
+    <ClInclude Include="src\c\test\cppunit-tests\cppunit-1.12.1\include\cppunit\config\SourcePrefix.h" />
+    <ClInclude Include="src\c\test\cppunit-tests\cppunit-1.12.1\include\cppunit\extensions\AutoRegisterSuite.h" />
+    <ClInclude Include="src\c\test\cppunit-tests\cppunit-1.12.1\include\cppunit\extensions\Orthodox.h" />
+    <ClInclude Include="src\c\test\cppunit-tests\cppunit-1.12.1\include\cppunit\Outputter.h" />
+    <ClInclude Include="src\c\test\cppunit-tests\cppunit-1.12.1\include\cppunit\Portability.h" />
+    <ClInclude Include="src\c\test\cppunit-tests\cppunit-1.12.1\include\cppunit\portability\FloatingPoint.h" />
+    <ClInclude Include="src\c\test\cppunit-tests\cppunit-1.12.1\include\cppunit\portability\Stream.h" />
+    <ClInclude Include="src\c\test\cppunit-tests\cppunit-1.12.1\include\cppunit\SourceLine.h" />
+    <ClInclude Include="src\c\test\cppunit-tests\cppunit-1.12.1\include\cppunit\tools\Algorithm.h" />
+    <ClInclude Include="src\c\test\cppunit-tests\cppunit-1.12.1\include\cppunit\tools\StringTools.h" />
+    <ClInclude Include="src\c\test\cppunit-tests\cppunit-1.12.1\include\cppunit\ui\qt\Config.h" />
+    <ClInclude Include="src\c\test\cppunit-tests\cppunit-1.12.1\include\cppunit\ui\qt\QtTestRunner.h" />
+    <ClInclude Include="src\c\test\cppunit-tests\cppunit-1.12.1\src\cppunit\DefaultProtector.h" />
+    <ClInclude Include="src\c\test\cppunit-tests\cppunit-1.12.1\src\msvc6\dsplugin\resource.h" />
+    <ClInclude Include="src\c\test\cppunit-tests\cppunit-1.12.1\src\msvc6\testpluginrunner\Resource.h" />
+    <ClInclude Include="src\c\test\cppunit-tests\cppunit-1.12.1\src\msvc6\testrunner\ActiveTest.h" />
+    <ClInclude Include="src\c\test\cppunit-tests\cppunit-1.12.1\src\msvc6\testrunner\dynamicwindow\SizeCBar.h" />
+    <ClInclude Include="src\c\test\cppunit-tests\cppunit-1.12.1\src\msvc6\testrunner\ListCtrlFormatter.h" />
+    <ClInclude Include="src\c\test\cppunit-tests\cppunit-1.12.1\src\msvc6\testrunner\ListCtrlSetter.h" />
+    <ClInclude Include="src\c\test\cppunit-tests\cppunit-1.12.1\src\msvc6\testrunner\MsDevCallerListCtrl.h" />
+    <ClInclude Include="src\c\test\cppunit-tests\cppunit-1.12.1\src\msvc6\testrunner\Resource.h" />
+    <ClInclude Include="src\c\test\cppunit-tests\cppunit-1.12.1\src\msvc6\testrunner\ResourceLoaders.h" />
+    <ClInclude Include="src\c\test\unit-tests\check\config.h" />
+    <ClInclude Include="src\c\utils.h" />
+    <ClInclude Include="src\c\version.h" />
+    <ClInclude Include="src\c\xlink\SearchForXLinks.h" />
+    <ClInclude Include="src\c\xlink\xhhc.h" />
+    <ClInclude Include="src\c\xlink\xhhc_ion_series.h" />
+    <ClInclude Include="src\c\xlink\xhhc_scorer.h" />
+    <ClInclude Include="src\c\xlink\XLinkBondMap.h" />
+    <ClInclude Include="src\c\xlink\XLinkSite.h" />
+    <ClInclude Include="src\c\xlink_compute_qvalues.h" />
+    <ClInclude Include="src\c\xlink_search.h" />
+    <ClInclude Include="src\external\MSObject.h" />
+    <ClInclude Include="src\external\MSReader.h" />
+    <ClInclude Include="src\external\MSToolkitTypes.h" />
+    <ClInclude Include="src\external\ramp\base64.h" />
+    <ClInclude Include="src\external\ramp\ramp.h" />
+    <ClInclude Include="src\external\Spectrum.h" />
+    <ClInclude Include="src\external\zlib\crc32.h" />
+    <ClInclude Include="src\external\zlib\deflate.h" />
+    <ClInclude Include="src\external\zlib\inffast.h" />
+    <ClInclude Include="src\external\zlib\inffixed.h" />
+    <ClInclude Include="src\external\zlib\inflate.h" />
+    <ClInclude Include="src\external\zlib\inftrees.h" />
+    <ClInclude Include="src\external\zlib\trees.h" />
+    <ClInclude Include="src\external\zlib\zconf.h" />
+    <ClInclude Include="src\external\zlib\zutil.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="src\c\test\cppunit-tests\cppunit-1.12.1\examples\msvc6\cppunittestapp\CppUnitTestApp.rc" />
+    <ResourceCompile Include="src\c\test\cppunit-tests\cppunit-1.12.1\examples\msvc6\hostapp\HostApp.rc" />
+    <ResourceCompile Include="src\c\test\cppunit-tests\cppunit-1.12.1\src\msvc6\dsplugin\DSPlugIn.rc" />
+    <ResourceCompile Include="src\c\test\cppunit-tests\cppunit-1.12.1\src\msvc6\testpluginrunner\TestPlugInRunner.rc" />
+    <ResourceCompile Include="src\c\test\cppunit-tests\cppunit-1.12.1\src\msvc6\testrunner\TestRunner.rc" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
