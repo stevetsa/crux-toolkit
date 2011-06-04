@@ -10,8 +10,10 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
+#ifndef WIN32
 #include <sys/time.h>
 #include <unistd.h> 
+#endif
 #include <math.h>
 #include <assert.h>
 #include <errno.h>

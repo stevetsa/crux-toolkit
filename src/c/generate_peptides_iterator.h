@@ -10,7 +10,9 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <ctype.h>
+#ifndef WIN32
 #include <dirent.h>
+#endif
 #include "utils.h"
 #include "crux-utils.h"
 #include "peptide.h"

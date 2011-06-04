@@ -40,7 +40,7 @@ struct record {
  * \struct hash
  * \brief hash table, contains the records
  */
-struct hash {
+struct our_hash {
   RECORD_T* records; ///< record holds key & values
   unsigned int records_count; ///< number of records
   unsigned int size_index; ///< index into the size array, thus can get the size of the hash table

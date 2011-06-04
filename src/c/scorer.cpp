@@ -11,7 +11,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#ifndef WIN32
 #include <dirent.h>
+#endif
 #include <ctype.h>
 #include <sys/stat.h>
 #include "objects.h"

@@ -12,7 +12,9 @@
 #define SCORER_H
 
 #include <stdio.h>
+#ifndef WIN32
 #include <dirent.h>
+#endif
 #include <string>
 #include "objects.h"
 #include "Spectrum.h"

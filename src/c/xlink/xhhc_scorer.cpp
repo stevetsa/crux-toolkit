@@ -38,12 +38,12 @@ int Scorer::get_matched_by_ions(Spectrum* spectrum,
   return ans;
 }
 
-float Scorer::score_spectrum_vs_series(
+FLOAT_T Scorer::score_spectrum_vs_series(
       Spectrum* spectrum,
       LinkedIonSeries& ion_series
   ) {
     //SCORER_T* scorer = new_scorer(XCORR);
-    float score = 0.0;
+    FLOAT_T score = 0.0;
     score =  hhc_gen_score_xcorr(spectrum, ion_series);
     return score; 
   } 
