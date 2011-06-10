@@ -1078,6 +1078,7 @@ int SQTParser :: set_output_dir(string &output_dir, int overwrite_flag, string &
 	return 0;
       }
     }
+  /*
   else
     {
       DIR *dp;
@@ -1085,6 +1086,7 @@ int SQTParser :: set_output_dir(string &output_dir, int overwrite_flag, string &
       //is this a directory?
       if((stFileInfo.st_mode & S_IFMT) == S_IFDIR)
 	{
+	  
 	  if((dp  = opendir(output_dir.c_str())) == NULL)
 	    cout << "reading files in directory " << output_dir  << " failed, will overwrite them" << endl;
 	  else
@@ -1104,7 +1106,8 @@ int SQTParser :: set_output_dir(string &output_dir, int overwrite_flag, string &
 		    }
 		}
 	      closedir(dp);
-	    }    
+	    }
+	  
 	}
       //it is not a directory
       else
@@ -1128,8 +1131,10 @@ int SQTParser :: set_output_dir(string &output_dir, int overwrite_flag, string &
 	    }
 	}
     }
-  
+  */
+ 
   out_dir = output_dir;
+  cout << out_dir << endl;
   return 1;
 }
 

@@ -1545,7 +1545,7 @@ int Barista :: set_command_line_options(int argc, char *argv[])
       cout << "output_directory: " << output_directory << endl;
       
       //num of spec features
-      sqtp.set_num_spec_features(7);
+      sqtp.set_num_spec_features(0);
       if(!sqtp.run())
 	return 0;
       sqtp.clear();
