@@ -279,8 +279,14 @@ void plot_weibull(vector<pair<FLOAT_T, LinkedPeptide> >& scores,
   int num_targets = 0;
   int num_decoys = 0;
 
-  FLOAT_T decoy_scores_array[num_scores];
-  FLOAT_T target_scores_array[num_scores];
+
+  // Replaces previous use of dynamic array which was a GNU extension
+  std::vector<FLOAT_T> decoy_scores_vector(num_scores);
+  std::vector<FLOAT_T> target_scores_vector(num_scores);
+
+  // Get array from vector
+  FLOAT_T *decoy_scores_array = &(decoy_scores_vector[0]);
+  FLOAT_T *target_scores_array = &(target_scores_vector[0]);
 
   for (vector<pair<FLOAT_T, LinkedPeptide> >::iterator score_pair = scores.begin();
 	score_pair != scores.end(); ++score_pair) {

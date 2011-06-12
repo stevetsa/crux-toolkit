@@ -23,6 +23,7 @@ using namespace std;
 #include "Globals.h"
 #include "PosteriorEstimator.h"
 #include "ssl.h"
+#include "WinCrux.h"
 
 namespace qranker {
 

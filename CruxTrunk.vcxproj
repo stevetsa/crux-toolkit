@@ -34,7 +34,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>C:\Users\Charles\Documents\Visual Studio 2010\Projects\crux-trunk\src\c\xlink;C:\Users\Charles\Documents\Visual Studio 2010\Projects\crux-trunk\src\c\q-ranker;C:\Users\Charles\Documents\Visual Studio 2010\Projects\crux-trunk\src\c\percolator;C:\Users\Charles\Documents\Visual Studio 2010\Projects\crux-trunk\src\c\MSToolkit\zLib;C:\Users\Charles\Documents\Visual Studio 2010\Projects\crux-trunk\src\c\MSToolkit\RAMP;C:\Users\Charles\Documents\Visual Studio 2010\Projects\crux-trunk\src\c\MSToolkit;C:\Users\Charles\Documents\Visual Studio 2010\Projects\crux-trunk\src\c\ArrayLibrary;C:\Users\Charles\Documents\Visual Studio 2010\Projects\crux-trunk\src\c;$(IncludePath)</IncludePath>
+    <IncludePath>\\psf\Home\Documents\Visual Studio 2010\Projects\CruxTrunk-windows-port\src\c;\\psf\Home\Documents\Visual Studio 2010\Projects\CruxTrunk-windows-port\src\c\xlink;\\psf\Home\Documents\Visual Studio 2010\Projects\CruxTrunk-windows-port\src\c\q-ranker;\\psf\Home\Documents\Visual Studio 2010\Projects\CruxTrunk-windows-port\src\c\percolator;\\psf\Home\Documents\Visual Studio 2010\Projects\CruxTrunk-windows-port\src\c\ArrayLibrary;\\psf\Home\Documents\Visual Studio 2010\Projects\CruxTrunk-windows-port\src\c\MSToolkit;\\psf\Home\Documents\Visual Studio 2010\Projects\CruxTrunk-windows-port\src\c\MSToolkit\zLib;\\psf\Home\Documents\Visual Studio 2010\Projects\CruxTrunk-windows-port\src\c\MSToolkit\RAMP;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>true</LinkIncremental>
@@ -72,18 +72,8 @@
   <ItemGroup>
     <ClCompile Include="src\c\alphabet.cpp" />
     <ClCompile Include="src\c\analyze_psms.cpp" />
-    <ClCompile Include="src\c\arraylibrary\Arithmetic.cpp" />
-    <ClCompile Include="src\c\arraylibrary\Array.cpp" />
-    <ClCompile Include="src\c\arraylibrary\ArrayTypes.cpp" />
     <ClCompile Include="src\c\arraylibrary\MatrixFunctions.cpp" />
     <ClCompile Include="src\c\arraylibrary\Numerical.cpp" />
-    <ClCompile Include="src\c\arraylibrary\OrderedArray.cpp" />
-    <ClCompile Include="src\c\arraylibrary\PackedArray.cpp" />
-    <ClCompile Include="src\c\arraylibrary\PackedMatrix.cpp" />
-    <ClCompile Include="src\c\arraylibrary\PackedSetFunctions.cpp" />
-    <ClCompile Include="src\c\arraylibrary\PackedVec.cpp" />
-    <ClCompile Include="src\c\arraylibrary\Random.cpp" />
-    <ClCompile Include="src\c\arraylibrary\SparseArray.cpp" />
     <ClCompile Include="src\c\arraylibrary\VectorFunctions.cpp" />
     <ClCompile Include="src\c\carp.cpp" />
     <ClCompile Include="src\c\ComputeQValues.cpp" />
@@ -209,7 +199,6 @@
     <ClCompile Include="src\c\SpectrumZState.cpp" />
     <ClCompile Include="src\c\test\unit-tests\crux-unit-tests.c" />
     <ClCompile Include="src\c\utils.cpp" />
-    <ClCompile Include="src\c\xlink\AccurateMonoMass.cpp" />
     <ClCompile Include="src\c\xlink\SearchForXLinks.cpp" />
     <ClCompile Include="src\c\xlink\xhhc.cpp" />
     <ClCompile Include="src\c\xlink\xhhc_ion_series.cpp" />
@@ -222,24 +211,8 @@
     <ClCompile Include="src\c\xlink\XLinkSite.cpp" />
     <ClCompile Include="src\c\xlink\xlink_assign_ions.cpp" />
     <ClCompile Include="src\c\xlink\xlink_compute_qvalues.cpp" />
-    <ClCompile Include="src\external\MSObject.cpp" />
-    <ClCompile Include="src\external\MSReader.cpp" />
-    <ClCompile Include="src\external\MSTDemo.cpp" />
     <ClCompile Include="src\external\ramp\base64.c" />
-    <ClCompile Include="src\external\ramp\ramp.c" />
-    <ClCompile Include="src\external\Spectrum.cpp" />
-    <ClCompile Include="src\external\zlib\adler32.c" />
     <ClCompile Include="src\external\zlib\compress.c" />
-    <ClCompile Include="src\external\zlib\crc32.c" />
-    <ClCompile Include="src\external\zlib\deflate.c" />
-    <ClCompile Include="src\external\zlib\gzio.c" />
-    <ClCompile Include="src\external\zlib\infback.c" />
-    <ClCompile Include="src\external\zlib\inffast.c" />
-    <ClCompile Include="src\external\zlib\inflate.c" />
-    <ClCompile Include="src\external\zlib\inftrees.c" />
-    <ClCompile Include="src\external\zlib\trees.c" />
-    <ClCompile Include="src\external\zlib\uncompr.c" />
-    <ClCompile Include="src\external\zlib\zutil.c" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\c\test\cppunit-tests\cppunit-1.12.1\examples\msvc6\cppunittestapp\res\CppUnitTestApp.rc2" />
@@ -424,6 +397,7 @@
     <ClInclude Include="src\c\test\unit-tests\check\config.h" />
     <ClInclude Include="src\c\utils.h" />
     <ClInclude Include="src\c\version.h" />
+    <ClInclude Include="src\c\WinCrux.h" />
     <ClInclude Include="src\c\xlink\SearchForXLinks.h" />
     <ClInclude Include="src\c\xlink\xhhc.h" />
     <ClInclude Include="src\c\xlink\xhhc_ion_series.h" />
@@ -432,20 +406,7 @@
     <ClInclude Include="src\c\xlink\XLinkSite.h" />
     <ClInclude Include="src\c\xlink_compute_qvalues.h" />
     <ClInclude Include="src\c\xlink_search.h" />
-    <ClInclude Include="src\external\MSObject.h" />
-    <ClInclude Include="src\external\MSReader.h" />
-    <ClInclude Include="src\external\MSToolkitTypes.h" />
-    <ClInclude Include="src\external\ramp\base64.h" />
-    <ClInclude Include="src\external\ramp\ramp.h" />
     <ClInclude Include="src\external\Spectrum.h" />
-    <ClInclude Include="src\external\zlib\crc32.h" />
-    <ClInclude Include="src\external\zlib\deflate.h" />
-    <ClInclude Include="src\external\zlib\inffast.h" />
-    <ClInclude Include="src\external\zlib\inffixed.h" />
-    <ClInclude Include="src\external\zlib\inflate.h" />
-    <ClInclude Include="src\external\zlib\inftrees.h" />
-    <ClInclude Include="src\external\zlib\trees.h" />
-    <ClInclude Include="src\external\zlib\zconf.h" />
     <ClInclude Include="src\external\zlib\zutil.h" />
   </ItemGroup>
   <ItemGroup>

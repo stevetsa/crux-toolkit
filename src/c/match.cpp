@@ -1510,7 +1510,7 @@ MATCH_T* parse_match_tab_delimited(
   }
 
   // get experiment size
-  match->ln_experiment_size = log(result_file.getInteger(MATCHES_SPECTRUM_COL));
+  match->ln_experiment_size = log((FLOAT_T) result_file.getInteger(MATCHES_SPECTRUM_COL));
 
   // parse spectrum
   if((spectrum = Spectrum::parseTabDelimited(result_file))== NULL){

@@ -285,7 +285,7 @@ void Scorer::print_spectrums(FLOAT_T* theoretical, Spectrum* spectrum) {
   theoretical_file << "> theoretical" << endl;
   observed_file << "> observed" << endl;
   spectrums_file << "> spectrums" << endl;
-  bool noflanks = get_boolean_parameter("xcorr-use-flanks");
+  BOOLEAN_T noflanks = get_boolean_parameter("xcorr-use-flanks");
   int normalize = NORMALIZE;
   int max_mz = MAX_MZ;
   int min_mz = MIN_MZ;

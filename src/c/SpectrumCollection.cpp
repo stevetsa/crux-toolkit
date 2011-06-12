@@ -8,7 +8,9 @@
 #include "protein_index.h" 
 #include "Peak.h"
 #include "utils.h"
+#ifndef WIN32
 #include "unistd.h"
+#endif
 #include "parameter.h"
 #include <cerrno>
 #include <cstring>

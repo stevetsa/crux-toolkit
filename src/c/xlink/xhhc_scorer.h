@@ -2,6 +2,7 @@
 #define XHHC_SCORER_H
 
 #include "scorer.h"
+#include "utils.h"
 
 #include "xhhc_ion_series.h"
 
@@ -31,7 +32,7 @@ class Scorer {
     // creates theoretical spectrum from ion series and
     // scores against observed spectrum
     // returns xcorr score
-    float score_spectrum_vs_series(Spectrum* spectrum, 
+    FLOAT_T score_spectrum_vs_series(Spectrum* spectrum, 
                                    LinkedIonSeries& ion_series);
 
     static int get_matched_by_ions(Spectrum* spectrum,

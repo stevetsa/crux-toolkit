@@ -43,6 +43,7 @@ using namespace std;
 #include "PosteriorEstimator.h"
 #include "Transform.h"
 #include "Globals.h"
+#include "WinCrux.h"
 
 namespace qranker {
 

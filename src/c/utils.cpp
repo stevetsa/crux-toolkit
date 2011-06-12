@@ -633,6 +633,22 @@ int main (int argc, char *argv[])
   return(0);
 }
 
+#ifdef WIN32
+int snprintf(char *str,size_t size,const char *fmt,...)
+{
+   // FIXME:CEG This function needs to fully emulate the POSIX std snprintf
+   // need to fix return value and behavior when passing in a null buffer
+   int ret;
+   va_list ap;
+   
+   va_start(ap,fmt); 
+   ret = vsnprintf(str,size,fmt,ap);
+   str[size-1] = '\0';       
+    va_end(ap);    
+   return ret;    
+}
+#endif
+
 #endif
 
 /*

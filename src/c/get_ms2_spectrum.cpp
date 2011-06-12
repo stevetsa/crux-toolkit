@@ -17,7 +17,9 @@
 #include "Spectrum.h"
 #include "Peak.h"
 #include "SpectrumCollectionFactory.h"
+#ifndef WIN32
 #include "unistd.h"
+#endif
 
 /****************************************************************************
  * Read a string into either a single positive integer or a range of

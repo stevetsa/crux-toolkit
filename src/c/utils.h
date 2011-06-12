@@ -307,5 +307,9 @@ char** parse_file(
   int* num_lines
   );
 
+#ifdef WIN32
+int snprintf(char *str,size_t size,const char *fmt,...);
+#endif
+
 #endif
 

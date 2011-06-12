@@ -24,7 +24,9 @@
 #include "Spectrum.h"
 #include "scorer.h"
 #include "parameter.h"
+#ifndef WIN32
 #include "unistd.h"
+#endif
 
 
 /**
