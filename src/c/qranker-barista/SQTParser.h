@@ -1,5 +1,6 @@
 #ifndef SQTPARSER_H
 #define SQTPARSER_H
+#define CRUX
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -16,6 +17,12 @@
 #include <cstring>
 #include "SpecFeatures.h"
 #include "BipartiteGraph.h"
+#ifdef CRUX
+#include "CruxApplication.h"
+#include "carp.h"
+#include "crux-utils.h"
+#include "parameter.h"
+#endif
 using namespace std;
 
 typedef enum {TRYPSIN_ENZ,CHYMOTRYPSIN_ENZ,ELASTASE_ENZ} enzyme;
@@ -53,7 +60,7 @@ class SQTParser{
   inline void set_num_features(int nf) {num_features = nf;}
   inline void set_num_spec_features(int nsf) {num_spec_features = nsf;}
   inline int get_num_features() const {return num_features;}
-  int set_output_dir(string &output_dir, int overwrite_flag, string &forbidden_prefix);
+  int set_output_dir(string &output_dir, int overwrite_flag);
   inline string& get_output_dir(){return out_dir;}
   inline void set_input_dir(string input_dir){in_dir = input_dir;}
   inline void set_input_dir_ms2(string input_dir){in_dir_ms2 = input_dir;}

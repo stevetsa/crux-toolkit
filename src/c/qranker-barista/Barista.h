@@ -1,5 +1,6 @@
 #ifndef BARISTA_H
 #define BARISTA_H
+#define CRUX
 
 #include <sys/types.h>
 #include <dirent.h>
@@ -9,7 +10,12 @@
 #include <algorithm>
 #include <assert.h>
 #include <cstdio>
+#ifdef CRUX
 #include "CruxApplication.h"
+#include "carp.h"
+#include "crux-utils.h"
+#include "parameter.h"
+#endif
 #include "DataSet.h"
 #include "ProtScores.h"
 #include "PSMScores.h"

@@ -91,6 +91,7 @@ void MatchFileWriter::setPrecision(){
     case QRANKER_QVALUE_COL:
     case SIN_SCORE_COL:
     case NSAF_SCORE_COL:
+    case EMPAI_SCORE_COL:
 #ifdef NEW_COLUMNS
     case WEIBULL_PEPTIDE_QVALUE_COL:      // NEW
     case DECOY_XCORR_PEPTIDE_QVALUE_COL:  // NEW
@@ -145,10 +146,13 @@ void MatchFileWriter::addColumnName(MATCH_COLUMNS_T column_type){
  * Adds which columns to print based on the COMMAND_TYPE_T. Only for
  * search-for-matches, sequest-search and spectral-counts.
  */
-void MatchFileWriter::addColumnNames(COMMAND_T command, bool has_decoys){
+void MatchFileWriter::addColumnNames(CruxApplication* application, bool has_decoys){
+
+  COMMAND_T command = application->getCommand();
 
   switch (command){
   // commands with no tab files
+  case MISC_COMMAND:
   case INDEX_COMMAND:        ///< create-index
   case PROCESS_SPEC_COMMAND: ///< print-processed-spectra
   case VERSION_COMMAND:      ///< just print the version number
@@ -156,7 +160,7 @@ void MatchFileWriter::addColumnNames(COMMAND_T command, bool has_decoys){
   case NUMBER_COMMAND_TYPES:
   case INVALID_COMMAND:
     carp(CARP_FATAL, "Invalid command (%s) for creating a MatchFileWriter.",
-         command_type_to_command_line_string_ptr(command));
+         application->getName().c_str());
     return;
 
   // commands that also require list of cols to print
@@ -165,7 +169,7 @@ void MatchFileWriter::addColumnNames(COMMAND_T command, bool has_decoys){
   case QRANKER_COMMAND:
     carp(CARP_FATAL, 
          "Post-search command %s requires a list of columns to print.",
-         command_type_to_command_line_string_ptr(command));
+         application->getName().c_str());
     return;
 
   // valid commands
@@ -214,8 +218,10 @@ void MatchFileWriter::addColumnNames(COMMAND_T command, bool has_decoys){
     // SIN or NSAF score
     if( get_measure_type_parameter("measure") == MEASURE_SIN ){
       addColumnName(SIN_SCORE_COL);
-    } else {
+    } else if( get_measure_type_parameter("measure") == MEASURE_NSAF){
       addColumnName(NSAF_SCORE_COL);
+    } else if( get_measure_type_parameter("measure") == MEASURE_EMPAI){
+      addColumnName(EMPAI_SCORE_COL);
     }
 
     return; // do not add additional columns
@@ -246,12 +252,15 @@ void MatchFileWriter::addColumnNames(COMMAND_T command, bool has_decoys){
  * of columns to print. For all post-search commands.
  */
 void MatchFileWriter::addColumnNames
-  (COMMAND_T command, 
+  (CruxApplication* application, 
    bool has_decoys,
    const vector<bool>& cols_to_print){
 
+  COMMAND_T command = application->getCommand();
+
   switch (command){
   // commands with no tab files
+  case MISC_COMMAND:
   case INDEX_COMMAND:        ///< create-index
   case PROCESS_SPEC_COMMAND: ///< print-processed-spectra
   case VERSION_COMMAND:      ///< just print the version number
@@ -260,14 +269,14 @@ void MatchFileWriter::addColumnNames
   case NUMBER_COMMAND_TYPES:
   case INVALID_COMMAND:
     carp(CARP_FATAL, "Invalid command (%s) for creating a MatchFileWriter.",
-         command_type_to_command_line_string_ptr(command));
+         application->getName().c_str());
     return;
 
   // search commands handled elsewhere
   case SEARCH_COMMAND:       ///< search-for-matches
   case SEQUEST_COMMAND:      ///< sequest-search
   case XLINK_SEARCH_COMMAND:
-    addColumnNames(command, has_decoys);
+    addColumnNames(application, has_decoys);
     return;
 
   // valid commands

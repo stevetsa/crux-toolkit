@@ -97,7 +97,6 @@ int ProtScores :: traverse_protein(Dataset &d, int protind, int trn_tst, vector<
 
 void ProtScores :: fillProteinsSplit(ProtScores& train,ProtScores& test,Dataset &d, double ratio)
 {
-  cout << "splitting into training and testing sets\n";
   int n = d.get_num_proteins();
   vector<int> assignment_array;
   assignment_array.resize(n,0);
@@ -128,7 +127,7 @@ void ProtScores :: fillProteinsSplit(ProtScores& train,ProtScores& test,Dataset 
 	} 
     } 
   //cout << "total proteins " << num_trn+num_tst << " trainset size " << num_trn << " testeset size " << num_tst << " ratio " << (double)num_trn/(double)num_tst << endl;
-  cout << "total proteins " << num_trn+num_tst << " trainset size " << num_trn << " testeset size " << num_tst << endl;
+  //cout << "total proteins " << num_trn+num_tst << " trainset size " << num_trn << " testeset size " << num_tst << endl;
 
   int trn= 0;
   int tst= 0;

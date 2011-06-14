@@ -13,7 +13,6 @@
 #include <ctype.h>
 #include "objects.h"
 #include "Spectrum.h"
-#include "peak.h"
 #include "utils.h"
 #include "mass.h"
 #include "parameter.h"
@@ -21,6 +20,7 @@
 #include "carp.h"
 #include <vector>
 #include <string>
+#include "DelimitedFile.h"
 #include "MatchFileReader.h"
 #include "MSToolkit/Spectrum.h"
 
@@ -85,7 +85,7 @@ Spectrum::~Spectrum()
   free_peak_vector(peaks_);
   
   if(has_mz_peak_array_){
-    free(mz_peak_array_);
+    delete [] mz_peak_array_;
   }
 }
 
@@ -135,10 +135,10 @@ void Spectrum::print(FILE* file) ///< output file to print at -out
 
   // print peaks
   for(int peak_idx = 0; peak_idx < (int)peaks_.size(); ++peak_idx){
-    fprintf(file, "%.2f %.*f\n", 
-            get_peak_location(peaks_[peak_idx]),
+    fprintf(file, "%.*f %.4f\n",
             mass_precision,
-            get_peak_intensity(peaks_[peak_idx]));
+            peaks_[peak_idx]->getLocation(),
+            peaks_[peak_idx]->getIntensity());
   }
 }
 
@@ -210,7 +210,7 @@ void Spectrum::printXml(
   if (filepath == NULL){
     filename = "NA";
   } else {
-    name_ext_array = parse_filename_path_extension(filepath, ".ms2");
+    name_ext_array = parse_filename_path_extension(filepath, NULL);
     filename = name_ext_array[0];
   }
   const char* period = ".";
@@ -290,8 +290,8 @@ void Spectrum::printSqt(
 
   // copy each peak
   for(int peak_idx=0; peak_idx < (int)old_spectrum.peaks_.size(); ++peak_idx){
-    this->addPeak(get_peak_intensity(old_spectrum.peaks_[peak_idx]),
-                   get_peak_location(old_spectrum.peaks_[peak_idx])); 
+    this->addPeak(old_spectrum.peaks_[peak_idx]->getIntensity(),
+		  old_spectrum.peaks_[peak_idx]->getLocation());
   }
 
   /*  Should we do this??
@@ -302,39 +302,16 @@ void Spectrum::printSqt(
 }
 
 /**
- * Parses a spectrum from a file, either mgf or ms2.
- */
- Spectrum* Spectrum::newSpectrumFromFile(FILE* file, const char* filename)
-{
-  if (get_boolean_parameter("use-mgf")) {
-    return Spectrum::newSpectrumMgf(file, filename);
-  } else {
-    return Spectrum::newSpectrumMs2(file, filename);
-  }
-}
-
-/**
- * Parses a spectrum from a file, either mgf or ms2.
- */
-bool Spectrum::parseFile(FILE* file, const char* filename)
-{
-  if (get_boolean_parameter("use-mgf")) {
-    return this->parseMgf(file, filename);
-  } else {
-    return this->parseMs2(file, filename);
-  }
-}
-
-/**
  * Parses a spectrum from an .mgf file
  * \returns A newly allocated spectrum or NULL on error or EOF.
  */
 Spectrum* Spectrum::newSpectrumMgf
 (FILE* file, ///< the input file stream -in
+ int scan_num, ///< assign the spectrum this scan number
  const char* filename) ///< filename of the spectrum
 {
   Spectrum* spectrum = new Spectrum();
-  if( spectrum->parseMgf(file, filename) ){
+  if( spectrum->parseMgf(file, scan_num, filename) ){
     return spectrum;
   } else {
     delete spectrum;
@@ -343,39 +320,43 @@ Spectrum* Spectrum::newSpectrumMgf
 }
 
 /**
- * Parses a spectrum from an .mgf file
+ * Parses a spectrum from an .mgf file, assigning it the given scan
+ * number.
  * \returns True if successfully parsed or false on error or EOF.
  */
-// TODO: figure out a better way to handle spectrum count.  
-// MGF doesn't really have
-// a defined format for this.  If it does, then the programs that output 
-// MGF don't always conform to this format. SJM
 bool Spectrum::parseMgf
 (FILE* file, ///< the input file stream -in
+ int scan_num, ///< scan number to give this spectrum
  const char* filename) ///< filename of the spectrum
 {
   // TODO: delete any existing peaks
-  static int spec_count = 1;
   char* new_line = NULL;
+  string new_line_str = "";
+
   int line_length;
   size_t buf_length = 0;
   FLOAT_T location_mz;
   FLOAT_T intensity;
   
-  bool begin_found = FALSE;
-  bool title_found = FALSE;
-  bool charge_found = FALSE;
-  bool pepmass_found = FALSE;
-  bool peaks_found = FALSE;
-  bool end_found = FALSE;
-  
+  bool begin_found = false;
+  bool title_found = false;
+  bool charge_found = false;
+  bool pepmass_found = false;
+  bool peaks_found = false;
+  bool end_found = false;
+  bool scans_found = false;
+
+  string scan_title_str="";
   int charge = -1;
 
   carp(CARP_DEBUG, "parsing MGF Scan");
   
   while( (line_length = getline(&new_line, &buf_length, file)) != -1){
+
+    new_line_str = string(new_line);
     //scan until BEGIN IONS
-    if (strncmp(new_line, "BEGIN IONS", 10) == 0) {
+
+    if (new_line_str.find("BEGIN IONS") == 0) {
       begin_found = true;
       break;
     }
@@ -388,60 +369,135 @@ bool Spectrum::parseMgf
   
   //scan for the header fields
   while( (line_length = getline(&new_line, &buf_length, file)) != -1){
-    if (strncmp(new_line, "TITLE=",6) == 0) {
+    new_line_str = string(new_line);
+
+    if (new_line_str.find("TITLE=") == 0) {
+
       title_found = true;
-      int first_scan = spec_count;
-      int last_scan = spec_count;
-      //  TODO : figure out what to do here, the format is dependent 
-      // upon the machine i think
-      // parse the title line
+      scan_title_str = new_line_str;
+
+    } else if (new_line_str.find("SCANS=") == 0) {
+
+      //format is SCANS=X-Y where X and Y are integers
+      scans_found = true;
+      string scans_str = new_line_str.substr(6, new_line_str.length());
       
-      this->first_scan_ = first_scan;
-      this->last_scan_ = last_scan;
-    } else if (strncmp(new_line, "CHARGE=",7) == 0) {
+      carp(CARP_DETAILED_DEBUG, "parsing scans:%s",scans_str.c_str());
+      vector<string> tokens;
+      DelimitedFile::tokenize(scans_str, tokens, '-');
+      DelimitedFile::from_string(first_scan_, tokens[0]);
+
+      if (tokens.size() > 1) {
+        DelimitedFile::from_string(last_scan_,tokens[1]);
+      } else {
+        last_scan_ = first_scan_;
+      }
+      carp(CARP_DETAILED_DEBUG,
+        "first scan:%i last scan:%i",
+        first_scan_,last_scan_);
+
+    } else if (new_line_str.find("CHARGE=") == 0) {
+
       //parse the charge line
- 
-      char* plus_index = index(new_line,'+');
-      *plus_index = '\0';
-      carp(CARP_DETAILED_DEBUG,"Parsing %s",(new_line+7));
-      charge = atoi(new_line+7);
-      
+      int plus_index = new_line_str.find("+");
+      string charge_str = new_line_str.substr(7,plus_index);
+      carp(CARP_DETAILED_DEBUG,"Parsing charge:%s",charge_str.c_str());
+      DelimitedFile::from_string(charge, charge_str);
       carp(CARP_DETAILED_DEBUG, "charge:%d", charge);
-      
       charge_found = true;
-    } else if (strncmp(new_line, "PEPMASS=",8) == 0) {
-      //parse the pepmass line
+
+    } else if (new_line_str.find("PEPMASS=") == 0) {
+
+      //format is "PEPMASS=mz intensity" intensity is optional..
+
       FLOAT_T pepmass;
-      carp(CARP_DETAILED_DEBUG, "Parsing %s",(new_line+8));
-      pepmass = atof(new_line+8);
-      carp(CARP_DETAILED_DEBUG, "pepmass:%f",pepmass);
+      string pepmass_str = new_line_str.substr(8, new_line_str.length());
+      carp(CARP_DETAILED_DEBUG, "Parsing pepmass %s", pepmass_str.c_str());
+      vector<string> tokens;
+      DelimitedFile::tokenize(pepmass_str, tokens, ' ');
+      DelimitedFile::from_string(pepmass, tokens[0]);
+      carp(CARP_DETAILED_DEBUG, "pepmass:%f", pepmass);
       //TODO - check to see if this is correct.
-      this->precursor_mz_ = pepmass;
+      precursor_mz_ = pepmass;
       pepmass_found = true;
-    } else if (isdigit(new_line[0])) {
+
+    } else if (isdigit(new_line_str.at(0))) {
+
       //no more header lines, peak information is up
       peaks_found = true;
       break;
+
     } else if (strcmp(new_line, "END IONS") == 0) {
+
       //we found the end of the ions without any peaks.
       carp(CARP_WARNING,"No peaks found for mgf spectrum");
       return true;
+
     }
   }
-  
-  //TODO check to make sure we gleaned the information from
-  //the headers.
-  
+
+  if (!scans_found) {
+    //Try to parse scan information from title.  
+    //Otherwise use passed in scan count.
+    first_scan_ = scan_num;
+    last_scan_ = scan_num;
+
+    if (title_found) {
+      //try to parse the scan title string.
+      vector<string> scan_title_tokens;
+      DelimitedFile::tokenize(scan_title_str, scan_title_tokens, '.');
+
+      //make sure we have enough tokens and that the last token is dta.
+      if ((scan_title_tokens.size() >= 4) && (scan_title_tokens.back().find("dta") == 0)) {
+        carp(CARP_DETAILED_DEBUG, "Attempting to parse title:%s", scan_title_str.c_str());
+        size_t n = scan_title_tokens.size();
+
+        int title_charge;
+        int title_first_scan;
+        int title_last_scan;
+        //try to parse the first scan, last scan, and charge from the title, keeping track
+        //of whether we were successful.
+
+        bool success = DelimitedFile::from_string(title_charge, scan_title_tokens[n-2]);
+        success &= DelimitedFile::from_string(title_last_scan, scan_title_tokens[n-3]);
+        success &= DelimitedFile::from_string(title_first_scan, scan_title_tokens[n-4]);
+
+        if (success) {
+          //okay we parsed the three numbers, fill in the results.
+          carp(CARP_DETAILED_DEBUG, "Title first scan:%i", title_first_scan);
+          carp(CARP_DETAILED_DEBUG, "Title last scan:%i" ,title_last_scan);
+          carp(CARP_DETAILED_DEBUG, "Title charge:%i", title_charge);
+          first_scan_ = title_first_scan;
+          last_scan_ = title_last_scan;
+          //if we didn't get the charge before, assign it here.
+          if (!charge_found) {
+            charge = title_charge;
+            charge_found = true;
+          } else if (charge != title_charge) {
+            carp(CARP_ERROR, 
+              "Title charge doesn't match spectrum charge! %i != %i", 
+              charge, 
+              title_charge);
+          }
+        }
+      }
+    }
+  }
+
   if (pepmass_found && charge_found) {
     SpectrumZState zstate;
     zstate.setMZ(precursor_mz_, charge);
     zstates_.push_back(zstate);
+  } else {
+    carp(CARP_ERROR, "Pepmass or charge not found!");
   }
+
 
 
   //parse peak information
   do {
-    if (strncmp(new_line, "END IONS", 8) == 0) {
+    new_line_str = string(new_line);  
+    if (new_line_str.find("END IONS") == 0) {
       //we are done parsing this charged spectrum.
       end_found = true;
       break;
@@ -452,19 +508,19 @@ bool Spectrum::parseMgf
     else if(sscanf(new_line,"%f %f", &location_mz, &intensity) == 2)
 #endif
     {
-      carp(CARP_DETAILED_DEBUG,"adding peak %f %f",location_mz, intensity);
+      carp(CARP_DETAILED_DEBUG,"adding peak %lf %lf",
+        (double)location_mz, 
+        (double)intensity);
       //add the peak to the spectrum object
-      this->addPeak(intensity, location_mz);
+      addPeak(intensity, location_mz);
     } else {
       //file format error.
       carp(CARP_ERROR,
-           "File format error\n"
-           "At line: %s",
-           new_line);
+        "File format error\n"
+        "At line: %s",
+         new_line);
     }
   } while( (line_length = getline(&new_line, &buf_length, file)) != -1);
-  
-  spec_count++;
   
   if (end_found) {
     //we successfully parsed this spectrum.
@@ -777,6 +833,9 @@ bool Spectrum::parseZLine(char* line)  ///< 'Z' line to parse -in
   return true;
  }
 
+
+
+
 /**
  * FIXME currently does not parse D line, just copies the entire line
  * Parses the 'D' line of the a spectrum
@@ -801,8 +860,60 @@ bool Spectrum::parseILine(char* line)  ///< 'I' line to parse -in
    line_str.erase( line_str.find_first_of("\r\n") );
    i_lines_v_.push_back(line_str);
 
-  return TRUE;
+   if (line_str.find("EZ") != string::npos) {
+     return parseEZLine(line_str);
+   }
+
+
+  return true;
 }
+
+/**
+ * Parses the 'EZ' line of the a spectrum
+ * \returns TRUE if success. FALSE is failure.
+ * 
+ */
+bool Spectrum::parseEZLine(string line_str) ///< 'EZ' line to parse -in
+{
+
+  vector<string> tokens;
+
+  DelimitedFile::tokenize(line_str, tokens, '\t');
+  
+  int charge;
+  FLOAT_T m_h_plus;
+  FLOAT_T rtime;
+  FLOAT_T area;
+
+  if (tokens.size() < 6) {
+    carp(CARP_FATAL,
+      "Failed to parse 'EZ' line %d/6 tokens:\n %s", 
+      tokens.size(),
+      line_str.c_str());
+    return false;
+  }
+
+  DelimitedFile::from_string(charge, tokens.at(2));
+  DelimitedFile::from_string(m_h_plus, tokens.at(3));
+  DelimitedFile::from_string(rtime, tokens.at(4));
+  DelimitedFile::from_string(area, tokens.at(5));
+
+  carp(CARP_DETAILED_DEBUG, "EZLine-Charge:%i", charge);
+  carp(CARP_DETAILED_DEBUG, "EZLine-M+H:%f", m_h_plus);
+  carp(CARP_DETAILED_DEBUG, "EZLine-RTime:%f", rtime);
+  carp(CARP_DETAILED_DEBUG, "EZLine-Area:%f", area);
+
+  SpectrumZState ezstate;
+  ezstate.setSinglyChargedMass(m_h_plus, charge);
+  ezstate.setRTime(rtime);
+  ezstate.setArea(area);
+
+  ezstates_.push_back(ezstate);
+
+  return true;
+
+}
+
 
 /**
  * Transfer values from an MSToolkit spectrum to the crux Spectrum.
@@ -819,7 +930,7 @@ bool Spectrum::parseMstoolkitSpectrum
   free_peak_vector(peaks_);
   i_lines_v_.clear();
   d_lines_v_.clear();
-  if( mz_peak_array_ ){ free(mz_peak_array_); }
+  if( mz_peak_array_ ){ delete [] mz_peak_array_; }
 
   MSToolkit::Spectrum* mst_real_spectrum = (MSToolkit::Spectrum*)mst_spectrum;
 
@@ -881,7 +992,8 @@ bool Spectrum::addPeak
   )
 {
 
-  PEAK_T* peak = new_peak(intensity, location_mz);
+  //PEAK_T* peak = new_peak(intensity, location_mz);
+  Peak *peak = new Peak(intensity, location_mz);
   peaks_.push_back(peak);
 
   updateFields(intensity, location_mz);
@@ -902,17 +1014,17 @@ void Spectrum::populateMzPeakArray()
   }
   
   int array_length = MZ_TO_PEAK_ARRAY_RESOLUTION * MAX_PEAK_MZ;
-  mz_peak_array_ = (PEAK_T**)mymalloc(array_length * sizeof(PEAK_T*));
+  mz_peak_array_ = new Peak * [array_length];
   for (int peak_idx = 0; peak_idx < array_length; peak_idx++){
     mz_peak_array_[peak_idx] = NULL;
   }
   for(int peak_idx = 0; peak_idx < (int)peaks_.size(); peak_idx++){
-    PEAK_T* peak = peaks_[peak_idx];
-    FLOAT_T peak_mz = get_peak_location(peak);
+    Peak * peak = peaks_[peak_idx];
+    FLOAT_T peak_mz = peak->getLocation();
     int mz_idx = (int) (peak_mz * MZ_TO_PEAK_ARRAY_RESOLUTION);
     if (mz_peak_array_[mz_idx] != NULL){
       carp(CARP_INFO, "Peak collision at mz %.3f = %i", peak_mz, mz_idx);
-      if(get_peak_intensity(mz_peak_array_[mz_idx])< get_peak_intensity(peak)){
+      if (mz_peak_array_[mz_idx]->getIntensity() < peak->getIntensity()) {
         mz_peak_array_[mz_idx] = peak;
       }
     } else {
@@ -929,7 +1041,7 @@ void Spectrum::populateMzPeakArray()
  * spectrum object that it needs.
  * TODO: reimplement with faster peak lookup
  */
-PEAK_T* Spectrum::getNearestPeak(
+Peak * Spectrum::getNearestPeak(
   FLOAT_T mz, ///< the mz of the peak around which to sum intensities -in
   FLOAT_T max ///< the maximum distance to get intensity -in
   )
@@ -943,14 +1055,14 @@ PEAK_T* Spectrum::getNearestPeak(
   int absolute_max_mz_idx = MAX_PEAK_MZ * MZ_TO_PEAK_ARRAY_RESOLUTION - 1;
   max_mz_idx = max_mz_idx > absolute_max_mz_idx 
     ? absolute_max_mz_idx : max_mz_idx;
-  PEAK_T* peak = NULL;
-  PEAK_T* nearest_peak = NULL;
+  Peak * peak = NULL;
+  Peak * nearest_peak = NULL;
   int peak_idx;
   for (peak_idx=min_mz_idx; peak_idx < max_mz_idx + 1; peak_idx++){
     if ((peak = mz_peak_array_[peak_idx]) == NULL){
       continue;
     }
-    FLOAT_T peak_mz = get_peak_location(peak);
+    FLOAT_T peak_mz = peak->getLocation();
     FLOAT_T distance = fabs(mz - peak_mz);
     if (distance > max){
       continue;
@@ -1043,10 +1155,14 @@ double Spectrum::getTotalEnergy()
 
 /**
  * \returns A read-only reference to the vector of possible chare
- * states for this spectrum.
+ * states for this spectrum.  If EZ states are available, return those.
  */
 const vector<SpectrumZState>& Spectrum::getZStates() {
-  return zstates_;
+  if (ezstates_.size() != 0) {
+    return ezstates_;
+  } else {
+    return zstates_;
+  }
 }
 
 
@@ -1056,29 +1172,6 @@ const vector<SpectrumZState>& Spectrum::getZStates() {
  *  spectrum: all of them or the one selected by the parameter.
  * /returns A vector of charge states to consider for this spectrum.
  */ 
-/*
-vector<int> Spectrum::getChargesToSearch(){
-
-  vector<int> select_charges;
-  const char* charge_str = get_string_parameter_pointer("spectrum-charge");
-
-  
-  if( strcmp( charge_str, "all") == 0){ // return full array of charges
-    select_charges = possible_z_;
-  } else { // return one charge
-
-    int param_charge = atoi(charge_str);
-    
-    if( (param_charge < 1) || (param_charge > MAX_CHARGE) ){
-      carp(CARP_FATAL, "spectrum-charge option must be 1,2,3,.. %d or 'all'.  "
-           "'%s' is not valid", MAX_CHARGE, charge_str);
-    }
-    
-    select_charges.push_back(param_charge);
-  }
-  return select_charges;
-}
-*/
 vector<SpectrumZState> Spectrum::getZStatesToSearch() {
 
   vector<SpectrumZState> select_zstates;
@@ -1086,7 +1179,7 @@ vector<SpectrumZState> Spectrum::getZStatesToSearch() {
 
   
   if( strcmp( charge_str, "all") == 0){ // return full array of charges
-    select_zstates = zstates_;
+    select_zstates = getZStates();
   } else { // return a single charge state.
 
     int param_charge = atoi(charge_str);
@@ -1096,9 +1189,9 @@ vector<SpectrumZState> Spectrum::getZStatesToSearch() {
            "'%s' is not valid", MAX_CHARGE, charge_str);
     }
 
-    for (unsigned int zstate_idx=0;zstate_idx < zstates_.size();zstate_idx++) {
-      if (zstates_[zstate_idx].getCharge() == param_charge) {
-        select_zstates.push_back(zstates_[zstate_idx]);
+    for (unsigned int zstate_idx=0;zstate_idx < getNumZStates();zstate_idx++) {
+      if (getZState(zstate_idx).getCharge() == param_charge) {
+        select_zstates.push_back(getZState(zstate_idx));
       }
     }
   }
@@ -1107,13 +1200,21 @@ vector<SpectrumZState> Spectrum::getZStatesToSearch() {
 
 }
 
+/**
+ * \returns the ZState at the requested index
+ */
+const SpectrumZState& Spectrum::getZState(
+  int idx ///< the zstate index
+) {
+  return getZStates().at(idx);
+}
+
 
 /**
  * \returns The number of possible charge states of this spectrum.
  */
-int Spectrum::getNumZStates()
-{
-  return (int)zstates_.size();
+unsigned int Spectrum::getNumZStates() {
+  return getZStates().size();
 }
 
 /**
@@ -1124,8 +1225,8 @@ FLOAT_T Spectrum::getMaxPeakIntensity()
   FLOAT_T max_intensity = -1;
 
   for(int peak_idx = 0; peak_idx < (int)peaks_.size(); ++peak_idx){
-    if(max_intensity <= get_peak_intensity(peaks_[peak_idx])){
-      max_intensity = get_peak_intensity(peaks_[peak_idx]);
+    if (max_intensity <= peaks_[peak_idx]->getIntensity()) {
+      max_intensity = peaks_[peak_idx]->getIntensity();
     }
   }
   return max_intensity; 
@@ -1153,6 +1254,7 @@ Spectrum* Spectrum::parseTabDelimited(
   FLOAT_T neutral_mass = file.getFloat(SPECTRUM_NEUTRAL_MASS_COL);
   
   SpectrumZState zstate;
+
   zstate.setNeutralMass(neutral_mass, charge);
 
   spectrum->zstates_.push_back(zstate);
@@ -1177,9 +1279,9 @@ Spectrum* Spectrum::parseTabDelimited(
 void Spectrum::sumNormalize()
 {
   for(int peak_idx = 0; peak_idx < (int)peaks_.size(); peak_idx++){
-    PEAK_T* peak = peaks_[peak_idx];
-    FLOAT_T new_intensity = get_peak_intensity(peak) / total_energy_;
-    set_peak_intensity(peak, new_intensity);
+    Peak * peak = peaks_[peak_idx];
+    FLOAT_T new_intensity = peak->getIntensity() / total_energy_;
+    peak->setIntensity(new_intensity);
   }
 }
 
@@ -1193,10 +1295,10 @@ void Spectrum::rankPeaks()
   sorted_by_mz_ = false;
   int rank = (int)peaks_.size();
   for(int peak_idx = 0; peak_idx < (int) peaks_.size(); peak_idx++){
-    PEAK_T* peak = peaks_[peak_idx];
+    Peak * peak = peaks_[peak_idx];
     FLOAT_T new_rank = rank/(float)peaks_.size();
     rank--;
-    set_peak_intensity_rank(peak, new_rank); 
+    peak->setIntensityRank(new_rank);
   }
 
 }

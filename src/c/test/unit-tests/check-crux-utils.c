@@ -1,6 +1,6 @@
 #include "check-crux-utils.h"
 #include "crux-utils.h"
-#include "peak.h"
+#include "Peak.h"
 
 #include <vector>
 
@@ -11,7 +11,7 @@ int myint1, myint2, *myintptr;
 
 // helper function for reading a file with a list of peaks
 FLOAT_T read_peaks_file(const char* filename,
-                        vector<PEAK_T*>& peaks, int* num_peaks){
+                        vector<Peak*>& peaks, int* num_peaks){
 
   FILE* file = fopen(filename, "r");
   if( file == NULL ){
@@ -29,8 +29,8 @@ FLOAT_T read_peaks_file(const char* filename,
   FLOAT_T peakmz, intensity;
   for(int i=0; i<num; i++){
     fscanf(file, "%f %f", &peakmz, &intensity);
-    set_peak_location(peaks[i], peakmz);
-    set_peak_intensity(peaks[i], intensity);
+    peaks[i]->setLocation(peakmz);
+    peaks[i]->setIntensity(intensity);
   }
 
   fclose(file);
@@ -42,6 +42,33 @@ void crux_utils_setup(){
 
 void crux_utils_teardown(){
 }
+
+// does has_extension() work?
+START_TEST(has_extension){
+
+  fail_unless( has_extension("", "") == true,
+               "An empty string should have the empty extension.");
+
+  fail_unless( has_extension("", "end") == false,
+               "An empty string should not have any extension.");
+
+  fail_unless( has_extension("anystring", "") == true,
+               "Any string should have the empty extension.");
+
+  fail_unless( has_extension("anystring", NULL) == true,
+               "Any string should have the null extension.");
+
+  fail_unless( has_extension(NULL, "ext") == false,
+               "A NULL string should not have an extension.");
+
+  fail_unless( has_extension("namewithend", "end") == true,
+               "namewithend should end in 'end'.");
+
+  fail_unless( has_extension("namenoend", "no") == false,
+               "namenoend should not have the extension 'no'.");
+
+}
+END_TEST
 
 // are two floating point numbers within rounding error of eachother
 START_TEST(test_is_equal){
@@ -94,7 +121,7 @@ END_TEST
 START_TEST(test_choose_charge){
   // error case
 
-  vector<PEAK_T*> peaks;
+  vector<Peak*> peaks;
 
   int charge = choose_charge(0, peaks);
   fail_unless( charge == -1, "Choose charge should return -1 with no peaks.");
@@ -141,6 +168,7 @@ Suite* crux_utils_suite(){
   // Test basic features
   TCase *tc_core = tcase_create("Core");
   tcase_add_test(tc_core, test_is_equal);
+  tcase_add_test(tc_core, has_extension);
   tcase_add_test(tc_core, test_choose_charge);
 
   tcase_add_checked_fixture(tc_core, crux_utils_setup, crux_utils_teardown);

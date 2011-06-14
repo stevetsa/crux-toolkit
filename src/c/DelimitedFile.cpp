@@ -46,8 +46,12 @@ void DelimitedFile::tokenize(
 /**
  * \returns a DelimitedFile object
  */  
-DelimitedFile::DelimitedFile() {
+DelimitedFile::DelimitedFile(
+  char delimiter ///< the delimiter to use (default tab)
+) {
+  delimiter_ = delimiter;
   clear();
+ 
 }
 
 /**
@@ -56,10 +60,11 @@ DelimitedFile::DelimitedFile() {
  */  
 DelimitedFile::DelimitedFile(
   const char *file_name, ///< the path of the file to read 
-  bool hasHeader ///< indicate whether header exists
+  bool hasHeader, ///< indicate whether header exists
+  char delimiter ///< the delimiter to use (default tab)
   ){
 
-  loadData(file_name, hasHeader);
+  loadData(file_name, hasHeader, delimiter);
 }
 
 /** 
@@ -68,13 +73,16 @@ DelimitedFile::DelimitedFile(
  */
 DelimitedFile::DelimitedFile(
     const string& file_name, ///< the path of the file  to read
-    bool hasHeader ///< indicates whether header exists
+    bool hasHeader, ///< indicates whether header exists
+    char delimiter ///< the delimiter to use (default tab)
   ){
 
-  loadData(file_name, hasHeader);
+  loadData(file_name, hasHeader, delimiter);
 }
 
-
+/**
+ * empties the delimited file
+ */
 void DelimitedFile::clear() {
   for (unsigned int idx=0;idx < data_.size(); idx++) {
     data_[idx].clear();
@@ -89,6 +97,23 @@ void DelimitedFile::clear() {
  */
 DelimitedFile::~DelimitedFile() {
   clear();
+}
+
+/**
+ * sets the delimiter
+ */
+void DelimitedFile::setDelimiter(
+  char delimiter ///< the delimiter
+  ) {
+
+  delimiter_ = delimiter;
+}
+
+/**
+ * /returns the delimiter
+ */
+char DelimitedFile::getDelimiter() const {
+  return delimiter_;
 }
 
 
@@ -136,9 +161,11 @@ unsigned int DelimitedFile::numCols() {
  */
 void DelimitedFile::loadData(
   const char *file_name, ///< the file path
-  bool hasHeader ///< header indicator
+  bool hasHeader, ///< header indicator
+  char delimiter ///< delimiter to use
   ) {
 
+  setDelimiter(delimiter);
   clear();
 
   fstream file(file_name, ios::in);
@@ -157,7 +184,7 @@ void DelimitedFile::loadData(
 
     hasLine = getline(file, line) != NULL;
     if (hasLine) {
-      tokenize(line, tokens, '\t');
+      tokenize(line, tokens, getDelimiter());
       for (vector<string>::iterator iter = tokens.begin();
         iter != tokens.end();
         ++iter) {
@@ -173,11 +200,10 @@ void DelimitedFile::loadData(
   hasLine = getline(file, line) != NULL;
   while (hasLine) {
 
-    tokenize(line, tokens, '\t');
+    tokenize(line, tokens, getDelimiter());
     if (!hasHeader && numCols() == 0) {
       //initialize the number of columns so that addRow won't fail.
       while (numCols() <= tokens.size()) {
-
         addColumn();
       }
     }
@@ -205,10 +231,11 @@ void DelimitedFile::loadData(
  */
 void DelimitedFile::loadData(
   const string& file, ///< the file path
-  bool hasHeader ///< header indicator
+  bool hasHeader, ///< header indicator
+  char delimiter ///< the delimiter to use
   ) {
 
-  loadData(file.c_str(), hasHeader);
+  loadData(file.c_str(), hasHeader, delimiter);
 }
 
 /**
@@ -240,22 +267,22 @@ void DelimitedFile::saveData(
   if (column_names_.size() != 0) {
     fout << column_names_[0];
     for (unsigned int col_idx=1; col_idx<column_names_.size(); col_idx++) {
-      fout << "\t" << column_names_[col_idx];
+      fout << getDelimiter() << column_names_[col_idx];
     }
     fout << endl;
   }
 
-  //print out all rows, using \t when
+  //print out all rows, using delimiter_ when
   //the row goes past the current column
   //size.
   for (unsigned int row_idx=0; row_idx<maxRow; row_idx++) {
     if (row_idx < numRows(0)) {
       fout << getString((unsigned int)0, row_idx);
     } else {
-      fout << "\t";
+      fout << delimiter_;
     }
     for (unsigned int col_idx=1;col_idx<numCols();col_idx++) {
-      fout <<"\t";
+      fout << getDelimiter();
       if (row_idx < numRows(col_idx))
         fout << getString(col_idx, row_idx);
     }
@@ -270,7 +297,7 @@ void DelimitedFile::saveData(
  *\returns the column index.
  */
 unsigned int DelimitedFile::addColumn(
-  string& column_name ///< the column name
+  const string& column_name ///< the column name
   ) {
 
   vector<string> new_col;
@@ -454,7 +481,7 @@ string& DelimitedFile::getString(
 void DelimitedFile::setString(
   unsigned int col_idx, ///< the column index
   unsigned int row_idx, ///< the row index
-  string& value ///< the new value
+  const string& value ///< the new value
   ) {
 
   //ensure there are enough columns
@@ -714,9 +741,16 @@ void DelimitedFile::getIntegerVectorFromCell(
   }
 }
 
+/**
+ * reorders the rows of a delimited file using a built map 
+ * of sorted indices.  
+ */
 template <typename T>
-void DelimitedFile::reorderRows(multimap<T, unsigned int>& sort_indices, BOOLEAN_T ascending) {
-  //cout <<"reorderRows: start"<<endl;
+void DelimitedFile::reorderRows(
+  multimap<T, unsigned int>& sort_indices, ///<map of indices sorted by type T 
+  bool ascending ///<sort in ascending order?
+  ) {
+
   vector<vector<string> > newData;
 
   for (unsigned int col_idx = 0;col_idx < numCols();col_idx++) {
@@ -746,9 +780,13 @@ void DelimitedFile::reorderRows(multimap<T, unsigned int>& sort_indices, BOOLEAN
   data_.swap(newData);
 }
 
+/**
+ * sorts the delimited file treating the key column as float values
+ */
 void DelimitedFile::sortByFloatColumn(
-  const string& column_name,
-  BOOLEAN_T ascending) {
+  const string& column_name, ///<The name of the key column
+  bool ascending ///<sort in ascending order?
+  ) {
 
   multimap<FLOAT_T, unsigned int> sort_indices;
   int sort_col_idx = findColumn(column_name); 
@@ -764,9 +802,13 @@ void DelimitedFile::sortByFloatColumn(
   reorderRows(sort_indices, ascending);
 }
 
+/**
+ * sorts the delimited file treating the key column as integers
+ */
 void DelimitedFile::sortByIntegerColumn(
-  unsigned int col_idx,
-  BOOLEAN_T ascending) {
+  unsigned int col_idx, ///< the index of the key column 
+  bool ascending ///< sort in ascending order?
+  ) {
   
   multimap<int, unsigned int> sort_indices;
   for (unsigned int row_idx=0;row_idx<numRows();row_idx++) {
@@ -777,10 +819,12 @@ void DelimitedFile::sortByIntegerColumn(
 }
 
 
-
+/**
+ * sorts the delimited file treating the key column as integers
+ */
 void DelimitedFile::sortByIntegerColumn(
-  const string& column_name,
-  BOOLEAN_T ascending
+  const string& column_name, ///< the name of the key column
+  bool ascending ///< sort in ascending order?
   ) {
   
   int sort_col_idx = findColumn(column_name); 
@@ -791,13 +835,13 @@ void DelimitedFile::sortByIntegerColumn(
 
 }
 
-
-
-
-
+/**
+ * sorts the delimited file treating the key column as a string
+ */
 void DelimitedFile::sortByStringColumn(
-  const string& column_name,
-  BOOLEAN_T ascending) {
+  const string& column_name, ///< the name of the key column
+  bool ascending ///< sort in ascending order?
+  ) {
   
   multimap<string, unsigned int> sort_indices;
 
@@ -815,11 +859,13 @@ void DelimitedFile::sortByStringColumn(
 
 }
 
-
+/**
+ * copies a row to a another DelimitedFile
+ */ 
 void DelimitedFile::copyToRow(
-  DelimitedFile& dest,
-  int src_row_idx,
-  int dest_row_idx
+  DelimitedFile& dest, ///<The DelimitedFile to copy the row to
+  int src_row_idx, ///<The row index of the source (this)
+  int dest_row_idx ///<The row index of the destination.
   ) {
 
   for (unsigned int src_col_idx=0;src_col_idx < numCols();src_col_idx++) {
@@ -830,8 +876,6 @@ void DelimitedFile::copyToRow(
     }
   }
 }
-
-
 
 /*Iterator functions.*/
 /**
@@ -850,20 +894,21 @@ void DelimitedFile::next() {
     current_row_++;
 }
 
-
 /**
  * \returns whether there are more rows to 
  * iterate through
  */
-BOOLEAN_T DelimitedFile::hasNext() {
+bool DelimitedFile::hasNext() {
   return current_row_ < numRows();
 }
-
 
 /**
  *Allows object to be printed to a stream
  */
-std::ostream &operator<< (std::ostream& os, DelimitedFile& delimited_file) {
+std::ostream &operator<< (
+  std::ostream& os, ///< The stream to output to
+  DelimitedFile& delimited_file ///< The delimited file to output
+  ) {
 
   //find the maximum number of rows.
   unsigned int maxRow = 0;
@@ -875,22 +920,22 @@ std::ostream &operator<< (std::ostream& os, DelimitedFile& delimited_file) {
   if (delimited_file.column_names_.size() != 0) {
     os << delimited_file.column_names_[0];
     for (unsigned int col_idx=1; col_idx < delimited_file.column_names_.size(); col_idx++) {
-      os << "\t" << delimited_file.column_names_[col_idx];
+      os << delimited_file.getDelimiter() << delimited_file.column_names_[col_idx];
     }
     os << endl;
   }
 
-  //print out all rows, using \t when
+  //print out all rows, using delimiter_ when
   //the row goes past the current column
   //size.
   for (unsigned int row_idx=0; row_idx<maxRow; row_idx++) {
     if (row_idx < delimited_file.numRows(0)) {
       os << delimited_file.getString((unsigned int)0, row_idx);
     } else {
-      os << "\t";
+      os << delimited_file.getDelimiter();
     }
     for (unsigned int col_idx=1;col_idx<delimited_file.numCols();col_idx++) {
-      os <<"\t";
+      os <<delimited_file.getDelimiter();
       if (row_idx < delimited_file.numRows(col_idx))
         os << delimited_file.getString(col_idx, row_idx);
     }

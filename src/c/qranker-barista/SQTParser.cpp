@@ -83,20 +83,30 @@ void SQTParser :: set_enzyme(string &enz)
   if(enz.find("elastase") != string::npos)
     {
       e = ELASTASE_ENZ;
+#ifndef CRUX
       cout << "set enzyme: elastase" << endl;
+#endif
     }
   else if (enz.find("chymotrypsin") != string::npos)
     {
       e = CHYMOTRYPSIN_ENZ;
+#ifndef CRUX
       cout << "set enzyme: chymotrypsin" << endl;
+#endif
     }
   else if (enz.find("trypsin") != string::npos)
     {
       e = TRYPSIN_ENZ;
+#ifndef CRUX
       cout << "set enzyme: trypsin" << endl;
+#endif
     }
   else
+#ifdef CRUX
+    carp(CARP_WARNING, "warning: could not determine enzyme, will assume trypsin");
+#else
     cout << "warning: could not determine enzyme, will assume trypsin\n";
+#endif
 }
 
 
@@ -182,7 +192,11 @@ void SQTParser :: add_matches_to_tables(sqt_match &m, string &decoy_prefix, int 
 	  pep_ind = pep_to_ind[pep];
 	  string p = ind_to_pep[pep_ind];
 	  if(pep.compare(p) != 0)
-	    cout << "did not find peptide in ind_to_pep_table\n"; 
+	    {
+#ifndef CRUX
+	      cout << "warning : did not find peptide index in ind_to_pep_table\n"; 
+#endif
+	    }
 	}
       
       for(set<string>::iterator it = proteins.begin(); it != proteins.end();it++)
@@ -229,7 +243,13 @@ void SQTParser :: add_matches_to_tables(sqt_match &m, string &decoy_prefix, int 
 		    cnt = protein_to_num_all_pep_map[prot];
 		  //add the cnt to protind_to_num_all_pep_map
 		  if(cnt == 0)
-		    cout << "warning: did not find protein " << prot << " from sqt file in the database " << endl;
+		    {
+#ifdef CRUX
+		      carp(CARP_WARNING, "warning: did not find protein %s from sqt file in the database ", prot.c_str());
+#else
+		      cout << "warning: did not find protein " << prot << " from sqt file in the database " << endl;
+#endif
+		    }
 		  else
 		    protind_to_num_all_pep_map[prot_ind] = cnt;
 		}
@@ -238,7 +258,11 @@ void SQTParser :: add_matches_to_tables(sqt_match &m, string &decoy_prefix, int 
 		  prot_ind = prot_to_ind[prot];
 		  string p = ind_to_prot[prot_ind];
 		  if(prot.compare(p) != 0)
-		    cout << "did not find protein in the ind_to_prot_table\n";
+		    {
+#ifndef CRUX
+		      cout << "did not find protein in the ind_to_prot_table\n";
+#endif
+		    }
 		}
 	      //augment the pepinds_to_psminds table
 	      (pepind_to_psminds_map[pep_ind]).insert(num_psm);
@@ -510,9 +534,13 @@ void SQTParser :: extract_features(sqt_match &m, string &decoy_prefix, int hits_
 	    {
 	      int protind = prot_to_ind[prot];
 	      if(!protind_to_pepinds.is_index_in_range(pepind,protind))
+#ifndef CRUX
 		cout << "warning: peptide was not found in protein to peptide table\n";
+#endif
 	      if(!pepind_to_protinds.is_index_in_range(protind,pepind))
+#ifndef CRUX
 		cout << "warning: peptide was not found in peptide to protein table\n";
+#endif
 	      assert(protind_to_label[protind] == label);
 	    }
 	}
@@ -795,13 +823,13 @@ void SQTParser :: clean_up(string dir)
 
   ostringstream fname;
       
-  //fname << out_dir << "/summary.txt";
-  //ofstream f_summary(fname.str().c_str());
+  fname << out_dir << "/summary.txt";
+  remove(fname.str().c_str());
+  fname.str("");
 
   fname << dir << "/psm.txt";
   remove(fname.str().c_str());
   fname.str("");
-
   
   //psmind_to_pepind
   fname << out_dir << "/psmind_to_pepind.txt";
@@ -951,26 +979,41 @@ int SQTParser :: run()
       ifstream f_db(db_name.c_str());
       if(!f_db.is_open())
 	{
+#ifdef CRUX
+	  carp(CARP_INFO, "could not open database file: %s", db_name.c_str());
+#else
 	  cout << "could not open database file: " << db_name << endl;
+#endif
 	  return 0;
 	}
+#ifdef CRUX
+      carp(CARP_INFO,"digesting database %s", db_name.c_str());
+#else
       cout << "digesting database " << db_name << endl;
+#endif
       digest_database(f_db, e);
       f_db.close();
     }
 
   int pass;
   //input sqt file
-  cout << "parsing files:\n";
   int num_files_read = 0;
   for(unsigned int i = 0; i < sqt_file_names.size(); i++)
     {
       cur_fname = sqt_file_names[i];
-      cout << cur_fname << endl;
+#ifdef CRUX
+      carp(CARP_INFO, "parsing file %s", cur_fname.c_str());
+#else
+      cout << "parsing file " << cur_fname << endl;
+#endif
       ifstream f_sqt(cur_fname.c_str());
       if(!f_sqt.is_open())
 	{
+#ifdef CRUX
+	  carp(CARP_WARNING, "could not open sqt file: %s", cur_fname.c_str());
+#else
 	  cout << "could not open sqt file: " << cur_fname << endl;
+#endif
 	  continue;
 	}
       //first pass
@@ -981,7 +1024,11 @@ int SQTParser :: run()
     }
   if(num_files_read < 1)
     {
+#ifdef CRUX
+      carp(CARP_WARNING, "could not parse any sqt files");
+#else
       cout << "could not parse any sqt files\n";
+#endif
       return 0;
     }
 
@@ -1002,17 +1049,29 @@ int SQTParser :: run()
 	  sfg.clear();
 	  if(!sfg.open_ms2_file_for_reading(ms2_fn))
 	    {
+#ifdef CRUX
+	      carp(CARP_WARNING, "could not open ms2 file %s for reading", ms2_fn.c_str());
+#else
 	      cout << "could not open ms2 file " << ms2_fn << " for reading" << endl;
+#endif
 	      return 0;
 	    }
+#ifdef CRUX
+	  carp(CARP_INFO, "reading file %s", ms2_fn.c_str());
+#else
 	  cout << "reading file " << ms2_fn << endl;
+#endif
 	  sfg.read_ms2_file();
 	  sfg.initialize_aa_tables();
 	}
       //second pass
       pass = 2;
       cur_fname = sqt_file_names[i];
+#ifdef CRUX
+      carp(CARP_INFO, "extracting features from file %s", cur_fname.c_str()); 
+#else
       cout << "extracting features from file " << cur_fname << endl;
+#endif
       ifstream f_sqt(cur_fname.c_str());
       read_sqt_file(f_sqt, decoy_prefix, fhps,e,pass);
       f_sqt.close();
@@ -1020,11 +1079,17 @@ int SQTParser :: run()
     }
   f_psm.close();
   
+#ifdef CRUX
+  carp(CARP_INFO, "Number of spectra: %d", num_spectra);
+  carp(CARP_INFO, "Number of PSMs: total %d positives %d negatives %d", num_psm, num_pos_psm, num_neg_psm);
+  carp(CARP_INFO, "Number of peptides: total %d positives %d negatives %d", num_pep, num_pos_pep, num_neg_pep);
+  carp(CARP_INFO, "Number of proteins: total %d positives %d negatives %d", num_prot, num_pos_prot, num_neg_prot);
+#else
   cout << "Number of spectra: " << num_spectra << endl;
   cout << "Number of PSMs: " << "total " << num_psm << " positives " << num_pos_psm << " negatives " << num_neg_psm << "\n";
   cout << "Number of peptides: " << "total " << num_pep << " positives " << num_pos_pep << " negatives " << num_neg_pep << "\n";
   cout << "Number of proteins: " << "total " << num_prot << " positives " << num_pos_prot << " negatives " << num_neg_prot << "\n";
-
+#endif
   //save the data
   save_data_in_binary(out_dir);
 
@@ -1036,8 +1101,7 @@ void SQTParser :: read_list_of_files(string &list, vector<string> &fnames)
   ifstream f(list.c_str());
   string str;
   f >> str;
-  
-  if(!f.eof())
+  while(!f.eof())
     {
       fnames.push_back(str);
       f >> str;
@@ -1063,78 +1127,48 @@ int SQTParser :: check_files(vector <string> &filenames)
   return 1;
 }
 
-int SQTParser :: set_output_dir(string &output_dir, int overwrite_flag, string &forbidden_prefix)
+int SQTParser :: set_output_dir(string &output_dir, int overwrite_flag)
 {
   int intStat;
   struct stat stFileInfo;
   intStat = stat(output_dir.c_str(), &stFileInfo);
   if(intStat != 0)
     {
-      cout << "creating output directory " << output_dir << endl;
+      cout << "INFO: creating output directory " << output_dir << endl;
       int dir_access = S_IRWXU + S_IRWXG + S_IRWXO;
       if (mkdir(output_dir.c_str(), dir_access)) {
 	// mkdir failed
-	cout << "unable to create output directory " << output_dir << endl;
+	cout << "FATAL: unable to create output directory " << output_dir << endl;
 	return 0;
       }
     }
-  /*
   else
     {
-      DIR *dp;
-      struct dirent *dirp;
       //is this a directory?
-      if((stFileInfo.st_mode & S_IFMT) == S_IFDIR)
+      if(!((stFileInfo.st_mode & S_IFMT) == S_IFDIR))
 	{
-	  
-	  if((dp  = opendir(output_dir.c_str())) == NULL)
-	    cout << "reading files in directory " << output_dir  << " failed, will overwrite them" << endl;
-	  else
-	    {
-	      if(overwrite_flag == 0)
-		{
-		  //look if the directory contains the files with forbidden prefix
-		  while ((dirp = readdir(dp)) != NULL) 
-		    {
-		      string fname = string(dirp->d_name);
-		      if(fname.find(forbidden_prefix) != string::npos)
-			{
-			  cout << "Barista output already exists in " << output_dir << " directory and cannot be overwritten. ";
-			  cout << "Please use --overwrite T to replace or specify a different output directory." << endl;
-			  return 0;
-			}
-		    }
-		}
-	      closedir(dp);
-	    }
-	  
-	}
-      //it is not a directory
-      else
-	{
-	  cout << "File " << output_dir << " already exists, but it not a directory" << endl;
+	  //it is not a directory
+      	  cout << "WARNING: File " << output_dir << " already exists, but it is not a directory" << endl;
 	  if(overwrite_flag == 1)
 	    {
-	      cout << "Creating output directory " << output_dir << endl;
+	      cout << "INFO: Creating output directory " << output_dir << endl;
 	      remove(output_dir.c_str());
 	      int dir_access = S_IRWXU + S_IRWXG + S_IRWXO;
 	      if (mkdir(output_dir.c_str(), dir_access)) {
 		// mkdir failed
-		cout << "Unable to create output directory " << output_dir << endl;
+		cout << "FATAL: Unable to create output directory " << output_dir << endl;
 		return 0;
 	      }
 	    }
 	  else
 	    {
-	      cout << "File " << output_dir << " cannot be overwritten. Please use --overwrite T to replace or specify a different output directory." << endl;
+	      cout << "FATAL: File " << output_dir << " cannot be overwritten. Please use --overwrite T to replace or specify a different output directory." << endl;
 	      return 0;
 	    }
 	}
     }
-  */
  
   out_dir = output_dir;
-  cout << out_dir << endl;
   return 1;
 }
 
@@ -1149,15 +1183,24 @@ int SQTParser :: set_input_sources(string &db_source, string &sqt_source, string
   intStat = stat(db_source.c_str(), &stFileInfo);
   if(intStat != 0)
     {
-      cout << "file " << db_source << " does not exist" << endl;
+#ifdef CRUX
+      carp(CARP_WARNING, "%s does not exist", db_source.c_str());
+#else
+      cout << db_source << " does not exist" << endl;
+#endif
       return 0;
     }
   //is this a directory?
   if((stFileInfo.st_mode & S_IFMT) == S_IFDIR)
     {
+      //try to open it
       if((dp  = opendir(db_source.c_str())) == NULL)
 	{
-	  cout << "reading files in directory " << db_source  << " failed " << endl;
+#ifdef CRUX
+	  carp(CARP_WARNING, "openning directory %s failed ", db_source.c_str());
+#else
+	  cout << "openning directory " << db_source  << " failed " << endl;
+#endif
 	  return 0;
 	}
       int cn = 0;
@@ -1170,14 +1213,17 @@ int SQTParser :: set_input_sources(string &db_source, string &sqt_source, string
 	      fstr << db_source <<"/" << fname;
 	      string dbname = fstr.str();
 	      db_file_names.push_back(dbname);
-	      //cout << "found " << dbname << endl;
 	      cn++;
 	    }
 	}
       closedir(dp);
       if(cn<1)
 	{
+#ifdef CRUX
+	  carp(CARP_WARNING, "did not find any .fasta files in %s directory", db_source.c_str());
+#else
 	  cout << "did not find any .fasta files in " << db_source << " directory " << endl;
+#endif
 	  return 0;
 	}
     }
@@ -1192,17 +1238,27 @@ int SQTParser :: set_input_sources(string &db_source, string &sqt_source, string
   intStat = stat(sqt_source.c_str(), &stFileInfo);
   if(intStat != 0)
     {
-      cout << "file " << sqt_source << " does not exist" << endl;
+#ifdef CRUX
+      carp(CARP_WARNING, "%s does not exist", sqt_source.c_str());
+#else
+      cout << sqt_source << " does not exist" << endl;
+#endif
       return 0;
     }
   if((stFileInfo.st_mode & S_IFMT) == S_IFDIR)
     {
+      //try openning the directory
       if((dp  = opendir(sqt_source.c_str())) == NULL)
 	{
-	  cout << "reading files in directory " << sqt_source  << " failed " << endl;
+#ifdef CRUX
+	  carp(CARP_WARNING, "openning directory %s failed ", sqt_source.c_str());
+#else
+	  cout << "openning directory " << sqt_source  << " failed " << endl;
+#endif
 	  return 0;
 	}
       int cn = 0;
+      //read sqt files in the directory and match them by name to the .ms2 files
       while ((dirp = readdir(dp)) != NULL) 
 	{
 	  string fname = string(dirp->d_name);
@@ -1225,7 +1281,11 @@ int SQTParser :: set_input_sources(string &db_source, string &sqt_source, string
       closedir(dp);
       if(cn<1)
 	{
+#ifdef CRUX
+	  carp(CARP_WARNING, "did not find any .sqt files in %s directory", sqt_source.c_str());
+#else
 	  cout << "did not find any .sqt files in " << sqt_source << " directory " << endl;
+#endif
 	  return 0;
 	}
     }
@@ -1234,9 +1294,13 @@ int SQTParser :: set_input_sources(string &db_source, string &sqt_source, string
       if(sqt_source.find("sqt") != string :: npos)
 	{
 	  sqt_file_names.push_back(sqt_source);
-	  if(ms2_source.find("ms2") == string::npos)
+	  if(ms2_source.find(".ms2") == string::npos)
 	    {
+#ifdef CRUX
+	      carp(CARP_WARNING,  "expecting ms2 file to accompany the sqt file");
+#else
 	      cout << "expecting ms2 file to accompany the sqt file\n";
+#endif
 	      return 0;
 	    }
 	  ms2_file_names.push_back(ms2_source);
@@ -1247,7 +1311,11 @@ int SQTParser :: set_input_sources(string &db_source, string &sqt_source, string
 	  read_list_of_files(ms2_source, ms2_file_names);
 	  if(ms2_file_names.size() != sqt_file_names.size())
 	    {
+#ifdef CRUX
+	      carp(CARP_WARNING, " the number of sqt and ms2 files does not match: each sqt file should be accompaned by ms2 file");
+#else
 	      cout << " the number of sqt and ms2 files does not match: each sqt file should be accompaned by ms2 file" << endl;
+#endif
 	      return 0;
 	    }
 	}

@@ -16,9 +16,9 @@
 
 1 = generate_peptides_sort_mass_unique = good_results/standard_generate_peptides_mass.out = crux-generate-peptides --parameter-file params/params_uniq --output-sequence T --enzyme no-enzyme --sort mass  test.fasta =
 
-1 = generate_peptides_sort_length_unique = good_results/standard_generate_peptides_length.out = crux-generate-peptides --parameter-file params/params_uniq --output-sequence T --enzyme trypsin --missed-cleavages T --sort length test.fasta =
+1 = generate_peptides_sort_length_unique = good_results/standard_generate_peptides_length.out = crux-generate-peptides --parameter-file params/params_uniq --output-sequence T --enzyme trypsin --missed-cleavages 1 --sort length test.fasta =
 
-1 = generate_peptides_sort_lexical_unique = good_results/standard_generate_peptides_lexical.out = crux-generate-peptides --parameter-file params/params_uniq --output-sequence T --enzyme trypsin --digestion partial-digest --missed-cleavages T --sort lexical test.fasta =
+1 = generate_peptides_sort_lexical_unique = good_results/standard_generate_peptides_lexical.out = crux-generate-peptides --parameter-file params/params_uniq --output-sequence T --enzyme trypsin --digestion partial-digest --missed-cleavages 1 --sort lexical test.fasta =
 
 1 = generate_peptides_change_minmax = good_results/standard_generate_peptides_change_minmax = crux-generate-peptides --parameter-file params/many_changes --output-sequence T --max-length 20 test.fasta=
 
@@ -168,6 +168,9 @@
 
 # Test mzXML files
 1 = mzxml = good_results/mzxml.search.target.txt = crux search-for-matches --fileroot mzxml --parameter-file params/mstk small.raw2xml.mzXML small-yeast.fasta; cat crux-output/mzxml.search.target.txt 
+
+# Test .mgf file
+1 = mgf = good_results/mgf.search.target.txt = crux search-for-matches --fileroot mgf --parameter-file params/minimal test.mgf test.fasta; cat crux-output/mgf.search.target.txt
 
 # xlink
 0 = search-for-xlinks = good_results/search-xlink.target.txt =  crux search-for-xlinks --parameter-file params/xlink xlink.ms2 xlink.fasta E:K,D:K -18.01; cat crux-output/search.target.txt

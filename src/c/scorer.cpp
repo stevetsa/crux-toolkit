@@ -67,7 +67,7 @@ static const int B_Y_HEIGHT = 50;
 /**
  * Relative height of flanking peaks.
  */
-static const int FLANK_HEIGHT = 25;
+static int FLANK_HEIGHT = 25;
 /**
  * Relative height of neutral loss peaks.
  */
@@ -178,6 +178,9 @@ SCORER_T* new_scorer(
     scorer->initialized = FALSE;
   }
 
+  if( get_boolean_parameter("use-flanking-peaks") == FALSE ){
+    FLANK_HEIGHT = 0;
+  }
   return scorer;
 }
 
@@ -529,7 +532,7 @@ BOOLEAN_T create_intensity_array_sp(
   int charge               ///< the peptide charge -in 
   )
 {
-  PEAK_T* peak = NULL;
+  Peak * peak = NULL;
   FLOAT_T peak_location = 0;
   FLOAT_T max_intensity = 0;
   int mz = 0;
@@ -552,8 +555,8 @@ BOOLEAN_T create_intensity_array_sp(
     ++peak_iterator) {
 
     peak = *peak_iterator;
-    peak_location = get_peak_location(peak);
-    
+    peak_location = peak->getLocation();
+
     // skip all peaks larger than experimental mass
     if(peak_location > experimental_mass_cut_off){
       continue;
@@ -568,7 +571,7 @@ BOOLEAN_T create_intensity_array_sp(
     mz = INTEGERIZE(peak_location, bin_width, bin_offset);
     
     // get intensity
-    intensity = sqrt(get_peak_intensity(peak));
+    intensity = sqrt(peak->getIntensity());
     
     // set intensity in array with correct mz, only if max peak in the bin
     if(scorer->intensity_array[mz] < intensity){
@@ -834,7 +837,7 @@ BOOLEAN_T create_intensity_array_observed(
   int charge               ///< the peptide charge -in 
   )
 {  
-  PEAK_T* peak = NULL;
+  Peak * peak = NULL;
   FLOAT_T peak_location = 0;
   int mz = 0;
   FLOAT_T intensity = 0;
@@ -878,7 +881,7 @@ BOOLEAN_T create_intensity_array_observed(
     ++peak_iterator) {
 
     peak = *peak_iterator;
-    peak_location = get_peak_location(peak);
+    peak_location = peak->getLocation();
     if (peak_location < experimental_mass_cut_off && peak_location > max_peak) {
       max_peak = peak_location;
     }
@@ -901,7 +904,7 @@ BOOLEAN_T create_intensity_array_observed(
     peak_iterator != spectrum->end();
     ++peak_iterator) {
     peak = *peak_iterator;
-    peak_location = get_peak_location(peak);
+    peak_location = peak->getLocation();
     
     // skip all peaks larger than experimental mass
     if(peak_location > experimental_mass_cut_off){
@@ -924,7 +927,7 @@ BOOLEAN_T create_intensity_array_observed(
 
     // get intensity
     // sqrt the original intensity
-    intensity = sqrt(get_peak_intensity(peak));
+    intensity = sqrt(peak->getIntensity());
 
     // Record the max intensity in the full spectrum
     if (intensity > max_intensity_overall) {

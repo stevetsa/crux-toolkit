@@ -11,17 +11,10 @@
 #include <string>
 #include "utils.h"
 #include "objects.h"
-#include "peak.h"
+#include "Peak.h"
 
 #include "MSToolkit/Spectrum.h"
 #include "SpectrumZState.h"
-
-/**
- * \class PeakIterator
- * \brief Object to iterate over the peaks in a spectrum.
- */
-
-typedef std::vector<PEAK_T*>::const_iterator PeakIterator;
 
 /**
  * \class Spectrum 
@@ -50,8 +43,8 @@ class Spectrum{
   int              last_scan_;     ///< The number of the last scan
   FLOAT_T          precursor_mz_;  ///< The m/z of precursor (MS-MS spectra)
   std::vector<SpectrumZState> zstates_;
-
-  std::vector<PEAK_T*>  peaks_;         ///< The spectrum peaks
+  std::vector<SpectrumZState> ezstates_;
+  std::vector<Peak*>  peaks_;         ///< The spectrum peaks
   FLOAT_T          min_peak_mz_;   ///< The minimum m/z of all peaks
   FLOAT_T          max_peak_mz_;   ///< The maximum m/z of all peaks
   double           total_energy_;  ///< The sum of intensities in all peaks
@@ -62,7 +55,7 @@ class Spectrum{
   bool             sorted_by_mz_; ///< Are the spectrum peaks sorted by m/z...
   bool             sorted_by_intensity_; ///< ... or by intensity?
   bool             has_mz_peak_array_; ///< Is the mz_peak_array populated.
-  PEAK_T**         mz_peak_array_;  ///< Allows rapid peak retrieval by mz.
+  Peak         **mz_peak_array_;  ///< Allows rapid peak retrieval by mz.
 
   // constants
   /**
@@ -74,32 +67,10 @@ class Spectrum{
   
   // private methods
   /**
-   * Parses a spectrum from file, deleting any existing values in the
-   * object.
-   * Skips Header line "H"
-   * \returns The newly allocated spectrum or NULL on error or EOF.
-   */
-  static Spectrum* newSpectrumMs2(FILE* file, const char* filename = NULL); 
-  
-  /**
-   * Parses a spectrum from file, deleting any existing values in the
-   * object.
-   * Skips Header line "H"
-   * \returns The newly allocated spectrum or NULL on error or EOF.
-   */
-  bool parseMs2(FILE* file, const char* filename = NULL); 
-  
-  /**
-   * Parse a spectrum from a file in mgf format.
-   * \returns A newly allocated spectrum or NULL on error or EOF.
-   */
-  static Spectrum* newSpectrumMgf(FILE* file, const char* filename = NULL); 
-  
-  /**
    * Parse a spectrum from a file in mgf format.
    * \returns True if successfully parsed or false on error or EOF.
    */
-  bool parseMgf(FILE* file, const char* filename = NULL); 
+  bool parseMgf(FILE* file, int scan_num, const char* filename = NULL); 
 
   /**
    * Parses the 'S' line of a spectrum
@@ -115,6 +86,12 @@ class Spectrum{
    * \returns TRUE if success. FALSE is failure.
    */
   bool parseZLine(char* line);  ///< 'Z' line to parse -in
+
+  /**
+   * Parses the 'EZ' line of a spectrum
+   * \returns true if success. false is failure.
+   */
+  bool parseEZLine(std::string line_str);
 
   /**
    * Parses the 'D' line of the a spectrum
@@ -209,15 +186,28 @@ class Spectrum{
      );
 
   /**
-   * Parses a spectrum from a file, either mgf or ms2.
+   * Parses a spectrum from file, deleting any existing values in the
+   * object.
+   * Skips Header line "H"
+   * \returns The newly allocated spectrum or NULL on error or EOF.
    */
-  static Spectrum* newSpectrumFromFile(FILE* file, 
-                                          const char* filename = NULL);
+  static Spectrum* newSpectrumMs2(FILE* file, const char* filename = NULL); 
+  
 
   /**
-   * Parses a spectrum from a file, either mgf or ms2.
+   * Parse a spectrum from a file in mgf format.
+   * \returns A newly allocated spectrum or NULL on error or EOF.
    */
-  bool parseFile(FILE* file, const char* filename = NULL);
+  static Spectrum* newSpectrumMgf(FILE* file, int scan_num, 
+                                  const char* filename = NULL); 
+  
+  /**
+   * Parses a spectrum from file, deleting any existing values in the
+   * object.
+   * Skips Header line "H"
+   * \returns The newly allocated spectrum or NULL on error or EOF.
+   */
+  bool parseMs2(FILE* file, const char* filename = NULL); 
 
   /**
    * Transfer values from an MSToolkit spectrum to the crux Spectrum.
@@ -258,9 +248,14 @@ class Spectrum{
 
   /**
    * \returns The a const reference to a vector of the possible charge
-   * states of this spectrum.
+   * states of this spectrum. If EZ states are available, return those.
    */
   const std::vector<SpectrumZState>& getZStates();
+
+  /**
+   * \returns the ZState at the requested index
+   */
+  const SpectrumZState& getZState(int idx);
 
   /**
    * Considers the spectrum-charge parameter and returns the
@@ -269,15 +264,14 @@ class Spectrum{
    * /returns A vector of charge states to consider for this spectrum.
    */ 
   //std::vector<int> getChargesToSearch();
-
-
+ 
   std::vector<SpectrumZState> getZStatesToSearch();
 
   
   /**
    * \returns The number of possible charge states of this spectrum.
    */
-  int getNumZStates();
+  unsigned int getNumZStates();
 
   /**
    * \returns The minimum m/z of all peaks.
@@ -300,7 +294,7 @@ class Spectrum{
    * This should lazily create the data structures within the
    * spectrum object that it needs.
    */
-  PEAK_T* getNearestPeak
+  Peak * getNearestPeak
     (FLOAT_T mz, ///< the mz of the peak around which to sum intensities -in
      FLOAT_T max ///< the maximum distance to get intensity -in
      );

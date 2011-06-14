@@ -21,8 +21,12 @@
 #include "Barista.h"
 #include "PrintProcessedSpectra.h"
 #include "SearchForXLinks.h"
+#include "ExtractColumns.h"
 #include "SpectralCounts.h"
+#include "ExtractRows.h"
 #include "PrintVersion.h"
+#include "StatColumn.h"
+#include "SortColumn.h"
 
 /**
  * The starting point for crux.  Prints a general usage statement when
@@ -34,17 +38,32 @@ int main(int argc, char** argv){
   CruxApplicationList applications("crux");
 
   applications.add(new CreateIndex());
+
   applications.add(new MatchSearch());
   applications.add(new SequestSearch());
+
   applications.add(new ComputeQValues());
   applications.add(new Percolator());
   applications.add(new QRanker());
+
   applications.add(new Barista());
+
   applications.add(new PrintProcessedSpectra());
+
   applications.add(new SearchForXLinks());
+
   applications.add(new SpectralCounts());
+
+  applications.add(new ExtractColumns());
+  applications.add(new ExtractRows());
+  applications.add(new StatColumn());
+  applications.add(new SortColumn());
+
   applications.add(new PrintVersion());
   
+
+
+
   int ret = applications.main(argc, argv);
   return ret;
 

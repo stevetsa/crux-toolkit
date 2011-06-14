@@ -8,6 +8,7 @@
 #define OBJECTS_H
 
 #include <stdio.h>
+#include <vector>
 #include <set>
 #include <map>
 #include "utils.h"
@@ -17,11 +18,7 @@
 
 class DelimitedFile;
 class DelimitedFileReader;
-class IonConstraint;
-class IonFilteredIterator;
-class IonSeries;
 class MatchFileReader;
-class Spectrum;
 class SpectrumZState;
 
 
@@ -29,7 +26,7 @@ class SpectrumZState;
  * \typedef PEAK_T 
  * A peak in a spectrum
  */
-typedef struct peak PEAK_T;
+class Peak;
 
 /**
  * The enum for peak sort type(_PEAK_LOCATION, _PEAK_INTENSITY)
@@ -41,6 +38,18 @@ enum _peak_sort_type {_PEAK_LOCATION, _PEAK_INTENSITY};
  * \brief The typedef for peak sort type(_PEAK_LOCATION, _PEAK_INTENSITY)
  */
 typedef enum _peak_sort_type PEAK_SORT_TYPE_T;
+
+/**
+ * \class Spectrum 
+ * \brief A spectrum
+ */
+class Spectrum;
+
+/**
+ * \typedef PeakIterator
+ * \brief An object to iterate over the peaks in a spectrum
+ */
+typedef std::vector<Peak*>::const_iterator PeakIterator;
 
 /**
  * \class SpectrumCollection
@@ -165,6 +174,7 @@ enum _measure_type {
   MEASURE_INVALID,
   MEASURE_SIN,
   MEASURE_NSAF,
+  MEASURE_EMPAI,
   NUMBER_MEASURE_TYPES
 };
 
@@ -307,6 +317,24 @@ typedef struct index_filtered_peptide_iterator INDEX_FILTERED_PEPTIDE_ITERATOR_T
 typedef struct sorted_peptide_iterator SORTED_PEPTIDE_ITERATOR_T;
 
 /**
+ * \class Ion 
+ * \brief An object to represent a (fragment) ion of a peptide
+ */
+class Ion;
+
+/**
+ * \class ION_SERIES_T 
+ * \brief An object to represent a series of ions
+ */
+class IonSeries;
+
+/**
+ * \typedef ION_CONSTRAINT_T
+ * \brief An object to represent a constraint to be applied to ions
+ */
+class IonConstraint;
+
+/**
  * The enum for index type
  */
 enum _index_type {DB_INDEX, BIN_INDEX};
@@ -367,10 +395,16 @@ typedef struct protein_index PROTEIN_INDEX_T;
 typedef struct protein_index_iterator PROTEIN_INDEX_ITERATOR_T;
 
 /**
- * \typedef ION_ITERATOR_T
- * \brief An object to iterate over all ion objects in the ion_series
+ * \typedef IonIterator
+  * \brief An object to iterate over all ion objects in the ion_series
  */
-typedef struct ion_iterator ION_ITERATOR_T;
+typedef std::vector<Ion*>::iterator IonIterator;
+
+/**
+ * \class IonFilteredIterator
+ * \brief An object to iterate over ion objects that meet constraint in the ion_series
+ */
+class IonFilteredIterator;
 
 /**
  *\typedef LOSS_LIMIT_T
@@ -512,7 +546,7 @@ enum _command {
   PROCESS_SPEC_COMMAND, ///< print-processed-spectra
   XLINK_SEARCH_COMMAND, ///< search-for-xlinks
   VERSION_COMMAND,      ///< just print the version number
-
+  MISC_COMMAND,         ///< miscellaneous command
   NUMBER_COMMAND_TYPES  ///< always keep this last so the value
                         /// changes as cmds are added
 };
@@ -621,6 +655,32 @@ enum XLINK_SITE_T{
   XLINKSITE_AA,
   NUMBER_XLINKSITES
 };
+
+/**
+ * \enum COMPARISON_T
+ */
+enum COMPARISON_T{
+  COMPARISON_INVALID,
+  COMPARISON_LT,
+  COMPARISON_LTE,
+  COMPARISON_EQ,
+  COMPARISON_GTE,
+  COMPARISON_GT,
+  COMPARISON_NEQ,
+  NUMBER_COMPARISONS,
+};
+
+/**
+ * \enum COLTYPE_T
+ */
+enum COLTYPE_T{
+  COLTYPE_INVALID,
+  COLTYPE_INT,
+  COLTYPE_REAL,
+  COLTYPE_STRING,
+  NUMBER_COLTYPES
+};
+
 
 /**
  * \typedef peptideToScore

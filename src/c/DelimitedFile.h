@@ -35,17 +35,26 @@ class DelimitedFile {
   std::vector<std::vector<std::string> > data_;
   std::vector<std::string> column_names_;
   unsigned int current_row_; //used for iterating through the table.
+  char delimiter_;
 
+
+  /**
+   * reorders the rows of a delimited file using a built map 
+   * of sorted indices.  
+   */
   template <typename T>
   void reorderRows(
-    std::multimap<T, unsigned int>& sort_indices, 
-    BOOLEAN_T ascending);  
+    std::multimap<T, unsigned int>& sort_indices, ///<map of indices sorted by type T 
+    bool ascending ///<sort in ascending order?
+    );
 
  public:
   /**
-   * \returns a blank DelimitedFile object 
+   * \returns a DelimitedFile object 
    */
-  DelimitedFile();
+  DelimitedFile(
+    char delimiter='\t' ///< the delimiter to use (default tab)
+  );
   
   /**
    * \returns a DelimitedFile object and loads the tab-delimited
@@ -53,7 +62,8 @@ class DelimitedFile {
    */  
   DelimitedFile(
     const char *file_name, ///< the path of the file to read 
-    bool hasHeader=true ///< indicate whether header exists
+    bool hasHeader=true, ///< indicate whether header exists
+    char delimiter='\t' ///< the delimiter to use (default tab)
   );
 
   /** 
@@ -62,11 +72,12 @@ class DelimitedFile {
    */
   DelimitedFile(
     const std::string& file_name, ///< the path of the file  to read
-    bool hasHeader=true ///< indicates whether header exists
+    bool hasHeader=true, ///< indicates whether header exists
+    char delimiter='\t' ///< the delimiter to use (default tab)
   );
 
   /**
-   * clears the table
+   * empties the delimited file
    */
   void clear();
 
@@ -75,6 +86,19 @@ class DelimitedFile {
    */
   virtual ~DelimitedFile();
   
+
+  /**
+   * sets the delimiter
+   */
+  void setDelimiter(
+    char delimiter ///< the delimiter
+  );
+
+  /**
+   * /returns the delimtier
+   */
+  char getDelimiter() const;
+
   /**
    *\returns the number of rows, assuming a square matrix
    */
@@ -101,7 +125,8 @@ class DelimitedFile {
    */
   void loadData(
     const char *file_name, ///< the file path
-    bool hasHeader=true ///< header indicator
+    bool hasHeader=true, ///< header indicator
+    char delimiter='\t' ///< the delimiter to use (default tab).
   );
 
   /**
@@ -109,7 +134,8 @@ class DelimitedFile {
    */
   void loadData(
     const std::string& file_name, ///< the file path
-    bool hasHeader=true ///< header indicator
+    bool hasHeader=true, ///< header indicator
+    char delimiter='\t' ///< the delimiter to use (default tab).
   );
 
   /**
@@ -131,7 +157,7 @@ class DelimitedFile {
    *\returns the column index.
    */
   unsigned int addColumn(
-    std::string& column_name ///< the column name
+    const std::string& column_name ///< the column name
   );
 
   /**
@@ -232,7 +258,7 @@ class DelimitedFile {
   void setString(
     unsigned int col_idx, ///< the column index
     unsigned int row_idx, ///< the row index
-    std::string& value ///< the new value
+    const std::string& value ///< the new value
   );
 
   /**
@@ -387,42 +413,45 @@ class DelimitedFile {
   );
 
   /**
-   * sorts the table by a column. Assumes the data type is
-   * Float. By default sorts in ascending order.
+   * sorts the delimited file treating the key column as float values
    */
   void sortByFloatColumn(
-    const std::string& column_name, ///< the column name
-    BOOLEAN_T ascending = TRUE);
+    const std::string& column_name, ///<The name of the key column
+    bool ascending = true ///<sort in ascending order?
+  );
   
   /**
-   * sorts the table by a column. Assumes the data type is 
-   * integer.
+   * sorts the delimited file treating the key column as integers
    */
   void sortByIntegerColumn(
-    const std::string& column_name, ///< the column name
-    BOOLEAN_T ascending = TRUE);
+    unsigned int col_idx, ///< the index of the key column 
+    bool ascending = true ///< sort in ascending order?
+  );
 
-  void sortByIntegerColumn(
-    unsigned int col_idx,
-    BOOLEAN_T ascending = TRUE);
-
-
-  
   /**
-   * sorts the table by a column. Assumes the data type is 
-   * string.
+   * sorts the delimited file treating the key column as integers
+   */
+  void sortByIntegerColumn(
+    const std::string& column_name, ///< the name of the key column
+    bool ascending = true ///< sort in ascending order?
+  );
+
+  /**
+   * sorts the delimited file treating the key column as a string
    */
   void sortByStringColumn(
-    const std::string& column_name,
-    BOOLEAN_T ascending = TRUE);
+    const std::string& column_name, ///< the name of the key column
+    bool ascending = true ///< sort in ascending order?
+  );
 
-
+  /**
+   * copies a row to a another DelimitedFile
+   */ 
   void copyToRow(
-    DelimitedFile& dest,
-    int src_row_idx, 
-    int dest_row_idx
-  ); 
-
+    DelimitedFile& dest, ///<The DelimitedFile to copy the row to
+    int src_row_idx, ///<The row index of the source (this)
+    int dest_row_idx ///<The row index of the destination.
+  );
 
   /*Iterator functions.*/
   /**
@@ -440,7 +469,7 @@ class DelimitedFile {
    * \returns whether there are more rows to 
    * iterate through
    */
-  BOOLEAN_T hasNext();
+  bool hasNext();
 
   /**
    * tokenize a string by delimiter
@@ -451,10 +480,14 @@ class DelimitedFile {
     char delimiter = '\t'
   );
 
+  /**
+   * \returns a delimited string from the vector of elements 
+   */
   template<typename T>
   static std::string splice(
-    const std::vector<T>& elements,
-    char delimiter = '\t') {
+    const std::vector<T>& elements, ///<vector of elements to splice
+    char delimiter = '\t' ///<delimited to use
+  ) {
 
       if (elements.size() == 0) return "";
 
@@ -486,7 +519,10 @@ class DelimitedFile {
   /**
    * Allows object to be printed to a stream
    */
-  friend std::ostream &operator<< (std::ostream& os, DelimitedFile& delimited_file); 
+  friend std::ostream &operator<< (
+    std::ostream& os, ///< The stream to output to
+    DelimitedFile& delimited_file ///< The delimited file to output to
+  ); 
 
 };
 

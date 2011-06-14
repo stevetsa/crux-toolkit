@@ -2,6 +2,7 @@
  * \file parameter.cpp
  * FILE: parameter.cpp
  * AUTHOR: written by Tobias Mann, CRUXified by Chris Park
+ * Missed-cleavage conversion: Kha Nguyen
  * \brief General parameter handling utilities. MUST declare ALL
  * optional command parameters here inside initalialize_parameters.
  ****************************************************************************/
@@ -439,13 +440,16 @@ void initialize_parameters(void){
       "[RK]|{P}.  AspN cuts after any residue but only before D which is "
       "represented as [X]|[D].",
                        "true");
-  set_boolean_parameter("missed-cleavages", FALSE, 
-      "Include peptides with missed cleavage sites. Default=F.",
-      "Available from command line or parameter file for crux-create-index "
-      "and crux-generate-peptides.  Parameter file only for crux-search-"
-      "for-matches.  When used with enzyme=<trypsin|elastase|chymotrpysin> "
-      " includes peptides containing one or more potential cleavage sites.",
-      "true");
+  
+  set_int_parameter("missed-cleavages",
+		    0, 0, 500,
+		    "Include peptides with up to n missed cleavage sites. Default=0.",
+		    "Available from command line or parameter file for crux-create-index "
+		    "and crux-generate-peptides.  Parameter file only for crux-search-"
+		    "for-matches.  When used with enzyme=<trypsin|elastase|chymotrpysin> "
+		    " includes peptides containing one or more potential cleavage sites.",
+		    "true");	    
+
   set_boolean_parameter("unique-peptides", TRUE,
       "Generate peptides only once, even if they appear in more "
       "than one protein (T,F).  Default=F.",
@@ -514,6 +518,12 @@ void initialize_parameters(void){
       "Specify the location of the left edge of the "
       "first bin used to discretize the m/z axis. Default=0.68",
       "Available for crux-search-for-matches.", "true");
+  // initialize as "unset", then set as bool after cmdline parsed
+  set_string_parameter("use-flanking-peaks", "unset",
+      "Include peaks +/- 1da around b/y ions in theoretical spectrum.  "
+      "sequest-search default=T. search-for-matches default=F.",
+      "Available in the paramter file for all search commands.",
+      "true");
   set_double_parameter("spectrum-min-mass", 0.0, 0, BILLION, 
       "Minimum mass of spectra to be searched. Default=0.",
       "Available for crux-search-for-matches.", "true");
@@ -754,7 +764,7 @@ void initialize_parameters(void){
 
 
   // ***** spectral-counts aguments *****
-  set_string_parameter("input PSM", NULL,
+  set_string_parameter("input PSMs", NULL,
        "Name of file in text format which holds match results.",
        "For quantify to retrieve scores for protein and peptides.",
        "false");
@@ -770,21 +780,16 @@ void initialize_parameters(void){
        "Available for spectral-counts.  All PSMs with q-value higher than "
        "this will be ignored.",
        "true");
-  set_measure_type_parameter("measure", MEASURE_SIN,
-       "Type of analysis to make on the match results: (NSAF|SIN). "
-       "Default=SIN. ", 
+  set_measure_type_parameter("measure", MEASURE_NSAF,
+       "Type of analysis to make on the match results: (NSAF|SIN|EMPAI). "
+       "Default=NSAF. ", 
        "Available for spectral-counts.  NSAF is Normalized Spectral "
-       "Abundance Factor and SIN is Spectral Index Normalized.",
+       "Abundance Factor, SIN is Spectral Index Normalized and EMPAI is "
+       "Exponentially Modified Protein Abundance Index",
        "true");
   set_boolean_parameter("unique-mapping", FALSE,
        "Ignore peptides with multiple mappings to proteins (T,F). Default=F.",
        "Available for spectral-counts.",
-       "true");
-  set_string_parameter("input-bullseye", NULL,
-       "Bullseye output from the accompanying MS1 file to provide area under "
-       "the chromatogram peak.  Default is to use total ion intenstiy",
-       "Available for spectral-counts and the SIN measure.  Use areas under "
-       "peaks instead of total ion intensity.",
        "true");
   set_quant_level_parameter("quant-level", PROTEIN_QUANT_LEVEL,
        "Quantification at protein or peptide level (PROTEIN,PEPTIDE). "
@@ -966,6 +971,53 @@ void initialize_parameters(void){
       "Weibull parameters.  Default=4000.",
       "Available for crux search-for-xlinks", "true");
 
+  /* crux-util parameters */
+
+  set_boolean_parameter("ascending", TRUE,
+    "Sort in ascending order.  Otherwise, descending. "
+    "Default: True.",
+    "Available for sort-by-column", "true");
+
+  set_string_parameter("tsv file", NULL,
+    "Path to a delimited file (-) for standard input",
+    "Available for the delimited utility programs", "false");
+
+  set_string_parameter("delimiter", "tab",
+    "Character delimiter to use when parsing a delimited file (Default tab).",
+    "Available for the delimited utility programs.", "false");
+
+  set_string_parameter("column names", NULL,
+    "List of column names separated by a comma",
+    "Available for the delimited utility", "false");
+
+  set_string_parameter("column name", NULL,
+    "Name of the column to do the operation on",
+    "Available for the delimited utility programs", "false");
+
+  set_string_parameter("column value", NULL,
+    "value of the column",
+    "Available for the delimited utility programs", "false");
+
+  set_boolean_parameter("header", TRUE,
+    "Print the header line of the tsv file. Default=T.",
+    "Available for crux extract-columns and extract-rows",
+    "true");
+
+  set_string_parameter("column-type","string",
+    "Specifies the data type the column contains "
+    "(int|real|string) Default: string",
+    "Available for crux extract-rows",
+    "true");
+
+  set_string_parameter("comparison", "eq",
+    "Specifies the operator that is used to compare an "
+    "entry in the specified column to the value given "
+    "on the command line.  (eq|gt|gte|lt|lte|neq). "
+    "Default: eq.",
+    "Available for crux extract-rows",
+    "true");
+
+  
   // now we have initialized the parameters
   parameter_initialized = TRUE;
   usage_initialized = TRUE;
@@ -1225,6 +1277,35 @@ double get_mz_bin_offset() {
 }
 
 /**
+ * Set the use-flanking-peaks parameter.  If the value was set by
+ * user, set to that value.  Otherwise, set according to what command
+ * is being run.  Defaults are F for search-for-matches and T for
+ * others (sequest-search, search-for-xlinks).
+ */
+void set_flanking_peaks(const char* exe_name){
+
+  const char* value = get_string_parameter_pointer("use-flanking-peaks");
+  // if it is the default value, it was not set by the user
+  if( strcmp(value, "unset") == 0 ){
+    if( strcmp(exe_name, "search-for-matches") == 0 ){
+      value = "FALSE";
+    } else {
+      value = "TRUE";
+    }
+  } else { // use the value set by the user
+    if( value[0] == 'T' || value[0] == 't' ){
+      value = "TRUE";
+    } else if( value[0] == 'F' || value[0] == 'f' ){
+      value = "FALSE";
+    } //else don't change, let check find error
+  }
+  // set the new value and change type to BOOLEAN_T
+  update_hash_value(parameters, "use-flanking-peaks", value);
+  update_hash_value(types, "use-flanking-peaks", (void*)"BOOLEAN_T");
+  check_option_type_and_bounds("use-flanking-peaks");
+}
+
+/**
  * Take the command line string from main, find the parameter file 
  * option (if present), parse it's values into the hash, and parse
  * the command line options and arguments into the hash.
@@ -1337,6 +1418,9 @@ BOOLEAN_T parse_cmd_line_into_params_hash(int argc,
   char value_str[SMALL_BUFFER];
   sprintf(value_str, "%i", max);
   update_hash_value(parameters, "psms-per-spectrum-reported", value_str);
+
+  set_flanking_peaks(exe_name);
+
 
   parameter_plasticity = FALSE;
 
@@ -1493,6 +1577,14 @@ void check_parameter_consistency(){
     free(val_str);
     update_hash_value(parameters, "missed-cleavages", (void*)"TRUE");
   }
+
+  // spectral counts SIN requires an MS2 file
+  if( get_measure_type_parameter("measure") == MEASURE_SIN ){
+    if( strcmp(get_string_parameter_pointer("input-ms2"), "__NULL_STR") == 0 ){
+      carp(CARP_FATAL, "The SIN computation for spectral-counts requires "
+           "that the --input-ms2 option specify a file.");
+    }
+  }
 }
 
 
@@ -1634,7 +1726,7 @@ BOOLEAN_T check_option_type_and_bounds(const char* name){
     if (string_to_measure_type(value_str) == MEASURE_INVALID){
       success = FALSE;
       sprintf(die_str, "Illegal measure type '%s' for option '%s'. "
-	      "Must be (NSAF, SIN)", value_str, name);
+	      "Must be (NSAF, SIN, EMPAI)", value_str, name);
     }
     break;
   case PARSIMONY_TYPE_P:
@@ -1808,6 +1900,12 @@ void free_parameters(void){
     free_hash(types);
     free_hash(min_values);
     free_hash(max_values);
+
+    for (int mod_idx=0; mod_idx < MAX_AA_MODS; mod_idx++) {
+      free_aa_mod(list_of_mods[mod_idx]);
+      list_of_mods[mod_idx] = NULL;
+    }
+
   }
   // this is mostly so I can test repeatedly
   num_mods = 0;
@@ -1860,12 +1958,6 @@ void parse_parameter_file(
          line[idx] == '\f' || line[idx] == ' ' || line[idx] == '\t')
         line[idx] = '\0';
     }
-    /* why does this segfault?  only with break, not without
-    if(line[0] == '#' || line[0] == '\0'){
-      printf("comment or blank line");
-      break;
-    }
-    */
     /* empty lines and those beginning with '#' are ignored */
     if(line[0] != '#' && line[0] != '\0'){
 
@@ -1997,17 +2089,6 @@ int get_int_parameter(
   /* there is a parameter with the right name.  Now 
      try to convert it to a base 10 integer*/
   value = atoi(int_value);
-  /*  value = strtol(int_value, &endptr, 10);
-  if ((value == LONG_MIN) || 
-      (value == LONG_MAX) || 
-      (endptr == int_value)) {
-    carp(CARP_FATAL, "Conversion error when trying to convert parameter %s with value %s to an int ",
-        name, 
-        int_value);
-        exit(1);
-  } 
-  return((int)value);
-  */
   return value;
 }
 
@@ -2051,16 +2132,8 @@ double get_double_parameter(
   /* there is a parameter with the right name.  Now 
      try to convert it to a double*/
   value = strtod(double_value, &endptr);
-  /*if((value == HUGE_VALF) ||  // AAK removed //BF: why?
-    (value == -HUGE_VALF) || 
-    (endptr == double_value)) {
-    capr(CARP_FATAL, "Conversion error when trying to convert parameter %s with value %s to an double ",
-    name,
-    double_value);
-    exit(1); */
-  // } else {  
+ 
   return(value);
-  // }
   
   carp(CARP_FATAL, "parameter name: %s, doesn't exist", name);
 }
@@ -2095,13 +2168,6 @@ char* get_string_parameter(
   PARAMETER_TYPE_T type;
   string_to_param_type(type_str, &type);
 
-  /*  Let any type be retrieved as string
-  if(found==FALSE || type != STRING_P){
-    carp(CARP_ERROR, "Request for string parameter '%s' which is of type %s",
-         name, type_str);
-  }
-  */
-
   return my_copy_string(string_value);
 }
 
@@ -2131,11 +2197,6 @@ const char* get_string_parameter_pointer(
   char* type_str = (char*)get_hash_value(types, name);
   PARAMETER_TYPE_T type;
   string_to_param_type(type_str, &type);
-
-  /*if(found==FALSE || type != STRING_P){
-    carp(CARP_ERROR, "Request for string parameter '%s' which is of type %s",
-         name, type_str);
-         }*/
 
   return string_value;
 
@@ -2238,6 +2299,22 @@ int get_max_ion_charge_parameter(
   }
 }
 
+char get_delimiter_parameter(
+  const char* name
+  ) {
+  
+  char* param_value_str = (char*)get_hash_value(parameters, name);
+  if (strcmp(param_value_str,"tab") == 0) {
+    return '\t'; //using this with min function on peptide charge.
+  } else {
+    if (strlen(param_value_str) != 1) {
+      carp(CARP_FATAL,
+        "delimiter parameter %s with value %s is not a single character or "
+        "'tab'", name, param_value_str);
+    }
+    return param_value_str[0];
+  }
+}
 
 SORT_TYPE_T get_sort_type_parameter(const char* name){
   char* param_value_str = (char*)get_hash_value(parameters, name);
@@ -2283,11 +2360,27 @@ ION_TYPE_T get_ion_type_parameter(const char* name){
 
   if(!success){
     carp(CARP_FATAL, 
-   "Ion_type parameter %s ahs the value %s which is not of the correct type.",
+   "Ion_type parameter %s has the value %s which is not of the correct type.",
          name, param_value_str);
   }
   return param_value;
 }
+
+COLTYPE_T get_column_type_parameter(const char* name){
+  char* param_value_str = (char*)get_hash_value(parameters, name);
+  COLTYPE_T param_value = string_to_column_type(param_value_str);
+
+  return param_value;
+}
+
+COMPARISON_T get_comparison_parameter(const char* name) {
+  char* param_value_str = (char*)get_hash_value(parameters, name);
+  COMPARISON_T param_value = string_to_comparison(param_value_str);
+
+  return param_value;
+}
+
+
 /**************************************************
  *   SETTERS (private)
  **************************************************
@@ -2295,6 +2388,23 @@ ION_TYPE_T get_ion_type_parameter(const char* name){
 
 BOOLEAN_T reset_parameter(const char* name, const char* value){
   return add_or_update_hash(parameters, name, value);
+}
+
+BOOLEAN_T set_boolean_parameter(
+  const char* name,
+  BOOLEAN_T set_value
+  ){
+
+  const char* bool_str;
+  if(set_value){
+    bool_str = "TRUE";
+  }
+  else{
+    bool_str = "FALSE";
+  }
+  BOOLEAN_T result = add_or_update_hash(parameters, name, bool_str);
+  return result;
+
 }
 
 BOOLEAN_T set_boolean_parameter(
@@ -2400,6 +2510,19 @@ BOOLEAN_T set_double_parameter(
   return result;
 }
 
+
+BOOLEAN_T set_string_parameter(
+  const char* name, 
+  const char* set_value                       
+  ){
+
+  if( set_value == NULL ){
+    set_value = "__NULL_STR";
+  }
+
+  BOOLEAN_T result = add_or_update_hash(parameters, name, set_value);
+  return result;
+}
 /**
  * temporary replacement for function, return name once all exe's are fixed
  * \returns TRUE if paramater value is set, else FALSE
@@ -2775,7 +2898,6 @@ BOOLEAN_T update_aa_masses(){
 
   for(aa=(int)'A'; aa< alphabet_size -1; aa++){
     aa_str[0] = (char)aa;
-    //aa_to_string(aa, aa_str);
     double delta_mass = get_double_parameter(aa_str);
     carp(CARP_DETAILED_DEBUG, "aa: %i, aa_str: %s, mass: %f", aa, aa_str, delta_mass);
     increase_amino_acid_mass((char)aa, delta_mass);
@@ -2792,7 +2914,6 @@ BOOLEAN_T update_aa_masses(){
 int get_aa_mod_list
   (AA_MOD_T*** mods) ///< the address of an array of pointers
 {
-  //carp(CARP_DEBUG, "getting aa mods, all %d of them", num_mods);
   *mods = list_of_mods;
   return num_mods;
 
@@ -2808,7 +2929,6 @@ int get_aa_mod_list
 int get_c_mod_list
   (AA_MOD_T*** mods) ///< the address of an array of pointers
 {
-  //carp(CARP_DEBUG, "getting c mods, all %d of them", num_c_mods);
   *mods = list_of_c_mods;
   return num_c_mods;
 }
@@ -2822,7 +2942,6 @@ int get_c_mod_list
 int get_n_mod_list
   (AA_MOD_T*** mods) ///< the address of an array of pointers
 {
-  //carp(CARP_DEBUG, "getting n mods, all %d of them", num_n_mods);
   *mods = list_of_n_mods;
   return num_n_mods;
 }
@@ -2932,9 +3051,7 @@ char* read_max_per_peptide(AA_MOD_T* mod, char* line, char separator){
   }
 
   aa_mod_set_max_per_peptide(mod, atoi(line));
-  //mod->max_per_peptide = atoi(line);
   if( aa_mod_get_max_per_peptide(mod) == 0 ){
-  //if( mod->max_per_peptide == 0 ){
     carp(CARP_FATAL, "Maximum mods per peptide is invalid for mod %s", line);
   }
 
@@ -3025,9 +3142,7 @@ void read_max_distance(AA_MOD_T* mod, char* line){
   }
 
   aa_mod_set_max_distance(mod, atoi(line));
-  // 0 is a valid distance, would have to check some other way
-  //    carp(CARP_FATAL, "Maximum mods per peptide is invalid for mod %s", line);
-
+ 
 }
 
 /**
@@ -3113,7 +3228,6 @@ int read_mods(
 
     //  increment counter and get next mod
     cur_index++;
-    //print_mod(cur_mod);
 
   }// repeat until end of file
 
@@ -3139,7 +3253,6 @@ void read_mods_from_file(char* param_filename){
   }
 
   // get first mod
-  //AA_MOD_T* cur_mod = list_of_mods[num_mods]; // num_mods == 0
   int total_num_mods = 0;
   int max_precision = MOD_MASS_PRECISION;
 

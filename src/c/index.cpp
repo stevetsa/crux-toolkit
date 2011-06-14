@@ -10,6 +10,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <time.h>
+#include <errno.h>
 
 #include "utils.h"
 #include "crux-utils.h"
@@ -472,7 +473,7 @@ BOOLEAN_T check_index_constraints(INDEX_T* index){
   }else if(max_len < get_int_parameter("max-length")){
     success = FALSE;
     param = "max-length";
-  }else if(missed_cleavages < get_boolean_parameter("missed-cleavages")){
+  }else if(missed_cleavages < get_int_parameter("missed-cleavages")){
     success = FALSE;
     param = "missed-cleavages";
   }else if(mass_type != get_mass_type_parameter("isotopic-mass")){
@@ -1688,7 +1689,10 @@ BOOLEAN_T parse_crux_index_map(
   carp(CARP_DETAILED_DEBUG, "Opening map file '%s'", full_filename);
   file = fopen(full_filename, "r");
   if(file == NULL){
-    carp(CARP_WARNING, "Cannot open crux_index_map file.");
+    int errsv = errno;
+    carp(CARP_WARNING, "Cannot open crux_index_map file.:%s\nError:%s", 
+      full_filename, 
+      strerror(errsv));
     return FALSE;
   }
   

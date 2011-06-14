@@ -491,11 +491,14 @@ void Barista :: write_results_prot(string &out_dir, int fdr)
 
 void Barista :: report_all_results()
 {
-
   trainset.clear();
   testset.clear();
   ProtScores::fillProteinsFull(trainset, d);
+#ifdef CRUX
+  carp(CARP_INFO, "finished training, making parsimonious protein set");
+#else
   cout << "finished training, making parsimonious protein set\n";
+#endif
   trainset.make_meta_set(d);
   int fdr_trn = getOverFDRProtParsimonious(trainset,max_net_prot,selectionfdr);
   cout << "total proteins parsimonious at q<" << selectionfdr << ": " << fdr_trn << endl;
@@ -708,7 +711,11 @@ void Barista :: write_results_prot_tab(ofstream &os)
 	  if(psmind > -1)
 	    os << seq <<  "-" << d.psmind2scan(psmind) << "." << d.psmind2charge(psmind);
 	  else
-	    cout << "waning: did not assign peptide max psmind\n";
+	    {
+#ifndef CRUX
+	      cout << "warning: did not assign peptide max psmind\n";
+#endif
+	    }
 	  for( int j = 1; j < num_pep; j++)
 	    {
 	      pepind = pepinds[j];
@@ -718,7 +725,11 @@ void Barista :: write_results_prot_tab(ofstream &os)
 	      if(psmind > -1)
 		os << "," << seq <<  "-" << d.psmind2scan(psmind) << "." << d.psmind2charge(psmind);
 	      else
-		cout << "waning: did not assign peptide max psmind\n";
+		{
+#ifndef CRUX
+		  cout << "warning: did not assign peptide max psmind\n";
+#endif
+		}
 	    }
 	  os << endl;
 	}
@@ -728,8 +739,8 @@ void Barista :: write_results_prot_tab(ofstream &os)
 
 void Barista :: write_results_peptides_tab(ofstream &os)
 {
-  os << "peptide" << "\t" << "q-value" << "/t" << "barista_score" << "/t";
-  os << "spectrum_scan" << "/t" << "spectrum_charge" << endl;
+  os << "peptide" << "\t" << "q-value" << "\t" << "barista score" << "\t";
+  os << "scan" << "\t" << "charge" << endl;
   int cn = 0;
   for(int i = 0; i < peptrainset.size(); i++)
     {
@@ -757,8 +768,8 @@ void Barista :: write_results_peptides_tab(ofstream &os)
 
 void Barista :: write_results_psm_tab(ofstream &os)
 {
-  os << "psmind" << "\t" << "q-value" << "\t" << "barista_score" << "\t";
-  os << "charge" << "\t" << "scan" << "\t" << "peptide" << "\t" << "filename" << endl;
+  os << "q-value" << "\t" << "barista score" << "\t";
+  os << "scan" << "\t" << "charge" << "\t" << "peptide" << "\t" << "filename" << endl;
  int cn = 0;
   for(int i = 0; i < psmtrainset.size(); i++)
     {
@@ -767,7 +778,7 @@ void Barista :: write_results_psm_tab(ofstream &os)
 	  cn++;
 	  //write out proteins
 	  int psmind = psmtrainset[i].psmind;
-	  os << psmind << "\t";
+	  //os << psmind << "\t";
 	  os << psmtrainset[i].q << "\t";
 	  os << psmtrainset[i].score << "\t";
 	  os << d.psmind2scan(psmind) << "\t";
@@ -790,7 +801,12 @@ void Barista :: setup_for_reporting_results()
   trainset.clear();
   testset.clear();
   ProtScores::fillProteinsFull(trainset, d);
+#ifdef CRUX
+  carp(CARP_INFO, "finished training, making parsimonious protein set");
+#else
   cout << "finished training, making parsimonious protein set\n";
+#endif
+
   trainset.make_meta_set(d);
   
   int fdr_trn = getOverFDRProtParsimonious(trainset,max_net_prot,selectionfdr);
@@ -1277,13 +1293,39 @@ void Barista :: train_net_multi_task(double selectionfdr, int interval)
 
 void Barista :: setup_for_training(int trn_to_tst)
 {
+#ifdef CRUX
+  carp(CARP_INFO, "loading and normalizing data");
+#else
+  cout << "loading data" << endl;
+#endif
   d.load_psm_data_for_training();
   d.normalize_psms();
   d.load_prot_data_for_training();
+
+
   if(trn_to_tst)
-    ProtScores::fillProteinsSplit(trainset, testset, d, trn_to_tst);
+    {
+#ifdef CRUX
+      carp(CARP_INFO, "splitting data into training and testing sets");
+#else
+      cout << "splitting data into training and testing sets" << endl;
+#endif
+      ProtScores::fillProteinsSplit(trainset, testset, d, trn_to_tst);
+#ifdef CRUX
+      carp(CARP_INFO, "trainset size %d testset size %d", trainset.size(), testset.size());
+#else
+      cout << "trainset size " << trainset.size() << " testset size " << testset.size() << endl;
+#endif
+    }
   else
-    ProtScores::fillProteinsFull(trainset, d);
+    {
+      ProtScores::fillProteinsFull(trainset, d);
+#ifdef CRUX
+      carp(CARP_INFO, "trainset size %d", trainset.size());
+#else
+      cout << "trainset size " << trainset.size() << endl;
+#endif
+    }
   thresholdset = trainset;
   
   if(trn_to_tst)
@@ -1381,7 +1423,13 @@ int Barista :: run_tries_multi_task()
 {
   setup_for_training(2);
   srand(seed);
-  
+
+#ifdef CRUX
+  carp(CARP_INFO, "training the model");
+#else
+  cout << "training the model" << endl;
+#endif
+
   int tries = 3;
   vector<double> mu_choices;
   mu_choices.resize(3,0.0);
@@ -1409,14 +1457,14 @@ int Barista :: run_tries_multi_task()
 
 }
 
-
-
 int Barista :: set_command_line_options(int argc, char *argv[])
 {
   string db_source;
   string sqt_source;
   string ms2_source;
   string output_directory = "crux-output";
+  string enzyme = "trypsin";
+  string decoy_prefix = "random_";
   string dir_with_tables = "";
   int found_dir_with_tables = 0;
   int arg = 1;
@@ -1431,16 +1479,20 @@ int Barista :: set_command_line_options(int argc, char *argv[])
 	  if(str.find("enzyme") != string::npos)
 	    {
 	      arg++;
-	      string enzyme = argv[arg];
+	      enzyme = argv[arg];
+#ifndef CRUX
 	      cout << "enzyme: " << enzyme << endl;
+#endif
 	      sqtp.set_enzyme(enzyme);
 	    }
 	  //found decoy prefix
 	  if(str.find("decoy") != string::npos)
 	    {
 	      arg++;
-	      string decoy_prefix = argv[arg];
+	      decoy_prefix = argv[arg];
+#ifndef CRUX
 	      cout << "decoy prefix: " << decoy_prefix << endl;
+#endif
 	      sqtp.set_decoy_prefix(decoy_prefix);
 	    }
 	  //found output directory
@@ -1456,22 +1508,18 @@ int Barista :: set_command_line_options(int argc, char *argv[])
 	      arg++;
 	      string opt = argv[arg];
 	      if (opt.compare("T") == 0)
-		{
-		  overwrite_flag = 1;
-		  cout << "existing files will be overwritten" << endl;
-		}
+		overwrite_flag = 1;
 	      else
-		{
-		  overwrite_flag = 0;
-		  cout << "existing files will not be overwritten" << endl;
-		}
+		overwrite_flag = 0;
 	    }
 	  //found fileroot
 	  if(str.find("fileroot") != string::npos)
 	    {
 	      arg++;
 	      fileroot = argv[arg];
+#ifndef CRUX
 	      cout << "fileroot: " << fileroot << endl;
+#endif
 	    }
 	  //no cleanup
 	  if(str.find("skip") != string::npos)
@@ -1481,16 +1529,16 @@ int Barista :: set_command_line_options(int argc, char *argv[])
 	      if (opt.compare("T") == 0)
 		{
 		  skip_cleanup_flag = 1;
-		  cout << "will not do cleanup" << endl;
+		  cout << "INFO: will not do cleanup" << endl;
 		}
 	    }
 	  //
-	  if(str.find("dir_with_tables") != string::npos)
+	  if(str.find("re-run") != string::npos)
 	    {
 	      arg++;
 	      dir_with_tables = argv[arg];
 	      found_dir_with_tables = 1;
-	      cout << "found directory with preprocessed data: " << dir_with_tables << endl;
+	      cout << "INFO: directory with preprocessed data: " << dir_with_tables << endl;
 	    }
 	}
       else
@@ -1498,13 +1546,12 @@ int Barista :: set_command_line_options(int argc, char *argv[])
       arg++;
     }
   
-  string forbidden_prefix = "barista";
   if(found_dir_with_tables)
     {
       DIR *dp;
       if((dp = opendir(dir_with_tables.c_str())) == NULL)
 	{
-	  cout << " could not open directory " << dir_with_tables << " for reading" << endl;
+	  cout << " FATAL: could not open directory " << dir_with_tables << " for reading" << endl;
 	  return 0;
 	}
       ostringstream fn;
@@ -1512,46 +1559,130 @@ int Barista :: set_command_line_options(int argc, char *argv[])
       ifstream f_try(fn.str().c_str());
       if(!f_try.is_open())
 	{
-	  cout << "given directory does not seem to contain preprocessed data" << endl;
+	  cout << "FATAL: given directory does not seem to contain preprocessed data" << endl;
 	  return 0;
 	}
       f_try.close();
 
-      sqtp.set_output_dir(dir_with_tables, overwrite_flag, forbidden_prefix);
+      sqtp.set_output_dir(dir_with_tables, overwrite_flag);
       set_input_dir(dir_with_tables);
       set_output_dir(output_directory);
+#ifdef CRUX
+      set_verbosity_level(CARP_INFO);
+      initialize_parameters();
+      //open log file
+      set_boolean_parameter("overwrite", overwrite_flag);
+      set_string_parameter("output-dir", output_directory.c_str());
+      ostringstream logfname;
+      logfname << fileroot << "barista.log.txt";
+      char* log_file = (char*) logfname.str().c_str();
+      open_log_file(&log_file);
+      //char* log_file ="barista.log.txt";
+      //open_log_file(&log_file);
+#endif
+
+#ifdef CRUX
+      carp(CARP_INFO, "directory with tables: %s", dir_with_tables.c_str());
+      carp(CARP_INFO, "output_directory: %s", output_directory.c_str());
+      carp(CARP_INFO, "enzyme: %s", enzyme.c_str());
+      carp(CARP_INFO, "decoy prefix: %s", decoy_prefix.c_str());
+      if(fileroot.compare("") != 0)
+	carp(CARP_INFO, "fileroot: %s", fileroot.c_str());
+#else
+      cout << "database source: " << db_source << endl; 
+      cout << "sqt source: " << sqt_source << endl; 
+      cout << "ms2 source: " << ms2_source << endl;
+      cout << "output_directory: " << output_directory << endl;
+#endif
+
     }
   else
     {
       if(argc-arg < 3)
 	{
-	  cout << "Incorrect input format: to run barista\n barista database-source sqt-file-source ms2-file-source" << endl;
+#ifdef CRUX
+	  cout << endl;
+	  cout << "\t crux barista [options] <database-source> <sqt-source> <ms2-source>" << endl <<endl;
+#else
+	  cout << "barista [options] <database-source> <sqt-source> <ms2-source>" << endl;
+#endif
+	  cout << "REQUIRED ARGUMENTS:" << endl << endl;
+	  cout << "\t <database-source> Directory with FASTA files , list of FASTA files or a single FASTA file with the protein database used for the search." << endl;
+	  cout << "\t <sqt-source> Directory with sqt files, list of sqt files or a single sqt file with psms generated during search." << endl;
+	  cout << "\t <ms2-source> Directory with ms2 files, list of ms2 files or a single ms2 file used for database search." << endl;
+	  cout << endl;
+	  
+	  cout << "OPTIONAL ARGUMENTS:" << endl << endl;
+	  cout << "\t [--enzyme <string>] \n \t     The enzyme used to digest the proteins in the experiment. Default trypsin." << endl;
+	  cout << "\t [--decoy-prefix <string>] \n \t     Specifies the prefix of the protein names that indicates a decoy. Default random_" << endl;
+	  cout << "\t [--fileroot <string>] \n \t     The fileroot string will be added as a prefix to all output file names. Default = none." <<endl;
+	  cout << "\t [--output-dir <directory>] \n \t     The name of the directory where output files will be created. Default = crux-output." << endl;
+	  cout << "\t [--overwrite <T/F>] \n \t     Replace existing files (T) or exit if attempting to overwrite (F). Default=F." << endl;
+	  cout << "\t [--skip-cleanup <T/F>] \n \t     When set to T, prevents the deletion of lookup tables created during the preprocessing step. Default = F." << endl; 
+	  cout << "\t [--re-run <directory>] \n \t      Re-run Barista analysis using a previously computed set of lookup tables." <<endl;  
+	  cout << endl; 
+
 	  return 0;
-	}
-      db_source = argv[arg];
-      arg++;
-      sqt_source = argv[arg];
-      arg++;
+	} 
+      db_source = argv[arg]; arg++; sqt_source = argv[arg]; arg++;
       ms2_source = argv[arg];
+
+      //set the output directory
+      if(!sqtp.set_output_dir(output_directory, overwrite_flag))
+	return 0;
+      set_input_dir(output_directory);
+      set_output_dir(output_directory);
+      
+#ifdef CRUX
+      set_verbosity_level(CARP_INFO);
+      initialize_parameters();
+      //open log file
+      set_boolean_parameter("overwrite", overwrite_flag);
+      set_string_parameter("output-dir", output_directory.c_str());
+      ostringstream logfname;
+      logfname << fileroot << "barista.log.txt";
+      char* log_file = (char*) logfname.str().c_str();
+      open_log_file(&log_file);
+      
+#endif
+
+      
+      if(!sqtp.set_input_sources(db_source, sqt_source, ms2_source))
+#ifdef CRUX
+	carp(CARP_FATAL, "could not extract features for training");
+#else
+      return 0;
+#endif
+
+#ifdef CRUX
+      carp(CARP_INFO, "database source: %s", db_source.c_str());
+      carp(CARP_INFO, "sqt source: %s", sqt_source.c_str()); 
+      carp(CARP_INFO, "ms2 source: %s", ms2_source.c_str());
+      carp(CARP_INFO, "output_directory: %s", output_directory.c_str());
+      carp(CARP_INFO, "enzyme: %s", enzyme.c_str());
+      carp(CARP_INFO, "decoy prefix: %s", decoy_prefix.c_str());
+      if(fileroot.compare("") != 0)
+	carp(CARP_INFO, "fileroot: %s", fileroot.c_str());
+#else
       cout << "database source: " << db_source << endl; 
       cout << "sqt source: " << sqt_source << endl; 
       cout << "ms2 source: " << ms2_source << endl;
-
-      if(!sqtp.set_input_sources(db_source, sqt_source, ms2_source))
-	return 0;
-      sqtp.set_output_dir(output_directory, overwrite_flag, forbidden_prefix);
-      set_input_dir(output_directory);
-      set_output_dir(output_directory);
       cout << "output_directory: " << output_directory << endl;
-      
+#endif
+
       //num of spec features
-      sqtp.set_num_spec_features(0);
+      sqtp.set_num_spec_features(7);
       if(!sqtp.run())
+#ifdef CRUX
+	carp(CARP_FATAL, "could not extract features for training");
+#else
 	return 0;
+#endif
       sqtp.clear();
       
     }
   
+
   
 
   return 1;
@@ -1578,7 +1709,7 @@ string Barista::getName() {
 }
 
 string Barista::getDescription() {
-  return "Program for protein inferrence using .....";
+  return "Protein identification algorithm that combines two different tasks — peptide-spectrum match (PSM) verification and protein inference — into a single learning algorithm.";
 }
 
 

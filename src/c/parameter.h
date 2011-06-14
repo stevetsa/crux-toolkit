@@ -170,6 +170,14 @@ char* get_string_parameter(
   const char* name  ///< the name of the parameter looking for -in
   );
 
+BOOLEAN_T set_string_parameter(
+			  const char* name,
+			  const char* value);
+
+BOOLEAN_T set_boolean_parameter(
+			  const char* name,
+			  BOOLEAN_T value);
+
 /**
  * Searches through the list of parameters, looking for one whose
  * parameter_name matches the string. 
@@ -184,6 +192,10 @@ const char* get_string_parameter_pointer(
 MASS_TYPE_T get_mass_type_parameter(
  const char* name
  );
+
+char get_delimiter_parameter(
+  const char* name
+  );
 
 SORT_TYPE_T get_sort_type_parameter(
  const char* name
@@ -241,6 +253,13 @@ double get_mz_bin_width();
  
 double get_mz_bin_offset();
 
+COLTYPE_T get_column_type_parameter(
+  const char* name
+  );
+
+COMPARISON_T get_comparison_parameter(
+  const char* name
+  );
 
 /**
  * \brief prints all parameters except mods into the output stream

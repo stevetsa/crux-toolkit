@@ -71,7 +71,7 @@ class ProteinPeptideIterator {
    * A small inconsistency: 
    *  Allowed cleavages start at 0, while the output cleavages start at 1.
    */
-  void addCleavages(
+  void selectPeptides(
     int* nterm_allowed_cleavages, 
     int  nterm_num_cleavages, 
     int* cterm_allowed_cleavages, 
@@ -135,6 +135,11 @@ class ProteinPeptideIterator {
   Protein* getProtein();
 
   /**
+   * \returns The total number of peptides in this protein.
+   */
+  int getTotalPeptides();
+
+  /**
    * Creates the data structures in the protein_peptide_iterator object necessary
    * for creating peptide objects.
    * - mass_array - cumulative distribution of masses. used to determine 
@@ -146,7 +151,7 @@ class ProteinPeptideIterator {
    *    used to determine if a cleavage location has been skipped
    */
   void prepareMc(
-    bool missed_cleavages
+    int missed_cleavages
   );
 
   /**
