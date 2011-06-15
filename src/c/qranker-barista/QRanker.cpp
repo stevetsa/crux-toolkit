@@ -1,6 +1,16 @@
 #include "QRanker.h"
 
-QRanker::QRanker() :  seed(0),selectionfdr(0.01),num_hu(5),mu(0.005),weightDecay(0.000)
+QRanker::QRanker() :  
+  seed(0),
+  selectionfdr(0.01),
+  num_hu(5),
+  mu(0.005),
+  weightDecay(0.000),
+  in_dir(""), 
+  out_dir(""), 
+  skip_cleanup_flag(0),
+  overwrite_flag(0),
+  fileroot("") 
 {
 }
 
@@ -491,7 +501,7 @@ int QRanker::run( ) {
 }
 
 
-
+/*
 int QRanker::set_command_line_options(int argc, char **argv)
 {
   vector<string> fnames;
@@ -508,19 +518,226 @@ int QRanker::set_command_line_options(int argc, char **argv)
   pars.clear();
   return 1;
 }
+*/
+
+
+int QRanker :: set_command_line_options(int argc, char *argv[])
+{
+  string db_source;
+  string sqt_source;
+  string ms2_source;
+  string output_directory = "crux-output";
+  string enzyme = "trypsin";
+  string decoy_prefix = "random_";
+  string dir_with_tables = "";
+  int found_dir_with_tables = 0;
+  int spec_features_flag = 1;
+  int arg = 1;
+  
+  while (arg < argc)
+    {
+      string str = argv[arg];
+      //parse the options
+      if(str.find("--") != string::npos)
+	{
+	  //found enzyme
+	  if(str.find("enzyme") != string::npos)
+	    {
+	      arg++;
+	      enzyme = argv[arg];
+	      sqtp.set_enzyme(enzyme);
+	    }
+	  //found decoy prefix
+	  if(str.find("decoy") != string::npos)
+	    {
+	      arg++;
+	      decoy_prefix = argv[arg];
+	      sqtp.set_decoy_prefix(decoy_prefix);
+	    }
+	  //found output directory
+	  if(str.find("output") != string::npos)
+	    {
+	      arg++;
+	      output_directory = argv[arg];
+	      set_output_dir(output_directory);
+	    }
+	  //found overwrite directory
+	  if(str.find("overwrite") != string::npos)
+	    {
+	      arg++;
+	      string opt = argv[arg];
+	      if (opt.compare("T") == 0)
+		overwrite_flag = 1;
+	      else
+		overwrite_flag = 0;
+	    }
+	  //found fileroot
+	  if(str.find("fileroot") != string::npos)
+	    {
+	      arg++;
+	      fileroot = argv[arg];
+	    }
+	  //no cleanup
+	  if(str.find("skip") != string::npos)
+	    {
+	      arg++;
+	      string opt = argv[arg];
+	      if (opt.compare("T") == 0)
+		{
+		  skip_cleanup_flag = 1;
+		  cout << "INFO: will not do cleanup" << endl;
+		}
+	    }
+	  //
+	  if(str.find("re-run") != string::npos)
+	    {
+	      arg++;
+	      dir_with_tables = argv[arg];
+	      found_dir_with_tables = 1;
+	      cout << "INFO: directory with preprocessed data: " << dir_with_tables << endl;
+	    }
+	  //found overwrite directory
+	  if(str.find("spec-features") != string::npos)
+	    {
+	      arg++;
+	      string opt = argv[arg];
+	      if (opt.compare("T") == 0)
+		spec_features_flag = 1;
+	      else
+		spec_features_flag = 0;
+	    }
+	}
+      else
+	break;
+      arg++;
+    }
+  
+  if(found_dir_with_tables)
+    {
+      DIR *dp;
+      if((dp = opendir(dir_with_tables.c_str())) == NULL)
+	{
+	  cout << " FATAL: could not open directory " << dir_with_tables << " for reading" << endl;
+	  return 0;
+	}
+      ostringstream fn;
+      fn << dir_with_tables << "/" << "psm.txt";
+      ifstream f_try(fn.str().c_str());
+      if(!f_try.is_open())
+	{
+	  cout << "FATAL: given directory does not seem to contain preprocessed data" << endl;
+	  return 0;
+	}
+      f_try.close();
+
+      sqtp.set_output_dir(dir_with_tables, overwrite_flag);
+      set_input_dir(dir_with_tables);
+      set_output_dir(output_directory);
+
+      set_verbosity_level(CARP_INFO);
+      initialize_parameters();
+      //open log file
+      set_boolean_parameter("overwrite", overwrite_flag);
+      set_string_parameter("output-dir", output_directory.c_str());
+      ostringstream logfname;
+      logfname << fileroot << "qranker.log.txt";
+      string str = logfname.str();
+      char *log_file = my_copy_string(str.c_str());
+      open_log_file(&log_file);
+      free(log_file);
+      
+      carp(CARP_INFO, "directory with tables: %s", dir_with_tables.c_str());
+      carp(CARP_INFO, "output_directory: %s", output_directory.c_str());
+      carp(CARP_INFO, "enzyme: %s", enzyme.c_str());
+      carp(CARP_INFO, "decoy prefix: %s", decoy_prefix.c_str());
+      if(fileroot.compare("") != 0)
+	carp(CARP_INFO, "fileroot: %s", fileroot.c_str());
+
+    }
+  else
+    {
+      if(argc-arg < 3)
+	{
+	  cout << endl;
+	  cout << "\t crux q-ranker [options] <database-source> <sqt-source> <ms2-source>" << endl <<endl;
+	  cout << "REQUIRED ARGUMENTS:" << endl << endl;
+	  cout << "\t <database-source> Directory with FASTA files , list of FASTA files or a single FASTA file with the protein database used for the search." << endl;
+	  cout << "\t <sqt-source> Directory with sqt files, list of sqt files or a single sqt file with psms generated during search." << endl;
+	  cout << "\t <ms2-source> Directory with ms2 files, list of ms2 files or a single ms2 file used for database search." << endl;
+	  cout << endl;
+	  
+	  cout << "OPTIONAL ARGUMENTS:" << endl << endl;
+	  cout << "\t [--enzyme <string>] \n \t     The enzyme used to digest the proteins in the experiment. Default trypsin." << endl;
+	  cout << "\t [--decoy-prefix <string>] \n \t     Specifies the prefix of the protein names that indicates a decoy. Default random_" << endl;
+	  cout << "\t [--fileroot <string>] \n \t     The fileroot string will be added as a prefix to all output file names. Default = none." <<endl;
+	  cout << "\t [--output-dir <directory>] \n \t     The name of the directory where output files will be created. Default = crux-output." << endl;
+	  cout << "\t [--overwrite <T/F>] \n \t     Replace existing files (T) or exit if attempting to overwrite (F). Default=F." << endl;
+	  cout << "\t [--skip-cleanup <T/F>] \n \t     When set to T, prevents the deletion of lookup tables created during the preprocessing step. Default = F." << endl; 
+	  cout << "\t [--re-run <directory>] \n \t      Re-run QRanker analysis using a previously computed set of lookup tables." <<endl;  
+	  cout << "\t [--use-spec-features <T/F>] \n \t      When set to F, use minimal feature set. Default T." <<endl;  
+	  cout << endl; 
+
+	  return 0;
+	} 
+      db_source = argv[arg]; arg++; sqt_source = argv[arg]; arg++;
+      ms2_source = argv[arg];
+
+      //set the output directory
+      if(!sqtp.set_output_dir(output_directory, overwrite_flag))
+      	return 0;
+      set_input_dir(output_directory);
+      set_output_dir(output_directory);
+
+
+      set_verbosity_level(CARP_INFO);
+      initialize_parameters();
+      //open log file
+      set_boolean_parameter("overwrite", overwrite_flag);
+      set_string_parameter("output-dir", output_directory.c_str());
+      ostringstream logfname;
+      logfname << fileroot << "qranker.log.txt";
+      string str = logfname.str();
+      char *log_file = my_copy_string(str.c_str());
+      open_log_file(&log_file);
+      free(log_file);
+      
+      if(!sqtp.set_input_sources(db_source, sqt_source, ms2_source))
+	carp(CARP_FATAL, "could not extract features for training");
+
+      carp(CARP_INFO, "database source: %s", db_source.c_str());
+      carp(CARP_INFO, "sqt source: %s", sqt_source.c_str()); 
+      carp(CARP_INFO, "ms2 source: %s", ms2_source.c_str());
+      carp(CARP_INFO, "output_directory: %s", output_directory.c_str());
+      carp(CARP_INFO, "enzyme: %s", enzyme.c_str());
+      carp(CARP_INFO, "decoy prefix: %s", decoy_prefix.c_str());
+      if(fileroot.compare("") != 0)
+	carp(CARP_INFO, "fileroot: %s", fileroot.c_str());
+
+      //num of spec features
+      if(spec_features_flag)
+	sqtp.set_num_spec_features(7);
+      else
+	sqtp.set_num_spec_features(0);
+      if(!sqtp.run())
+	carp(CARP_FATAL, "could not extract features for training");
+      sqtp.clear();
+    }
+  return 1;
+  
+}
+
 
 
 int QRanker::main(int argc, char **argv) {
 
   if(!set_command_line_options(argc, argv))
-    return 0;
-  string dir = pars.get_output_dir();
+    return 1;
 
-  set_input_dir(dir);
-  set_output_dir(dir);
   run();
+  if(skip_cleanup_flag != 1)
+    sqtp.clean_up(out_dir);
     
-  return 1;
+  return 0;
 }   
 
 

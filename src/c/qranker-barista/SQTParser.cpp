@@ -102,11 +102,7 @@ void SQTParser :: set_enzyme(string &enz)
 #endif
     }
   else
-#ifdef CRUX
-    carp(CARP_WARNING, "warning: could not determine enzyme, will assume trypsin");
-#else
-    cout << "warning: could not determine enzyme, will assume trypsin\n";
-#endif
+    carp(CARP_WARNING, "could not determine enzyme, will assume trypsin");
 }
 
 
@@ -244,11 +240,7 @@ void SQTParser :: add_matches_to_tables(sqt_match &m, string &decoy_prefix, int 
 		  //add the cnt to protind_to_num_all_pep_map
 		  if(cnt == 0)
 		    {
-#ifdef CRUX
-		      carp(CARP_WARNING, "warning: did not find protein %s from sqt file in the database ", prot.c_str());
-#else
-		      cout << "warning: did not find protein " << prot << " from sqt file in the database " << endl;
-#endif
+		      carp(CARP_WARNING, "did not find protein %s from sqt file in the database ", prot.c_str());
 		    }
 		  else
 		    protind_to_num_all_pep_map[prot_ind] = cnt;
@@ -259,9 +251,7 @@ void SQTParser :: add_matches_to_tables(sqt_match &m, string &decoy_prefix, int 
 		  string p = ind_to_prot[prot_ind];
 		  if(prot.compare(p) != 0)
 		    {
-#ifndef CRUX
 		      cout << "did not find protein in the ind_to_prot_table\n";
-#endif
 		    }
 		}
 	      //augment the pepinds_to_psminds table
@@ -979,18 +969,10 @@ int SQTParser :: run()
       ifstream f_db(db_name.c_str());
       if(!f_db.is_open())
 	{
-#ifdef CRUX
-	  carp(CARP_INFO, "could not open database file: %s", db_name.c_str());
-#else
-	  cout << "could not open database file: " << db_name << endl;
-#endif
+	  carp(CARP_WARNING, "could not open database file: %s", db_name.c_str());
 	  return 0;
 	}
-#ifdef CRUX
       carp(CARP_INFO,"digesting database %s", db_name.c_str());
-#else
-      cout << "digesting database " << db_name << endl;
-#endif
       digest_database(f_db, e);
       f_db.close();
     }
@@ -1001,19 +983,11 @@ int SQTParser :: run()
   for(unsigned int i = 0; i < sqt_file_names.size(); i++)
     {
       cur_fname = sqt_file_names[i];
-#ifdef CRUX
       carp(CARP_INFO, "parsing file %s", cur_fname.c_str());
-#else
-      cout << "parsing file " << cur_fname << endl;
-#endif
       ifstream f_sqt(cur_fname.c_str());
       if(!f_sqt.is_open())
 	{
-#ifdef CRUX
 	  carp(CARP_WARNING, "could not open sqt file: %s", cur_fname.c_str());
-#else
-	  cout << "could not open sqt file: " << cur_fname << endl;
-#endif
 	  continue;
 	}
       //first pass
@@ -1024,11 +998,7 @@ int SQTParser :: run()
     }
   if(num_files_read < 1)
     {
-#ifdef CRUX
       carp(CARP_WARNING, "could not parse any sqt files");
-#else
-      cout << "could not parse any sqt files\n";
-#endif
       return 0;
     }
 
@@ -1049,29 +1019,17 @@ int SQTParser :: run()
 	  sfg.clear();
 	  if(!sfg.open_ms2_file_for_reading(ms2_fn))
 	    {
-#ifdef CRUX
 	      carp(CARP_WARNING, "could not open ms2 file %s for reading", ms2_fn.c_str());
-#else
-	      cout << "could not open ms2 file " << ms2_fn << " for reading" << endl;
-#endif
 	      return 0;
 	    }
-#ifdef CRUX
 	  carp(CARP_INFO, "reading file %s", ms2_fn.c_str());
-#else
-	  cout << "reading file " << ms2_fn << endl;
-#endif
 	  sfg.read_ms2_file();
 	  sfg.initialize_aa_tables();
 	}
       //second pass
       pass = 2;
       cur_fname = sqt_file_names[i];
-#ifdef CRUX
       carp(CARP_INFO, "extracting features from file %s", cur_fname.c_str()); 
-#else
-      cout << "extracting features from file " << cur_fname << endl;
-#endif
       ifstream f_sqt(cur_fname.c_str());
       read_sqt_file(f_sqt, decoy_prefix, fhps,e,pass);
       f_sqt.close();
@@ -1079,17 +1037,11 @@ int SQTParser :: run()
     }
   f_psm.close();
   
-#ifdef CRUX
   carp(CARP_INFO, "Number of spectra: %d", num_spectra);
   carp(CARP_INFO, "Number of PSMs: total %d positives %d negatives %d", num_psm, num_pos_psm, num_neg_psm);
   carp(CARP_INFO, "Number of peptides: total %d positives %d negatives %d", num_pep, num_pos_pep, num_neg_pep);
   carp(CARP_INFO, "Number of proteins: total %d positives %d negatives %d", num_prot, num_pos_prot, num_neg_prot);
-#else
-  cout << "Number of spectra: " << num_spectra << endl;
-  cout << "Number of PSMs: " << "total " << num_psm << " positives " << num_pos_psm << " negatives " << num_neg_psm << "\n";
-  cout << "Number of peptides: " << "total " << num_pep << " positives " << num_pos_pep << " negatives " << num_neg_pep << "\n";
-  cout << "Number of proteins: " << "total " << num_prot << " positives " << num_pos_prot << " negatives " << num_neg_prot << "\n";
-#endif
+
   //save the data
   save_data_in_binary(out_dir);
 
@@ -1132,17 +1084,8 @@ int SQTParser :: set_output_dir(string &output_dir, int overwrite_flag)
   int intStat;
   struct stat stFileInfo;
   intStat = stat(output_dir.c_str(), &stFileInfo);
-  if(intStat != 0)
-    {
-      cout << "INFO: creating output directory " << output_dir << endl;
-      int dir_access = S_IRWXU + S_IRWXG + S_IRWXO;
-      if (mkdir(output_dir.c_str(), dir_access)) {
-	// mkdir failed
-	cout << "FATAL: unable to create output directory " << output_dir << endl;
-	return 0;
-      }
-    }
-  else
+
+  if (intStat == 0)
     {
       //is this a directory?
       if(!((stFileInfo.st_mode & S_IFMT) == S_IFDIR))
@@ -1162,12 +1105,23 @@ int SQTParser :: set_output_dir(string &output_dir, int overwrite_flag)
 	    }
 	  else
 	    {
+	      cout << " I am here\n";
 	      cout << "FATAL: File " << output_dir << " cannot be overwritten. Please use --overwrite T to replace or specify a different output directory." << endl;
 	      return 0;
 	    }
 	}
     }
- 
+  else
+    {
+      cout << "INFO: creating output directory " << output_dir << endl;
+      int dir_access = S_IRWXU + S_IRWXG + S_IRWXO;
+      if (mkdir(output_dir.c_str(), dir_access)) {
+	// mkdir failed
+	cout << "FATAL: unable to create output directory " << output_dir << endl;
+	return 0;
+      }
+    }
+
   out_dir = output_dir;
   return 1;
 }

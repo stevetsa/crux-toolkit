@@ -11,6 +11,12 @@
 #include <string>
 #include <math.h>
 using namespace std;
+#ifdef CRUX
+#include "CruxApplication.h"
+#include "carp.h"
+#include "crux-utils.h"
+#include "parameter.h"
+#endif
 #include "NeuralNet.h"
 #include "DataSet.h"
 #include "PSMScores.h"
@@ -86,8 +92,12 @@ protected:
 
     string in_dir;
     string out_dir;
-
+    int skip_cleanup_flag;
+    int overwrite_flag;
+    string fileroot;
+    
     TabDelimParser pars;
+    SQTParser sqtp;
 
 };
 

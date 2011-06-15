@@ -1467,6 +1467,7 @@ int Barista :: set_command_line_options(int argc, char *argv[])
   string decoy_prefix = "random_";
   string dir_with_tables = "";
   int found_dir_with_tables = 0;
+  int spec_features_flag = 1;
   int arg = 1;
   
   while (arg < argc)
@@ -1480,9 +1481,6 @@ int Barista :: set_command_line_options(int argc, char *argv[])
 	    {
 	      arg++;
 	      enzyme = argv[arg];
-#ifndef CRUX
-	      cout << "enzyme: " << enzyme << endl;
-#endif
 	      sqtp.set_enzyme(enzyme);
 	    }
 	  //found decoy prefix
@@ -1490,9 +1488,6 @@ int Barista :: set_command_line_options(int argc, char *argv[])
 	    {
 	      arg++;
 	      decoy_prefix = argv[arg];
-#ifndef CRUX
-	      cout << "decoy prefix: " << decoy_prefix << endl;
-#endif
 	      sqtp.set_decoy_prefix(decoy_prefix);
 	    }
 	  //found output directory
@@ -1517,9 +1512,6 @@ int Barista :: set_command_line_options(int argc, char *argv[])
 	    {
 	      arg++;
 	      fileroot = argv[arg];
-#ifndef CRUX
-	      cout << "fileroot: " << fileroot << endl;
-#endif
 	    }
 	  //no cleanup
 	  if(str.find("skip") != string::npos)
@@ -1539,6 +1531,16 @@ int Barista :: set_command_line_options(int argc, char *argv[])
 	      dir_with_tables = argv[arg];
 	      found_dir_with_tables = 1;
 	      cout << "INFO: directory with preprocessed data: " << dir_with_tables << endl;
+	    }
+	  //found overwrite directory
+	  if(str.find("spec-features") != string::npos)
+	    {
+	      arg++;
+	      string opt = argv[arg];
+	      if (opt.compare("T") == 0)
+		spec_features_flag = 1;
+	      else
+		spec_features_flag = 0;
 	    }
 	}
       else
@@ -1567,7 +1569,7 @@ int Barista :: set_command_line_options(int argc, char *argv[])
       sqtp.set_output_dir(dir_with_tables, overwrite_flag);
       set_input_dir(dir_with_tables);
       set_output_dir(output_directory);
-#ifdef CRUX
+
       set_verbosity_level(CARP_INFO);
       initialize_parameters();
       //open log file
@@ -1575,37 +1577,25 @@ int Barista :: set_command_line_options(int argc, char *argv[])
       set_string_parameter("output-dir", output_directory.c_str());
       ostringstream logfname;
       logfname << fileroot << "barista.log.txt";
-      char* log_file = (char*) logfname.str().c_str();
+      string str = logfname.str();
+      char *log_file = my_copy_string(str.c_str());
       open_log_file(&log_file);
-      //char* log_file ="barista.log.txt";
-      //open_log_file(&log_file);
-#endif
+      free(log_file);
 
-#ifdef CRUX
       carp(CARP_INFO, "directory with tables: %s", dir_with_tables.c_str());
       carp(CARP_INFO, "output_directory: %s", output_directory.c_str());
       carp(CARP_INFO, "enzyme: %s", enzyme.c_str());
       carp(CARP_INFO, "decoy prefix: %s", decoy_prefix.c_str());
       if(fileroot.compare("") != 0)
 	carp(CARP_INFO, "fileroot: %s", fileroot.c_str());
-#else
-      cout << "database source: " << db_source << endl; 
-      cout << "sqt source: " << sqt_source << endl; 
-      cout << "ms2 source: " << ms2_source << endl;
-      cout << "output_directory: " << output_directory << endl;
-#endif
 
     }
   else
     {
       if(argc-arg < 3)
 	{
-#ifdef CRUX
 	  cout << endl;
 	  cout << "\t crux barista [options] <database-source> <sqt-source> <ms2-source>" << endl <<endl;
-#else
-	  cout << "barista [options] <database-source> <sqt-source> <ms2-source>" << endl;
-#endif
 	  cout << "REQUIRED ARGUMENTS:" << endl << endl;
 	  cout << "\t <database-source> Directory with FASTA files , list of FASTA files or a single FASTA file with the protein database used for the search." << endl;
 	  cout << "\t <sqt-source> Directory with sqt files, list of sqt files or a single sqt file with psms generated during search." << endl;
@@ -1620,6 +1610,7 @@ int Barista :: set_command_line_options(int argc, char *argv[])
 	  cout << "\t [--overwrite <T/F>] \n \t     Replace existing files (T) or exit if attempting to overwrite (F). Default=F." << endl;
 	  cout << "\t [--skip-cleanup <T/F>] \n \t     When set to T, prevents the deletion of lookup tables created during the preprocessing step. Default = F." << endl; 
 	  cout << "\t [--re-run <directory>] \n \t      Re-run Barista analysis using a previously computed set of lookup tables." <<endl;  
+	  cout << "\t [--use-spec-features <T/F>] \n \t      When set to F, use minimal feature set. Default T." <<endl;  
 	  cout << endl; 
 
 	  return 0;
@@ -1629,11 +1620,11 @@ int Barista :: set_command_line_options(int argc, char *argv[])
 
       //set the output directory
       if(!sqtp.set_output_dir(output_directory, overwrite_flag))
-	return 0;
+      	return 0;
       set_input_dir(output_directory);
       set_output_dir(output_directory);
-      
-#ifdef CRUX
+
+
       set_verbosity_level(CARP_INFO);
       initialize_parameters();
       //open log file
@@ -1641,20 +1632,14 @@ int Barista :: set_command_line_options(int argc, char *argv[])
       set_string_parameter("output-dir", output_directory.c_str());
       ostringstream logfname;
       logfname << fileroot << "barista.log.txt";
-      char* log_file = (char*) logfname.str().c_str();
+      string str = logfname.str();
+      char *log_file = my_copy_string(str.c_str());
       open_log_file(&log_file);
-      
-#endif
-
+      free(log_file);
       
       if(!sqtp.set_input_sources(db_source, sqt_source, ms2_source))
-#ifdef CRUX
 	carp(CARP_FATAL, "could not extract features for training");
-#else
-      return 0;
-#endif
 
-#ifdef CRUX
       carp(CARP_INFO, "database source: %s", db_source.c_str());
       carp(CARP_INFO, "sqt source: %s", sqt_source.c_str()); 
       carp(CARP_INFO, "ms2 source: %s", ms2_source.c_str());
@@ -1663,28 +1648,16 @@ int Barista :: set_command_line_options(int argc, char *argv[])
       carp(CARP_INFO, "decoy prefix: %s", decoy_prefix.c_str());
       if(fileroot.compare("") != 0)
 	carp(CARP_INFO, "fileroot: %s", fileroot.c_str());
-#else
-      cout << "database source: " << db_source << endl; 
-      cout << "sqt source: " << sqt_source << endl; 
-      cout << "ms2 source: " << ms2_source << endl;
-      cout << "output_directory: " << output_directory << endl;
-#endif
 
       //num of spec features
-      sqtp.set_num_spec_features(7);
+      if(spec_features_flag)
+	sqtp.set_num_spec_features(7);
+      else
+	sqtp.set_num_spec_features(0);
       if(!sqtp.run())
-#ifdef CRUX
 	carp(CARP_FATAL, "could not extract features for training");
-#else
-	return 0;
-#endif
       sqtp.clear();
-      
     }
-  
-
-  
-
   return 1;
   
 }

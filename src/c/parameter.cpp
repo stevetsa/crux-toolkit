@@ -2515,7 +2515,6 @@ BOOLEAN_T set_string_parameter(
   const char* name, 
   const char* set_value                       
   ){
-
   if( set_value == NULL ){
     set_value = "__NULL_STR";
   }

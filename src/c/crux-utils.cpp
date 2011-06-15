@@ -729,7 +729,6 @@ void print_peptide_type(PEPTIDE_TYPE_T peptide_type, FILE* file){
 char* cat_string(const char* string_one, const char* string_two){
   int len_one = strlen(string_one);
   int len_two = strlen(string_two);
-  
   char* result = (char*)mycalloc(len_one + len_two + 1, sizeof(char));
   strncpy(result, string_one, len_one);
   strncpy(&result[len_one], string_two, len_two);
@@ -826,6 +825,7 @@ char* get_full_filename(const char* path, const char* filename){
     result = my_copy_string(filename);
   }else{
     // TODO (BF 26-Feb-08) don't add second / if path already ends in /
+    
     char* ready_path = cat_string(path, "/");
     result = cat_string(ready_path, filename);
     free(ready_path);
@@ -1172,7 +1172,6 @@ FILE* create_file_in_path(
   }
   
   file = fopen(file_full_path, "w+"); //read and write, replace existing
-
   if(file == NULL){
     carp(CARP_FATAL, "Failed to create and open file: %s", file_full_path);
   }

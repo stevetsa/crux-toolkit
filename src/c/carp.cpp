@@ -43,7 +43,7 @@ void open_log_file(char **log_file_name) {
 /**
  * Print command line to log file.
  *
- * Parameters must have been processed before calling this function.
+ * Parameetrs must have been processed before calling this function.
  */
 void log_command_line(int argc, char *argv[]) {
   // Command line arguments were shifted, shift back.
