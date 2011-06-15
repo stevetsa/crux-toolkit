@@ -68,21 +68,19 @@ void QRanker :: printNetResults(vector<int> &scores)
 void QRanker :: write_results(string filename, NeuralNet &net)
 {
   //write out the results of the general net
-  ostringstream s1;
-  s1 << filename << ".txt";
-  ofstream f1(s1.str().c_str());
+  ofstream f1(filename.c_str());
   trainset.clear();
   testset.clear();
   thresholdset.clear();
   PSMScores::fillFeaturesFull(fullset, d);
   getOverFDR(fullset,net, qvals[4]);
  
-  f1 << "psm ind" << "\t" << "q-value" << "\t" << "scan" << "\t" << "charge" << "\t" << "peptide" << endl;
+  f1 << "q-value" << "\t" << "qranker score" <<"\t" << "scan" << "\t" << "charge" << "\t" << "peptide" << "\t" << "filename" << endl;
   for(int i = 0; i < fullset.size(); i++)
     {
       int psmind = fullset[i].psmind;
       int pepind = d.psmind2pepind(psmind);
-      f1 << psmind << "\t" << fullset[i].q << "\t" << d.psmind2scan(psmind) << "\t" << d.psmind2charge(psmind) << "\t" << d.ind2pep(pepind) << endl;
+      f1 << fullset[i].q << "\t" << fullset[i].score << "\t" << d.psmind2scan(psmind) << "\t" << d.psmind2charge(psmind) << "\t" << d.ind2pep(pepind) << "\t" << d.psmind2fname(psmind) << endl;
     }
   f1.close();
 }
@@ -92,16 +90,15 @@ void QRanker :: write_results(string filename, NeuralNet &net)
 void QRanker :: write_max_nets(string filename, NeuralNet* max_net)
 {
   //write out the results of the general net
-  ostringstream s1;
-  s1 << filename << ".txt";
-  ofstream f1(s1.str().c_str());
-  
+
+  ofstream f1(filename.c_str());
+  f1 << "FDR thresh" << "\t" << "PSMs trn" << "\t" << "PSMs tst" << endl;
   for(int count = 0; count < num_qvals; count++)
     {
       net = max_net[count];
       int r = getOverFDR(testset,net, qvals[count]);
       int r1 = getOverFDR(trainset,net, qvals[count]);
-      f1 << qvals[count] << " " << r1 << " " << r << "\n";
+      f1 << qvals[count] << "\t" << r1 << "\t" << r << "\n";
       
       double qn;
       if(qvals[count] < 0.01)
@@ -110,7 +107,7 @@ void QRanker :: write_max_nets(string filename, NeuralNet* max_net)
 	qn = 0.005;
       r = getOverFDR(testset,net, qvals[count]+qn);
       r1 = getOverFDR(trainset,net, qvals[count]+qn);
-      f1 << qvals[count]+qn << " " << r1 << " " << r << "\n";
+      f1 << qvals[count]+qn << "\t" << r1 << "\t" << r << "\n";
       
     }
   f1.close();
@@ -450,15 +447,6 @@ void QRanker::train_many_nets()
 
   train_many_target_nets();  
  
-  /*
-  //write out the results of the target net
-  cerr << "target net results: ";
-  ostringstream s2;
-  s2 << res_prefix;
-  cout << s2.str() << endl;
-  //write_max_nets(s2.str(), max_net_targ);
-  //write_unique_peptides(s2.str(), max_net_targ);
-
   //choose the best net for the selectionfdr
   int max_fdr = 0;
   int fdr = 0;
@@ -474,14 +462,13 @@ void QRanker::train_many_nets()
     }
   net = max_net_targ[ind];
 
-  //write_num_psm_per_spectrum("test.txt", max_net_targ);
-  write_results(s2.str(),net);
-  */
+  ostringstream fname;
+  fname << out_dir << "/" << fileroot << "qranker.psms.at.fdr.thresholds.txt";;
+  write_max_nets(fname.str(), max_net_targ);
+
   delete [] max_net_gen;
   delete [] max_net_targ;
   delete [] nets;
-
-
 }
 
 int QRanker::run( ) {
@@ -497,6 +484,11 @@ int QRanker::run( ) {
   PSMScores::fillFeaturesSplit(trainset, testset, d, 0.5);
   thresholdset = trainset;
   train_many_nets();
+
+  d.load_psm_data_for_reporting_results();
+  ostringstream fname;
+  fname << out_dir << "/" << fileroot << "qranker.target.psms.txt";
+  write_results(fname.str(),net);
   return 0;
 }
 
