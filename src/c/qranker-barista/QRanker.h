@@ -32,7 +32,7 @@ public:
 	virtual ~QRanker();
 
     int run();
-
+    void train_net_sigmoid(PSMScores &set, int interval);
     void train_net_ranking(PSMScores &set, int interval);
     void train_net_hinge(PSMScores &set, int interval);
     void train_many_general_nets();

@@ -41,9 +41,9 @@ for searchtool in sequest-search search-for-matches; do
   if [[ $searchtool == "sequest-search" ]]; then
      shortname=sequest
      search_parameter="--parameter-file crux.param"
-  else
-     shortname=search
-     search_parameter="--parameter-file crux.param --compute-p-values T --compute-sp T"
+#  else
+#     shortname=search
+#     search_parameter="--parameter-file crux.param --compute-p-values T --compute-sp T"
   fi
 
   # Run the search.
@@ -87,16 +87,29 @@ for searchtool in sequest-search search-for-matches; do
   echo replot \"$shortname/qvalues.percolator.txt\" using 1:0 title \"$shortname crux percolator\" with lines >> $gnuplot
 
   # Run q-ranker.
-  if [[ -e $shortname/qranker.target.txt ]]; then
-    echo Skipping q-ranker.
+  cp $ms2 $shortname/sequest.target.ms2
+  cp $ms2 $shortname/sequest.decoy.ms2
+
+  # Run q-ranker.
+  if [[ $searchtool == "search-for-matches" ]]; then
+    echo QRanker does not work with crux search-for-matches.
   else
     $CRUX q-ranker \
-      --output-dir $shortname \
-      --feature-file T \
-      $db $shortname
+      --output-dir $shortname --decoy-prefix rand_ --use-spec-features F $db.fasta $shortname $shortname
   fi
-  $CRUX extract-columns $shortname/qranker.target.txt "q-ranker q-value" > $shortname/qvalues.qranker.txt
+  $CRUX extract-columns $shortname/qranker.target.psms.txt "q-value" > $shortname/qvalues.qranker.txt
 
+
+
+  #if [[ -e $shortname/qranker.target.txt ]]; then
+  #  echo Skipping q-ranker.
+  #else
+  #  $CRUX q-ranker \
+  #    --output-dir $shortname \
+  #    --feature-file T \
+  #    $db $shortname
+  #fi
+  #$CRUX extract-columns $shortname/qranker.target.txt "q-ranker q-value" > $shortname/qvalues.qranker.txt
   
   echo replot \"$shortname/qvalues.qranker.txt\" using 1:0 title \"$shortname q-ranker\" with lines >> $gnuplot
   

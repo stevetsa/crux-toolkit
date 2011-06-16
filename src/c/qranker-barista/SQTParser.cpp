@@ -83,23 +83,14 @@ void SQTParser :: set_enzyme(string &enz)
   if(enz.find("elastase") != string::npos)
     {
       e = ELASTASE_ENZ;
-#ifndef CRUX
-      cout << "set enzyme: elastase" << endl;
-#endif
     }
   else if (enz.find("chymotrypsin") != string::npos)
     {
       e = CHYMOTRYPSIN_ENZ;
-#ifndef CRUX
-      cout << "set enzyme: chymotrypsin" << endl;
-#endif
     }
   else if (enz.find("trypsin") != string::npos)
     {
       e = TRYPSIN_ENZ;
-#ifndef CRUX
-      cout << "set enzyme: trypsin" << endl;
-#endif
     }
   else
     carp(CARP_WARNING, "could not determine enzyme, will assume trypsin");
@@ -187,12 +178,8 @@ void SQTParser :: add_matches_to_tables(sqt_match &m, string &decoy_prefix, int 
 	{
 	  pep_ind = pep_to_ind[pep];
 	  string p = ind_to_pep[pep_ind];
-	  if(pep.compare(p) != 0)
-	    {
-#ifndef CRUX
-	      cout << "warning : did not find peptide index in ind_to_pep_table\n"; 
-#endif
-	    }
+	  //if(pep.compare(p) != 0)
+	  //   cout << "warning : did not find peptide index in ind_to_pep_table\n"; 
 	}
       
       for(set<string>::iterator it = proteins.begin(); it != proteins.end();it++)
@@ -510,7 +497,7 @@ void SQTParser :: extract_features(sqt_match &m, string &decoy_prefix, int hits_
 	  protein_pos++;
 	}
       assert(psmind_to_label[psmind] == label);
-      assert(pepind_to_label[pepind] == label);
+      //assert(pepind_to_label[pepind] == label);
 
       //go through the proteins
       for(set<string>::iterator it = proteins.begin(); it != proteins.end();it++)
@@ -1105,7 +1092,6 @@ int SQTParser :: set_output_dir(string &output_dir, int overwrite_flag)
 	    }
 	  else
 	    {
-	      cout << " I am here\n";
 	      cout << "FATAL: File " << output_dir << " cannot be overwritten. Please use --overwrite T to replace or specify a different output directory." << endl;
 	      return 0;
 	    }
@@ -1137,11 +1123,7 @@ int SQTParser :: set_input_sources(string &db_source, string &sqt_source, string
   intStat = stat(db_source.c_str(), &stFileInfo);
   if(intStat != 0)
     {
-#ifdef CRUX
       carp(CARP_WARNING, "%s does not exist", db_source.c_str());
-#else
-      cout << db_source << " does not exist" << endl;
-#endif
       return 0;
     }
   //is this a directory?
@@ -1150,11 +1132,7 @@ int SQTParser :: set_input_sources(string &db_source, string &sqt_source, string
       //try to open it
       if((dp  = opendir(db_source.c_str())) == NULL)
 	{
-#ifdef CRUX
 	  carp(CARP_WARNING, "openning directory %s failed ", db_source.c_str());
-#else
-	  cout << "openning directory " << db_source  << " failed " << endl;
-#endif
 	  return 0;
 	}
       int cn = 0;
@@ -1173,11 +1151,7 @@ int SQTParser :: set_input_sources(string &db_source, string &sqt_source, string
       closedir(dp);
       if(cn<1)
 	{
-#ifdef CRUX
 	  carp(CARP_WARNING, "did not find any .fasta files in %s directory", db_source.c_str());
-#else
-	  cout << "did not find any .fasta files in " << db_source << " directory " << endl;
-#endif
 	  return 0;
 	}
     }
@@ -1192,11 +1166,7 @@ int SQTParser :: set_input_sources(string &db_source, string &sqt_source, string
   intStat = stat(sqt_source.c_str(), &stFileInfo);
   if(intStat != 0)
     {
-#ifdef CRUX
       carp(CARP_WARNING, "%s does not exist", sqt_source.c_str());
-#else
-      cout << sqt_source << " does not exist" << endl;
-#endif
       return 0;
     }
   if((stFileInfo.st_mode & S_IFMT) == S_IFDIR)
@@ -1204,11 +1174,7 @@ int SQTParser :: set_input_sources(string &db_source, string &sqt_source, string
       //try openning the directory
       if((dp  = opendir(sqt_source.c_str())) == NULL)
 	{
-#ifdef CRUX
 	  carp(CARP_WARNING, "openning directory %s failed ", sqt_source.c_str());
-#else
-	  cout << "openning directory " << sqt_source  << " failed " << endl;
-#endif
 	  return 0;
 	}
       int cn = 0;
@@ -1235,11 +1201,7 @@ int SQTParser :: set_input_sources(string &db_source, string &sqt_source, string
       closedir(dp);
       if(cn<1)
 	{
-#ifdef CRUX
 	  carp(CARP_WARNING, "did not find any .sqt files in %s directory", sqt_source.c_str());
-#else
-	  cout << "did not find any .sqt files in " << sqt_source << " directory " << endl;
-#endif
 	  return 0;
 	}
     }
@@ -1250,11 +1212,7 @@ int SQTParser :: set_input_sources(string &db_source, string &sqt_source, string
 	  sqt_file_names.push_back(sqt_source);
 	  if(ms2_source.find(".ms2") == string::npos)
 	    {
-#ifdef CRUX
 	      carp(CARP_WARNING,  "expecting ms2 file to accompany the sqt file");
-#else
-	      cout << "expecting ms2 file to accompany the sqt file\n";
-#endif
 	      return 0;
 	    }
 	  ms2_file_names.push_back(ms2_source);
@@ -1265,11 +1223,7 @@ int SQTParser :: set_input_sources(string &db_source, string &sqt_source, string
 	  read_list_of_files(ms2_source, ms2_file_names);
 	  if(ms2_file_names.size() != sqt_file_names.size())
 	    {
-#ifdef CRUX
 	      carp(CARP_WARNING, " the number of sqt and ms2 files does not match: each sqt file should be accompaned by ms2 file");
-#else
-	      cout << " the number of sqt and ms2 files does not match: each sqt file should be accompaned by ms2 file" << endl;
-#endif
 	      return 0;
 	    }
 	}

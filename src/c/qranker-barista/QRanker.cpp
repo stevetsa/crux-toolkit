@@ -216,6 +216,29 @@ void QRanker :: write_num_psm_per_spectrum(NeuralNet* max_net)
 
 
 /*********************** training net functions*******************************************/
+
+void QRanker :: train_net_sigmoid(PSMScores &set, int interval)
+{
+  double *r;
+  int label;
+  double *gc = new double[1];
+  for(int i = 0; i < set.size(); i++)
+    { 
+      unsigned int ind;
+      ind = rand()%(interval);
+      //pass both through the net
+      r = net.fprop(d.psmind2features(set[ind].psmind));
+      label = d.psmind2label(set[ind].psmind);
+      double a = exp(label*r[0]);
+      net.clear_gradients();
+      gc[0] = -a/((1+a)*(1+a))*label;
+      net.bprop(gc);
+      net.update(mu,weightDecay);
+
+    }
+  delete[] gc;
+}
+
 void QRanker :: train_net_hinge(PSMScores &set, int interval)
 {
   double *r;
@@ -308,7 +331,10 @@ void QRanker :: train_many_general_nets()
 {
   interval = trainset.size();
   for(int i=0;i<switch_iter;i++) {
-    train_net_ranking(trainset, interval);
+    //train_net_hinge(trainset, interval);
+    //train_net_ranking(trainset, interval);
+    train_net_sigmoid(trainset, interval);
+      
        
     //record the best result
     getMultiFDR(thresholdset,net,qvals);

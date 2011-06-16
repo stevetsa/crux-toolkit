@@ -264,6 +264,7 @@ NeuralNet& NeuralNet :: operator=(NeuralNet &N)
       lin2 = N.lin2;
     }
   resize_states();
+  return *this;
 }
 
 void NeuralNet :: copy(NeuralNet &N)
