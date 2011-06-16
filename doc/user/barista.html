@@ -218,10 +218,11 @@ these search results can be provided as a single file, a list of files
 or a directory.  However, the choice (file, list or directory) must be
 consistent for the MS2 files and the target and decoy SQT files.
 Also, if the MS2 and SQT files are provided in directories, then
-Barista will search for triplets of files with names
-like <code>foo.ms2</code>, <code>foo.target.sqt</code>
-and <code>foo.decoy.sqt</code>.  This naming convention allows the
-target and decoy SQT files to reside in the same directory.</li>
+Barista will use the MS2 filename (<code>foo.ms2</code>) to identify
+corresponding target and decoy SQT files with names
+like <code>foo*.target.sqt</code> and <code>foo*.decoy.sqt</code>.
+This naming convention allows the target and decoy SQT files to reside
+in the same directory.</li>
 
 <li>
 <code>--fileroot &lt;string&gt;</code> &ndash;
