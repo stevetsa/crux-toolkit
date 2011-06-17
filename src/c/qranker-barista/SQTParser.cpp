@@ -1113,7 +1113,7 @@ int SQTParser :: set_output_dir(string &output_dir, int overwrite_flag)
 }
 
 
-int SQTParser :: set_input_sources(string &db_source, string &sqt_source, string &ms2_source)
+int SQTParser :: set_database_source(string &db_source)
 {
   DIR *dp;
   struct dirent *dirp;
@@ -1139,7 +1139,7 @@ int SQTParser :: set_input_sources(string &db_source, string &sqt_source, string
       while ((dirp = readdir(dp)) != NULL) 
 	{
 	  string fname = string(dirp->d_name);
-	  if(fname.find("fasta") != string::npos)
+	  if(fname.find(".fasta") != string::npos)
 	    {
 	      ostringstream fstr;
 	      fstr << db_source <<"/" << fname;
@@ -1157,12 +1157,22 @@ int SQTParser :: set_input_sources(string &db_source, string &sqt_source, string
     }
   else
     {
-      if(db_source.find("fasta") != string :: npos)
+      if(db_source.find(".fasta") != string :: npos)
 	db_file_names.push_back(db_source);
       else 
 	read_list_of_files(db_source, db_file_names);
     }
- 
+     
+  return 1;
+}
+
+int SQTParser :: set_input_sources(string &sqt_source, string &ms2_source)
+{
+  DIR *dp;
+  struct dirent *dirp;
+
+  int intStat;
+  struct stat stFileInfo;
   intStat = stat(sqt_source.c_str(), &stFileInfo);
   if(intStat != 0)
     {
@@ -1207,7 +1217,7 @@ int SQTParser :: set_input_sources(string &db_source, string &sqt_source, string
     }
   else
     {
-      if(sqt_source.find("sqt") != string :: npos)
+      if(sqt_source.find(".sqt") != string :: npos)
 	{
 	  sqt_file_names.push_back(sqt_source);
 	  if(ms2_source.find(".ms2") == string::npos)

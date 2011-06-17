@@ -806,8 +806,14 @@ void Barista :: setup_for_reporting_results()
 #else
   cout << "finished training, making parsimonious protein set\n";
 #endif
-
   trainset.make_meta_set(d);
+
+  psmtrainset.clear();
+  psmtestset.clear();
+  PSMScores::fillFeaturesFull(psmtrainset, d);
+  peptrainset.clear();
+  peptestset.clear();
+  PepScores::fillFeaturesFull(peptrainset, d);
   
   int fdr_trn = getOverFDRProtParsimonious(trainset,max_net_prot,selectionfdr);
   cout << "total proteins parsimonious at q<" << selectionfdr << ": " << fdr_trn << endl;
@@ -1457,6 +1463,30 @@ int Barista :: run_tries_multi_task()
 
 }
 
+void Barista :: print_description()
+{
+  	  cout << endl;
+	  cout << "\t crux barista [options] <database-source> <sqt-source> <ms2-source>" << endl <<endl;
+	  cout << "REQUIRED ARGUMENTS:" << endl << endl;
+	  cout << "\t <database-source> Directory with FASTA files , list of FASTA files or a single FASTA file with the protein database used for the search." << endl;
+	  cout << "\t <sqt-source> Directory with sqt files, list of sqt files or a single sqt file with psms generated during search." << endl;
+	  cout << "\t <ms2-source> Directory with ms2 files, list of ms2 files or a single ms2 file used for database search." << endl;
+	  cout << endl;
+	  
+	  cout << "OPTIONAL ARGUMENTS:" << endl << endl;
+	  cout << "\t [--enzyme <string>] \n \t     The enzyme used to digest the proteins in the experiment. Default trypsin." << endl;
+	  cout << "\t [--decoy-prefix <string>] \n \t     Specifies the prefix of the protein names that indicates a decoy. Default random_" << endl;
+	  cout << "\t [--fileroot <string>] \n \t     The fileroot string will be added as a prefix to all output file names. Default = none." <<endl;
+	  cout << "\t [--output-dir <directory>] \n \t     The name of the directory where output files will be created. Default = crux-output." << endl;
+	  cout << "\t [--overwrite <T/F>] \n \t     Replace existing files (T) or exit if attempting to overwrite (F). Default=F." << endl;
+	  cout << "\t [--skip-cleanup <T/F>] \n \t     When set to T, prevents the deletion of lookup tables created during the preprocessing step. Default = F." << endl; 
+	  cout << "\t [--re-run <directory>] \n \t      Re-run Barista analysis using a previously computed set of lookup tables." <<endl;  
+	  cout << "\t [--use-spec-features <T/F>] \n \t      When set to F, use minimal feature set. Default T." <<endl;  
+	  cout << endl; 
+
+}
+
+
 int Barista :: set_command_line_options(int argc, char *argv[])
 {
   string db_source;
@@ -1566,6 +1596,7 @@ int Barista :: set_command_line_options(int argc, char *argv[])
 	}
       f_try.close();
 
+      //set input and output dirs
       sqtp.set_output_dir(dir_with_tables, overwrite_flag);
       set_input_dir(dir_with_tables);
       set_output_dir(output_directory);
@@ -1582,6 +1613,7 @@ int Barista :: set_command_line_options(int argc, char *argv[])
       open_log_file(&log_file);
       free(log_file);
 
+      //print some info
       carp(CARP_INFO, "directory with tables: %s", dir_with_tables.c_str());
       carp(CARP_INFO, "output_directory: %s", output_directory.c_str());
       carp(CARP_INFO, "enzyme: %s", enzyme.c_str());
@@ -1594,37 +1626,21 @@ int Barista :: set_command_line_options(int argc, char *argv[])
     {
       if(argc-arg < 3)
 	{
-	  cout << endl;
-	  cout << "\t crux barista [options] <database-source> <sqt-source> <ms2-source>" << endl <<endl;
-	  cout << "REQUIRED ARGUMENTS:" << endl << endl;
-	  cout << "\t <database-source> Directory with FASTA files , list of FASTA files or a single FASTA file with the protein database used for the search." << endl;
-	  cout << "\t <sqt-source> Directory with sqt files, list of sqt files or a single sqt file with psms generated during search." << endl;
-	  cout << "\t <ms2-source> Directory with ms2 files, list of ms2 files or a single ms2 file used for database search." << endl;
-	  cout << endl;
-	  
-	  cout << "OPTIONAL ARGUMENTS:" << endl << endl;
-	  cout << "\t [--enzyme <string>] \n \t     The enzyme used to digest the proteins in the experiment. Default trypsin." << endl;
-	  cout << "\t [--decoy-prefix <string>] \n \t     Specifies the prefix of the protein names that indicates a decoy. Default random_" << endl;
-	  cout << "\t [--fileroot <string>] \n \t     The fileroot string will be added as a prefix to all output file names. Default = none." <<endl;
-	  cout << "\t [--output-dir <directory>] \n \t     The name of the directory where output files will be created. Default = crux-output." << endl;
-	  cout << "\t [--overwrite <T/F>] \n \t     Replace existing files (T) or exit if attempting to overwrite (F). Default=F." << endl;
-	  cout << "\t [--skip-cleanup <T/F>] \n \t     When set to T, prevents the deletion of lookup tables created during the preprocessing step. Default = F." << endl; 
-	  cout << "\t [--re-run <directory>] \n \t      Re-run Barista analysis using a previously computed set of lookup tables." <<endl;  
-	  cout << "\t [--use-spec-features <T/F>] \n \t      When set to F, use minimal feature set. Default T." <<endl;  
-	  cout << endl; 
-
+	  print_description();
 	  return 0;
 	} 
-      db_source = argv[arg]; arg++; sqt_source = argv[arg]; arg++;
-      ms2_source = argv[arg];
+      db_source = argv[arg]; arg++;
+      ms2_source = argv[arg]; arg++;
+      sqt_source = argv[arg];
 
-      //set the output directory
+      //set the output directory for the parser
       if(!sqtp.set_output_dir(output_directory, overwrite_flag))
       	return 0;
+      //set input and output for the leaning algo (in and out are the same as the out for the parser)
       set_input_dir(output_directory);
       set_output_dir(output_directory);
 
-
+      //open log file 
       set_verbosity_level(CARP_INFO);
       initialize_parameters();
       //open log file
@@ -1637,9 +1653,12 @@ int Barista :: set_command_line_options(int argc, char *argv[])
       open_log_file(&log_file);
       free(log_file);
       
-      if(!sqtp.set_input_sources(db_source, sqt_source, ms2_source))
+      if(!sqtp.set_database_source(db_source))
+	carp(CARP_FATAL, "could not find the database");
+      if(!sqtp.set_input_sources(sqt_source, ms2_source))
 	carp(CARP_FATAL, "could not extract features for training");
 
+      //print some info
       carp(CARP_INFO, "database source: %s", db_source.c_str());
       carp(CARP_INFO, "sqt source: %s", sqt_source.c_str()); 
       carp(CARP_INFO, "ms2 source: %s", ms2_source.c_str());
@@ -1649,6 +1668,7 @@ int Barista :: set_command_line_options(int argc, char *argv[])
       if(fileroot.compare("") != 0)
 	carp(CARP_INFO, "fileroot: %s", fileroot.c_str());
 
+      
       //num of spec features
       if(spec_features_flag)
 	sqtp.set_num_spec_features(7);
@@ -1657,6 +1677,7 @@ int Barista :: set_command_line_options(int argc, char *argv[])
       if(!sqtp.run())
 	carp(CARP_FATAL, "could not extract features for training");
       sqtp.clear();
+      
     }
   return 1;
   

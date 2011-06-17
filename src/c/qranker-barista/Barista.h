@@ -50,6 +50,7 @@ class Barista : public CruxApplication
     max_fdr_psm(0),
     max_fdr_pep(0){}
   ~Barista(){delete[] net_clones; net_clones = 0;}
+  void print_description();
   int set_command_line_options(int argc, char *argv[]);
   void setup_for_training(int trn_to_tst);
   void setup_for_reporting_results();

@@ -31,6 +31,13 @@ PepScores::~PepScores()
 
 }
 
+void PepScores::clear()
+{
+  scores.clear();
+  pos=neg=posNow = 0;
+}
+
+
 /**
  * Percentage of target scores that are drawn according to the null.
  */

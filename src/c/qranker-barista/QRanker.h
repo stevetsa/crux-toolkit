@@ -35,12 +35,14 @@ public:
     void train_net_sigmoid(PSMScores &set, int interval);
     void train_net_ranking(PSMScores &set, int interval);
     void train_net_hinge(PSMScores &set, int interval);
+    void count_pairs(PSMScores &set, int interval);
     void train_many_general_nets();
     void train_many_target_nets();
     void train_many_nets();
     
     int getOverFDR(PSMScores &set, NeuralNet &n, double fdr);
     void getMultiFDR(PSMScores &set, NeuralNet &n, vector<double> &qval);
+    void getMultiFDRXCorr(PSMScores &set, vector<double> &qval);
     void printNetResults(vector<int> &scores);
     void write_results(string filename, NeuralNet &net);
     void write_max_nets(string filename, NeuralNet *max_net);
@@ -49,6 +51,7 @@ public:
 
     inline void set_input_dir(string input_dir) {in_dir = input_dir; d.set_input_dir(input_dir);}
     inline void set_output_dir(string output_dir){out_dir = output_dir;}
+    void print_description();
     int set_command_line_options(int argc, char **argv);
 
     virtual int main(int argc, char** argv);

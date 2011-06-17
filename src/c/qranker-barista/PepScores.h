@@ -25,6 +25,7 @@ public:
     vector<PepScoreHolder>::iterator end() {return scores.end();}    
     static double pi0;
     double factor;
+    void clear();
 
     int calcOverFDR(double fdr);
     void calcMultiOverFDR(vector<double> &fdr, vector<int> &overFDR);

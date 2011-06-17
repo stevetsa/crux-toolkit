@@ -68,7 +68,8 @@ class SQTParser{
   inline void set_db_name(string database){db_name = database;}
   inline void set_decoy_prefix(string prefix){decoy_prefix = prefix;}
   void set_enzyme(string &enz);
-  int set_input_sources(string &db_source, string &sqt_source, string &ms2_source);
+  int set_database_source(string &db_source);
+  int set_input_sources(string &sqt_source, string &ms2_source);
   void read_list_of_files(string &list, vector<string> &fnames);
   int check_files(vector <string> &filenames);
 

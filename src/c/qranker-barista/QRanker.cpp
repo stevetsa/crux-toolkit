@@ -4,7 +4,7 @@ QRanker::QRanker() :
   seed(0),
   selectionfdr(0.01),
   num_hu(5),
-  mu(0.005),
+  mu(0.00005),
   weightDecay(0.000),
   in_dir(""), 
   out_dir(""), 
@@ -33,6 +33,7 @@ int QRanker :: getOverFDR(PSMScores &set, NeuralNet &n, double fdr)
   return set.calcOverFDR(fdr);
 }
 
+
 void QRanker :: getMultiFDR(PSMScores &set, NeuralNet &n, vector<double> &qvalues)
 {
   double *r;
@@ -43,6 +44,23 @@ void QRanker :: getMultiFDR(PSMScores &set, NeuralNet &n, vector<double> &qvalue
       featVec = d.psmind2features(set[i].psmind);
       r = n.fprop(featVec);
       set[i].score = r[0];
+    }
+ 
+  for(unsigned int ct = 0; ct < qvalues.size(); ct++)
+    overFDRmulti[ct] = 0;
+  set.calcMultiOverFDR(qvalues, overFDRmulti);
+}
+
+void QRanker :: getMultiFDRXCorr(PSMScores &set, vector<double> &qvalues)
+{
+  double r;
+  double* featVec;
+   
+  for(int i = 0; i < set.size(); i++)
+    {
+      featVec = d.psmind2features(set[i].psmind);
+      r = featVec[3];
+      set[i].score = r;
     }
  
   for(unsigned int ct = 0; ct < qvalues.size(); ct++)
@@ -262,6 +280,7 @@ void QRanker :: train_net_hinge(PSMScores &set, int interval)
   delete[] gc;
 }
 
+
 void QRanker :: train_net_ranking(PSMScores &set, int interval)
 {
   double *r1;
@@ -269,6 +288,7 @@ void QRanker :: train_net_ranking(PSMScores &set, int interval)
   double diff = 0;
   int label = 1;
   double *gc = new double[1];
+
 
   for(int i = 0; i < set.size(); i++)
     { 
@@ -303,7 +323,8 @@ void QRanker :: train_net_ranking(PSMScores &set, int interval)
       r1 = nets[0].fprop(d.psmind2features(set[ind1].psmind));
       r2 = nets[1].fprop(d.psmind2features(set[ind2].psmind));
       diff = r1[0]-r2[0];
-            
+      
+
       label=0;
       if(  set[ind1].label==1 && set[ind2].label==-1)
 	label=1;
@@ -315,26 +336,93 @@ void QRanker :: train_net_ranking(PSMScores &set, int interval)
 	  if(label*diff<1)
 	    {
 	      net.clear_gradients();
-	      gc[0] = -1.0;
+	      gc[0] = -1.0*label;
 	      nets[0].bprop(gc);
-	      gc[0] = 1.0;
+	      gc[0] = 1.0*label;
 	      nets[1].bprop(gc);
 	      net.update(mu,weightDecay);
-	      
 	    }
+	  
 	}
     }
   delete[] gc;
+  
 }
+
+
+void QRanker :: count_pairs(PSMScores &set, int interval)
+{
+  double *r1;
+  double *r2;
+  double diff = 0;
+  int label = 1;
+  double err = 0.0;
+
+  for(int i = 0; i < set.size()*100; i++)
+    { 
+      int ind1, ind2;
+      int label_flag = 1;
+      //get the first index
+      if(interval == 0)
+	ind1 = 0;
+      else
+	ind1 = rand()%(interval);
+      if(ind1>set.size()-1) continue;
+      if(set[ind1].label == 1)
+	label_flag = -1;
+      else
+	label_flag = 1;
+      
+      int cn = 0;
+      while(1)
+	{
+	  ind2 = rand()%(interval);
+	  if(ind2>set.size()-1) continue;
+	  if(set[ind2].label == label_flag) break;
+	  if(cn > 1000)
+	    {
+	      ind2 = rand()%set.size();
+	      break;
+	    }
+	  cn++;
+	}
+      
+      //pass both through the net
+      r1 = nets[0].fprop(d.psmind2features(set[ind1].psmind));
+      r2 = nets[1].fprop(d.psmind2features(set[ind2].psmind));
+      diff = r1[0]-r2[0];
+      
+
+      label=0;
+      if(  set[ind1].label==1 && set[ind2].label==-1)
+	label=1;
+      if( set[ind1].label==-1 && set[ind2].label==1)
+	    label=-1;
+      
+      if(label != 0)
+	{
+	  if(label*diff<1)
+	    {
+	      err += 1-label*diff;
+	      
+	    }
+	  
+	}
+    }
+
+  cout << "er" << err/trainset.size() << endl;
+}
+
+
 
 void QRanker :: train_many_general_nets()
 {
   interval = trainset.size();
   for(int i=0;i<switch_iter;i++) {
     //train_net_hinge(trainset, interval);
-    //train_net_ranking(trainset, interval);
-    train_net_sigmoid(trainset, interval);
-      
+    train_net_ranking(trainset, interval);
+    //train_net_sigmoid(trainset, interval);
+
        
     //record the best result
     getMultiFDR(thresholdset,net,qvals);
@@ -441,7 +529,7 @@ void QRanker::train_many_nets()
   if(num_hu == 1)
     lf = 1;
   //set whether there is bias in the linear units: 1 if yes, 0 otherwise
-  int bs = 1;
+  int bs = 0;
   
   net.initialize(d.get_num_features(),num_hu,lf,bs);
   for(int count = 0; count < num_qvals; count++){
@@ -454,7 +542,7 @@ void QRanker::train_many_nets()
 
   cerr << "Before iterating\n";
   cerr << "trainset: ";
-  getMultiFDR(trainset,net,qvals);
+  getMultiFDRXCorr(trainset,qvals);
   printNetResults(overFDRmulti);
   cerr << "\n";
   for(int count = 0; count < num_qvals;count++)
@@ -537,6 +625,29 @@ int QRanker::set_command_line_options(int argc, char **argv)
   return 1;
 }
 */
+
+void QRanker :: print_description()
+{
+  cout << endl;
+  cout << "\t crux q-ranker [options] <database-source> <sqt-source> <ms2-source>" << endl <<endl;
+  cout << "REQUIRED ARGUMENTS:" << endl << endl;
+  cout << "\t <database-source> Directory with FASTA files , list of FASTA files or a single FASTA file with the protein database used for the search." << endl;
+  cout << "\t <sqt-source> Directory with sqt files, list of sqt files or a single sqt file with psms generated during search." << endl;
+  cout << "\t <ms2-source> Directory with ms2 files, list of ms2 files or a single ms2 file used for database search." << endl;
+  cout << endl;
+  
+  cout << "OPTIONAL ARGUMENTS:" << endl << endl;
+  cout << "\t [--enzyme <string>] \n \t     The enzyme used to digest the proteins in the experiment. Default trypsin." << endl;
+  cout << "\t [--decoy-prefix <string>] \n \t     Specifies the prefix of the protein names that indicates a decoy. Default random_" << endl;
+  cout << "\t [--fileroot <string>] \n \t     The fileroot string will be added as a prefix to all output file names. Default = none." <<endl;
+  cout << "\t [--output-dir <directory>] \n \t     The name of the directory where output files will be created. Default = crux-output." << endl;
+  cout << "\t [--overwrite <T/F>] \n \t     Replace existing files (T) or exit if attempting to overwrite (F). Default=F." << endl;
+  cout << "\t [--skip-cleanup <T/F>] \n \t     When set to T, prevents the deletion of lookup tables created during the preprocessing step. Default = F." << endl; 
+  cout << "\t [--re-run <directory>] \n \t      Re-run QRanker analysis using a previously computed set of lookup tables." <<endl;  
+  cout << "\t [--use-spec-features <T/F>] \n \t      When set to F, use minimal feature set. Default T." <<endl;  
+  cout << endl; 
+
+}
 
 
 int QRanker :: set_command_line_options(int argc, char *argv[])
@@ -676,29 +787,12 @@ int QRanker :: set_command_line_options(int argc, char *argv[])
     {
       if(argc-arg < 3)
 	{
-	  cout << endl;
-	  cout << "\t crux q-ranker [options] <database-source> <sqt-source> <ms2-source>" << endl <<endl;
-	  cout << "REQUIRED ARGUMENTS:" << endl << endl;
-	  cout << "\t <database-source> Directory with FASTA files , list of FASTA files or a single FASTA file with the protein database used for the search." << endl;
-	  cout << "\t <sqt-source> Directory with sqt files, list of sqt files or a single sqt file with psms generated during search." << endl;
-	  cout << "\t <ms2-source> Directory with ms2 files, list of ms2 files or a single ms2 file used for database search." << endl;
-	  cout << endl;
-	  
-	  cout << "OPTIONAL ARGUMENTS:" << endl << endl;
-	  cout << "\t [--enzyme <string>] \n \t     The enzyme used to digest the proteins in the experiment. Default trypsin." << endl;
-	  cout << "\t [--decoy-prefix <string>] \n \t     Specifies the prefix of the protein names that indicates a decoy. Default random_" << endl;
-	  cout << "\t [--fileroot <string>] \n \t     The fileroot string will be added as a prefix to all output file names. Default = none." <<endl;
-	  cout << "\t [--output-dir <directory>] \n \t     The name of the directory where output files will be created. Default = crux-output." << endl;
-	  cout << "\t [--overwrite <T/F>] \n \t     Replace existing files (T) or exit if attempting to overwrite (F). Default=F." << endl;
-	  cout << "\t [--skip-cleanup <T/F>] \n \t     When set to T, prevents the deletion of lookup tables created during the preprocessing step. Default = F." << endl; 
-	  cout << "\t [--re-run <directory>] \n \t      Re-run QRanker analysis using a previously computed set of lookup tables." <<endl;  
-	  cout << "\t [--use-spec-features <T/F>] \n \t      When set to F, use minimal feature set. Default T." <<endl;  
-	  cout << endl; 
-
+	  print_description();
 	  return 0;
 	} 
-      db_source = argv[arg]; arg++; sqt_source = argv[arg]; arg++;
-      ms2_source = argv[arg];
+      db_source = argv[arg]; arg++; 
+      ms2_source = argv[arg]; arg++;
+      sqt_source = argv[arg];
 
       //set the output directory
       if(!sqtp.set_output_dir(output_directory, overwrite_flag))
@@ -719,7 +813,9 @@ int QRanker :: set_command_line_options(int argc, char *argv[])
       open_log_file(&log_file);
       free(log_file);
       
-      if(!sqtp.set_input_sources(db_source, sqt_source, ms2_source))
+      if(!sqtp.set_database_source(db_source))
+	carp(CARP_FATAL, "could not extract features for training");
+      if(!sqtp.set_input_sources(sqt_source, ms2_source))
 	carp(CARP_FATAL, "could not extract features for training");
 
       carp(CARP_INFO, "database source: %s", db_source.c_str());
