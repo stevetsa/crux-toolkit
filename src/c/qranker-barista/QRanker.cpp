@@ -629,11 +629,11 @@ int QRanker::set_command_line_options(int argc, char **argv)
 void QRanker :: print_description()
 {
   cout << endl;
-  cout << "\t crux q-ranker [options] <database-source> <sqt-source> <ms2-source>" << endl <<endl;
+  cout << "\t crux q-ranker [options] <protein database> <spectra> <search results>" << endl <<endl;
   cout << "REQUIRED ARGUMENTS:" << endl << endl;
-  cout << "\t <database-source> Directory with FASTA files , list of FASTA files or a single FASTA file with the protein database used for the search." << endl;
-  cout << "\t <sqt-source> Directory with sqt files, list of sqt files or a single sqt file with psms generated during search." << endl;
-  cout << "\t <ms2-source> Directory with ms2 files, list of ms2 files or a single ms2 file used for database search." << endl;
+  cout << "\t <protein database> Directory with FASTA files , list of FASTA files or a single FASTA file with the protein database used for the search." << endl;
+  cout << "\t <spectra> Directory with ms2 files, list of ms2 files or a single ms2 file used for database search." << endl;
+  cout << "\t <search results> Directory with sqt files, list of sqt files or a single sqt file with psms generated during search." << endl;
   cout << endl;
   
   cout << "OPTIONAL ARGUMENTS:" << endl << endl;
