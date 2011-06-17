@@ -85,7 +85,7 @@ DelimitedFile::DelimitedFile(
  */
 void DelimitedFile::clear() {
   for (unsigned int idx=0;idx < data_.size(); idx++) {
-    data_[idx].clear();
+    data_.at(idx).clear();
   }
   data_.clear();
   column_names_.clear();
@@ -127,7 +127,7 @@ unsigned int DelimitedFile::numRows() {
     return 0;
   }
 
-  return data_[0].size();
+  return data_.at(0).size();
 }
 
 /**
@@ -141,7 +141,7 @@ unsigned int DelimitedFile::numRows(
     return 0;
   }
   
-  return(data_[col_idx].size());
+  return(data_.at(col_idx).size());
 }
 
 /**
@@ -215,7 +215,7 @@ void DelimitedFile::loadData(
         addColumn();
       }
 
-      setString(col_idx, row_idx, tokens[col_idx]);
+      setString(col_idx, row_idx, tokens.at(col_idx));
     }
     hasLine = getline(file, line) != NULL;
   }
@@ -265,9 +265,9 @@ void DelimitedFile::saveData(
 
   //print out the header if it exists.
   if (column_names_.size() != 0) {
-    fout << column_names_[0];
+    fout << column_names_.at(0);
     for (unsigned int col_idx=1; col_idx<column_names_.size(); col_idx++) {
-      fout << getDelimiter() << column_names_[col_idx];
+      fout << getDelimiter() << column_names_.at(col_idx);
     }
     fout << endl;
   }
@@ -336,7 +336,7 @@ void DelimitedFile::addColumns(
   ) {
   cout <<"Number of columns:"<<column_names.size()<<endl;
   for (unsigned int col_idx = 0;col_idx < column_names.size(); col_idx++) {
-    cout <<"Adding :"<<column_names[col_idx]<<endl;
+    cout <<"Adding :"<<column_names.at(col_idx)<<endl;
     //addColumn(column_names[col_idx]);
   }
 }
@@ -352,7 +352,7 @@ int DelimitedFile::findColumn(
   ) {
 
   for (unsigned int col_idx=0;col_idx<column_names_.size();col_idx++) {
-    if (column_names_[col_idx] == column_name) {
+    if (column_names_.at(col_idx) == column_name) {
       return col_idx;
     }
   }
@@ -380,10 +380,10 @@ vector<string>& DelimitedFile::getColumn(
   int col_idx = findColumn(column);
 
   if (col_idx != -1) {
-    return data_[col_idx];
+    return data_.at(col_idx);
   } else {
     carp(CARP_ERROR,"column %s not found, returning column 0", column.c_str());
-    return data_[0];
+    return data_.at(0);
   }
 }
 
@@ -439,6 +439,16 @@ string& DelimitedFile::getString(
   unsigned int col_idx, ///< the column index
   unsigned int row_idx  ///< the row index
   ) {
+
+  vector<string>& column = getColumn(col_idx);
+  if (row_idx >= column.size()) {
+    carp(CARP_FATAL, "Row is out of range for column %i:%s row %i:%i", 
+      col_idx, 
+      getColumnName(col_idx).c_str(), 
+      row_idx, 
+      column.size());
+  }
+
   return getColumn(col_idx).at(row_idx);
 }
 
@@ -458,7 +468,7 @@ string& DelimitedFile::getString(
     }
     carp(CARP_FATAL,"Calling FATAL");
   }
-  return getColumn(col_idx)[row_idx];
+  return getColumn(col_idx).at(row_idx);
 }
 
 /**
@@ -497,7 +507,7 @@ void DelimitedFile::setString(
     col.push_back("");
   }
 
-  col[row_idx] = value;
+  col.at(row_idx) = value;
 }
 
 /**
@@ -771,7 +781,7 @@ void DelimitedFile::reorderRows(
            sort_iter != sort_indices.rend();
            ++sort_iter) {
         row_idx = sort_iter -> second;
-        string current_cell = data_[col_idx][row_idx];
+        string current_cell = getString(col_idx, row_idx);
         current_col.push_back(current_cell);
       }
     }
@@ -794,12 +804,13 @@ void DelimitedFile::sortByFloatColumn(
   if (sort_col_idx == -1) {
     carp(CARP_FATAL,"column %s doesn't exist",column_name.c_str());
   }
-
+  cerr <<"Building index"<<endl;
   for (unsigned int row_idx=0;row_idx<numRows();row_idx++) {
     sort_indices.insert(pair<FLOAT_T, unsigned int>(getFloat(sort_col_idx, row_idx), row_idx));
   }
-
+  cerr <<"Reordering rows"<<endl;
   reorderRows(sort_indices, ascending);
+  cerr <<"Done sorting"<<endl;
 }
 
 /**
@@ -873,6 +884,8 @@ void DelimitedFile::copyToRow(
     int dest_col_idx = dest.findColumn(getColumnName(src_col_idx));
     if (dest_col_idx != -1) {
       dest.setString(dest_col_idx, dest_row_idx, getString(src_col_idx, src_row_idx));
+    } else {
+      carp(CARP_WARNING, "Column %s not found in destination", getColumnName(src_col_idx).c_str());
     }
   }
 }
@@ -918,9 +931,9 @@ std::ostream &operator<< (
 
   //print out the header if it exists.
   if (delimited_file.column_names_.size() != 0) {
-    os << delimited_file.column_names_[0];
+    os << delimited_file.column_names_.at(0);
     for (unsigned int col_idx=1; col_idx < delimited_file.column_names_.size(); col_idx++) {
-      os << delimited_file.getDelimiter() << delimited_file.column_names_[col_idx];
+      os << delimited_file.getDelimiter() << delimited_file.column_names_.at(col_idx);
     }
     os << endl;
   }

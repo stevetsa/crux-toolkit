@@ -349,9 +349,9 @@ void QRanker :: train_net_ranking(PSMScores &set, int interval)
 	  if(label*diff<1)
 	    {
 	      net.clear_gradients();
-	      gc[0] = -1.0;
+	      gc[0] = -1.0*label;
 	      nets[0].bprop(gc);
-	      gc[0] = 1.0;
+	      gc[0] = 1.0*label;
 	      nets[1].bprop(gc);
 	      net.update(mu,weightDecay);
 	      
@@ -366,6 +366,7 @@ void QRanker :: train_many_general_nets()
   interval = trainset.size();
   for(int i=0;i<switch_iter;i++) {
     train_net_ranking(trainset, interval);
+    
        
     //record the best result
     getMultiFDR(thresholdset,net,qvals);
@@ -470,7 +471,7 @@ void QRanker::train_many_nets()
   if(num_hu == 1)
     lf = 1;
   //set whether there is bias in the linear units: 1 if yes, 0 otherwise
-  int bs = 1;
+  int bs = 0;
   
   net.initialize(d.get_num_features(),num_hu,lf,bs);
   for(int count = 0; count < num_qvals; count++){

@@ -179,14 +179,32 @@ int xlink_compute_qvalues(){
   carp(CARP_INFO,"Sorting by p-value bonf.");
   target_matches_bonf.sortByFloatColumn("p-value bonf.");
   decoy_matches_bonf.sortByFloatColumn("p-value bonf."); 
+
+  //test the decoy p-values for accuracy.
+  for (unsigned int idx=0;idx < decoy_matches_bonf.numRows();idx++) {
+    double calc_pvalue = decoy_matches_bonf.getDouble("p-value bonf.", idx);
+    double rank_pvalue = (double)(idx + 1) / (double) decoy_matches_bonf.numRows();
+
+    if ((calc_pvalue > 2 * rank_pvalue) || (calc_pvalue < 0.5 * rank_pvalue)) {
+      carp(CARP_WARNING, "inaccurate p-values!");
+      carp(CARP_WARNING, "scan:%d charge:%d mass: %g rank:%g calc:%g", 
+        decoy_matches_bonf.getInteger("scan", idx),
+        decoy_matches_bonf.getInteger("charge", idx),
+        decoy_matches_bonf.getDouble("spectrum neutral mass"),
+        rank_pvalue,
+        calc_pvalue);
+    } 
+  }
   
   carp(CARP_INFO,"Adding q-value column");
+
   target_matches_bonf.addColumn("fdr b-h");
   target_matches_bonf.addColumn("fdr decoy");
+
   target_matches_bonf.addColumn("q-value b-h");
   target_matches_bonf.addColumn("q-value decoy");
 
-  //carp(CARP_INFO,"Calculating q-values");
+  carp(CARP_INFO,"Calculating fdr using p-values (bh and target-decoy)");
   unsigned int decoy_idx = 0;
   //cout <<"Number of target rows:"<<target_matches_bonf.numRows()<<endl;
   for (unsigned int target_idx = 0; 
@@ -201,13 +219,15 @@ int xlink_compute_qvalues(){
       (double)(target_idx + 1) *
       current_pvalue;
 
-    //cout <<"q_value_bh:"<<q_value_bh<<endl;
+    //cout <<"fdr_bh:"<<fdr_bh<<endl;
 
     while ((decoy_idx < decoy_matches_bonf.numRows()) && 
 	   (decoy_matches_bonf.getDouble("p-value bonf.", decoy_idx) <= 
 	    current_pvalue)) {
       decoy_idx++;
     }
+
+    
 
     double fdr_decoy = 0;
     if (decoy_idx != 0) {
@@ -239,10 +259,58 @@ int xlink_compute_qvalues(){
     target_matches_bonf.setValue("q-value decoy", idx, min_fdr); 
   }
 
-  
+  //calculate fdr,q-value using just xcorr.
+  carp(CARP_INFO, "Calculate fdr using xcorr");
+  carp(CARP_INFO, "Sorting by xcorr descending");
+  target_matches_bonf.sortByFloatColumn("xcorr score", false);
+  carp(CARP_INFO, "Sorting decoys");
+  decoy_matches_bonf.sortByFloatColumn("xcorr score", false);
+  decoy_idx = 0;
+
+  target_matches_bonf.addColumn("fdr xcorr");
+  target_matches_bonf.addColumn("q-value xcorr");
+
+  carp(CARP_INFO, "Calculating fdr xcorr");
+  for (unsigned int target_idx = 0;
+    target_idx < target_matches_bonf.numRows();
+    target_idx++) {
+    
+    cout <<"target idx:"<<target_idx<<endl;
+
+    double target_xcorr = target_matches_bonf.getDouble("xcorr score", target_idx);
+
+    cout <<"target xcorr:"<<target_xcorr<<endl;
+
+    while ((decoy_idx < decoy_matches_bonf.numRows()) &&
+      (decoy_matches_bonf.getDouble("xcorr score", decoy_idx) >= target_xcorr)) {
+      decoy_idx++;
+    }
+
+    cout <<"decoy idx:"<<decoy_idx<<endl;
+
+    double fdr_xcorr = 0;
+    if (decoy_idx != 0) {
+      fdr_xcorr = (double)decoy_idx / (double)(target_idx + 1);
+    }
+
+    cout <<"fdr xcorr:"<<fdr_xcorr<<endl;
+
+    target_matches_bonf.setValue("fdr xcorr", target_idx, fdr_xcorr);
+  }
+
+  carp(CARP_INFO, "Calculating q-value (xcorr)");
+  min_fdr = 1.0;
+  for (int idx=target_matches_bonf.numRows()-1;idx>=0;idx--) {
+    double cur_fdr = target_matches_bonf.getDouble("fdr xcorr", idx);
+    if (cur_fdr < min_fdr) {
+      min_fdr = cur_fdr;
+    }
+    target_matches_bonf.setValue("q-value xcorr", idx, min_fdr); 
+  }
+
 
   //sort back by scans? or q-value?
-  //target_matches_bonf.sortByFloatColumn("q-value decoy");
+  target_matches_bonf.sortByFloatColumn("q-value b-h");
 
   string result_file = output_dir + "/qvalues.target.txt";
   target_matches_bonf.saveData(result_file);
