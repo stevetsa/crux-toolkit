@@ -1475,7 +1475,8 @@ void Barista :: print_description()
 	  
   cout << "OPTIONAL ARGUMENTS:" << endl << endl;
   cout << "\t [--enzyme <string>] \n \t     The enzyme used to digest the proteins in the experiment. Default trypsin." << endl;
-  cout << "\t [--decoy-prefix <string>] \n \t     Specifies the prefix of the protein names that indicates a decoy. Default random_" << endl;
+  cout << "\t [--decoy-prefix <string>] \n \t     Specifies the prefix of the protein names that indicates a decoy. Default decoy_" << endl;
+  cout << "\t [--separate-searches <string>] \n \t     If the target and decoy searches were run separately, the option then allows the user to specify the location of the decoy search results, the target database search should be provided as required argument." << endl;
   cout << "\t [--fileroot <string>] \n \t     The fileroot string will be added as a prefix to all output file names. Default = none." <<endl;
   cout << "\t [--output-dir <directory>] \n \t     The name of the directory where output files will be created. Default = crux-output." << endl;
   cout << "\t [--overwrite <T/F>] \n \t     Replace existing files (T) or exit if attempting to overwrite (F). Default=F." << endl;
@@ -1491,6 +1492,8 @@ int Barista :: set_command_line_options(int argc, char *argv[])
 {
   string db_source;
   string sqt_source;
+  string sqt_decoy_source;
+  int separate_search_flag = 0;
   string ms2_source;
   string output_directory = "crux-output";
   string enzyme = "trypsin";
@@ -1525,6 +1528,8 @@ int Barista :: set_command_line_options(int argc, char *argv[])
 	    {
 	      arg++;
 	      output_directory = argv[arg];
+	      if(output_directory.at(output_directory.size()-1) == '/')
+		output_directory = output_directory.substr(0, output_directory.size()-1);
 	      set_output_dir(output_directory);
 	    }
 	  //found overwrite directory
@@ -1542,6 +1547,7 @@ int Barista :: set_command_line_options(int argc, char *argv[])
 	    {
 	      arg++;
 	      fileroot = argv[arg];
+	      fileroot.append(".");
 	    }
 	  //no cleanup
 	  if(str.find("skip") != string::npos)
@@ -1562,7 +1568,7 @@ int Barista :: set_command_line_options(int argc, char *argv[])
 	      found_dir_with_tables = 1;
 	      cout << "INFO: directory with preprocessed data: " << dir_with_tables << endl;
 	    }
-	  //found overwrite directory
+	  //found spec-features
 	  if(str.find("spec-features") != string::npos)
 	    {
 	      arg++;
@@ -1571,6 +1577,15 @@ int Barista :: set_command_line_options(int argc, char *argv[])
 		spec_features_flag = 1;
 	      else
 		spec_features_flag = 0;
+	    }
+	  //found separate search
+	  if(str.find("separate-search") != string::npos)
+	    {
+	      arg++;
+	      string opt = argv[arg];
+	      sqt_decoy_source = opt;
+	      separate_search_flag = 1;
+	      cout << sqt_decoy_source << endl;
 	    }
 	}
       else
@@ -1620,7 +1635,6 @@ int Barista :: set_command_line_options(int argc, char *argv[])
       carp(CARP_INFO, "decoy prefix: %s", decoy_prefix.c_str());
       if(fileroot.compare("") != 0)
 	carp(CARP_INFO, "fileroot: %s", fileroot.c_str());
-
     }
   else
     {
@@ -1655,9 +1669,17 @@ int Barista :: set_command_line_options(int argc, char *argv[])
       
       if(!sqtp.set_database_source(db_source))
 	carp(CARP_FATAL, "could not find the database");
-      if(!sqtp.set_input_sources(sqt_source, ms2_source))
-	carp(CARP_FATAL, "could not extract features for training");
 
+      if(separate_search_flag)
+	{
+	  if(!sqtp.set_input_sources(ms2_source, sqt_source, sqt_decoy_source))
+	    carp(CARP_FATAL, "could not extract features for training");
+	}
+      else
+	{
+	  if(!sqtp.set_input_sources(ms2_source, sqt_source))
+	    carp(CARP_FATAL, "could not extract features for training");
+	}
       //print some info
       carp(CARP_INFO, "database source: %s", db_source.c_str());
       carp(CARP_INFO, "sqt source: %s", sqt_source.c_str()); 

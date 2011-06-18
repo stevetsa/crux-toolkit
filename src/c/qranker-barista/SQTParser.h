@@ -68,10 +68,21 @@ class SQTParser{
   inline void set_db_name(string database){db_name = database;}
   inline void set_decoy_prefix(string prefix){decoy_prefix = prefix;}
   void set_enzyme(string &enz);
+  int is_fasta(string &fname);
   int set_database_source(string &db_source);
-  int set_input_sources(string &sqt_source, string &ms2_source);
+  int match_sqt_to_ms2(string &sqt_source, string &prefix);
+  int collect_ms2_files(string &ms2_source, string &sqt_source);
+  int set_input_sources(string &ms2_source, string &sqt_source);
   void read_list_of_files(string &list, vector<string> &fnames);
   int check_files(vector <string> &filenames);
+
+  /********* for separate database searches ********************************************/
+  int match_target_sqt_to_ms2(string &sqt_source, string &prefix);
+  int match_decoy_sqt_to_ms2(string &sqt_source, string &prefix);
+  int collect_ms2_files(string &ms2_source, string &sqt_target_source, string &sqt_decoy_source);
+  int set_input_sources(string &ms2_source, string &sqt_target_source, string &sqt_decoy_source);
+  /*************************************************************************************/
+
 
   void read_sqt_file(ifstream &is, string &decoy_prefix, int final_hits_per_spectrum, enzyme enz, int pass);
   int parse_sqt_spectrum_matches(ifstream &is, sqt_match &m);
