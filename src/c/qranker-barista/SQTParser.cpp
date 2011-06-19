@@ -888,28 +888,27 @@ void SQTParser :: clean_up(string dir)
 
 
 int SQTParser::cntEnzConstraints(string& seq,enzyme enz) {
-    unsigned int pos=2, cnt=0;
-    unsigned int pos1 = pos;
-    char n = seq.at(pos);
+  int cnt = 0;
+  unsigned int pos=0;
+  unsigned int pos1 = pos;
+  char n = seq.at(pos);
+  pos++;
+  while (pos<seq.size()-1) {
+    char c = seq.at(pos);
+    if (isEnz(n,c,enz))
+      {
+	int pep_len = pos-pos1;
+	if(pep_len <= max_len && pep_len >= min_len)
+	  {
+	    cnt++;
+	    pos1 = pos;
+	  }
+      }
+    n=c;
     pos++;
-    while (pos<seq.size()-1) {
-      char c = seq.at(pos);
-      if (isEnz(n,c,enz))
-	{
-	  int pep_len = pos-pos1;
-	  if(pep_len <= max_len && pep_len >= min_len)
-	    {
-	      cnt++;
-	      pos1 = pos;
-	    }
-	}
-      n=c;
-      pos++;
-    }
-    return cnt;
+  }
+  return cnt;
 }
-
-
 
 void SQTParser :: digest_database(ifstream &f_db, enzyme e)
 {
@@ -935,7 +934,9 @@ void SQTParser :: digest_database(ifstream &f_db, enzyme e)
 	  getline(f_db, tempstr);
 	}
       else
-	seq << tempstr;
+	{
+	  seq << tempstr;
+	}
     }
   if(num_prot_read > 0)
     {
@@ -944,6 +945,7 @@ void SQTParser :: digest_database(ifstream &f_db, enzyme e)
       protein_to_num_all_pep_map[prot] = cnt;
       seq.str("");
     }
+  
 }
 
 
@@ -1491,12 +1493,12 @@ int SQTParser :: collect_ms2_files(string &ms2_source, string &sqt_target_source
 	  	  
 	  if(!num_matched_targets)
 	    {
-	      carp(CARP_WARNING, "could not find %s*.sqt in directory %s to match %s, skipping", prefix.c_str(), sqt_target_source.c_str(), ms2name.c_str());
+	      carp(CARP_WARNING, "could not find %s*.target.sqt in directory %s to match %s, skipping", prefix.c_str(), sqt_target_source.c_str(), ms2name.c_str());
 	      continue;
 	    }
 	  if(!num_matched_decoys)
 	    {
-	      carp(CARP_WARNING, "could not find %s*.sqt in directory %s to match %s, skipping", prefix.c_str(), sqt_decoy_source.c_str(), ms2name.c_str());
+	      carp(CARP_WARNING, "could not find %s*.decoy.sqt in directory %s to match %s, skipping", prefix.c_str(), sqt_decoy_source.c_str(), ms2name.c_str());
 	      continue;
 	    }
 	  for(int i = 0; i < (num_matched_targets+num_matched_decoys); i++)
