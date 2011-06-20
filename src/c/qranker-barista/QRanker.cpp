@@ -660,7 +660,7 @@ int QRanker :: set_command_line_options(int argc, char *argv[])
   string ms2_source;
   string output_directory = "crux-output";
   string enzyme = "trypsin";
-  string decoy_prefix = "random_";
+  string decoy_prefix = "decoy_";
   string dir_with_tables = "";
   int found_dir_with_tables = 0;
   int spec_features_flag = 1;
@@ -787,13 +787,36 @@ int QRanker :: set_command_line_options(int argc, char *argv[])
       char *log_file = my_copy_string(str.c_str());
       open_log_file(&log_file);
       free(log_file);
-      
+
       carp(CARP_INFO, "directory with tables: %s", dir_with_tables.c_str());
       carp(CARP_INFO, "output_directory: %s", output_directory.c_str());
       carp(CARP_INFO, "enzyme: %s", enzyme.c_str());
       carp(CARP_INFO, "decoy prefix: %s", decoy_prefix.c_str());
       if(fileroot.compare("") != 0)
 	carp(CARP_INFO, "fileroot: %s", fileroot.c_str());
+
+      //write out a parameter file
+      stringstream fname;
+      fname << output_directory << "/" << fileroot << "qranker.params.txt";
+      ofstream fparam(fname.str().c_str());
+      fparam << "enzyme=" << enzyme << endl;
+      fparam << "decoy prefix=" << decoy_prefix << endl;
+      if(separate_search_flag)
+	fparam << "separate search=" << sqt_decoy_source << endl;
+      fparam << "fileroot=" << fileroot << endl;
+      fparam << "output directory=" << output_directory << endl;
+      if(skip_cleanup_flag)
+	fparam << "skip-cleanup=T" << endl;
+      else
+	fparam << "skip-cleanup=F" << endl;
+      fparam << "re-run=" << dir_with_tables << endl;
+      if(spec_features_flag)
+	fparam << "use spec features=T" << endl;
+      else
+	fparam << "use spec features=F" << endl;
+      fparam.close();
+
+
 
     }
   else
@@ -826,6 +849,26 @@ int QRanker :: set_command_line_options(int argc, char *argv[])
       open_log_file(&log_file);
       free(log_file);
       
+      //write out a parameter file
+      stringstream fname;
+      fname << output_directory << "/" << fileroot << "qranker.params.txt";
+      ofstream fparam(fname.str().c_str());
+      fparam << "enzyme=" << enzyme << endl;
+      fparam << "decoy prefix=" << decoy_prefix << endl;
+      if(separate_search_flag)
+	fparam << "separate search=" << sqt_decoy_source << endl;
+      fparam << "fileroot=" << fileroot << endl;
+      fparam << "output directory=" << output_directory << endl;
+      if(skip_cleanup_flag)
+	fparam << "skip-cleanup=T" << endl;
+      else
+	fparam << "skip-cleanup=F" << endl; 
+      if(spec_features_flag)
+	fparam << "use spec features=T" << endl;
+      else
+	fparam << "use spec features=F" << endl;
+      fparam.close();
+
       if(!sqtp.set_database_source(db_source))
 	carp(CARP_FATAL, "could not extract features for training");
        if(separate_search_flag)

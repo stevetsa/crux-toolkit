@@ -1487,7 +1487,6 @@ void Barista :: print_description()
 
 }
 
-
 int Barista :: set_command_line_options(int argc, char *argv[])
 {
   string db_source;
@@ -1497,7 +1496,7 @@ int Barista :: set_command_line_options(int argc, char *argv[])
   string ms2_source;
   string output_directory = "crux-output";
   string enzyme = "trypsin";
-  string decoy_prefix = "random_";
+  string decoy_prefix = "decoy_";
   string dir_with_tables = "";
   int found_dir_with_tables = 0;
   int spec_features_flag = 1;
@@ -1635,6 +1634,29 @@ int Barista :: set_command_line_options(int argc, char *argv[])
       carp(CARP_INFO, "decoy prefix: %s", decoy_prefix.c_str());
       if(fileroot.compare("") != 0)
 	carp(CARP_INFO, "fileroot: %s", fileroot.c_str());
+
+      //write out a parameter file
+      stringstream fname;
+      fname << output_directory << "/" << fileroot << "barista.params.txt";
+      ofstream fparam(fname.str().c_str());
+      fparam << "enzyme=" << enzyme << endl;
+      fparam << "decoy prefix=" << decoy_prefix << endl;
+      if(separate_search_flag)
+	fparam << "separate search=" << sqt_decoy_source << endl;
+      fparam << "fileroot=" << fileroot << endl;
+      fparam << "output directory=" << output_directory << endl;
+      if(skip_cleanup_flag)
+	fparam << "skip-cleanup=T" << endl;
+      else
+	fparam << "skip-cleanup=F" << endl;
+      fparam << "re-run=" << dir_with_tables << endl;
+      if(spec_features_flag)
+	fparam << "use spec features=T" << endl;
+      else
+	fparam << "use spec features=F" << endl;
+      fparam.close();
+
+
     }
   else
     {
@@ -1689,8 +1711,27 @@ int Barista :: set_command_line_options(int argc, char *argv[])
       carp(CARP_INFO, "decoy prefix: %s", decoy_prefix.c_str());
       if(fileroot.compare("") != 0)
 	carp(CARP_INFO, "fileroot: %s", fileroot.c_str());
-
       
+      //write out a parameter file
+      stringstream fname;
+      fname << output_directory << "/" << fileroot << "barista.params.txt";
+      ofstream fparam(fname.str().c_str());
+      fparam << "enzyme=" << enzyme << endl;
+      fparam << "decoy prefix=" << decoy_prefix << endl;
+      if(separate_search_flag)
+	fparam << "separate search=" << sqt_decoy_source << endl;
+      fparam << "fileroot=" << fileroot << endl;
+      fparam << "output directory=" << output_directory << endl;
+      if(skip_cleanup_flag)
+	fparam << "skip-cleanup=T" << endl;
+      else
+	fparam << "skip-cleanup=F" << endl; 
+      if(spec_features_flag)
+	fparam << "use spec features=T" << endl;
+      else
+	fparam << "use spec features=F" << endl;
+      fparam.close();
+
       //num of spec features
       if(spec_features_flag)
 	sqtp.set_num_spec_features(7);
@@ -1704,8 +1745,6 @@ int Barista :: set_command_line_options(int argc, char *argv[])
   return 1;
   
 }
-
-
 
 int Barista::main(int argc, char **argv) {
  //int main(int argc, char **argv){
