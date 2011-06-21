@@ -87,15 +87,13 @@ for searchtool in sequest-search search-for-matches; do
   echo replot \"$shortname/qvalues.percolator.txt\" using 1:0 title \"$shortname crux percolator\" with lines >> $gnuplot
 
   # Run q-ranker.
-  cp $ms2 $shortname/sequest.target.ms2
-  cp $ms2 $shortname/sequest.decoy.ms2
 
   # Run q-ranker.
   if [[ $searchtool == "search-for-matches" ]]; then
     echo QRanker does not work with crux search-for-matches.
   else
     $CRUX q-ranker \
-      --output-dir $shortname --decoy-prefix rand_ --use-spec-features F $db.fasta $shortname $shortname
+      --output-dir $shortname --decoy-prefix rand_ --use-spec-features F --separate-search $shortname/sequest.decoy.sqt . ./051708-worm-ASMS-10.ms2 $shortname/sequest.target.sqt
   fi
   $CRUX extract-columns $shortname/qranker.target.psms.txt "q-value" > $shortname/qvalues.qranker.txt
 
