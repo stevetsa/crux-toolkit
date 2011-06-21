@@ -40,10 +40,10 @@ for searchtool in sequest-search search-for-matches; do
 
   if [[ $searchtool == "sequest-search" ]]; then
      shortname=sequest
-     search_parameter="--parameter-file crux.param"
-#  else
-#     shortname=search
-#     search_parameter="--parameter-file crux.param --compute-p-values T --compute-sp T"
+     search_parameter=""
+  else
+     shortname=search
+     search_parameter="--compute-p-values T --compute-sp T"
   fi
 
   # Run the search.
@@ -66,11 +66,15 @@ for searchtool in sequest-search search-for-matches; do
       $db $shortname
   fi
   if [[ $searchtool == "sequest-search" ]]; then
-    $CRUX extract-columns $shortname/qvalues.target.txt "decoy q-value (xcorr)" > $shortname/qvalues.xcorr.decoy.txt
-    echo replot \"$shortname/qvalues.xcorr.decoy.txt\" using 1:0 title \"$shortname XCorr \(decoy\)\" with lines >> $gnuplot
+    $CRUX extract-columns $shortname/qvalues.target.txt \
+        "decoy q-value (xcorr)" > $shortname/qvalues.xcorr.decoy.txt
+    echo replot \"$shortname/qvalues.xcorr.decoy.txt\" using 1:0 title \
+         \"$shortname XCorr \(decoy\)\" with lines >> $gnuplot
   else  
-    $CRUX extract-columns $shortname/qvalues.target.txt "Weibull est. q-value" > $shortname/qvalues.weibull.txt
-    echo replot \"$shortname/qvalues.weibull.txt\" using 1:0 title \"$shortname XCorr \(Weibull\)\" with lines >> $gnuplot
+    $CRUX extract-columns $shortname/qvalues.target.txt \
+         "Weibull est. q-value" > $shortname/qvalues.weibull.txt
+    echo replot \"$shortname/qvalues.weibull.txt\" using 1:0 \
+         title \"$shortname XCorr \(Weibull\)\" with lines >> $gnuplot
   fi
   
   # Run Crux percolator
@@ -83,19 +87,26 @@ for searchtool in sequest-search search-for-matches; do
       $db $shortname 
   fi
 
-  $CRUX extract-columns $shortname/percolator.target.txt "percolator q-value" > $shortname/qvalues.percolator.txt
-  echo replot \"$shortname/qvalues.percolator.txt\" using 1:0 title \"$shortname crux percolator\" with lines >> $gnuplot
-
-  # Run q-ranker.
+  $CRUX extract-columns $shortname/percolator.target.txt "percolator q-value" \
+        > $shortname/qvalues.percolator.txt
+  echo replot \"$shortname/qvalues.percolator.txt\" using 1:0 \
+        title \"$shortname crux percolator\" with lines >> $gnuplot
 
   # Run q-ranker.
   if [[ $searchtool == "search-for-matches" ]]; then
     echo QRanker does not work with crux search-for-matches.
   else
-    $CRUX q-ranker \
-      --output-dir $shortname --decoy-prefix rand_ --use-spec-features F --separate-search $shortname/sequest.decoy.sqt . ./051708-worm-ASMS-10.ms2 $shortname/sequest.target.sqt
+    if [[ -e $shortname/qranker.target.psms.txt ]]; then
+      echo Skipping q-ranker
+    else
+      $CRUX q-ranker --output-dir $shortname --decoy-prefix rand_ \
+           --use-spec-features F \
+           --separate-search $shortname/sequest.decoy.sqt . \
+           ./051708-worm-ASMS-10.ms2 $shortname/sequest.target.sqt
+    fi
   fi
-  $CRUX extract-columns $shortname/qranker.target.psms.txt "q-value" > $shortname/qvalues.qranker.txt
+  $CRUX extract-columns $shortname/qranker.target.psms.txt "q-value" \
+        > $shortname/qvalues.qranker.txt
 
 
 
@@ -109,7 +120,8 @@ for searchtool in sequest-search search-for-matches; do
   #fi
   #$CRUX extract-columns $shortname/qranker.target.txt "q-ranker q-value" > $shortname/qvalues.qranker.txt
   
-  echo replot \"$shortname/qvalues.qranker.txt\" using 1:0 title \"$shortname q-ranker\" with lines >> $gnuplot
+  echo replot \"$shortname/qvalues.qranker.txt\" using 1:0 \
+       title \"$shortname q-ranker\" with lines >> $gnuplot
   
   # Run Lukas's percolator
   # THIS DOES NOT WORK WITH PERCOLATOR 1.17 BECAUSE XML IS REQUIRED. --Bill
