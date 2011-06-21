@@ -106,22 +106,10 @@ for searchtool in sequest-search search-for-matches; do
     fi
     $CRUX extract-columns $shortname/qranker.target.psms.txt "q-value" \
           > $shortname/qvalues.qranker.txt
+    echo replot \"$shortname/qvalues.qranker.txt\" using 1:0 \
+         title \"$shortname q-ranker\" with lines >> $gnuplot
   fi
 
-
-
-  #if [[ -e $shortname/qranker.target.txt ]]; then
-  #  echo Skipping q-ranker.
-  #else
-  #  $CRUX q-ranker \
-  #    --output-dir $shortname \
-  #    --feature-file T \
-  #    $db $shortname
-  #fi
-  #$CRUX extract-columns $shortname/qranker.target.txt "q-ranker q-value" > $shortname/qvalues.qranker.txt
-  
-  echo replot \"$shortname/qvalues.qranker.txt\" using 1:0 \
-       title \"$shortname q-ranker\" with lines >> $gnuplot
   
   # Run Lukas's percolator
   # THIS DOES NOT WORK WITH PERCOLATOR 1.17 BECAUSE XML IS REQUIRED. --Bill
