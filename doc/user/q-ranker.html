@@ -27,11 +27,8 @@ proteomics data sets."</a>  <i>Journal of Proteome Research.</i>
 <b>Usage:</b></p>
 
 <blockquote>
-<code>crux q-ranker [options] &lt;protein&nbsp;database&nbsp;folder&gt; &lt;sqt folder&gt; &lt;ms2 folder&gt;</p> 
-<code>crux q-ranker [options] &lt;list&nbsp;of&nbsp;protein&nbsp;database&nbsp;files&gt;&nbsp;&lt;list&nbsp;of&nbsp;sqt&nbsp;files&gt;&nbsp;&lt;list&nbsp;of&nbsp;ms2&nbsp;files&gt; </p> 
-<code>crux q-ranker [options] &lt;protein&nbsp;database&nbsp;file&gt;&nbsp;&lt;sqt&nbsp;file&gt;&nbsp;&lt;ms2&nbsp;file&gt; 
-
-</code>
+<code>crux q-ranker [options]
+  &lt;protein&nbsp;database&nbsp;folder&gt; &lt;spectra&gt; &lt;search&nbsp;results&gt;</code>
 </blockquote>
 
 
@@ -41,49 +38,41 @@ proteomics data sets."</a>  <i>Journal of Proteome Research.</i>
 <ul>
 
 <li>
-protein database &ndash; The program requires the FASTA format protein database
-files against which the search was performed. The protein database
-input may be a concatenated database or separate target and decoy
-databases. However, in both cases, the program distinguishes between
-target and decoy proteins based on the decoy prefix. There is an
-option to specify the prefix to the protein name that indicates a
-decoy; the default is "random_".</p>
-   
-<p>
-The format of the input can be a directory containing the database
-FASTA files, a text file with a list of FASTA files or a single
-FASTA file.  If the protein database input contains suffix "fasta",
-the program assumes a single-file input; otherwise, it checks whether
-the input is a directory or a text file.</li>
-</p>
+<b>protein database</b> &ndash; The program requires the FASTA format
+protein database files against which the search was performed. The
+protein database input may be a concatenated database or separate
+target and decoy databases; the latter is supported with the
+<code>--separate-searches</code> option, described below. In either
+case, Q-ranker distinguishes between target and decoy proteins based on
+the presence of a decoy prefix on the sequence identifiers (see
+the <code>--decoy-prefix</code> option, below).  The database can be
+provided in three different ways: (1) as a a single FASTA file with
+suffix ".fa", ".fsa" or ".fasta", (2) as a text file containing a list
+of FASTA files, one per line, or (3) as a directory containing
+multiple FASTA files (identified via the filename suffixes ".fa",
+".fsa" or ".fasta").</li>
 
 <li>
-sqt input &ndash; Q-Ranker recognizes sqt format for psm input. The psm
-input can be specified as a single file with suffix "sqt" and should
-be accompanied by the corresponding ms2 file as a third required
-argument. Alternatively, psm input can be given as a text file containing
-the list of all the "sqt" files and should be accompanied by the text
-file with the list of the corresponding ms2 files as a third required
-argument. 
-</p>
-Finally, the psm input can be specified as a directory in which all
-the database search results are located. In this case, the program
-collects all the files with prefix "sqt" contained in the directory and
-analyses them jointly. As it finds each sqt file, it simultaneously
-searches the ms2 input directory for an ms2 file with the same name,
-but with the suffix "sqt" replaced with suffix the "ms2" (for example, yeast.sqt and yeast.ms2).
+<b>spectra</b> &ndash; The fragmentation spectra must be provided
+in <a href="ms2-format.html">MS2 format</a>.  Like the database, the
+spectra can be specified in three different ways: (1) as a single file
+with suffix ".ms2", (2) as a text file containing a list of MS2 files
+or (3) as a directory in which all the MS2 files can be found.</li>
 
-</p>
-The multiple files can be results of many different experiments or of
-multiple duplicate runs. They can also be the result of separate
-target and decoy searches.  All such files in the given directory are
-analyzed jointly.
-</p>
+
 <li>
-ms2 input &ndash; The ms2 input can be specified as a single file with
-suffix "ms2", as a text file containing the list of all the ms2
-files or as a directory where all the ms2 files corresponding to
-the psm input in the second argument can be found.
+<b>search results</b> &ndash; Q-ranker recognizes search results
+in <a href="sqt-format.html">SQT format</a>.  Like the spectra, the
+search results can be provided as a single file, a list of files or a
+directory of files.  Note, however, that the input mode for spectra
+and for search results must be the same; i.e., if you provide a list
+of files for the spectra, then you must also provide a list of files
+containing your search results.  When the MS2 files and SQT files are
+provided via a file listing, Q-ranker assumes that the order of the MS2
+files matches the order of the SQT files.  Alternatively, when the MS2
+files and SQT files are provided via directories, Q-ranker will search
+for pairs of files with the same root name but different extensions
+(".ms2" and ".sqt").</li>
 
 </ul>
 
@@ -101,12 +90,12 @@ created:</p>
 <li>
 <b>qranker.target.psm.txt</b>: a tab-delimited file containing a
 ranked list of target peptide-spectrum matches with the associated
-Q-Ranker scores and q-values.  The following columns are included:
+Q-ranker scores and q-values.  The following columns are included:
 <ol>
 <li>q-value: The minimal PSM-level false discovery rate at which this
   PSM is deemed significant.  This q-value is computed based on the
-  ranking of the PSMs induced by the Q-Ranker score.</li>
-<li>q-ranker score: The score assigned to the PSM by Q-Ranker.  Higher
+  ranking of the PSMs induced by the Q-ranker score.</li>
+<li>q-ranker score: The score assigned to the PSM by Q-ranker.  Higher
   values correspond to more confident identifications.</code>
 <li>scan: the scan number</li>
 <li>charge: the inferred charge state</li>
@@ -126,10 +115,16 @@ on the training and testing sets. The following columns are included:
 </ol>
 </li>
 
-
 <li>
 <b>qranker.log.txt</b>: a file where the program reports its progress. 
 </li>
+
+<li>
+<b>barista.params.txt</b>: a file with the values of all the options
+given to the current run.
+</li>
+
+
 </ul>
 
 
@@ -149,6 +144,23 @@ prefix of the protein names that indicates a decoy. Default = random_.
 </li>
 
 <li>
+<code>--separate-searches &lt;string&gt;</code> &ndash; If the target
+and decoy searches were run separately, rather than using a
+concatenated database, then Q-ranker will assume that the database
+search results provided as a required argument are from the target
+database search.  This option then allows the user to specify the
+location of the decoy search results.  Like the required arguments,
+these search results can be provided as a single file, a list of files
+or a directory.  However, the choice (file, list or directory) must be
+consistent for the MS2 files and the target and decoy SQT files.
+Also, if the MS2 and SQT files are provided in directories, then
+Q-ranker will use the MS2 filename (<code>foo.ms2</code>) to identify
+corresponding target and decoy SQT files with names
+like <code>foo*.target.sqt</code> and <code>foo*.decoy.sqt</code>.
+This naming convention allows the target and decoy SQT files to reside
+in the same directory.</li>
+
+<li>
 <code>--fileroot &lt;string&gt;</code> &ndash;
 The <code>fileroot</code> string will be added as a prefix to all
 output file names. Default = none.</li>
@@ -161,34 +173,34 @@ Default = crux-output.</li>
 <li>
 <code>--overwrite &lt;T/F&gt;</code> &ndash; The option applies to the
 situation when the output directory specified for the run already
-exists. If set to T, Q-Ranker will overwrite the contents of the
+exists. If set to T, Q-ranker will overwrite the contents of the
 output directory specified for the run. Default = F.</li>
 
 <li>
-<code>--skip-cleanup &lt;T/F&gt;</code> &ndash; Q-Ranker analysis
+<code>--skip-cleanup &lt;T/F&gt;</code> &ndash; Q-ranker analysis
 begins with a pre-processsing step that creates a set of lookup tables
 which are then used during training. Normally, these lookup tables are
-deleted at the end of the Q-Ranker analysis, but setting this option
+deleted at the end of the Q-ranker analysis, but setting this option
 to <code>T</code> prevents the deletion of these tables.
-Subsequently, the Q-Ranker analysis can be repeated more efficiently by
+Subsequently, the Q-ranker analysis can be repeated more efficiently by
 specifying the <code>--re-run</code> option (see below). Default =
 F.</li>
 
 <li>
 <code>--re-run &lt;directory&gt;</code> &ndash; Re-run a previous
-Q-Ranker analysis using a previously computed set of lookup tables.
+Q-ranker analysis using a previously computed set of lookup tables.
 For this option to work, the <code>--skip-cleanup</code> must have
-been set to true when Q-Ranker was run the first time.</li>
+been set to true when Q-ranker was run the first time.</li>
 
 <li>
-<code>--use-spec-features &lt;T/F&gt;</code> &ndash; Q-Ranker uses
+<code>--use-spec-features &lt;T/F&gt;</code> &ndash; Q-ranker uses
 enriched feature set derived from the spectra in ms2 files. It can be
 forced to use minimal feature set by setting the --use-spec-features
 option to F. Default T.
 
-<hr></hr>
-
 </ul>
+
+<hr></hr>
 
 <a href="crux.html">Crux home</a>
 
