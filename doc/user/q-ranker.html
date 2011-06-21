@@ -133,21 +133,21 @@ prefix of the protein names that indicates a decoy. Default = random_.
 </li>
 
 <li>
-<code>--separate-searches &lt;string&gt;</code> &ndash; If the target
-and decoy searches were run separately, rather than using a
-concatenated database, then Q-ranker will assume that the database
-search results provided as a required argument are from the target
-database search.  This option then allows the user to specify the
-location of the decoy search results.  Like the required arguments,
-these search results can be provided as a single file, a list of files
-or a directory.  However, the choice (file, list or directory) must be
-consistent for the MS2 files and the target and decoy SQT files.
-Also, if the MS2 and SQT files are provided in directories, then
-Q-ranker will use the MS2 filename (<code>foo.ms2</code>) to identify
-corresponding target and decoy SQT files with names
-like <code>foo*.target.sqt</code> and <code>foo*.decoy.sqt</code>.
-This naming convention allows the target and decoy SQT files to reside
-in the same directory.</li>
+<code>--separate-searches &lt;search&nbsp;results&gt;</code> &ndash;
+If the target and decoy searches were run separately, rather than
+using a concatenated database, then Q-ranker will assume that the
+database search results provided as a required argument are from the
+target database search.  This option then allows the user to specify
+the location of the decoy search results.  Like the required
+arguments, these search results can be provided as a single file, a
+list of files or a directory.  However, the choice (file, list or
+directory) must be consistent for the MS2 files and the target and
+decoy SQT files.  Also, if the MS2 and SQT files are provided in
+directories, then Q-ranker will use the MS2 filename
+(<code>foo.ms2</code>) to identify corresponding target and decoy SQT
+files with names like <code>foo*.target.sqt</code>
+and <code>foo*.decoy.sqt</code>.  This naming convention allows the
+target and decoy SQT files to reside in the same directory.</li>
 
 <li>
 <code>--fileroot &lt;string&gt;</code> &ndash;
