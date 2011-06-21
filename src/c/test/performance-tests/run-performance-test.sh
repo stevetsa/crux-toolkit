@@ -104,9 +104,9 @@ for searchtool in sequest-search search-for-matches; do
            --separate-search $shortname/sequest.decoy.sqt . \
            ./051708-worm-ASMS-10.ms2 $shortname/sequest.target.sqt
     fi
+    $CRUX extract-columns $shortname/qranker.target.psms.txt "q-value" \
+          > $shortname/qvalues.qranker.txt
   fi
-  $CRUX extract-columns $shortname/qranker.target.psms.txt "q-value" \
-        > $shortname/qvalues.qranker.txt
 
 
 
