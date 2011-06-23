@@ -436,12 +436,9 @@ bool Spectrum::parseMgf
     }
   }
 
-  if (!scans_found) {
-    //Try to parse scan information from title.  
-    //Otherwise use passed in scan count.
-    first_scan_ = scan_num;
-    last_scan_ = scan_num;
+  if (!scans_found || !charge_found) {
 
+    //Try to parse scan,charge information from title.    
     if (title_found) {
       //try to parse the scan title string.
       vector<string> scan_title_tokens;
@@ -467,21 +464,31 @@ bool Spectrum::parseMgf
           carp(CARP_DETAILED_DEBUG, "Title first scan:%i", title_first_scan);
           carp(CARP_DETAILED_DEBUG, "Title last scan:%i" ,title_last_scan);
           carp(CARP_DETAILED_DEBUG, "Title charge:%i", title_charge);
-          first_scan_ = title_first_scan;
-          last_scan_ = title_last_scan;
+          if (!scans_found) {
+            first_scan_ = title_first_scan;
+            last_scan_ = title_last_scan;
+            scans_found = true;
+          }
           //if we didn't get the charge before, assign it here.
           if (!charge_found) {
             charge = title_charge;
             charge_found = true;
           } else if (charge != title_charge) {
-            carp(CARP_ERROR, 
-              "Title charge doesn't match spectrum charge! %i != %i", 
+            carp_once(CARP_DEBUG, 
+              "Title charge doesn't match spectrum charge! %i != %i\n"
+              "  Check your file! Message will not be repeated.", 
               charge, 
               title_charge);
           }
         }
       }
     }
+  }
+
+  if (!scans_found) {
+    //Use passed in scan count.
+    first_scan_ = scan_num;
+    last_scan_ = scan_num;
   }
 
   if (pepmass_found && charge_found) {
@@ -491,8 +498,6 @@ bool Spectrum::parseMgf
   } else {
     carp(CARP_ERROR, "Pepmass or charge not found!");
   }
-
-
 
   //parse peak information
   do {

@@ -244,14 +244,17 @@ void MatchCandidateVector::shuffle(MatchCandidateVector& decoy_vector) {
 void MatchCandidateVector::scoreSpectrum(Spectrum* spectrum) {
 
   int max_ion_charge = get_max_ion_charge_parameter("max-ion-charge");
-  
+
+  carp(CARP_DEBUG, "Creating scorer");
   XLinkScorer scorer(
     spectrum, 
     min(zstate_.getCharge(), max_ion_charge));
 
   for (unsigned int idx=0;idx<size();idx++) {
+    carp(CARP_DEBUG, "Scoring candidate:%d", idx);
     scorer.scoreCandidate(at(idx));
   }
+  carp(CARP_DEBUG, "Done scoreSpectrum");
 }
 
 void MatchCandidateVector::sortByXCorr() {

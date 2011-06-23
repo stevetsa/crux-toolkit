@@ -171,7 +171,7 @@ int xlink_search_main(int argc, char** argv) {
     }
 
     //score targets
-    carp(CARP_DEBUG, "scoring targets");
+    carp(CARP_DEBUG, "scoring targets:%d", target_candidates.size());
     target_candidates.scoreSpectrum(spectrum);
 
     

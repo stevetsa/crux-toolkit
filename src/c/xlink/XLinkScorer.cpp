@@ -47,7 +47,6 @@ FLOAT_T XLinkScorer::scoreCandidate(MatchCandidate* candidate) {
   FLOAT_T xcorr = score_spectrum_v_ion_series(scorer_xcorr_, spectrum_, ion_series_xcorr_);
   candidate->setXCorr(xcorr);
   
-
   candidate->predictIons(ion_series_sp_, charge_);
   FLOAT_T sp = score_spectrum_v_ion_series(scorer_sp_, spectrum_, ion_series_sp_);
   candidate->setSP(sp);

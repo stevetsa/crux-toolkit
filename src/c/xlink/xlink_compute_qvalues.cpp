@@ -270,30 +270,22 @@ int xlink_compute_qvalues(){
   target_matches_bonf.addColumn("fdr xcorr");
   target_matches_bonf.addColumn("q-value xcorr");
 
-  carp(CARP_INFO, "Calculating fdr xcorr");
+  carp(CARP_DEBUG, "Calculating fdr xcorr");
   for (unsigned int target_idx = 0;
     target_idx < target_matches_bonf.numRows();
     target_idx++) {
-    
-    cout <<"target idx:"<<target_idx<<endl;
 
     double target_xcorr = target_matches_bonf.getDouble("xcorr score", target_idx);
-
-    cout <<"target xcorr:"<<target_xcorr<<endl;
 
     while ((decoy_idx < decoy_matches_bonf.numRows()) &&
       (decoy_matches_bonf.getDouble("xcorr score", decoy_idx) >= target_xcorr)) {
       decoy_idx++;
     }
 
-    cout <<"decoy idx:"<<decoy_idx<<endl;
-
     double fdr_xcorr = 0;
     if (decoy_idx != 0) {
       fdr_xcorr = (double)decoy_idx / (double)(target_idx + 1);
     }
-
-    cout <<"fdr xcorr:"<<fdr_xcorr<<endl;
 
     target_matches_bonf.setValue("fdr xcorr", target_idx, fdr_xcorr);
   }
