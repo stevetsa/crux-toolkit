@@ -444,6 +444,9 @@
     <ClCompile Include="src\external\zlib\compress.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\c\WinCrux.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="src\c\test\cppunit-tests\cppunit-1.12.1\examples\msvc6\cppunittestapp\res\CppUnitTestApp.rc2">

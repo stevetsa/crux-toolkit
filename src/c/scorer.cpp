@@ -38,6 +38,7 @@ static const int MAX_XCORR_OFFSET = 75;
 // These values should be good for double precision floating point
 // numbers compatible with the IEEE 754 standard.
 
+#ifndef WIN32
 /**
 * Constant for EVD p_value calculation
 */
@@ -46,6 +47,7 @@ static const FLOAT_T DBL_EPSILON = 2.2204460492503131e-16;
 * Constant for EVD p_value calculation
 */
 static const int DBL_MAX_10_EXP = 308;
+#endif
 
 /**
  * Cut-off below which the simple Bonferroni calculation can be used.

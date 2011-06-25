@@ -27,6 +27,7 @@
 #include "database.h"
 #include "protein_index.h"
 #include "parameter.h"
+#include "WinCrux.h"
 
 // maximum proteins the index can handle
 static const int MAX_PROTEIN = 30000;

@@ -11,6 +11,7 @@
 #include "CreateIndex.h"
 
 #include <signal.h>
+#include "WinCrux.h"
 
 using namespace std;
 

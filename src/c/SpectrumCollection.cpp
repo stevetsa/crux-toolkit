@@ -15,6 +15,7 @@
 #include <cerrno>
 #include <cstring>
 #include "carp.h"
+#include "WinCrux.h"
 
 /**
  * Instantiates a new spectrum_collection object from a filename. 

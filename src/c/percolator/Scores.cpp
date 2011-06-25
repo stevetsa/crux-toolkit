@@ -8,6 +8,7 @@
  *******************************************************************************/
 #include <assert.h>
 #include <iostream>
+#include <iterator>
 #include <fstream>
 #include <utility>
 #include <algorithm>

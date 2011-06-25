@@ -20,6 +20,7 @@
 #ifndef WIN32
 #include "unistd.h"
 #endif
+#include "WinCrux.h"
 
 /****************************************************************************
  * Read a string into either a single positive integer or a range of
