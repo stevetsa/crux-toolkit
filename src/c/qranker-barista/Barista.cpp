@@ -1516,14 +1516,14 @@ int Barista :: set_command_line_options(int argc, char *argv[])
 	      sqtp.set_enzyme(enzyme);
 	    }
 	  //found decoy prefix
-	  if(str.find("decoy") != string::npos)
+	  else if(str.find("decoy-prefix") != string::npos)
 	    {
 	      arg++;
 	      decoy_prefix = argv[arg];
 	      sqtp.set_decoy_prefix(decoy_prefix);
 	    }
 	  //found output directory
-	  if(str.find("output") != string::npos)
+	  else if(str.find("output-dir") != string::npos)
 	    {
 	      arg++;
 	      output_directory = argv[arg];
@@ -1532,7 +1532,7 @@ int Barista :: set_command_line_options(int argc, char *argv[])
 	      set_output_dir(output_directory);
 	    }
 	  //found overwrite directory
-	  if(str.find("overwrite") != string::npos)
+	  else if(str.find("overwrite") != string::npos)
 	    {
 	      arg++;
 	      string opt = argv[arg];
@@ -1542,14 +1542,14 @@ int Barista :: set_command_line_options(int argc, char *argv[])
 		overwrite_flag = 0;
 	    }
 	  //found fileroot
-	  if(str.find("fileroot") != string::npos)
+	  else if(str.find("fileroot") != string::npos)
 	    {
 	      arg++;
 	      fileroot = argv[arg];
 	      fileroot.append(".");
 	    }
 	  //no cleanup
-	  if(str.find("skip") != string::npos)
+	  else if(str.find("skip-cleanup") != string::npos)
 	    {
 	      arg++;
 	      string opt = argv[arg];
@@ -1560,7 +1560,7 @@ int Barista :: set_command_line_options(int argc, char *argv[])
 		}
 	    }
 	  //
-	  if(str.find("re-run") != string::npos)
+	  else if(str.find("re-run") != string::npos)
 	    {
 	      arg++;
 	      dir_with_tables = argv[arg];
@@ -1568,7 +1568,7 @@ int Barista :: set_command_line_options(int argc, char *argv[])
 	      cout << "INFO: directory with preprocessed data: " << dir_with_tables << endl;
 	    }
 	  //found spec-features
-	  if(str.find("spec-features") != string::npos)
+	  else if(str.find("spec-features") != string::npos)
 	    {
 	      arg++;
 	      string opt = argv[arg];
@@ -1578,13 +1578,18 @@ int Barista :: set_command_line_options(int argc, char *argv[])
 		spec_features_flag = 0;
 	    }
 	  //found separate search
-	  if(str.find("separate-search") != string::npos)
+	  else if(str.find("separate-search") != string::npos)
 	    {
 	      arg++;
 	      string opt = argv[arg];
 	      sqt_decoy_source = opt;
 	      separate_search_flag = 1;
 	      cout << sqt_decoy_source << endl;
+	    }
+	  else
+	    {
+	      cout << "FATAL: option " << str << " does not exist" << endl;
+	      return 0;
 	    }
 	}
       else
@@ -1691,7 +1696,7 @@ int Barista :: set_command_line_options(int argc, char *argv[])
       
       if(!sqtp.set_database_source(db_source))
 	carp(CARP_FATAL, "could not find the database");
-
+      
       if(separate_search_flag)
 	{
 	  if(!sqtp.set_input_sources(ms2_source, sqt_source, sqt_decoy_source))
@@ -1702,6 +1707,7 @@ int Barista :: set_command_line_options(int argc, char *argv[])
 	  if(!sqtp.set_input_sources(ms2_source, sqt_source))
 	    carp(CARP_FATAL, "could not extract features for training");
 	}
+      
       //print some info
       carp(CARP_INFO, "database source: %s", db_source.c_str());
       carp(CARP_INFO, "sqt source: %s", sqt_source.c_str()); 
@@ -1738,7 +1744,7 @@ int Barista :: set_command_line_options(int argc, char *argv[])
       else
 	sqtp.set_num_spec_features(0);
       if(!sqtp.run())
-	carp(CARP_FATAL, "could not extract features for training");
+	carp(CARP_FATAL, "Could not proceed with training.");
       sqtp.clear();
       
     }

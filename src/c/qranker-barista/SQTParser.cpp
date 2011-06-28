@@ -17,6 +17,7 @@ SQTParser :: SQTParser()
     num_pos_prot(0),
     num_neg_prot(0),
     psmind(0),
+    num_prot_not_found_in_db(0),
     x(0), 
     xs(0), 
     psmind_to_pepind(0), 
@@ -227,7 +228,8 @@ void SQTParser :: add_matches_to_tables(sqt_match &m, string &decoy_prefix, int 
 		  //add the cnt to protind_to_num_all_pep_map
 		  if(cnt == 0)
 		    {
-		      carp(CARP_WARNING, "did not find protein %s from sqt file in the database ", prot.c_str());
+		      num_prot_not_found_in_db++;
+		      //carp(CARP_WARNING, "did not find protein %s from sqt file in the database ", prot.c_str());
 		    }
 		  else
 		    protind_to_num_all_pep_map[prot_ind] = cnt;
@@ -945,7 +947,6 @@ void SQTParser :: digest_database(ifstream &f_db, enzyme e)
       protein_to_num_all_pep_map[prot] = cnt;
       seq.str("");
     }
-  
 }
 
 
@@ -1031,6 +1032,15 @@ int SQTParser :: run()
   carp(CARP_INFO, "Number of peptides: total %d positives %d negatives %d", num_pep, num_pos_pep, num_neg_pep);
   carp(CARP_INFO, "Number of proteins: total %d positives %d negatives %d", num_prot, num_pos_prot, num_neg_prot);
 
+  if(num_prot_not_found_in_db > 0)
+    carp(CARP_WARNING, "The database did not contain %d of the proteins that were found in the sqt files", num_prot_not_found_in_db);
+
+  if(num_neg_prot == 0)
+    {
+      carp(CARP_WARNING, "Found %d decoy proteins in the sqt files.", num_neg_prot);
+      return 0;
+    }
+
   //save the data
   save_data_in_binary(out_dir);
 
@@ -1114,13 +1124,22 @@ int SQTParser :: set_output_dir(string &output_dir, int overwrite_flag)
   return 1;
 }
 
+int SQTParser :: is_ending(string &name, string &ext)
+{
+  int len = ext.size();
+  int pos = name.size()-len-1;
+  if(name.find(ext,pos) != string::npos)
+    return pos;
+  else
+    return 0;
+}
+
 int SQTParser :: is_fasta(string &fname)
 {
-  if(fname.find(".fasta") != string::npos)
-    return 1;
-  if(fname.find(".fsa") != string::npos)
-    return 1;
-  if(fname.find(".fa") != string::npos)
+  string ext1 = ".fasta";
+  string ext2 = ".fsa";
+  string ext3 = ".fa";
+  if(is_ending(fname, ext1) || is_ending(fname, ext2) || is_ending(fname, ext3))
     return 1;
   return 0;
 }
@@ -1152,7 +1171,6 @@ int SQTParser :: set_database_source(string &db_source)
 	{
 	  string fname = string(dirp->d_name);
 	  if(is_fasta(fname))
-	  //if(fname.find(".fasta") != string::npos)
 	    {
 	      ostringstream fstr;
 	      fstr << db_source;
@@ -1174,7 +1192,6 @@ int SQTParser :: set_database_source(string &db_source)
   else
     {
       if(is_fasta(db_source))
-      //if(db_source.find(".fasta") != string :: npos)
 	db_file_names.push_back(db_source);
       else 
 	read_list_of_files(db_source, db_file_names);
@@ -1183,83 +1200,6 @@ int SQTParser :: set_database_source(string &db_source)
   return 1;
 }
 
-/*
-int SQTParser :: set_input_sources(string &sqt_source, string &ms2_source)
-{
-  DIR *dp;
-  struct dirent *dirp;
-
-  int intStat;
-  struct stat stFileInfo;
-  intStat = stat(sqt_source.c_str(), &stFileInfo);
-  if(intStat != 0)
-    {
-      carp(CARP_WARNING, "%s does not exist", sqt_source.c_str());
-      return 0;
-    }
-  if((stFileInfo.st_mode & S_IFMT) == S_IFDIR)
-    {
-      //try openning the directory
-      if((dp  = opendir(sqt_source.c_str())) == NULL)
-	{
-	  carp(CARP_WARNING, "openning directory %s failed ", sqt_source.c_str());
-	  return 0;
-	}
-      int cn = 0;
-      //read sqt files in the directory and match them by name to the .ms2 files
-      while ((dirp = readdir(dp)) != NULL) 
-	{
-	  string fname = string(dirp->d_name);
-	  size_t pos = fname.find(".sqt"); 
-	  if(pos != string::npos)
-	    {
-	      string prefix = fname.substr(0,pos);
-	      ostringstream fstr;
-	      fstr << sqt_source <<"/" << fname;
-	      string sqtname = fstr.str();
-	      fstr.str("");
-	      fstr << ms2_source <<"/" << prefix << ".ms2";
-	      string ms2name = fstr.str();
-	      sqt_file_names.push_back(sqtname);
-	      ms2_file_names.push_back(ms2name);
-	      //cout << "found " << sqtname <<  " " << ms2name << endl;
-	      cn++;
-	    }
-	}
-      closedir(dp);
-      if(cn<1)
-	{
-	  carp(CARP_WARNING, "did not find any .sqt files in %s directory", sqt_source.c_str());
-	  return 0;
-	}
-    }
-  else
-    {
-      if(sqt_source.find(".sqt") != string :: npos)
-	{
-	  sqt_file_names.push_back(sqt_source);
-	  if(ms2_source.find(".ms2") == string::npos)
-	    {
-	      carp(CARP_WARNING,  "expecting ms2 file to accompany the sqt file");
-	      return 0;
-	    }
-	  ms2_file_names.push_back(ms2_source);
-	}
-      else 
-	{
-	  read_list_of_files(sqt_source, sqt_file_names);
-	  read_list_of_files(ms2_source, ms2_file_names);
-	  if(ms2_file_names.size() != sqt_file_names.size())
-	    {
-	      carp(CARP_WARNING, " the number of sqt and ms2 files does not match: each sqt file should be accompaned by ms2 file");
-	      return 0;
-	    }
-	}
-    }  
-    
-  return 1;
-}
-*/
 
 int SQTParser :: match_sqt_to_ms2(string &sqt_source, string &prefix)
 {
@@ -1275,9 +1215,10 @@ int SQTParser :: match_sqt_to_ms2(string &sqt_source, string &prefix)
   //read sqt files in the directory 
   while ((dirp = readdir(dp)) != NULL) 
     {
+      string ext_sqt = ".sqt";
       string fname = string(dirp->d_name);
-      size_t pos = fname.find(".sqt");
-      if((pos != string::npos) && (fname.find(prefix) != string::npos))
+      int pos = is_ending(fname, ext_sqt);
+      if((pos != 0) && (fname.find(prefix,0) != string::npos))
 	{
 	  ostringstream fstr;
 	  fstr << sqt_source;
@@ -1287,7 +1228,6 @@ int SQTParser :: match_sqt_to_ms2(string &sqt_source, string &prefix)
 	  string sqtname = fstr.str();
 	  fstr.str("");
 	  sqt_file_names.push_back(sqtname);
-	  cout << "found " << sqtname << endl;
 	  cn++;
 	}
     }
@@ -1307,14 +1247,16 @@ int SQTParser :: collect_ms2_files(string &ms2_source, string & sqt_source)
       return 0;
     }
   int cn = 0;
+  int total_matched = 0;
   //read ms2 files in the directory 
   while ((dirp = readdir(dp)) != NULL) 
     {
       string fname = string(dirp->d_name);
-      size_t pos = fname.find(".ms2");
-      if(pos != string::npos)
+      string ext_ms2 = ".ms2";
+      int pos = is_ending(fname, ext_ms2);
+      if(pos != 0)
 	{
-	  string prefix = fname.substr(0,pos);
+	  string prefix = fname.substr(0,pos+1);
 	  //collect the file
 	  ostringstream fstr;
 	  fstr << ms2_source;
@@ -1323,7 +1265,8 @@ int SQTParser :: collect_ms2_files(string &ms2_source, string & sqt_source)
 	  fstr << fname;
 	  string ms2name = fstr.str();
 	  fstr.str("");
-	  int num_matched = match_sqt_to_ms2(sqt_source, prefix); 
+	  int num_matched = match_sqt_to_ms2(sqt_source, prefix);
+	  total_matched += num_matched;
 	  if(!num_matched)
 	    carp(CARP_WARNING, "could not find %s*.sqt in directory %s to match %s, skipping", prefix.c_str(), sqt_source.c_str(), ms2name.c_str());
 	  else
@@ -1331,7 +1274,7 @@ int SQTParser :: collect_ms2_files(string &ms2_source, string & sqt_source)
 	      for(int i = 0; i < num_matched; i++)
 		ms2_file_names.push_back(ms2name);
 	    }
-	  cn++;
+	    cn++;
 	}
     }
   closedir(dp);
@@ -1341,6 +1284,12 @@ int SQTParser :: collect_ms2_files(string &ms2_source, string & sqt_source)
       carp(CARP_WARNING, "did not find any .ms2 files in %s directory", ms2_source.c_str());
       return 0;
     }
+    if(total_matched<1)
+    {
+      carp(CARP_WARNING, "did not find any .sqt files in %s directory to match the .ms2 files in %s directory", sqt_source.c_str(), ms2_source.c_str());
+      return 0;
+    }
+
   
   return 1;
 }
@@ -1364,9 +1313,11 @@ int SQTParser :: set_input_sources(string &ms2_source, string &sqt_source)
     }
   else
     {
-      if(ms2_source.find(".ms2") != string :: npos)
+      string ext_ms2 = ".ms2";
+      string ext_sqt = ".sqt";
+      if(is_ending(ms2_source, ext_ms2))
 	{
-	  if(sqt_source.find(".sqt") == string::npos)
+	  if(!is_ending(sqt_source, ext_sqt))
 	    {
 	      carp(CARP_WARNING,  "expecting sqt file to accompany the ms2 file");
 	      return 0;
@@ -1403,11 +1354,12 @@ int SQTParser :: match_target_sqt_to_ms2(string &sqt_source, string &prefix)
     }
   int cn = 0;
   //read sqt files in the directory 
+  string ext_sqt = ".target.sqt";
   while ((dirp = readdir(dp)) != NULL) 
     {
       string fname = string(dirp->d_name);
-      size_t pos = fname.find(".target.sqt");
-      if((pos != string::npos) && (fname.find(prefix) != string::npos))
+      int pos = is_ending(fname, ext_sqt);
+      if((pos != 0) && (fname.find(prefix,0) != string::npos))
 	{
 	  ostringstream fstr;
 	  fstr << sqt_source;
@@ -1417,7 +1369,6 @@ int SQTParser :: match_target_sqt_to_ms2(string &sqt_source, string &prefix)
 	  string sqtname = fstr.str();
 	  fstr.str("");
 	  sqt_file_names.push_back(sqtname);
-	  cout << "found " << sqtname << endl;
 	  cn++;
 	}
     }
@@ -1438,11 +1389,12 @@ int SQTParser :: match_decoy_sqt_to_ms2(string &sqt_source, string &prefix)
     }
   int cn = 0;
   //read sqt files in the directory 
+  string ext_sqt = ".decoy.sqt";
   while ((dirp = readdir(dp)) != NULL) 
     {
       string fname = string(dirp->d_name);
-      size_t pos = fname.find(".decoy.sqt");
-      if((pos != string::npos) && (fname.find(prefix) != string::npos))
+      int pos = is_ending(fname, ext_sqt);
+      if((pos != 0) && (fname.find(prefix,0) != string::npos))
 	{
 	  ostringstream fstr;
 	  fstr << sqt_source;
@@ -1452,7 +1404,6 @@ int SQTParser :: match_decoy_sqt_to_ms2(string &sqt_source, string &prefix)
 	  string sqtname = fstr.str();
 	  fstr.str("");
 	  sqt_file_names.push_back(sqtname);
-	  cout << "found " << sqtname << endl;
 	  cn++;
 	}
     }
@@ -1472,14 +1423,15 @@ int SQTParser :: collect_ms2_files(string &ms2_source, string &sqt_target_source
       return 0;
     }
   int cn = 0;
-  //read ms2 files in the directory 
+  //read ms2 files in the directory
+  string ext_ms2 = ".ms2";
   while ((dirp = readdir(dp)) != NULL) 
     {
       string fname = string(dirp->d_name);
-      size_t pos = fname.find(".ms2");
-      if(pos != string::npos)
+      int pos = is_ending(fname, ext_ms2);
+      if(pos != 0)
 	{
-	  string prefix = fname.substr(0,pos);
+	  string prefix = fname.substr(0,pos+1);
 	  //collect the file
 	  ostringstream fstr;
 	  fstr << ms2_source;
@@ -1537,14 +1489,16 @@ int SQTParser :: set_input_sources(string &ms2_source, string &sqt_target_source
     }
   else
     {
-      if(ms2_source.find(".ms2") != string :: npos)
-	{
-	  if(sqt_target_source.find(".sqt") == string::npos)
+      string ext_ms2 = ".ms2";
+      string ext_sqt = ".sqt";
+      if(is_ending(ms2_source, ext_ms2))
+      	{
+	  if(!is_ending(sqt_target_source, ext_sqt))
 	    {
 	      carp(CARP_WARNING,  "expecting target sqt file to accompany the ms2 file");
 	      return 0;
 	    }
-	  if(sqt_decoy_source.find(".sqt") == string::npos)
+	  if(!is_ending(sqt_decoy_source, ext_sqt))
 	    {
 	      carp(CARP_WARNING,  "expecting decoy sqt file to accompany the ms2 file and the target sqt file for the separate searches");
 	      return 0;

@@ -40,10 +40,10 @@ for searchtool in sequest-search search-for-matches; do
 
   if [[ $searchtool == "sequest-search" ]]; then
      shortname=sequest
-     search_parameter=""
+     search_parameter="--parameter-file crux.param"
   else
      shortname=search
-     search_parameter="--compute-p-values T --compute-sp T"
+     search_parameter="--parameter-file crux.param --compute-p-values T --compute-sp T"
   fi
 
   # Run the search.

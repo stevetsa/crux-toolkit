@@ -67,7 +67,9 @@ class SQTParser{
   inline string& get_input_dir(){return in_dir;}
   inline void set_db_name(string database){db_name = database;}
   inline void set_decoy_prefix(string prefix){decoy_prefix = prefix;}
+  inline void set_num_hits_per_spectrum(int hits_per_spectrum){fhps = hits_per_spectrum;}
   void set_enzyme(string &enz);
+  int is_ending(string &name, string &ext);
   int is_fasta(string &fname);
   int set_database_source(string &db_source);
   int match_sqt_to_ms2(string &sqt_source, string &prefix);
@@ -136,6 +138,8 @@ class SQTParser{
   int num_neg_prot;
   
   int psmind;
+
+  int num_prot_not_found_in_db;
 
   //psm feature vector
   double *x;

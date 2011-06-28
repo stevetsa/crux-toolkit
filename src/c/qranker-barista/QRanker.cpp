@@ -3,8 +3,8 @@
 QRanker::QRanker() :  
   seed(0),
   selectionfdr(0.01),
-  num_hu(5),
-  mu(0.00005),
+  num_hu(3),
+  mu(0.005),
   weightDecay(0.000),
   in_dir(""), 
   out_dir(""), 
@@ -525,7 +525,7 @@ void QRanker::train_many_nets()
     }
   
   //set the linear flag: 1 if linear, 0 otherwise
-  int lf = 0; num_hu = 5;
+  int lf = 0; num_hu = 3;
   if(num_hu == 1)
     lf = 1;
   //set whether there is bias in the linear units: 1 if yes, 0 otherwise
@@ -660,7 +660,7 @@ int QRanker :: set_command_line_options(int argc, char *argv[])
   string ms2_source;
   string output_directory = "crux-output";
   string enzyme = "trypsin";
-  string decoy_prefix = "decoy_";
+  string decoy_prefix = "reverse_";
   string dir_with_tables = "";
   int found_dir_with_tables = 0;
   int spec_features_flag = 1;
@@ -680,21 +680,21 @@ int QRanker :: set_command_line_options(int argc, char *argv[])
 	      sqtp.set_enzyme(enzyme);
 	    }
 	  //found decoy prefix
-	  if(str.find("decoy") != string::npos)
+	  else if(str.find("decoy-prefix") != string::npos)
 	    {
 	      arg++;
 	      decoy_prefix = argv[arg];
 	      sqtp.set_decoy_prefix(decoy_prefix);
 	    }
 	  //found output directory
-	  if(str.find("output") != string::npos)
+	  else if(str.find("output-dir") != string::npos)
 	    {
 	      arg++;
 	      output_directory = argv[arg];
 	      set_output_dir(output_directory);
 	    }
 	  //found overwrite directory
-	  if(str.find("overwrite") != string::npos)
+	  else if(str.find("overwrite") != string::npos)
 	    {
 	      arg++;
 	      string opt = argv[arg];
@@ -704,14 +704,14 @@ int QRanker :: set_command_line_options(int argc, char *argv[])
 		overwrite_flag = 0;
 	    }
 	  //found fileroot
-	  if(str.find("fileroot") != string::npos)
+	  else if(str.find("fileroot") != string::npos)
 	    {
 	      arg++;
 	      fileroot = argv[arg];
 	      fileroot.append(".");
 	    }
 	  //no cleanup
-	  if(str.find("skip") != string::npos)
+	  else if(str.find("skip-cleanup") != string::npos)
 	    {
 	      arg++;
 	      string opt = argv[arg];
@@ -722,7 +722,7 @@ int QRanker :: set_command_line_options(int argc, char *argv[])
 		}
 	    }
 	  //
-	  if(str.find("re-run") != string::npos)
+	  else if(str.find("re-run") != string::npos)
 	    {
 	      arg++;
 	      dir_with_tables = argv[arg];
@@ -730,7 +730,7 @@ int QRanker :: set_command_line_options(int argc, char *argv[])
 	      cout << "INFO: directory with preprocessed data: " << dir_with_tables << endl;
 	    }
 	  //found overwrite directory
-	  if(str.find("spec-features") != string::npos)
+	  else if(str.find("spec-features") != string::npos)
 	    {
 	      arg++;
 	      string opt = argv[arg];
@@ -740,13 +740,18 @@ int QRanker :: set_command_line_options(int argc, char *argv[])
 		spec_features_flag = 0;
 	    }
 	  //found separate search
-	  if(str.find("separate-search") != string::npos)
+	  else if(str.find("separate-search") != string::npos)
 	    {
 	      arg++;
 	      string opt = argv[arg];
 	      sqt_decoy_source = opt;
 	      separate_search_flag = 1;
 	      cout << sqt_decoy_source << endl;
+	    }
+	  else
+	    {
+	      cout << "FATAL: option " << str << " does not exist" << endl;
+	      return 0;
 	    }
 	}
       else
@@ -875,6 +880,7 @@ int QRanker :: set_command_line_options(int argc, char *argv[])
 	{
 	  if(!sqtp.set_input_sources(ms2_source, sqt_source, sqt_decoy_source))
 	    carp(CARP_FATAL, "could not extract features for training");
+	  sqtp.set_num_hits_per_spectrum(1);
 	}
       else
 	{
@@ -897,7 +903,7 @@ int QRanker :: set_command_line_options(int argc, char *argv[])
       else
 	sqtp.set_num_spec_features(0);
       if(!sqtp.run())
-	carp(CARP_FATAL, "could not extract features for training");
+	carp(CARP_FATAL, "Could not proceed with training.");
       sqtp.clear();
     }
   return 1;
