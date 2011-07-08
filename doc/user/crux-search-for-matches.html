@@ -32,9 +32,10 @@ open source warning -->
 This command searches a protein database with a set of spectra.  For
 each spectrum, the precursor mass is computed from either the measured precursor
 singly charged mass (m+h) or the mass-to-charge (m/z) and an assumed charge.  
-Candidate peptides whose masslies within a specified range of the precursor mass 
-are identified.  These candidate peptides scored with the SEQUEST XCorr 
-and ranked by score. The top ranking matches are printed to file.  An 
+Candidate peptides whose masses lie within a specified range of the
+precursor mass are identified.  These candidate peptides scored with
+the SEQUEST XCorr and ranked by score. The top ranking matches are
+printed to file.  An  
 optional p-value may be computed for each spectrum based on the distribution 
 of scores for that spectrum (<a href="../../papers/klammer2009statistical.html">
 Aaron A. Klammer, Christopher Y. Park and William
@@ -139,7 +140,7 @@ that were printed to stderr.
 </ul>
 
 <p>
-If decoys are enabled using <code>--num-decoys-per-target</code>, then
+If decoys are enabled using <code>--decoys</code>, then
 files called search.decoy.txt and search.decoy.pep.xml are also produced.</p>
 
 
@@ -163,24 +164,22 @@ Replace existing files if true (T) or fail when trying to overwrite a
 file if false (F). Default =  F.</li>
 
 <LI>
-<code>--num-decoys-per-target &lt;n&gt;</code> &ndash; 
-Specify the number of decoy peptides to search for every target
-peptide searched. Control where the decoys are returned (to what
-files) with <code>--decoy-location</code>. At least one decoy set (in
-its own file) is required to run the algorithm 'percolator' in a
-subsequent crux run.  Default = 2. </li>
+<code>--decoys &lt;none|shuffle|reverse&gt;</code> &ndash; 
+Search decoy peptides either stored in the index or generated
+on-the-fly from the fasta file.  Control where the decoys are returned
+(to what files) with <code>--decoy-location</code>. Decoys are required to 
+for <code>crux percolator</code>, <code>crux barista</code>, and 
+<code>crux q-rankder</code>. Default = shuffle. </li>
 
 <li>
-<code>--decoy-location &lt;target-file | one-decoy-file |
-separate-decoy-files&gt;</code> &ndash; 
-File(s) in which decoy results are returned.  Only applies
-when <code>num-decoys-per-target</code> is not zero.  Use
-'target-file' to mix target and decoy psms in one file. Use
-'one-decoy-file' to print target psms to one file and all decoys to a
-separate file.  Use 'separate-decoy-files' to print one .txt file for
-each decoy set.  (<code>crux percolator</code> accepts up to two
-search.decoy.txt files. <code>crux q-ranker</code> accepts only one
-search.decoy.txt file.) Default = separate-decoy-files.
+<code>--decoy-location &lt;target-file | decoy-file&gt;</code> &ndash; 
+Either report the decoy PSMs in their own file or in the same file as the
+target PSMs.  When reported separately, every spectrum will have both
+a top-ranked target and top-ranked decoy match.  When reported
+together, the targets and decoys are ranked together so that every
+spectrum has only one top-ranked match that will be to either a target
+or decoy peptide.  Only applies when <code>--decoys</code> is not 
+<code>none</code>. Default = decoy-file.</li>
 
 <li>
 <code>--compute-p-values &lt;T | F&gt;</code> &ndash
@@ -278,25 +277,27 @@ precursor window units depends upon <code>precursor-window-type</code>. Default 
 3.0.
 
 <li>
-<code>precursor-window-type &lt;mass|mz|ppm&gt;</code> &ndash; Specify
-the units for the window that is used to select peptides around the
-precursor mass location (mass, mz, ppm).  The magnitude of the window
-is defined by the <code>precursor-window</code> option, and candidate peptides must
-fall within this window.  For the <code>mass</code> window-type, the
-spectrum precursor m+h value is converted to mass, and the window is defined
-as that mass &plusmn; <code>precursor-window</code>. If the m+h value is not available, then
-the mass is calculated from the precursor m/z and provided charge. The peptide mass is computed as the
-sum of the average amino acid masses plus 18 Da for the terminal OH
-group.  The <code>mz</code> window-type calculates
-the window as spectrum precursor m/z &plusmn; <code>precursor-window</code> and then 
-converts the resulting m/z range to the peptide mass range using the precursor 
-charge. 
-For the parts-per-million (<code>ppm</code>) window-type, the spectrum mass is 
-calculated as in the <code>mass</code> type.  The lower bound of the mass 
-window is then defined as the 
-spectrum mass / (1.0 + (<code>precursor-window</code> / 1000000)) and the upper bound 
-is defined as spectrum mass / (1.0 - (<code>precursor-window</code> / 1000000)).  
-Default = mass.</li>
+<code>precursor-window-type &lt;mass|mz|ppm&gt;</code> &ndash; 
+Specify the units for the window that is used to select peptides
+around the precursor mass location (mass, mz, ppm).  The magnitude of
+the window is defined by the <code>precursor-window</code> option, and
+candidate peptides must fall within this window.  For
+the <code>mass</code> window-type, the spectrum precursor m+h value is
+converted to mass, and the window is defined as that mass
+&plusmn; <code>precursor-window</code>. If the m+h value is not
+available, then the mass is calculated from the precursor m/z and
+provided charge. The peptide mass is computed as the sum of the
+average amino acid masses plus 18 Da for the terminal OH
+group. The <code>mz</code> window-type calculates the window as
+spectrum precursor m/z &plusmn; <code>precursor-window</code> and then
+converts the resulting m/z range to the peptide mass range using the
+precursor charge. For the parts-per-million (<code>ppm</code>)
+window-type, the spectrum mass is calculated as in
+the <code>mass</code> type.  The lower bound of the mass window is
+then defined as the spectrum mass / (1.0 +
+(<code>precursor-window</code> / 1000000)) and the upper bound is
+defined as spectrum mass / (1.0 - (<code>precursor-window</code> /
+1000000)). Default = mass.</li>
 
 <li>
 <code>use-mstoolkit &lt;T|F&gt;</code> &ndash;
@@ -370,15 +371,6 @@ written to text files. Default = 8.
 <code>print-search-progress &lt;int&gt;</code> &ndash;
 Show search progress by printing every n spectra searched. Set to
 0 to show no search progress.  Default = 10.
-
-<li>
-<code>reverse-sequence &lt;T|F&gt;</code> &ndash;
-Generate decoy sequences by reversing the peptide rather than by
-shuffling.  The first and last residues of the sequence are not
-changed.  If the target sequence is a palindrome (the same when
-reversed), then the decoy will be generated by shuffling and a note to
-that effect will be printed at verbosity level 40 (DETAILED
-INFO). Default = generate decoys by shuffling.
 
 <p>
 <i>NOTE: the following parameters are also used when creating an index
