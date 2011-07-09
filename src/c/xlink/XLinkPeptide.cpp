@@ -155,7 +155,7 @@ bool XLinkPeptide::isIntra() {
 }
 
 void XLinkPeptide::addLinkablePeptides(double min_mass, double max_mass,
-			 INDEX_T* index, DATABASE_T* database,
+			 INDEX_T* index, Database* database,
 			 PEPTIDE_MOD_T* peptide_mod, BOOLEAN_T is_decoy, 
 			 XLinkBondMap& bondmap, 
 			 vector<XLinkablePeptide>& linkable_peptides) {
@@ -202,7 +202,7 @@ void XLinkPeptide::addCandidates(
   FLOAT_T max_mass,
   XLinkBondMap& bondmap,
   INDEX_T* index, 
-  DATABASE_T* database,
+  Database* database,
   PEPTIDE_MOD_T** peptide_mods,
   int num_peptide_mods,
   MatchCandidateVector& candidates) {

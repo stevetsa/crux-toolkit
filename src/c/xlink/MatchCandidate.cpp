@@ -118,12 +118,14 @@ string MatchCandidate::getResultHeader() {
       << "spectrum neutral mass" << "\t"
       << "peptide mass mono" << "\t"
       << "peptide mass average" << "\t"
-      << "mass error(ppm)" << "\t"
-      << "sp score" << "\t"
-      << "sp rank" << "\t"
-      << "b/y ions matched" << "\t"
-      << "b/y ions total" << "\t"
-      << "xcorr score" << "\t"
+      << "mass error(ppm)" << "\t";
+  if (get_boolean_parameter("compute-sp")) {
+    oss << "sp score" << "\t"
+        << "sp rank" << "\t"
+        << "b/y ions matched" << "\t"
+        << "b/y ions total" << "\t";
+  }
+  oss << "xcorr score" << "\t"
       << "xcorr rank" << "\t"
       << "p-value" << "\t"
       << "matches/spectrum" << "\t"
@@ -145,12 +147,16 @@ std::string MatchCandidate::getResultString() {
      << parent_->getSpectrumNeutralMass() << "\t"
      << this->getMass(MONO) << "\t"
      << this->getMass(AVERAGE) << "\t"
-     << this->getPPMError() << "\t"
-     << this->getSP() << "\t"
-     << this->getSPRank() << "\t"
-     << this->getBYIonsMatched() << "\t"
-     << this->getBYIonsTotal() << "\t"
-     << this->getXCorr() << "\t"
+     << this->getPPMError() << "\t";
+
+  if (get_boolean_parameter("compute-sp")) {
+    ss << this->getSP() << "\t"
+       << this->getSPRank() << "\t"
+       << this->getBYIonsMatched() << "\t"
+       << this->getBYIonsTotal() << "\t";
+  }
+
+  ss << this->getXCorr() << "\t"
      << this->getXCorrRank() << "\t"
      << pvalue_ << "\t"
      << parent_->size() << "\t"

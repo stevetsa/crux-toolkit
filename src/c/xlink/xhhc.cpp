@@ -5,7 +5,7 @@
 #include "parameter.h"
 #include "peptide.h"
 #include "DelimitedFile.h"
-
+#include "DatabaseProteinIterator.h"
 #include "ProteinPeptideIterator.h"
 
 using namespace std;
@@ -16,8 +16,8 @@ FLOAT_T LinkedPeptide::linker_mass;
 map<string, vector<PEPTIDE_T*> > sequence_peptide_map; //hack to keep track of peptides.
 
 void get_linear_peptides(set<string>& peptides,
-			 DATABASE_PROTEIN_ITERATOR_T* protein_iterator,
-			 PEPTIDE_CONSTRAINT_T* peptide_constraint) {
+			 DatabaseProteinIterator* protein_iterator,
+			 PeptideConstraint* peptide_constraint) {
 
   ProteinPeptideIterator* peptide_iterator = NULL;
   Protein* protein;
@@ -28,11 +28,11 @@ void get_linear_peptides(set<string>& peptides,
   //bool missed_cleavage = false;
   // keep track of whether the next peptide contains the previous one or not
   //size_t index;
-  while (database_protein_iterator_has_next(protein_iterator)) {
-    protein = database_protein_iterator_next(protein_iterator);
+  while (protein_iterator->hasNext()) {
+    protein = protein_iterator->next();
     peptide_iterator = new ProteinPeptideIterator(protein, peptide_constraint);
-    // missed_cleavages must be TRUE in protein.c for this to work
-    peptide_iterator->prepareMc(true);
+    // missed_cleavages must be all in protein.c for this to work
+    peptide_iterator->prepareMc(500);
     while (peptide_iterator->hasNext()) {
       //peptide = database_peptide_iterator_next(peptide_iterator);
       peptide = peptide_iterator->next();
@@ -80,8 +80,8 @@ void free_peptides() {
 
 // a hack, works for EDC linker only
 void get_linkable_peptides(set<string>& peptides, 
-	DATABASE_PROTEIN_ITERATOR_T* protein_iterator,
-	PEPTIDE_CONSTRAINT_T* peptide_constraint) 
+	DatabaseProteinIterator* protein_iterator,
+	PeptideConstraint* peptide_constraint) 
 {
   ProteinPeptideIterator* peptide_iterator = NULL;
   Protein* protein;
@@ -91,11 +91,12 @@ void get_linkable_peptides(set<string>& peptides,
   bool missed_cleavage = false;
   // keep track of whether the next peptide contains the previous one or not
   size_t index;
-  while (database_protein_iterator_has_next(protein_iterator)) {
-    protein = database_protein_iterator_next(protein_iterator);
+  while (protein_iterator->hasNext()) {
+    protein = protein_iterator->next();
     peptide_iterator = new ProteinPeptideIterator(protein, peptide_constraint);
-    // missed_cleavages must be TRUE in protein.c for this to work
-    peptide_iterator->prepareMc(true); 
+    // missed_cleavages must be all in protein.c for this to work
+    //TODO either fix this code or make an option to allow all missed cleavages...
+    peptide_iterator->prepareMc(500); 
     while (peptide_iterator->hasNext()) {
       //peptide = database_peptide_iterator_next(peptide_iterator);
       peptide = peptide_iterator->next();
@@ -175,15 +176,16 @@ void find_all_precursor_ions(vector<LinkedPeptide>& all_ions,
 
   carp(CARP_DEBUG,"missed link cleavage:%s", missed_link_cleavage);
   carp(CARP_DEBUG,"find_all_precursor_ions: start()");
-  DATABASE_T* db = new_database(database_file, FALSE);
+  Database* db = new Database(database_file, FALSE);
   carp(CARP_DEBUG,"peptide constraint");
-  PEPTIDE_CONSTRAINT_T* peptide_constraint = new_peptide_constraint_from_parameters();
+  PeptideConstraint* peptide_constraint = 
+    PeptideConstraint::newFromParameters();
   // add 
-  set_peptide_constraint_num_mis_cleavage(peptide_constraint, 1);
+  peptide_constraint->setNumMisCleavage(get_int_parameter("missed-cleavages") + 1);
   //set_verbosity_level(CARP_INFO);
   //Protein* protein = NULL;
   carp(CARP_DEBUG,"protein iterator");
-  DATABASE_PROTEIN_ITERATOR_T* protein_iterator = new_database_protein_iterator(db);
+  DatabaseProteinIterator* protein_iterator = new DatabaseProteinIterator(db);
   //PROTEIN_PEPTIDE_ITERATOR_T* peptide_iterator = NULL;
   string bonds_string = string(links);
   set<string> peptides;
@@ -211,7 +213,7 @@ void find_all_precursor_ions(vector<LinkedPeptide>& all_ions,
   }
   */
 
-  free_database_protein_iterator(protein_iterator);
+  delete protein_iterator;
 
 
   carp(CARP_DEBUG,"find_all_precursor_ions: done()");
@@ -333,9 +335,8 @@ void add_linked_peptides(vector<LinkedPeptide>& all_ions, set<string>& peptides,
     } /* xlink-include-selfloops */
 
     {
-      set<string>::iterator pepB = pepA;
-      pepB++;
-      for (;pepB != peptides.end(); ++pepB) {
+
+      for (set<string>::iterator pepB = pepA ;pepB != peptides.end(); ++pepB) {
         string seqB = *pepB;
         vector<PEPTIDE_T*>& crux_peptides2 = get_peptides_from_sequence(seqB);
         

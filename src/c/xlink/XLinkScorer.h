@@ -14,10 +14,19 @@ class XLinkScorer {
   int charge_;
   IonSeries* ion_series_xcorr_;
   IonSeries* ion_series_sp_;
-  
+  bool compute_sp_;
+ 
+  void init(
+    Spectrum* spectrum,
+    int charge,
+    bool compute_sp
+    );
+
  public:
   XLinkScorer();
   XLinkScorer(Spectrum* spectrum, int charge);
+  XLinkScorer(Spectrum* spectrum, int charge, bool compute_sp);
+
   virtual ~XLinkScorer();
 
   FLOAT_T scoreCandidate(MatchCandidate* candidate);

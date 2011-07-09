@@ -38,6 +38,7 @@ int xlink_search_main(int argc, char** argv) {
   const char* option_list[] = {
     "verbosity",
     "parameter-file",
+    "compute-sp",
     "overwrite",
     "output-dir",
     "precursor-window",
@@ -88,7 +89,7 @@ int xlink_search_main(int argc, char** argv) {
   char* input_file = get_string_parameter("protein database");
   
   INDEX_T* index = NULL;
-  DATABASE_T* database = NULL;
+  Database* database = NULL;
   int num_proteins = prepare_protein_input(input_file, &index, &database);
   carp(CARP_INFO,"Number of proteins:%d",num_proteins);
   free(input_file);

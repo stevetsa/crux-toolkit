@@ -10,10 +10,9 @@
 #include "peptide_src.h"
 #include "Protein.h"
 #include "ProteinPeptideIterator.h"
-#include "database.h"
+#include "Database.h"
 #include "carp.h"
 #include "crux-utils.h"
-#include "database.h"
 #include "parameter.h"
 // also in parameter.c
 void parse_custom_enzyme(const char* rule_str);
@@ -22,11 +21,11 @@ void parse_custom_enzyme(const char* rule_str);
 static PEPTIDE_T *peptide1, *peptide2;
 static Protein *protein1;
 static ProteinPeptideIterator* pp_iterator;
-static PEPTIDE_CONSTRAINT_T *constraint, *enzyme_constraint;
+static PeptideConstraint *constraint, *enzyme_constraint;
 
 static PEPTIDE_SRC_T* src;
 
-static DATABASE_T* db;
+static Database* db;
 //                      0123456789
 static char prot1_sequence[256] = "MRVLKFGGTSVANAERFLRVADILESNARQGQVAOOTVLSAPAKITNHLVAMIEKTISGQDALPNISDAERIFAELLTGLAAAQPGFPLAQLKTFWVDQEFAQIKHVLHGISLWLGQC";
 
@@ -34,26 +33,26 @@ void protein_setup(){
 
   initialize_parameters();
   // a protein must have a database as its source of sequences
-  db = new_database("input-data/protein1.fasta", FALSE); //not mem mapped
-  parse_database(db);  // assuming we have already tested database
+  db = new Database("input-data/protein1.fasta", FALSE); //not mem mapped
+  db->parse();  // assuming we have already tested database
 
   protein1 = new Protein("protein1", prot1_sequence, strlen(prot1_sequence),
                          NULL, 0, 0, db);//annotation, file offset, index
 
-  constraint = new_peptide_constraint_from_parameters();
+  constraint = PeptideConstraint::newFromParameters();
   pp_iterator = new ProteinPeptideIterator(protein1, constraint);
 
   // For testing enzymes 
   // remove mass constraints, set len 4-100, no missed cleavages
-  enzyme_constraint = new_peptide_constraint(TRYPSIN, FULL_DIGEST,
+  enzyme_constraint = new PeptideConstraint(TRYPSIN, FULL_DIGEST,
                                              1,70000, 4, 100, 0, AVERAGE);
 
 }
 
 void protein_teardown(){
-  free_database(db);
+  Database::freeDatabase(db);
   delete protein1;
-  free_peptide_constraint(constraint);
+  PeptideConstraint::free(constraint);
   delete pp_iterator;
 }
 
@@ -135,7 +134,7 @@ START_TEST (test_elastase){
   }
 
   // create peptide constraint with elastase
-  set_peptide_constraint_enzyme(enzyme_constraint, ELASTASE);
+  enzyme_constraint->setEnzyme(ELASTASE);
 
   // create new iterator
   delete pp_iterator;
@@ -221,7 +220,7 @@ START_TEST (test_chymo){
   }
 
   // create peptide constraint with elastase
-  set_peptide_constraint_enzyme(enzyme_constraint, CHYMOTRYPSIN);
+  enzyme_constraint->setEnzyme(CHYMOTRYPSIN);
 
   // create new iterator
   delete pp_iterator;
@@ -307,7 +306,7 @@ START_TEST (test_mod_chymo){
   }
 
   // create peptide constraint with elastase
-  set_peptide_constraint_enzyme(enzyme_constraint, MODIFIED_CHYMOTRYPSIN);
+  enzyme_constraint->setEnzyme(MODIFIED_CHYMOTRYPSIN);
 
   // create new iterator
   delete pp_iterator;
@@ -400,8 +399,7 @@ START_TEST (test_el_tryp_chymo){
   }
 
   // create peptide constraint with elastase
-  set_peptide_constraint_enzyme(enzyme_constraint, 
-                                ELASTASE_TRYPSIN_CHYMOTRYPSIN);
+  enzyme_constraint->setEnzyme(ELASTASE_TRYPSIN_CHYMOTRYPSIN);
 
   // create new iterator
   delete pp_iterator;
@@ -495,7 +493,7 @@ START_TEST(test_aspn){
   }
 
   // create peptide constraint with elastase
-  set_peptide_constraint_enzyme(enzyme_constraint, ASPN);
+  enzyme_constraint->setEnzyme(ASPN);
 
   // create new iterator
   delete pp_iterator;
@@ -581,7 +579,7 @@ START_TEST(test_other_enzymes){
    }
    
    // create peptide constraint with elastase
-   set_peptide_constraint_enzyme(enzyme_constraint, enzyme);
+  enzyme_constraint->setEnzyme(enzyme);
    
    // create new iterator
    delete pp_iterator;
@@ -663,8 +661,7 @@ START_TEST(test_custom_enzyme){
   }
 
   // create peptide constraint with elastase
-  set_peptide_constraint_enzyme(enzyme_constraint, 
-                                CUSTOM_ENZYME);
+  enzyme_constraint->setEnzyme(CUSTOM_ENZYME);
 
   // create new iterator
   delete pp_iterator;
@@ -751,8 +748,7 @@ START_TEST(test_custom_enzyme){
   }
 
   // create peptide constraint with elastase
-  set_peptide_constraint_enzyme(enzyme_constraint, 
-                                CUSTOM_ENZYME);
+  enzyme_constraint->setEnzyme(CUSTOM_ENZYME);
 
   // create new iterator
   delete pp_iterator;

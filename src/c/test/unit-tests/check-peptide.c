@@ -8,9 +8,9 @@
 #include "Peak.h"
 #include "peptide.h"
 #include "peptide_src.h"
-#include "peptide_constraint.h"
+#include "PeptideConstraint.h"
 #include "Protein.h"
-#include "database.h"
+#include "Database.h"
 // also from parameter.c
 void force_set_aa_mod_list(AA_MOD_T** amod_list, int num_mods);
 

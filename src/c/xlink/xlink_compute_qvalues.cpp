@@ -93,9 +93,14 @@ void collapseScans(DelimitedFile& matches_in, DelimitedFile& matches_out) {
   }
   
   //make sure scans are together.
+  carp(CARP_DETAILED_DEBUG, "Sorting matches by scan");
   matches_in.sortByIntegerColumn("scan");
 
   matches_out.addColumn("p-value bonf.");
+
+  if (matches_in.numRows() == 0) {
+    return;
+  }
 
   int last_scan = matches_in.getInteger("scan", 0);
   int first_row = 0;

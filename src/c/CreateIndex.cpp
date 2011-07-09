@@ -2,6 +2,7 @@
  * \file CreateIndex.cpp 
  * ORIGINAL AUTHOR: Chris Park
  * CRUX APPLICATION CONVERSION: Sean McIlwain
+ * Missed-cleavage Conversion: Kha Nguyen
  * \brief Given a protein fasta sequence database as input, generate
  * crux_index files that contain list of peptides in the database that
  * meet certain criteria (e.g. mass, length, trypticity) as output.
@@ -42,7 +43,7 @@ int CreateIndex::main(int argc, char** argv) {
   int missed_cleavages; 
 
   double mass_range;
-  PEPTIDE_CONSTRAINT_T* constraint;
+  PeptideConstraint* constraint;
   char* in_file = NULL;
   INDEX_T* crux_index;
   char* binary_fasta_file = NULL;
@@ -94,13 +95,13 @@ int CreateIndex::main(int argc, char** argv) {
   min_length = get_int_parameter("min-length");
   max_length = get_int_parameter("max-length");
 
-  missed_cleavages = get_boolean_parameter("missed-cleavages");
+  missed_cleavages = get_int_parameter("missed-cleavages");
   enzyme = get_enzyme_type_parameter("enzyme");
   digest = get_digest_type_parameter("digestion");
   mass_type = get_mass_type_parameter("isotopic-mass");
 
   /* create peptide constraint */
-  constraint = new_peptide_constraint(enzyme, digest, min_mass, max_mass, 
+  constraint = new PeptideConstraint(enzyme, digest, min_mass, max_mass, 
                                       min_length, max_length, 
                                       missed_cleavages, mass_type);
   
@@ -142,12 +143,7 @@ int CreateIndex::main(int argc, char** argv) {
   free(in_file);
   free_parameters();
 
-  /* successfull exit message */
-  //carp(CARP_INFO, "crux-create-index finished.");
-
   return 0;
-
-
 
 }
 

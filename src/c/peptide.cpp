@@ -446,7 +446,7 @@ int get_peptide_num_peptide_src(PEPTIDE_T* peptide){
 /**
  * get the peptide->first peptide_src->parent protein->database
  */
-DATABASE_T* get_peptide_first_src_database(
+Database* get_peptide_first_src_database(
   PEPTIDE_T* peptide ///< working peptide -in
   )
 {
@@ -1823,7 +1823,7 @@ void print_filtered_peptide_in_format(
  * The peptide src information (in square brackets) repeats for the
  * number times indicated by the number between the struct and the
  * first peptide src entry.  The protein index is the index of the
- * parent protein in the database DATABASE_T. The number of
+ * parent protein in the database Database. The number of
  * MODIFIED_AA_T's is given by the int preceeding it.
  *
  * \returns TRUE if serialization is successful, else FALSE
@@ -1918,7 +1918,7 @@ BOOLEAN_T serialize_peptide(
  */
 PEPTIDE_T* parse_peptide_tab_delimited(
   MatchFileReader& file, ///< the tab delimited peptide file -in
-  DATABASE_T* database,///< the database containing the peptides -in
+  Database* database,///< the database containing the peptides -in
   BOOLEAN_T use_array  ///< should I use array peptide_src or link list -in  
   ) {
 
@@ -1957,7 +1957,7 @@ PEPTIDE_T* parse_peptide_tab_delimited(
  */
 PEPTIDE_T* parse_peptide(
   FILE* file, ///< the serialized peptide file -in
-  DATABASE_T* database, ///< the database containing the peptides -in
+  Database* database, ///< the database containing the peptides -in
   BOOLEAN_T use_array  ///< should I use array peptide_src or link list -in  
   )
 {  

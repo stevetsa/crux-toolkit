@@ -125,7 +125,7 @@ MatchCandidateVector::MatchCandidateVector(
   PEPTIDE_MOD_T** peptide_mods,
   int num_peptide_mods,
   INDEX_T* index,
-  DATABASE_T* database) {
+  Database* database) {
 
 
   FLOAT_T min_mass = get_double_parameter("min-mass");
@@ -148,7 +148,7 @@ void MatchCandidateVector::addCandidates(
   FLOAT_T max_mass,
   XLinkBondMap& bondmap,
   INDEX_T* index,
-  DATABASE_T* database,
+  Database* database,
   PEPTIDE_MOD_T** peptide_mods,
   int num_peptide_mods) {
 
@@ -199,7 +199,7 @@ MatchCandidateVector::MatchCandidateVector(
   SpectrumZState& zstate,
   XLinkBondMap& bondmap,
   INDEX_T* index, 
-  DATABASE_T* database, 
+  Database* database, 
   PEPTIDE_MOD_T** peptide_mods, 
   int num_peptide_mods, 
   BOOLEAN_T use_decoy_window) {
@@ -267,19 +267,25 @@ void MatchCandidateVector::sortBySP() {
 
 
 void MatchCandidateVector::setRanks() {
-  sortBySP();
 
   int current_rank = 1;
-  FLOAT_T last_score = at(0)->getSP();
-  at(0)->setSPRank(current_rank);
+  FLOAT_T last_score = 0;
 
-  for (unsigned int candidate_idx = 1; candidate_idx < size() ; candidate_idx++) {
-    FLOAT_T current_score = at(candidate_idx)->getSP();
-    if (last_score != current_score) {
-      current_rank++;
-      last_score = current_score;
+  if (get_boolean_parameter("compute-sp")) {
+    sortBySP();
+
+    current_rank = 1;
+    last_score = at(0)->getSP();
+    at(0)->setSPRank(current_rank);
+
+    for (unsigned int candidate_idx = 1; candidate_idx < size() ; candidate_idx++) {
+      FLOAT_T current_score = at(candidate_idx)->getSP();
+      if (last_score != current_score) {
+        current_rank++;
+        last_score = current_score;
+      }
+      at(candidate_idx)->setSPRank(current_rank);
     }
-    at(candidate_idx)->setSPRank(current_rank);
   }
 
   sortByXCorr();

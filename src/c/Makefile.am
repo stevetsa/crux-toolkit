@@ -43,8 +43,14 @@ LIBFILES= \
   crux-file-utils.h \
   crux-utils.cpp \
   crux-utils.h \
-  database.cpp \
-  database.h \
+  Database.cpp \
+  Database.h \
+  DatabaseProteinIterator.cpp \
+  DatabaseProteinIterator.h \
+  DatabasePeptideIterator.cpp \
+  DatabasePeptideIterator.h \
+  DatabaseSortedPeptideIterator.cpp \
+  DatabaseSortedPeptideIterator.h \
   CruxApplication.cpp \
   CruxApplication.h \
   CruxApplicationList.cpp \
@@ -83,8 +89,8 @@ LIBFILES= \
   linked_list.h \
   mass.cpp \
   mass.h \
-  match.cpp \
-  match.h \
+  Match.cpp \
+  Match.h \
   MatchColumns.cpp \
   MatchColumns.h \
   MatchFileReader.cpp \
@@ -115,8 +121,8 @@ LIBFILES= \
   Peak.cpp \
   Peak.h \
   peptide.cpp \
-  peptide_constraint.cpp \
-  peptide_constraint.h \
+  PeptideConstraint.cpp \
+  PeptideConstraint.h \
   peptide.h \
   peptide_modifications.cpp \
   peptide_modifications.h \
@@ -132,8 +138,10 @@ LIBFILES= \
   Protein.h \
   ProteinPeptideIterator.cpp \
   ProteinPeptideIterator.h \
-  protein_index.cpp \
-  protein_index.h \
+  ProteinIndex.cpp \
+  ProteinIndex.h \
+  ProteinIndexIterator.cpp \
+  ProteinIndexIterator.h \
   q-value.cpp \
   q-value.h \
   SearchProgress.h \

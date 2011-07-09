@@ -21,9 +21,10 @@
 #include "carp.h"
 #include "sorter.h"
 #include "objects.h"
-#include "peptide_constraint.h"
-#include "database.h"
-#include "protein_index.h"
+#include "PeptideConstraint.h"
+#include "Database.h"
+#include "DatabasePeptideIterator.h"
+#include "ProteinIndex.h"
 #include "parameter.h"
 
 // maximum proteins the index can handle
@@ -112,9 +113,9 @@ char temp_folder_name[12] = "";
  */
 
 /* Private Functions */
-// BOOLEAN_T set_index_fields_from_disk(INDEX_T* index);
+// bool set_index_fields_from_disk(INDEX_T* index);
 void set_index_field_from_map(INDEX_T* index, char* line);
-BOOLEAN_T check_index_constraints(INDEX_T* index);
+bool check_index_constraints(INDEX_T* index);
 
 /* Private Data Types */
 /**
@@ -155,13 +156,13 @@ BOOLEAN_T check_index_constraints(INDEX_T* index);
  */
 struct index{
   int num_pointers; ///< The number of pointers to this index.
-  DATABASE_T* database; ///< The database that has been indexed.
+  Database* database; ///< The database that has been indexed.
   char* directory; ///< The directory containing the indexed files
-  PEPTIDE_CONSTRAINT_T* disk_constraint;///< Defines peptides on disk
-  PEPTIDE_CONSTRAINT_T* search_constraint;///< Defines peptides being searched
-  BOOLEAN_T on_disk; ///< Does this index exist on disk yet?
+  PeptideConstraint* disk_constraint;///< Defines peptides on disk
+  PeptideConstraint* search_constraint;///< Defines peptides being searched
+  bool on_disk; ///< Does this index exist on disk yet?
   FLOAT_T mass_range;  ///< the range of masses contained in each index file -in
-  BOOLEAN_T is_unique; ///< only unique peptides? -in
+  bool is_unique; ///< only unique peptides? -in
 };    
 
 /**
@@ -187,7 +188,7 @@ struct index_peptide_iterator{
   int total_index_files; ///< the total count of index_files
   int current_index_file; ///< the index file open or one to open next 
   FILE* index_file; ///< The current file stream that we are reading from
-  BOOLEAN_T has_next; ///< Is there another peptide?
+  bool has_next; ///< Is there another peptide?
   PEPTIDE_T* peptide; ///< the next peptide to return
 };    
 
@@ -198,7 +199,7 @@ struct index_peptide_iterator{
  */
 struct index_filtered_peptide_iterator{
   INDEX_PEPTIDE_ITERATOR_T* index_peptide_iterator;///< Core peptide iterator
-  BOOLEAN_T has_next; ///< Is there another peptide?
+  bool has_next; ///< Is there another peptide?
   PEPTIDE_T* peptide; ///< the next peptide to return
 };    
 
@@ -210,9 +211,9 @@ struct index_filtered_peptide_iterator{
 struct bin_peptide_iterator{
   INDEX_T* index; ///< The index object which we are iterating over
   FILE* index_file; ///< The current file stream that we are reading from
-  BOOLEAN_T has_next; ///< Is there another peptide?
+  bool has_next; ///< Is there another peptide?
   PEPTIDE_T* peptide; ///< the next peptide to return
-  BOOLEAN_T use_array; 
+  bool use_array; 
   ///< Use array peptide_src or link list peptide_src when parsing peptides
 };    
 
@@ -327,7 +328,7 @@ char* get_index_binary_fasta_name(const char* index_name){
  * \returns TRUE if fields were successfully set, FALSE if index on
  * disk could not be used to initialize the object.
  */
-BOOLEAN_T set_index_fields_from_disk(
+bool set_index_fields_from_disk(
   INDEX_T* index  ///< Index to set -out                       
   )
 {
@@ -342,7 +343,7 @@ BOOLEAN_T set_index_fields_from_disk(
   }
 
   // create constraint
-  index->disk_constraint = allocate_peptide_constraint();
+  index->disk_constraint = new PeptideConstraint();
   index->search_constraint = NULL;
 
   // open map file
@@ -387,16 +388,16 @@ void set_index_field_from_map(INDEX_T* index, char* line){
   carp(CARP_DEBUG, "Index map header found %s value %.2f", trait_name, value);
 
   if(strcmp("min_mass:", trait_name) == 0){
-    set_peptide_constraint_min_mass(index->disk_constraint, value);
+    index->disk_constraint->setMinMass(value);
   }
   else if(strcmp("max_mass:", trait_name) == 0){
-    set_peptide_constraint_max_mass(index->disk_constraint, value);
+    index->disk_constraint->setMaxMass(value);
   }
   else if(strcmp("min_length:", trait_name) == 0){
-    set_peptide_constraint_min_length(index->disk_constraint, (int)value);
+    index->disk_constraint->setMinLength((int)value);
   }
   else if(strcmp("max_length:", trait_name) == 0){
-    set_peptide_constraint_max_length(index->disk_constraint, (int)value);
+    index->disk_constraint->setMaxLength((int)value);
   }
   else if(strcmp("peptide_type:", trait_name) == 0){
     //    set_peptide_constraint_peptide_type(index->disk_constraint, value);
@@ -404,19 +405,19 @@ void set_index_field_from_map(INDEX_T* index, char* line){
          "Rebuild with current version of crux to use 'enzyme_type'.");
   }
   else if(strcmp("enzyme_type:", trait_name) == 0){
-    set_peptide_constraint_enzyme(index->disk_constraint, (ENZYME_T)value);
+    index->disk_constraint->setEnzyme((ENZYME_T)value);
   }
   else if(strcmp("digest_type:", trait_name) == 0){
-    set_peptide_constraint_digest(index->disk_constraint, (DIGEST_T)value);
+    index->disk_constraint->setDigest((DIGEST_T)value);
   }
   else if(strcmp("missed_cleavages:", trait_name) == 0){
-   set_peptide_constraint_num_mis_cleavage(index->disk_constraint, (int)value);
+   index->disk_constraint->setNumMisCleavage((int)value);
   }
   else if(strcmp("mass_type:", trait_name) == 0){
-   set_peptide_constraint_mass_type(index->disk_constraint, (MASS_TYPE_T)value);
+   index->disk_constraint->setMassType((MASS_TYPE_T)value);
   }
   else if(strcmp("unique_peptides:", trait_name) == 0){
-    index->is_unique = (BOOLEAN_T)value;
+    index->is_unique = (bool)value;
   }
   else if(strcmp("target_mass_range_for_index_file:", trait_name) == 0){
     index->mass_range = value;
@@ -445,21 +446,20 @@ void set_index_field_from_map(INDEX_T* index, char* line){
  * ANY_TRYPTIC is least).
  * \returns TRUE if all constraints will work with those in parameter.c.
  */
-BOOLEAN_T check_index_constraints(INDEX_T* index){
-  double min_mass = get_peptide_constraint_min_mass(index->disk_constraint);
-  double max_mass = get_peptide_constraint_max_mass(index->disk_constraint);
-  double min_len = get_peptide_constraint_min_length(index->disk_constraint);
-  double max_len = get_peptide_constraint_max_length(index->disk_constraint);
+bool check_index_constraints(INDEX_T* index){
+  double min_mass = index->disk_constraint->getMinMass();
+  double max_mass = index->disk_constraint->getMaxMass();
+  double min_len = index->disk_constraint->getMinLength();
+  double max_len = index->disk_constraint->getMaxLength();
   int missed_cleavages = 
-    get_peptide_constraint_num_mis_cleavage(index->disk_constraint);
+    index->disk_constraint->getNumMisCleavage();
   //  PEPTIDE_TYPE_T cleavage_type = 
   //    get_peptide_constraint_peptide_type(index->disk_constraint);
-  ENZYME_T enzyme = get_peptide_constraint_enzyme(index->disk_constraint);
-  DIGEST_T digestion = get_peptide_constraint_digest(index->disk_constraint);
-  MASS_TYPE_T mass_type = get_peptide_constraint_mass_type(index->disk_constraint);
-  //  BOOLEAN_T unique = index->is_unique;
+  ENZYME_T enzyme = index->disk_constraint->getEnzyme();
+  DIGEST_T digestion = index->disk_constraint->getDigest();
+  MASS_TYPE_T mass_type = index->disk_constraint->getMassType();
 
-  BOOLEAN_T success = TRUE;
+  bool success = TRUE;
   const char* param;
   if(min_mass > get_double_parameter("min-mass")){
     success = FALSE;
@@ -473,7 +473,7 @@ BOOLEAN_T check_index_constraints(INDEX_T* index){
   }else if(max_len < get_int_parameter("max-length")){
     success = FALSE;
     param = "max-length";
-  }else if(missed_cleavages < get_boolean_parameter("missed-cleavages")){
+  }else if(missed_cleavages < get_int_parameter("missed-cleavages")){
     success = FALSE;
     param = "missed-cleavages";
   }else if(mass_type != get_mass_type_parameter("isotopic-mass")){
@@ -523,11 +523,11 @@ BOOLEAN_T check_index_constraints(INDEX_T* index){
 void set_index_fields(
   INDEX_T* index,  ///< Index to set -out                       
   const char* output_dir,      ///< The name of the new index
-  PEPTIDE_CONSTRAINT_T* constraint,  
+  PeptideConstraint* constraint,  
   ///< Constraint which these peptides satisfy -in
   FLOAT_T mass_range,  
   ///< the range of mass that each index file should be partitioned into -in
-  BOOLEAN_T is_unique ///< only unique peptides? -in
+  bool is_unique ///< only unique peptides? -in
   )
 {
   carp(CARP_DEBUG, "Setting index fields");
@@ -573,7 +573,7 @@ void set_index_fields(
 INDEX_T* new_index(
   const char* fasta_filename, ///< The fasta file
   const char* output_dir,     ///< The name of the new index
-  PEPTIDE_CONSTRAINT_T* constraint,  
+  PeptideConstraint* constraint,  
     ///< Constraint which these peptides will satisfy
   FLOAT_T mass_range  
     ///< the range of mass that each index file should be partitioned into
@@ -582,16 +582,16 @@ INDEX_T* new_index(
   carp(CARP_DETAILED_DEBUG, "Creating new index to be named %s", output_dir);
 
   INDEX_T* index = allocate_index();
-  DATABASE_T* database = NULL;
+  Database* database = NULL;
   
   // Initially, create a database that does not use memory mapping (FALSE)
   // Once binary fasta file has been creaated this will change to a
   // memory mapped database
-  database = new_database(fasta_filename, FALSE);
+  database = new Database(fasta_filename, FALSE);
 
   // set database, has not been parsed
   set_index_database(index, database);
-  BOOLEAN_T is_unique = TRUE;
+  bool is_unique = TRUE;
   set_index_fields(index, output_dir,
                    constraint, mass_range, is_unique);
 
@@ -637,9 +637,9 @@ INDEX_T* new_index_from_disk(
   }
   
   // now create a database, using binary fasta file
-  search_index->database = new_database(binary_fasta, TRUE);
+  search_index->database = new Database(binary_fasta, TRUE);
   
-  if(!parse_database(search_index->database)){
+  if(!search_index->database->parse()){
     carp(CARP_FATAL, "Failed to parse database, cannot create new index");
   }
 
@@ -651,7 +651,7 @@ INDEX_T* new_index_from_disk(
 
 int get_index_num_proteins(INDEX_T* index){
 
-  return get_database_num_proteins(index->database);
+  return index->database->getNumProteins();
 }
 
 /**
@@ -691,15 +691,15 @@ void free_index(
     carp(CARP_DEBUG, "Freeing index");
     if (index->database != NULL){
       carp(CARP_DEBUG, "Freeing index database");
-      free_database(index->database);
+      Database::freeDatabase(index->database);
     }
     if (index->disk_constraint != NULL){
       carp(CARP_DEBUG, "Freeing index disk constraint");
-      free_peptide_constraint(index->disk_constraint);
+      PeptideConstraint::free(index->disk_constraint);
     }
     if (index->search_constraint != NULL){
       carp(CARP_DEBUG, "Freeing index search constraint");
-      free_peptide_constraint(index->search_constraint);
+      PeptideConstraint::free(index->search_constraint);
     }
     free(index->directory);
     free(index);
@@ -710,25 +710,25 @@ void free_index(
  * write to the file stream various information of the
  * index files created
  */
-BOOLEAN_T write_header(
+bool write_header(
   INDEX_T* index, ///< the working index -in
   FILE* file ///< out put stream for crux_index_map -in
   )
 {
   time_t hold_time;
   hold_time = time(0);
-  PEPTIDE_CONSTRAINT_T* constraint = index->disk_constraint;
+  PeptideConstraint* constraint = index->disk_constraint;
   
   
-  fprintf(file, "#\tmin_mass: %.2f\n", get_peptide_constraint_min_mass(constraint));
-  fprintf(file, "#\tmax_mass: %.2f\n", get_peptide_constraint_max_mass(constraint));
-  fprintf(file, "#\tmin_length: %d\n", get_peptide_constraint_min_length(constraint));
-  fprintf(file, "#\tmax_length: %d\n", get_peptide_constraint_max_length(constraint));
+  fprintf(file, "#\tmin_mass: %.2f\n", constraint->getMinMass());
+  fprintf(file, "#\tmax_mass: %.2f\n", constraint->getMaxMass());
+  fprintf(file, "#\tmin_length: %d\n", constraint->getMinLength());
+  fprintf(file, "#\tmax_length: %d\n", constraint->getMaxLength());
   //fprintf(file, "#\tpeptide_type: %d\n", get_peptide_constraint_peptide_type(constraint));
-  fprintf(file, "#\tenzyme_type: %d\n", get_peptide_constraint_enzyme(constraint));
-  fprintf(file, "#\tdigest_type: %d\n", get_peptide_constraint_digest(constraint));
-  fprintf(file, "#\tmissed_cleavages: %d\n", get_peptide_constraint_num_mis_cleavage(constraint));
-  fprintf(file, "#\tmass_type: %d\n", get_peptide_constraint_mass_type(constraint));
+  fprintf(file, "#\tenzyme_type: %d\n", constraint->getEnzyme());
+  fprintf(file, "#\tdigest_type: %d\n", constraint->getDigest());
+  fprintf(file, "#\tmissed_cleavages: %d\n", constraint->getNumMisCleavage());
+  fprintf(file, "#\tmass_type: %d\n", constraint->getMassType());
   fprintf(file, "#\tunique_peptides: %d\n", get_index_is_unique(index));
   
   fprintf(file, "#\tCRUX index directory: %s\n", index->directory);
@@ -743,27 +743,27 @@ BOOLEAN_T write_header(
  * index files created in human readable format
  *\returns TRUE if successfully creates README file, else FALSE
  */
-BOOLEAN_T write_readme_file(
+bool write_readme_file(
   INDEX_T* index, ///< the working index -in
   FILE* file ///< out put stream for README file -in
   )
 {
   time_t hold_time;
   hold_time = time(0);
-  PEPTIDE_CONSTRAINT_T* constraint = index->disk_constraint;
-  char* fasta_file = get_database_filename(index->database);
+  PeptideConstraint* constraint = index->disk_constraint;
+  char* fasta_file = index->database->getFilename();
   char* fasta_file_no_path = parse_filename(fasta_file);
   
   fprintf(file, "#\ttime created: %s",  ctime(&hold_time)); 
   fprintf(file, "#\tfasta file: %s\n",  fasta_file_no_path); 
   fprintf(file, "#\tmin_mass: %.2f\n",
-          get_peptide_constraint_min_mass(constraint));
+          constraint->getMinMass());
   fprintf(file, "#\tmax_mass: %.2f\n",
-          get_peptide_constraint_max_mass(constraint));
+          constraint->getMaxMass());
   fprintf(file, "#\tmin_length: %d\n",
-          get_peptide_constraint_min_length(constraint));
+          constraint->getMinLength());
   fprintf(file, "#\tmax_length: %d\n",
-          get_peptide_constraint_max_length(constraint));
+          constraint->getMaxLength());
 
   /*
   PEPTIDE_TYPE_T type = get_peptide_constraint_peptide_type(constraint);
@@ -772,17 +772,17 @@ BOOLEAN_T write_readme_file(
   fprintf(file, "#\tpeptide_type: %s\n", type_str);
   */
   char* value_str = 
-    enzyme_type_to_string(get_peptide_constraint_enzyme(constraint));
+    enzyme_type_to_string(constraint->getEnzyme());
   fprintf(file, "#\tenzyme_type: %s\n", value_str);
   free(value_str);
   value_str = 
-    digest_type_to_string(get_peptide_constraint_digest(constraint));
+    digest_type_to_string(constraint->getDigest());
   free(value_str);
 
   fprintf(file, "#\tmissed_cleavage: %s\n", 
-        (get_peptide_constraint_num_mis_cleavage(constraint)? "true":"false"));
+        (constraint->getNumMisCleavage()? "true":"false"));
   fprintf(file, "#\tmass_type: %s\n", 
-          (get_peptide_constraint_mass_type(constraint)==AVERAGE? 
+          (constraint->getMassType()==AVERAGE? 
            "average":"mono"));
   fprintf(file, "#\tunique peptides: %s\n", 
           (get_index_is_unique(index)? "unique":"redundant"));
@@ -840,10 +840,10 @@ long get_num_bins_needed(
   int* mass_limits  ///< an array that holds the min/max mass limit -in
   )
 {
-  int min_length = get_peptide_constraint_min_length(index->disk_constraint);
-  int max_length = get_peptide_constraint_max_length(index->disk_constraint);
-  FLOAT_T min_mass = get_peptide_constraint_min_mass(index->disk_constraint);
-  FLOAT_T max_mass = get_peptide_constraint_max_mass(index->disk_constraint);
+  int min_length = index->disk_constraint->getMinLength();
+  int max_length = index->disk_constraint->getMaxLength();
+  FLOAT_T min_mass = index->disk_constraint->getMinMass();
+  FLOAT_T max_mass = index->disk_constraint->getMaxMass();
   FLOAT_T min_mass_limit = min_mass;
   FLOAT_T max_mass_limit = max_mass;
   long num_bins = 0;
@@ -879,7 +879,7 @@ long get_num_bins_needed(
  *generates all the file handlers(bins) that are needed
  *\returns TRUE, if successfully opened all needed bins, else FALSE
  */
-BOOLEAN_T generate_file_handlers(
+bool generate_file_handlers(
   FILE** file_array,  ///< the file handler array -out
   long num_bins  ///< total number of bins needed
   )
@@ -910,7 +910,7 @@ BOOLEAN_T generate_file_handlers(
  *generates all the file handlers(bins) that are needed
  *\returns TRUE, if successfully opened bin, else FALSE
  */
-BOOLEAN_T generate_one_file_handler(
+bool generate_one_file_handler(
   FILE** file_array,  ///< the file handler array -out                            
   long bin_index ///< the bin index to create a file handler -in
   )
@@ -999,7 +999,7 @@ FILE* sort_bin(
  * \returns TRUE if successful in storing the peptide or serializing
  * peptides, else FALSE .
  */
-static BOOLEAN_T dump_peptide(
+static bool dump_peptide(
   FILE** file_array,   ///< the working file handler array to the bins -in/out
   long int file_idx,   ///< the index of the file the peptide belongs to -in
   PEPTIDE_T* working_peptide, ///< the peptide to be stored -in
@@ -1045,7 +1045,7 @@ static BOOLEAN_T dump_peptide(
  *
  * \returns TRUE, if successful in serializing all peptides, else FALSE.
  */
-static BOOLEAN_T dump_peptide_all(
+static bool dump_peptide_all(
   FILE** file_array,   ///< the working file handle array to the bins -out
   PEPTIDE_T*** peptide_array, ///< the array of pre-serialized peptides -in
   int* bin_count,      ///< the count array of peptides in each bin -in
@@ -1097,7 +1097,7 @@ static BOOLEAN_T dump_peptide_all(
  *
  *\returns TRUE, if all processes are successful, else FALSE
  */
-BOOLEAN_T transform_database_to_memmap_database(
+bool transform_database_to_memmap_database(
   INDEX_T* index ///< An allocated index -in/out
   )
 {
@@ -1105,11 +1105,11 @@ BOOLEAN_T transform_database_to_memmap_database(
 
   // get the fasta file name with correct path
   char* fasta_file = cat_string("../", 
-                              get_database_filename_pointer(index->database));
+                              index->database->getFilenamePointer());
 
   // create binary fasta file inside temp directory
   if(!create_binary_fasta_in_cur(fasta_file,
-                               get_database_filename_pointer(index->database),
+                               index->database->getFilenamePointer(),
                                &binary_fasta)){
     /*
     // remove directory
@@ -1125,14 +1125,14 @@ BOOLEAN_T transform_database_to_memmap_database(
   }
   
   // change name of file to binary fasta
-  set_database_filename(index->database, fasta_file);
+  index->database->setFilename(fasta_file);
 
   // check if already parsed
-  if(!get_database_is_parsed(index->database)){
+  if(!index->database->getIsParsed()){
     carp(CARP_DEBUG,
        "Database was not parsed after creating the binary fasta, parsing now");
 
-    if(!parse_database(index->database)){
+    if(!index->database->parse()){
       /*
       carp(CARP_FATAL, "failed to parse database, cannot create new index");
       free(index);
@@ -1173,9 +1173,9 @@ BOOLEAN_T transform_database_to_memmap_database(
  * all information that was used to create this index.
  * \returns TRUE if success. FALSE if failure.
  */
-BOOLEAN_T create_index(
+bool create_index(
   INDEX_T* index, ///< An allocated index -in/out
-  BOOLEAN_T create_text_file ///< Should an ASCII text file be create? -in
+  bool create_text_file ///< Should an ASCII text file be create? -in
   )
 {
   // the file stream where the index creation information is sent
@@ -1186,13 +1186,13 @@ BOOLEAN_T create_index(
   FILE** file_array = NULL;
   int* mass_limits = (int*)mycalloc(2, sizeof(int));
   long num_bins = 0;
-  DATABASE_PEPTIDE_ITERATOR_T* peptide_iterator = NULL;
+  DatabasePeptideIterator* peptide_iterator = NULL;
   PEPTIDE_T* working_peptide = NULL;
   FLOAT_T working_mass;
   char* filename = NULL;
   FLOAT_T mass_range = index->mass_range;
   unsigned int* peptide_count_array = NULL;
-  BOOLEAN_T replace_index = FALSE;
+  bool replace_index = FALSE;
 
   carp(CARP_DEBUG, "Creating index");
   // check if already created index
@@ -1220,8 +1220,7 @@ BOOLEAN_T create_index(
   // copy temporary folder name for SIGINT cleanup purpose
   strncpy(temp_folder_name, temp_dir_name, 12); 
 
-  if(! transform_database_text_to_memmap(index->database, 
-                                         temp_dir_name) ){
+  if(! index->database->transformTextToMemmap(temp_dir_name) ){
     clean_up(1);
     carp(CARP_FATAL, "Failed to create binary database from text fasta file");
   }
@@ -1284,7 +1283,7 @@ BOOLEAN_T create_index(
                     
   // create database peptide_iterator
   peptide_iterator =
-    new_database_peptide_iterator(index->database, index->disk_constraint, 
+    new DatabasePeptideIterator(index->database, index->disk_constraint, 
                                   false);// don't parse all pep into memory
 
   long int file_idx = 0;
@@ -1293,7 +1292,7 @@ BOOLEAN_T create_index(
   int mod_me = 1000;
   
   // iterate through all peptides
-  while(database_peptide_iterator_has_next(peptide_iterator)){    
+  while(peptide_iterator->hasNext()){    
     ++count_peptide;
     if(count_peptide % mod_me == 0){
       if( (count_peptide/10 ) == mod_me ){
@@ -1302,7 +1301,7 @@ BOOLEAN_T create_index(
       carp(CARP_INFO, "Reached peptide %d", (int)count_peptide);
     }
 
-    working_peptide = database_peptide_iterator_next(peptide_iterator);
+    working_peptide = peptide_iterator->next();
     working_mass = get_peptide_peptide_mass(working_peptide);
     file_idx = (long int)((working_mass - low_mass) / mass_range);
 
@@ -1366,7 +1365,7 @@ BOOLEAN_T create_index(
   free(mass_limits);
   free(file_array);
   free(peptide_count_array);
-  free_database_peptide_iterator(peptide_iterator);
+  delete (peptide_iterator);
 
   if( chdir("..") == -1 ){ //move out of temp dir
     return FALSE;
@@ -1399,7 +1398,7 @@ BOOLEAN_T create_index(
  *
  * \returns TRUE if it does. FALSE if it does not.
  */
-BOOLEAN_T index_exists(
+bool index_exists(
   INDEX_T* index ///< An allocated index
   )
 {
@@ -1452,7 +1451,7 @@ void set_index_directory(
 /**
  *\returns a pointer to the database
  */
-DATABASE_T* get_index_database(
+Database* get_index_database(
   INDEX_T* index ///< The index -in
   )
 {
@@ -1464,7 +1463,7 @@ DATABASE_T* get_index_database(
  */
 void set_index_database(
   INDEX_T* index, ///< The index -in
-  DATABASE_T* database ///< The database that has been indexed. -in
+  Database* database ///< The database that has been indexed. -in
   )
 {
   index->database = database;
@@ -1478,18 +1477,18 @@ void set_index_database(
  */
 void set_index_search_constraint(
   INDEX_T* index, ///< The index -in
-  PEPTIDE_CONSTRAINT_T* constraint ///< Constraint for the next iterator
+  PeptideConstraint* constraint ///< Constraint for the next iterator
   )
 {
   if(  index->search_constraint ){
-    free_peptide_constraint(index->search_constraint);
+    PeptideConstraint::free(index->search_constraint);
   }
-  index->search_constraint = copy_peptide_constraint_ptr(constraint);
+  index->search_constraint = PeptideConstraint::copyPtr(constraint);
   // check that the new mass window is within the index
-  double search_min = get_peptide_constraint_min_mass(constraint);
-  double search_max = get_peptide_constraint_max_mass(constraint);
-  double index_min = get_peptide_constraint_min_mass(index->disk_constraint);
-  double index_max = get_peptide_constraint_max_mass(index->disk_constraint);
+  double search_min = constraint->getMinMass();
+  double search_max = constraint->getMaxMass();
+  double index_min = index->disk_constraint->getMinMass();
+  double index_max = index->disk_constraint->getMaxMass();
   
   if( search_min < index_min ){
     carp_once(CARP_WARNING, 
@@ -1509,7 +1508,7 @@ void set_index_search_constraint(
 /**
  *\returns TRUE if index files are on disk else FALSE
  */
-BOOLEAN_T get_index_on_disk(
+bool get_index_on_disk(
   INDEX_T* index ///< The index -in
   )
 {
@@ -1521,7 +1520,7 @@ BOOLEAN_T get_index_on_disk(
  */
 void set_index_on_disk(
   INDEX_T* index, ///< The index -in
-  BOOLEAN_T on_disk ///< Does this index exist on disk yet? -in
+  bool on_disk ///< Does this index exist on disk yet? -in
   )
 {
   index->on_disk = on_disk;
@@ -1551,7 +1550,7 @@ void set_index_mass_range(
 /**
  *\returns TRUE if only allow unique peptides else FALSE
  */
-BOOLEAN_T get_index_is_unique(
+bool get_index_is_unique(
   INDEX_T* index ///< The index -in
   )
 {
@@ -1563,7 +1562,7 @@ BOOLEAN_T get_index_is_unique(
  */
 void set_index_is_unique(
   INDEX_T* index, ///< The index -in
-  BOOLEAN_T is_unique ///< do you allow duplicate peptides? -in
+  bool is_unique ///< do you allow duplicate peptides? -in
   )
 {
   index->is_unique = is_unique;
@@ -1600,7 +1599,7 @@ INDEX_FILE_T* new_index_file(
  * total_index_files count.
  * \returns TRUE if successfully added the new index_file
  */
-BOOLEAN_T add_new_index_file(
+bool add_new_index_file(
   INDEX_PEPTIDE_ITERATOR_T* index_peptide_iterator,
   ///< the index_peptide_iterator to add file -out
   char* filename_parsed,  ///< the filename to add -in
@@ -1646,7 +1645,7 @@ void free_index_file(
  * range. 
  * \returns TRUE if successfully parses crux_index_map
  */
-BOOLEAN_T parse_crux_index_map(
+bool parse_crux_index_map(
   INDEX_PEPTIDE_ITERATOR_T* index_peptide_iterator  
     ///< working index_peptide_iterator -in
   )
@@ -1662,13 +1661,11 @@ BOOLEAN_T parse_crux_index_map(
 
   FLOAT_T start_mass;
   FLOAT_T range;
-  BOOLEAN_T start_file = FALSE;
+  bool start_file = FALSE;
   FLOAT_T min_mass = 
-    get_peptide_constraint_min_mass(
-          index_peptide_iterator->index->search_constraint);
+    index_peptide_iterator->index->search_constraint->getMinMass();
   FLOAT_T max_mass = 
-    get_peptide_constraint_max_mass(
-          index_peptide_iterator->index->search_constraint);
+    index_peptide_iterator->index->search_constraint->getMaxMass();
 
   // used as buffer for reading in from file
   char full_filename[MAX_FILE_NAME_LENGTH] = "";
@@ -1763,7 +1760,7 @@ BOOLEAN_T parse_crux_index_map(
  * the constraint.
  */
 
-BOOLEAN_T fast_forward_index_file(
+bool fast_forward_index_file(
   INDEX_PEPTIDE_ITERATOR_T* index_peptide_iterator//, 
   ///< working index_peptide_iterator -in/out
   //FILE* file ///< the file stream to fast foward -in
@@ -1773,12 +1770,12 @@ BOOLEAN_T fast_forward_index_file(
   // peptide to parse, reuse this memory while we look
   PEPTIDE_T* peptide = allocate_peptide();
 
-  PEPTIDE_CONSTRAINT_T* index_constraint = 
+  PeptideConstraint* index_constraint = 
     index_peptide_iterator->index->search_constraint;
 
   // loop until we get to a peptide that fits the constraint, we find
   // a peptide bigger (mass) than the constraint, or reach eof
-  BOOLEAN_T peptide_fits = FALSE;
+  bool peptide_fits = FALSE;
   long int src_loc = 0;
   while( ! peptide_fits ){
     // read in next peptide, returns false if eof
@@ -1791,16 +1788,16 @@ BOOLEAN_T fast_forward_index_file(
     int peptide_length = get_peptide_length(peptide);
     
     // if peptide mass larger than constraint, no more peptides to return
-    if(peptide_mass > get_peptide_constraint_max_mass(index_constraint)){
+    if(peptide_mass > index_constraint->getMaxMass()){
       //free(peptide);
       free_peptide(peptide);
       return FALSE;
     }
 
     // does this peptide fit the constraint?
-    double min_mass = get_peptide_constraint_min_mass(index_constraint);
-    int min_length = get_peptide_constraint_min_length(index_constraint);
-    int max_length = get_peptide_constraint_max_length(index_constraint);
+    double min_mass = index_constraint->getMinMass();
+    int min_length = index_constraint->getMinLength();
+    int max_length = index_constraint->getMaxLength();
     if( peptide_mass >= min_mass 
         && peptide_length >= min_length
         && peptide_length <= max_length){
@@ -1812,7 +1809,7 @@ BOOLEAN_T fast_forward_index_file(
   // get peptide_src for this peptide
   long int pep_end = ftell(file);
   fseek(file, src_loc, SEEK_SET);
-  DATABASE_T* database = index_peptide_iterator->index->database;
+  Database* database = index_peptide_iterator->index->database;
   if( ! parse_peptide_src(peptide, file, database, TRUE) ){
     carp(CARP_ERROR, "Could not parse peptide src");
     free_peptide(peptide);
@@ -1852,7 +1849,7 @@ void clean_up( int dummy ) {
  * \returns TRUE if there is a file ready to be read or FALSE if no
  * more files remain.
  */
-BOOLEAN_T find_next_index_file(
+bool find_next_index_file(
   INDEX_PEPTIDE_ITERATOR_T* iterator
   ){
   carp(CARP_DETAILED_DEBUG, "Finding file");
@@ -1891,7 +1888,7 @@ BOOLEAN_T find_next_index_file(
  * FALSE if no peptide meeting the constraint could abe found in the
  * current file. 
  */
-BOOLEAN_T find_peptide_in_current_index_file(
+bool find_peptide_in_current_index_file(
   INDEX_PEPTIDE_ITERATOR_T* iterator)
 {
   if( iterator == NULL){
@@ -1909,12 +1906,12 @@ BOOLEAN_T find_peptide_in_current_index_file(
   // peptide to return, reuse this memory while we look
   PEPTIDE_T* peptide = allocate_peptide();
   // constraint to meet
-  PEPTIDE_CONSTRAINT_T* index_constraint = iterator->index->search_constraint;
+  PeptideConstraint* index_constraint = iterator->index->search_constraint;
 
   // loop until we get to a peptide that fits the constraint, 
   // a peptide bigger (mass) than the constraint, or reach eof
-  BOOLEAN_T peptide_fits = FALSE;
-  BOOLEAN_T file_finished = FALSE;
+  bool peptide_fits = FALSE;
+  bool file_finished = FALSE;
   long int src_loc = 0;  // in case we need to parse the peptide src
 
   while( !peptide_fits && !file_finished ){// until pep_fits or file done
@@ -1922,7 +1919,7 @@ BOOLEAN_T find_peptide_in_current_index_file(
          peptide_fits, file_finished);
 
     // read in next peptide
-    BOOLEAN_T found_pep = parse_peptide_no_src(peptide, cur_file, &src_loc);
+    bool found_pep = parse_peptide_no_src(peptide, cur_file, &src_loc);
     // returns false if eof
     if( ! found_pep ){
       carp(CARP_DETAILED_DEBUG, "parse peptide returned FALSE");
@@ -1935,7 +1932,7 @@ BOOLEAN_T find_peptide_in_current_index_file(
     int peptide_length = get_peptide_length(peptide);
 
     // if peptide mass larger than constraint, no more peptides to return
-    if(peptide_mass > get_peptide_constraint_max_mass(index_constraint)){
+    if(peptide_mass > index_constraint->getMaxMass()){
       carp(CARP_DETAILED_DEBUG, "peptide found is bigger than constraint");
       file_finished = TRUE;
       continue;
@@ -1943,9 +1940,9 @@ BOOLEAN_T find_peptide_in_current_index_file(
 
     // does this peptide fit the constraint?
 
-    double min_mass = get_peptide_constraint_min_mass(index_constraint);
-    int min_length = get_peptide_constraint_min_length(index_constraint);
-    int max_length = get_peptide_constraint_max_length(index_constraint);
+    double min_mass = index_constraint->getMinMass();
+    int min_length = index_constraint->getMinLength();
+    int max_length = index_constraint->getMaxLength();
 
 
     /*
@@ -1986,7 +1983,7 @@ BOOLEAN_T find_peptide_in_current_index_file(
     carp(CARP_DETAILED_DEBUG, "Found a peptide that fits constraint");
     pep_end = ftell(cur_file);
     fseek(cur_file, src_loc, SEEK_SET);
-    DATABASE_T* database = iterator->index->database;
+    Database* database = iterator->index->database;
     if( ! parse_peptide_src(peptide, cur_file, database, TRUE) ){
       carp(CARP_ERROR, "Could not parse peptide src");
       file_finished = TRUE; // maybe we could read more, but unlikly
@@ -2032,7 +2029,7 @@ BOOLEAN_T find_peptide_in_current_index_file(
  * \returns TRUE if no errors were encountered while reading files
  * (even if there is no peptide to return).
  */
-BOOLEAN_T queue_next_peptide_index_peptide_iterator(
+bool queue_next_peptide_index_peptide_iterator(
   INDEX_PEPTIDE_ITERATOR_T* iterator
   ){
   
@@ -2040,7 +2037,7 @@ BOOLEAN_T queue_next_peptide_index_peptide_iterator(
     carp(CARP_ERROR, "Can't queue peptide for NULL index iterator.");
     return FALSE;
   }
-  BOOLEAN_T found = FALSE;
+  bool found = FALSE;
   while(find_next_index_file(iterator)){
     found = find_peptide_in_current_index_file(iterator);
     if(found == TRUE ){
@@ -2125,7 +2122,7 @@ PEPTIDE_T* index_peptide_iterator_next(
  * check to see if the index_peptide_iterator has more peptides to return
  *\returns TRUE if there are additional peptides to iterate over, FALSE if not.
  */
-BOOLEAN_T index_peptide_iterator_has_next(
+bool index_peptide_iterator_has_next(
   INDEX_PEPTIDE_ITERATOR_T* index_peptide_iterator ///< the index_peptide_iterator to initialize -in
   )
 {
@@ -2165,7 +2162,7 @@ void free_index_peptide_iterator(
  * sets up the index_filtered_peptide_iterator
  * \returns TRUE if successfully sets up the iterator, else FALSE
  */
-BOOLEAN_T setup_index_filtered_peptide_iterator(
+bool setup_index_filtered_peptide_iterator(
   INDEX_FILTERED_PEPTIDE_ITERATOR_T* iterator
   )
 {
@@ -2175,8 +2172,8 @@ BOOLEAN_T setup_index_filtered_peptide_iterator(
   PEPTIDE_TYPE_T peptide_type = 
     get_peptide_constraint_peptide_type(iterator->index_peptide_iterator->index->search_constraint);
   */
-  DIGEST_T required_digestion = get_peptide_constraint_digest(iterator->index_peptide_iterator->index->search_constraint);
-  BOOLEAN_T match = FALSE;
+  DIGEST_T required_digestion = iterator->index_peptide_iterator->index->search_constraint->getDigest();
+  bool match = FALSE;
 
   // initialize index_filered
   while(index_peptide_iterator_has_next(iterator->index_peptide_iterator)){
@@ -2276,7 +2273,7 @@ PEPTIDE_T* index_filtered_peptide_iterator_next(
  * check to see if the index_filtered_peptide_iterator has more peptides to return
  *\returns TRUE if there are additional peptides to iterate over, FALSE if not.
  */
-BOOLEAN_T index_filtered_peptide_iterator_has_next(
+bool index_filtered_peptide_iterator_has_next(
   INDEX_FILTERED_PEPTIDE_ITERATOR_T* index_filtered_peptide_iterator ///< the index_filtered_peptide_iterator to initialize -in
   )
 {
@@ -2310,7 +2307,7 @@ void free_index_filtered_peptide_iterator(
  * parse the peptide, then adds it to the bin-peptide-iterator to return
  * \returns TRUE if successfully initializes the bin_peptide_iterator
  */
-BOOLEAN_T initialize_bin_peptide_iterator(
+bool initialize_bin_peptide_iterator(
   BIN_PEPTIDE_ITERATOR_T* bin_peptide_iterator ///< working bin_peptide_iterator -in/out
   )
 {
@@ -2318,8 +2315,8 @@ BOOLEAN_T initialize_bin_peptide_iterator(
   // parsing.  One fix would be for parse_peptide to return error code
 
   FILE* file = bin_peptide_iterator->index_file;
-  DATABASE_T* database = bin_peptide_iterator->index->database;
-  BOOLEAN_T use_src_array = bin_peptide_iterator->use_array;
+  Database* database = bin_peptide_iterator->index->database;
+  bool use_src_array = bin_peptide_iterator->use_array;
 
   // allocate peptide to used to parse
   //  PEPTIDE_T* peptide = allocate_peptide();
@@ -2346,7 +2343,7 @@ BOOLEAN_T initialize_bin_peptide_iterator(
 BIN_PEPTIDE_ITERATOR_T* new_bin_peptide_iterator(
   INDEX_T* index, ///< The index object which we are iterating over -in
   FILE* file, ///< the bin to parse peptides
-  BOOLEAN_T use_array  ///< should I use array peptide_src or link list when parsing peptides -in
+  bool use_array  ///< should I use array peptide_src or link list when parsing peptides -in
   )
 {
   if(use_array){
@@ -2406,7 +2403,7 @@ PEPTIDE_T* bin_peptide_iterator_next(
  * check to see if the bin_peptide_iterator has more peptides to return
  *\returns TRUE if there are additional peptides to iterate over, FALSE if not.
  */
-BOOLEAN_T bin_peptide_iterator_has_next(
+bool bin_peptide_iterator_has_next(
   BIN_PEPTIDE_ITERATOR_T* bin_peptide_iterator ///< the bin_peptide_iterator to initialize -in
   )
 {
@@ -2495,7 +2492,7 @@ PEPTIDE_T* bin_sorted_peptide_iterator_next(
  * check to see if the bin_sorted_peptide_iterator has more peptides to return
  *\returns TRUE if there are additional peptides to iterate over, FALSE if not.
  */
-BOOLEAN_T bin_sorted_peptide_iterator_has_next(
+bool bin_sorted_peptide_iterator_has_next(
   BIN_SORTED_PEPTIDE_ITERATOR_T* bin_sorted_peptide_iterator ///< the bin_peptide_iterator to initialize -in
   )
 {
@@ -2536,7 +2533,7 @@ PEPTIDE_T* void_index_filtered_peptide_iterator_next(
  * check to see if the index_filtered_peptide_iterator has more peptides to return
  *\returns TRUE if there are additional peptides to iterate over, FALSE if not.
  */
-BOOLEAN_T void_index_filtered_peptide_iterator_has_next(
+bool void_index_filtered_peptide_iterator_has_next(
   void* index_filtered_peptide_iterator ///< the index_filtered_peptide_iterator to initialize -in
   )
 {
@@ -2569,7 +2566,7 @@ void void_free_index_peptide_iterator(
  * The basic iterator functions.
  * \returns TRUE if there are additional peptides to iterate over, FALSE if not.
  */
-BOOLEAN_T void_index_peptide_iterator_has_next(
+bool void_index_peptide_iterator_has_next(
     void* index_peptide_iterator ///< the iterator of interest -in
     )
 {

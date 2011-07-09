@@ -46,7 +46,7 @@ void SelfLoopPeptide::addCandidates(
   FLOAT_T min_mass,
   FLOAT_T max_mass,
   XLinkBondMap& bondmap, 
-  INDEX_T* index, DATABASE_T* database,
+  INDEX_T* index, Database* database,
   PEPTIDE_MOD_T** peptide_mods,
   int num_peptide_mods,
   MatchCandidateVector& candidates) {

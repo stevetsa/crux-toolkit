@@ -6,7 +6,7 @@
 #include "SpectrumZState.h"
 
 #include "index.h"
-#include "database.h"
+#include "Database.h"
 #include "modifications.h"
 
 #include <vector>
@@ -26,7 +26,7 @@ class MatchCandidateVector : public std::vector<MatchCandidate*> {
     FLOAT_T max_mass,
     XLinkBondMap& bondmap,
     INDEX_T* index,
-    DATABASE_T* database,
+    Database* database,
     PEPTIDE_MOD_T** peptide_mods,
     int num_peptide_mods);
 
@@ -40,14 +40,14 @@ class MatchCandidateVector : public std::vector<MatchCandidate*> {
     PEPTIDE_MOD_T** peptide_mods,
     int num_peptide_mods,
     INDEX_T* index,
-    DATABASE_T* database);
+    Database* database);
 
 
   MatchCandidateVector(FLOAT_T precursor_mz,
                        SpectrumZState& zstate,
 		       XLinkBondMap& bondmap,
 		       INDEX_T* index,
-		       DATABASE_T* database,
+		       Database* database,
 		       PEPTIDE_MOD_T** peptide_mods,
 		       int num_peptide_mods,
 		       BOOLEAN_T is_decoy=FALSE);

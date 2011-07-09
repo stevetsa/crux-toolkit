@@ -7,27 +7,57 @@
 
 using namespace std;
 
-XLinkScorer::XLinkScorer() {
-  //  scorer = new_scorer(XCORR);
-}
+void XLinkScorer::init(
+  Spectrum* spectrum,
+  int charge,
+  bool compute_sp
+  ) {
 
-XLinkScorer::XLinkScorer(Spectrum* spectrum, int charge) {
   scorer_xcorr_ = new_scorer(XCORR);
   scorer_sp_ = new_scorer(SP);
   spectrum_ = spectrum;
   charge_ = charge;
+  compute_sp_ = compute_sp;
 
-  ion_constraint_xcorr_ = 
-    IonConstraint::newIonConstraintSmart(XCORR, charge_);
+  if ((spectrum_ != NULL) && (charge_ > 0)) {
 
-  ion_constraint_sp_ =
-    IonConstraint::newIonConstraintSmart(SP, charge_);
+    ion_constraint_xcorr_ = 
+      IonConstraint::newIonConstraintSmart(XCORR, charge_);
 
-  ion_series_xcorr_ = 
-    new IonSeries(ion_constraint_xcorr_, charge_);
+    ion_constraint_sp_ =
+      IonConstraint::newIonConstraintSmart(SP, charge_);
 
-  ion_series_sp_ =
-    new IonSeries(ion_constraint_sp_, charge_);
+    ion_series_xcorr_ = 
+      new IonSeries(ion_constraint_xcorr_, charge_);
+
+    ion_series_sp_ =
+      new IonSeries(ion_constraint_sp_, charge_);
+  } else {
+
+    ion_constraint_xcorr_ = NULL;
+    ion_constraint_sp_ = NULL;
+    ion_series_xcorr_ = NULL;
+    ion_series_sp_ = NULL;
+  }
+}
+
+XLinkScorer::XLinkScorer() {
+
+  init(NULL, 0, get_boolean_parameter("compute-sp"));
+}
+
+XLinkScorer::XLinkScorer(Spectrum* spectrum, int charge) {
+
+  init(spectrum, charge, get_boolean_parameter("compute-sp"));
+}
+
+XLinkScorer::XLinkScorer(
+  Spectrum* spectrum, 
+  int charge, 
+  bool compute_sp
+  ) {
+
+  init(spectrum, charge, compute_sp);
 }
 
 XLinkScorer::~XLinkScorer() {
@@ -47,12 +77,14 @@ FLOAT_T XLinkScorer::scoreCandidate(MatchCandidate* candidate) {
   FLOAT_T xcorr = score_spectrum_v_ion_series(scorer_xcorr_, spectrum_, ion_series_xcorr_);
   candidate->setXCorr(xcorr);
   
-  candidate->predictIons(ion_series_sp_, charge_);
-  FLOAT_T sp = score_spectrum_v_ion_series(scorer_sp_, spectrum_, ion_series_sp_);
-  candidate->setSP(sp);
+  if (compute_sp_) {
 
-  candidate->setBYIonsMatched(get_scorer_sp_b_y_ion_matched(scorer_sp_));
-  candidate->setBYIonsTotal(get_scorer_sp_b_y_ion_possible(scorer_sp_));
+    candidate->predictIons(ion_series_sp_, charge_);
+    FLOAT_T sp = score_spectrum_v_ion_series(scorer_sp_, spectrum_, ion_series_sp_);
+    candidate->setSP(sp);
+    candidate->setBYIonsMatched(get_scorer_sp_b_y_ion_matched(scorer_sp_));
+    candidate->setBYIonsTotal(get_scorer_sp_b_y_ion_possible(scorer_sp_));
+  }
   //cerr<<candidate->getSequenceString()<<" xcorr "<<xcorr<<endl;
   return xcorr;
 
