@@ -149,12 +149,12 @@ versions of each metric, as follows:</p>
 <ul>
 
 <li>
-<code>&lt;input PSMs&gt;</code>&ndash;
+<code>&lt;input PSMs&gt;</code> &ndash;
 A tab delimited text file produced by a <code>crux</code> post-search
 command, for example <code>percolator.target.txt</code>
 or <code>qranker.target.txt</code>.</li>
 
-<li><code>&lt;protein database&gt;</code>&ndash; 
+<li><code>&lt;protein database&gt;</code> &ndash; 
 The name of the file in fasta format or the directory containing the
 protein index from which to retrieve proteins and peptides.</li>
 </ul>
@@ -163,17 +163,23 @@ protein index from which to retrieve proteins and peptides.</li>
 <ul>
 
 <p>
-The program writes one file to the folder <code>crux-output</code> by
-default.  The name of the output folder can be set by the user using
+The program writes to the folder <code>crux-output</code> by default.
+The name of the output folder can be set by the user using
 the <code>--output-dir</code> option. The following files will be
 created:</p>
 
 <li>
-<code>spectral-count.target.txt</code>: a tab-delimited text file
+<b>spectral-counts.target.txt</b>: a tab-delimited text file
 containing the protein IDs and their corresponding scores, in sorted
 order.</li>
 
-<li><code>spectral-count.log.txt</code>: All messages written to
+<li><b>spectral-counts.params.txt</b>: a file containing the name
+and value of all parameters/options for the current operation.  Not
+all parameters in the file may have been used in the operation.  The
+resulting file can be used with the <code>--parameter-file</code>
+option for other crux programs.</li>
+
+<li><b>spectral-counts.log.txt</b>: All messages written to
 standard error.</li>
 
 </ul>
