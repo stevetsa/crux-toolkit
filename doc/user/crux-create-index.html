@@ -114,13 +114,17 @@ with <code>enzyme</code> and set to true, includes peptides containing
 one or more potential cleavage sites. Default = F.
 
 <li>
-<code>--decoys &lt;none|shuffle|reverse&gt;</code &ndash;
-Create decoy peptides by either shuffling the protein sequence or
-reversing it. If <code>--enzyme</code> or <code>--custom-enzyme</code>
-is specified shuffling is done only between cleavage positions,
-leaving the terminal residues in place.  For example, with tryptic
-digestion and the protein AXXRAXXXKAXXA, only the residues in the X
-positions would be shuffled.
+<code>--decoys &lt;none|reverse|protein-shuffle|peptide-shuffle&gt;</code>
+&ndash;
+Create decoy peptides by either shuffling or reversing the protein sequence.
+For <code>peptide-shuffle</code> the shuffling is done only between
+cleavage positions, leaving the terminal residues in place.  For
+example, with tryptic digestion and the protein AXXRAXXXKAXXA, only
+the residues in the X positions would be shuffled.  For 
+<code>protein-shuffle</code>, the entire sequence of the protein is
+shuffled without respect to any cleavage positions.  Specifying 
+<code>peptide-shuffle</code> and <code>enzyme=none</code> raises an
+error.  Default = protein-shuffle.
 
 <LI>
 <code>--isotopic-mass &lt;average|mono&gt;</code> &ndash;
