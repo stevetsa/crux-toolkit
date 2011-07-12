@@ -20,66 +20,72 @@
 Given a collection of scored peptide-spectrum matches (PSMs), produce
 a list of proteins or peptides ranked by a quantification
 score. The <code>spectral-counts</code> command supports four types of
-quantification: Normalized Spectral Abundance Factor
+quantification: normalized spectral abundance factor
 (NSAF, <a href="http://www.ncbi.nlm.nih.gov/pubmed/17138671">Paoletti
 et al., 2006</a>), distributed NSAF
 (dNSAF, <a href="http://www.ncbi.nlm.nih.gov/pubmed/20166708">Zhang et
-al., 2010</a>), Normalized Spectral Index (SI<sub>N</sub>,
+al., 2010</a>),  spectral index (SI<sub>N</sub>,
 <a href="http://www.nature.com/nbt/journal/v28/n1/abs/nbt.1592.html">Griffin
-et al., 2010</a>) and Exponentially Modified Protein Abundance Index
+et al., 2010</a>) and exponentially modified protein abundance index
 (emPAI, <a href="http://www.mcponline.org/content/4/9/1265">Ishihama
 et al., 2005</a>).  The quantification methods are defined below:</p>
 
 <ol>
 <li>
-  <p>For each protein in a given database, the NSAF score is:</p>
+  <p>For each protein in a given database, the NSAF score is</p>
   <p><img alt="" src="nsaf_prot_equation_a.png"></p>
 <div>where:</div>
 <ul>
-<li>N is protein index</li>
-<li>S<sub>N</sub> is the number spectra matched to protein index</li>
-<li>L<sub>N</sub> is the length of protein N </li>
-<li>n is the total number of proteins in the input database</li>
+<li>N is the protein index,</li>
+<li>S<sub>N</sub> is the number spectra matched to protein N,</li>
+<li>L<sub>N</sub> is the length of protein N, and</li>
+<li>n is the total number of proteins in the input database.</li>
 </ul>
-  <p>With the distribution factor of shared spectra matched, the NSAF score is:</p>
+</li>
+
+<li>
+<p>The dNSAF score is</p>
   <p><img alt="" src="nsaf_prot_equation_b.png"></p>
 <div>where:</div>
 <ul>
 <li>N is the protein index</li>
-<li>uSpc<sub>N</sub> is the unique number spectra matched to the protein index</li>
-<li>sSpc<sub>N</sub> is the shared number spectra matched to the protein index</li>
-<li>uL<sub>N</sub> is the unique length of protein N</li>
-<li>sL<sub>N</sub> is the shared length of protein N</li>
-<li>n is the total number of proteins in the input database</li>
+<li>uSpc<sub>N</sub> is the number of spectra matched to
+  peptides that occur only in protein N,</li>
+<li>sSpc<sub>N</sub> is the number of spectra matched to
+  peptides that occur in protein N and at least one other
+  protein,</li>
+<li>uL<sub>N</sub> is the length of the unique portion of
+  protein N,</li>
+<li>sL<sub>N</sub> is the length of the shared portion of
+  protein N,</li>
+<li>n is the total number of proteins in the input database, and</li>
 <li>d is the distributing factor of protein N, given by</li>
 <p><img alt="" src="d.png"></p>
 </ul>
 </li>
 
 <li>
-FIXME: Insert dNSAF description here.</li>
-
-<li>
-  <p>For each protein in a given database, the SI<sub>N</sub> score is:</p>
+  <p>The SI<sub>N</sub> score is</p>
   <p><img alt="" src="sin_prot_equation.png"></p>
   <div>where:</div>
   <ul>
-    <li>N is protein index</li>
-    <li>p<sub>n</sub> is the number of unique peptides in protein N</li>
-    <li>s<sub>j</sub> is the number of spectra assigned to peptide j</li>
-    <li>i<sub>k</sub> is the total fragment ion intensity of spectrum k</li>
-    <li>L<sub>N</sub> is the length of protein N</li>
+    <li>N is the protein index,</li>
+    <li>p<sub>n</sub> is the number of peptides in protein N,</li>
+    <li>s<sub>j</sub> is the number of spectra assigned to peptide j,</li>
+    <li>i<sub>k</sub> is the total fragment ion intensity of spectrum
+    k, and</li>
+    <li>L<sub>N</sub> is the length of protein N.</li>
   </ul>
 </li>
 <li>
-  <p>For each protein in a given database, the emPAI score is:</p>
+  <p>The emPAI score is</p>
   <p><img alt="" src="quant_empai_1.gif"></p>
 <div>where:</div>
 <ul>
 <li>N<sub>observed</sub> is the number of experimentally observed
-  peptides with scores above a specified threshold.</li>
-<li>N<sub>obervable</sub> is the calculated number of observable
-  peptides for the protein given the search constraints.</li>
+  peptides with scores above a specified threshold, and</li>
+<li>N<sub>observable</sub> is the calculated number of observable
+  peptides for the protein, given the search constraints.</li>
 </ul></li>
 </ol>
 </div>
@@ -95,44 +101,47 @@ versions of each metric, as follows:</p>
 <p><img alt="" src="nsaf_pep_equation_a.png"></p>
 <div>where:</div>
 <ul>
-<li>N is the peptide index</li>
-<li>S<sub>N</sub> is the number spectra matched to peptide N</li>
-<li>L<sub>N</sub> is the length of peptide N </li>
-<li>n is the total number of peptides in the input database</li>
-</ul>
-  <p>With the distribution factor of shared spectra matched, the NSAF score is:</p>
+<li>N is the peptide index,</li>
+<li>S<sub>N</sub> is the number spectra matched to peptide N,</li>
+<li>L<sub>N</sub> is the length of peptide N, and</li>
+<li>n is the total number of peptides in the input database.</li>
+</ul></li>
+
+<li>
+<p>The dNSAF score is:</p>
   <p><img alt="" src="nsaf_pep_equation_b.png"></p>
 <div>where:</div>
 <ul>
-<li>N is the peptide index</li>
-<li>uSpc<sub>N</sub> is the unique number spectra matched to the peptide index</li>
-<li>sSpc<sub>N</sub> is the shared number spectra matched to the peptide index</li>
-<li>uL<sub>N</sub> is the unique length of peptide N</li>
-<li>sL<sub>N</sub> is the shared length of peptide N</li>
-<li>n is the total number of peptides in the input database</li>
+<li>N is the peptide index,</li>
+<li>uSpc<sub>N</sub> is the number of spectra matched to
+  peptides that occur only in protein N,</li>
+<li>sSpc<sub>N</sub> is the number of spectra matched to
+  peptides that appear in protein N and at least one other
+  protein,</li>
+<li>uL<sub>N</sub> is the length of the unique portion of peptide
+  N,</li>
+<li>sL<sub>N</sub> is the length of the shared portion of peptide
+  N,</li>
+<li>n is the total number of peptides in the input database, and</li>
 <li>d is the distributing factor of peptide N, given by</li>
 <p><img alt="" src="d.png"></p>
 </ul>
 </li>
 
 <li>
-FIXME: Insert peptide-level dNSAF description here.</li>
-
-<li>
 <p>For each peptide in a given database, the SI<sub>N</sub> score is:</p>
 <p><img alt="" src="sin_pep_equation.png"></p>
 <div>where:</div>
 <ul>
-<li>N is the peptide index</li>
-<li>s<sub>N</sub> is the number of spectra assigned to peptide N</li>
-<li>i<sub>k</sub> is the total fragment ion intensity of spectrum k</li>
-<li>L<sub>N</sub> is the length of peptide N</li>
+<li>N is the peptide index,</li>
+<li>s<sub>N</sub> is the number of spectra assigned to peptide N,</li>
+<li>i<sub>k</sub> is the total fragment ion intensity of spectrum k, and</li>
+<li>L<sub>N</sub> is the length of peptide N.</li>
 </ul>
 </li>
 </ol>
 </div>
 </div>
-
 
 </blockquote>
 <p>
