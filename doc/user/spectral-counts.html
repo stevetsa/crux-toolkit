@@ -14,21 +14,22 @@
 </blockquote>
 <p>
 <b>Description:</b></p>
+
 <blockquote>
-<p>Given a collection of scored PSMs, produce a&nbsp;list
-of proteins or peptides ranked by a quantification score. Spectral-counts
-supports three types of quantification: Normalized Spectral Abundance
-Factor (NSAF), Normalized Spectral Index (SI<sub>N</sub>) and 
-Exponentially Modified Protein Abundance Index (emPAI). The
-NSAF method is from a 
-<a href="http://www.ncbi.nlm.nih.gov/pubmed/17138671">publication
-by Paoletti et al. (2006)</a>. The SI<sub>N</sub> method is from the 
+<p>
+Given a collection of scored peptide-spectrum matches (PSMs), produce
+a list of proteins or peptides ranked by a quantification
+score. The <code>spectral-counts</code> command supports four types of
+quantification: Normalized Spectral Abundance Factor
+(NSAF, <a href="http://www.ncbi.nlm.nih.gov/pubmed/17138671">Paoletti
+et al., 2006</a>), distributed NSAF
+(dNSAF, <a href="http://www.ncbi.nlm.nih.gov/pubmed/20166708">Zhang et
+al., 2010</a>), Normalized Spectral Index (SI<sub>N</sub>,
 <a href="http://www.nature.com/nbt/journal/v28/n1/abs/nbt.1592.html">Griffin
-et al. (2010) paper</a>. The emPAI method was first described in
-<a href="http://www.mcponline.org/content/4/9/1265">Ishihama et al
-  (2005)</a>. 
-The quantification methods are defined below:</p> 
-<b>Protein Quantification </b>
+et al., 2010</a>) and Exponentially Modified Protein Abundance Index
+(emPAI, <a href="http://www.mcponline.org/content/4/9/1265">Ishihama
+et al., 2005</a>).  The quantification methods are defined below:</p>
+
 <ol>
 <li>
   <p>For each protein in a given database, the NSAF score is:</p>
@@ -54,6 +55,10 @@ The quantification methods are defined below:</p>
 <p><img alt="" src="d.png"></p>
 </ul>
 </li>
+
+<li>
+FIXME: Insert dNSAF description here.</li>
+
 <li>
   <p>For each protein in a given database, the SI<sub>N</sub> score is:</p>
   <p><img alt="" src="sin_prot_equation.png"></p>
@@ -79,8 +84,13 @@ The quantification methods are defined below:</p>
 </ol>
 </div>
 
-<div> <u>Peptide Quantification</u>
-  <ol>
+<div>
+<p>
+In addition to the above protein quantification
+metrics, <code>spectral-counts</code> can also compute peptide-level
+versions of each metric, as follows:</p>
+
+<ol>
 <li><p>For each peptide in a given database, the NSAF score is:</p>
 <p><img alt="" src="nsaf_pep_equation_a.png"></p>
 <div>where:</div>
@@ -106,7 +116,9 @@ The quantification methods are defined below:</p>
 </li>
 
 <li>
+FIXME: Insert peptide-level dNSAF description here.</li>
 
+<li>
 <p>For each peptide in a given database, the SI<sub>N</sub> score is:</p>
 <p><img alt="" src="sin_pep_equation.png"></p>
 <div>where:</div>
@@ -162,15 +174,14 @@ standard error.</li>
 <ul>
 
 <li>
-<code>--measure &lt;NSAF|SIN|EMPAI&gt;</code> &ndash;
-Type of analysis to make on match results: (NSAF | SIN |
-EMPAI). Default = NSAF. 
+<code>--measure &lt;NSAF|DNSAF|SIN|EMPAI&gt;</code> &ndash; Specify
+which of the four metrics to compute, as described above. Default =
+NSAF.
 </li>
 
 <li>
-<code>--quant-level &lt;protein|peptide&gt;</code> &ndash; 
-Quantification at protein or peptide level. Methods described under 
-Description. Default = protein.
+<code>--quant-level &lt;protein|peptide&gt;</code> &ndash; Perform
+quantification at the protein or peptide level.  Default = protein.
 </li>
 
 <li>
@@ -203,8 +214,9 @@ output file names. Default = none.
 
 <li>
 <code>--input-MS2 &lt;string&gt;</code> &ndash;
-MS2 file corresponding to the PSM file. Required to measure the
-SIN. Ignored for NSAF and EMPAI.
+Specify the MS2 file corresponding to the PSM file. This file is
+required for the SI<sub>n</a> metric and is ignored for the other
+three metrics.
 </li>
 
 <li>
