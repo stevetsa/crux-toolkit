@@ -117,20 +117,22 @@ class IonSeries {
     int charge ///< The charge for this ion series -in
     );
 
+
   /**
    * user must ensure that there is enough space for this ion
    * adds ion to ion_series' master ion_array and if B|Y ion to the specific ion_array
    */
   void addIon(
     Ion* ion ///< ion to add -in
-    );
+  );
+
   
-  /**
-   * Updates an ion_series to a specific instance of a peptide sequence.
-   * If the ion_series has been already generated its ions, will free ions up.
-   * Copies in the peptide sequence.
-   * and re-initialize for the new peptide sequence.
-   */
+/**
+ * Updates an ion_series to a specific instance of a peptide sequence.
+ * If the ion_series has been already generated its ions, will free ions up.
+ * Copies in the peptide sequence.
+ * and re-initialize for the new peptide sequence.
+ */
  void update(
    char* peptide, ///< The peptide sequence for this ion series. -in
   MODIFIED_AA_T* mod_seq ///< modified version of seq -in

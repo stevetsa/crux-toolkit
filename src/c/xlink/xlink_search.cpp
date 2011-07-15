@@ -3,7 +3,7 @@
 //#include "xhhc_search.h"
 #include "xlink_compute_qvalues.h"
 
-#include "SearchForXLinksMods.h"
+#include "SearchForXLinks.h"
 #include "MatchCandidate.h"
 #include "MatchCandidateVector.h"
 #include "XLinkBondMap.h"
@@ -30,49 +30,10 @@
 using namespace std;
 
 int xlink_search_main(int argc, char** argv) {
-
-  /* Verbosity level for set-up/command line reading */
-  set_verbosity_level(CARP_ERROR);
-
-  /* Define optional command line arguments */
-  const char* option_list[] = {
-    "verbosity",
-    "parameter-file",
-    "compute-sp",
-    "overwrite",
-    "output-dir",
-    "precursor-window",
-    "precursor-window-type",
-    "precursor-window-decoy",
-    "precursor-window-type-decoy",
-    "max-ion-charge",
-    "min-weibull-points",
-    "xlink-prevents-cleavage",
-    "spectrum-min-mass",
-    "spectrum-max-mass",
-    "spectrum-charge",
-    "top-match",
-    "xlink-include-linears",
-    "xlink-include-deadends",
-    "xlink-include-selfloops",
-    "use-mgf"
-  };
-  int num_options = sizeof(option_list) / sizeof(char*);
-
-  /* Define required command line arguments */
-  const char* argument_list[] = {
-    "ms2 file", 
-    "protein database", 
-    "link sites", 
-    "link mass"
-  };
-
-  int num_arguments = sizeof(argument_list) / sizeof(char*);
-
-  SearchForXLinksMods search;
-  search.initialize(argument_list, num_arguments,
-		 option_list, num_options, argc, argv);
   
+  (void)argc;
+  (void)argv;
+
   carp(CARP_INFO, "Beginning crux xlink-search-mods");
 
 
@@ -88,7 +49,7 @@ int xlink_search_main(int argc, char** argv) {
 
   char* input_file = get_string_parameter("protein database");
   
-  INDEX_T* index = NULL;
+  Index* index = NULL;
   Database* database = NULL;
   int num_proteins = prepare_protein_input(input_file, &index, &database);
   carp(CARP_INFO,"Number of proteins:%d",num_proteins);

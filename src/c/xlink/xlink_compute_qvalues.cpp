@@ -202,14 +202,12 @@ int xlink_compute_qvalues(){
   }
   
   carp(CARP_INFO,"Adding q-value column");
-
   target_matches_bonf.addColumn("fdr b-h");
   target_matches_bonf.addColumn("fdr decoy");
-
   target_matches_bonf.addColumn("q-value b-h");
   target_matches_bonf.addColumn("q-value decoy");
 
-  carp(CARP_INFO,"Calculating fdr using p-values (bh and target-decoy)");
+  //carp(CARP_INFO,"Calculating q-values");
   unsigned int decoy_idx = 0;
   //cout <<"Number of target rows:"<<target_matches_bonf.numRows()<<endl;
   for (unsigned int target_idx = 0; 
@@ -224,7 +222,7 @@ int xlink_compute_qvalues(){
       (double)(target_idx + 1) *
       current_pvalue;
 
-    //cout <<"fdr_bh:"<<fdr_bh<<endl;
+    //cout <<"q_value_bh:"<<q_value_bh<<endl;
 
     while ((decoy_idx < decoy_matches_bonf.numRows()) && 
 	   (decoy_matches_bonf.getDouble("p-value bonf.", decoy_idx) <= 

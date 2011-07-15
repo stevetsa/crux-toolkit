@@ -200,7 +200,6 @@ void MatchFileWriter::addColumnNames(CruxApplication* application, bool has_deco
     break;
 
   case XLINK_SEARCH_COMMAND:
-  case XLINK_SEARCH_MODS_COMMAND:
     // TODO: does search-for-xlinks use MatchFileWriter?
     break;
 
@@ -277,7 +276,6 @@ void MatchFileWriter::addColumnNames
   case SEARCH_COMMAND:       ///< search-for-matches
   case SEQUEST_COMMAND:      ///< sequest-search
   case XLINK_SEARCH_COMMAND:
-  case XLINK_SEARCH_MODS_COMMAND:
     addColumnNames(application, has_decoys);
     return;
 

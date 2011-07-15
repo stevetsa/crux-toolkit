@@ -124,7 +124,7 @@ MatchCandidateVector::MatchCandidateVector(
   XLinkBondMap& bondmap,
   PEPTIDE_MOD_T** peptide_mods,
   int num_peptide_mods,
-  INDEX_T* index,
+  Index* index,
   Database* database) {
 
 
@@ -147,7 +147,7 @@ void MatchCandidateVector::addCandidates(
   FLOAT_T min_mass,
   FLOAT_T max_mass,
   XLinkBondMap& bondmap,
-  INDEX_T* index,
+  Index* index,
   Database* database,
   PEPTIDE_MOD_T** peptide_mods,
   int num_peptide_mods) {
@@ -198,7 +198,7 @@ MatchCandidateVector::MatchCandidateVector(
   FLOAT_T precursor_mz, 
   SpectrumZState& zstate,
   XLinkBondMap& bondmap,
-  INDEX_T* index, 
+  Index* index, 
   Database* database, 
   PEPTIDE_MOD_T** peptide_mods, 
   int num_peptide_mods, 

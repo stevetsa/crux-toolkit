@@ -920,6 +920,12 @@ void initialize_parameters(void){
       "Available for search-for-xlinks program (Default=F).",
       "true");
 
+  set_boolean_parameter("use-old-xlink", TRUE,
+      "Use old xlink searching algorihtm",
+      "Available for search-for-xlinks program (Default=T).",
+      "false");
+
+
   set_int_parameter("max-missed-cleavages", 1, 0, BILLION,
       "",
       "", "true");

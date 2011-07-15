@@ -804,13 +804,12 @@ void DelimitedFile::sortByFloatColumn(
   if (sort_col_idx == -1) {
     carp(CARP_FATAL,"column %s doesn't exist",column_name.c_str());
   }
-  cerr <<"Building index"<<endl;
+
   for (unsigned int row_idx=0;row_idx<numRows();row_idx++) {
     sort_indices.insert(pair<FLOAT_T, unsigned int>(getFloat(sort_col_idx, row_idx), row_idx));
   }
-  cerr <<"Reordering rows"<<endl;
+
   reorderRows(sort_indices, ascending);
-  cerr <<"Done sorting"<<endl;
 }
 
 /**

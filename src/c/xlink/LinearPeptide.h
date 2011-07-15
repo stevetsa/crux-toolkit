@@ -27,7 +27,7 @@ class LinearPeptide : public MatchCandidate {
   static void addCandidates(
     FLOAT_T min_mass,
     FLOAT_T max_mass,
-    INDEX_T* index, 
+    Index* index, 
     Database* database,
     PEPTIDE_MOD_T** peptide_mods,
     int num_peptide_mods,

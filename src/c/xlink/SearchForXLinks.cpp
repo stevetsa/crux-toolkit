@@ -25,7 +25,56 @@ SearchForXLinks::~SearchForXLinks() {
  * main method for SearchForXLinks
  */
 int SearchForXLinks::main(int argc, char** argv) {
-  return xhhc_search_main(argc, argv);
+
+  /* Verbosity level for set-up/command line reading */
+  set_verbosity_level(CARP_ERROR);
+
+  /* Define optional command line arguments */
+  const char* option_list[] = {
+    "verbosity",
+    "parameter-file",
+    "compute-sp",
+    "overwrite",
+    "output-dir",
+    "precursor-window",
+    "precursor-window-type",
+    "precursor-window-decoy",
+    "precursor-window-type-decoy",
+    "max-ion-charge",
+    "min-weibull-points",
+    "xlink-prevents-cleavage",
+    "spectrum-min-mass",
+    "spectrum-max-mass",
+    "spectrum-charge",
+    "top-match",
+    "xlink-include-linears",
+    "xlink-include-deadends",
+    "xlink-include-selfloops",
+    "use-mgf"
+  };
+  int num_options = sizeof(option_list) / sizeof(char*);
+
+  /* Define required command line arguments */
+  const char* argument_list[] = {
+    "ms2 file", 
+    "protein database", 
+    "link sites", 
+    "link mass"
+  };
+
+  int num_arguments = sizeof(argument_list) / sizeof(char*);
+
+
+  initialize(argument_list, num_arguments,
+		 option_list, num_options, argc, argv);
+  
+
+
+  if (get_boolean_parameter("use-old-xlink")) {
+    return xhhc_search_main(argc, argv);
+  } else {
+    return xlink_search_main(argc, argv);
+  }
 }
 
 /**

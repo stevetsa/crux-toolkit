@@ -56,49 +56,9 @@ string get_protein_ids_locations(vector<PEPTIDE_T*>& peptides);
 
 int xhhc_search_main(int argc, char** argv) {
 
-  /* Verbosity level for set-up/command line reading */
-  set_verbosity_level(CARP_ERROR);
+  (void)argc;
+  (void)argv;
 
-  /* Define optional command line arguments */
-  const char* option_list[] = {
-    "verbosity",
-    "parameter-file",
-    "overwrite",
-    "output-dir",
-    "precursor-window",
-    "precursor-window-type",
-    "precursor-window-decoy",
-    "precursor-window-type-decoy",
-    "max-ion-charge",
-    "min-weibull-points",
-    /* TODO: Implement or remove
-    "missed-link-cleavage",
-    */
-    "spectrum-min-mass",
-    "spectrum-max-mass",
-    "spectrum-charge",
-    "top-match",
-    "xlink-include-linears",
-    "xlink-include-deadends",
-    "xlink-include-selfloops",
-    "xcorr-use-flanks",
-    "use-mgf"
-  };
-  int num_options = sizeof(option_list) / sizeof(char*);
-
-  /* Define required command line arguments */
-  const char* argument_list[] = {
-    "ms2 file", 
-    "protein database", 
-    "link sites", 
-    "link mass"
-  };
-
-  int num_arguments = sizeof(argument_list) / sizeof(char*);
-  SearchForXLinks search;
-  search.initialize(argument_list, num_arguments,
-		 option_list, num_options, argc, argv);
-  
   carp(CARP_INFO, "Beginning crux xlink-search");
 
 

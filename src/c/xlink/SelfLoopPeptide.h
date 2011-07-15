@@ -37,7 +37,7 @@ class SelfLoopPeptide : public MatchCandidate {
     FLOAT_T min_mass,
     FLOAT_T max_mass,
     XLinkBondMap& bondmap, 
-    INDEX_T* index, 
+    Index* index, 
     Database* database,
     PEPTIDE_MOD_T** peptide_mods,
     int num_peptide_mods,

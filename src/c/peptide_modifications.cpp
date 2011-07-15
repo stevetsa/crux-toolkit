@@ -141,36 +141,12 @@ int generate_peptide_mod_list_TESTER(
 {
 
   // initialize list of peptide mods with one unmodified peptide
-
-  int nterm_idx=-1;
-  
-  for (int mod_list_idx=0;mod_list_idx < num_aa_mods; mod_list_idx++) {
-    AA_MOD_T* cur_aa_mod = aa_mod_list[mod_list_idx];
-    
-    if (aa_mod_get_position(cur_aa_mod) == N_TERM) {
-      nterm_idx = mod_list_idx;
-      break;
-    }
-  }
-  
-  PEPTIDE_MOD_T* base_mod = new_peptide_mod();
-  carp(CARP_INFO,"Creating base modification");
-  /*
-  if (nterm_idx != -1) {
-    AA_MOD_T* nterm_mod = aa_mod_list[nterm_idx];
-    base_mod->mass_change=aa_mod_get_mass_change(nterm_mod);
-    base_mod->aa_mod_counts[nterm_idx]++;
-    base_mod->num_mods++;
-  }
-  */
-  LINKED_LIST_T* final_list = new_list( base_mod );
+  LINKED_LIST_T* final_list = new_list( new_peptide_mod() );
   int final_counter = 1;
 
   // for each aa_mod
   int mod_list_idx = 0;
   for(mod_list_idx=0; mod_list_idx < num_aa_mods; mod_list_idx++){
-
-    //if (mod_list_idx == nterm_idx) continue;
 
     AA_MOD_T* cur_aa_mod = aa_mod_list[mod_list_idx];
     int cur_mod_max = aa_mod_get_max_per_peptide(cur_aa_mod);
