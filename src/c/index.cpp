@@ -163,6 +163,7 @@ struct index{
   bool on_disk; ///< Does this index exist on disk yet?
   FLOAT_T mass_range;  ///< the range of masses contained in each index file -in
   bool is_unique; ///< only unique peptides? -in
+  DECOY_TYPE_T decoys; ///< what kind of decoys, if any, to produce
 };    
 
 /**
@@ -422,6 +423,9 @@ void set_index_field_from_map(INDEX_T* index, char* line){
   else if(strcmp("target_mass_range_for_index_file:", trait_name) == 0){
     index->mass_range = value;
   }
+  else if(strcmp("decoys:", trait_name) == 0){
+    index->decoys = (DECOY_TYPE_T)value;
+  }
   else if(strcmp("CRUX", trait_name) == 0){
     return;
   }
@@ -575,8 +579,9 @@ INDEX_T* new_index(
   const char* output_dir,     ///< The name of the new index
   PeptideConstraint* constraint,  
     ///< Constraint which these peptides will satisfy
-  FLOAT_T mass_range  
+  FLOAT_T mass_range,  
     ///< the range of mass that each index file should be partitioned into
+  DECOY_TYPE_T decoys ///< what kind of decoys to produce, if any
   )
 {
   carp(CARP_DETAILED_DEBUG, "Creating new index to be named %s", output_dir);
@@ -594,6 +599,7 @@ INDEX_T* new_index(
   bool is_unique = TRUE;
   set_index_fields(index, output_dir,
                    constraint, mass_range, is_unique);
+  index->decoys = decoys;
 
   return index;
 }         
@@ -730,6 +736,7 @@ bool write_header(
   fprintf(file, "#\tmissed_cleavages: %d\n", constraint->getNumMisCleavage());
   fprintf(file, "#\tmass_type: %d\n", constraint->getMassType());
   fprintf(file, "#\tunique_peptides: %d\n", get_index_is_unique(index));
+  fprintf(file, "#\tdecoys: %d\n", index->decoys);
   
   fprintf(file, "#\tCRUX index directory: %s\n", index->directory);
   fprintf(file, "#\ttime created: %s",  ctime(&hold_time)); 

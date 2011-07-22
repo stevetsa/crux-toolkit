@@ -554,6 +554,12 @@ void initialize_parameters(void){
       "file is controlled by --output-dir.", "true");
 
   // user options regarding decoys
+  set_string_parameter("decoys", "protein-shuffle",
+      "Include a decoy version of every peptide by shuffling or reversing the "
+      "target sequence.  <string>=none|reverse|protein-shuffle|peptide-shuffle."
+      " Use 'none' for no decoys.  Default=protein-shuffle.",
+      "For create-index, store the decoys in the index.  For search, either "
+      "use decoys in the index or generate them from the fasta file.", "true");
   set_int_parameter("num-decoys-per-target", 2, 0, 10,
       "Number of decoy peptides to search for every "
       "target peptide searched. Default=2.",
@@ -1584,6 +1590,14 @@ void check_parameter_consistency(){
       carp(CARP_FATAL, "The SIN computation for spectral-counts requires "
            "that the --input-ms2 option specify a file.");
     }
+  }
+
+  // decoys must be one of "none", "shuffle", "reverse"
+  const char* decoys = get_string_parameter_pointer("decoys");
+  DECOY_TYPE_T decoy_type = string_to_decoy_type(decoys);
+  if( decoy_type == INVALID_DECOY_TYPE ){
+    carp(CARP_FATAL, "The 'decoys' option must be 'none', 'reverse', "
+         "'protein-shuffle', or 'peptide-shuffle'.  '%s' is invalid.", decoys);
   }
 }
 

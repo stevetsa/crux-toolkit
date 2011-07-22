@@ -49,7 +49,6 @@ void Database::init(){
   is_hashed_ = false;
   proteins_ = new vector<Protein*>();
   protein_map_ = new map<char*, Protein*, cmp_str>();
-  // fprintf(stderr, "Free: Allocation: %i\n", database->pointer_count);
 }
 
 /**
@@ -77,7 +76,8 @@ Database::Database(
 }  
 
 /**
- * Frees an allocated protein object.
+ * Checks pointer count on the object and frees if no one else is
+ * still pointing to it. 
  */
 void Database::freeDatabase(
   Database* database ///< An allocated database -in
@@ -179,12 +179,11 @@ void Database::print(
 
 /**
  * Parses a database from the text based fasta file in the filename
- * member variable
- * reads in all proteins in the fasta file and creates a protein object
- * and adds them to the database protein array
- * total proteins in fasta file must not exceed MAX_PROTEIN constant
+ * member variable.
+ * Reads in all proteins in the fasta file, creates a protein object
+ * for each and adds them to the database protein array.
  * IF using light_protein functionality will not read in the sequence or id.
- * \returns true if success. false if failure.
+ * \returns true if success, false if failure.
  */
 bool Database::parseTextFasta()
 {

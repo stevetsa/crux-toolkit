@@ -38,7 +38,8 @@ INDEX_T* new_index(
   const char* fasta_filename,  ///< The fasta file
   const char* output_dir,      ///< The name of the new index
   PeptideConstraint* constraint,///< Constraint which these peptides satisfy
-  FLOAT_T mass_range  ///< the range of masses contained in each index file
+  FLOAT_T mass_range,  ///< the range of masses contained in each index file
+  DECOY_TYPE_T decoys   ///< what kind of decoys to produce, if any
 );         
 
 /**

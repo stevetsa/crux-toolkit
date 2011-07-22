@@ -218,6 +218,17 @@ enum _parsimony_type {
  */
 typedef enum _parsimony_type PARSIMONY_TYPE_T;
 
+/**
+ * \enum DECOY_TYPE_T
+ */
+enum DECOY_TYPE_T {
+  INVALID_DECOY_TYPE,
+  NO_DECOYS,
+  REVERSE_DECOYS,
+  PROTIEN_SHUFFLE_DECOYS,
+  PEPTIDE_SHUFFLE_DECOYS,
+  NUMBER_DECOY_TYPES
+};
 
 /**
  * \typedef WINDOW_TYPE_T

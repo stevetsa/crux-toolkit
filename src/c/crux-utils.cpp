@@ -30,6 +30,27 @@ static const int MAX_ULPS = 2;
 /* Functions for converting custom types to and from strings */
 
 /**
+ * The string version of the decoy types
+ */
+static const char* decoy_type_strings[NUMBER_DECOY_TYPES] = 
+  { "invalid", "none", "reverse", "protein-shuffle", "peptide-shuffle" };
+
+DECOY_TYPE_T string_to_decoy_type(const char* name){
+  int decoy_int = convert_enum_type_str(name, -10, 
+                                       decoy_type_strings, 
+                                       NUMBER_DECOY_TYPES);
+  if( decoy_int < 0 ){
+    decoy_int = 0;
+  }
+
+  return (DECOY_TYPE_T)decoy_int;
+}
+
+char* decoy_type_to_string(DECOY_TYPE_T type){
+  return my_copy_string(decoy_type_strings[type]);
+}
+
+/**
  * The string version of isotopic mass type (average, mono)
  */
 static const char* mass_type_strings[NUMBER_MASS_TYPES] = {"average", "mono"};
