@@ -66,6 +66,7 @@ class Index {
  protected:
   int num_pointers_; ///< The number of pointers to this index.
   Database* database_; ///< The database that has been indexed.
+  Database* decoy_database_; ///< The decoy verision of the database.
   char* directory_; ///< The directory containing the indexed files
   PeptideConstraint* disk_constraint_;///< Defines peptides on disk
   PeptideConstraint* search_constraint_;///< Defines peptides being searched
@@ -257,6 +258,18 @@ class Index {
    */
   static char* getBinaryFastaName(const char* index_name);
 
+  /**
+   * \brief Looks in given directory for a file ending in
+   * "-decoy-binary-fasta" and returns a heap-allocated string of the
+   * full name including the index directory.
+   *
+   * Exits with error if index_name does not exist, no file
+   * *-decoy-binary-fasta exists, or more than one *binary-fasta file exists.
+   * \returns A string with the name of the existing binary fasta file
+   * for this index.
+   */
+  static char* getDecoyBinaryFastaName(const char* index_name);
+
 
   /*********************************************
    * set and get methods for the object fields
@@ -277,13 +290,6 @@ class Index {
    * \returns A pointer to the database.
    */
   Database* getDatabase();
-
-  /**
-   * Sets the database of the index.
-   */
-  void setDatabase(
-    Database* database ///< The database that has been indexed. -in
-  );
 
   /**
    *\returns a pointer to the peptides constraint

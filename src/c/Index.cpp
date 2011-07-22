@@ -148,12 +148,14 @@ struct bin_sorted_peptide_iterator {
 void Index::init() {
   num_pointers_ = 1;
   database_ = NULL;
+  decoy_database_ = NULL;
   directory_ = NULL;
   disk_constraint_ = NULL;
   search_constraint_ = NULL;
   on_disk_ = false;
   mass_range_ = 0.0;
   is_unique_ = false;
+  decoys_ = NO_DECOYS;
 }  
 
 /**
@@ -165,8 +167,8 @@ Index::Index() {
 
 /**
  * Helper function for scandir to find files with names ending in
- * "-binary-fasta"
- * \returns 1 if filename ends in -binary-fasta, else 0 
+ * Database::binary_suffix.
+ * \returns 1 if filename has ending, else 0
  */
 #ifdef DARWIN
 int is_binary_fasta_name(struct dirent *entry){
@@ -176,7 +178,7 @@ int is_binary_fasta_name(const struct dirent *entry){
 
 
   const char* filename = entry->d_name; //w/o const gcc warning
-  const char* suffix = "-binary-fasta";
+  const char* suffix = Database::binary_suffix.c_str();
 
   int name_length = strlen(filename);
   int suffix_length = strlen(suffix);
@@ -196,15 +198,46 @@ int is_binary_fasta_name(const struct dirent *entry){
   return 0;
 }
 
-// TODO (BF 27-Feb-08): find what I used to generate the name and put
-// the two functions near each other.
+/**
+ * Helper function for scandir to find files with names ending in
+ * Database::decoy_binary_suffix.
+ * \returns 1 if filename has ending, else 0. 
+ */
+#ifdef DARWIN
+int is_decoy_binary_fasta_name(struct dirent *entry){
+#else
+int is_decoy_binary_fasta_name(const struct dirent *entry){
+#endif
+
+
+  const char* filename = entry->d_name; //w/o const gcc warning
+  const char* suffix = Database::decoy_binary_suffix.c_str();
+
+  int name_length = strlen(filename);
+  int suffix_length = strlen(suffix);
+
+  if( suffix_length > name_length){
+    return 0;
+  }
+
+  // point to the last bit of filename
+  filename += name_length - suffix_length;
+  int matches = strncmp(filename, suffix, suffix_length); // 0 if matches
+
+  if( matches == 0 ) {
+    return 1;
+  }//else
+
+  return 0;
+}
+
 /**
  * \brief Looks in given directory for a file ending in
- * "-binary-fasta" and returns a heap-allocated string of the full
+ * Database::binary_suffix and returns a heap-allocated string of the full
  * name including the index directory.
  *
  * Exits with error if index->directory does not exist, no file
- * *-binary-fasta exists, or more than one *binary-fasta file exists.
+ * exists, or more than one file exists. 
  * \returns A string with the name of the existing binary fasta file
  * for this index. 
  */
@@ -236,6 +269,42 @@ char* Index::getBinaryFastaName(const char* index_name){
 
 }
 
+/**
+ * \brief Looks in given directory for a file ending in
+ * Database::decoy_binary_suffix and returns a heap-allocated string of the
+ * full name including the index directory.
+ *
+ * Exits with error if index_name does not exist, no file
+ * exists, or more than one file exists.
+ * \returns A string with the name of the existing binary fasta file
+ * for this index.
+ */
+char* Index::getDecoyBinaryFastaName(const char* index_name){
+  struct dirent** namelist = NULL;
+  int num_files = scandir(index_name, &namelist, is_decoy_binary_fasta_name,
+                          alphasort);
+
+  if( num_files < 1 ){
+    return NULL;
+  }
+  if( num_files > 1 ){
+    carp(CARP_FATAL, "More than one decoy binary fasta file found in '%s'", 
+         index_name);
+  }
+
+  carp(CARP_DEBUG, "Found '%s' in index '%s'", namelist[0]->d_name, 
+       index_name);
+
+  char* fasta_name = my_copy_string(namelist[0]->d_name);
+  char* fasta_name_path = get_full_filename(index_name, fasta_name);
+
+  std::free(namelist[0]);
+  std::free(namelist);
+  std::free(fasta_name);
+
+  return fasta_name_path;
+
+}
 /**
  * \brief Initializes a new Index object by setting its member
  * variables to the values in the index on disk.
@@ -495,7 +564,12 @@ Index::Index(
   database = new Database(fasta_filename, false);
 
   // set database, has not been parsed
-  setDatabase(database);
+  database_ = database;
+  if( decoys == NO_DECOYS ){
+    decoy_database_ = NULL;
+  } else {
+    decoy_database_ = new Database(fasta_filename, false, decoys);
+  }
   bool is_unique = true;
   setFields(output_dir, constraint, mass_range, is_unique, decoys);
 }         
@@ -547,10 +621,29 @@ Index::Index(
 
   // free string
   std::free(binary_fasta);
+
+  // repeat for decoy database
+  if( decoys_ != NO_DECOYS ){
+    char* decoy_binary_fasta = getDecoyBinaryFastaName(index_name);
+
+    // check if input file exist
+    if(access(decoy_binary_fasta, F_OK)){
+      carp(CARP_FATAL, "The file \"%s\" does not exist for crux index.", 
+           decoy_binary_fasta);
+    }
+    decoy_database_ = new Database(binary_fasta, true, decoys_);
+    
+    if(decoy_database_->parse()){
+      carp(CARP_FATAL, "Failed to parse decoy database, can't create index");
+    }
+
+    // free string
+    std::free(decoy_binary_fasta);
+  }
 }
 
 int Index::getNumProteins(){
-
+  // will be the same for decoy database, if present
   return database_->getNumProteins();
 }
 
@@ -587,6 +680,11 @@ Index::~Index() {
   if (database_ != NULL){
     carp(CARP_DEBUG, "Freeing index database");
     Database::freeDatabase(database_);
+  }
+
+  if (decoy_database_ != NULL){
+    carp(CARP_DEBUG, "Freeing index decoy database");
+    Database::freeDatabase(decoy_database_);
   }
 
   if (disk_constraint_ != NULL){
@@ -646,9 +744,18 @@ bool Index::writeReadmeFile(
   PeptideConstraint* constraint = disk_constraint_;
   char* fasta_file = database_->getFilename();
   char* fasta_file_no_path = parse_filename(fasta_file);
+  char* decoy_fasta_file_no_path = NULL;
+  if( decoys_ != NO_DECOYS ){
+    char* decoy_fasta_file = decoy_database_->getFilename();
+    decoy_fasta_file_no_path = parse_filename(decoy_fasta_file);
+    std::free(decoy_fasta_file);
+  }
   
   fprintf(file, "#\ttime created: %s",  ctime(&hold_time)); 
   fprintf(file, "#\tfasta file: %s\n",  fasta_file_no_path); 
+  if( decoys_ != NO_DECOYS ){
+    fprintf(file, "#\tdecoy fasta file: %s\n",  decoy_fasta_file_no_path); 
+  }
   fprintf(file, "#\tmin_mass: %.2f\n",
           constraint->getMinMass());
   fprintf(file, "#\tmax_mass: %.2f\n",
@@ -679,6 +786,7 @@ bool Index::writeReadmeFile(
   
   std::free(fasta_file);
   std::free(fasta_file_no_path);
+  std::free(decoy_fasta_file_no_path);
 
   return true;
 }
@@ -1080,13 +1188,18 @@ bool Index::create(
       return false;
     }
   }
-  
   // copy temporary folder name for SIGINT cleanup purpose
   strncpy(temp_folder_name, temp_dir_name, 12); 
 
   if(! database_->transformTextToMemmap(temp_dir_name) ){
     clean_up(1);
     carp(CARP_FATAL, "Failed to create binary database from text fasta file");
+  }
+
+  if( decoy_database_ 
+      && ! decoy_database_->transformTextToMemmap(temp_dir_name) ){
+    clean_up(1);
+    carp(CARP_FATAL, "Failed to create binary decoy database from fasta file");
   }
 
   // move into temporary directory
@@ -1139,6 +1252,7 @@ bool Index::create(
   info_out = fopen("crux_index_map", "w");
   writeHeader(info_out);
                     
+  // TODO repeat for decoy database
   // create database peptide_iterator
   peptide_iterator =
     new DatabasePeptideIterator(database_, disk_constraint_, 
@@ -1284,16 +1398,6 @@ void Index::setDirectory(
 Database* Index::getDatabase()
 {
   return database_;
-}
-
-/**
- * sets the database of the index
- */
-void Index::setDatabase(
-  Database* database ///< The database that has been indexed. -in
-  )
-{
-  database_ = database;
 }
 
 /**

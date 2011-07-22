@@ -40,6 +40,7 @@ class Database {
   void* data_address_; ///< pointer to the beginning of the memory mapped data, 
   unsigned int pointer_count_; ///< number of pointers referencing this database. 
   long file_size_; ///< the size of the binary fasta file, when memory mapping
+  DECOY_TYPE_T decoys_; ///< the type of decoys, none if target db
 
   /**
    * Parses a database from the text based fasta file in the filename
@@ -83,6 +84,11 @@ class Database {
   void init();
 
  public:
+  /**
+   * The suffix on binary fasta files.
+   */
+  static const string binary_suffix;
+  static const string decoy_binary_suffix;
 
   /**
    * \returns An (empty) database object.
@@ -95,7 +101,8 @@ class Database {
    */
   Database(
     const char*         filename, ///< The file from which to parse the database. either text fasta file or binary fasta file -in
-    bool is_memmap ///< are we using a memory mapped binary fasta file, thus proteins are all memory mapped -in
+    bool is_memmap, ///< are we using a memory mapped binary fasta file, thus proteins are all memory mapped -in
+    DECOY_TYPE_T decoys = NO_DECOYS ///< is this a decoy database
     );         
 
   /**

@@ -94,9 +94,9 @@ int main(int argc, char** argv){
   use_index = is_directory(filename);
 
   if( use_index == TRUE ){
-    index = new Index(filename);//, 
+    index = new Index(filename); 
   }else{
-    database = new Database(filename, FALSE); // not memmapped
+    database = new Database(filename, false); // not memmapped
   }
   free(filename);
 

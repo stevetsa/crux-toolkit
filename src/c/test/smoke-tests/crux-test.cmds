@@ -110,17 +110,22 @@
 
 # Create index. Use crux-generate-peptides to test that it worked
 
-1 = create_index_default = good_results/standard_create_index_default.out = rm -rf test_crux_index; crux create-index test.fasta test_crux_index; cat test_crux_index/README test_crux_index/crux_index_map = 'time'
+1 = create_index_no_decoy = good_results/standard_create_index_no_decoy.out = rm -rf test_crux_index; crux create-index --decoys none test.fasta test_crux_index; cat test_crux_index/README test_crux_index/crux_index_map = 'time'
 
 1 = generate_peptides_test_index = good_results/standard_generate_peptides_use_index.out = crux-generate-peptides --output-sequence T test_crux_index = '# PROTEIN DATABASE'
 
 # test that mods work with the index
 1 = generate_peptides_mods_index = good_results/standard_generate_peptides_mods_index = crux-generate-peptides --parameter-file params/mods --output-sequence T --max-length 20  test_crux_index =
 
+# create an index with all defaults (including decoys)
+1 = create_index_default = good_results/standard_create_index_default.out = rm -rf test_crux_index; crux create-index test.fasta test_crux_index; cat test_crux_index/README test_crux_index/crux_index_map = 'time'
+# HEY! UNCOMMENT THIS
+#1 = generate_peptides_test_index = good_results/standard_generate_peptides_use_index.out = crux-generate-peptides --output-sequence T test_crux_index = '# PROTEIN DATABASE'
+
 #create_index_uniq = good_results/standard_create_index_uniq.out = rm -rf test_crux_index; crux create-index --unique-peptides T test.fasta test_crux_index; cat test_crux_index/README test_crux_index/crux_index_map = 'time'
 
 # use crux-generate-peptides to test that it worked
-1 = generate_peptides_test_index_uniq = good_results/standard_generate_peptides_use_index_uniq.out = crux-generate-peptides --parameter-file params/params_uniq --output-sequence T  test_crux_index=
+#1 = generate_peptides_test_index_uniq = good_results/standard_generate_peptides_use_index_uniq.out = crux-generate-peptides --parameter-file params/params_uniq --output-sequence T  test_crux_index=
 
 # Search for matches and test txt file
 1 = search_for_matches_default_index = good_results/search_for_matches_default_index.target.txt = crux search-for-matches --overwrite T --parameter-file params/params_uniq test.ms2 test_crux_index; cat crux-output/search.target.txt = 'Time' 'Database'

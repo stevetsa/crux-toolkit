@@ -33,6 +33,9 @@
 
 using namespace std;
 
+const string Database::binary_suffix = "-binary-fasta";
+const string Database::decoy_binary_suffix = "-decoy-binary-fasta";
+
 /**
  * intializes a database object
  */
@@ -49,6 +52,7 @@ void Database::init(){
   is_hashed_ = false;
   proteins_ = new vector<Protein*>();
   protein_map_ = new map<char*, Protein*, cmp_str>();
+  decoys_ = NO_DECOYS;
 }
 
 /**
@@ -65,14 +69,16 @@ Database::Database() {
 Database::Database(
   const char*         filename, ///< The file from which to parse the database. 
   ///< either text fasta file or binary fasta file -in
-  bool is_memmap ///< are we using a memory mapped binary fasta file? 
+  bool is_memmap, ///< are we using a memory mapped binary fasta file? 
   ///< If so, all proteins are memory mapped -in
+  DECOY_TYPE_T decoys ///< is this a decoy database
   )         
 {
   carp(CARP_DEBUG, "Creating new database from '%s'", filename);
   init();
   setFilename(filename);
   is_memmap_ = is_memmap;
+  decoys_ = decoys;
 }  
 
 /**
@@ -465,10 +471,15 @@ bool Database::transformTextToMemmap(
 
   bool success = false;
 
+  const char* binary_suffix = Database::binary_suffix.c_str();
+  if( decoys_ != NO_DECOYS ){
+    binary_suffix = Database::decoy_binary_suffix.c_str();
+  }
+
   // from output_dir name and database filename, get binary_filename
   char* binary_filename = generate_name_path( filename_, ".fasta",
-                                           "-binary-fasta", output_dir);
-
+                                              binary_suffix, output_dir);
+  
 
   carp(CARP_DEBUG, "Transforming text file '%s' to binary file '%s'",
        filename_, binary_filename);
