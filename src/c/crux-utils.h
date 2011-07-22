@@ -365,7 +365,7 @@ char* decoy_type_to_string(DECOY_TYPE_T type);
  */
 int prepare_protein_input(
   char* input_file,      ///< name of the fasta file or index directory
-  INDEX_T** index,       ///< return new index here OR
+  Index** index,       ///< return new index here OR
   Database** database);///< return new fasta database here
 
 /**

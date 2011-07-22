@@ -302,23 +302,22 @@ class DatabaseSortedPeptideIterator;
 typedef struct peptide_wrapper PEPTIDE_WRAPPER_T;
 
 /**
- * \typedef INDEX_T
+ * \class Index
  * \brief An index of a database 
  */
-typedef struct index INDEX_T;
+class Index;
 
 /**
- * \typedef INDEX_PEPTIDE_ITERATOR_T
+ * \class IndexPeptideIterator
  * \brief An object to iterate over the peptides in an index
  */
-typedef struct index_peptide_iterator INDEX_PEPTIDE_ITERATOR_T;
-
+class IndexPeptideIterator;
 
 /**
- * \typedef INDEX_FILTERED_PEPTIDE_ITERATOR_T
- * \brief An iterator to filter out the peptides wanted from the index_peptide_iterator
+ * \brief An iterator to further filter peptides from an
+ * IndexPeptideIterator based on digestion.
  */
-typedef struct index_filtered_peptide_iterator INDEX_FILTERED_PEPTIDE_ITERATOR_T;
+class IndexFilteredPeptideIterator;
 
 /**
  * \typedef SORTED_PEPTIDE_ITERATOR_T
@@ -506,22 +505,22 @@ typedef enum _protein_scorer_type PROTEIN_SCORER_TYPE_T;
 class Match;
 
 /**
- *\typedef MATCH_COLLECTION_T
+ *\class MatchCollection
  *\brief An object that contains mutiple match objects
  */
-typedef struct match_collection MATCH_COLLECTION_T;
+class MatchCollection;
 
 /**
- *\typedef MATCH_ITERATOR_T
+ *\class MatchIterator
  *\brief An object that navigates the matches
  */
-typedef struct match_iterator MATCH_ITERATOR_T;
+class MatchIterator;
 
 /**
- *\typedef MATCH_COLLECTION_ITERATOR_T
+ *\class MatchCollectionIterator
  *\brief An object that navigates the match_collection objects
  */
-typedef struct match_collection_iterator MATCH_COLLECTION_ITERATOR_T;
+class MatchCollectionIterator;
 
 /**
  * The enum for algorithm type (PERCOLATOR, CZAR, ALL)
