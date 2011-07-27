@@ -147,8 +147,8 @@ void SpecFeaturesGenerator :: read_processed_ms2_file()
       spec_to_pos_in_file[spec.str()] = pos_in_file;
     } 
   
-  cout << "num_spec_read " << num_spec_read << endl;
-  cout << max_mz << "\n";
+  //cout << "num_spec_read " << num_spec_read << endl;
+  //cout << max_mz << "\n";
 }
 
 
@@ -373,8 +373,8 @@ void SpecFeaturesGenerator :: read_ms2_file()
       if (tempstr.compare("S") == 0)
 	{
 	  num_spec_read++;
-	  if((num_spec_read%5000) == 0)
-	    cout << "spectrum number " << num_spec_read << endl;
+	  //if((num_spec_read%5000) == 0)
+	  //cout << "spectrum number " << num_spec_read << endl;
 	  if(num_spec_read > 0)
 	    {
 	      scan_to_rtime[first_scan] = rtime;

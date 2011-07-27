@@ -240,7 +240,7 @@ void SQTParser :: add_matches_to_tables(sqt_match &m, string &decoy_prefix, int 
 		  string p = ind_to_prot[prot_ind];
 		  if(prot.compare(p) != 0)
 		    {
-		      cout << "did not find protein in the ind_to_prot_table\n";
+		      //cout << "did not find protein in the ind_to_prot_table\n";
 		    }
 		}
 	      //augment the pepinds_to_psminds table
@@ -447,7 +447,7 @@ void SQTParser :: extract_features(sqt_match &m, string &decoy_prefix, int hits_
 	  //if((m.scan %10000) == 0 && i == 0)
 	  //cout << scan_str << endl;
 	  if(psmind % 5000 == 0)
-	    cout << "PMS number " << psmind << endl;
+	    carp(CARP_INFO, "PMS number %d", psmind);
 	  string peptide = m.peptides[i];
 	  int pos = peptide.find(".");
 	  string pept = peptide.substr(pos+1,peptide.size());
@@ -514,11 +514,11 @@ void SQTParser :: extract_features(sqt_match &m, string &decoy_prefix, int hits_
 	      int protind = prot_to_ind[prot];
 	      if(!protind_to_pepinds.is_index_in_range(pepind,protind))
 #ifndef CRUX
-		cout << "warning: peptide was not found in protein to peptide table\n";
+		carp(CARP_WARNING, "peptide was not found in protein to peptide table");
 #endif
 	      if(!pepind_to_protinds.is_index_in_range(protind,pepind))
 #ifndef CRUX
-		cout << "warning: peptide was not found in peptide to protein table\n";
+		carp(CARP_WARNING, "peptide was not found in peptide to protein table");
 #endif
 	      assert(protind_to_label[protind] == label);
 	    }

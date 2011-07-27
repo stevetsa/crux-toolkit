@@ -379,6 +379,7 @@ int Barista :: getOverFDRPep(PepScores &s, NeuralNet &n,double fdr)
 	}
       cout << "over FDR peptides:\n";
       cout << "num pos proteins  " << proteins_pos.size() << " num neg proteins " << proteins_neg.size() << " num pos peptides " << pep_pos << " num neg peptides " << pep_neg  << endl;
+
     }
   return overFDR;
 }
@@ -444,7 +445,8 @@ void Barista :: write_results_prot(string &out_dir, int fdr)
 {
   ostringstream fn;
   fn << out_dir <<"/barista.target.proteins.txt";
-  cout << "writing results to " << fn.str() << endl;
+  //cout << "writing results to " << fn.str() << endl;
+  carp(CARP_INFO, "write_results to %s", fn.str().c_str());
   ofstream f_res(fn.str().c_str());
 
   int cn = 0;
@@ -476,7 +478,7 @@ void Barista :: write_results_prot(string &out_dir, int fdr)
 	      if(psmind > -1)
 		f_res << "-" << d.psmind2scan(psmind) << "." << d.psmind2charge(psmind);
 	      else
-		cout << "waning: did not assign peptide max psmind\n";
+		cout << "warning: did not assign peptide max psmind\n";
 	      f_res << " ";
 	    }
 	  f_res << endl << endl;
@@ -501,12 +503,22 @@ void Barista :: report_all_results()
 #endif
   trainset.make_meta_set(d);
   int fdr_trn = getOverFDRProtParsimonious(trainset,max_net_prot,selectionfdr);
+#ifdef CRUX
+  carp(CARP_INFO, "total proteins parsimonious at q<%.2f: %d", selectionfdr, fdr_trn);
+#else
   cout << "total proteins parsimonious at q<" << selectionfdr << ": " << fdr_trn << endl;
-  int fdr_trn_psm = getOverFDRPSM(psmtrainset, max_net_psm, selectionfdr); 
-  cout << "peptides at q< " << selectionfdr << ": " << getOverFDRPep(peptrainset, max_net_pep, selectionfdr) << endl;
-  cout << "psms at q< " << selectionfdr << ": " << fdr_trn_psm << endl;
-  write_results_prot(out_dir, fdr_trn);
+#endif
 
+  int fdr_trn_psm = getOverFDRPSM(psmtrainset, max_net_psm, selectionfdr);
+#ifdef CRUX
+  carp(CARP_INFO, "peptides at q<%.2f: %d", selectionfdr, getOverFDRPep(peptrainset, max_net_pep, selectionfdr)); 
+  carp(CARP_INFO, "psms at q<%.2f: %d", selectionfdr, fdr_trn_psm);
+#else  
+  cout << "peptides at q< " << selectionfdr << ": " <<  << endl;
+  cout << "psms at q< " << selectionfdr << ": " << fdr_trn_psm << endl;
+#endif
+  
+  write_results_prot(out_dir, fdr_trn);
 }
 
 
@@ -594,7 +606,7 @@ void Barista :: write_results_peptides_xml(ofstream &os)
 	  if(psmind > -1)
 	    os << "  <main_psm_id>"<< psmind << "</main_psm_id>" << endl;
 	  else
-	    cout << "waning: did not assign peptide max psmind\n";
+	    cout << "warning: did not assign peptide max psmind\n";
 	  
 	  //print out all the psms in which this peptide is present
 	  int num_psm = d.pepind2num_psm(pepind);
@@ -816,11 +828,20 @@ void Barista :: setup_for_reporting_results()
   PepScores::fillFeaturesFull(peptrainset, d);
   
   int fdr_trn = getOverFDRProtParsimonious(trainset,max_net_prot,selectionfdr);
+#ifdef CRUX
+  carp(CARP_INFO, "total proteins parsimonious at q<%.2f: %d", selectionfdr, fdr_trn);
+#else
   cout << "total proteins parsimonious at q<" << selectionfdr << ": " << fdr_trn << endl;
-  int fdr_trn_psm = getOverFDRPSM(psmtrainset, max_net_psm, selectionfdr); 
+#endif
+  int fdr_trn_psm = getOverFDRPSM(psmtrainset, max_net_psm, selectionfdr);
+
+#ifdef CRUX
+  carp(CARP_INFO, "peptides at q<%.2f: %d", selectionfdr,getOverFDRPep(peptrainset, max_net_pep, selectionfdr));
+  carp(CARP_INFO, "psms at q<%.2f: %d", selectionfdr, fdr_trn_psm);
+#else 
   cout << "peptides at q< " << selectionfdr << ": " << getOverFDRPep(peptrainset, max_net_pep, selectionfdr) << endl;
   cout << "psms at q< " << selectionfdr << ": " << fdr_trn_psm << endl;
-
+#endif
 }
 
 
@@ -1255,10 +1276,17 @@ void Barista :: train_net_multi_task(double selectionfdr, int interval)
 	  max_fdr = fdr_trn;
 	  if(verbose == 0)
 	    {
+#ifdef CRUX
+	      if(testset.size() > 0)
+		carp(CARP_INFO, "q<%.2f: max non-parsimonious so far %d %d", selectionfdr, max_fdr, getOverFDRProt(testset,max_net_prot,selectionfdr));
+	      else
+		carp(CARP_INFO, "q<%.2f: max non-parsimonious so far %d", selectionfdr, max_fdr);
+#else
 	      cout << "q< " << selectionfdr << ": max non-parsimonious so far " << max_fdr;
 	      if(testset.size() > 0)
 		cout << " " << getOverFDRProt(testset,max_net_prot,selectionfdr);
 	      cout << endl;
+#endif
 	    }
 	}
       if(verbose > 0)
@@ -1596,6 +1624,10 @@ int Barista :: set_command_line_options(int argc, char *argv[])
 	break;
       arg++;
     }
+
+  ostringstream cmd;
+  for(int k = 0; k < argc; k++)
+    cmd << argv[k] << " ";
   
   if(found_dir_with_tables)
     {
@@ -1633,6 +1665,7 @@ int Barista :: set_command_line_options(int argc, char *argv[])
       free(log_file);
 
       //print some info
+      carp(CARP_INFO, "COMMAND: %s", cmd.str().c_str());
       carp(CARP_INFO, "directory with tables: %s", dir_with_tables.c_str());
       carp(CARP_INFO, "output_directory: %s", output_directory.c_str());
       carp(CARP_INFO, "enzyme: %s", enzyme.c_str());
@@ -1660,8 +1693,6 @@ int Barista :: set_command_line_options(int argc, char *argv[])
       else
 	fparam << "use spec features=F" << endl;
       fparam.close();
-
-
     }
   else
     {
@@ -1709,6 +1740,7 @@ int Barista :: set_command_line_options(int argc, char *argv[])
 	}
       
       //print some info
+      carp(CARP_INFO, "COMMAND: %s", cmd.str().c_str());
       carp(CARP_INFO, "database source: %s", db_source.c_str());
       carp(CARP_INFO, "sqt source: %s", sqt_source.c_str()); 
       carp(CARP_INFO, "ms2 source: %s", ms2_source.c_str());

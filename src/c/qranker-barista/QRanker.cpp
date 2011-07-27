@@ -434,17 +434,35 @@ void QRanker :: train_many_general_nets()
 	    max_net_gen[count] = net;
 	  }
       }
-    if((i % 1) == 0)
+    if((i % 10) == 0)
       {
-	cerr << "Iteration " << i << " : \n";
-	cerr << "trainset: ";
+	carp(CARP_INFO, "Iteration %d :", i);
+	getMultiFDR(trainset,net,qvals);
+	carp(CARP_INFO, "trainset %.2f:%d %.2f:%d %.2f:%d  %.2f:%d %.2f:%d %.2f:%d %.2f:%d %.2f:%d %.2f:%d  %.2f:%d %.2f:%d %.2f:%d %.2f:%d %.2f:%d ", 
+	     qvals[0], overFDRmulti[0], qvals[1], overFDRmulti[1], qvals[2], overFDRmulti[2],
+	     qvals[3], overFDRmulti[3], qvals[4], overFDRmulti[4], qvals[5], overFDRmulti[5],
+	     qvals[6], overFDRmulti[6], qvals[7], overFDRmulti[7], qvals[8], overFDRmulti[8],
+	     qvals[9], overFDRmulti[9], qvals[10], overFDRmulti[10], qvals[11], overFDRmulti[11],
+	     qvals[12], overFDRmulti[12], qvals[13], overFDRmulti[13], qvals[14], overFDRmulti[14]);
+	getMultiFDR(testset,net,qvals);
+	carp(CARP_INFO, "testset %.2f:%d %.2f:%d %.2f:%d  %.2f:%d %.2f:%d %.2f:%d %.2f:%d %.2f:%d %.2f:%d  %.2f:%d %.2f:%d %.2f:%d %.2f:%d %.2f:%d\n ", 
+	     qvals[0], overFDRmulti[0], qvals[1], overFDRmulti[1], qvals[2], overFDRmulti[2],
+	     qvals[3], overFDRmulti[3], qvals[4], overFDRmulti[4], qvals[5], overFDRmulti[5],
+	     qvals[6], overFDRmulti[6], qvals[7], overFDRmulti[7], qvals[8], overFDRmulti[8],
+	     qvals[9], overFDRmulti[9], qvals[10], overFDRmulti[10], qvals[11], overFDRmulti[11],
+	     qvals[12], overFDRmulti[12], qvals[13], overFDRmulti[13], qvals[14], overFDRmulti[14]);
+	
+	/*
+	cout << "Iteration " << i << " : \n";
+	cout << "trainset: ";
 	getMultiFDR(trainset,net,qvals);
 	printNetResults(overFDRmulti);
-	cerr << "\n";
-	cerr << "testset: ";
+	cout << "\n";
+	cout << "testset: ";
 	getMultiFDR(testset,net,qvals);
 	printNetResults(overFDRmulti);
-	cerr << "\n";
+	cout << "\n";
+	*/
       }
   }
 
@@ -457,8 +475,9 @@ void QRanker :: train_many_target_nets()
   while (thr_count > 0)
     {
       net.copy(max_net_gen[thr_count]);
-          
-      cerr << "training thresh " << thr_count  << "\n";
+        
+      carp(CARP_INFO, "training threshold %d", thr_count);
+      //cout << "training thresh " << thr_count  << "\n";
       //interval = getOverFDR(trainset, net, qvals[thr_count]);
       interval = max_overFDR[thr_count];
       for(int i=switch_iter;i<niter;i++) {
@@ -476,13 +495,31 @@ void QRanker :: train_many_target_nets()
 	      }
 	  }
 
-	if((i % 1) == 0)
+	if((i % 3) == 0)
 	  {
-	    cerr << "Iteration " << i << " : \n";
+	    carp(CARP_INFO, "Iteration %d :", i);
+	    getMultiFDR(trainset,net,qvals);
+	    carp(CARP_INFO, "trainset %.2f:%d %.2f:%d %.2f:%d  %.2f:%d %.2f:%d %.2f:%d %.2f:%d %.2f:%d %.2f:%d  %.2f:%d %.2f:%d %.2f:%d %.2f:%d %.2f:%d ", 
+		 qvals[0], overFDRmulti[0], qvals[1], overFDRmulti[1], qvals[2], overFDRmulti[2],
+		 qvals[3], overFDRmulti[3], qvals[4], overFDRmulti[4], qvals[5], overFDRmulti[5],
+		 qvals[6], overFDRmulti[6], qvals[7], overFDRmulti[7], qvals[8], overFDRmulti[8],
+		 qvals[9], overFDRmulti[9], qvals[10], overFDRmulti[10], qvals[11], overFDRmulti[11],
+		 qvals[12], overFDRmulti[12], qvals[13], overFDRmulti[13], qvals[14], overFDRmulti[14]);
 	    getMultiFDR(testset,net,qvals);
-	    cerr << "testset: ";
+	    carp(CARP_INFO, "testset %.2f:%d %.2f:%d %.2f:%d  %.2f:%d %.2f:%d %.2f:%d %.2f:%d %.2f:%d %.2f:%d  %.2f:%d %.2f:%d %.2f:%d %.2f:%d %.2f:%d\n ", 
+		 qvals[0], overFDRmulti[0], qvals[1], overFDRmulti[1], qvals[2], overFDRmulti[2],
+		 qvals[3], overFDRmulti[3], qvals[4], overFDRmulti[4], qvals[5], overFDRmulti[5],
+		 qvals[6], overFDRmulti[6], qvals[7], overFDRmulti[7], qvals[8], overFDRmulti[8],
+		 qvals[9], overFDRmulti[9], qvals[10], overFDRmulti[10], qvals[11], overFDRmulti[11],
+		 qvals[12], overFDRmulti[12], qvals[13], overFDRmulti[13], qvals[14], overFDRmulti[14]);
+	    
+	    /*
+	    cout << "Iteration " << i << " : \n";
+	    getMultiFDR(testset,net,qvals);
+	    cout << "testset: ";
 	    printNetResults(overFDRmulti);
-	    cerr << "\n";
+	    cout << "\n";
+	    */
 	  }
 
       }
@@ -540,18 +577,36 @@ void QRanker::train_many_nets()
   nets[0].clone(net);
   nets[1].clone(net);
 
-  cerr << "Before iterating\n";
-  cerr << "trainset: ";
+  carp(CARP_INFO, "Before Iterating");
+  getMultiFDRXCorr(trainset,qvals);
+  carp(CARP_INFO, "trainset %.2f:%d %.2f:%d %.2f:%d  %.2f:%d %.2f:%d %.2f:%d %.2f:%d %.2f:%d %.2f:%d  %.2f:%d %.2f:%d %.2f:%d %.2f:%d %.2f:%d ", 
+       qvals[0], overFDRmulti[0], qvals[1], overFDRmulti[1], qvals[2], overFDRmulti[2],
+       qvals[3], overFDRmulti[3], qvals[4], overFDRmulti[4], qvals[5], overFDRmulti[5],
+       qvals[6], overFDRmulti[6], qvals[7], overFDRmulti[7], qvals[8], overFDRmulti[8],
+       qvals[9], overFDRmulti[9], qvals[10], overFDRmulti[10], qvals[11], overFDRmulti[11],
+       qvals[12], overFDRmulti[12], qvals[13], overFDRmulti[13], qvals[14], overFDRmulti[14]);
+  getMultiFDRXCorr(testset,qvals);
+  carp(CARP_INFO, "trainset %.2f:%d %.2f:%d %.2f:%d  %.2f:%d %.2f:%d %.2f:%d %.2f:%d %.2f:%d %.2f:%d  %.2f:%d %.2f:%d %.2f:%d %.2f:%d %.2f:%d \n", 
+       qvals[0], overFDRmulti[0], qvals[1], overFDRmulti[1], qvals[2], overFDRmulti[2],
+       qvals[3], overFDRmulti[3], qvals[4], overFDRmulti[4], qvals[5], overFDRmulti[5],
+       qvals[6], overFDRmulti[6], qvals[7], overFDRmulti[7], qvals[8], overFDRmulti[8],
+       qvals[9], overFDRmulti[9], qvals[10], overFDRmulti[10], qvals[11], overFDRmulti[11],
+       qvals[12], overFDRmulti[12], qvals[13], overFDRmulti[13], qvals[14], overFDRmulti[14]);
+  
+  /*
+  cout << "Before iterating\n";
+  cout << "trainset: ";
   getMultiFDRXCorr(trainset,qvals);
   printNetResults(overFDRmulti);
-  cerr << "\n";
+  cout << "\n";
   for(int count = 0; count < num_qvals;count++)
     if(overFDRmulti[count] > max_overFDR[count])
       max_overFDR[count] = overFDRmulti[count];
-  cerr << "testset: ";
+  cout << "testset: ";
   getMultiFDR(testset,net,qvals);
   printNetResults(overFDRmulti);
-  cerr << "\n";
+  cout << "\n";
+  */
 
   train_many_general_nets();
   
@@ -587,7 +642,7 @@ void QRanker::train_many_nets()
 
 int QRanker::run( ) {
   srand(seed);
-  cout << "reading data\n";
+  carp(CARP_INFO, "reading data");
   
   ostringstream res;
   res << out_dir << "/qranker_output";
@@ -759,6 +814,10 @@ int QRanker :: set_command_line_options(int argc, char *argv[])
       arg++;
     }
   
+  ostringstream cmd;
+  for(int k = 0; k < argc; k++)
+    cmd << argv[k] << " ";
+
   if(found_dir_with_tables)
     {
       DIR *dp;
@@ -793,6 +852,7 @@ int QRanker :: set_command_line_options(int argc, char *argv[])
       open_log_file(&log_file);
       free(log_file);
 
+      carp(CARP_INFO, "COMMAND: %s", cmd.str().c_str());
       carp(CARP_INFO, "directory with tables: %s", dir_with_tables.c_str());
       carp(CARP_INFO, "output_directory: %s", output_directory.c_str());
       carp(CARP_INFO, "enzyme: %s", enzyme.c_str());
@@ -820,9 +880,6 @@ int QRanker :: set_command_line_options(int argc, char *argv[])
       else
 	fparam << "use spec features=F" << endl;
       fparam.close();
-
-
-
     }
   else
     {
@@ -840,7 +897,6 @@ int QRanker :: set_command_line_options(int argc, char *argv[])
       	return 0;
       set_input_dir(output_directory);
       set_output_dir(output_directory);
-
 
       set_verbosity_level(CARP_INFO);
       initialize_parameters();
@@ -887,24 +943,25 @@ int QRanker :: set_command_line_options(int argc, char *argv[])
 	  if(!sqtp.set_input_sources(ms2_source, sqt_source))
 	    carp(CARP_FATAL, "could not extract features for training");
 	}
-      
-      carp(CARP_INFO, "database source: %s", db_source.c_str());
-      carp(CARP_INFO, "sqt source: %s", sqt_source.c_str()); 
-      carp(CARP_INFO, "ms2 source: %s", ms2_source.c_str());
-      carp(CARP_INFO, "output_directory: %s", output_directory.c_str());
-      carp(CARP_INFO, "enzyme: %s", enzyme.c_str());
-      carp(CARP_INFO, "decoy prefix: %s", decoy_prefix.c_str());
-      if(fileroot.compare("") != 0)
-	carp(CARP_INFO, "fileroot: %s", fileroot.c_str());
 
-      //num of spec features
-      if(spec_features_flag)
-	sqtp.set_num_spec_features(7);
-      else
-	sqtp.set_num_spec_features(0);
-      if(!sqtp.run())
-	carp(CARP_FATAL, "Could not proceed with training.");
-      sqtp.clear();
+       carp(CARP_INFO, "COMMAND: %s", cmd.str().c_str());
+       carp(CARP_INFO, "database source: %s", db_source.c_str());
+       carp(CARP_INFO, "sqt source: %s", sqt_source.c_str()); 
+       carp(CARP_INFO, "ms2 source: %s", ms2_source.c_str());
+       carp(CARP_INFO, "output_directory: %s", output_directory.c_str());
+       carp(CARP_INFO, "enzyme: %s", enzyme.c_str());
+       carp(CARP_INFO, "decoy prefix: %s", decoy_prefix.c_str());
+       if(fileroot.compare("") != 0)
+	 carp(CARP_INFO, "fileroot: %s", fileroot.c_str());
+       
+       //num of spec features
+       if(spec_features_flag)
+	 sqtp.set_num_spec_features(7);
+       else
+	 sqtp.set_num_spec_features(0);
+       if(!sqtp.run())
+	 carp(CARP_FATAL, "Could not proceed with training.");
+       sqtp.clear();
     }
   return 1;
   
