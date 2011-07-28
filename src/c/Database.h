@@ -14,7 +14,7 @@
 #include "carp.h"
 #include "PeptideConstraint.h"
 #include "sorter.h"
-
+#include <string>
 
 //Comparator function for c type strings.
 struct cmp_str {
@@ -27,7 +27,8 @@ struct cmp_str {
 
 class Database {
  protected:
-  char*        filename_; ///< Original database filename.
+  string fasta_filename_; ///< Name of the text file.
+  string binary_filename_;///< Full path to the binary protein sequence file.
   FILE*        file_;     ///< Open filehandle for this database.
                          ///  A database has only one associated file.
   bool is_parsed_;  ///< Has this database been parsed yet.
@@ -41,6 +42,7 @@ class Database {
   unsigned int pointer_count_; ///< number of pointers referencing this database. 
   long file_size_; ///< the size of the binary fasta file, when memory mapping
   DECOY_TYPE_T decoys_; ///< the type of decoys, none if target db
+  bool binary_is_temp_; ///< should we delete the binary fasta in destructor
 
   /**
    * Parses a database from the text based fasta file in the filename
@@ -100,9 +102,9 @@ class Database {
    * \returns A new database object.
    */
   Database(
-    const char*         filename, ///< The file from which to parse the database. either text fasta file or binary fasta file -in
+    const char* filename, ///< The file from which to parse the database. either text fasta file or binary fasta file -in
     bool is_memmap, ///< are we using a memory mapped binary fasta file, thus proteins are all memory mapped -in
-    DECOY_TYPE_T decoys = NO_DECOYS ///< is this a decoy database
+    DECOY_TYPE_T decoys = NO_DECOYS ///< is this to be a decoy database
     );         
 
   /**
@@ -144,7 +146,8 @@ class Database {
    * \returns TRUE if all processes succeed, else FALSE.
    */
   bool transformTextToMemmap(
-    char* binary_protein_filename
+    const char* binary_protein_filename,
+    bool binary_is_temp
     );
 
   /**
@@ -157,6 +160,14 @@ class Database {
       Protein** protein   ///< A pointer to a pointer to a PROTEIN object -out
       );
   **/
+
+  /**
+   * Using the fasta file the Database was instantiated with, write a
+   * binary protein file in the given directory to use for memory
+   * mapping.  If is_temp, delete the file on destruction.  Warns if
+   * Database was not opened with a text file.
+   */
+  void createBinaryFasta(const char* directory, bool is_temp = false);
 
   /** 
    * Access routines of the form get_<object>_<field> and set_<object>_<field>. 
@@ -177,7 +188,7 @@ class Database {
    *\returns the pointer to the filename of the database
    * user must not free or change the filename
    */
-  char* getFilenamePointer();
+  const char* getFilenamePointer();
 
   /**
    * sets the filename of the database

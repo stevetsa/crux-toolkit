@@ -62,7 +62,6 @@ MatchCollectionIterator::MatchCollectionIterator(
 
   DIR* working_directory = NULL;
   struct dirent* directory_entry = NULL;
-  Database* database = NULL;
   bool use_index = is_directory(fasta_file);
 
   /*
@@ -144,48 +143,20 @@ MatchCollectionIterator::MatchCollectionIterator(
   char* binary_fasta  = NULL;
   if (use_index == true){ 
     binary_fasta = Index::getBinaryFastaName(fasta_file);
+    database_ = new Database(binary_fasta, true);// is memmapped
   } else {
-    binary_fasta = get_binary_fasta_name(fasta_file);
-    carp(CARP_DEBUG, "Looking for binary fasta %s", binary_fasta);
-    if (access(binary_fasta, F_OK)){
-      carp(CARP_DEBUG, "Could not find binary fasta %s", binary_fasta);
-      if (!create_binary_fasta_here(fasta_file, binary_fasta)){
-       carp(CARP_FATAL, "Could not create binary fasta file %s", binary_fasta);
-      };
-    }
+    database_ = new Database(fasta_file, false);// not memmapped
+    database_->transformTextToMemmap(".", true);// is temp
   }
-  
-  // check if input file exist
-  if(access(binary_fasta, F_OK)){
-    free(binary_fasta);
-    carp(CARP_FATAL, "The file \"%s\" does not exist (or is not readable, "
-        "or is empty) for crux index.", binary_fasta);
-  }
-  
-  carp(CARP_DEBUG, "Creating a new database");
-  // now create a database, 
-  // using fasta file either binary_file(index) or fastafile
-  database = new Database(binary_fasta, true);
-  
-  // check if already parsed
-  if(!database->getIsParsed()){
-    carp(CARP_DETAILED_DEBUG,"Parsing database");
-    if(!database->parse()){
-      carp(CARP_FATAL, "Failed to parse database, cannot create new index");
-    }
-  }
-  
-  free(binary_fasta);
+  database_->parse();
 
   // reset directory
   rewinddir(working_directory);
-  
  
 
   // set match_collection_iterator fields
   collection_idx_ = 0;
   working_directory_ = working_directory;
-  database_ = database;  
   number_collections_ = total_sets;
   directory_name_ = 
     my_copy_string(output_file_directory);
@@ -220,16 +191,6 @@ MatchCollectionIterator::~MatchCollectionIterator()
     delete match_collection_;
   }
   
-  // if no index, remove the temp binary fasta file
-  char* fasta_file = get_string_parameter("protein database");
-  if( is_directory(fasta_file) == false ){
-    char* binary_fasta = get_binary_fasta_name(fasta_file);
-    carp(CARP_DEBUG, "Protein source %s is not an index.  "
-         "Removing temp binary fasta %s", fasta_file, binary_fasta);
-    remove(binary_fasta);
-  }
-  free(fasta_file);
-
   // free up all match_collection_iteratory.
   free(directory_name_);
   Database::freeDatabase(database_);

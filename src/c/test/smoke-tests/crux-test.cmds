@@ -128,7 +128,7 @@
 #1 = generate_peptides_test_index_uniq = good_results/standard_generate_peptides_use_index_uniq.out = crux-generate-peptides --parameter-file params/params_uniq --output-sequence T  test_crux_index=
 
 # Search for matches and test txt file
-1 = search_for_matches_default_index = good_results/search_for_matches_default_index.target.txt = crux search-for-matches --overwrite T --parameter-file params/params_uniq test.ms2 test_crux_index; cat crux-output/search.target.txt = 'Time' 'Database'
+1 = search_for_matches_default_index = good_results/search_for_matches_default_index.target.txt = rm -f crux-output/search.target.txt; crux search-for-matches --overwrite T --parameter-file params/params_uniq test.ms2 test_crux_index; cat crux-output/search.target.txt = 'Time' 'Database'
 
 # Analyze matches using above index
 1 = analyze_matches_index = good_results/analyze_matches_index.percolator.target.txt =  crux percolator --overwrite T --parameter-file params/set_rand_seed test_crux_index crux-output; cat crux-output/percolator.target.txt = 'StartTime'

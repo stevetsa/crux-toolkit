@@ -631,9 +631,9 @@ Index::Index(
       carp(CARP_FATAL, "The file \"%s\" does not exist for crux index.", 
            decoy_binary_fasta);
     }
-    decoy_database_ = new Database(binary_fasta, true, decoys_);
+    decoy_database_ = new Database(decoy_binary_fasta, true, decoys_);
     
-    if(decoy_database_->parse()){
+    if(!decoy_database_->parse()){
       carp(CARP_FATAL, "Failed to parse decoy database, can't create index");
     }
 
@@ -1080,53 +1080,6 @@ static bool dump_peptide_all(
   return true;
 }
 
-/***
- * This function does the following things...
- * 1. create binary fasta file in temporary directory
- * 2. transform database into memory mapped database from text base database
- * 3. then, parse database
- * Called while the cwd is the temp directory in which the index is
- * being made.
- *
- *\returns true, if all processes are successful, else false
- */
-bool Index::transformDatabaseToMemmapDatabase() {
-
-  char* binary_fasta = NULL; // BF not used after set
-
-  // get the fasta file name with correct path
-  char* fasta_file = cat_string("../", 
-                              database_->getFilenamePointer());
-
-  // create binary fasta file inside temp directory
-  if(!create_binary_fasta_in_cur(fasta_file,
-                               database_->getFilenamePointer(),
-                               &binary_fasta)){
-    carp(CARP_ERROR, "Failed to create protein index on disk");
-    return false;
-  }
-  
-  // change name of file to binary fasta
-  database_->setFilename(fasta_file);
-
-  // check if already parsed
-  if(!database_->getIsParsed()){
-    carp(CARP_DEBUG,
-       "Database was not parsed after creating the binary fasta, parsing now");
-
-    if(!database_->parse()){
-      carp(CARP_ERROR, "Failed to parse database, cannot create new index");
-      return false;
-    }
-  }
-  
-  // free file name
-  std::free(fasta_file);
-  std::free(binary_fasta);
-
-  return true;
-}
-
 /**
  * \brief The main index method. Does all the heavy lifting, creating
  * files serializing peptides, etc. 
@@ -1191,13 +1144,13 @@ bool Index::create(
   // copy temporary folder name for SIGINT cleanup purpose
   strncpy(temp_folder_name, temp_dir_name, 12); 
 
-  if(! database_->transformTextToMemmap(temp_dir_name) ){
+  if(! database_->transformTextToMemmap(temp_dir_name, false)){//binary not tmp
     clean_up(1);
     carp(CARP_FATAL, "Failed to create binary database from text fasta file");
   }
 
   if( decoy_database_ 
-      && ! decoy_database_->transformTextToMemmap(temp_dir_name) ){
+      && ! decoy_database_->transformTextToMemmap(temp_dir_name, false) ){
     clean_up(1);
     carp(CARP_FATAL, "Failed to create binary decoy database from fasta file");
   }
