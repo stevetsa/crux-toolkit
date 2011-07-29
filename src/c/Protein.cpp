@@ -9,6 +9,7 @@
 #include <ctype.h>
 #include <vector>
 #include "utils.h"
+#include "crux-utils.h"
 #include "parameter.h"
 #include "objects.h"
 #include "peptide.h"
@@ -526,6 +527,51 @@ bool Protein::readRawSequence
  * Thanks Bill!
  */
 
+/**
+ * Change the sequence of a protein to be a randomized version of
+ * itself.  The method of randomization is dependant on the
+ * decoy_type (shuffle or reverse).  The name of the protein is also
+ * changed by prefixing with reverse_ or rand_, depending on how it
+ * was randomized. 
+ */
+void Protein::shuffle(DECOY_TYPE_T decoy_type){
+  carp(CARP_DEBUG, "Shuffling protein %s as %s", 
+       id_, decoy_type_to_string(decoy_type));
+
+  switch(decoy_type){
+  case NO_DECOYS:
+    return;
+
+  case REVERSE_DECOYS:
+    reverse(sequence_, sequence_ + strlen(sequence_));
+    break;
+
+  case PROTIEN_SHUFFLE_DECOYS:
+    carp(CARP_DEBUG, "shuffling");
+    shuffle_array(sequence_, strlen(sequence_));
+    break;
+
+  case PEPTIDE_SHUFFLE_DECOYS:
+    carp(CARP_FATAL, 
+         "Sorry, haven't implemented digest-constrained shuffling yet.");
+    break;
+    
+  case INVALID_DECOY_TYPE:
+  case NUMBER_DECOY_TYPES:
+    carp(CARP_FATAL, "Illegal decoy type for shuffling protein.");
+    break;
+  }
+
+  // change the protein name
+  const char* prefix = "rand_";
+  if( decoy_type == REVERSE_DECOYS ){
+    prefix = "reverse_";
+  }
+  char* new_name = cat_string(prefix, id_);
+  free(id_);
+  id_= new_name;
+
+}
 
 /** 
  * Access routines of the form get_<object>_<field> and set_<object>_<field>. 

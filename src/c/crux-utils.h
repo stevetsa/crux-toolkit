@@ -254,10 +254,44 @@ BOOLEAN_T valid_peptide_sequence(const char* sequence);
 void quicksort(FLOAT_T numbers[], int array_size);
 
 /**
+ * User define our upper and our lower bounds.
+ * The random number will always be 
+ * between low and high, inclusive.
+ * There is no seeding in this function, user must do it for themselves
+ *\returns a random number between the interval user provides
+ */
+int get_random_number_interval(
+  int low, ///< the number for lower bound -in
+  int high ///< the number for higher bound -in
+  );
+
+/**
  * \brief Shuffle an array of FLOAT_Ts.  Uses the Knuth algorithm.  Uses
  * get_random_number_interval() to generate random numbers. 
  */
 void shuffle_floats(FLOAT_T* array, int size);
+
+/**
+ * \brief Shuffles an array of elements.  Uses the Knuth algorithm.  Uses
+ * get_random_number_interval() to generate random numbers. 
+ */
+template<typename T>
+void shuffle_array(T* array, int size){
+  if( array == NULL ){
+    carp(CARP_ERROR, "Cannot shuffle NULL array.");
+    return;
+  }
+
+  int idx, switch_idx;
+  int last_element_idx = size - 1;
+  T temp_value;
+  for(idx=0; idx < size; idx++){
+    switch_idx = get_random_number_interval(idx, last_element_idx);
+    temp_value = array[idx];
+    array[idx] = array[switch_idx];
+    array[switch_idx] = temp_value;
+  }
+}
 
 /**
  * \brief Comparison function for reverse sorting floats.
@@ -278,18 +312,6 @@ char** generate_feature_name_array();
  */
 int get_number_digits(
   int number ///< the number to count digits
-  );
-
-/**
- * User define our upper and our lower bounds.
- * The random number will always be 
- * between low and high, inclusive.
- * There is no seeding in this function, user must do it for themselves
- *\returns a random number between the interval user provides
- */
-int get_random_number_interval(
-  int low, ///< the number for lower bound -in
-  int high ///< the number for higher bound -in
   );
 
 /**

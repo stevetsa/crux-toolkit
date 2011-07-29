@@ -36,6 +36,7 @@ using namespace std;
 
 const string Database::binary_suffix = "-binary-fasta";
 const string Database::decoy_binary_suffix = "-binary-fasta-decoy";
+const string Database::decoy_fasta_suffix = "-random.fasta";
 
 /**
  * intializes a database object
@@ -142,6 +143,7 @@ Database::~Database() {
       fclose(file_);
     }
   }
+
   if( binary_is_temp_ && !binary_filename_.empty() ){
     carp(CARP_DEBUG, "Deleting temp binary fasta %s.", 
          binary_filename_.c_str());
@@ -501,7 +503,10 @@ bool Database::transformTextToMemmap(
  * Using the fasta file the Database was instantiated with, write a
  * binary protein file in the given directory to use for memory
  * mapping.  If is_temp, delete the file on destruction.  Warns if
- * Database was not opened with a text file.
+ * Database was not opened with a text file.  If the database is to
+ * contain decoy proteins, randomizes each protein before
+ * serializing.  Also prints a new fasta file of the decoy proteins in
+ * the same directory as the binary file.
  */
 void Database::createBinaryFasta(const char* directory, bool is_temp){
   binary_is_temp_ = is_temp;
@@ -527,6 +532,20 @@ void Database::createBinaryFasta(const char* directory, bool is_temp){
     carp(CARP_FATAL, "Could not open binary protein file %s", 
          binary_filename_.c_str());
   }
+  // also open a fasta file if this is a decoy database
+  FILE* output_fasta = NULL;
+  if( decoys_ != NO_DECOYS){
+    char* fasta_output_name = generate_name_path( fasta_filename_.c_str(),
+                                                  ".fasta", 
+                                                  decoy_fasta_suffix.c_str(),
+                                                  directory);
+    output_fasta = fopen(fasta_output_name, "w");
+    if( output_fasta == NULL ){
+      carp(CARP_FATAL, "Could not open new fasta file %s for decoy proteins.",
+           output_fasta);
+    }
+  }
+
 
   // open input file
   FILE* input_file = fopen(fasta_filename_.c_str(), "r");
@@ -557,6 +576,11 @@ void Database::createBinaryFasta(const char* directory, bool is_temp){
         carp(CARP_FATAL, "Failed to parse fasta file");
       }
       new_protein->setIsLight(false);
+
+      if( decoys_ != NO_DECOYS ){
+        new_protein->shuffle(decoys_);
+        new_protein->print(output_fasta);
+      }
       
       // serialize protein as binary to output file
       new_protein->serialize(output_file);

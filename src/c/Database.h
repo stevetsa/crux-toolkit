@@ -87,10 +87,11 @@ class Database {
 
  public:
   /**
-   * The suffix on binary fasta files.
+   * The suffix on binary and text fasta files.
    */
   static const string binary_suffix;
   static const string decoy_binary_suffix;
+  static const string decoy_fasta_suffix;
 
   /**
    * \returns An (empty) database object.

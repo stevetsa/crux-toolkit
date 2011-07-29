@@ -11,6 +11,8 @@
 #include <unistd.h>
 #include <time.h>
 #include <errno.h>
+#include <iostream>
+#include <sstream>
 
 #include "utils.h"
 #include "crux-utils.h"
@@ -803,27 +805,20 @@ char* make_temp_dir_template(void){
 }
 
 /**
- * heap allocated filename
+ * Combines the bin index and the file prefix into the name of the
+ * index file for that bin.
  *\returns the filename for the given index
  */
 char* get_crux_filename(
-  long bin_idx,  ///< the bin_indx name you want -in
-  int part  ///< the what sub part of the dir is it? only needed when spliting -in
+  long bin_idx,  ///< the bin_indx name you want 
+  const char* file_prefix  ///< the first part of the filename
   )
 {
-  char* file_num = 0;
-  const char* filename_tag = "crux_index_";
-  char* filename = NULL;
+  ostringstream filename;
+  filename << file_prefix;
+  filename << (bin_idx + 1);
 
-  // quiet compiler
-  part = part;
-
-  // add functionallity to make _1, _2, _3
-  file_num = int_to_char(bin_idx + 1);
-  filename = cat_string(filename_tag, file_num);
-
-  free(file_num);
-  return filename;
+  return my_copy_string(filename.str().c_str());
 }
 
 /**
@@ -868,53 +863,19 @@ long Index::getNumBinsNeeded(
 }                         
 
 /**
- * user MUST set the unix system max allowed file handlers enough to allow this procsess
- * check and change on command line by "ulimit -n", need root permission to change...
- *generates all the file handlers(bins) that are needed
- *\returns true, if successfully opened all needed bins, else false
+ * Opens one index file, storing it in the array.  File name is the
+ * concatenation of file_prefix and bin_index+1.
+ * \returns True, if successfully opened file, else false.
  */
-bool generate_file_handlers(
-  FILE** file_array,  ///< the file handler array -out
-  long num_bins  ///< total number of bins needed
+bool generate_one_file_handle(
+  FILE** file_array,  ///< the file handler array 
+  long bin_index, ///< the bin index for which to create a file handle
+  const char* file_prefix
   )
 {
-  long bin_indx = 0;
-  FILE* file = NULL;
-  char* filename = NULL;
-  
-  // create all the file handlers need for create index
-  for(; bin_indx < num_bins; ++bin_indx){
-    filename = get_crux_filename(bin_indx, 0);
-    file = fopen(filename, "w+" );
-    free(filename);
-    if(file == NULL){
-      carp(CARP_WARNING, "cannot open all file handlers needed");
-      free(file_array);
-      return false;
-    }
-    (file_array)[bin_indx] = file;
-  }
-  
-  return true;
-}
-
-/**
- * user MUST set the unix system max allowed file handlers enough to allow this procsess
- * check and change on command line by "ulimit -n", need root permission to change...
- *generates all the file handlers(bins) that are needed
- *\returns true, if successfully opened bin, else false
- */
-bool generate_one_file_handler(
-  FILE** file_array,  ///< the file handler array -out                            
-  long bin_index ///< the bin index to create a file handler -in
-  )
-{
-  FILE* file = NULL;
-  char* filename = NULL;
-  
   // create the file handler needed for create index
-  filename = get_crux_filename(bin_index, 0);
-  file = fopen(filename, "w+" );
+  char* filename = get_crux_filename(bin_index, file_prefix);
+  FILE* file = fopen(filename, "w+" );
   free(filename);
   if(file == NULL){
     carp(CARP_WARNING, "cannot open all file handlers needed");
@@ -951,7 +912,8 @@ FILE* Index::sortBin(
   FILE* file, ///< the working file handle to the bin -in
   long bin_idx, ///< bin index in the file array -in
   unsigned int peptide_count, ///< the total peptide count in the bin -in
-  FILE* text_file
+  FILE* text_file,
+  const char* file_prefix
   )
 {
   char* filename = NULL;
@@ -966,7 +928,7 @@ FILE* Index::sortBin(
   PEPTIDE_T* working_peptide = NULL;
   
   // get the filename for this file bin
-  filename = get_crux_filename(bin_idx, 0);
+  filename = get_crux_filename(bin_idx, file_prefix);
   // close unsorted bin
   fclose(file);
   // create new bin which will be sorted 
@@ -1104,23 +1066,11 @@ bool Index::create(
   bool create_text_file ///< Should an ASCII text file be create? -in
   )
 {
-  // the file stream where the index creation information is sent
-  FILE* info_out = NULL; 
-  FILE* readme = NULL;
-  char* temp_dir_name = NULL;
-  FILE** file_array = NULL;
-  int* mass_limits = (int*)mycalloc(2, sizeof(int));
-  long num_bins = 0;
-  DatabasePeptideIterator* peptide_iterator = NULL;
-  PEPTIDE_T* working_peptide = NULL;
-  FLOAT_T working_mass;
-  char* filename = NULL;
-  FLOAT_T mass_range = mass_range_;
-  unsigned int* peptide_count_array = NULL;
+  carp(CARP_DEBUG, "Creating index");
+
+  // check if index exists
   bool replace_index = false;
 
-  carp(CARP_DEBUG, "Creating index");
-  // check if already created index
   if(on_disk_){
     if(get_boolean_parameter("overwrite")){
       replace_index = true;
@@ -1135,6 +1085,7 @@ bool Index::create(
   
   // create temporary directory
   // temp_dir_name = "foo"; // CYGWIN
+  char* temp_dir_name = NULL;
   if(mkdir(temp_dir_name, S_IRWXO) != 0){
     if((temp_dir_name = mkdtemp(make_temp_dir_template()))== NULL){
       carp(CARP_WARNING, "Cannot create temporary directory");
@@ -1144,6 +1095,7 @@ bool Index::create(
   // copy temporary folder name for SIGINT cleanup purpose
   strncpy(temp_folder_name, temp_dir_name, 12); 
 
+  // instantiate database(s)
   if(! database_->transformTextToMemmap(temp_dir_name, false)){//binary not tmp
     clean_up(1);
     carp(CARP_FATAL, "Failed to create binary database from text fasta file");
@@ -1161,39 +1113,15 @@ bool Index::create(
     return false;
   }
 
-  // 1. create binary fasta file in temporary directory
-  // 2. transform database into memory mapped database from text base database
-  // 3. then, parse database
- 
-  // get number of bins needed
-  num_bins = getNumBinsNeeded(mass_limits);
-  
-  // create file handle array
-  file_array = (FILE**)mycalloc(num_bins, sizeof(FILE*));
-
-  // peptide array to store the peptides before serializing them all together
-  PEPTIDE_T*** peptide_array = (PEPTIDE_T***)
-    mycalloc(num_bins, sizeof(PEPTIDE_T**));
-  int sub_indx;
-  for(sub_indx = 0; sub_indx < num_bins; ++sub_indx){
-    peptide_array[sub_indx] = (PEPTIDE_T**)
-      mycalloc(MAX_PROTEIN_IN_BIN, sizeof(PEPTIDE_T*));
-  }
-  // int array that stores the peptide count for each peptide array branch
-  // this is used to determine when to output all peptides in buffer
-  // does not represent the total peptide count in the bin
-  // total count of peptide in bin is sotred in peptide_count_array
-  int* bin_count = (int*)mycalloc(num_bins, sizeof(int));
-
-  // create array that stores total count of peptides in each bin
-  peptide_count_array = 
-    (unsigned int*)mycalloc(num_bins, sizeof(unsigned int));
-
   // create README file, with parameter informations
-  readme = fopen("README", "w");
+  FILE* readme = fopen("README", "w");
   writeReadmeFile(readme);
   fclose(readme);
 
+  // create the index map & info
+  FILE* info_out = fopen("crux_index_map", "w");
+  writeHeader(info_out);
+               
   // create text file of peptides.
   FILE* text_file = NULL;
   if (create_text_file) {
@@ -1201,98 +1129,23 @@ bool Index::create(
     text_file = fopen("peptides.txt", "w");
   }
   
-  // create the index map & info
-  info_out = fopen("crux_index_map", "w");
-  writeHeader(info_out);
-                    
-  // TODO repeat for decoy database
-  // create database peptide_iterator
-  peptide_iterator =
-    new DatabasePeptideIterator(database_, disk_constraint_, 
-                                  false);// don't parse all pep into memory
-
-  long int file_idx = 0;
-  int low_mass = mass_limits[0];
-  long int count_peptide = 0;
-  int mod_me = 1000;
-  
-  // iterate through all peptides
-  while(peptide_iterator->hasNext()){    
-    ++count_peptide;
-    if(count_peptide % mod_me == 0){
-      if( (count_peptide/10 ) == mod_me ){
-        mod_me = mod_me * 10;
-      }
-      carp(CARP_INFO, "Reached peptide %d", (int)count_peptide);
-    }
-
-    working_peptide = peptide_iterator->next();
-    working_mass = get_peptide_peptide_mass(working_peptide);
-    file_idx = (long int)((working_mass - low_mass) / mass_range);
-
-    // check if first time using this bin, if so create new file handle
-    if(file_array[file_idx] == NULL){
-      if(!generate_one_file_handler(file_array, file_idx)){
-        carp(CARP_ERROR, 
-             "Exceeded filehandle limit on system with %d files", file_idx);
-        fcloseall();
-        return false;
-      }
-    }
-    
-    // increment total peptide count of bin
-    ++peptide_count_array[file_idx];
-
-    // dump peptide in bin or temporary matrix
-    dump_peptide(file_array, file_idx, working_peptide, 
-                 peptide_array[file_idx], bin_count); 
-  }
-
-  carp(CARP_INFO, "Printing index");
-  // dump all the left over peptides
-  dump_peptide_all(file_array, peptide_array, bin_count, num_bins);
-
-  // sort each bin  
-  carp(CARP_INFO, "Sorting index");
-  long bin_idx;
-  for(bin_idx = 0; bin_idx < num_bins; ++bin_idx){
-    carp(CARP_DETAILED_DEBUG, "Sorting bin %d", bin_idx);
-    if(file_array[bin_idx] == NULL){
-      continue;
-    }
-    // sort bin
-    if((file_array[bin_idx] = sortBin(file_array[bin_idx], bin_idx,  
-                                       peptide_count_array[bin_idx], 
-                                       text_file)) == NULL){
-      carp(CARP_WARNING, "Failed to sort bin %i", bin_idx);
-      fcloseall();
-      return false;
-    }
-
-    // TODO add splitting of files if necessary
-    // print to crux_map
-    filename = get_crux_filename(bin_idx, 0); 
-      ///< 0 can change if we need to split the file
-    fprintf(info_out, "%s\t%.2f\t", filename, 
-        mass_limits[0] + (bin_idx * mass_range_));
-    fprintf(info_out, "%.2f\n", mass_range_);
-
-    // free up heap
-    std::free(filename);
-    fclose(file_array[bin_idx]);
-  }
-  
-  // close crux_index_map, free heap allocated objects
-  if (create_text_file) {
-    fclose(text_file);
-  }
+  // first, index target database
+  const char* file_prefix = "crux_index_";
+  index_database(database_, file_prefix, info_out, text_file);
   fclose(info_out);
-  std::free(mass_limits);
-  std::free(file_array);
-  std::free(peptide_count_array);
-  delete (peptide_iterator);
+  info_out = NULL;
+  if( text_file){
+    fclose(text_file);
+    text_file = NULL;
+  }
 
-  if( chdir("..") == -1 ){ //move out of temp dir
+  
+  // now index decoy database without the info files
+  file_prefix = "crux_decoy_index_";
+  index_database(decoy_database_, file_prefix, NULL, NULL);
+  
+  //move out of temp dir
+  if( chdir("..") == -1 ){ 
     return false;
   }
 
@@ -1318,6 +1171,125 @@ bool Index::create(
   return true;
 }
 
+/**
+ * The steps of creating an index that are repeated for the target and
+ * decoy databases.  For the decoy, the info_file and text_file can be NULL.
+ */
+void Index::index_database(
+  Database* database, ///< the database to index
+  const char* file_prefix, ///< name for the index files
+  FILE* info_out, ///< index map
+  FILE* text_file) ///< optional peptides file
+{
+  if( database == NULL ){
+    return;
+  }
+
+  // get number of bins/files needed
+  int* mass_limits = (int*)mycalloc(2, sizeof(int));
+  long num_bins = getNumBinsNeeded(mass_limits);
+  
+  // create file handle array
+  FILE** file_array = (FILE**)mycalloc(num_bins, sizeof(FILE*));
+
+  // peptide array to store the peptides before serializing them all together
+  PEPTIDE_T*** peptide_array = (PEPTIDE_T***)
+    mycalloc(num_bins, sizeof(PEPTIDE_T**));
+
+  for(int sub_indx = 0; sub_indx < num_bins; ++sub_indx){
+    peptide_array[sub_indx] = (PEPTIDE_T**)
+      mycalloc(MAX_PROTEIN_IN_BIN, sizeof(PEPTIDE_T*));
+  }
+  // int array that stores the peptide count for each peptide array branch
+  // this is used to determine when to output all peptides in buffer
+  // does not represent the total peptide count in the bin
+  // total count of peptide in bin is sotred in peptide_count_array
+  int* bin_count = (int*)mycalloc(num_bins, sizeof(int));
+
+  // create array that stores total count of peptides in each bin
+  unsigned int* peptide_count_array = 
+    (unsigned int*)mycalloc(num_bins, sizeof(unsigned int));
+
+  // create database peptide_iterator
+  DatabasePeptideIterator* peptide_iterator =
+    new DatabasePeptideIterator(database, disk_constraint_, 
+                                false);// don't parse all pep into memory
+
+  long int file_idx = 0;
+  int low_mass = mass_limits[0];
+  long int count_peptide = 0;
+  int mod_me = 1000;
+  
+  // iterate through all peptides
+  while(peptide_iterator->hasNext()){    
+    ++count_peptide;
+    if(count_peptide % mod_me == 0){
+      if( (count_peptide/10 ) == mod_me ){
+        mod_me = mod_me * 10;
+      }
+      carp(CARP_INFO, "Reached peptide %d", (int)count_peptide);
+    }
+
+    PEPTIDE_T* working_peptide = peptide_iterator->next();
+    FLOAT_T working_mass = get_peptide_peptide_mass(working_peptide);
+    file_idx = (long int)((working_mass - low_mass) / mass_range_);
+
+    // check if first time using this bin, if so create new file handle
+    if(file_array[file_idx] == NULL){
+      if(!generate_one_file_handle(file_array, file_idx, file_prefix)){
+        fcloseall();
+        carp(CARP_FATAL, 
+             "Could not open file handle for index %d.", file_idx);
+      }
+    }
+    
+    // increment total peptide count of bin
+    ++peptide_count_array[file_idx];
+
+    // dump peptide in bin or temporary matrix
+    dump_peptide(file_array, file_idx, working_peptide, 
+                 peptide_array[file_idx], bin_count); 
+  }
+
+  carp(CARP_INFO, "Printing index");
+  // dump all the left over peptides
+  dump_peptide_all(file_array, peptide_array, bin_count, num_bins);
+
+  // sort each bin  
+  carp(CARP_INFO, "Sorting index");
+  long bin_idx;
+  for(bin_idx = 0; bin_idx < num_bins; ++bin_idx){
+    carp(CARP_DETAILED_DEBUG, "Sorting bin %d", bin_idx);
+    if(file_array[bin_idx] == NULL){
+      continue;
+    }
+    // sort bin
+    if((file_array[bin_idx] = sortBin(file_array[bin_idx], bin_idx,  
+                                      peptide_count_array[bin_idx], 
+                                      text_file,
+                                      file_prefix)) == NULL){
+      fcloseall();
+      carp(CARP_FATAL, "Failed to sort bin %i", bin_idx);
+    }
+
+    // print to crux_map
+    if( info_out ){
+      char* filename = get_crux_filename(bin_idx, file_prefix); 
+      fprintf(info_out, "%s\t%.2f\t", filename, 
+              mass_limits[0] + (bin_idx * mass_range_));
+      fprintf(info_out, "%.2f\n", mass_range_);
+      
+      // free up heap
+      std::free(filename);
+    }
+    fclose(file_array[bin_idx]);
+  }
+  
+  std::free(mass_limits);
+  std::free(file_array);
+  std::free(peptide_count_array);
+  delete (peptide_iterator);
+}
 
 /*********************************************
  * set and get methods for the object fields

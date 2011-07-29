@@ -171,20 +171,9 @@ class Index {
     FILE* file, ///< the working file handle to the bin -in
     long bin_idx, ///< bin index in the file array -in
     unsigned int peptide_count, ///< the total peptide count in the bin -in
-    FILE* text_file
+    FILE* text_file,
+    const char* file_prefix
     );
-
-  /***
-   * This function does the following things...
-   * 1. create binary fasta file in temporary directory
-   * 2. transform database into memory mapped database from text base database
-   * 3. then, parse database
-   * Called while the cwd is the temp directory in which the index is
-   * being made.
-   *
-   *\returns true, if all processes are successful, else false
-   */
-  bool transformDatabaseToMemmapDatabase();
 
   /*
    * Returns the index filename appropriate for this peptide
@@ -192,6 +181,16 @@ class Index {
   char* getPeptideFileName(
     PEPTIDE_T* peptide
   );
+
+  /**
+   * The steps of creating an index that are repeated for the target and
+   * decoy databases.  For the decoy, the info_file and text_file can be NULL.
+   */
+  void index_database(
+    Database* database, ///< the database to index
+    const char* file_prefix, ///< name for the index files
+    FILE* info_file, ///< index map
+    FILE* text_file); ///< optional peptides file
 
  public:
 

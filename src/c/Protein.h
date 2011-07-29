@@ -141,6 +141,15 @@ class Protein {
     char** memmap ///< a pointer to a pointer to the memory mapped binary fasta file -in
   );
 
+  /**
+   * Change the sequence of a protein to be a randomized version of
+   * itself.  The method of randomization is dependant on the
+   * decoy_type (shuffle or reverse).  The name of the protein is also
+   * changed by prefixing with reverse_ or rand_, depending on how it
+   * was randomized. 
+   */
+  void shuffle(DECOY_TYPE_T decoy_type);
+
   /** 
    * Access routines of the form get_<object>_<field> and set_<object>_<field>. 
    * FIXME Chris, could you create the get and set methods for the object fields?

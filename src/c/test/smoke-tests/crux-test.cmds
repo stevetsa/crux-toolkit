@@ -119,8 +119,7 @@
 
 # create an index with all defaults (including decoys)
 1 = create_index_default = good_results/standard_create_index_default.out = rm -rf test_crux_index; crux create-index test.fasta test_crux_index; cat test_crux_index/README test_crux_index/crux_index_map = 'time'
-# HEY! UNCOMMENT THIS
-#1 = generate_peptides_test_index = good_results/standard_generate_peptides_use_index.out = crux-generate-peptides --output-sequence T test_crux_index = '# PROTEIN DATABASE'
+1 = generate_peptides_test_index = good_results/standard_generate_peptides_use_index.out = crux-generate-peptides --output-sequence T test_crux_index = '# PROTEIN DATABASE'
 
 #create_index_uniq = good_results/standard_create_index_uniq.out = rm -rf test_crux_index; crux create-index --unique-peptides T test.fasta test_crux_index; cat test_crux_index/README test_crux_index/crux_index_map = 'time'
 
