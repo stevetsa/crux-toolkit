@@ -1592,7 +1592,8 @@ void check_parameter_consistency(){
     }
   }
 
-  // decoys must be one of "none", "shuffle", "reverse"
+  // decoys must be one of "none", "protein-shuffle", "peptide-shuffl",
+  // "reverse"
   const char* decoys = get_string_parameter_pointer("decoys");
   DECOY_TYPE_T decoy_type = string_to_decoy_type(decoys);
   if( decoy_type == INVALID_DECOY_TYPE ){

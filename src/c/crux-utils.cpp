@@ -29,6 +29,7 @@ static const int MAX_ULPS = 2;
 
 /* Functions for converting custom types to and from strings */
 
+static const int INVALID_ENUM_STRING = -10;
 /**
  * The string version of the decoy types
  */
@@ -36,9 +37,9 @@ static const char* decoy_type_strings[NUMBER_DECOY_TYPES] =
   { "invalid", "none", "reverse", "protein-shuffle", "peptide-shuffle" };
 
 DECOY_TYPE_T string_to_decoy_type(const char* name){
-  int decoy_int = convert_enum_type_str(name, -10, 
-                                       decoy_type_strings, 
-                                       NUMBER_DECOY_TYPES);
+  int decoy_int = convert_enum_type_str(name, INVALID_ENUM_STRING, 
+                                        decoy_type_strings, 
+                                        NUMBER_DECOY_TYPES);
   if( decoy_int < 0 ){
     decoy_int = 0;
   }
@@ -58,8 +59,8 @@ static const char* mass_type_strings[NUMBER_MASS_TYPES] = {"average", "mono"};
 BOOLEAN_T string_to_mass_type(char* name, MASS_TYPE_T* result){
   BOOLEAN_T success = TRUE;
   //this is copied from parameter.c::get_peptide_mass_type
-  int mass_type = convert_enum_type_str(
-                          name, -10, mass_type_strings, NUMBER_MASS_TYPES);
+  int mass_type = convert_enum_type_str(name, INVALID_ENUM_STRING, 
+                                        mass_type_strings, NUMBER_MASS_TYPES);
 
   (*result) = (MASS_TYPE_T)mass_type;
 
@@ -90,7 +91,7 @@ static const char* digest_type_strings[NUMBER_DIGEST_TYPES] =
   {"invalid", "full-digest", "partial-digest", "non-specific-digest"};
 
 DIGEST_T string_to_digest_type(char* name){
-  int clev_int = convert_enum_type_str(name, -10, 
+  int clev_int = convert_enum_type_str(name, INVALID_ENUM_STRING, 
                                        digest_type_strings, 
                                        NUMBER_DIGEST_TYPES);
   if( clev_int < 0 ){
@@ -121,7 +122,7 @@ static const char* enzyme_type_strings[NUMBER_ENZYME_TYPES] =
    "custom-enzyme"};
 
 ENZYME_T string_to_enzyme_type(char* name){
-  int enz_int = convert_enum_type_str(name, -10, 
+  int enz_int = convert_enum_type_str(name, INVALID_ENUM_STRING, 
                                       enzyme_type_strings, 
                                       NUMBER_ENZYME_TYPES);
   if( enz_int < 0 ){
@@ -148,9 +149,9 @@ static const char* window_type_strings[NUMBER_WINDOW_TYPES] =
   {"invalid", "mass", "mz", "ppm"};
 
 WINDOW_TYPE_T string_to_window_type(char* name){
-  int window_int = convert_enum_type_str(name, -10, 
-                                      window_type_strings, 
-                                      NUMBER_WINDOW_TYPES);
+  int window_int = convert_enum_type_str(name, INVALID_ENUM_STRING, 
+                                         window_type_strings, 
+                                         NUMBER_WINDOW_TYPES);
   if( window_int < 0 ){
     window_int = 0;
   }
@@ -175,7 +176,7 @@ static const char* parsimony_type_strings[NUMBER_PARSIMONY_TYPES] =
   {"invalid", "simple", "greedy", "none"};
 
 PARSIMONY_TYPE_T string_to_parsimony_type(char* name){
-  int parsimony_int = convert_enum_type_str(name, -10,
+  int parsimony_int = convert_enum_type_str(name, INVALID_ENUM_STRING,
 					    parsimony_type_strings,
 					    NUMBER_PARSIMONY_TYPES);
   if ( parsimony_int < 0 ){
@@ -205,9 +206,9 @@ static const char* measure_type_strings[NUMBER_MEASURE_TYPES] =
   {"invalid", "SIN", "NSAF", "EMPAI"};
 
 MEASURE_TYPE_T string_to_measure_type(char* name){
-  int measure_int = convert_enum_type_str(name, -10,
-					    measure_type_strings,
-					    NUMBER_PARSIMONY_TYPES);
+  int measure_int = convert_enum_type_str(name, INVALID_ENUM_STRING,
+                                          measure_type_strings,
+                                          NUMBER_PARSIMONY_TYPES);
   if ( measure_int < 0 ){
     measure_int = 0;
   }
@@ -233,9 +234,9 @@ static const char* quant_level_type_strings[NUMBER_QUANT_LEVEL_TYPES] =
   {"invalid", "peptide", "protein"};
 
 QUANT_LEVEL_TYPE_T string_to_quant_level_type(char* name){
-  int quant_int = convert_enum_type_str(name, -10,
-					    quant_level_type_strings,
-					    NUMBER_QUANT_LEVEL_TYPES);
+  int quant_int = convert_enum_type_str(name, INVALID_ENUM_STRING,
+                                        quant_level_type_strings,
+                                        NUMBER_QUANT_LEVEL_TYPES);
   if ( quant_int < 0 ){
     quant_int = 0;
   }
@@ -263,7 +264,7 @@ static const char* column_type_strings[NUMBER_COLTYPES] =
 COLTYPE_T string_to_column_type(char* name) {
   int coltype_int = convert_enum_type_str(
     name, 
-    -10,
+    INVALID_ENUM_STRING,
     column_type_strings,
     NUMBER_COLTYPES);
 
@@ -284,7 +285,7 @@ static const char* comparison_type_strings[NUMBER_COMPARISONS] =
 COMPARISON_T string_to_comparison(char* name) {
   int comparison_int = convert_enum_type_str(
     name,
-    -10,
+    INVALID_ENUM_STRING,
     comparison_type_strings,
     NUMBER_COMPARISONS);
 
@@ -341,8 +342,8 @@ static const char* sort_type_strings[NUMBER_SORT_TYPES] =
 BOOLEAN_T string_to_sort_type(char* name, SORT_TYPE_T* result){
   BOOLEAN_T success = TRUE;
 
-  int sort_type = convert_enum_type_str(
-                        name, -10, sort_type_strings, NUMBER_SORT_TYPES);
+  int sort_type = convert_enum_type_str(name, INVALID_ENUM_STRING, 
+                                        sort_type_strings, NUMBER_SORT_TYPES);
   (*result) = (SORT_TYPE_T)sort_type;
 
   if( sort_type < 0){
@@ -371,8 +372,8 @@ static const char* ion_type_strings[NUMBER_ION_TYPES] = {
 BOOLEAN_T string_to_ion_type(char* name, ION_TYPE_T* result){
   BOOLEAN_T success = TRUE;
 
-  int ion_type = convert_enum_type_str(
-                       name, -10, ion_type_strings, NUMBER_ION_TYPES);
+  int ion_type = convert_enum_type_str(name, INVALID_ENUM_STRING, 
+                                       ion_type_strings, NUMBER_ION_TYPES);
   (*result) = (ION_TYPE_T)ion_type;
 
   if( ion_type < 0){
@@ -403,7 +404,7 @@ static const char* algorithm_type_strings[NUMBER_ALGORITHM_TYPES] =
 BOOLEAN_T string_to_algorithm_type(char* name, ALGORITHM_TYPE_T* result){
   BOOLEAN_T success = TRUE;
 
-  int algorithm_type = convert_enum_type_str(name, -10,
+  int algorithm_type = convert_enum_type_str(name, INVALID_ENUM_STRING,
                                              algorithm_type_strings,
                                              NUMBER_ALGORITHM_TYPES);
   (*result) = (ALGORITHM_TYPE_T)algorithm_type;
@@ -453,7 +454,8 @@ static const char* scorer_type_strings[NUMBER_SCORER_TYPES] =
 BOOLEAN_T string_to_scorer_type(char* name, SCORER_TYPE_T* result){
   BOOLEAN_T success = TRUE;
 
-  int scorer_type = convert_enum_type_str(name, -10, scorer_type_strings,
+  int scorer_type = convert_enum_type_str(name, INVALID_ENUM_STRING, 
+                                          scorer_type_strings,
                                           NUMBER_SCORER_TYPES);
   (*result) = (SCORER_TYPE_T)scorer_type;
 
