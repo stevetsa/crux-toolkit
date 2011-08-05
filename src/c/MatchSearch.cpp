@@ -29,6 +29,7 @@
 #include "FilteredSpectrumChargeIterator.h"
 #include "SearchProgress.h"
 #include "SpectrumCollectionFactory.h"
+#include "ModifiedPeptidesIterator.h"
 
 using namespace std;
 
@@ -136,14 +137,9 @@ int MatchSearch::searchPepMods(
     
     
     // get peptide iterator
-    MODIFIED_PEPTIDES_ITERATOR_T* peptide_iterator =
-      new_modified_peptides_iterator_from_zstate(mz,
-                                             zstate,
-                                             peptide_mod, 
-                                             is_decoy,
-                                             index,
-                                             database);
-    
+    ModifiedPeptidesIterator* peptide_iterator = new
+      ModifiedPeptidesIterator(mz, zstate, peptide_mod, is_decoy,
+                               index, database); 
     
     // score peptides
     int added = match_collection->addMatches(spectrum, 
@@ -157,7 +153,7 @@ int MatchSearch::searchPepMods(
     
     carp(CARP_DEBUG, "Added %i matches", added);
 
-    free_modified_peptides_iterator(peptide_iterator);
+    delete peptide_iterator;
     
   }//next peptide mod
 
@@ -539,3 +535,10 @@ COMMAND_T MatchSearch::getCommand() {
 bool MatchSearch::needsOutputDirectory() {
   return true;
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 2
+ * End:
+ */

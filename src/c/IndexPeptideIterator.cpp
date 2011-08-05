@@ -20,10 +20,13 @@ static const int SLEEP_DURATION = 5;
  * \returns a new heap allocated index_peptide_iterator object
  */
 IndexPeptideIterator::IndexPeptideIterator(
-  Index* index ///< The index object which we are iterating over -in
+  Index* index, ///< The index object which we are iterating over -in
+  bool is_decoy ///< return target or decoy peptides
   )
+  : is_decoy_(is_decoy)
 {
-  carp(CARP_DETAILED_DEBUG, "Creating new index iterator");
+  carp(CARP_DETAILED_DEBUG, "Creating new %sindex iterator", 
+       ((is_decoy) ? "decoy " : ""));
 
   // set peptide implementation to array peptide_src
   // this determines which peptide free method to use
@@ -34,8 +37,6 @@ IndexPeptideIterator::IndexPeptideIterator(
   total_index_files_ = 0;
   current_index_file_ = 0;
   index_file_ = NULL;
-  has_next_ = false;
-  peptide_ = NULL;
   
   // set index
   index_ = index->copyPtr();
@@ -59,31 +60,9 @@ IndexPeptideIterator::IndexPeptideIterator(
   index_file_ = NULL;
 
   // sets has_next, peptide, index_file
-  carp(CARP_DETAILED_DEBUG, "Queueing first peptide");
-  queueNextPeptide();
-}
+  carp(CARP_DETAILED_DEBUG, "IndexPeptideIterator queueing first peptide");
 
-/**
- *  The basic iterator functions.
- * \returns The next peptide in the index.
- */
-PEPTIDE_T* IndexPeptideIterator::next()
-{
-  PEPTIDE_T* peptide_to_return = peptide_;
-
-  queueNextPeptide();
-
-  return peptide_to_return;
-}
-
-/**
- * The basic iterator functions.
- * check to see if the index_peptide_iterator has more peptides to return
- *\returns true if there are additional peptides to iterate over, false if not.
- */
-bool IndexPeptideIterator::hasNext()
-{
-  return has_next_; 
+  initialize();
 }
 
 /**
@@ -100,7 +79,8 @@ IndexPeptideIterator::~IndexPeptideIterator()
   
   // if did not iterate over all peptides, free the last peptide not returned
   if(hasNext()){
-    free_peptide(peptide_);
+    free_peptide(next_peptide_);
+    next_peptide_ = NULL;
   }
   
   // free the index
@@ -126,7 +106,7 @@ bool IndexPeptideIterator::findNextIndexFile(){
   }
   // no more files to open
   if( current_index_file_ == total_index_files_ ){
-  carp(CARP_DETAILED_DEBUG, "the last file has been opened. no more");
+  carp(CARP_DETAILED_DEBUG, "The last file has been opened. no more");
     return false;
   }
   // else, current is NULL and there are more to open
@@ -246,7 +226,7 @@ bool IndexPeptideIterator::findPeptideInCurrentIndexFile()
     carp(CARP_DETAILED_DEBUG, "Found a peptide that fits constraint");
     pep_end = ftell(cur_file);
     fseek(cur_file, src_loc, SEEK_SET);
-    Database* database = index_->getDatabase();
+    Database* database = index_->getDatabase(is_decoy_);
     if( ! parse_peptide_src(peptide, cur_file, database, true) ){
       carp(CARP_ERROR, "Could not parse peptide src");
       file_finished = true; // maybe we could read more, but unlikly
@@ -259,8 +239,7 @@ bool IndexPeptideIterator::findPeptideInCurrentIndexFile()
       fclose(cur_file);
       index_file_ = NULL;
       current_index_file_ += 1;
-      has_next_ = false;
-      peptide_ = NULL;
+      next_peptide_ = NULL;
 
       carp(CARP_DETAILED_DEBUG, "about to free peptide.");
       free_peptide(peptide);
@@ -275,8 +254,7 @@ bool IndexPeptideIterator::findPeptideInCurrentIndexFile()
   index_file_ = cur_file;
 
   // add peptide to iterator
-  peptide_ = peptide;
-  has_next_ = true;
+  next_peptide_ = peptide;
 
   return true;
 }
@@ -306,6 +284,7 @@ bool IndexPeptideIterator::queueNextPeptide() {
   }// try the next index file
 
   // no more index files to try
+  next_peptide_ = NULL;
   return false;
 }
 
@@ -318,8 +297,7 @@ bool IndexPeptideIterator::queueNextPeptide() {
  * \returns true if successfully added the new index_file
  */
 bool IndexPeptideIterator::addNewIndexFile(
-  ///< the index_peptide_iterator to add file -out
-  char* filename_parsed,  ///< the filename to add -in
+  const char* filename_parsed,  ///< the filename to add -in
   FLOAT_T start_mass,  ///< the start mass of the index file  -in
   FLOAT_T range  ///< the mass range of the index file  -in
   )
@@ -379,7 +357,13 @@ bool IndexPeptideIterator::parseCruxIndexMap()
   // for filename as read from map file
   char* filename = full_filename + dir_name_length;
   // first use to open map file
-  strcpy(filename, "crux_index_map");
+  if( is_decoy_ ){
+    strcpy(filename, Index::decoy_index_file_prefix);
+    strcpy(filename + strlen(Index::decoy_index_file_prefix), "map");
+  } else {
+    strcpy(filename, Index::index_file_prefix);
+    strcpy(filename + strlen(Index::index_file_prefix), "map");
+  }
 
   // open crux_index_file
   carp(CARP_DETAILED_DEBUG, "Opening map file '%s'", full_filename);
@@ -393,7 +377,7 @@ bool IndexPeptideIterator::parseCruxIndexMap()
   }
   
   while((line_length =  getline(&new_line, &buf_length, file)) != -1){
-    carp(CARP_DETAILED_DEBUG, "Index map file line reads %s", new_line);
+    carp(CARP_DETAILED_DEBUG, "Index map file line reads '%s'", new_line);
 
     if(new_line[0] == 'c' && new_line[1] == 'r'){
       carp(CARP_DETAILED_DEBUG, "Looking for index file ");
@@ -450,79 +434,15 @@ bool IndexPeptideIterator::parseCruxIndexMap()
 }
 
 
-/**
- * \brief Find the next peptide in the file that meets the peptide
- * constraint, read it from file, and add set up the iterator to
- * return it.
- * \returns true if successfully finds and parses a peptide that meets
- * the constraint.
- */
-
-bool IndexPeptideIterator::fastForwardIndexFile(
-  ///< working index_peptide_iterator -in/out
-  //FILE* file ///< the file stream to fast foward -in
-  )
-{
-  FILE* file = index_file_;
-  // peptide to parse, reuse this memory while we look
-  PEPTIDE_T* peptide = allocate_peptide();
-
-  PeptideConstraint* index_constraint = 
-    index_->getSearchConstraint();
-
-  // loop until we get to a peptide that fits the constraint, we find
-  // a peptide bigger (mass) than the constraint, or reach eof
-  bool peptide_fits = false;
-  long int src_loc = 0;
-  while( ! peptide_fits ){
-    // read in next peptide, returns false if eof
-    if( ! parse_peptide_no_src(peptide, file, &src_loc) ){
-      free_peptide(peptide);
-      return false;
-    }
-    // get mass & length
-    int peptide_mass = (int)get_peptide_peptide_mass(peptide);
-    int peptide_length = get_peptide_length(peptide);
-    
-    // if peptide mass larger than constraint, no more peptides to return
-    if(peptide_mass > index_constraint->getMaxMass()){
-      //free(peptide);
-      free_peptide(peptide);
-      return false;
-    }
-
-    // does this peptide fit the constraint?
-    double min_mass = index_constraint->getMinMass();
-    int min_length = index_constraint->getMinLength();
-    int max_length = index_constraint->getMaxLength();
-    if( peptide_mass >= min_mass 
-        && peptide_length >= min_length
-        && peptide_length <= max_length){
-      peptide_fits = true;
-    }
-  } // read next peptide
-  // now we have the peptide to hand to the iterator, finish parsing it
-
-  // get peptide_src for this peptide
-  long int pep_end = ftell(file);
-  fseek(file, src_loc, SEEK_SET);
-  Database* database = index_->getDatabase();
-  if( ! parse_peptide_src(peptide, file, database, true) ){
-    carp(CARP_ERROR, "Could not parse peptide src");
-    free_peptide(peptide);
-    return false;
-  }
-
-  fseek(file, pep_end, SEEK_SET);
-  index_file_ = file;
-  
-  // add peptide to iterator
-  peptide_ = peptide;
-
-  return true;
-}
-
 Index* IndexPeptideIterator::getIndex() {
   
   return index_;
 }
+
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 2
+ * End:
+ */

@@ -67,6 +67,8 @@ LIBFILES= \
   ExtractRows.h \
   FilteredSpectrumChargeIterator.cpp \
   FilteredSpectrumChargeIterator.h \
+  GeneratePeptidesIterator.cpp \
+  GeneratePeptidesIterator.h \
   generate_peptides_iterator.cpp \
   generate_peptides_iterator.h \
   hash.cpp \
@@ -111,6 +113,8 @@ LIBFILES= \
   MGFSpectrumCollection.h \
   modifications.cpp \
   modifications.h \
+  ModifiedPeptidesIterator.cpp \
+  ModifiedPeptidesIterator.h \
   modified_peptides_iterator.cpp \
   modified_peptides_iterator.h \
   MS2SpectrumCollection.cpp \
@@ -129,6 +133,7 @@ LIBFILES= \
   peptide.cpp \
   PeptideConstraint.cpp \
   PeptideConstraint.h \
+  PeptideIterator.h \
   peptide.h \
   peptide_modifications.cpp \
   peptide_modifications.h \

@@ -257,6 +257,57 @@ int MatchCollection::addMatches(
 
   return num_matches_added;
 }
+int MatchCollection::addMatches(
+  Spectrum* spectrum,  ///< compare peptides to this spectrum
+  SpectrumZState& zstate,            ///< use this charge state for spectrum
+  ModifiedPeptidesIterator* peptide_iterator, ///< use these peptides
+  bool is_decoy,     ///< are peptides to be shuffled
+  bool store_scores, ///< save scores for p-val estimation
+  bool do_sp_scoring, ///< start with SP scoring
+  bool filter_by_sp  ///< truncate matches based on Sp scores
+){
+
+  if( peptide_iterator == NULL || spectrum == NULL ){
+    carp(CARP_FATAL, "Cannot add matches to a collection when match " 
+         "collection, spectrum and/or peptide iterator are NULL.");
+  }
+
+  //assert(matches->zstate == zstate);
+
+  // generate a match for each peptide in the iterator, storing them
+  // in the match collection
+  int num_matches_added = addUnscoredPeptides(spectrum, zstate,
+                                              peptide_iterator, is_decoy);
+
+  if( num_matches_added == 0 ){
+    return num_matches_added;
+  }
+
+  int xcorr_max_rank = get_int_parameter("psms-per-spectrum-reported");
+
+  // optional Sp score on all candidate peptides
+  if( do_sp_scoring ){
+    scoreMatchesOneSpectrum(SP, spectrum, zstate.getCharge(),
+                               false); // don't store scores
+    populateMatchRank(SP);
+    if( filter_by_sp ){ // keep only high-ranking sp psms
+      saveTopSpMatch();
+      int sp_max_rank = get_int_parameter("max-rank-preliminary");
+      truncate(sp_max_rank + 1, // extra for deltacn of last
+               SP);
+      xcorr_max_rank = sp_max_rank;
+    }
+  }
+
+  // main scoring
+  scoreMatchesOneSpectrum(XCORR, spectrum, zstate.getCharge(), 
+                             store_scores); 
+  populateMatchRank(XCORR);
+  truncate(xcorr_max_rank + 1,// extra for deltacn of last
+           XCORR);
+
+  return num_matches_added;
+}
 
 /**
  * \brief Put all the matches from the source match collection in the
@@ -1047,6 +1098,54 @@ int MatchCollection::addUnscoredPeptides(
   return matches_added;
 }
 
+int MatchCollection::addUnscoredPeptides(
+  Spectrum* spectrum, 
+  SpectrumZState& zstate, 
+  ModifiedPeptidesIterator* peptide_iterator,
+  bool is_decoy
+){
+
+  if( spectrum == NULL || peptide_iterator == NULL ){
+    carp(CARP_FATAL, "Cannot score peptides with NULL inputs.");
+  }
+  carp(CARP_DETAILED_DEBUG, "Adding decoy peptides to match collection? %i", 
+       is_decoy);
+
+  int starting_number_of_psms = match_total_;
+
+  while( peptide_iterator->hasNext() ){
+    // get peptide
+    PEPTIDE_T* peptide = peptide_iterator->next();
+
+    // create a match
+    Match* match = new Match();
+
+    // set match fields
+    match->setPeptide(peptide);
+    match->setSpectrum(spectrum);
+    match->setZState(zstate);
+    match->setNullPeptide(is_decoy);
+
+    // add to match collection
+    if(match_total_ >= _MAX_NUMBER_PEPTIDES){
+      carp(CARP_ERROR, "peptide count of %i exceeds max match limit: %d", 
+          match_total_, _MAX_NUMBER_PEPTIDES);
+
+      return false;
+    }
+
+    match_[match_total_] = match;
+    match_total_++;
+
+  }// next peptide
+
+  int matches_added = match_total_ - starting_number_of_psms;
+  experiment_size_ += matches_added;
+
+  // matches are no longer correctly sorted
+  last_sorted_ = (SCORER_TYPE_T)-1; // unsorted
+  return matches_added;
+}
 /**
  * \brief Use the score type to compare the spectrum and peptide in
  * the matches in match collection.  
@@ -1867,7 +1966,7 @@ bool MatchCollection::printXml(
   int index
   )
 {
-  if ( output == NULL || spectrum == NULL ){
+  if ( output == NULL || spectrum == NULL || match_total_ == 0){
     return false;
   }
   SpectrumZState zstate = zstate_; 
@@ -1941,7 +2040,7 @@ bool MatchCollection::printSqt(
   )
 {
 
-  if( output == NULL || spectrum == NULL ){
+  if( output == NULL || spectrum == NULL || match_total_ == 0 ){
     return false;
   }
   time_t hold_time;
@@ -2002,7 +2101,7 @@ bool MatchCollection::printTabDelimited(
   )
 {
 
-  if( output == NULL || spectrum == NULL ){
+  if( output == NULL || spectrum == NULL || match_total_ == 0 ){
     return false;
   }
   //int charge = match_collection->charge; 

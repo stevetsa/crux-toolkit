@@ -63,6 +63,7 @@ void clean_up( int dummy );
  * for under min).
  */
 class Index {
+
  protected:
   int num_pointers_; ///< The number of pointers to this index.
   Database* database_; ///< The database that has been indexed.
@@ -193,6 +194,9 @@ class Index {
     FILE* text_file); ///< optional peptides file
 
  public:
+  // Member constants
+  static const char* index_file_prefix;
+  static const char* decoy_index_file_prefix;
 
   /**
    * \returns An (empty) index object.
@@ -288,7 +292,7 @@ class Index {
   /**
    * \returns A pointer to the database.
    */
-  Database* getDatabase();
+  Database* getDatabase(bool is_decoy);
 
   /**
    *\returns a pointer to the peptides constraint

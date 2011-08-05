@@ -36,6 +36,8 @@ static const int MAX_PROTEIN = 30000;
 static const int NUM_CHECK_LINES = 8;
 static const int MAX_PROTEIN_IN_BIN = 2500;
 static const int MAX_FILE_SIZE_TO_USE_LIGHT_PROTEIN = 500000000;
+const char* Index::index_file_prefix = "crux_index_";
+const char* Index::decoy_index_file_prefix = "crux_decoy_index_";
 
 
 #ifdef DARWIN
@@ -1130,8 +1132,7 @@ bool Index::create(
   }
   
   // first, index target database
-  const char* file_prefix = "crux_index_";
-  index_database(database_, file_prefix, info_out, text_file);
+  index_database(database_, Index::index_file_prefix, info_out, text_file);
   fclose(info_out);
   info_out = NULL;
   if( text_file){
@@ -1141,8 +1142,10 @@ bool Index::create(
 
   
   // now index decoy database without the info files
-  file_prefix = "crux_decoy_index_";
-  index_database(decoy_database_, file_prefix, NULL, NULL);
+  info_out = fopen("crux_decoy_index_map", "w");
+  writeHeader(info_out);
+  index_database(decoy_database_, Index::decoy_index_file_prefix, 
+                 info_out, NULL);
   
   //move out of temp dir
   if( chdir("..") == -1 ){ 
@@ -1320,8 +1323,11 @@ void Index::setDirectory(
 /**
  *\returns a pointer to the database
  */
-Database* Index::getDatabase()
+Database* Index::getDatabase(bool is_decoy)
 {
+  if( is_decoy ){
+    return decoy_database_;
+  }
   return database_;
 }
 
@@ -1407,7 +1413,7 @@ bool initialize_bin_peptide_iterator(
   // parsing.  One fix would be for parse_peptide to return error code
 
   FILE* file = bin_peptide_iterator->index_file;
-  Database* database = bin_peptide_iterator->index->getDatabase();
+  Database* database = bin_peptide_iterator->index->getDatabase(false);// not decoy
   bool use_src_array = bin_peptide_iterator->use_array;
 
   // allocate peptide to used to parse

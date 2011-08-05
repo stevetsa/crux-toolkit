@@ -38,6 +38,7 @@
 #include "ProteinIndex.h"
 #include "modifications.h"
 #include "modified_peptides_iterator.h"
+#include "ModifiedPeptidesIterator.h"
 #include "MatchFileWriter.h"
 #include "MatchIterator.h"
 
@@ -109,6 +110,12 @@ class MatchCollection {
     Spectrum* spectrum, 
     SpectrumZState& charge, 
     MODIFIED_PEPTIDES_ITERATOR_T* peptide_iterator,
+    bool is_decoy
+    );
+  int addUnscoredPeptides(
+    Spectrum* spectrum, 
+    SpectrumZState& charge, 
+    ModifiedPeptidesIterator* peptide_iterator,
     bool is_decoy
     );
 
@@ -206,6 +213,15 @@ class MatchCollection {
     Spectrum* spectrum,  ///< compare peptides to this spectrum
     SpectrumZState& zstate,            ///< use this charge state for spectrum
     MODIFIED_PEPTIDES_ITERATOR_T* peptide_iterator, ///< use these peptides
+    bool is_decoy,     ///< do we shuffle the peptides
+    bool store_scores, ///< true means save scores in xcorrs[]
+    bool do_sp_score,  ///< true means do Sp before xcorr
+    bool filter_by_sp  ///< true means keep only high sp scoring psms
+  );
+  int addMatches(
+    Spectrum* spectrum,  ///< compare peptides to this spectrum
+    SpectrumZState& zstate,            ///< use this charge state for spectrum
+    ModifiedPeptidesIterator* peptide_iterator, ///< use these peptides
     bool is_decoy,     ///< do we shuffle the peptides
     bool store_scores, ///< true means save scores in xcorrs[]
     bool do_sp_score,  ///< true means do Sp before xcorr
