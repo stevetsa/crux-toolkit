@@ -108,7 +108,6 @@ bool XLinkBondMap::canLink(
     pep.getLinkSite(link2_site));
 }
 
-
 /**
  * \returns whether a cross-link can occur between two peptides at their 
  * respective sequence positions (for inter/intra links).

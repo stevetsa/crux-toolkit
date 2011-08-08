@@ -230,8 +230,6 @@ int xlink_compute_qvalues(){
       decoy_idx++;
     }
 
-    
-
     double fdr_decoy = 0;
     if (decoy_idx != 0) {
       fdr_decoy = (double)decoy_idx / (double)(target_idx + 1);

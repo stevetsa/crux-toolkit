@@ -8,7 +8,6 @@
 
 #include "XLinkablePeptide.h"
 #include "XLinkSite.h"
-
 #include <map>
 #include <set>
 #include <string>
@@ -45,7 +44,6 @@ class XLinkBondMap: public std::map<XLinkSite, std::set<XLinkSite> > {
     std::string& links_string
   );
 
-
   /**
    * \returns whether a cross-link can occur at a single position in the 
    * peptide (for deadlinks).
@@ -71,8 +69,6 @@ class XLinkBondMap: public std::map<XLinkSite, std::set<XLinkSite> > {
     int link2_site
     );
 
-
-
   /**
    * \returns whether a cross-link can occur between two peptides at their 
    * respective sequence positions (for inter/intra links).
@@ -90,9 +86,6 @@ class XLinkBondMap: public std::map<XLinkSite, std::set<XLinkSite> > {
     int link1_site,
     int link2_site
   );
-
-
-
 
 };
 

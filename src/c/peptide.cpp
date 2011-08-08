@@ -777,8 +777,6 @@ BOOLEAN_T get_peptide_is_modified(PEPTIDE_T* peptide) {
   return peptide->modified_seq != NULL;
 }
 
-
-
 /**
  * \brief Get the modified peptide sequence
  *
@@ -1005,7 +1003,6 @@ FLOAT_T calc_modified_peptide_mass(
   }
   
 }
-
 
 static FLOAT_T krokhin_index['Z'-'A'] = {
   0.8, 0.0, -0.8, -0.5, 0.0, 10.5, -0.9, -1.3, 8.4, 0.0, 

@@ -316,7 +316,7 @@ char* modified_aa_string_to_string_with_masses(
     return_str_ptr += strlen(cur_mod);
     free(cur_mod);
   }
-  //*return_str_ptr = '\0';
+
   return return_string;
 }
 

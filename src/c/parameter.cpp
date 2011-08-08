@@ -925,11 +925,6 @@ void initialize_parameters(void){
       "Available for search-for-xlinks program (Default=T).",
       "false");
 
-
-  set_int_parameter("max-missed-cleavages", 1, 0, BILLION,
-      "",
-      "", "true");
-
   // **** xlink-score-spectrum options ****
   set_string_parameter("xlink-score-method", "composite", 
       "Score method for xlink {composite, modification, concatenated}. Default=composite.",
@@ -2130,11 +2125,6 @@ vector<int> get_int_vector_parameter(
   return ans;
 }
 
-
-
-
-
-
 /**
  * Searches through the list of parameters, looking for one whose
  * name matches the string.  This function returns the parameter value if the
@@ -2199,8 +2189,6 @@ vector<double> get_double_vector_parameter(
   return ans;
 }
 
-
-
 /**
  * \brief Get the value of a parameter whose type is char*
  *
@@ -2246,7 +2234,6 @@ vector<string> get_string_vector_parameter(
 
   return ans;
 }
-
 
 // TODO (BF 04-Feb-08): Should we delete this since it allows caller
 //      to change the value of a parameter?
