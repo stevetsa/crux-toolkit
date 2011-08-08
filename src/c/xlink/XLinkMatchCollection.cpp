@@ -1,4 +1,4 @@
-#include "MatchCandidateVector.h"
+#include "XLinkMatchCollection.h"
 #include "XLinkPeptide.h"
 #include "LinearPeptide.h"
 #include "SelfLoopPeptide.h"
@@ -54,7 +54,7 @@ void get_min_max_mass(
 void get_min_max_mass(
   FLOAT_T precursor_mz, 
   SpectrumZState& zstate,
-  BOOLEAN_T use_decoy_window,
+  bool use_decoy_window,
   FLOAT_T& min_mass, 
   FLOAT_T& max_mass) {
   
@@ -79,28 +79,33 @@ void get_min_max_mass(
 
 
 
-bool compareXCorr(MatchCandidate* mc1, MatchCandidate* mc2) {
+bool compareXCorr(XLinkMatch* mc1, XLinkMatch* mc2) {
   return mc1->getXCorr() > mc2->getXCorr(); 
 }
 
-bool compareSP(MatchCandidate* mc1, MatchCandidate* mc2) {
+bool compareSP(XLinkMatch* mc1, XLinkMatch* mc2) {
   return mc1->getSP() > mc2->getSP();
 }
 
-MatchCandidateVector::MatchCandidateVector() {
+XLinkMatchCollection::XLinkMatchCollection() : MatchCollection () {
   scan_ = 0;
 }
 
-MatchCandidateVector::MatchCandidateVector(MatchCandidateVector& vector) : std::vector<MatchCandidate*>() {
+XLinkMatchCollection::XLinkMatchCollection(
+  XLinkMatchCollection& vector
+  ) : MatchCollection() {
   
 
+  (void)vector;
+
+/*
   precursor_mz_ = vector.precursor_mz_;
   zstate_ = vector.zstate_;
   scan_ = vector.scan_;
 
   for (unsigned int idx=0;idx<vector.size();idx++) {
-    MatchCandidate* currentCandidate = vector[idx];
-    MatchCandidate* copyCandidate = NULL;
+    XLinkMatch* currentCandidate = vector[idx];
+    XLinkMatch* copyCandidate = NULL;
     switch (currentCandidate -> getCandidateType()) {
     case LINEAR_CANDIDATE:
       copyCandidate = 
@@ -117,10 +122,10 @@ MatchCandidateVector::MatchCandidateVector(MatchCandidateVector& vector) : std::
     }
     add(copyCandidate);
   }
-
+*/
 }
 
-MatchCandidateVector::MatchCandidateVector(
+XLinkMatchCollection::XLinkMatchCollection(
   XLinkBondMap& bondmap,
   PEPTIDE_MOD_T** peptide_mods,
   int num_peptide_mods,
@@ -143,7 +148,7 @@ MatchCandidateVector::MatchCandidateVector(
 }
 
 
-void MatchCandidateVector::addCandidates(
+void XLinkMatchCollection::addCandidates(
   FLOAT_T min_mass,
   FLOAT_T max_mass,
   XLinkBondMap& bondmap,
@@ -194,7 +199,7 @@ void MatchCandidateVector::addCandidates(
 }
 
 
-MatchCandidateVector::MatchCandidateVector(
+XLinkMatchCollection::XLinkMatchCollection(
   FLOAT_T precursor_mz, 
   SpectrumZState& zstate,
   XLinkBondMap& bondmap,
@@ -202,7 +207,7 @@ MatchCandidateVector::MatchCandidateVector(
   Database* database, 
   PEPTIDE_MOD_T** peptide_mods, 
   int num_peptide_mods, 
-  BOOLEAN_T use_decoy_window) {
+  bool use_decoy_window) {
 
   precursor_mz_ = precursor_mz;
 
@@ -217,31 +222,37 @@ MatchCandidateVector::MatchCandidateVector(
 }
 
 
-MatchCandidateVector::~MatchCandidateVector() {
+XLinkMatchCollection::~XLinkMatchCollection() {
+/*
   for (unsigned int idx=0;idx<size();idx++) {
     delete at(idx);
   }
   clear();
+*/
 }
 
-void MatchCandidateVector::add(MatchCandidate* candidate) {
-  push_back(candidate);
+void XLinkMatchCollection::add(XLinkMatch* candidate) {
+
+  //push_back(candidate);
   candidate->setParent(this);
+
 }
 
-void MatchCandidateVector::shuffle() {
+void XLinkMatchCollection::shuffle() {
 }
 
-void MatchCandidateVector::shuffle(MatchCandidateVector& decoy_vector) {
+void XLinkMatchCollection::shuffle(XLinkMatchCollection& decoy_vector) {
   decoy_vector.precursor_mz_ = precursor_mz_;
   decoy_vector.zstate_ = zstate_;
   decoy_vector.scan_ = scan_;
+/*
   for (unsigned int idx=0;idx<size();idx++) {
     decoy_vector.add(at(idx)->shuffle());
   }
+*/
 }
 
-void MatchCandidateVector::scoreSpectrum(Spectrum* spectrum) {
+void XLinkMatchCollection::scoreSpectrum(Spectrum* spectrum) {
 
   int max_ion_charge = get_max_ion_charge_parameter("max-ion-charge");
 
@@ -249,25 +260,26 @@ void MatchCandidateVector::scoreSpectrum(Spectrum* spectrum) {
   XLinkScorer scorer(
     spectrum, 
     min(zstate_.getCharge(), max_ion_charge));
-
+/*
   for (unsigned int idx=0;idx<size();idx++) {
     carp(CARP_DEBUG, "Scoring candidate:%d", idx);
     scorer.scoreCandidate(at(idx));
   }
+*/
   carp(CARP_DEBUG, "Done scoreSpectrum");
 }
 
-void MatchCandidateVector::sortByXCorr() {
-  sort(begin(), end(), compareXCorr);
+void XLinkMatchCollection::sortByXCorr() {
+//  sort(begin(), end(), compareXCorr);
 }
 
-void MatchCandidateVector::sortBySP() {
-  sort(begin(), end(), compareSP);
+void XLinkMatchCollection::sortBySP() {
+//  sort(begin(), end(), compareSP);
 }
 
 
-void MatchCandidateVector::setRanks() {
-
+void XLinkMatchCollection::setRanks() {
+/*
   int current_rank = 1;
   FLOAT_T last_score = 0;
 
@@ -279,7 +291,7 @@ void MatchCandidateVector::setRanks() {
     at(0)->setSPRank(current_rank);
 
     for (unsigned int candidate_idx = 1; candidate_idx < size() ; candidate_idx++) {
-      FLOAT_T current_score = at(candidate_idx)->getSP();
+      FLOAT_T current_score = 0;//at(candidate_idx)->getSP();
       if (last_score != current_score) {
         current_rank++;
         last_score = current_score;
@@ -301,10 +313,11 @@ void MatchCandidateVector::setRanks() {
     }
     at(candidate_idx)->setXCorrRank(current_rank);
   }
+*/
 }
 
 
-void MatchCandidateVector::fitWeibull(
+void XLinkMatchCollection::fitWeibull(
   FLOAT_T& shift, 
   FLOAT_T& eta, 
   FLOAT_T& beta, 
@@ -316,20 +329,20 @@ void MatchCandidateVector::fitWeibull(
   beta=0;
   corr=0;
 
-  FLOAT_T* xcorrs = new FLOAT_T[size()];
+  FLOAT_T* xcorrs = NULL; //new FLOAT_T[size()];
 
-  for (unsigned int idx=0;idx<size();idx++) {
-    xcorrs[idx] = at(idx)->getXCorr();
-  }
+  //for (unsigned int idx=0;idx<size();idx++) {
+  //  xcorrs[idx] = at(idx)->getXCorr();
+  //}
 
-  sort(xcorrs, xcorrs+size(), greater<FLOAT_T>());
+//  sort(xcorrs, xcorrs+size(), greater<FLOAT_T>());
 
   double fraction_to_fit = get_double_parameter("fraction-top-scores-to-fit");
-  int num_tail_samples = (int)(size() * fraction_to_fit);
+  int num_tail_samples = (int)(0/*size()*/ * fraction_to_fit);
 
   fit_three_parameter_weibull(xcorrs,
 			      num_tail_samples,
-			      size(),
+			      0/*size()*/,
 			      MIN_XCORR_SHIFT,
 			      MAX_XCORR_SHIFT,
 			      XCORR_SHIFT,
@@ -343,23 +356,23 @@ void MatchCandidateVector::fitWeibull(
 }
 
 
-void MatchCandidateVector::setScan(unsigned int scan) {
+void XLinkMatchCollection::setScan(unsigned int scan) {
   scan_ = scan;
 }
 
-unsigned int MatchCandidateVector::getScan() {
+unsigned int XLinkMatchCollection::getScan() {
   return scan_;
 }
 
-int MatchCandidateVector::getCharge() {
+int XLinkMatchCollection::getCharge() {
   return zstate_.getCharge();
 }
 
-FLOAT_T MatchCandidateVector::getPrecursorMZ() {
+FLOAT_T XLinkMatchCollection::getPrecursorMZ() {
   return precursor_mz_;
 }
 
-FLOAT_T MatchCandidateVector::getSpectrumNeutralMass() {
+FLOAT_T XLinkMatchCollection::getSpectrumNeutralMass() {
   return zstate_.getNeutralMass();
 }
 

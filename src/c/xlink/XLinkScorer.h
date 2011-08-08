@@ -1,7 +1,7 @@
 #ifndef XLINKSCORER_H_
 #define XLINKSCORER_H_
 #include "objects.h"
-#include "MatchCandidate.h"
+#include "XLinkMatch.h"
 
 class XLinkScorer {
  protected:
@@ -10,7 +10,7 @@ class XLinkScorer {
   SCORER_T* scorer_sp_;
   IonConstraint* ion_constraint_xcorr_;
   IonConstraint* ion_constraint_sp_;
-  MatchCandidate* candidate_;
+  XLinkMatch* candidate_;
   int charge_;
   IonSeries* ion_series_xcorr_;
   IonSeries* ion_series_sp_;
@@ -29,7 +29,7 @@ class XLinkScorer {
 
   virtual ~XLinkScorer();
 
-  FLOAT_T scoreCandidate(MatchCandidate* candidate);
+  FLOAT_T scoreCandidate(XLinkMatch* candidate);
 
 
 };

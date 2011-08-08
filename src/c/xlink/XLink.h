@@ -6,8 +6,10 @@
 
 #include <vector>
 #include <string>
-class MatchCandidate;
-class MatchCandidateVector;
+
+
+class XLinkMatch;
+class XLinkMatchCollection;
 
 
 void get_min_max_mass(

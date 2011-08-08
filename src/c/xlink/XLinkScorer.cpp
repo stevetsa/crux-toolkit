@@ -71,7 +71,7 @@ XLinkScorer::~XLinkScorer() {
   
 }
 
-FLOAT_T XLinkScorer::scoreCandidate(MatchCandidate* candidate) {
+FLOAT_T XLinkScorer::scoreCandidate(XLinkMatch* candidate) {
 
   candidate->predictIons(ion_series_xcorr_, charge_);
   FLOAT_T xcorr = score_spectrum_v_ion_series(scorer_xcorr_, spectrum_, ion_series_xcorr_);

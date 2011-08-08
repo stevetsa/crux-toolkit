@@ -14,13 +14,13 @@ using namespace std;
 FLOAT_T XLinkPeptide::linker_mass_;
 set<PEPTIDE_T*> XLinkPeptide::allocated_peptides_;
 
-XLinkPeptide::XLinkPeptide() : MatchCandidate() {
+XLinkPeptide::XLinkPeptide() : XLinkMatch() {
 
 }
 
 XLinkPeptide::XLinkPeptide(XLinkablePeptide& peptideA,
 			   XLinkablePeptide& peptideB,
-			   int posA, int posB) : MatchCandidate() {
+			   int posA, int posB) : XLinkMatch() {
   //cout<<"XLinkPeptide"<<endl;
   linked_peptides_.push_back(peptideA);
   linked_peptides_.push_back(peptideB);
@@ -30,7 +30,7 @@ XLinkPeptide::XLinkPeptide(XLinkablePeptide& peptideA,
 
 XLinkPeptide::XLinkPeptide(char* peptideA,
 			   char* peptideB,
-			   int posA, int posB) : MatchCandidate() {
+			   int posA, int posB) : XLinkMatch() {
 
   //cout <<"Creating peptideA"<<endl;
   XLinkablePeptide A(peptideA);
@@ -205,7 +205,7 @@ void XLinkPeptide::addCandidates(
   Database* database,
   PEPTIDE_MOD_T** peptide_mods,
   int num_peptide_mods,
-  MatchCandidateVector& candidates) {
+  XLinkMatchCollection& candidates) {
 
   //get all linkable peptides up to mass-linkermass.
 
@@ -306,7 +306,7 @@ void XLinkPeptide::addCandidates(
 	  //cerr<<"Testing link:"<<endl;
 	  if (bondmap.canLink(pep1, pep2, link1_idx, link2_idx)) {
 	    //create the candidate
-	    MatchCandidate* newCandidate = 
+	    XLinkMatch* newCandidate = 
 	      new XLinkPeptide(pep1, pep2, link1_idx, link2_idx);
             if (newCandidate->getNumMissedCleavages() <= max_missed_cleavages) {
               candidates.add(newCandidate);
@@ -332,7 +332,7 @@ void XLinkPeptide::addCandidates(
   //cerr <<"XLinkPeptide::addCandidates: done"<<endl;
 }
 
-MATCHCANDIDATE_TYPE_T XLinkPeptide::getCandidateType() {
+XLINKMATCH_TYPE_T XLinkPeptide::getCandidateType() {
   return XLINK_CANDIDATE;
 }
 
@@ -357,7 +357,7 @@ FLOAT_T XLinkPeptide::calcMass(MASS_TYPE_T mass_type) {
     linker_mass_;
 }
 
-MatchCandidate* XLinkPeptide::shuffle() {
+XLinkMatch* XLinkPeptide::shuffle() {
 
   XLinkPeptide* decoy = new XLinkPeptide();
   decoy->linked_peptides_.push_back(linked_peptides_[0].shuffle());
@@ -365,7 +365,7 @@ MatchCandidate* XLinkPeptide::shuffle() {
   decoy->link_pos_idx_.push_back(link_pos_idx_[0]);
   decoy->link_pos_idx_.push_back(link_pos_idx_[1]);
 
-  return (MatchCandidate*)decoy;
+  return (XLinkMatch*)decoy;
 
 
 }

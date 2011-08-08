@@ -1,4 +1,4 @@
-#include "MatchCandidate.h"
+#include "XLinkMatch.h"
 
 #include "parameter.h"
 #include "scorer.h"
@@ -8,7 +8,7 @@
 
 using namespace std;
 
-MatchCandidate::MatchCandidate() {
+XLinkMatch::XLinkMatch() {
   parent_ = NULL;
   xcorr_ = 0;
   xcorr_rank_ = 0;
@@ -19,11 +19,11 @@ MatchCandidate::MatchCandidate() {
   }
 }
 
-MatchCandidate::~MatchCandidate() {
+XLinkMatch::~XLinkMatch() {
 
 }
 
-void MatchCandidate::computeWeibullPvalue(
+void XLinkMatch::computeWeibullPvalue(
   FLOAT_T shift,
   FLOAT_T eta,
   FLOAT_T beta) {
@@ -31,57 +31,57 @@ void MatchCandidate::computeWeibullPvalue(
   pvalue_ = compute_weibull_pvalue(xcorr_, eta, beta, shift);
 }
 
-void MatchCandidate::setXCorr(FLOAT_T xcorr) {
+void XLinkMatch::setXCorr(FLOAT_T xcorr) {
   xcorr_ = xcorr;
 }
 
-FLOAT_T MatchCandidate::getXCorr() {
+FLOAT_T XLinkMatch::getXCorr() {
   return xcorr_;
 }
 
-void MatchCandidate::setSP(FLOAT_T sp) {
+void XLinkMatch::setSP(FLOAT_T sp) {
   sp_ = sp;
 }
 
-FLOAT_T MatchCandidate::getSP() {
+FLOAT_T XLinkMatch::getSP() {
   return sp_;
 }
 
-void MatchCandidate::setBYIonsMatched(int by_ions_matched) {
+void XLinkMatch::setBYIonsMatched(int by_ions_matched) {
   by_ions_matched_ = by_ions_matched;
 }
 
-int MatchCandidate::getBYIonsMatched() {
+int XLinkMatch::getBYIonsMatched() {
   return by_ions_matched_;
 }
 
-void MatchCandidate::setBYIonsTotal(int by_ions_total) {
+void XLinkMatch::setBYIonsTotal(int by_ions_total) {
   by_ions_total_ = by_ions_total;
 }
 
-int MatchCandidate::getBYIonsTotal() {
+int XLinkMatch::getBYIonsTotal() {
   return by_ions_total_;
 }
 
-void MatchCandidate::setSPRank(int sp_rank) {
+void XLinkMatch::setSPRank(int sp_rank) {
   sp_rank_ = sp_rank;
 
 }
 
-int MatchCandidate::getSPRank() {
+int XLinkMatch::getSPRank() {
   return sp_rank_;
 }
 
-void MatchCandidate::setXCorrRank(int xcorr_rank) {
+void XLinkMatch::setXCorrRank(int xcorr_rank) {
   xcorr_rank_ = xcorr_rank;
 }
 
-int MatchCandidate::getXCorrRank() {
+int XLinkMatch::getXCorrRank() {
   return xcorr_rank_;
 }
 
 
-string MatchCandidate::getProteinIdString(int peptide_idx) {
+string XLinkMatch::getProteinIdString(int peptide_idx) {
   PEPTIDE_T* peptide = this -> getPeptide(peptide_idx);
 
   if (peptide == NULL) {
@@ -92,7 +92,7 @@ string MatchCandidate::getProteinIdString(int peptide_idx) {
 }
 
 
-FLOAT_T MatchCandidate::getMass(MASS_TYPE_T mass_type) {
+FLOAT_T XLinkMatch::getMass(MASS_TYPE_T mass_type) {
 
   if (!mass_calculated_[mass_type]) {
     mass_[mass_type] = calcMass(mass_type);
@@ -102,14 +102,14 @@ FLOAT_T MatchCandidate::getMass(MASS_TYPE_T mass_type) {
 }
 
 
-FLOAT_T MatchCandidate::getPPMError() {
+FLOAT_T XLinkMatch::getPPMError() {
   FLOAT_T mono_mass = getMass(MONO);
   
   return (mono_mass - parent_->getSpectrumNeutralMass()) / mono_mass * 1e6;
   
 }
 
-string MatchCandidate::getResultHeader() {
+string XLinkMatch::getResultHeader() {
 
   ostringstream oss;
   oss << "scan" << "\t"
@@ -136,7 +136,7 @@ string MatchCandidate::getResultHeader() {
   return oss.str();
 }
 
-std::string MatchCandidate::getResultString() {
+std::string XLinkMatch::getResultString() {
   ostringstream ss;
   int precision = get_int_parameter("precision");
   ss << std::setprecision(precision);
@@ -159,7 +159,7 @@ std::string MatchCandidate::getResultString() {
   ss << this->getXCorr() << "\t"
      << this->getXCorrRank() << "\t"
      << pvalue_ << "\t"
-     << parent_->size() << "\t"
+//     << parent_->getExperimentSize() << "\t"
      << this->getSequenceString() << "\t"
      << this->getProteinIdString(0) << "\t"   //protein id(loc) 1
      << this->getProteinIdString(1);  //protein id(loc) 2
@@ -167,6 +167,6 @@ std::string MatchCandidate::getResultString() {
   return out_string;
 }
 
-void MatchCandidate::setParent(MatchCandidateVector* parent) {
+void XLinkMatch::setParent(XLinkMatchCollection* parent) {
   parent_ = parent;
 }

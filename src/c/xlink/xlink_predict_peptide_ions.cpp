@@ -1,5 +1,5 @@
 #include "IonSeries.h"
-#include "MatchCandidate.h"
+#include "XLinkMatch.h"
 #include "XLinkPeptide.h"
 #include "LinearPeptide.h"
 #include "SelfLoopPeptide.h"
@@ -96,7 +96,7 @@ int main(int argc, char** argv) {
 
   XLinkPeptide::setLinkerMass(linker_mass);
 
-  MatchCandidate* linked_peptide = NULL;
+  XLinkMatch* linked_peptide = NULL;
 
   cerr <<"creating peptide"<<endl;
 

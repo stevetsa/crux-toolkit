@@ -1,20 +1,23 @@
-#ifndef MATCHCANDIDATEVECTOR_H_
-#define MATCHCANDIDATEVECTOR_H_
+#ifndef XLINKMATCHCOLLECTION_H_
+#define XLINKMATCHCOLLECTION_H_
 
-#include "XLink.h"
-#include "MatchCandidate.h"
-#include "SpectrumZState.h"
-
+/* Crux Includes */
+#include "objects.h"
+#include "MatchCollection.h"
 #include "Index.h"
 #include "Database.h"
 #include "modifications.h"
+#include "SpectrumZState.h"
 
-#include <vector>
+/* XLink Includes */
+#include "XLink.h"
+#include "XLinkMatch.h"
 
-class MatchCandidateVector : public std::vector<MatchCandidate*> {
+class XLinkMatchCollection : public MatchCollection {
  protected:
-  BOOLEAN_T include_linear_peptides;
-  BOOLEAN_T include_self_loops;
+
+  bool include_linear_peptides;
+  bool include_self_loops;
 
   SpectrumZState zstate_;
   int scan_;
@@ -32,10 +35,10 @@ class MatchCandidateVector : public std::vector<MatchCandidate*> {
 
 
  public:
-  MatchCandidateVector();
-  MatchCandidateVector(MatchCandidateVector& vector);
+  XLinkMatchCollection();
+  XLinkMatchCollection(XLinkMatchCollection& vector);
 
-  MatchCandidateVector(
+  XLinkMatchCollection(
     XLinkBondMap& bondmap,
     PEPTIDE_MOD_T** peptide_mods,
     int num_peptide_mods,
@@ -43,22 +46,22 @@ class MatchCandidateVector : public std::vector<MatchCandidate*> {
     Database* database);
 
 
-  MatchCandidateVector(FLOAT_T precursor_mz,
+  XLinkMatchCollection(FLOAT_T precursor_mz,
                        SpectrumZState& zstate,
 		       XLinkBondMap& bondmap,
 		       Index* index,
 		       Database* database,
 		       PEPTIDE_MOD_T** peptide_mods,
 		       int num_peptide_mods,
-		       BOOLEAN_T is_decoy=FALSE);
+		       bool is_decoy=FALSE);
 
-  virtual ~MatchCandidateVector();
+  virtual ~XLinkMatchCollection();
   
-  void add(MatchCandidate* candidate);
+  void add(XLinkMatch* candidate);
 
 
   void shuffle();
-  void shuffle(MatchCandidateVector& decoy_vector);
+  void shuffle(XLinkMatchCollection& decoy_vector);
 
   void scoreSpectrum(Spectrum* spectrum);
   void sortByXCorr();
@@ -76,7 +79,7 @@ class MatchCandidateVector : public std::vector<MatchCandidate*> {
   FLOAT_T getPrecursorMZ();
   FLOAT_T getSpectrumNeutralMass();
 
-
+  unsigned int size() {return 0;} //PLACEHOLDER
 
 
 };

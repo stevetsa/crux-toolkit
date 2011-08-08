@@ -4,14 +4,14 @@
 #include "objects.h"
 #include "utils.h"
 
-#include "MatchCandidate.h"
+#include "XLinkMatch.h"
 #include "XLinkBondMap.h"
 #include "XLinkablePeptide.h"
 
 #include <set>
 #include <vector>
 
-class XLinkPeptide : public MatchCandidate {
+class XLinkPeptide : public XLinkMatch {
  protected:
   static FLOAT_T linker_mass_;
   static std::set<PEPTIDE_T*> allocated_peptides_;
@@ -51,7 +51,7 @@ class XLinkPeptide : public MatchCandidate {
     Database* database,
     PEPTIDE_MOD_T** peptide_mods,
     int num_peptide_mods,
-    MatchCandidateVector& candidates);
+    XLinkMatchCollection& candidates);
 
   static void addLinkablePeptides(
     double min_mass, double max_mass,
@@ -60,11 +60,11 @@ class XLinkPeptide : public MatchCandidate {
     XLinkBondMap& bondmap, 
     std::vector<XLinkablePeptide>& linkable_peptides);
 
-  virtual MATCHCANDIDATE_TYPE_T getCandidateType();
+  virtual XLINKMATCH_TYPE_T getCandidateType();
   virtual std::string getSequenceString();
   virtual FLOAT_T calcMass(MASS_TYPE_T mass_type);
 
-  virtual MatchCandidate* shuffle();
+  virtual XLinkMatch* shuffle();
 
   virtual void predictIons(IonSeries* ion_series, int charge);
   std::string getIonSequence(Ion* ion);

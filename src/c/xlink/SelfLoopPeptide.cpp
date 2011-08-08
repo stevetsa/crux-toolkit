@@ -49,7 +49,7 @@ void SelfLoopPeptide::addCandidates(
   Index* index, Database* database,
   PEPTIDE_MOD_T** peptide_mods,
   int num_peptide_mods,
-  MatchCandidateVector& candidates) {
+  XLinkMatchCollection& candidates) {
 
   int max_missed_cleavages = get_int_parameter("max-missed-cleavages");
   
@@ -83,7 +83,7 @@ void SelfLoopPeptide::addCandidates(
 	if (bondmap.canLink(pep, link1_idx, link2_idx)) {
 	  //create the candidate.
 	  //cerr<<"Adding new selfloop peptide"<<endl;
-	  MatchCandidate* new_candidate = 
+	  XLinkMatch* new_candidate = 
 	    new SelfLoopPeptide(pep, link1_idx, link2_idx);
 
           if (new_candidate->getNumMissedCleavages() <= max_missed_cleavages) {
@@ -102,7 +102,7 @@ int SelfLoopPeptide::getLinkPos(int link_idx) {
   return linked_peptide_.getLinkSite(link_pos_idx_[link_idx]);
 }
 
-MATCHCANDIDATE_TYPE_T SelfLoopPeptide::getCandidateType() {
+XLINKMATCH_TYPE_T SelfLoopPeptide::getCandidateType() {
   return SELFLOOP_CANDIDATE;
 }
 
@@ -120,14 +120,14 @@ FLOAT_T SelfLoopPeptide::calcMass(MASS_TYPE_T mass_type) {
   return linked_peptide_.getMass(mass_type) + XLinkPeptide::getLinkerMass();
 }
 
-MatchCandidate* SelfLoopPeptide::shuffle() {
+XLinkMatch* SelfLoopPeptide::shuffle() {
   SelfLoopPeptide* decoy = new SelfLoopPeptide();
 
   decoy->linked_peptide_ = linked_peptide_.shuffle();
   decoy->link_pos_idx_.push_back(link_pos_idx_[0]);
   decoy->link_pos_idx_.push_back(link_pos_idx_[1]);
 
-  return (MatchCandidate*)decoy;
+  return (XLinkMatch*)decoy;
 
 
 }

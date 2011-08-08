@@ -4,8 +4,8 @@
 #include "xlink_compute_qvalues.h"
 
 #include "SearchForXLinks.h"
-#include "MatchCandidate.h"
-#include "MatchCandidateVector.h"
+#include "XLinkMatch.h"
+#include "XLinkMatchCollection.h"
 #include "XLinkBondMap.h"
 #include "XLinkPeptide.h"
 
@@ -85,8 +85,8 @@ int xlink_search_main(int argc, char** argv) {
   ofstream target_file(target_filename.c_str());
   ofstream decoy_file(decoy_filename.c_str());
 
-  target_file << MatchCandidate::getResultHeader()<<endl;
-  decoy_file  << MatchCandidate::getResultHeader()<<endl;
+  target_file << XLinkMatch::getResultHeader()<<endl;
+  decoy_file  << XLinkMatch::getResultHeader()<<endl;
 
 
   // main loop over spectra in ms2 file
@@ -111,7 +111,7 @@ int xlink_search_main(int argc, char** argv) {
     FLOAT_T precursor_mz = spectrum->getPrecursorMz();
 
     carp(CARP_DEBUG,"Getting targets");  
-    MatchCandidateVector target_candidates(precursor_mz,
+    XLinkMatchCollection target_candidates(precursor_mz,
                                            zstate,
 					   bondmap,
 					   index,
@@ -139,7 +139,7 @@ int xlink_search_main(int argc, char** argv) {
     
     carp(CARP_DEBUG,"Getting decoy candidates");
 
-    MatchCandidateVector decoy_candidates;
+    XLinkMatchCollection decoy_candidates;
     target_candidates.shuffle(decoy_candidates);
 
     carp(CARP_DEBUG,"scoring decoys");
@@ -155,7 +155,7 @@ int xlink_search_main(int argc, char** argv) {
     
 
       carp(CARP_DEBUG,"Getting weibull training candidates");
-      MatchCandidateVector train_target_candidates(precursor_mz,
+      XLinkMatchCollection train_target_candidates(precursor_mz,
                                                    zstate,
                                                    bondmap,
                                                    index,
@@ -164,7 +164,7 @@ int xlink_search_main(int argc, char** argv) {
                                                    num_peptide_mods,
                                                    TRUE);
    
-      MatchCandidateVector train_candidates(train_target_candidates);
+      XLinkMatchCollection train_candidates(train_target_candidates);
       //get enough weibull training candidates by shuffling.
       carp(CARP_DEBUG,"Shuffling %d:%d", train_candidates.size(), min_weibull_points);
     
@@ -189,8 +189,8 @@ int xlink_search_main(int argc, char** argv) {
  
     //print out data.
     for (int idx=0;idx < nprint;idx++) {
-      target_candidates[idx]->computeWeibullPvalue(shift, eta, beta);
-      target_file << target_candidates[idx]->getResultString() << endl;
+      //target_candidates[idx]->computeWeibullPvalue(shift, eta, beta);
+      //target_file << target_candidates[idx]->getResultString() << endl;
     }
 
     nprint = min(top_match,(int)decoy_candidates.size());
@@ -198,8 +198,8 @@ int xlink_search_main(int argc, char** argv) {
     carp(CARP_DEBUG,"Printing %d decoys", nprint);
 
     for (int idx=0;idx < nprint;idx++) {
-      decoy_candidates[idx]->computeWeibullPvalue(shift, eta, beta);
-      decoy_file << decoy_candidates[idx]->getResultString() << endl;
+      //decoy_candidates[idx]->computeWeibullPvalue(shift, eta, beta);
+      //decoy_file << decoy_candidates[idx]->getResultString() << endl;
     }
     
     carp(CARP_DEBUG,"Cleanup");

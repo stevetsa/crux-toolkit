@@ -18,10 +18,6 @@ libxlink_la_SOURCES = \
   xhhc_search.cpp \
   LinearPeptide.cpp \
   LinearPeptide.h \
-  MatchCandidate.cpp \
-  MatchCandidate.h \
-  MatchCandidateVector.cpp \
-  MatchCandidateVector.h \
   SelfLoopPeptide.cpp \
   SelfLoopPeptide.h \
   XLink.cpp \
@@ -30,6 +26,10 @@ libxlink_la_SOURCES = \
   XLinkBondMap.h \
   XLinkPeptide.cpp \
   XLinkPeptide.h \
+  XLinkMatch.h \
+  XLinkMatch.cpp \
+  XLinkMatchCollection.h \
+  XLinkMatchCollection.cpp \
   XLinkablePeptide.cpp \
   XLinkablePeptide.h \
   SearchForXLinks.cpp \

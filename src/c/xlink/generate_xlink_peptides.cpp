@@ -131,7 +131,7 @@ int main(int argc, char** argv){
 
   XLinkBondMap bondmap;
   //carp(CARP_INFO, "Creating candidate vector");
-  MatchCandidateVector xlink_candidates(
+  XLinkMatchCollection xlink_candidates(
     bondmap, 
     peptide_mods, 
     num_peptide_mods,
@@ -152,13 +152,13 @@ int main(int argc, char** argv){
 
   for (unsigned int idx=0;idx<xlink_candidates.size();idx++) {
 
-    MatchCandidate* current_candidate = xlink_candidates[idx];
+    XLinkMatch* current_candidate = NULL;//xlink_candidates[idx];
 
     FLOAT_T mono_mass = current_candidate->getMass(MONO);
     FLOAT_T average_mass = current_candidate->getMass(AVERAGE);
     int num_missed_cleavages = current_candidate->getNumMissedCleavages();
     string sequence = current_candidate->getSequenceString();
-    MATCHCANDIDATE_TYPE_T candidate_type = current_candidate->getCandidateType();
+    XLINKMATCH_TYPE_T candidate_type = current_candidate->getCandidateType();
 
     bool modified = current_candidate->isModified();
 
