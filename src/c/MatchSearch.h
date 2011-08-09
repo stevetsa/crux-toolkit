@@ -60,7 +60,7 @@ class MatchSearch : public CruxApplication {
    * each collection to a separate file.
    * Possible side effectos: Collections may be merged and re-ranked.
    */
-  void printSpectrumMatches(
+  static void printSpectrumMatches(
     OutputFiles& output_files,       
     MatchCollection* target_psms, 
     vector<MatchCollection*>& decoy_psms,

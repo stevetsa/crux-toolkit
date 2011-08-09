@@ -13,9 +13,12 @@
 //CRUX INCLUDES
 #include "objects.h"
 #include "FilteredSpectrumChargeIterator.h"
+#include "MatchSearch.h"
+#include "OutputFiles.h"
 #include "SpectrumCollectionFactory.h"
 
 
+//C++ Includes
 #include <algorithm>
 #include <cmath>
 #include <ctime>
@@ -29,26 +32,18 @@
 
 using namespace std;
 
-int xlink_search_main(int argc, char** argv) {
-  
-  (void)argc;
-  (void)argv;
+int SearchForXLinks::xlink_search_main() {
 
   carp(CARP_INFO, "Beginning crux xlink-search-mods");
 
 
   //int num_missed_cleavages = 0;
+
+  /* Get parameters */
   char* ms2_file = get_string_parameter("ms2 file");
-
-  //FLOAT_T precursor_window = get_double_parameter("precursor-window");
-  //FLOAT_T precursor_window_decoy = get_double_parameter("precursor-window-decoy");
-  //WINDOW_TYPE_T precursor_window_type = 
-  //  get_window_type_parameter("precursor-window-type");
-  //WINDOW_TYPE_T window_type_decoy = 
-  //  get_window_type_parameter("precursor-window-type-decoy");
-
   char* input_file = get_string_parameter("protein database");
-  
+
+  /* Prepare input, fasta or index */
   Index* index = NULL;
   Database* database = NULL;
   int num_proteins = prepare_protein_input(input_file, &index, &database);
@@ -57,8 +52,8 @@ int xlink_search_main(int argc, char** argv) {
 
   XLinkBondMap bondmap;
   
-  unsigned int min_weibull_points = 
-    (unsigned int)get_int_parameter("min-weibull-points");
+  int min_weibull_points = 
+    get_int_parameter("min-weibull-points");
   
   int scan_num = 0;
 
@@ -78,22 +73,15 @@ int xlink_search_main(int argc, char** argv) {
   FilteredSpectrumChargeIterator* spectrum_iterator =
     new FilteredSpectrumChargeIterator(spectra);
 
-  char* output_dir = get_string_parameter("output-dir");
 
-  string target_filename = string(output_dir)+"/search.target.txt";
-  string decoy_filename = string(output_dir)+"/search.decoy.txt";
-  ofstream target_file(target_filename.c_str());
-  ofstream decoy_file(decoy_filename.c_str());
-
-  target_file << XLinkMatch::getResultHeader()<<endl;
-  decoy_file  << XLinkMatch::getResultHeader()<<endl;
-
+  /* Prepare output files */
+  
+  OutputFiles output_files(this);
+  output_files.writeHeaders(num_proteins);
 
   // main loop over spectra in ms2 file
   PEPTIDE_MOD_T** peptide_mods = NULL;
   int num_peptide_mods = generate_peptide_mod_list( &peptide_mods );
-
-  FLOAT_T shift, eta, beta, corr;
 
   int search_count = 0;
   // for every observed spectrum 
@@ -127,13 +115,13 @@ int xlink_search_main(int argc, char** argv) {
       continue;
     }
     */
-    if (target_candidates.size() < 1) {
+    if (target_candidates.getMatchTotal() < 1) {
       carp(CARP_INFO, "not enough precursors found in range, skipping scan %d charge %d", scan_num, zstate.getCharge());
       continue;
     }
 
     //score targets
-    carp(CARP_DEBUG, "scoring targets:%d", target_candidates.size());
+    carp(CARP_DEBUG, "scoring targets:%d", target_candidates.getMatchTotal());
     target_candidates.scoreSpectrum(spectrum);
 
     
@@ -145,9 +133,9 @@ int xlink_search_main(int argc, char** argv) {
     carp(CARP_DEBUG,"scoring decoys");
     decoy_candidates.scoreSpectrum(spectrum);
 
-    if (target_candidates.size() >= min_weibull_points) {
+    if (target_candidates.getMatchTotal() >= min_weibull_points) {
       carp(CARP_INFO,"Fitting weibull to targets");
-      target_candidates.fitWeibull(shift, eta, beta, corr);
+      target_candidates.fitWeibull();
     //TODO
     //} else if (target_candidates.size() + decoy_candidates.size() >= min_wiebull_points) {
     //  fit_weibull(target_candidates, decoy_candidates, shift, eta, beta, corr);
@@ -166,15 +154,17 @@ int xlink_search_main(int argc, char** argv) {
    
       XLinkMatchCollection train_candidates(train_target_candidates);
       //get enough weibull training candidates by shuffling.
-      carp(CARP_DEBUG,"Shuffling %d:%d", train_candidates.size(), min_weibull_points);
+      carp(CARP_DEBUG,"Shuffling %d:%d", 
+        train_candidates.getMatchTotal(), 
+        min_weibull_points);
     
-      while(train_candidates.size() < min_weibull_points) {
+      while(train_candidates.getMatchTotal() < min_weibull_points) {
         train_target_candidates.shuffle(train_candidates);
       }
-      carp(CARP_DEBUG, "Have %d training candidates", train_candidates.size());
+      carp(CARP_DEBUG, "Have %d training candidates", train_candidates.getMatchTotal());
       carp(CARP_DEBUG,"scoring training points");
       train_candidates.scoreSpectrum(spectrum);
-      train_candidates.fitWeibull(shift, eta, beta, corr);
+      train_candidates.fitWeibull();
     }
 
     carp(CARP_DEBUG,"setting ranks");
@@ -183,25 +173,35 @@ int xlink_search_main(int argc, char** argv) {
     
     
 
-    int nprint = min(top_match,(int)target_candidates.size());
+    int nprint = min(top_match,target_candidates.getMatchTotal());
 
     carp(CARP_DEBUG,"Printing %d targets", nprint);
  
-    //print out data.
+    //calculate pvalues.
     for (int idx=0;idx < nprint;idx++) {
-      //target_candidates[idx]->computeWeibullPvalue(shift, eta, beta);
-      //target_file << target_candidates[idx]->getResultString() << endl;
+      target_candidates.computeWeibullPValue(idx);
     }
 
-    nprint = min(top_match,(int)decoy_candidates.size());
+    nprint = min(top_match,(int)decoy_candidates.getMatchTotal());
 
     carp(CARP_DEBUG,"Printing %d decoys", nprint);
 
     for (int idx=0;idx < nprint;idx++) {
-      //decoy_candidates[idx]->computeWeibullPvalue(shift, eta, beta);
-      //decoy_file << decoy_candidates[idx]->getResultString() << endl;
+      decoy_candidates.computeWeibullPValue(idx);
     }
     
+    vector<MatchCollection*> decoy_vec;
+    decoy_vec.push_back(&decoy_candidates);
+
+    //print out
+    MatchSearch::printSpectrumMatches(
+      output_files,
+      (MatchCollection*)&target_candidates, 
+      decoy_vec, 
+      spectrum,
+      false,
+      1);
+ 
     carp(CARP_DEBUG,"Cleanup");
     XLink::deleteAllocatedPeptides();
     
@@ -210,12 +210,18 @@ int xlink_search_main(int argc, char** argv) {
 
     carp(CARP_DEBUG,"Done with spectrum %d", scan_num);
   } // get next spectrum
-  //carp(CARP_INFO,"Done searching spectra");
-  target_file.close();
-  decoy_file.close();
+
+  output_files.writeFooters();
+
+  // clean up
+  delete spectrum_iterator;
   delete spectra;
-  //free_spectrum(spectrum);
-  //carp(CARP_INFO,"Done freeing spectrum collection");
+  for(int mod_idx = 0; mod_idx < num_peptide_mods; mod_idx++){
+    free_peptide_mod(peptide_mods[mod_idx]);
+  }
+  free(peptide_mods);
+  Index::free(index);
+  Database::freeDatabase(database);
 
   //Calculate q-values.
   carp(CARP_DEBUG, "Computing Q-Values");

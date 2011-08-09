@@ -923,7 +923,7 @@ void initialize_parameters(void){
   set_boolean_parameter("use-old-xlink", TRUE,
       "Use old xlink searching algorihtm",
       "Available for search-for-xlinks program (Default=T).",
-      "false");
+      "true");
 
   // **** xlink-score-spectrum options ****
   set_string_parameter("xlink-score-method", "composite", 

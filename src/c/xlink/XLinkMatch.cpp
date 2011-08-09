@@ -10,8 +10,6 @@ using namespace std;
 
 XLinkMatch::XLinkMatch() {
   parent_ = NULL;
-  xcorr_ = 0;
-  xcorr_rank_ = 0;
   pvalue_= 1;
   for (int idx = 0;idx < NUMBER_MASS_TYPES;idx++) {
     mass_calculated_[idx] = FALSE;
@@ -28,23 +26,7 @@ void XLinkMatch::computeWeibullPvalue(
   FLOAT_T eta,
   FLOAT_T beta) {
 
-  pvalue_ = compute_weibull_pvalue(xcorr_, eta, beta, shift);
-}
-
-void XLinkMatch::setXCorr(FLOAT_T xcorr) {
-  xcorr_ = xcorr;
-}
-
-FLOAT_T XLinkMatch::getXCorr() {
-  return xcorr_;
-}
-
-void XLinkMatch::setSP(FLOAT_T sp) {
-  sp_ = sp;
-}
-
-FLOAT_T XLinkMatch::getSP() {
-  return sp_;
+  pvalue_ = compute_weibull_pvalue(getScore(XCORR), eta, beta, shift);
 }
 
 void XLinkMatch::setBYIonsMatched(int by_ions_matched) {
@@ -62,24 +44,6 @@ void XLinkMatch::setBYIonsTotal(int by_ions_total) {
 int XLinkMatch::getBYIonsTotal() {
   return by_ions_total_;
 }
-
-void XLinkMatch::setSPRank(int sp_rank) {
-  sp_rank_ = sp_rank;
-
-}
-
-int XLinkMatch::getSPRank() {
-  return sp_rank_;
-}
-
-void XLinkMatch::setXCorrRank(int xcorr_rank) {
-  xcorr_rank_ = xcorr_rank;
-}
-
-int XLinkMatch::getXCorrRank() {
-  return xcorr_rank_;
-}
-
 
 string XLinkMatch::getProteinIdString(int peptide_idx) {
   PEPTIDE_T* peptide = this -> getPeptide(peptide_idx);
@@ -150,14 +114,14 @@ std::string XLinkMatch::getResultString() {
      << this->getPPMError() << "\t";
 
   if (get_boolean_parameter("compute-sp")) {
-    ss << this->getSP() << "\t"
-       << this->getSPRank() << "\t"
+    ss << this->getScore(SP) << "\t"
+       << this->getRank(SP) << "\t"
        << this->getBYIonsMatched() << "\t"
        << this->getBYIonsTotal() << "\t";
   }
 
-  ss << this->getXCorr() << "\t"
-     << this->getXCorrRank() << "\t"
+  ss << this->getScore(XCORR) << "\t"
+     << this->getRank(XCORR) << "\t"
      << pvalue_ << "\t"
 //     << parent_->getExperimentSize() << "\t"
      << this->getSequenceString() << "\t"
@@ -169,4 +133,47 @@ std::string XLinkMatch::getResultString() {
 
 void XLinkMatch::setParent(XLinkMatchCollection* parent) {
   parent_ = parent;
+}
+
+/**
+ * Print one field in the tab-delimited output file, based on column index.
+ */
+void XLinkMatch::printOneMatchField(
+  int      column_idx,             ///< Index of the column to print. -in
+  MatchCollection* collection,  ///< collection holding this match -in 
+  MatchFileWriter*    output_file,            ///< output stream -out
+  int      scan_num,               ///< starting scan number -in
+  FLOAT_T  spectrum_precursor_mz,  ///< m/z of spectrum precursor -in
+  int      num_matches,            ///< num matches in spectrum -in
+  int      b_y_total,              ///< total b/y ions -in
+  int      b_y_matched             ///< Number of b/y ions matched. -in
+) {
+
+  switch ((MATCH_COLUMNS_T)column_idx) {
+
+  case PEPTIDE_MASS_COL:
+    output_file->setColumnCurrentRow((MATCH_COLUMNS_T)column_idx, getMass(MONO));
+    break;
+  case PVALUE_COL:
+    output_file->setColumnCurrentRow((MATCH_COLUMNS_T)column_idx, pvalue_);
+    break;
+  case SEQUENCE_COL:
+    output_file->setColumnCurrentRow((MATCH_COLUMNS_T)column_idx, 
+      getSequenceString());
+    break;
+  case PROTEIN_ID_COL:
+    output_file->setColumnCurrentRow((MATCH_COLUMNS_T)column_idx, 
+      getProteinIdString(0)); //TODO - fix this.
+    break;
+  default:
+    Match::printOneMatchField(column_idx,
+      collection,
+      output_file,
+      scan_num,
+      spectrum_precursor_mz,
+      num_matches,
+      b_y_total,
+      b_y_matched
+    );
+  }
 }

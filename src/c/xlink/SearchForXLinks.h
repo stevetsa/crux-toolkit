@@ -8,12 +8,12 @@
 #ifndef SEARCHFORXLINKS_H
 #define SEARCHFORXLINKS_H
 
-#include "CruxApplication.h"
+#include "MatchSearch.h"
 #include "DelimitedFileReader.h"
 
 #include <string>
 
-class SearchForXLinks: public CruxApplication {
+class SearchForXLinks: public MatchSearch {
 
  public:
 
@@ -31,6 +31,10 @@ class SearchForXLinks: public CruxApplication {
    * main method for SearchForXLinks
    */
   virtual int main(int argc, char** argv);
+
+  //New search main method.
+  int xlink_search_main();
+
 
   /**
    * \returns the command name for SearchForXLinks

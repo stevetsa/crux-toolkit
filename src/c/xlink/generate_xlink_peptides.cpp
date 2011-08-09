@@ -150,7 +150,7 @@ int main(int argc, char** argv){
   int num_mod_intra = 0;
   int num_mod_inter_intra = 0;
 
-  for (unsigned int idx=0;idx<xlink_candidates.size();idx++) {
+  for (int idx=0;idx<xlink_candidates.getMatchTotal();idx++) {
 
     XLinkMatch* current_candidate = NULL;//xlink_candidates[idx];
 
@@ -207,7 +207,7 @@ int main(int argc, char** argv){
   }
 
   // debug purpose
-  carp(CARP_INFO, "total candidates: %d", xlink_candidates.size());
+  carp(CARP_INFO, "total candidates: %d", xlink_candidates.getMatchTotal());
   carp(CARP_INFO, "Number Linear:%d", type_counts[LINEAR_CANDIDATE]);
   carp(CARP_INFO, "Number SelfLoop:%d", type_counts[SELFLOOP_CANDIDATE]);
   carp(CARP_INFO, "Number XLinks:%d", type_counts[XLINK_CANDIDATE]);

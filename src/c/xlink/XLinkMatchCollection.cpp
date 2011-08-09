@@ -78,7 +78,7 @@ void get_min_max_mass(
 
 
 
-
+/*
 bool compareXCorr(XLinkMatch* mc1, XLinkMatch* mc2) {
   return mc1->getXCorr() > mc2->getXCorr(); 
 }
@@ -86,6 +86,7 @@ bool compareXCorr(XLinkMatch* mc1, XLinkMatch* mc2) {
 bool compareSP(XLinkMatch* mc1, XLinkMatch* mc2) {
   return mc1->getSP() > mc2->getSP();
 }
+*/
 
 XLinkMatchCollection::XLinkMatchCollection() : MatchCollection () {
   scan_ = 0;
@@ -98,13 +99,13 @@ XLinkMatchCollection::XLinkMatchCollection(
 
   (void)vector;
 
-/*
+
   precursor_mz_ = vector.precursor_mz_;
   zstate_ = vector.zstate_;
   scan_ = vector.scan_;
 
-  for (unsigned int idx=0;idx<vector.size();idx++) {
-    XLinkMatch* currentCandidate = vector[idx];
+  for (int idx=0;idx<vector.getMatchTotal();idx++) {
+    XLinkMatch* currentCandidate = (XLinkMatch*)vector.match_[idx];
     XLinkMatch* copyCandidate = NULL;
     switch (currentCandidate -> getCandidateType()) {
     case LINEAR_CANDIDATE:
@@ -122,7 +123,8 @@ XLinkMatchCollection::XLinkMatchCollection(
     }
     add(copyCandidate);
   }
-*/
+
+
 }
 
 XLinkMatchCollection::XLinkMatchCollection(
@@ -222,18 +224,13 @@ XLinkMatchCollection::XLinkMatchCollection(
 }
 
 
-XLinkMatchCollection::~XLinkMatchCollection() {
-/*
-  for (unsigned int idx=0;idx<size();idx++) {
-    delete at(idx);
-  }
-  clear();
-*/
+XLinkMatchCollection::~XLinkMatchCollection()  {
+//TODO - make sure we dont have to do any special handling here.
 }
 
 void XLinkMatchCollection::add(XLinkMatch* candidate) {
 
-  //push_back(candidate);
+  addMatch(candidate);
   candidate->setParent(this);
 
 }
@@ -245,11 +242,12 @@ void XLinkMatchCollection::shuffle(XLinkMatchCollection& decoy_vector) {
   decoy_vector.precursor_mz_ = precursor_mz_;
   decoy_vector.zstate_ = zstate_;
   decoy_vector.scan_ = scan_;
-/*
-  for (unsigned int idx=0;idx<size();idx++) {
-    decoy_vector.add(at(idx)->shuffle());
+
+  for (int idx=0;idx<getMatchTotal();idx++) {
+    XLinkMatch* current = (XLinkMatch*)match_[idx];
+    decoy_vector.addMatch((Match*)current->shuffle());
   }
-*/
+
 }
 
 void XLinkMatchCollection::scoreSpectrum(Spectrum* spectrum) {
@@ -260,21 +258,13 @@ void XLinkMatchCollection::scoreSpectrum(Spectrum* spectrum) {
   XLinkScorer scorer(
     spectrum, 
     min(zstate_.getCharge(), max_ion_charge));
-/*
-  for (unsigned int idx=0;idx<size();idx++) {
+
+  for (int idx=0;idx<getMatchTotal();idx++) {
     carp(CARP_DEBUG, "Scoring candidate:%d", idx);
-    scorer.scoreCandidate(at(idx));
+    scorer.scoreCandidate((XLinkMatch*)match_[idx]);
   }
-*/
+
   carp(CARP_DEBUG, "Done scoreSpectrum");
-}
-
-void XLinkMatchCollection::sortByXCorr() {
-//  sort(begin(), end(), compareXCorr);
-}
-
-void XLinkMatchCollection::sortBySP() {
-//  sort(begin(), end(), compareSP);
 }
 
 
@@ -317,42 +307,40 @@ void XLinkMatchCollection::setRanks() {
 }
 
 
-void XLinkMatchCollection::fitWeibull(
-  FLOAT_T& shift, 
-  FLOAT_T& eta, 
-  FLOAT_T& beta, 
-  FLOAT_T& corr) {
+void XLinkMatchCollection::fitWeibull() {
 
   //create the array of x's and 
-  shift=0;
-  eta=0;
-  beta=0;
-  corr=0;
+  shift_=0;
+  eta_=0;
+  beta_=0;
+  correlation_=0;
 
-  FLOAT_T* xcorrs = NULL; //new FLOAT_T[size()];
-
-  //for (unsigned int idx=0;idx<size();idx++) {
-  //  xcorrs[idx] = at(idx)->getXCorr();
-  //}
-
-//  sort(xcorrs, xcorrs+size(), greater<FLOAT_T>());
+  FLOAT_T* xcorrs = extractScores(XCORR);
 
   double fraction_to_fit = get_double_parameter("fraction-top-scores-to-fit");
   int num_tail_samples = (int)(0/*size()*/ * fraction_to_fit);
 
   fit_three_parameter_weibull(xcorrs,
 			      num_tail_samples,
-			      0/*size()*/,
+			      getMatchTotal(),
 			      MIN_XCORR_SHIFT,
 			      MAX_XCORR_SHIFT,
 			      XCORR_SHIFT,
 			      CORR_THRESHOLD,
-			      &eta,
-			      &beta,
-			      &shift,
-			      &corr);
+			      &eta_,
+			      &beta_,
+			      &shift_,
+			      &correlation_);
 
-  free(xcorrs);
+  myfree(xcorrs);
+}
+
+void XLinkMatchCollection::computeWeibullPValue(
+  int idx
+  ) {
+
+  ((XLinkMatch*)match_[idx])->computeWeibullPvalue(shift_, eta_, beta_);
+
 }
 
 

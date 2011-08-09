@@ -50,6 +50,7 @@ int SearchForXLinks::main(int argc, char** argv) {
     "xlink-include-linears",
     "xlink-include-deadends",
     "xlink-include-selfloops",
+    "use-old-xlink",
     "use-mgf"
   };
   int num_options = sizeof(option_list) / sizeof(char*);
@@ -73,7 +74,7 @@ int SearchForXLinks::main(int argc, char** argv) {
   if (get_boolean_parameter("use-old-xlink")) {
     return xhhc_search_main(argc, argv);
   } else {
-    return xlink_search_main(argc, argv);
+    return xlink_search_main();
   }
 }
 

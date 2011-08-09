@@ -56,7 +56,7 @@ class XLinkMatchCollection : public MatchCollection {
 		       bool is_decoy=FALSE);
 
   virtual ~XLinkMatchCollection();
-  
+
   void add(XLinkMatch* candidate);
 
 
@@ -64,13 +64,12 @@ class XLinkMatchCollection : public MatchCollection {
   void shuffle(XLinkMatchCollection& decoy_vector);
 
   void scoreSpectrum(Spectrum* spectrum);
-  void sortByXCorr();
-  void sortBySP();
   void setRanks();
-  void fitWeibull(FLOAT_T& shift, 
-		  FLOAT_T& eta, 
-		  FLOAT_T& beta, 
-		  FLOAT_T& corr);
+  void fitWeibull();
+
+  void computeWeibullPValue(
+    int idx
+    );
 
   void setScan(unsigned int scan);
   unsigned int getScan();
@@ -78,9 +77,6 @@ class XLinkMatchCollection : public MatchCollection {
   
   FLOAT_T getPrecursorMZ();
   FLOAT_T getSpectrumNeutralMass();
-
-  unsigned int size() {return 0;} //PLACEHOLDER
-
 
 };
 

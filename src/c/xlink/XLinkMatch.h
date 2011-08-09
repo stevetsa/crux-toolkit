@@ -21,10 +21,6 @@ class XLinkMatch : public Match {
 
  protected:
   XLinkMatchCollection* parent_;
-  FLOAT_T xcorr_;
-  int xcorr_rank_;
-  FLOAT_T sp_;
-  int sp_rank_;
 
   int by_ions_matched_;
   int by_ions_total_;
@@ -56,19 +52,6 @@ class XLinkMatch : public Match {
     FLOAT_T eta,
     FLOAT_T beta);
 
-  
-  void setXCorr(FLOAT_T xcorr);
-  FLOAT_T getXCorr();
-
-  void setXCorrRank(int xcorr_rank);
-  int getXCorrRank();
-
-  void setSP(FLOAT_T sp);
-  FLOAT_T getSP();
-
-  void setSPRank(int sp_rank);
-  int getSPRank();
-
   void setBYIonsMatched(int by_ions_matched);
   int getBYIonsMatched();
 
@@ -86,7 +69,22 @@ class XLinkMatch : public Match {
   std::string getProteinIdString(int peptide_idx);
   void setParent(XLinkMatchCollection* parent);
 
-  
+  /**
+   * Print one field in the tab-delimited output file, based on column index.
+   * overridden from Match
+   */
+  virtual void printOneMatchField(
+    int      column_idx,             ///< Index of the column to print. -in
+    MatchCollection* collection,  ///< collection holding this match -in 
+    MatchFileWriter*    output_file,            ///< output stream -out
+    int      scan_num,               ///< starting scan number -in
+    FLOAT_T  spectrum_precursor_mz,  ///< m/z of spectrum precursor -in
+    int      num_matches,            ///< num matches in spectrum -in
+    int      b_y_total,              ///< total b/y ions -in
+    int      b_y_matched             ///< Number of b/y ions matched. -in
+  );    
+
+
 
 
 };
