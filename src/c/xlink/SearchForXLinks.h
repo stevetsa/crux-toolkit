@@ -13,7 +13,7 @@
 
 #include <string>
 
-class SearchForXLinks: public MatchSearch {
+class SearchForXLinks: public CruxApplication {
 
  public:
 
@@ -45,6 +45,11 @@ class SearchForXLinks: public MatchSearch {
    * \returns the description for SearchForXLinks
    */
   virtual std::string getDescription();
+
+  /**
+   * \returns the file stem of the application, default getName.
+   */
+  virtual std::string getFileStem();
 
   /**
    * \returns the enum of the application, default MISC_COMMAND

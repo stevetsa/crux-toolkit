@@ -18,8 +18,6 @@ class XLinkMatchCollection : public MatchCollection {
 
   bool include_linear_peptides;
   bool include_self_loops;
-
-  SpectrumZState zstate_;
   int scan_;
   FLOAT_T precursor_mz_;
   Spectrum* spectrum_;
@@ -58,7 +56,8 @@ class XLinkMatchCollection : public MatchCollection {
   virtual ~XLinkMatchCollection();
 
   void add(XLinkMatch* candidate);
-
+  XLinkMatch* operator [](int idx);
+  XLinkMatch* at(int idx);
 
   void shuffle();
   void shuffle(XLinkMatchCollection& decoy_vector);

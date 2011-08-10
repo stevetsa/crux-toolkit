@@ -88,7 +88,8 @@ bool compareSP(XLinkMatch* mc1, XLinkMatch* mc2) {
 }
 */
 
-XLinkMatchCollection::XLinkMatchCollection() : MatchCollection () {
+XLinkMatchCollection::XLinkMatchCollection() : MatchCollection() {
+  cerr << "XLinkMatchCollection()"<<endl;
   scan_ = 0;
 }
 
@@ -96,16 +97,13 @@ XLinkMatchCollection::XLinkMatchCollection(
   XLinkMatchCollection& vector
   ) : MatchCollection() {
   
-
-  (void)vector;
-
-
+  cerr << "XLinkMatchCollection(XLinkMatchCollection)"<<endl;
   precursor_mz_ = vector.precursor_mz_;
   zstate_ = vector.zstate_;
   scan_ = vector.scan_;
 
   for (int idx=0;idx<vector.getMatchTotal();idx++) {
-    XLinkMatch* currentCandidate = (XLinkMatch*)vector.match_[idx];
+    XLinkMatch* currentCandidate = (XLinkMatch*)vector[idx];
     XLinkMatch* copyCandidate = NULL;
     switch (currentCandidate -> getCandidateType()) {
     case LINEAR_CANDIDATE:
@@ -135,6 +133,8 @@ XLinkMatchCollection::XLinkMatchCollection(
   Database* database) {
 
 
+  cerr << "XLinkMatchCollection(...)"<<endl;
+
   FLOAT_T min_mass = get_double_parameter("min-mass");
   FLOAT_T max_mass = get_double_parameter("max-mass");
 
@@ -159,9 +159,12 @@ void XLinkMatchCollection::addCandidates(
   PEPTIDE_MOD_T** peptide_mods,
   int num_peptide_mods) {
 
+  cerr << "XLinkMatchCollection.addCandidates() start"<<endl;
 
   include_linear_peptides = get_boolean_parameter("xlink-include-linears");
   include_self_loops = get_boolean_parameter("xlink-include-selfloops");
+
+  carp(CARP_INFO, "Adding xlink candidates");
 
   XLinkPeptide::addCandidates(
     min_mass, 
@@ -211,9 +214,11 @@ XLinkMatchCollection::XLinkMatchCollection(
   int num_peptide_mods, 
   bool use_decoy_window) {
 
-  precursor_mz_ = precursor_mz;
+  carp(CARP_INFO, "Inside XLinkMatchCollection....");
 
-  zstate_ = zstate;
+  precursor_mz_ = precursor_mz;
+  setZState(zstate);  
+
 
   FLOAT_T min_mass;
   FLOAT_T max_mass;
@@ -230,10 +235,25 @@ XLinkMatchCollection::~XLinkMatchCollection()  {
 
 void XLinkMatchCollection::add(XLinkMatch* candidate) {
 
-  addMatch(candidate);
+  candidate->setZState(zstate_);
   candidate->setParent(this);
+  addMatch(candidate);
+  experiment_size_++;
 
 }
+
+XLinkMatch* XLinkMatchCollection::at(int idx) {
+  if (idx < 0 || idx >= getMatchTotal()) {
+    carp(CARP_FATAL, "XLinkMatchCollection:index %d out of bounds (0,%d)",
+      idx, getMatchTotal());
+  }
+  return (XLinkMatch*)match_[idx];
+}
+
+XLinkMatch* XLinkMatchCollection::operator [](int idx) {
+  return (XLinkMatch*)match_[idx];
+}
+
 
 void XLinkMatchCollection::shuffle() {
 }
@@ -244,8 +264,7 @@ void XLinkMatchCollection::shuffle(XLinkMatchCollection& decoy_vector) {
   decoy_vector.scan_ = scan_;
 
   for (int idx=0;idx<getMatchTotal();idx++) {
-    XLinkMatch* current = (XLinkMatch*)match_[idx];
-    decoy_vector.addMatch((Match*)current->shuffle());
+    decoy_vector.add(at(idx)->shuffle());
   }
 
 }
@@ -261,51 +280,17 @@ void XLinkMatchCollection::scoreSpectrum(Spectrum* spectrum) {
 
   for (int idx=0;idx<getMatchTotal();idx++) {
     carp(CARP_DEBUG, "Scoring candidate:%d", idx);
-    scorer.scoreCandidate((XLinkMatch*)match_[idx]);
+    scorer.scoreCandidate(at(idx));
+  }
+
+  // set the match_collection as having been scored
+  scored_type_[XCORR] = true;
+  if (get_boolean_parameter("compute-sp")) {
+    scored_type_[SP] = true;
   }
 
   carp(CARP_DEBUG, "Done scoreSpectrum");
 }
-
-
-void XLinkMatchCollection::setRanks() {
-/*
-  int current_rank = 1;
-  FLOAT_T last_score = 0;
-
-  if (get_boolean_parameter("compute-sp")) {
-    sortBySP();
-
-    current_rank = 1;
-    last_score = at(0)->getSP();
-    at(0)->setSPRank(current_rank);
-
-    for (unsigned int candidate_idx = 1; candidate_idx < size() ; candidate_idx++) {
-      FLOAT_T current_score = 0;//at(candidate_idx)->getSP();
-      if (last_score != current_score) {
-        current_rank++;
-        last_score = current_score;
-      }
-      at(candidate_idx)->setSPRank(current_rank);
-    }
-  }
-
-  sortByXCorr();
-
-  current_rank = 1;
-  last_score = at(0)->getXCorr();
-  at(0)->setXCorrRank(current_rank);
-  for (unsigned int candidate_idx = 1; candidate_idx < size(); candidate_idx++) {
-    FLOAT_T current_score = at(candidate_idx)->getXCorr();
-    if (last_score != current_score) {
-      current_rank++;
-      last_score = current_score;
-    }
-    at(candidate_idx)->setXCorrRank(current_rank);
-  }
-*/
-}
-
 
 void XLinkMatchCollection::fitWeibull() {
 
@@ -318,7 +303,7 @@ void XLinkMatchCollection::fitWeibull() {
   FLOAT_T* xcorrs = extractScores(XCORR);
 
   double fraction_to_fit = get_double_parameter("fraction-top-scores-to-fit");
-  int num_tail_samples = (int)(0/*size()*/ * fraction_to_fit);
+  int num_tail_samples = (int)(getMatchTotal() * fraction_to_fit);
 
   fit_three_parameter_weibull(xcorrs,
 			      num_tail_samples,
@@ -332,6 +317,8 @@ void XLinkMatchCollection::fitWeibull() {
 			      &shift_,
 			      &correlation_);
 
+  cerr <<eta_<<":"<<beta_<<":"<<shift_<<":"<<correlation_<<endl;
+
   myfree(xcorrs);
 }
 
@@ -339,8 +326,7 @@ void XLinkMatchCollection::computeWeibullPValue(
   int idx
   ) {
 
-  ((XLinkMatch*)match_[idx])->computeWeibullPvalue(shift_, eta_, beta_);
-
+  at(idx)->computeWeibullPvalue(shift_, eta_, beta_);
 }
 
 

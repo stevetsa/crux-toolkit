@@ -203,7 +203,7 @@ void MatchSearch::printSpectrumMatches(
                               XCORR, spectrum); 
     
   }else{ // targets and decoys in separate files
-    
+    cerr <<"printSpectrumMatches():1"<<endl;
     // if decoys in one file
     if( num_decoy_files == 1 ){
       // merge decoys
@@ -217,6 +217,7 @@ void MatchSearch::printSpectrumMatches(
       // NOTE (BF 09-14-10): since the multiple decoy collections have already
       // been truncated, the merged ranks aren't accurate for the total space
       // of decoys searched
+      cerr <<"printSpectrumMatches():Rank"<<endl;
       merged_decoy_psms->populateMatchRank(XCORR);
       
       vector<MatchCollection*> decoy_list(1, merged_decoy_psms);

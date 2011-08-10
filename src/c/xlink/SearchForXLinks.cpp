@@ -74,7 +74,9 @@ int SearchForXLinks::main(int argc, char** argv) {
   if (get_boolean_parameter("use-old-xlink")) {
     return xhhc_search_main(argc, argv);
   } else {
+    carp(CARP_DEBUG, "Calling new xlink code");
     return xlink_search_main();
+    
   }
 }
 
@@ -85,6 +87,8 @@ string SearchForXLinks::getName() {
   return "search-for-xlinks";
 }
 
+
+
 /**
  * \returns the description for SearchForXLinks
  */
@@ -94,6 +98,14 @@ string SearchForXLinks::getDescription() {
     "database returning a collection of matches "
     "corresponding to linear and cross-lnked peptides "
     "scored by XCorr.";
+}
+
+
+/**
+ * \returns the file stem of the application, default getName.
+ */
+string SearchForXLinks::getFileStem() {
+  return "search";
 }
 
 /**

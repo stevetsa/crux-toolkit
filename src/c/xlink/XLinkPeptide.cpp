@@ -173,16 +173,17 @@ void XLinkPeptide::addLinkablePeptides(double min_mass, double max_mass,
   while (modified_peptides_iterator_has_next(peptide_iterator)) {
     PEPTIDE_T* peptide = modified_peptides_iterator_next(peptide_iterator);
     vector<int> link_sites;
-    /*
+    
     char* seq= get_peptide_modified_sequence_with_masses(peptide, FALSE);
 
     cerr <<"Finding sites for :"<<seq<<":";
 
     free(seq);
-    */
+    
     XLinkablePeptide::findLinkSites(peptide, bondmap, link_sites);
 
-    //cerr << link_sites.size() << endl;
+    cerr << link_sites.size() << " missed cleavages:";
+    cerr << get_peptide_missed_cleavage_sites(peptide)<<endl;
 
     if (link_sites.size() > 0) {
       XLinkablePeptide xlinkable_peptide(peptide, link_sites);
@@ -210,7 +211,7 @@ void XLinkPeptide::addCandidates(
   //get all linkable peptides up to mass-linkermass.
 
   //cerr <<"XLinkPeptide::addCandidates() : start."<<endl;
-  int max_missed_cleavages = get_int_parameter("max-missed-cleavages");
+  //int max_missed_cleavages = get_int_parameter("missed-cleavages");
   vector<XLinkablePeptide> linkable_peptides;
   
   //iterate through each modification, 
@@ -269,7 +270,7 @@ void XLinkPeptide::addCandidates(
   unsigned int first_idx = 0;
   unsigned int last_idx = linkable_peptides.size()-1;
   
-  while(first_idx < linkable_peptides.size()-2) {
+  while(first_idx < linkable_peptides.size()-1) {
     //cerr<<"first:"<<first_idx;
     FLOAT_T first_mass = linkable_peptides[first_idx].getMass() + linker_mass_;
     //cerr<<" mass:"<<first_mass<<endl;
@@ -278,23 +279,17 @@ void XLinkPeptide::addCandidates(
     FLOAT_T current_mass = first_mass + 
       linkable_peptides[last_idx].getMass();
     //cerr<<"current_mass:"<<current_mass<<endl;
-    while (first_idx < last_idx && current_mass > max_mass) {
+    while (first_idx <= last_idx && current_mass > max_mass) {
       last_idx--;
       current_mass = first_mass + linkable_peptides[last_idx].getMass();
     }
 
     if (first_idx >= last_idx) break;  //we are done.
 
-    while (first_idx < last_idx && current_mass >= min_mass) {
-      //cerr<<"Adding links for peptides:"<<first_idx<<":"<<last_idx<<endl;
+    while (first_idx <= last_idx && current_mass >= min_mass) {
+      cerr<<"Adding links for peptides:"<<first_idx<<":"<<last_idx<<endl;
       XLinkablePeptide& pep1 = linkable_peptides[first_idx];
       XLinkablePeptide& pep2 = linkable_peptides[last_idx];
-      //make sure they are not the same peptide, this may happen with modifications.
-      if (get_peptide_sequence_pointer(pep1.getPeptide()) == 
-	  get_peptide_sequence_pointer(pep2.getPeptide())) {
-	last_idx--;
-	continue;
-      }
 
       //carp(CARP_INFO,"Generating xlink candidates");
 
@@ -308,20 +303,25 @@ void XLinkPeptide::addCandidates(
 	    //create the candidate
 	    XLinkMatch* newCandidate = 
 	      new XLinkPeptide(pep1, pep2, link1_idx, link2_idx);
-            if (newCandidate->getNumMissedCleavages() <= max_missed_cleavages) {
+            //if (newCandidate->getNumMissedCleavages() <= max_missed_cleavages) {
               candidates.add(newCandidate);
               //cerr<<"Adding candidate:"<<newCandidate -> getSequenceString()<<
 	      //" "<<newCandidate->getMass(MONO)<<endl;
-            } else {
-              delete newCandidate;
-            }
+            //} else {
+            //  delete newCandidate;
+            //}
 	    
 	  }
 	}
       } /* for link1_idx */
-      last_idx--;
-      //carp(CARP_INFO,"Decremented last to:%d",last_idx);
-      current_mass = first_mass + linkable_peptides[last_idx].getMass();
+      if (last_idx > 0) {
+        last_idx--;
+        current_mass = first_mass + linkable_peptides[last_idx].getMass();
+        carp(CARP_INFO,"Decremented last to:%d",last_idx);
+      } else {
+        break;
+      }
+        
     }
 
     //start with the next candidate.
@@ -337,15 +337,27 @@ XLINKMATCH_TYPE_T XLinkPeptide::getCandidateType() {
 }
 
 string XLinkPeptide::getSequenceString() {
+
+  
+
   string seq1 = linked_peptides_[0].getModifiedSequenceString();
   
   string seq2 = linked_peptides_[1].getModifiedSequenceString();
 
   ostringstream oss;
-  oss << seq1 << "," << 
-    seq2 << " (" <<
-    (getLinkPos(0)+1) << "," <<
-    (getLinkPos(1)+1) << ")";
+  
+  if (seq1 < seq2) {
+
+    oss << seq1 << ", " << 
+      seq2 << " (" <<
+      (getLinkPos(0)+1) << "," <<
+      (getLinkPos(1)+1) << ")";
+  } else {
+       oss << seq2 << ", " << 
+      seq1 << " (" <<
+      (getLinkPos(1)+1) << "," <<
+      (getLinkPos(0)+1) << ")";
+  }
   string svalue = oss.str();
 
   return svalue;
@@ -360,6 +372,7 @@ FLOAT_T XLinkPeptide::calcMass(MASS_TYPE_T mass_type) {
 XLinkMatch* XLinkPeptide::shuffle() {
 
   XLinkPeptide* decoy = new XLinkPeptide();
+  decoy->setZState(getZState());
   decoy->linked_peptides_.push_back(linked_peptides_[0].shuffle());
   decoy->linked_peptides_.push_back(linked_peptides_[1].shuffle());
   decoy->link_pos_idx_.push_back(link_pos_idx_[0]);

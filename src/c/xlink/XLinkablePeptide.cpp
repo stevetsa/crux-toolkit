@@ -69,7 +69,7 @@ void XLinkablePeptide::findLinkSites(
     if (bondmap.canLink(peptide, seq_idx)) {
       char aa = modified_aa_to_char(mod_seq[seq_idx]);
       BOOLEAN_T link_prevented = FALSE;
-      if ((seq_idx == 0) || (seq_idx == length-1)) {
+      if (seq_idx == length-1) {  
 	int idx = 0;
 	while (xlink_prevents_cleavage[idx] != '\0') {
 	  if (xlink_prevents_cleavage[idx] == aa) {

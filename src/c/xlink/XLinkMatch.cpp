@@ -5,6 +5,8 @@
 #include <sstream>
 #include <ios>
 #include <iomanip>
+#include <iostream>
+
 
 using namespace std;
 
@@ -149,6 +151,8 @@ void XLinkMatch::printOneMatchField(
   int      b_y_matched             ///< Number of b/y ions matched. -in
 ) {
 
+  cerr <<"XLinkMatch::printOneMatchField:";
+  cerr <<get_column_header(column_idx)<<endl;
   switch ((MATCH_COLUMNS_T)column_idx) {
 
   case PEPTIDE_MASS_COL:
@@ -164,6 +168,8 @@ void XLinkMatch::printOneMatchField(
   case PROTEIN_ID_COL:
     output_file->setColumnCurrentRow((MATCH_COLUMNS_T)column_idx, 
       getProteinIdString(0)); //TODO - fix this.
+    break;
+  case FLANKING_AA_COL:
     break;
   default:
     Match::printOneMatchField(column_idx,

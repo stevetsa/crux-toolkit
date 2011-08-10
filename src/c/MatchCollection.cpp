@@ -102,6 +102,12 @@ MatchCollection::~MatchCollection() {
   }
 }
 
+MatchCollection::MatchCollection() {
+  cerr << "MatchCollection::MatchCollection()"<<endl;
+  init();
+}
+
+
 /**
  * \brief Creates a new match collection with no matches in it.  Sets
  * the member variable indicating if the matches are to real peptides
@@ -114,7 +120,8 @@ MatchCollection::~MatchCollection() {
 MatchCollection::MatchCollection(
   bool is_decoy
   ){
-
+  cerr << "MatchCollection::MatchCollection(bool) " << endl;
+  carp(CARP_INFO, "Inside match collection init:%i",is_decoy);
   init();
   null_peptide_collection_ = is_decoy;
 }
@@ -138,6 +145,9 @@ MatchCollection::MatchCollection(
     ///< what set of match collection are we creating? (TARGET, DECOY1~3) -in 
   )
 { 
+
+  cerr << "MatchCollection::MatchCollection(iter,set)"<<endl;
+
   // prepare the match_collection
   init();
   // set this as a post_process match collection
@@ -2031,7 +2041,7 @@ bool MatchCollection::printTabDelimited(
     // print if we haven't reached the limit
     // or if we are at the limit but this match is a tie with the last
     if( count < top_match || last_rank == cur_rank ){
-
+      cerr <<"match->printTab()"<<endl;
       match->printTab(this, output, scan_num, 
                       spectrum_precursor_mz, 
                       num_matches);

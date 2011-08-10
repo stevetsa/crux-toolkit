@@ -51,7 +51,7 @@ void SelfLoopPeptide::addCandidates(
   int num_peptide_mods,
   XLinkMatchCollection& candidates) {
 
-  int max_missed_cleavages = get_int_parameter("max-missed-cleavages");
+  //int max_missed_cleavages = get_int_parameter("missed-cleavages");
   
   vector<XLinkablePeptide> linkable_peptides;
   int cur_aa_mods = 0;
@@ -86,11 +86,11 @@ void SelfLoopPeptide::addCandidates(
 	  XLinkMatch* new_candidate = 
 	    new SelfLoopPeptide(pep, link1_idx, link2_idx);
 
-          if (new_candidate->getNumMissedCleavages() <= max_missed_cleavages) {
+          //if (new_candidate->getNumMissedCleavages() <= max_missed_cleavages) {
             candidates.add(new_candidate);
-          } else {
-            delete new_candidate;
-          }
+          //} else {
+          //  delete new_candidate;
+          //}
 	}
       }
     }

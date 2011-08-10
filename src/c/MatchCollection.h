@@ -155,6 +155,8 @@ class MatchCollection {
 
  public:
 
+  MatchCollection();
+
   /**
    * \brief Creates a new match collection with no matches in it.  Sets
    * member variables from parameter.c.  The charge and null_collection
@@ -163,7 +165,7 @@ class MatchCollection {
    *
    * \returns A newly allocated match collection with member variables set.
    */
-  MatchCollection(bool is_decoy = false);
+  MatchCollection(bool is_decoy);
 
   /**
    * create a new match collection from the serialized PSM output files

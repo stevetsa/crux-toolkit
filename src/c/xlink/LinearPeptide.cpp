@@ -36,7 +36,7 @@ void LinearPeptide::addCandidates(
   int num_peptide_mods,
   XLinkMatchCollection& candidates) {
 
-  int max_missed_cleavages = get_int_parameter("max-missed-cleavages");
+  int max_missed_cleavages = get_int_parameter("missed-cleavages");
 
   for (int mod_idx=0;mod_idx<num_peptide_mods; mod_idx++) {
     PEPTIDE_MOD_T* peptide_mod = peptide_mods[mod_idx];
@@ -72,15 +72,19 @@ XLINKMATCH_TYPE_T LinearPeptide::getCandidateType() {
 }
 
 string LinearPeptide::getSequenceString() {
+  ostringstream oss;
   if (peptide_ == NULL) {
-    string svalue(sequence_);
-    return svalue;
+    oss << sequence_;
+
   } else {
     char* seq = get_peptide_modified_sequence_with_masses(peptide_, FALSE);
-    string svalue(seq);
+    oss << seq;
     free(seq);
-    return svalue;
   }
+
+  oss << " ()";
+  return oss.str();
+
 }
 
 FLOAT_T LinearPeptide::calcMass(MASS_TYPE_T mass_type) {
