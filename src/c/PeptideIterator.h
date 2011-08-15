@@ -34,6 +34,8 @@ class PeptideIterator{
   }
 
  public:
+  virtual ~PeptideIterator(){};
+
   PEPTIDE_T* next(){
     PEPTIDE_T* return_me = next_peptide_;
     has_next_ = queueNextPeptide();
