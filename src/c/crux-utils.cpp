@@ -1678,6 +1678,49 @@ void strcat_formatted
   strcat(string_to_extend, "\n");
 }
 
+/**
+ * Check parameter values for what kind of decoys are requested.  Make
+ * sure it is compatible with other search parameters and fail if not.  
+ * \returns Zero if no decoys are searched, one if there are decoys
+ * with an index search, or num-decoys-per-target for a fasta search.
+ */
+int get_num_decoys(bool have_index){
+
+  string decoy_type_str = get_string_parameter_pointer("decoys");
+  DECOY_TYPE_T decoy_type = string_to_decoy_type(decoy_type_str.c_str());
+
+  switch(decoy_type){
+  case NO_DECOYS:
+    return 0;
+
+    // valid for index or database
+  case REVERSE_DECOYS: 
+  case PEPTIDE_SHUFFLE_DECOYS:
+    if( have_index ){
+      return 1;
+    } else { // searching fasta
+      return  get_int_parameter("num-decoys-per-target"); 
+    }
+
+    //only valid for index
+  case PROTEIN_SHUFFLE_DECOYS:
+    if( have_index ){
+      return 1;
+    } else {
+      carp(CARP_FATAL, 
+           "Cannot generate shuffle whole proteins for fasta search.  Either "
+           "convert fasta to index or use reverse or peptide shuffling.");
+    }
+
+  case INVALID_DECOY_TYPE: // already checked in parameters...but
+  case NUMBER_DECOY_TYPES:
+    carp(CARP_FATAL, "Invalid decoy type.");
+  }
+
+  // shouldn't get here
+  return 0;
+}
+
 
 /*
  * Local Variables:

@@ -278,10 +278,9 @@ char* Index::getBinaryFastaName(const char* index_name){
  * Database::decoy_binary_suffix and returns a heap-allocated string of the
  * full name including the index directory.
  *
- * Exits with error if index_name does not exist, no file
- * exists, or more than one file exists.
+ * Exits with error if index_name does not exist or more than one file exists.
  * \returns A string with the name of the existing binary fasta file
- * for this index.
+ * for this index or NULL if no file found.
  */
 char* Index::getDecoyBinaryFastaName(const char* index_name){
   struct dirent** namelist = NULL;

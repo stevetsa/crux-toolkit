@@ -61,6 +61,7 @@ int SequestSearch::main(int argc,   ///< number of cmd line tokens
     "output-dir",
     "scan-number",
     "fileroot",
+    "decoys",
     "num-decoys-per-target",
     "decoy-location"
   };
@@ -110,7 +111,8 @@ int SequestSearch::main(int argc,   ///< number of cmd line tokens
   // get search parameters for match_collection
   BOOLEAN_T combine_target_decoy = get_boolean_parameter("tdc");
   int num_decoy_files = get_int_parameter("num-decoy-files");
-  int num_decoys_per_target = get_int_parameter("num-decoys-per-target");
+  bool have_index = (index != NULL);
+  int num_decoys_per_target = get_num_decoys(have_index); 
 
   SearchProgress progress;
 

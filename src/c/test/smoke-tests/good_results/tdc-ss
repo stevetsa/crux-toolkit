@@ -357,11 +357,13 @@ print-theoretical-spectrum=FALSE
 # Available for search-for-xlinks program (Default=F).
 use-mgf=FALSE
 
-# Number of decoy peptides to search for every target peptide searched.
-# Default=2.
+# Number of decoy peptides to search for every target peptide
+# searched.Only valid for fasta searches when --decoys is not none.
+# Default=0.
 # Use --decoy-location to control where they are returned (which
-# file(s)).  Available only from the command line for
-# search-for-matches. 
+# file(s)) and --decoys to control how targets are randomized. 
+# Available for search-for-matches and sequest-search when searching a
+# fasta file. 
 num-decoys-per-target=1
 
 # Search only select spectra specified as a single scan number or as a
@@ -458,11 +460,10 @@ precision=8
 # Specify location of decoy search results.
 # <string>=target-file|one-decoy-file|separate-decoy-files.
 # Default=separate-decoy-files.
-# Applies when num-decoys-per-target > 0.  Use 'target-file' to mix
-# target and decoy search results in one file. 'one-decoy-file' will
-# return target results in one file and all decoys in another.
-# 'separate-decoy-files' will create as many decoy files as
-# num-decoys-per-target.
+# Applies when decoys is not none.  Use 'target-file' to mix target and
+# decoy search results in one file. 'one-decoy-file' will return target
+# results in one file and all decoys in another. 'separate-decoy-files'
+# will create as many decoy files as num-decoys-per-target.
 decoy-location=target-file
 
 # The p-value or q-value threshold. Default=0.01.
@@ -533,7 +534,7 @@ xlink-include-linears=TRUE
 # no decoys.  Default=protein-shuffle.
 # For create-index, store the decoys in the index.  For search, either
 # use decoys in the index or generate them from the fasta file.
-decoys=protein-shuffle
+decoys=peptide-shuffle
 
 # Print peptide sequence (T,F). Default=F.
 # Available only for crux-generate-peptides.

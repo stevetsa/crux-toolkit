@@ -1817,7 +1817,8 @@ BOOLEAN_T serialize_peptide(
 PEPTIDE_T* parse_peptide_tab_delimited(
   MatchFileReader& file, ///< the tab delimited peptide file -in
   Database* database,///< the database containing the peptides -in
-  BOOLEAN_T use_array  ///< should I use array peptide_src or link list -in  
+  BOOLEAN_T use_array,  ///< should I use array peptide_src or link list -in  
+  Database* decoy_database///< database with decoy peptides -in
   ) {
 
   // the new peptide to be given values in file
@@ -1830,7 +1831,8 @@ PEPTIDE_T* parse_peptide_tab_delimited(
                                           &peptide->modified_seq);
   peptide->peptide_mass = file.getFloat(PEPTIDE_MASS_COL);
   
-  if(!parse_peptide_src_tab_delimited(peptide, file, database, use_array)){
+  if(!parse_peptide_src_tab_delimited(peptide, file, database, 
+                                      use_array, decoy_database)){
     carp(CARP_ERROR, "Failed to parse peptide src.");
     free(peptide);
     return NULL;

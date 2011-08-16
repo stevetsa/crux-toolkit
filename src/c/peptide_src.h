@@ -109,7 +109,9 @@ BOOLEAN_T parse_peptide_src_tab_delimited(
   PEPTIDE_T* peptide,   ///< assign peptide_src(s) to this peptide
   MatchFileReader& file,           ///< file to read from
   Database* database, ///< database containing proteins
-  BOOLEAN_T use_array); ///< use array implementation vs. linked list
+  BOOLEAN_T use_array,///< use array implementation vs. linked list
+  Database* decoy_database = NULL ///< database containing decoy proteins
+  ); 
 
 /**
  * \brief Read in the peptide_src objects from the given file and

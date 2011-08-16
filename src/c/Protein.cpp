@@ -546,7 +546,7 @@ void Protein::shuffle(DECOY_TYPE_T decoy_type){
     reverse(sequence_, sequence_ + strlen(sequence_));
     break;
 
-  case PROTIEN_SHUFFLE_DECOYS:
+  case PROTEIN_SHUFFLE_DECOYS:
     carp(CARP_DEBUG, "shuffling");
     shuffle_array(sequence_, strlen(sequence_));
     break;

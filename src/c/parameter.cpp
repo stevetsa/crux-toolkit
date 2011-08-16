@@ -560,17 +560,18 @@ void initialize_parameters(void){
       " Use 'none' for no decoys.  Default=protein-shuffle.",
       "For create-index, store the decoys in the index.  For search, either "
       "use decoys in the index or generate them from the fasta file.", "true");
-  set_int_parameter("num-decoys-per-target", 2, 0, 10,
-      "Number of decoy peptides to search for every "
-      "target peptide searched. Default=2.",
+  set_int_parameter("num-decoys-per-target", 1, 0, 10,
+      "Number of decoy peptides to search for every target peptide searched."
+      "Only valid for fasta searches when --decoys is not none. Default=0.",
       "Use --decoy-location to control where they are returned (which "
-      "file(s)).  Available only from the command line for search-for-matches. ",
+      "file(s)) and --decoys to control how targets are randomized.  Available "
+      "for search-for-matches and sequest-search when searching a fasta file. ",
       "true");
   set_string_parameter("decoy-location", "separate-decoy-files",
       "Specify location of decoy search results. "
       "<string>=target-file|one-decoy-file|separate-decoy-files. "
       "Default=separate-decoy-files.",
-      "Applies when num-decoys-per-target > 0.  Use 'target-file' to mix "
+      "Applies when decoys is not none.  Use 'target-file' to mix "
       "target and decoy search results in one file. 'one-decoy-file' will "
       "return target results in one file and all decoys in another. "
       "'separate-decoy-files' will create as many decoy files as "
@@ -1176,6 +1177,9 @@ void translate_decoy_options(){
 
   // get user values
   int num_decoy_per_target = get_int_parameter("num-decoys-per-target");
+  string decoy_type_str = get_string_parameter_pointer("decoys");
+  DECOY_TYPE_T decoy_type = string_to_decoy_type(decoy_type_str.c_str());
+
   char* location = get_string_parameter("decoy-location");
   int max_rank_preliminary = get_int_parameter("max-rank-preliminary");
 
@@ -1184,10 +1188,16 @@ void translate_decoy_options(){
   int new_num_decoy_files = -1;
   int new_max_rank_preliminary = max_rank_preliminary; 
 
+  // user may not have set num-decoys-per-target and default is 1
+  if( decoy_type == NO_DECOYS ){
+    num_decoy_per_target = 0;
+  } 
+
   // user may not have set target-location if no decoys requested
   if( num_decoy_per_target == 0 ){
     free(location);
     location = my_copy_string("separate-decoy-files");
+    new_num_decoy_files = 0;
   }
 
   // set new values
@@ -1592,7 +1602,7 @@ void check_parameter_consistency(){
     }
   }
 
-  // decoys must be one of "none", "protein-shuffle", "peptide-shuffl",
+  // decoys must be one of "none", "protein-shuffle", "peptide-shuffle",
   // "reverse"
   const char* decoys = get_string_parameter_pointer("decoys");
   DECOY_TYPE_T decoy_type = string_to_decoy_type(decoys);

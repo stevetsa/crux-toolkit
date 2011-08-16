@@ -17,7 +17,8 @@ class MatchCollectionIterator {
   DIR* working_directory_; 
   ///< the working directory for the iterator to find match_collections
   char* directory_name_; ///< the directory name in char
-  Database* database_; ///< the database for which the match_collection
+  Database* database_; ///< database of proteins in the results files
+  Database* decoy_database_; ///< optional database of decoy proteins in files
   int number_collections_; 
   ///< the total number of match_collections in the directory (target+decoy)
   int collection_idx_;  ///< the index of the current collection to return
@@ -70,6 +71,11 @@ class MatchCollectionIterator {
    */
   Database* getDatabase();
     
+  /**
+   *\returns the decoy database
+   */
+  Database* getDecoyDatabase();
+
   /**
    *\returns the total number of match_collections to return
    */

@@ -276,6 +276,7 @@ int MatchSearch::main(int argc, char** argv){
     "output-dir",
     "overwrite",
     "num-decoys-per-target",
+    "decoys",
     "decoy-location",
     "compute-sp",
     "compute-p-values",
@@ -364,6 +365,10 @@ int MatchSearch::main(int argc, char** argv){
   PEPTIDE_MOD_T** peptide_mods = NULL;
   int num_peptide_mods = generate_peptide_mod_list( &peptide_mods );
 
+  // do we need decoys
+  bool have_index = (index != NULL);
+  int num_decoy_collections = get_num_decoys(have_index);
+
   // for each spectrum
   while(spectrum_iterator->hasNext()) {
     SpectrumZState zstate;
@@ -399,7 +404,6 @@ int MatchSearch::main(int argc, char** argv){
     // now search decoys with the same number of mods
     is_decoy = TRUE;
     // create separate decoy match_collections 
-    int num_decoy_collections = get_int_parameter("num-decoys-per-target"); 
     vector<MatchCollection*> decoy_collection_list;
 
     int decoy_idx = 0;

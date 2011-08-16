@@ -610,7 +610,8 @@ BOOLEAN_T serialize_peptide(
 PEPTIDE_T* parse_peptide_tab_delimited(
   MatchFileReader& file, ///< the tab delimited peptide file -in
   Database* database,///< the database containing the peptides -in
-  BOOLEAN_T use_array  ///< should I use array peptide_src or link list -in  
+  BOOLEAN_T use_array,  ///< should I use array peptide_src or link list -in  
+  Database* decoy_database = NULL///< optional database with decoy peptides -in
   );
 
 /**

@@ -46,16 +46,16 @@
 1 = predict_ions_by_flank_max_z1 = good_results/standard_predict_ions_by_flank_max_z1.out = crux-predict-peptide-ions --primary-ions by --max-ion-charge 1 --flanking T IAMASEQ 3=
 
 # Search for matches and test txt file
-1 = search_for_matches_default = good_results/search_for_matches_default.target.txt = crux search-for-matches --parameter-file params/set_rand_seed test.ms2 test.fasta; cat crux-output/search.target.txt = 'Time' 'atabase'
+1 = search_for_matches_default = good_results/search_for_matches_default.target.txt = crux search-for-matches --decoys peptide-shuffle --parameter-file params/set_rand_seed test.ms2 test.fasta; cat crux-output/search.target.txt = 'Time' 'atabase'
 
 # Analyze existing search results
 1 = analyze_matches_existing = good_results/analyze_matches_existing.percolator.target.txt = crux percolator --overwrite T --output-dir existing_search test.fasta existing_search; cat existing_search/percolator.target.txt = 'Time' 'Database'
 
 # Search fasta with duplicate peptides, return one copy of each
-1 = search_duplicates = good_results/search_for_matches_duplicates.target.txt = crux search-for-matches --parameter-file params/set_rand_seed --fileroot duplicates test.ms2 duplicates.fasta; cat crux-output/duplicates.search.target.txt
+1 = search_duplicates = good_results/search_for_matches_duplicates.target.txt = crux search-for-matches --decoys peptide-shuffle --parameter-file params/set_rand_seed --fileroot duplicates test.ms2 duplicates.fasta; cat crux-output/duplicates.search.target.txt
 
 # Search for matches with Sp
-1 = search_sp = good_results/sp.search.target.txt = crux search-for-matches --parameter-file params/sp --output-dir crux-output-sp test.ms2 test.fasta; cat crux-output-sp/search.target.txt
+1 = search_sp = good_results/sp.search.target.txt = crux search-for-matches --decoys peptide-shuffle --parameter-file params/sp --output-dir crux-output-sp test.ms2 test.fasta; cat crux-output-sp/search.target.txt
 
 # Percolate search-for-matches results with sp
 1 = percolator = good_results/sp.percolator.target.txt =  crux percolator --parameter-file params/sp --output-dir crux-output-sp test.fasta crux-output-sp; cat crux-output-sp/percolator.target.txt = 'Time'
@@ -67,7 +67,7 @@
 0 = compute-q-values = good_results/qvalues.txt = crux compute-q-values --parameter-file params/pval small-yeast.fasta crux-output; cat crux-output/qvalues.target.txt 
 
 # Search for matches with modifications
-1 = search_mods_fasta = good_results/search_mods_fasta.target.txt = rm -rf crux-output; crux search-for-matches --parameter-file params/mods test.ms2 test.fasta; cat crux-output/search.target.txt = 'Time' 'Database'
+1 = search_mods_fasta = good_results/search_mods_fasta.target.txt = rm -rf crux-output; crux search-for-matches --decoys peptide-shuffle --parameter-file params/mods test.ms2 test.fasta; cat crux-output/search.target.txt = 'Time' 'Database'
 
 # Analyze matches with modifications
 0 = reverse_sequence = good_results/reverse.decoy.txt = crux search-for-matches --parameter-file params/reverse test.ms2 test-plus-palindrome.fasta; cat crux-output/reverse.search.decoy.txt

@@ -141,7 +141,8 @@ class MatchCollection {
 
   bool extendTabDelimited(
     Database* database, ///< the database holding the peptides -in
-    MatchFileReader& result_file   ///< the result file to parse PSMs -in
+    MatchFileReader& result_file,   ///< the result file to parse PSMs -in
+    Database* decoy_database = NULL ///< optional database with decoy peptides
     );
 
   bool addMatchToPostMatchCollection(

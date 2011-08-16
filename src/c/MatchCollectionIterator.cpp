@@ -53,14 +53,15 @@ MatchCollectionIterator::MatchCollectionIterator(
   const char* fasta_file, 
     ///< The name of the fasta file for peptides for match_collections. -in
   int* decoy_count
-  )
+) :
+  working_directory_(NULL), directory_name_(NULL), database_(NULL),
+  decoy_database_(NULL), number_collections_(0), collection_idx_(-1),
+  match_collection_(NULL), is_another_collection_(NULL)
 {
   carp(CARP_DEBUG, 
        "Creating match collection iterator for dir %s and protein database %s",
        output_file_directory, fasta_file);
 
-
-  DIR* working_directory = NULL;
   struct dirent* directory_entry = NULL;
   bool use_index = is_directory(fasta_file);
 
@@ -81,15 +82,15 @@ MatchCollectionIterator::MatchCollectionIterator(
   bool decoy_3 = false;
 
   // open PSM file directory
-  working_directory = opendir(output_file_directory);
+  working_directory_ = opendir(output_file_directory);
   
-  if (working_directory == NULL) {
+  if (working_directory_ == NULL) {
     carp(CARP_FATAL, "Failed to open PSM file directory: %s", 
         output_file_directory);
   }
   
   // determine how many decoy sets we have
-  while((directory_entry = readdir(working_directory))){
+  while((directory_entry = readdir(working_directory_))){
     
     if(suffix_compare(directory_entry->d_name, "decoy-1.txt")) {
       carp(CARP_DEBUG, "Found decoy file %s", directory_entry->d_name);
@@ -140,23 +141,29 @@ MatchCollectionIterator::MatchCollectionIterator(
   }
 
   // get binary fasta file name with path to crux directory 
-  char* binary_fasta  = NULL;
   if (use_index == true){ 
-    binary_fasta = Index::getBinaryFastaName(fasta_file);
+    char* binary_fasta = Index::getBinaryFastaName(fasta_file);
     database_ = new Database(binary_fasta, true);// is memmapped
+    free(binary_fasta);
+    binary_fasta = Index::getDecoyBinaryFastaName(fasta_file);
+    if( binary_fasta != NULL ){
+      decoy_database_ = new Database(binary_fasta, true);// is memmapped
+      decoy_database_->parse();
+      free(binary_fasta);
+    }
   } else {
     database_ = new Database(fasta_file, false);// not memmapped
     database_->transformTextToMemmap(".", true);// is temp
+    decoy_database_ = NULL;
   }
   database_->parse();
 
   // reset directory
-  rewinddir(working_directory);
+  rewinddir(working_directory_);
  
 
   // set match_collection_iterator fields
   collection_idx_ = 0;
-  working_directory_ = working_directory;
   number_collections_ = total_sets;
   directory_name_ = 
     my_copy_string(output_file_directory);
@@ -194,6 +201,7 @@ MatchCollectionIterator::~MatchCollectionIterator()
   // free up all match_collection_iteratory.
   free(directory_name_);
   Database::freeDatabase(database_);
+  Database::freeDatabase(decoy_database_);
   closedir(working_directory_); 
   delete cols_in_file_;
 }
@@ -224,6 +232,13 @@ MatchCollection* MatchCollectionIterator::next()
  */
 Database* MatchCollectionIterator::getDatabase() {
   return database_;
+}
+    
+/**
+ *\returns the decoy database
+ */
+Database* MatchCollectionIterator::getDecoyDatabase() {
+  return decoy_database_;
 }
     
 

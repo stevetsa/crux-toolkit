@@ -421,5 +421,13 @@ void strcat_formatted
  const char* extension           // Text to add.
  );
 
+/**
+ * Check parameter values for what kind of decoys are requested.  Make
+ * sure it is compatible with other search parameters and fail if not.  
+ * \returns Zero if no decoys are searched, one if there are decoys
+ * with an index search, or num-decoys-per-target for a fasta search.
+ */
+int get_num_decoys(bool have_index);
+
 
 #endif

@@ -433,16 +433,16 @@ BOOLEAN_T parse_peptide_src_tab_delimited(
   PEPTIDE_T* peptide,   ///< assign peptide_src(s) to this peptide
   MatchFileReader& file,           ///< file to read from
   Database* database, ///< database containing proteins
-  BOOLEAN_T use_array) ///< use array implementation vs. linked list
-{
-  //TODO - Implement
-
+  BOOLEAN_T use_array, ///< use array implementation vs. linked list
+  Database* decoy_database ///< database containing decoy proteins
+){
   if( peptide == NULL ){
     carp(CARP_ERROR, "Cannot parse peptide src with NULL peptide.");
     return FALSE;
   }
 
-  carp(CARP_DETAILED_DEBUG,"Parsing id line:%s", file.getString(PROTEIN_ID_COL).c_str());
+  carp(CARP_DETAILED_DEBUG,"Parsing id line:%s", 
+       file.getString(PROTEIN_ID_COL).c_str());
 
   vector<string> protein_ids;
   file.getStringVectorFromCell(PROTEIN_ID_COL, protein_ids);
@@ -470,7 +470,7 @@ BOOLEAN_T parse_peptide_src_tab_delimited(
     iter != protein_ids.end();
     ++iter) {
 
-    carp(CARP_DETAILED_DEBUG,"Parsing %s",iter -> c_str());
+    carp(CARP_DETAILED_DEBUG, "Parsing %s", iter->c_str());
     // get the protein and peptide index e.g. X(10)
     size_t left_paren_index = iter -> find('(');
 
@@ -481,9 +481,15 @@ BOOLEAN_T parse_peptide_src_tab_delimited(
       parent_protein =
         database->getProteinByIdString(protein_id_string.c_str());
       
-      if (parent_protein == NULL) {
-        carp(CARP_WARNING, "Can't find protein %s",protein_id_string.c_str());
-        continue;
+      if (parent_protein == NULL) { // if not in target, try decoy
+        if( decoy_database != NULL ){
+          parent_protein =
+            decoy_database->getProteinByIdString(protein_id_string.c_str());
+        }
+        if (parent_protein == NULL) {
+          carp(CARP_WARNING, "Can't find protein %s",protein_id_string.c_str());
+          continue;
+        }
       }
 
       //find the start index by searching the protein sequence.
@@ -510,17 +516,25 @@ BOOLEAN_T parse_peptide_src_tab_delimited(
       start_index = (int)pos + 1;
 
     } else {
-      string protein_id_string = iter -> substr(0, left_paren_index);
-      string peptide_start_index_string = iter -> substr(left_paren_index+1, 
-      iter -> length() - 1);
+      string protein_id_string = iter->substr(0, left_paren_index);
+      string peptide_start_index_string = iter->substr(left_paren_index+1, 
+                                                       iter->length() - 1);
 
       //  set fields in new peptide src
       parent_protein =
         database->getProteinByIdString(protein_id_string.c_str());
      
       if (parent_protein == NULL) {
-        carp(CARP_WARNING, "Can't find protein %s", iter -> c_str());
-        continue;
+        if( decoy_database != NULL ){
+          carp(CARP_DEBUG, "Checking decoy database for protein.");
+          parent_protein =
+            decoy_database->getProteinByIdString(protein_id_string.c_str());
+        }
+
+        if( parent_protein == NULL ){
+          carp(CARP_WARNING, "Can't find protein %s", protein_id_string.c_str());
+          continue;
+        }
       }
 
       DelimitedFile::from_string<int>(start_index, peptide_start_index_string); 

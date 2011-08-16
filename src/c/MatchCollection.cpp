@@ -145,6 +145,7 @@ MatchCollection::MatchCollection(
   
   // the protein counter size, create protein counter
   Database* database = match_collection_iterator->getDatabase();
+  Database* decoy_database = match_collection_iterator->getDecoyDatabase();
   post_protein_counter_size_ 
    = database->getNumProteins();
   post_protein_counter_ 
@@ -172,7 +173,7 @@ MatchCollection::MatchCollection(
          full_filename);
     free(full_filename);
 
-    extendTabDelimited(database, delimited_result_file);
+    extendTabDelimited(database, delimited_result_file, decoy_database);
 
     // for the first target file, set headers based on input files
     if( set_type == SET_TARGET && file_idx == 0 ){
@@ -2341,11 +2342,10 @@ void get_target_decoy_filenames(vector<string>& target_decoy_names,
  */
 bool MatchCollection::extendTabDelimited(
   Database* database, ///< the database holding the peptides -in
-  MatchFileReader& result_file   ///< the result file to parse PSMs -in
+  MatchFileReader& result_file,   ///< the result file to parse PSMs -in
+  Database* decoy_database ///< the database holding the decoy peptides -in
   )
 {
-
-
   Match* match = NULL;
 
   FLOAT_T delta_cn = 0;
@@ -2407,7 +2407,7 @@ bool MatchCollection::extendTabDelimited(
     post_scored_type_set_ = true;
 
     // parse match object
-    match = Match::parseTabDelimited(result_file, database);
+    match = Match::parseTabDelimited(result_file, database, decoy_database);
     if (match == NULL) {
       carp(CARP_ERROR, "Failed to parse tab-delimited PSM match");
       return false;

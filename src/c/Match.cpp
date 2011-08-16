@@ -1200,18 +1200,22 @@ double* Match::getPercolatorFeatures(
  */
 Match* Match::parseTabDelimited(
   MatchFileReader& result_file,  ///< the result file to parse PSMs -in
-  Database* database ///< the database to which the peptides are created -in
+  Database* database, ///< the database to which the peptides are created -in
+  Database* decoy_database ///< database with decoy peptides
   ) {
 
   Match* match = new Match();
 
   Spectrum* spectrum = NULL;
-  PEPTIDE_T* peptide = NULL;
 
   // this is a post_process match object
   match->post_process_match_ = true;
 
-  if((peptide = parse_peptide_tab_delimited(result_file, database, true))== NULL){
+  PEPTIDE_T* peptide = parse_peptide_tab_delimited(result_file, 
+                                                   database, 
+                                                   true, 
+                                                   decoy_database);
+  if(peptide == NULL){
     carp(CARP_ERROR, "Failed to parse peptide (tab delimited)");
     // FIXME should this exit or return null. I think sometimes we can get
     // no peptides, which is valid, in which case NULL makes sense.
