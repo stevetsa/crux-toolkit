@@ -1507,6 +1507,17 @@ int prepare_protein_input(
     }
     num_proteins = (*index)->getNumProteins();
 
+    // check that the index decoys are compatible with the search
+    DECOY_TYPE_T search_decoys = 
+      string_to_decoy_type(get_string_parameter_pointer("decoys"));
+    DECOY_TYPE_T index_decoys = (*index)->getDecoyType();
+    if( search_decoys != NO_DECOYS && search_decoys != index_decoys ){
+      carp(CARP_FATAL, 
+           "Cannot search for %s decoys using an index with %s decoys",
+           decoy_type_to_string(search_decoys), 
+           decoy_type_to_string(index_decoys));
+    }
+
   } else {
     carp(CARP_INFO, "Preparing protein fasta file %s", input_file);
     *database = new Database(input_file, FALSE);         

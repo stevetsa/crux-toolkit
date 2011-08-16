@@ -554,7 +554,7 @@ void initialize_parameters(void){
       "file is controlled by --output-dir.", "true");
 
   // user options regarding decoys
-  set_string_parameter("decoys", "protein-shuffle",
+  set_string_parameter("decoys", "peptide-shuffle",
       "Include a decoy version of every peptide by shuffling or reversing the "
       "target sequence.  <string>=none|reverse|protein-shuffle|peptide-shuffle."
       " Use 'none' for no decoys.  Default=protein-shuffle.",

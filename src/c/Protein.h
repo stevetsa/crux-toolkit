@@ -54,6 +54,15 @@ class Protein {
      unsigned int* sequence_length // the sequence length -chris added
    );
  
+  /**
+   * Rearrange the sequence_ between cleavage sites, keeping residues
+   * on either side of a cleavage in place.  Get enzyme from
+   * parameters.  Same behavior for full and partial digest, min/max
+   * length/mass and missed cleavages, i.e. shuffle between every
+   * cleavage site.
+   */
+  void peptideShuffleSequence();
+
  public:
 
   void init();

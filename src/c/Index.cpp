@@ -1381,6 +1381,13 @@ bool Index::getIsUnique()
 }
 
 /**
+ * \returns The type of decoys stored in the database.
+ */
+DECOY_TYPE_T Index::getDecoyType(){
+  return decoys_;
+}
+
+/**
  * clean_up
  * cleans up the temporary directory when SIGINT
  */

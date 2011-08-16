@@ -18,6 +18,7 @@
 #include "Database.h"
 #include "carp.h"
 #include "PeptideConstraint.h"
+#include "ProteinPeptideIterator.h"
 
 using namespace std;
 
@@ -552,8 +553,7 @@ void Protein::shuffle(DECOY_TYPE_T decoy_type){
     break;
 
   case PEPTIDE_SHUFFLE_DECOYS:
-    carp(CARP_FATAL, 
-         "Sorry, haven't implemented digest-constrained shuffling yet.");
+    peptideShuffleSequence();
     break;
     
   case INVALID_DECOY_TYPE:
@@ -812,6 +812,65 @@ bool protein_id_less_than(Protein* protein_one, Protein* protein_two){
   int compare = strcmp(protein_one->getIdPointer(),
                        protein_two->getIdPointer());
   return (compare > 0);
+}
+
+/**
+ * Rearrange the sequence_ between cleavage sites, keeping residues
+ * on either side of a cleavage in place.  Get enzyme from
+ * parameters.  Cases of NO_ENZYME or NON_SPECIFIC_DIGEST are the same
+ * as shuffling the whole protein.  Same behavior for full and partial
+ * digest, min/max length/mass and missed cleavages, i.e. shuffle
+ * between every cleavage site.
+ */
+void Protein::peptideShuffleSequence(){
+  if( sequence_ == NULL ){
+    carp(CARP_WARNING, "Cannot shuffle a NULL sequence");
+    return;
+  }
+  if( length_ < 2 ){
+    return;
+  }
+ 
+  // get the digest rule
+  ENZYME_T enzyme = get_enzyme_type_parameter("enzyme");
+  // cases where peptide-shuffle is really protein shuffle
+  if( enzyme == NO_ENZYME 
+      || get_digest_type_parameter("digestion") == NON_SPECIFIC_DIGEST){
+    this->shuffle(PROTEIN_SHUFFLE_DECOYS);
+    return;
+  }
+
+  // store valid cleavage locations
+  vector<int> cleave_after_here;
+
+  // traverse the sequence to penultimate residue
+  for(size_t seq_offset = 0; seq_offset < length_ - 1; seq_offset++){
+    // mark each valid location (mark x for cleavage between x and y)
+    if( ProteinPeptideIterator::validCleavagePosition(sequence_ + seq_offset, 
+                                                      enzyme) ){
+      cleave_after_here.push_back(seq_offset);
+    }
+  }
+
+  // shuffle between each cleavage site (leave a and b in place)
+  int start = 0; // shuffle between prot first residue and first site
+  int end = -1;
+  vector<int>::iterator next_position = cleave_after_here.begin();
+  for(; next_position != cleave_after_here.end(); ++next_position){
+    end = *next_position;
+    int sub_seq_length = end - start - 1;
+    if( sub_seq_length > 1 ){
+      shuffle_array(sequence_ + start + 1, sub_seq_length);
+    }
+    start = end + 1; // hold in place both sides of the cleavage site
+  }
+
+  // shuffle end of sequence
+  end = length_ - 1;
+  int sub_seq_length = end - start - 1;
+  if( sub_seq_length > 1 ){
+    shuffle_array(sequence_ + start + 1, sub_seq_length);
+  }
 }
 
 

@@ -315,6 +315,11 @@ class Index {
                            
 
   int getNumProteins();
+
+  /**
+   * \returns The type of decoys stored in the database.
+   */
+  DECOY_TYPE_T getDecoyType();
 };
 
 
