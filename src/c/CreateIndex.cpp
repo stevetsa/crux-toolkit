@@ -100,7 +100,7 @@ int CreateIndex::main(int argc, char** argv) {
   enzyme = get_enzyme_type_parameter("enzyme");
   digest = get_digest_type_parameter("digestion");
   mass_type = get_mass_type_parameter("isotopic-mass");
-  DECOY_TYPE_T decoys = string_to_decoy_type(get_string_parameter("decoys"));
+  DECOY_TYPE_T decoys = get_decoy_type_parameter("decoys");
 
   /* create peptide constraint */
   constraint = new PeptideConstraint(enzyme, digest, min_mass, max_mass, 

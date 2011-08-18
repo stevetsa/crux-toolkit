@@ -3,6 +3,5 @@ top-match=100
 overwrite=T
 decoys=reverse
 precision=2
-reverse-sequence=T
 mod=0.5:ABCDEFGHIJKLMNOPQRSTUVWXYZ:1
 seed=7

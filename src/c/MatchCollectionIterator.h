@@ -23,7 +23,7 @@ class MatchCollectionIterator {
   ///< the total number of match_collections in the directory (target+decoy)
   int collection_idx_;  ///< the index of the current collection to return
   MatchCollection* match_collection_; ///< the match collection to return
-  bool is_another_collection_; ///< is there another match_collection to return?
+  bool has_another_collection_; ///< has another match_collection to return?
   vector<bool>* cols_in_file_; ///< which columns were in the target file
 
   /**
@@ -31,7 +31,7 @@ class MatchCollectionIterator {
    * the iterator to hand it off when 'next' called.
    *
    * When no more match_collections (i.e. psm files) are available, set
-   * match_collection_iterator->is_another_collection to false
+   * match_collection_iterator->has_another_collection to false
    * \returns void
    */
   void setup();

@@ -16,7 +16,7 @@
  * the iterator to hand it off when 'next' called.
  *
  * When no more match_collections (i.e. psm files) are available, set
- * match_collection_iterator->is_another_collection to false
+ * match_collection_iterator->has_another_collection to false
  * \returns void
  */
 void MatchCollectionIterator::setup()
@@ -28,7 +28,7 @@ void MatchCollectionIterator::setup()
       new MatchCollection(this, (SET_TYPE_T)collection_idx_);
 
     // we have another match_collection to return
-    is_another_collection_ = true;
+    has_another_collection_ = true;
     
     // let's move on to the next one next time
     ++collection_idx_;
@@ -38,7 +38,7 @@ void MatchCollectionIterator::setup()
   }
   else{
     // we're done, no more match_collections to return
-    is_another_collection_ = false;
+    has_another_collection_ = false;
   }
 }
 
@@ -56,7 +56,7 @@ MatchCollectionIterator::MatchCollectionIterator(
 ) :
   working_directory_(NULL), directory_name_(NULL), database_(NULL),
   decoy_database_(NULL), number_collections_(0), collection_idx_(-1),
-  match_collection_(NULL), is_another_collection_(NULL)
+  match_collection_(NULL), has_another_collection_(false)
 {
   carp(CARP_DEBUG, 
        "Creating match collection iterator for dir %s and protein database %s",
@@ -167,7 +167,7 @@ MatchCollectionIterator::MatchCollectionIterator(
   number_collections_ = total_sets;
   directory_name_ = 
     my_copy_string(output_file_directory);
-  is_another_collection_ = false;
+  has_another_collection_ = false;
 
   carp(CARP_DETAILED_DEBUG,"num collections:%d",number_collections_);
 
@@ -185,7 +185,7 @@ MatchCollectionIterator::MatchCollectionIterator(
 bool MatchCollectionIterator::hasNext()
 {
   // Do we have another match_collection to return
-  return is_another_collection_;
+  return has_another_collection_;
 }
 
 /**
@@ -215,7 +215,7 @@ MatchCollection* MatchCollectionIterator::next()
 {
   MatchCollection* match_collection = NULL;
   
-  if(is_another_collection_){
+  if(has_another_collection_){
     match_collection = match_collection_;
     match_collection_ = NULL;
     setup();

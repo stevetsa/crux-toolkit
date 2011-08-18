@@ -1508,8 +1508,7 @@ int prepare_protein_input(
     num_proteins = (*index)->getNumProteins();
 
     // check that the index decoys are compatible with the search
-    DECOY_TYPE_T search_decoys = 
-      string_to_decoy_type(get_string_parameter_pointer("decoys"));
+    DECOY_TYPE_T search_decoys = get_decoy_type_parameter("decoys");
     DECOY_TYPE_T index_decoys = (*index)->getDecoyType();
     if( search_decoys != NO_DECOYS && search_decoys != index_decoys ){
       carp(CARP_FATAL, 
@@ -1697,8 +1696,7 @@ void strcat_formatted
  */
 int get_num_decoys(bool have_index){
 
-  string decoy_type_str = get_string_parameter_pointer("decoys");
-  DECOY_TYPE_T decoy_type = string_to_decoy_type(decoy_type_str.c_str());
+  DECOY_TYPE_T decoy_type = get_decoy_type_parameter("decoys");
 
   switch(decoy_type){
   case NO_DECOYS:

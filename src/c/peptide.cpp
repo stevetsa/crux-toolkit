@@ -1117,7 +1117,7 @@ void transform_peptide_to_decoy(PEPTIDE_T* peptide){
     return;
   }
 
-  BOOLEAN_T reverse_seq = get_boolean_parameter("reverse-sequence");
+  bool reverse_seq = (get_decoy_type_parameter("decoys") == REVERSE_DECOYS);
 
   // delete any existing decoy sequence
   if(peptide->decoy_modified_seq){ 
