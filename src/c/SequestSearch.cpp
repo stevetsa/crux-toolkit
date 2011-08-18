@@ -16,6 +16,7 @@
 #include "FilteredSpectrumChargeIterator.h"
 #include "SearchProgress.h"
 #include "SpectrumCollectionFactory.h"
+#include "ModifiedPeptidesIterator.h"
 
 using namespace std;
 
@@ -153,15 +154,13 @@ int SequestSearch::main(int argc,   ///< number of cmd line tokens
       PEPTIDE_MOD_T* peptide_mod = peptide_mods[mod_idx];
 
       // get peptide iterator
-
-      MODIFIED_PEPTIDES_ITERATOR_T* peptide_iterator =
-        new_modified_peptides_iterator_from_zstate(
-                                               mz,
-                                               zstate,
-                                               peptide_mod, 
-                                               FALSE, // not decoy
-                                               index,
-                                               database);
+      ModifiedPeptidesIterator* peptide_iterator =
+        new ModifiedPeptidesIterator(mz,
+                                     zstate,
+                                     peptide_mod, 
+                                     FALSE, // not decoy
+                                     index,
+                                     database);
 
       // add matches to targets
       int added = target_psms->addMatches(spectrum,
@@ -177,15 +176,13 @@ int SequestSearch::main(int argc,   ///< number of cmd line tokens
       for(int decoy_idx = 0; decoy_idx < num_decoys_per_target; decoy_idx++){
 
         // get new peptide iterator
-        free_modified_peptides_iterator(peptide_iterator);
-        peptide_iterator =
-          new_modified_peptides_iterator_from_zstate(
-                                                 mz,
-                                                 zstate,
-                                                 peptide_mod, 
-                                                 TRUE,  // is decoy
-                                                 index,
-                                                 database);
+        delete peptide_iterator;
+        peptide_iterator = new ModifiedPeptidesIterator(mz,
+                                                        zstate,
+                                                        peptide_mod, 
+                                                        TRUE,  // is decoy
+                                                        index,
+                                                        database);
         // add matches
         MatchCollection* cur_decoys = decoy_psm_collections.at(decoy_idx);
         cur_decoys->addMatches(spectrum,
@@ -201,7 +198,7 @@ int SequestSearch::main(int argc,   ///< number of cmd line tokens
       carp(CARP_DEBUG, "Found %d peptides.", added);
 
       // clean up for next peptide mod
-      free_modified_peptides_iterator(peptide_iterator);
+      delete peptide_iterator;
 
     } // next peptide mod
 
