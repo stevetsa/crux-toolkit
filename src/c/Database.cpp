@@ -667,6 +667,14 @@ bool Database::getIsParsed()
 }
 
 /**
+ * \returns The type of shuffling used on the proteins in this database
+ */
+DECOY_TYPE_T Database::getDecoyType(){
+  return decoys_;
+}
+
+
+/**
  * sets the use_light_protein of the database
  */
 void Database::setUseLightProtein(

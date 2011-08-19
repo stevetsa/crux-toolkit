@@ -205,6 +205,11 @@ class Database {
   bool getIsParsed();
 
   /**
+   * \returns The type of shuffling used on the proteins in this database
+   */
+  DECOY_TYPE_T getDecoyType();
+
+  /**
    *\returns the total number of proteins of the database
    */
   unsigned int getNumProteins();

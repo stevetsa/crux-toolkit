@@ -509,14 +509,17 @@ void Match::printSqt(
   char* protein_id = NULL;
   Protein* protein = NULL;
   const char* rand = "";
-  if( null_peptide_ ){
-    rand = "rand_";
-  }
   
   while(peptide_src_iterator_has_next(peptide_src_iterator)){
     peptide_src = peptide_src_iterator_next(peptide_src_iterator);
     protein = get_peptide_src_parent_protein(peptide_src);
     protein_id = protein->getId();
+
+    // only prepend "rand_" if we are doing a fasta search
+    if( null_peptide_ 
+        && (protein->getDatabase()->getDecoyType() == NO_DECOYS) ){
+      rand = "rand_";
+    }
     
     // print match info (locus line), add rand_ to locus name for decoys
     fprintf(file, "L\t%s%s\n", rand, protein_id);      
