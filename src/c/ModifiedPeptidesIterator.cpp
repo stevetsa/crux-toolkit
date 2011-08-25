@@ -27,10 +27,35 @@ ModifiedPeptidesIterator::ModifiedPeptidesIterator(
        hasNext(), (next_peptide_ == NULL));
 }
 
+/**
+ * Constructor for returning all peptides in the index or database
+ * that fall within the constraints defined in parameter.cpp.
+ */
+ModifiedPeptidesIterator::ModifiedPeptidesIterator(
+  PEPTIDE_MOD_T* pmod, ///< Peptide mod to apply
+  Index* index,      ///< Index from which to draw peptides OR
+  Database* dbase    ///< Database from which to draw peptides
+){
+  peptide_source_ = new GeneratePeptidesIterator(getMinMaxMass(), 
+                                                 false, // not decoy
+                                                 dbase, index);
+
+  peptide_modification_ = pmod;
+  temp_peptide_list_ = new_empty_list();
+  max_aas_modified_ = get_int_parameter("max-aas-modified");
+  initialize();
+}
+
 ModifiedPeptidesIterator::~ModifiedPeptidesIterator(){
   delete_linked_list(temp_peptide_list_);
   free_peptide(next_peptide_);
   delete peptide_source_;
+}
+
+pair<FLOAT_T,FLOAT_T>ModifiedPeptidesIterator::getMinMaxMass()
+{
+  return pair<FLOAT_T,FLOAT_T>(get_double_parameter("min-mass"),
+                               get_double_parameter("max-mass"));
 }
 
 pair<FLOAT_T,FLOAT_T> ModifiedPeptidesIterator::getMinMaxMass(

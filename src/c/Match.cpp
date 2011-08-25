@@ -26,7 +26,6 @@
 #include "scorer.h" 
 #include "Match.h" 
 #include "MatchCollection.h" 
-#include "generate_peptides_iterator.h" 
 #include "peptide.h"
 
 #include <string>

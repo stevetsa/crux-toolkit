@@ -49,8 +49,6 @@ LIBFILES= \
   DatabaseProteinIterator.h \
   DatabasePeptideIterator.cpp \
   DatabasePeptideIterator.h \
-  DatabaseSortedPeptideIterator.cpp \
-  DatabaseSortedPeptideIterator.h \
   CruxApplication.cpp \
   CruxApplication.h \
   CruxApplicationList.cpp \
@@ -69,8 +67,6 @@ LIBFILES= \
   FilteredSpectrumChargeIterator.h \
   GeneratePeptidesIterator.cpp \
   GeneratePeptidesIterator.h \
-  generate_peptides_iterator.cpp \
-  generate_peptides_iterator.h \
   hash.cpp \
   hash.h \
   Index.cpp \
@@ -115,8 +111,6 @@ LIBFILES= \
   modifications.h \
   ModifiedPeptidesIterator.cpp \
   ModifiedPeptidesIterator.h \
-  modified_peptides_iterator.cpp \
-  modified_peptides_iterator.h \
   MS2SpectrumCollection.cpp \
   MS2SpectrumCollection.h \
   MSToolkitSpectrumCollection.cpp \

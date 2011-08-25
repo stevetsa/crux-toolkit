@@ -31,13 +31,11 @@
 #include "parameter.h"
 #include "scorer.h" 
 #include "Index.h"
-#include "generate_peptides_iterator.h" 
 #include "Match.h"
 #include "hash.h"
 #include "peptide_src.h"
 #include "ProteinIndex.h"
 #include "modifications.h"
-#include "modified_peptides_iterator.h"
 #include "ModifiedPeptidesIterator.h"
 #include "MatchFileWriter.h"
 #include "MatchIterator.h"
@@ -106,12 +104,6 @@ class MatchCollection {
   Match* top_scoring_sp_; ///< the match with Sp rank == 1
 
   /******* Private function declarations ***/
-  int addUnscoredPeptides(
-    Spectrum* spectrum, 
-    SpectrumZState& charge, 
-    MODIFIED_PEPTIDES_ITERATOR_T* peptide_iterator,
-    bool is_decoy
-    );
   int addUnscoredPeptides(
     Spectrum* spectrum, 
     SpectrumZState& charge, 
@@ -209,16 +201,6 @@ class MatchCollection {
    *
    * \returns The number of matches added.
    */
-  
-  int addMatches(
-    Spectrum* spectrum,  ///< compare peptides to this spectrum
-    SpectrumZState& zstate,            ///< use this charge state for spectrum
-    MODIFIED_PEPTIDES_ITERATOR_T* peptide_iterator, ///< use these peptides
-    bool is_decoy,     ///< do we shuffle the peptides
-    bool store_scores, ///< true means save scores in xcorrs[]
-    bool do_sp_score,  ///< true means do Sp before xcorr
-    bool filter_by_sp  ///< true means keep only high sp scoring psms
-  );
   int addMatches(
     Spectrum* spectrum,  ///< compare peptides to this spectrum
     SpectrumZState& zstate,            ///< use this charge state for spectrum
@@ -586,8 +568,8 @@ class MatchCollection {
    */
   void addDecoyScores(
     Spectrum* spectrum, ///< search this spectrum
-    int charge, ///< search spectrum at this charge state
-    MODIFIED_PEPTIDES_ITERATOR_T* peptides ///< use these peptides to search
+    SpectrumZState& zstate, ///< search spectrum at this charge state
+    ModifiedPeptidesIterator* peptides ///< use these peptides to search
   );
 
   /**

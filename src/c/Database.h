@@ -13,8 +13,8 @@
 #include "Protein.h"
 #include "carp.h"
 #include "PeptideConstraint.h"
-#include "sorter.h"
 #include <string>
+#include <map>
 
 //Comparator function for c type strings.
 struct cmp_str {
@@ -27,13 +27,13 @@ struct cmp_str {
 
 class Database {
  protected:
-  string fasta_filename_; ///< Name of the text file.
-  string binary_filename_;///< Full path to the binary protein sequence file.
+  std::string fasta_filename_; ///< Name of the text file.
+  std::string binary_filename_;///< Full path to the binary protein sequence file.
   FILE*        file_;     ///< Open filehandle for this database.
                          ///  A database has only one associated file.
   bool is_parsed_;  ///< Has this database been parsed yet.
   std::vector<Protein*>* proteins_; ///< Proteins in this database.
-  map<char*, Protein*, cmp_str>* protein_map_; //map for proteins 
+  std::map<char*, Protein*, cmp_str>* protein_map_; //map for proteins 
   bool is_hashed_; //Indicator of whether the database has been hashed/mapped.
   unsigned long int size_; ///< The size of the database in bytes (convenience)
   bool use_light_protein_; ///< should I use the light/heavy protein option
@@ -89,9 +89,9 @@ class Database {
   /**
    * The suffix on binary and text fasta files.
    */
-  static const string binary_suffix;
-  static const string decoy_binary_suffix;
-  static const string decoy_fasta_suffix;
+  static const std::string binary_suffix;
+  static const std::string decoy_binary_suffix;
+  static const std::string decoy_fasta_suffix;
 
   /**
    * \returns An (empty) database object.

@@ -12,7 +12,6 @@
 #include "objects.h"
 #include "peptide.h"
 #include "Protein.h"
-#include "sorter.h"
 #include "carp.h"
 #include "PeptideConstraint.h"
 #include "Database.h"

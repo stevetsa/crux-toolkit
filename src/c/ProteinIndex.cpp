@@ -14,7 +14,6 @@
 #include "carp.h"
 #include "objects.h"
 #include "PeptideConstraint.h"
-#include "sorter.h"
 #include "ProteinIndex.h"
 
 

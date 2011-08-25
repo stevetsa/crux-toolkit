@@ -80,7 +80,7 @@ class MatchSearch : public CruxApplication {
   void addDecoyScores(
     MatchCollection* target_psms, ///< add scores to these matches
     Spectrum* spectrum, ///<
-    int charge, ///< 
+    SpectrumZState& zstate, ///< 
     Index* index, ///< search this index if not null
     Database* database, ///< search this database if not null
     PEPTIDE_MOD_T** peptide_mods, ///< list of peptide mods to search

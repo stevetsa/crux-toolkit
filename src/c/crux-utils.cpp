@@ -297,72 +297,6 @@ COMPARISON_T string_to_comparison(char* name) {
   
 }
 
-
-
-/**
- * The string version of peptide cleavage type
- */
-/*
-static char* peptide_type_strings[NUMBER_PEPTIDE_TYPES] = 
-{"tryptic", "partial", "N_TRYPTIC", "C_TRYPTIC", "NOT_TRYPTIC", "all"};
-
-BOOLEAN_T string_to_peptide_type(char* name, PEPTIDE_TYPE_T* result){
-
-  BOOLEAN_T success = TRUE;
-  //this is copied from parameter.c::get_peptide_mass_type
-  int pep_type = convert_enum_type_str(
-                     name, -10, peptide_type_strings, NUMBER_PEPTIDE_TYPES);
-  (*result) = (PEPTIDE_TYPE_T)pep_type;
-
-  if( pep_type < 0 ){
-    success = FALSE;
-  }
-  return success;
-}
-
-BOOLEAN_T peptide_type_to_string(PEPTIDE_TYPE_T type, char* type_str){
-  BOOLEAN_T success = TRUE;
-  if( (int)type > NUMBER_PEPTIDE_TYPES){
-    success = FALSE;
-    type_str = NULL;
-  }
-
-  //type_str = peptide_type_strings[type];
-  strcpy(type_str, peptide_type_strings[type]);
-
-  return success;
-}
-*/
-/**
- * The string version of peptide sort types
- */
-static const char* sort_type_strings[NUMBER_SORT_TYPES] =
-  { "none", "mass", "length", "lexical" };
-
-BOOLEAN_T string_to_sort_type(char* name, SORT_TYPE_T* result){
-  BOOLEAN_T success = TRUE;
-
-  int sort_type = convert_enum_type_str(name, INVALID_ENUM_STRING, 
-                                        sort_type_strings, NUMBER_SORT_TYPES);
-  (*result) = (SORT_TYPE_T)sort_type;
-
-  if( sort_type < 0){
-    success = FALSE;
-  }
-  return success;
-}
-
-BOOLEAN_T sort_type_to_string(SORT_TYPE_T type, 
-                              char* type_str){
-  BOOLEAN_T success = TRUE;
-  if( (int)type > NUMBER_SORT_TYPES ){
-    success = FALSE;
-    type_str = NULL;
-  }
-  strcpy(type_str, sort_type_strings[type]);
-  return success;
-}
-
 /*
  * The string version of ion types
  */
@@ -398,7 +332,6 @@ BOOLEAN_T ion_type_to_string(ION_TYPE_T type,
  */
 static const char* algorithm_type_strings[NUMBER_ALGORITHM_TYPES] = 
   {"percolator", "rczar", "curve-fit",
-   //"qvalue",
    "none", "all", "q-ranker"};
 
 BOOLEAN_T string_to_algorithm_type(char* name, ALGORITHM_TYPE_T* result){

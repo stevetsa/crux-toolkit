@@ -20,13 +20,11 @@
 #include "carp.h"
 #include "objects.h"
 #include "PeptideConstraint.h"
-#include "sorter.h"
 #include "ProteinIndex.h"
 #include "ProteinIndexIterator.h"
 
 #include "DatabaseProteinIterator.h"
 #include "DatabasePeptideIterator.h"
-#include "DatabaseSortedPeptideIterator.h"
 
 #include <map>
 #include <vector>
@@ -789,88 +787,6 @@ Database* Database::copyPtr(
   return database;
 }
 
-
-
-
-/***********************************************
- * Iterators
- ***********************************************/
-
-
-
-
-/**********************************************************************
- * wrapper, for generate_peptides_iterator, cast back to original type
- ***********************************************************************/
-
-/**
- * Frees an allocated database_peptide_iterator object.
- */
-void void_free_database_peptide_iterator(
-  void* database_peptide_iterator ///< the iterator to free -in
-  )
-{
-
-  delete (DatabasePeptideIterator*)database_peptide_iterator;
-}
-
-/**
- * The basic iterator functions.
- * \returns true if there are additional peptides, false if not.
- */
-bool void_database_peptide_iterator_has_next(
-  void* database_peptide_iterator ///< the iterator of interest -in
-  )
-{
-  return ((DatabasePeptideIterator*)database_peptide_iterator)->hasNext();
-}
-
-/**
- * \returns The next peptide in the database.
- */
-PEPTIDE_T* void_database_peptide_iterator_next(
-  void* database_peptide_iterator ///< the iterator of interest -in
-  )
-{
-
-  return ((DatabasePeptideIterator*)database_peptide_iterator)->next();
-}
-
-/**********************************************************************
- * wrapper, for generate_peptides_iterator, cast back to original type
- ***********************************************************************/
-
-/**
- * Frees an allocated database_sorted_peptide_iterator object.
- */
-void void_free_database_sorted_peptide_iterator(
-  void* database_peptide_iterator ///< the iterator to free -in
-  )
-{
-  delete (DatabaseSortedPeptideIterator*)database_peptide_iterator;
-}
-
-/**
- * The basic iterator functions.
- * \returns true if there are additional peptides to iterate over, false if not.
- */
-bool void_database_sorted_peptide_iterator_has_next(
-  void* database_peptide_iterator ///< the iterator of interest -in
-  )
-{
-  return ((DatabaseSortedPeptideIterator*)database_peptide_iterator)->hasNext();
-}
-
-/**
- * returns each peptide in sorted order
- * \returns The next peptide in the database.
- */
-PEPTIDE_T* void_database_sorted_peptide_iterator_next(
-  void* database_peptide_iterator ///< the iterator of interest -in
-  )
-{
-  return ((DatabaseSortedPeptideIterator*)database_peptide_iterator)->next();
-}
 
 /*
  * Local Variables:

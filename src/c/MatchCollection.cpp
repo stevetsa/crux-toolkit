@@ -210,57 +210,6 @@ MatchCollection::MatchCollection(
 int MatchCollection::addMatches(
   Spectrum* spectrum,  ///< compare peptides to this spectrum
   SpectrumZState& zstate,            ///< use this charge state for spectrum
-  MODIFIED_PEPTIDES_ITERATOR_T* peptide_iterator, ///< use these peptides
-  bool is_decoy,     ///< are peptides to be shuffled
-  bool store_scores, ///< save scores for p-val estimation
-  bool do_sp_scoring, ///< start with SP scoring
-  bool filter_by_sp  ///< truncate matches based on Sp scores
-){
-
-  if( peptide_iterator == NULL || spectrum == NULL ){
-    carp(CARP_FATAL, "Cannot add matches to a collection when match " 
-         "collection, spectrum and/or peptide iterator are NULL.");
-  }
-
-  //assert(matches->zstate == zstate);
-
-  // generate a match for each peptide in the iterator, storing them
-  // in the match collection
-  int num_matches_added = addUnscoredPeptides(spectrum, zstate,
-                                              peptide_iterator, is_decoy);
-
-  if( num_matches_added == 0 ){
-    return num_matches_added;
-  }
-
-  int xcorr_max_rank = get_int_parameter("psms-per-spectrum-reported");
-
-  // optional Sp score on all candidate peptides
-  if( do_sp_scoring ){
-    scoreMatchesOneSpectrum(SP, spectrum, zstate.getCharge(),
-                               false); // don't store scores
-    populateMatchRank(SP);
-    if( filter_by_sp ){ // keep only high-ranking sp psms
-      saveTopSpMatch();
-      int sp_max_rank = get_int_parameter("max-rank-preliminary");
-      truncate(sp_max_rank + 1, // extra for deltacn of last
-               SP);
-      xcorr_max_rank = sp_max_rank;
-    }
-  }
-
-  // main scoring
-  scoreMatchesOneSpectrum(XCORR, spectrum, zstate.getCharge(), 
-                             store_scores); 
-  populateMatchRank(XCORR);
-  truncate(xcorr_max_rank + 1,// extra for deltacn of last
-           XCORR);
-
-  return num_matches_added;
-}
-int MatchCollection::addMatches(
-  Spectrum* spectrum,  ///< compare peptides to this spectrum
-  SpectrumZState& zstate,            ///< use this charge state for spectrum
   ModifiedPeptidesIterator* peptide_iterator, ///< use these peptides
   bool is_decoy,     ///< are peptides to be shuffled
   bool store_scores, ///< save scores for p-val estimation
@@ -1050,55 +999,6 @@ bool MatchCollection::estimateWeibullParametersFromXcorrs(
  * Additional matches will not be scored for any type.
  * \returns The number of peptides added.
  */
-int MatchCollection::addUnscoredPeptides(
-  Spectrum* spectrum, 
-  SpectrumZState& zstate, 
-  MODIFIED_PEPTIDES_ITERATOR_T* peptide_iterator,
-  bool is_decoy
-){
-
-  if( spectrum == NULL || peptide_iterator == NULL ){
-    carp(CARP_FATAL, "Cannot score peptides with NULL inputs.");
-  }
-  carp(CARP_DETAILED_DEBUG, "Adding decoy peptides to match collection? %i", 
-       is_decoy);
-
-  int starting_number_of_psms = match_total_;
-
-  while( modified_peptides_iterator_has_next(peptide_iterator)){
-    // get peptide
-    PEPTIDE_T* peptide = modified_peptides_iterator_next(peptide_iterator);
-
-    // create a match
-    Match* match = new Match();
-
-    // set match fields
-    match->setPeptide(peptide);
-    match->setSpectrum(spectrum);
-    match->setZState(zstate);
-    match->setNullPeptide(is_decoy);
-
-    // add to match collection
-    if(match_total_ >= _MAX_NUMBER_PEPTIDES){
-      carp(CARP_ERROR, "peptide count of %i exceeds max match limit: %d", 
-          match_total_, _MAX_NUMBER_PEPTIDES);
-
-      return false;
-    }
-
-    match_[match_total_] = match;
-    match_total_++;
-
-  }// next peptide
-
-  int matches_added = match_total_ - starting_number_of_psms;
-  experiment_size_ += matches_added;
-
-  // matches are no longer correctly sorted
-  last_sorted_ = (SCORER_TYPE_T)-1; // unsorted
-  return matches_added;
-}
-
 int MatchCollection::addUnscoredPeptides(
   Spectrum* spectrum, 
   SpectrumZState& zstate, 
@@ -2808,11 +2708,12 @@ bool set_match_collection_charge(
  */
 void MatchCollection::addDecoyScores(
   Spectrum* spectrum, ///< search this spectrum
-  int charge, ///< search spectrum at this charge state
-  MODIFIED_PEPTIDES_ITERATOR_T* peptides ///< use these peptides to search
+  SpectrumZState& zstate, ///< search spectrum at this charge state
+  ModifiedPeptidesIterator* peptides ///< use these peptides to search
 ){
 
   // reuse these for scoring all matches
+  int charge = zstate.getCharge();
   IonConstraint* ion_constraint = 
     IonConstraint::newIonConstraintSmart(XCORR, charge);
  
@@ -2820,10 +2721,10 @@ void MatchCollection::addDecoyScores(
   SCORER_T* scorer = new_scorer(XCORR);
   
   // for each peptide in the iterator
-  while( modified_peptides_iterator_has_next(peptides)){
+  while( peptides->hasNext() ){
 
     // get peptide and sequence
-    PEPTIDE_T* peptide = modified_peptides_iterator_next(peptides);
+    PEPTIDE_T* peptide = peptides->next();
     char* decoy_sequence = get_peptide_sequence(peptide);
     MODIFIED_AA_T* modified_seq = get_peptide_modified_aa_sequence(peptide);
 

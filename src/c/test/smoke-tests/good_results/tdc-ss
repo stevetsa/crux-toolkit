@@ -37,11 +37,6 @@ min-weibull-points=4000
 # for Sp scoring and 1 for xcorr scoring.
 isotope=0
 
-# Sort peptides according to which property (mass, length, lexical,
-# none).  Default=none.
-# Only available for crux-generate-peptides.
-sort=none
-
 # Window type to use for selecting decoy peptides from precursor mz.
 # <string>=mass|mz|ppm. Default=mass.
 # Available for crux search-for-matches

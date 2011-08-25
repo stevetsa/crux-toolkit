@@ -6,7 +6,7 @@
 #define PETPIDE_ITERATOR_H
 
 #include "peptide.h"
-#include <iostream>
+//#include <iostream>
 
 class PeptideIterator{
 

@@ -13,7 +13,6 @@
 #include "Protein.h"
 #include "carp.h"
 #include "PeptideConstraint.h"
-#include "sorter.h"
 
 
 class ProteinIndex {

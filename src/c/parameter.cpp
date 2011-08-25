@@ -25,7 +25,7 @@ static const FLOAT_T SMART_MZ_OFFSET = 0.68;
 static const char* parameter_type_strings[NUMBER_PARAMETER_TYPES] = { 
   "INT_ARG", "DOUBLE_ARG", "STRING_ARG", "MASS_TYPE_T", "DIGEST_T", 
   "ENZYME_T", 
-  "BOOLEAN_T", "SORT_TYPE_T", "SCORER_TYPE_T", "ION_TYPE_T",
+  "BOOLEAN_T", "SCORER_TYPE_T", "ION_TYPE_T",
   "ALGORITHM_TYPE_T", "WINDOW_TYPE_T", "MEASURE_TYPE_T", 
   "PARSIMONY_TYPE_T", "QUANT_LEVEL_TYPE_T", "DECOY_TYPE_T"};
 
@@ -171,13 +171,6 @@ BOOLEAN_T set_window_type_parameter(
  const char* filenotes,   ///< additional info for param file
  const char* foruser
   );
-
-BOOLEAN_T set_sort_type_parameter(
- const char* name,
- SORT_TYPE_T set_value,
- const char* usage,
- const char* filenotes,
- const char* foruser);
 
 BOOLEAN_T set_algorithm_type_parameter(
  const char* name,
@@ -475,10 +468,6 @@ void initialize_parameters(void){
   set_boolean_parameter("output-sequence", FALSE, 
       "Print peptide sequence (T,F). Default=F.",
       "Available only for crux-generate-peptides.", "true");
-  set_sort_type_parameter("sort", SORT_NONE, 
-      "Sort peptides according to which property "
-      "(mass, length, lexical, none).  Default=none.",
-      "Only available for crux-generate-peptides.", "true");
 
   /* search-for-matches command line options */
   set_scorer_type_parameter("prelim-score-type", SP, 
@@ -1104,7 +1093,6 @@ BOOLEAN_T select_cmd_line(  //remove options from name
     if( //strcmp(type_ptr, "PEPTIDE_TYPE_T") == 0 ||
         strcmp((char*)type_ptr, "MASS_TYPE_T") == 0 ||
         strcmp((char*)type_ptr, "BOOLEAN_T") == 0 ||
-        strcmp((char*)type_ptr, "SORT_TYPE_T") == 0 ||
         strcmp((char*)type_ptr, "SCORER_TYPE_T") == 0 ){
       type_ptr = (void*)"STRING_ARG";
     }
@@ -1628,7 +1616,6 @@ BOOLEAN_T check_option_type_and_bounds(const char* name){
   char* max_str = (char*)get_hash_value(max_values, name);
 
   MASS_TYPE_T mass_type;
-  SORT_TYPE_T sort_type;
   SCORER_TYPE_T scorer_type;
   ALGORITHM_TYPE_T algorithm_type;
   ION_TYPE_T ion_type;
@@ -1688,16 +1675,6 @@ BOOLEAN_T check_option_type_and_bounds(const char* name){
       success =  FALSE;
       sprintf(die_str, 
               "Illegal boolean value '%s' for option '%s'.  Must be T or F",
-              value_str, name);
-    }
-    break;
-  case SORT_TYPE_P:
-    carp(CARP_DETAILED_DEBUG, "found sort_type param, value '%s'",
-         value_str);
-    if( ! string_to_sort_type( value_str, &sort_type)){
-      success = FALSE;
-      sprintf(die_str, "Illegal sort value '%s' for option '%s'. "
-              "Must be mass, length, lexical, or none.", 
               value_str, name);
     }
     break;
@@ -2359,18 +2336,6 @@ char get_delimiter_parameter(
   }
 }
 
-SORT_TYPE_T get_sort_type_parameter(const char* name){
-  char* param_value_str = (char*)get_hash_value(parameters, name);
-  SORT_TYPE_T param_value;
-  BOOLEAN_T success = string_to_sort_type(param_value_str, &param_value);
-
-  if( ! success){
-    carp(CARP_FATAL, "Sort_type parameter %s has the value %s which " 
-         "is not of the correct type", name, param_value_str);
-  }
-  return param_value;
-}
-
 ALGORITHM_TYPE_T get_algorithm_type_parameter(const char* name){
   char* param_value_str = (char*)get_hash_value(parameters, name);
   ALGORITHM_TYPE_T param_value;
@@ -2795,32 +2760,6 @@ BOOLEAN_T set_quant_level_parameter(
   free(value_str);
   return result;
   
-}
-  
-
-BOOLEAN_T set_sort_type_parameter(
-  const char* name,
-  SORT_TYPE_T set_value,
-  const char* usage,
-  const char* filenotes,
-  const char* foruser)
-{
-  BOOLEAN_T result = TRUE;
-  char value_str[SMALL_BUFFER];
-  // check if parameters can be changed
-  if(!parameter_plasticity){
-    carp(CARP_ERROR, "can't change parameters once they are confirmed");
-    return FALSE;
-  }
-  /* stringify value */
-  sort_type_to_string(set_value, value_str);
-  
-  result = add_or_update_hash(parameters, name, value_str);
-  result = add_or_update_hash(usages, name, usage);
-  result = add_or_update_hash(file_notes, name, filenotes);
-  result = add_or_update_hash(for_users, name, foruser);
-  result = add_or_update_hash(types, name, (void*)"SORT_TYPE_T");
-  return result;
 }
 
 BOOLEAN_T set_algorithm_type_parameter(

@@ -17,7 +17,6 @@
 #include "Spectrum.h"
 #include "parse_arguments.h" 
 #include "SpectrumCollection.h"
-#include "generate_peptides_iterator.h"
 #include "scorer.h"
 #include "Match.h"
 #include "MatchCollection.h"

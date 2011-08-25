@@ -239,7 +239,7 @@ void MatchSearch::printSpectrumMatches(
 void MatchSearch::addDecoyScores(
   MatchCollection* target_psms, ///< add scores to these matches
   Spectrum* spectrum, ///<
-  int charge, ///< 
+  SpectrumZState& zstate, ///< 
   Index* index, ///< search this index if not null
   Database* database, ///< search this database if not null
   PEPTIDE_MOD_T** peptide_mods, ///< list of peptide mods to search
@@ -249,19 +249,17 @@ void MatchSearch::addDecoyScores(
   int mod_idx = 0;
   // for each peptide mod in the list
   for(mod_idx = 0; mod_idx < num_peptide_mods; mod_idx++){
-    MODIFIED_PEPTIDES_ITERATOR_T* peptide_iterator = 
-      new_modified_peptides_iterator_from_mz(
-                                          spectrum->getPrecursorMz(),
-                                          charge,
-                                          peptide_mods[mod_idx],
-                                          TRUE, // is decoy
-                                          index,
-                                          database);
+    ModifiedPeptidesIterator* peptide_iterator = 
+      new ModifiedPeptidesIterator(spectrum->getPrecursorMz(),
+                                   zstate,
+                                   peptide_mods[mod_idx],
+                                   TRUE, // is decoy
+                                   index,
+                                   database);
     target_psms->addDecoyScores(spectrum, 
-                                      charge, 
-                                      peptide_iterator);  
-
-    free_modified_peptides_iterator(peptide_iterator);
+                                zstate,
+                                peptide_iterator);  
+    delete peptide_iterator;
   }
 
 
@@ -430,7 +428,7 @@ int MatchSearch::main(int argc, char** argv){
       carp(CARP_DEBUG, "Estimating Weibull parameters.");
       while( ! target_psms->hasEnoughWeibullPoints() ){
         // generate more scores from new decoys if there are not enough
-        addDecoyScores(target_psms, spectrum, charge, index, 
+        addDecoyScores(target_psms, spectrum, zstate, index, 
                          database, peptide_mods, max_pep_mods);
         
       }

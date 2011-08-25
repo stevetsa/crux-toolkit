@@ -23,6 +23,7 @@
 #include "utils.h"
 #include "objects.h"
 #include "Peak.h"
+#include "Index.h"
 
 #include "CruxApplication.h"
 
@@ -350,10 +351,6 @@ void fit_two_parameter_weibull(
 
 BOOLEAN_T string_to_mass_type(char*, MASS_TYPE_T*);
 BOOLEAN_T mass_type_to_string(MASS_TYPE_T, char*);
-//BOOLEAN_T string_to_peptide_type(char*, PEPTIDE_TYPE_T*);
-//BOOLEAN_T peptide_type_to_string(PEPTIDE_TYPE_T type, char* type_str);
-BOOLEAN_T string_to_sort_type(char*, SORT_TYPE_T*);
-BOOLEAN_T sort_type_to_string(SORT_TYPE_T, char*);
 BOOLEAN_T string_to_algorithm_type(char*, ALGORITHM_TYPE_T*);
 BOOLEAN_T algorithm_type_to_string(ALGORITHM_TYPE_T, char*);
 BOOLEAN_T string_to_scorer_type(char*, SCORER_TYPE_T*);
