@@ -473,9 +473,9 @@ void QRanker :: train_net_ranking(PSMScores &set, int interval)
 	  if(label*diff<1)
 	    {
 	      net.clear_gradients();
-	      gc[0] = -1.0;
+	      gc[0] = -1.0*labal;
 	      nets[0].bprop(gc);
-	      gc[0] = 1.0;
+	      gc[0] = 1.0*label;
 	      nets[1].bprop(gc);
 	      net.update(mu,weightDecay);
 	      
