@@ -858,18 +858,49 @@ void Protein::peptideShuffleSequence(){
   vector<int>::iterator next_position = cleave_after_here.begin();
   for(; next_position != cleave_after_here.end(); ++next_position){
     end = *next_position;
-    int sub_seq_length = end - start - 1;
-    if( sub_seq_length > 1 ){
-      shuffle_array(sequence_ + start + 1, sub_seq_length);
-    }
+    shuffleRegion(start, end);
     start = end + 1; // hold in place both sides of the cleavage site
   }
 
   // shuffle end of sequence
   end = length_ - 1;
+  shuffleRegion(start, end);
+}
+
+/**
+ * Shuffle the region of the sequence between start and end, leaving
+ * start and end residues in place.  Repeat up to three times if the
+ * shuffled sequence doesn't change.
+ */
+void Protein::shuffleRegion(int start, int end){
+
+  char buf[256]; // buffer for storing regions before shuffling
+
   int sub_seq_length = end - start - 1;
   if( sub_seq_length > 1 ){
+    carp(CARP_DETAILED_DEBUG, "Shuffle from %d to %d.", start+1, end);
+
+    // store the sequence before shuffling including the unmoved residues
+    strncpy(buf, sequence_ + start, sub_seq_length + 2);
+    buf[sub_seq_length + 2] = '\0';
+
     shuffle_array(sequence_ + start + 1, sub_seq_length);
+
+    // check to see if it changed
+    bool has_changed = strncmp(buf, sequence_ + start, sub_seq_length + 2);
+    // try reshuffling up to three more times
+    int count = 0;
+    while( (count < 3) && (has_changed == false)){
+      shuffle_array(sequence_ + start + 1, sub_seq_length);
+      has_changed = strncmp(buf, sequence_ + start, sub_seq_length + 2);
+      count++;
+    }
+    if( !has_changed ){
+        carp(CARP_WARNING, "Unable to generate a shuffled sequence "
+             "different than the original for sequence %s of protein %s "
+             "at position %d.", buf, id_, start);
+    }
+ 
   }
 }
 

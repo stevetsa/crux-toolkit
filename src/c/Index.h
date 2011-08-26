@@ -172,7 +172,8 @@ class Index {
     long bin_idx, ///< bin index in the file array -in
     unsigned int peptide_count, ///< the total peptide count in the bin -in
     FILE* text_file,
-    const char* file_prefix
+    const char* file_prefix,
+    Database* database ///< needed for protein info
     );
 
   /*
@@ -405,7 +406,8 @@ void free_bin_peptide_iterator(
 BIN_SORTED_PEPTIDE_ITERATOR_T* new_bin_sorted_peptide_iterator(
   Index* index, ///< The index object which we are iterating over -in
   FILE* file,///< the working file handler to the bin -in
-  unsigned int peptide_count ///< the total peptide count in the bin -in
+  unsigned int peptide_count, ///< the total peptide count in the bin -in
+  Database* database
   );
 
 /**

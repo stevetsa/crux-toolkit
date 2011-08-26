@@ -969,6 +969,35 @@ BOOLEAN_T delete_dir(char* dir) {
 
 /**
  * \brief Take a filename, strip its leading path information (if
+ * any) and file extension (if any).  Tries all file extensions until
+ * one is found.  Add a new path (if given) and a new suffix (exension).
+ *
+ * If given ../dir/filename.ext, [.txt, .ext, t], .new-ext, otherdir
+ * would return  otherdir/filename.new-ext 
+ * \returns A heap allocated filename
+ */
+char* generate_name_path(
+  const char* filename,
+  vector<const char*> old_suffixes,
+  const char* new_suffix,
+  const char* new_path
+  ){
+
+  // check the filename for the extension.  Use the first that matches
+  for(size_t suffix_idx = 0; suffix_idx < old_suffixes.size(); suffix_idx++){
+    if( has_extension(filename, old_suffixes[suffix_idx])){
+      return generate_name_path(filename, old_suffixes[suffix_idx],
+                                new_suffix, new_path);
+    }
+  }
+  // if we got to here, none of the suffixes were found, so it
+  // doesn't matter which we use
+  return generate_name_path(filename, "", new_suffix, new_path);
+
+}
+
+/**
+ * \brief Take a filename, strip its leading path information (if
  * any) and file extension (if any).  Add a new path (if given) and a
  * new suffix (exension).
  *

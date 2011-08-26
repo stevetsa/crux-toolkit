@@ -62,6 +62,7 @@ class Protein {
    * cleavage site.
    */
   void peptideShuffleSequence();
+  void shuffleRegion(int start, int end);
 
  public:
 

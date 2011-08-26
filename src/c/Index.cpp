@@ -123,6 +123,7 @@ char temp_folder_name[12] = "";
  */
 struct bin_peptide_iterator{
   Index* index; ///< The index object which we are iterating over
+  Database* database; ///< either target or decoy of index
   FILE* index_file; ///< The current file stream that we are reading from
   bool has_next; ///< Is there another peptide?
   PEPTIDE_T* peptide; ///< the next peptide to return
@@ -914,7 +915,8 @@ FILE* Index::sortBin(
   long bin_idx, ///< bin index in the file array -in
   unsigned int peptide_count, ///< the total peptide count in the bin -in
   FILE* text_file,
-  const char* file_prefix
+  const char* file_prefix,
+  Database* database
   )
 {
   char* filename = NULL;
@@ -925,7 +927,7 @@ FILE* Index::sortBin(
   }
 
   BIN_SORTED_PEPTIDE_ITERATOR_T* peptide_iterator =
-    new_bin_sorted_peptide_iterator(this, file, peptide_count);
+    new_bin_sorted_peptide_iterator(this, file, peptide_count, database);
   PEPTIDE_T* working_peptide = NULL;
   
   // get the filename for this file bin
@@ -1266,10 +1268,12 @@ void Index::index_database(
       continue;
     }
     // sort bin
-    if((file_array[bin_idx] = sortBin(file_array[bin_idx], bin_idx,  
+    if((file_array[bin_idx] = sortBin(file_array[bin_idx], 
+                                      bin_idx,  
                                       peptide_count_array[bin_idx], 
                                       text_file,
-                                      file_prefix)) == NULL){
+                                      file_prefix,
+                                      database)) == NULL){
       fcloseall();
       carp(CARP_FATAL, "Failed to sort bin %i", bin_idx);
     }
@@ -1419,17 +1423,15 @@ bool initialize_bin_peptide_iterator(
   // parsing.  One fix would be for parse_peptide to return error code
 
   FILE* file = bin_peptide_iterator->index_file;
-  Database* database = bin_peptide_iterator->index->getDatabase(false);// not decoy
+  Database* database = bin_peptide_iterator->database;// not decoy
   bool use_src_array = bin_peptide_iterator->use_array;
 
   // allocate peptide to used to parse
-  //  PEPTIDE_T* peptide = allocate_peptide();
   PEPTIDE_T* peptide = parse_peptide(file, database, use_src_array);
 
   if( peptide == NULL ){
     bin_peptide_iterator->peptide = NULL;
     bin_peptide_iterator->has_next = false;
-    //return false;
     return true;
   }
   // set file pointer
@@ -1447,7 +1449,8 @@ bool initialize_bin_peptide_iterator(
 BIN_PEPTIDE_ITERATOR_T* new_bin_peptide_iterator(
   Index* index, ///< The index object which we are iterating over -in
   FILE* file, ///< the bin to parse peptides
-  bool use_array  ///< should I use array peptide_src or link list when parsing peptides -in
+  bool use_array,  ///< should I use array peptide_src or link list when parsing peptides -in
+  Database* database
   )
 {
   if(use_array){
@@ -1465,6 +1468,7 @@ BIN_PEPTIDE_ITERATOR_T* new_bin_peptide_iterator(
   
   // set index, file
   bin_peptide_iterator->index = index;
+  bin_peptide_iterator->database = database;
   bin_peptide_iterator->index_file = file;
   bin_peptide_iterator->use_array = use_array;
     
@@ -1542,7 +1546,8 @@ void free_bin_peptide_iterator(
 BIN_SORTED_PEPTIDE_ITERATOR_T* new_bin_sorted_peptide_iterator(
   Index* index, ///< The index object which we are iterating over -in
   FILE* file, ///< the working bin file handler -in
-  unsigned int peptide_count ///< the total peptide count in the bin -in
+  unsigned int peptide_count, ///< the total peptide count in the bin -in
+  Database* database
   )
 {
   // set peptide implementation to array peptide_src
@@ -1560,7 +1565,7 @@ BIN_SORTED_PEPTIDE_ITERATOR_T* new_bin_sorted_peptide_iterator(
   // create bin_peptide_iterator
   // use link list peptide_src implementation to merge peptides
   BIN_PEPTIDE_ITERATOR_T* bin_peptide_iterator =
-    new_bin_peptide_iterator(index, file, false);
+    new_bin_peptide_iterator(index, file, false, database);
 
   // create a sorted peptide iterator that will sort all the peptides 
   // from bin peptide_iterator

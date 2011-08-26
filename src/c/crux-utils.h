@@ -194,6 +194,21 @@ char* generate_name(
   const char* file_extension,
   const char* suffix
   );
+/**
+ * \brief Take a filename, strip its leading path information (if
+ * any) and file extension (if any).  Tries all file extensions until
+ * one is found.  Add a new path (if given) and a new suffix (exension).
+ *
+ * If given ../dir/filename.ext, [.txt, .ext, t], .new-ext, otherdir
+ * would return  otherdir/filename.new-ext 
+ * \returns A heap allocated filename
+ */
+char* generate_name_path(
+  const char* filename,
+  vector<const char*> old_suffixes,
+  const char* new_suffix,
+  const char* new_path
+  );
 
 /**
  * \brief Take a filename, strip its leading path information (if

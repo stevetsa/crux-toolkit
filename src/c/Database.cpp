@@ -533,8 +533,12 @@ void Database::createBinaryFasta(const char* directory, bool is_temp){
   // also open a fasta file if this is a decoy database
   FILE* output_fasta = NULL;
   if( decoys_ != NO_DECOYS){
+    vector<const char*> suffixes;
+    suffixes.push_back(".fasta");
+    suffixes.push_back(".fa");
+    suffixes.push_back(".fsa");
     char* fasta_output_name = generate_name_path( fasta_filename_.c_str(),
-                                                  ".fasta", 
+                                                  suffixes, 
                                                   decoy_fasta_suffix.c_str(),
                                                   directory);
     output_fasta = fopen(fasta_output_name, "w");

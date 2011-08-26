@@ -124,6 +124,13 @@
 # Test sequest-search with an index
 1 = sequest_search_default = good_results/sequest_search.target.txt = rm -rf ss; crux sequest-search --output-dir ss test.ms2 test_crux_index; cat ss/sequest.target.txt  ss/sequest.decoy.txt
 
+# confirm that the decoys from an index search are the same as searching the index's decoy fasta file
+# compare to previous search results
+1 = index_decoys = good_results/index_decoy.target.txt = cut -f1-17 ss/sequest.decoy.txt > good_results/index_decoy.target.txt; crux sequest-search --output-dir ss --fileroot fasta --decoys none test.ms2 test_crux_index/test-random.fasta; cat ss/fasta.sequest.target.txt
+
+# compare a concatinated fasta seach with an indexed target-decoy-competition search
+1 = competition = good_results/competition.target.txt = rm -rf comp; cat test.fasta test_crux_index/test-random.fasta > concat.fasta; crux sequest-search --output-dir comp --fileroot concat test.ms2 concat.fasta; cp comp/concat.sequest.target.txt good_results/competition.target.txt; crux sequest-search --output-dir comp --decoy-location target-file test.ms2 test_crux_index; cat comp/sequest.target.txt
+
 # Search for matches with modifications from index
 1 = search_mods_index = good_results/search_mods_index.target.txt = crux search-for-matches --parameter-file params/mods-high-precision test.ms2 existing_crux_index; cat crux-output/search.target.txt = 'Time' 'Database'
 
