@@ -10,7 +10,7 @@ class MPSM_Scorer {
   
     Spectrum* spectrum_;
     int max_charge_;
-    SCORER_T* scorer_;
+    Scorer* scorer_;
     SCORER_TYPE_T scorer_type_;
     IonConstraint* ion_constraint_;
   /*

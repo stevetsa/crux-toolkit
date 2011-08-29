@@ -4,7 +4,7 @@
 #include "RetentionPredictor.h"
 #include "DelimitedFileReader.h"
 #include "mass.h"
-#include "match.h"
+#include "Match.h"
 
 #include <string>
 #include <vector>
@@ -38,7 +38,7 @@ class AKlammerRetentionPredictor: public RetentionPredictor {
       int charge,
       double spectrum_mz);
 
-    void fillFeatures(struct svm_node* data, MATCH_T* match);
+    void fillFeatures(struct svm_node* data, Match* match);
     void fillFeatures(struct svm_node* data, DelimitedFileReader& result_data);
 
 
@@ -64,7 +64,7 @@ class AKlammerRetentionPredictor: public RetentionPredictor {
 
     virtual ~AKlammerRetentionPredictor();
 
-    virtual FLOAT_T predictRTime(MATCH_T* match);
+    virtual FLOAT_T predictRTime(Match* match);
 
     static void train(DelimitedFileReader& result_data);
 };

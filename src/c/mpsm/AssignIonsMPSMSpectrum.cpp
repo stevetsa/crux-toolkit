@@ -7,7 +7,7 @@
 #include "Ion.h"
 #include "IonSeries.h"
 #include "IonConstraint.h"
-#include "peak.h"
+#include "Peak.h"
 
 #include "DelimitedFile.h"
 #include "SpectrumCollectionFactory.h"
@@ -125,9 +125,9 @@ int AssignIonsMPSMSpectrum::main(int argc, char** argv) {
   }
 
 
-  vector<map<PEAK_T*, vector<Ion*> > > matched_peak_to_ion_vec;
+  vector<map<Peak*, vector<Ion*> > > matched_peak_to_ion_vec;
 
-  map<PEAK_T*, vector<Ion*> >::iterator find_iter;
+  map<Peak*, vector<Ion*> >::iterator find_iter;
 
   vector<int> num_matched_ions;
 
@@ -139,9 +139,9 @@ int AssignIonsMPSMSpectrum::main(int argc, char** argv) {
 
     num_matched_ions.push_back(0);
     //For each ion, find the max_intensity peak with in the the 
-    map<PEAK_T*, vector<Ion*> > temp;
+    map<Peak*, vector<Ion*> > temp;
     matched_peak_to_ion_vec.push_back(temp);
-    map<PEAK_T*, vector<Ion*> > &matched_peak_to_ion = matched_peak_to_ion_vec[seq_idx];
+    map<Peak*, vector<Ion*> > &matched_peak_to_ion = matched_peak_to_ion_vec[seq_idx];
 
     IonSeries* current_ion_series = ion_series_vec[seq_idx];
 
@@ -151,7 +151,7 @@ int AssignIonsMPSMSpectrum::main(int argc, char** argv) {
 
       Ion* ion = *ion_iter;
 
-      PEAK_T* peak = spectrum->getMaxIntensityPeak(ion->getMassZ(), mz_tolerance);
+      Peak* peak = spectrum->getMaxIntensityPeak(ion->getMassZ(), mz_tolerance);
       if (peak != NULL) {  
         num_matched_ions[seq_idx]++;
         find_iter = matched_peak_to_ion.find(peak);
@@ -180,12 +180,12 @@ int AssignIonsMPSMSpectrum::main(int argc, char** argv) {
     peak_iter != spectrum->end();
     ++peak_iter) {
 
-    PEAK_T* peak = *peak_iter;
-    if (get_peak_location(peak) < 400 || get_peak_location(peak) > 1400) {
+    Peak* peak = *peak_iter;
+    if (peak->getLocation() < 400 || peak->getLocation() > 1400) {
       continue;
     }
-    cout << get_peak_location(peak) << "\t" <<
-            get_peak_intensity(peak);
+    cout << peak->getLocation() << "\t" <<
+            peak->getIntensity();
 
     //cerr << get_peak_location(peak) << endl;
 

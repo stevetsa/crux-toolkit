@@ -111,6 +111,7 @@ void MPSM_OutputFiles::writeMatch(
   file_ptr->setColumnCurrentRow(SPECTRUM_PRECURSOR_MZ_COL, mpsm_match.getSpectrumPrecursorMZ());
   file_ptr->setColumnCurrentRow(SPECTRUM_NEUTRAL_MASS_COL, mpsm_match.getNeutralMassString());
   file_ptr->setColumnCurrentRow(PEPTIDE_MASS_COL, mpsm_match.getPeptideMassString());
+  file_ptr->setColumnCurrentRow(DELTA_CN_COL, mpsm_match.getDeltaCN());
   file_ptr->setColumnCurrentRow(XCORR_SCORE_COL, mpsm_match.getScore(XCORR));
   file_ptr->setColumnCurrentRow(XCORR_RANK_COL, mpsm_match.getRank(XCORR));
   file_ptr->setColumnCurrentRow(MATCHES_SPECTRUM_COL, mpsm_match.getMatchesPerSpectrum());

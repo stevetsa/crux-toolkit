@@ -32,10 +32,10 @@ class SearchForMPSMS: public CruxApplication {
   );
 
   int searchPepMods(
-    MATCH_COLLECTION_T* match_collection, ///< store PSMs here
+    MatchCollection* match_collection, ///< store PSMs here
     BOOLEAN_T is_decoy,   ///< generate decoy peptides from index/db
-    INDEX_T* index,       ///< index to use for generating peptides
-    DATABASE_T* database, ///< db to use for generating peptides
+    Index* index,       ///< index to use for generating peptides
+    Database* database, ///< db to use for generating peptides
     Spectrum* spectrum,         ///< spectrum to search
     SpectrumZState& zstate,       ///< seach spectrum at this charge state
     PEPTIDE_MOD_T** peptide_mods, ///< list of peptide mods to apply
@@ -44,7 +44,7 @@ class SearchForMPSMS: public CruxApplication {
   );
 
   bool isSearchComplete(
-    MATCH_COLLECTION_T* matches, 
+    MatchCollection* matches, 
     int mods_per_peptide
   );
 

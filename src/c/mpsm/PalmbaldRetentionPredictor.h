@@ -3,7 +3,7 @@
 
 #include "RetentionPredictor.h"
 
-#include "match.h"
+#include "Match.h"
 
 #include <map>
 
@@ -17,7 +17,7 @@ class PalmbaldRetentionPredictor: public RetentionPredictor {
 
     virtual ~PalmbaldRetentionPredictor();
 
-    virtual FLOAT_T predictRTime(MATCH_T* match);
+    virtual FLOAT_T predictRTime(Match* match);
 
 };
 

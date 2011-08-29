@@ -1,5 +1,5 @@
 #include "MPSM_Scorer.h"
-#include "scorer.h"
+#include "Scorer.h"
 #include "modifications.h"
 
 #include <iostream>
@@ -29,7 +29,7 @@ MPSM_Scorer::MPSM_Scorer(
   max_charge_ = max_charge;
   scorer_type_ = scorer_type;
 
-  scorer_ = new_scorer(scorer_type_);
+  scorer_ = new Scorer(scorer_type_);
   ion_constraint_ = getIonConstraint(scorer_type_,max_charge_);
 
 }
@@ -94,16 +94,14 @@ FLOAT_T MPSM_Scorer::calcScore(
 
   createIonSeries(mpsm_match, ion_series);
 
-  FLOAT_T score = score_spectrum_v_ion_series(scorer_, spectrum_, ion_series);
+  FLOAT_T score = scorer_->scoreSpectrumVIonSeries(spectrum_, ion_series);
 
 
   if (scorer_type_ == SP) {
-    mpsm_match.setBYIonPossible(get_scorer_sp_b_y_ion_possible(scorer_));
-    mpsm_match.setBYIonMatched(get_scorer_sp_b_y_ion_matched(scorer_));
-    mpsm_match.setBYIonFractionMatched(get_scorer_sp_b_y_ion_fraction_matched(scorer_));
+    mpsm_match.setBYIonPossible(scorer_->getSpBYIonPossible());
+    mpsm_match.setBYIonMatched(scorer_->getSpBYIonMatched());
+    mpsm_match.setBYIonFractionMatched(scorer_->getSpBYIonFractionMatched());
   }
-
-  
 
   delete ion_series;
   
@@ -117,7 +115,7 @@ FLOAT_T MPSM_Scorer::score(
   SCORER_TYPE_T match_mode) {
 
   //TODO - do some caching to speed this process up.
-  SCORER_T* scorer = new_scorer(match_mode);
+  Scorer* scorer = new Scorer(match_mode);
 
   Spectrum* spectrum = mpsm_match.getSpectrum();
   
@@ -133,19 +131,20 @@ FLOAT_T MPSM_Scorer::score(
 
   createIonSeries(mpsm_match, ion_series);
 
-  FLOAT_T score = score_spectrum_v_ion_series(scorer, spectrum, ion_series);
+  FLOAT_T score = 
+    scorer->scoreSpectrumVIonSeries(spectrum, ion_series);
 
 
   if (match_mode == SP) {
-    mpsm_match.setBYIonPossible(get_scorer_sp_b_y_ion_possible(scorer));
-    mpsm_match.setBYIonMatched(get_scorer_sp_b_y_ion_matched(scorer));
-    mpsm_match.setBYIonFractionMatched(get_scorer_sp_b_y_ion_fraction_matched(scorer));
+    mpsm_match.setBYIonPossible(scorer->getSpBYIonPossible());
+    mpsm_match.setBYIonMatched(scorer->getSpBYIonMatched());
+    mpsm_match.setBYIonFractionMatched(scorer->getSpBYIonFractionMatched());
   }
 
 
   //clean up.
   delete ion_series;
-  free_scorer(scorer);
+  delete scorer;
 
 
   return score;
@@ -217,6 +216,6 @@ void MPSM_Scorer::createIonSeries(MPSM_Match& mpsm_match, IonSeries* ion_series)
 MPSM_Scorer::~MPSM_Scorer() {
   spectrum_ = NULL;
   max_charge_ = 0;
-  free_scorer(scorer_);
+  delete scorer_;
   ion_constraint_ = NULL;
 }

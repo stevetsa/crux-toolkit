@@ -306,7 +306,7 @@ class Spectrum{
    * This should lazily create the data structures within the
    * spectrum object that it needs.
    */
-  PEAK_T* getMaxIntensityPeak(
+  Peak* getMaxIntensityPeak(
     FLOAT_T mz, ///< the mz of the peak to find
     FLOAT_T max ///< the maximum distance to get intensity -in
   );

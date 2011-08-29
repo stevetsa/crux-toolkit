@@ -105,11 +105,11 @@ int ScoreMPSMSpectrum::main(int argc, char** argv) {
 
   MPSM_Scorer::createIonSeries(peptide_sequences, charge_states, ion_series);
 
-  SCORER_T* scorer = new_scorer(XCORR);
+  Scorer* scorer = new Scorer(XCORR);
   
-  FLOAT_T xcorr = score_spectrum_v_ion_series(scorer, spectrum, ion_series);
+  FLOAT_T xcorr = scorer->scoreSpectrumVIonSeries(spectrum, ion_series);
 
-  free_scorer(scorer);
+  delete scorer;
   delete ion_series;
   IonConstraint::free(ion_constraint);
 
@@ -120,10 +120,10 @@ int ScoreMPSMSpectrum::main(int argc, char** argv) {
 
   MPSM_Scorer::createIonSeries(peptide_sequences, charge_states, ion_series);
 
-  scorer = new_scorer(SP);
-  FLOAT_T sp = score_spectrum_v_ion_series(scorer, spectrum, ion_series);
+  scorer = new Scorer(SP);
+  FLOAT_T sp = scorer->scoreSpectrumVIonSeries(spectrum, ion_series);
 
-  free_scorer(scorer);
+  delete scorer;
   delete ion_series;
   IonConstraint::free(ion_constraint);
 

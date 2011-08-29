@@ -15,14 +15,14 @@ MPSM_MatchCollection::MPSM_MatchCollection() {
 
 }
 
-MPSM_MatchCollection::MPSM_MatchCollection(MATCH_COLLECTION_T* spsm_matches) {
+MPSM_MatchCollection::MPSM_MatchCollection(MatchCollection* spsm_matches) {
 
   spsm_matches_ = spsm_matches;
-  MATCH_ITERATOR_T *match_iter =
-    new_match_iterator(spsm_matches, XCORR, FALSE);
+  MatchIterator *match_iter =
+    new MatchIterator(spsm_matches, XCORR, FALSE);
 
-  while(match_iterator_has_next(match_iter)) {
-    MATCH_T* match = match_iterator_next(match_iter);
+  while(match_iter->hasNext()) {
+    Match* match = match_iter->next();
     MPSM_Match mpsm_match(match);
     addMatch(mpsm_match);
     /*
@@ -34,7 +34,7 @@ MPSM_MatchCollection::MPSM_MatchCollection(MATCH_COLLECTION_T* spsm_matches) {
     }
     */
   }
-  free_match_iterator(match_iter);
+  delete match_iter;
   sorted_ = false;
 
   //cout <<"Num matches added:"<<matches_.size()<<endl;
@@ -48,7 +48,7 @@ MPSM_MatchCollection::~MPSM_MatchCollection() {
 
 void MPSM_MatchCollection::free() {
   if (spsm_matches_ != NULL) {
-    free_match_collection(spsm_matches_);
+    delete spsm_matches_;
     spsm_matches_ = NULL;
   }
 }
@@ -102,14 +102,8 @@ void MPSM_MatchCollection::calcDeltaCN() {
     xcorr_2_ = 0;
     return;
   }
-
-  if (numMatches() == 1) {
-    xcorr_2_ = 0;
-  } else {
-
-    sortByScore(XCORR);  
-    xcorr_2_ = getMatch(1).getScore(XCORR);
-  }
+  sortByScore(XCORR);
+  xcorr_2_ = getMatch(0).getScore(XCORR);
 }
 
 void MPSM_MatchCollection::calcRanks(SCORER_TYPE_T scorer_type) {
@@ -152,8 +146,8 @@ void MPSM_MatchCollection::calcRanks(SCORER_TYPE_T scorer_type) {
 
 
 double MPSM_MatchCollection::calcDeltaCNMatch(double xcorr) {
-  if (xcorr > 0 && numMatches() > 1) {
-    return (xcorr - xcorr_2_) / xcorr;
+  if (xcorr > 0 && numMatches() >= 1) {
+    return (xcorr_2_ - xcorr) / xcorr_2_;
   } else {
     return 0;
   }

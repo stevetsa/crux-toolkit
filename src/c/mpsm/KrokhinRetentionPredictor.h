@@ -5,7 +5,7 @@
 
 #include "RetentionPredictor.h"
 
-#include "match.h"
+#include "Match.h"
 
 #include <map>
 
@@ -20,7 +20,7 @@ class KrokhinRetentionPredictor: public RetentionPredictor {
 
     virtual ~KrokhinRetentionPredictor();
 
-    virtual FLOAT_T predictRTime(MATCH_T* match);
+    virtual FLOAT_T predictRTime(Match* match);
 
     FLOAT_T predictRTimeS(const char* sequence);
     FLOAT_T predictRTimeS(const char* sequence, int N);

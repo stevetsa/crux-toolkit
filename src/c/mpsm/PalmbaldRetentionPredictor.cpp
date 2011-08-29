@@ -33,11 +33,11 @@ PalmbaldRetentionPredictor::PalmbaldRetentionPredictor() {
 PalmbaldRetentionPredictor::~PalmbaldRetentionPredictor() {
 }
 
-FLOAT_T PalmbaldRetentionPredictor::predictRTime(MATCH_T* match) {
+FLOAT_T PalmbaldRetentionPredictor::predictRTime(Match* match) {
 
-  PEPTIDE_T* peptide = get_match_peptide(match);
-  int sequence_length = get_peptide_length(peptide);
-  char* sequence = get_peptide_sequence_pointer(peptide);
+  Peptide* peptide = match->getPeptide();
+  int sequence_length = peptide->getLength();
+  char* sequence = peptide->getSequencePointer();
 
   double ans = t0;
 

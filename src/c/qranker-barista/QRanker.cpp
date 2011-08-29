@@ -1,5 +1,7 @@
 #include "QRanker.h"
 
+bool QRanker::no_delta_cn;
+
 QRanker::QRanker() :  seed(0),selectionfdr(0.01),num_hu(5),mu(0.005),weightDecay(0.0000)
 {
 }
@@ -713,9 +715,18 @@ int QRanker::set_command_line_options(int argc, char **argv)
 {
   vector<string> fnames;
   int arg = 1;
+
+  no_delta_cn = false;
+
   while(arg < argc)
     {
-      fnames.push_back(argv[arg]);
+
+      string sarg(argv[arg]);
+      if (sarg == "--nodeltacn") {
+        no_delta_cn = true;
+      } else {
+        fnames.push_back(argv[arg]);
+      }
       arg++;
     }
   string out_dir = "crux-output";

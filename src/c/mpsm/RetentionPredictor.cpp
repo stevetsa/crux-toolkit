@@ -17,7 +17,7 @@ RetentionPredictor::~RetentionPredictor() {
 }
 
 
-FLOAT_T RetentionPredictor::predictRTime(MATCH_T* match) {
+FLOAT_T RetentionPredictor::predictRTime(Match* match) {
   /*override this function*/
   return 0.0;
 }

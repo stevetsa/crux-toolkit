@@ -1,5 +1,5 @@
 #include "TabDelimParser.h"
-
+#include "QRanker.h"
 /******************************/
 /* tokens are
 0       scan
@@ -32,6 +32,7 @@ const static int charge_col_idx = 1;
 const static int spectrum_mz_col_idx = 2;
 const static int spectrum_mass_col_idx = 3;
 const static int peptide_mass_col_idx = 4;
+const static int delta_cn_col_idx = 5;
 const static int sp_score_col_idx = 6;
 const static int sp_rank_col_idx = 7;
 const static int xcorr_score_col_idx = 8;
@@ -66,7 +67,7 @@ TabDelimParser :: TabDelimParser()
 {
   
   //num_psm_features
-  num_features = 22;
+  num_features = 23;
   
   //final_hits_per_spectrum
   fhps = 3;
@@ -222,6 +223,7 @@ void TabDelimParser :: extract_psm_features(
   int psm_offset = psmind_to_ofst[psmind];
 
   double xcorr = atof(tokens[xcorr_score_col_idx].c_str());
+  double delta_cn = atof(tokens[delta_cn_col_idx].c_str());
   double sp = atof(tokens[sp_score_col_idx].c_str());
   double log_sp_rank = logf(atof(tokens[sp_rank_col_idx].c_str()));
 
@@ -289,27 +291,32 @@ void TabDelimParser :: extract_psm_features(
   //cerr << "Setting feature values"<<endl;
 
   x[0]  = xcorr;
-  x[1]  = sp;
-  x[2]  = log_sp_rank;
-  x[3]  = by_ion_fraction_matched;
-  x[4]  = avg_weight_diff;
-  x[5]  = max_weight_diff;
-  x[6]  = avg_neutral_mass;
-  x[7]  = max_neutral_mass;
-  x[8]  = ln_experiment_size;
-  x[9]  = avg_missed_cleavages;
-  x[10] = max_missed_cleavages;
-  x[11] = avg_sequence_length;
-  x[12] = max_sequence_length;
-  x[13] = num_sequences;
-  x[14] = ave_artd;
-  x[15] = max_artd;
-  x[16] = charge_count[0];
-  x[17] = charge_count[1];
-  x[18] = charge_count[2];
-  x[19] = charge_count[3];
-  x[20] = charge_count[4];
-  x[21] = charge_count[5];
+  if (!QRanker::no_delta_cn) { 
+    x[1]  = delta_cn;
+  } else {
+    x[1] = 0.0;
+  }
+  x[2]  = sp;
+  x[3]  = log_sp_rank;
+  x[4]  = by_ion_fraction_matched;
+  x[5]  = avg_weight_diff;
+  x[6]  = max_weight_diff;
+  x[7]  = avg_neutral_mass;
+  x[8]  = max_neutral_mass;
+  x[9]  = ln_experiment_size;
+  x[10]  = avg_missed_cleavages;
+  x[11] = max_missed_cleavages;
+  x[12] = avg_sequence_length;
+  x[13] = max_sequence_length;
+  x[14] = num_sequences;
+  x[15] = ave_artd;
+  x[16] = max_artd;
+  x[17] = charge_count[0];
+  x[18] = charge_count[1];
+  x[19] = charge_count[2];
+  x[20] = charge_count[3];
+  x[21] = charge_count[4];
+  x[22] = charge_count[5];
 
   /*
   cerr << psmind;

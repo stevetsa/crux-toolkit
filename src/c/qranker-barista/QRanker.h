@@ -49,7 +49,7 @@ public:
     virtual int main(int argc, char** argv);
     virtual std::string getName();
     virtual std::string getDescription();
-
+    static bool no_delta_cn;
 protected:
 
     Dataset d;
@@ -90,6 +90,8 @@ protected:
     string out_dir;
 
     TabDelimParser pars;
+
+
 
 };
 

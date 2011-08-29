@@ -423,12 +423,12 @@ void AKlammerRetentionPredictor::printFeatures(
 
 void AKlammerRetentionPredictor::fillFeatures(
   struct svm_node* data,
-  MATCH_T* match) {
+  Match* match) {
 
-  char* sequence = get_match_sequence(match);
-  int charge = get_match_charge(match);
+  char* sequence = match->getSequence();
+  int charge = match->getCharge();
   int length = strlen(sequence);
-  double spectrum_mz = get_match_spectrum(match)->getPrecursorMz();
+  double spectrum_mz = match->getSpectrum()->getPrecursorMz();
  
   fillFeatures(data, sequence, length, charge, spectrum_mz);
 
@@ -512,7 +512,7 @@ void AKlammerRetentionPredictor::fillFeatures(
 
 
     data[start_index].value = N; //peptide length
-    data[start_index+1].value = calc_sequence_mass(sequence, MONO); //peptide mono mass
+    data[start_index+1].value = Peptide::calcSequenceMass(sequence, MONO); //peptide mono mass
     data[start_index+2].value = charge; //peptide charge
 }
 
@@ -533,7 +533,7 @@ FLOAT_T AKlammerRetentionPredictor::predict(DelimitedFileReader& result_data) {
   return predict(data_);
 }
 
-FLOAT_T AKlammerRetentionPredictor::predictRTime(MATCH_T* match) {
+FLOAT_T AKlammerRetentionPredictor::predictRTime(Match* match) {
   fillFeatures(data_, match);
   return predict(data_);
 }

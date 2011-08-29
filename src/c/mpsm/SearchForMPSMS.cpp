@@ -92,8 +92,8 @@ int SearchForMPSMS::main(int argc, char** argv) {
   char* input_file = get_string_parameter("protein database");
 
   /* Prepare input, fasta or index */
-  INDEX_T* index = NULL;
-  DATABASE_T* database = NULL;
+  Index* index = NULL;
+  Database* database = NULL;
   int num_proteins = prepare_protein_input(input_file, &index, &database); 
   free(input_file);
   /*
@@ -181,7 +181,7 @@ int SearchForMPSMS::main(int argc, char** argv) {
         //spsm_map.calcZScores();
         //spsm_map.sortMatches(XCORR);
         cerr<<"Calculating delta cn"<<endl;
-        //mpsm_map.calcDeltaCN();
+        mpsm_map.calcDeltaCN();
         cerr<<"Calculating zscores"<<endl;
         //mpsm_map.calcZScores();
         //cerr<<"Calculating xcorr ranks"<<endl;
@@ -218,7 +218,7 @@ int SearchForMPSMS::main(int argc, char** argv) {
     progress.report(spectrum->getFirstScan(), zstate.getCharge());
  
     // with the target database decide how many peptide mods to use
-    MATCH_COLLECTION_T* target_psms = new_empty_match_collection(is_decoy); 
+    MatchCollection* target_psms = new MatchCollection(is_decoy); 
     int max_pep_mods = searchPepMods( target_psms, 
                                         is_decoy,   
                                         index,       
@@ -231,11 +231,11 @@ int SearchForMPSMS::main(int argc, char** argv) {
  
 
     // are there any matches?
-    if( get_match_collection_match_total(target_psms) == 0 ){
+    if( target_psms->getMatchTotal() == 0 ){
       // don't print and don't search decoys
       carp(CARP_WARNING, "No matches found for spectrum %i, charge %i",
            spectrum->getFirstScan(), zstate.getCharge());
-      free_match_collection(target_psms);
+      delete target_psms;
       progress.increment(FALSE);
       continue; // next spectrum
     }
@@ -244,14 +244,14 @@ int SearchForMPSMS::main(int argc, char** argv) {
     is_decoy = TRUE;
     // create separate decoy match_collections
     int num_decoy_collections = get_int_parameter("num-decoys-per-target"); 
-    MATCH_COLLECTION_T** decoy_collection_list = 
-      (MATCH_COLLECTION_T**)mycalloc(sizeof(MATCH_COLLECTION_T*), 
+    MatchCollection** decoy_collection_list = 
+      (MatchCollection**)mycalloc(sizeof(MatchCollection*), 
                                      num_decoy_collections);
 
     int decoy_idx = 0;
     for(decoy_idx = 0; decoy_idx < num_decoy_collections; decoy_idx++){
 
-      MATCH_COLLECTION_T* decoy_psms = new_empty_match_collection(is_decoy);
+      MatchCollection* decoy_psms = new MatchCollection(is_decoy);
       decoy_collection_list[decoy_idx] = decoy_psms;
 
       searchPepMods(decoy_psms, 
@@ -306,7 +306,7 @@ int SearchForMPSMS::main(int argc, char** argv) {
     mpsm_map.sortMatches(XCORR);
   //print out map
   //output the spsms.
-    //mpsm_map.calcDeltaCN();
+    mpsm_map.calcDeltaCN();
     //mpsm_map.calcZScores();
   }
   //output_files.writeMatches(spsm_map);
@@ -568,10 +568,10 @@ bool SearchForMPSMS::extendChargeMap(
 
 
 int SearchForMPSMS::searchPepMods(
-  MATCH_COLLECTION_T* match_collection, ///< store PSMs here
+  MatchCollection* match_collection, ///< store PSMs here
   BOOLEAN_T is_decoy,   ///< generate decoy peptides from index/db
-  INDEX_T* index,       ///< index to use for generating peptides
-  DATABASE_T* database, ///< db to use for generating peptides
+  Index* index,       ///< index to use for generating peptides
+  Database* database, ///< db to use for generating peptides
   Spectrum* spectrum,         ///< spectrum to search
   SpectrumZState& zstate,       ///< seach spectrum at this charge state
   PEPTIDE_MOD_T** peptide_mods, ///< list of peptide mods to apply
@@ -580,7 +580,7 @@ int SearchForMPSMS::searchPepMods(
 ) {
   
   // set match_collection charge
-  set_match_collection_zstate(match_collection, zstate);
+  match_collection->setZState(zstate);
 
   // get spectrum precursor mz
   double mz = spectrum->getPrecursorMz();
@@ -620,8 +620,7 @@ int SearchForMPSMS::searchPepMods(
     
     
     // score peptides
-    int added = add_matches(match_collection, 
-                            spectrum, 
+    int added = match_collection->addMatches(spectrum, 
                             zstate, 
                             peptide_iterator,
                             is_decoy,
@@ -641,7 +640,7 @@ int SearchForMPSMS::searchPepMods(
 }
 
 bool SearchForMPSMS::isSearchComplete(
-  MATCH_COLLECTION_T* matches, 
+  MatchCollection* matches, 
   int mods_per_peptide) {
 
   if( matches == NULL ){

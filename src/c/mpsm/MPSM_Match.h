@@ -1,7 +1,7 @@
 #ifndef MPSM_MATCH_H
 #define MPSM_MATCH_H
 #include "objects.h"
-#include "match.h"
+#include "Match.h"
 
 #include "ZStateIndex.h"
 
@@ -10,14 +10,14 @@
 #include <vector>
 
 
-bool MPSM_MatchCompare(MATCH_T* m1, MATCH_T* m2);
+bool MPSM_MatchCompare(Match* m1, Match* m2);
 
 class MPSM_Match {
  protected:
 
   MPSM_MatchCollection* parent_;
 
-  std::vector<MATCH_T*> matches_; //the matches that the multi-match is from.
+  std::vector<Match*> matches_; //the matches that the multi-match is from.
 
     
   FLOAT_T match_scores_[NUMBER_SCORER_TYPES];
@@ -32,8 +32,8 @@ class MPSM_Match {
     
   FLOAT_T rtime_max_diff_;
 
-  FLOAT_T b_y_ion_matched_;
-  FLOAT_T b_y_ion_possible_;
+  int b_y_ion_matched_;
+  int b_y_ion_possible_;
   FLOAT_T b_y_ion_fraction_matched_;
 
   /*
@@ -45,7 +45,7 @@ class MPSM_Match {
  public:
 
   MPSM_Match();
-  MPSM_Match(MATCH_T* match);
+  MPSM_Match(Match* match);
   //MPSM_Match(const MPSM_Match& mpsm_match);
 
   void setParent(MPSM_MatchCollection* parent);
@@ -65,7 +65,7 @@ class MPSM_Match {
   virtual ~MPSM_Match();
 
 
-  BOOLEAN_T addMatch(MATCH_T* match);
+  BOOLEAN_T addMatch(Match* match);
 
   BOOLEAN_T hasRTime(int match_idx);
   FLOAT_T getRTime(int match_idx);
@@ -82,8 +82,8 @@ class MPSM_Match {
   bool isChargeHomogeneous();
 
 
-  MATCH_T* getMatch(int match_idx) const;
-  MATCH_T* operator [] (int match_idx);
+  Match* getMatch(int match_idx) const;
+  Match* operator [] (int match_idx);
 
   Spectrum* getSpectrum();
   char* getSequence(int match_idx);
@@ -112,7 +112,7 @@ class MPSM_Match {
   FLOAT_T getBYIonFractionMatched();
 
   void getMatchedIons(
-    std::vector<std::map<PEAK_T*, std::vector<Ion*> > >& matched_peak_to_ion_vec);
+    std::vector<std::map<Peak*, std::vector<Ion*> > >& matched_peak_to_ion_vec);
 
   void getMatchedIonIntensities(
     double& total_ion_intensity,

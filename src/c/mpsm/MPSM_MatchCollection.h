@@ -6,15 +6,15 @@
 
 #include "MPSM_Match.h"
 
-#include "match.h"
-#include "match_collection.h"
+#include "Match.h"
+#include "MatchCollection.h"
 
 
 
 class MPSM_MatchCollection {
 
 protected:
-  MATCH_COLLECTION_T* spsm_matches_;
+  MatchCollection* spsm_matches_;
 
   std::vector<MPSM_Match> matches_;
 
@@ -28,7 +28,7 @@ protected:
 public:
 
   MPSM_MatchCollection();
-  MPSM_MatchCollection(MATCH_COLLECTION_T* spsm_matches);
+  MPSM_MatchCollection(MatchCollection* spsm_matches);
   virtual ~MPSM_MatchCollection();
   
   void free();

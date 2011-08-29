@@ -136,8 +136,8 @@ int PredictMPSMIons::main(int argc, char** argv) {
     printf("# INDEX: %d\n",idx);  
     printf("# PEPTIDE: %s\n",peptide_sequences[idx].c_str());
     printf("# AVERAGE: %f MONO:%f\n",
-      calc_sequence_mass(peptide_sequences[idx].c_str(), AVERAGE),
-      calc_sequence_mass(peptide_sequences[idx].c_str(), MONO));
+      Peptide::calcSequenceMass(peptide_sequences[idx].c_str(), AVERAGE),
+      Peptide::calcSequenceMass(peptide_sequences[idx].c_str(), MONO));
     printf("# CHARGE: %d\n", charge_states[idx]);
   }
   printf("# MAX-ION-CHRAGE: %s\n", max_ion_charge);

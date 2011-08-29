@@ -1082,24 +1082,24 @@ Peak * Spectrum::getNearestPeak(
  * This should lazily create the data structures within the
  * spectrum object that it needs.
  */
-PEAK_T* Spectrum::getMaxIntensityPeak(
+Peak* Spectrum::getMaxIntensityPeak(
   FLOAT_T mz, ///< the mz of the peak to find
   FLOAT_T max ///< the maximum distance to get intensity -in
   ) {
 
   FLOAT_T max_intensity = -BILLION;
-  PEAK_T* peak = NULL;
-  PEAK_T* max_intensity_peak = NULL;
+  Peak* peak = NULL;
+  Peak* max_intensity_peak = NULL;
   int peak_idx;
 
   for (PeakIterator peak_iter = begin();
     peak_iter != end();
     ++peak_iter) {
 
-    PEAK_T* peak = *peak_iter;
-    FLOAT_T peak_mz = get_peak_location(peak);
+    Peak* peak = *peak_iter;
+    FLOAT_T peak_mz = peak->getLocation();
     FLOAT_T distance = fabs(mz - peak_mz);
-    FLOAT_T intensity = get_peak_intensity(peak);
+    FLOAT_T intensity = peak->getIntensity();
     if ((distance <= max) && (intensity > max_intensity)){
       max_intensity_peak = peak;
       max_intensity = intensity;

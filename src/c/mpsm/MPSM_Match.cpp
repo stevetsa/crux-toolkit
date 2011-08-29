@@ -11,15 +11,15 @@
 using namespace std;
 
 
-int compareSequences(MATCH_T* m1, MATCH_T* m2) {
-  PEPTIDE_T* p1 = get_match_peptide(m1);
-  PEPTIDE_T* p2 = get_match_peptide(m2);
+int compareSequences(Match* m1, Match* m2) {
+  Peptide* p1 = m1->getPeptide();
+  Peptide* p2 = m2->getPeptide();
 
-  int l1 = get_peptide_length(p1);
-  int l2 = get_peptide_length(p2);
+  int l1 = p1->getLength();
+  int l2 = p2->getLength();
 
-  char* s1 = get_peptide_sequence_pointer(p1);
-  char* s2 = get_peptide_sequence_pointer(p2);
+  char* s1 = p1->getSequencePointer();
+  char* s2 = p2->getSequencePointer();
 
   int idx = 0;
 
@@ -45,11 +45,11 @@ int compareSequences(MATCH_T* m1, MATCH_T* m2) {
 
 }
 
-bool MPSM_MatchCompare(MATCH_T* m1, MATCH_T* m2) {
+bool MPSM_MatchCompare(Match* m1, Match* m2) {
 
 
-  if (get_match_zstate(m1) != get_match_zstate(m2)) {
-    return get_match_zstate(m1) < get_match_zstate(m2);
+  if (m1->getZState() != m2->getZState()) {
+    return m1->getZState() < m2->getZState();
   } else {
     return (compareSequences(m1, m2) == -1);
   }
@@ -57,9 +57,9 @@ bool MPSM_MatchCompare(MATCH_T* m1, MATCH_T* m2) {
 
 
 
-bool MATCH_T_Compare2(MATCH_T* m1, MATCH_T* m2) {
-  if (get_match_charge(m1) != get_match_charge(m2)) {
-    return get_match_charge(m1) < get_match_charge(m2);
+bool Match_Compare2(Match* m1, Match* m2) {
+  if (m1->getCharge() != m2->getCharge()) {
+    return m1->getCharge() < m2->getCharge();
   } else {
     return (compareSequences(m1, m2) == -1);
   }
@@ -71,19 +71,19 @@ bool compareMPSM_MatchVisited(const MPSM_Match& m1, const MPSM_Match& m2) {
     return m1.numMatches() < m2.numMatches();
   }
 
-  vector<MATCH_T*> matches_1(m1.matches_.begin(), m1.matches_.end());
+  vector<Match*> matches_1(m1.matches_.begin(), m1.matches_.end());
   
-  vector<MATCH_T*> matches_2(m2.matches_.begin(), m2.matches_.end());
+  vector<Match*> matches_2(m2.matches_.begin(), m2.matches_.end());
 
-  sort(matches_1.begin(), matches_1.end(), MATCH_T_Compare2);      
-  sort(matches_2.begin(), matches_2.end(), MATCH_T_Compare2);
+  sort(matches_1.begin(), matches_1.end(), Match_Compare2);      
+  sort(matches_2.begin(), matches_2.end(), Match_Compare2);
 
   for (int idx=0;idx<matches_1.size();idx++) {
-      MATCH_T* submatch_m1 = matches_1.at(idx);
-      MATCH_T* submatch_m2 = matches_2.at(idx);
+      Match* submatch_m1 = matches_1.at(idx);
+      Match* submatch_m2 = matches_2.at(idx);
 
-      int charge1 = get_match_charge(submatch_m1);
-      int charge2 = get_match_charge(submatch_m2);
+      int charge1 = submatch_m1->getCharge();
+      int charge2 = submatch_m2->getCharge();
 
       if (charge1 != charge2) {
         return (charge1 < charge2);
@@ -111,7 +111,7 @@ MPSM_Match::MPSM_Match() {
   invalidate();
 }
 
-MPSM_Match::MPSM_Match(MATCH_T* match) {
+MPSM_Match::MPSM_Match(Match* match) {
   parent_ = NULL;
   addMatch(match);
   
@@ -142,17 +142,17 @@ MPSM_MatchCollection* MPSM_Match::getParent() {
   return parent_;
 }
 
-bool isMATCH_T_Equal(MATCH_T* m1, MATCH_T* m2) {
-  if (get_match_charge(m1) != get_match_charge(m2)) {
+bool isMatch_Equal(Match* m1, Match* m2) {
+  if (m1->getCharge() != m2->getCharge()) {
     return false;
   }
-  PEPTIDE_T* p1 = get_match_peptide(m1);
-  char* s1 = get_peptide_unshuffled_modified_sequence(p1);
+  Peptide* p1 = m1->getPeptide();
+  char* s1 = p1->getUnshuffledModifiedSequence();
   string string_s1(s1);
   free(s1);
   
-  PEPTIDE_T* p2 = get_match_peptide(m2);
-  char* s2 = get_peptide_unshuffled_modified_sequence(p2);
+  Peptide* p2 = m2->getPeptide();
+  char* s2 = p2->getUnshuffledModifiedSequence();
   string string_s2(s2);
   free(s2);
 
@@ -160,11 +160,11 @@ bool isMATCH_T_Equal(MATCH_T* m1, MATCH_T* m2) {
 }
 
 
-BOOLEAN_T MPSM_Match::addMatch(MATCH_T* match) {
+BOOLEAN_T MPSM_Match::addMatch(Match* match) {
 
   //check to make sure match doesn't already exist here.
   for (int idx=0;idx<matches_.size();idx++) {
-    if (isMATCH_T_Equal(matches_[idx], match)) {
+    if (isMatch_Equal(matches_[idx], match)) {
       return false;
     }  
   }
@@ -181,7 +181,7 @@ BOOLEAN_T MPSM_Match::addMatch(MATCH_T* match) {
 bool MPSM_Match::isDecoy() {
   //If one of the matches is null, then this is a null mpsm.
   for (int idx = 0; idx < matches_.size(); idx++) {
-    if (get_match_null_peptide(matches_[idx])) {
+    if (matches_[idx]->getNullPeptide()) {
       return true;
     }
     if (getProteinIdsString().find("random_") != string::npos) {
@@ -220,8 +220,8 @@ ZStateIndex& MPSM_Match::getZStateIndex() {
     //TODO: validate the charge_index.
     zstate_index_.clear();
     for (int idx=0;idx < numMatches();idx++) {
-      MATCH_T* match = getMatch(idx);
-      zstate_index_.add(get_match_zstate(match));
+      Match* match = getMatch(idx);
+      zstate_index_.add(match->getZState());
     }
     zstate_valid_ = true;
   }
@@ -237,11 +237,11 @@ bool MPSM_Match::isChargeHomogeneous() {
 
 
 
-MATCH_T* MPSM_Match::getMatch(int match_idx) const {
+Match* MPSM_Match::getMatch(int match_idx) const {
   return matches_.at(match_idx);
 }
 
-MATCH_T* MPSM_Match::operator[] (int match_idx) {
+Match* MPSM_Match::operator[] (int match_idx) {
   return matches_[match_idx];
 }
 
@@ -251,18 +251,18 @@ int MPSM_Match::numMatches() const {
 
 Spectrum* MPSM_Match::getSpectrum() {
 
-  return get_match_spectrum(getMatch(0));
+  return getMatch(0)->getSpectrum();
 }
 
 char* MPSM_Match::getSequence(int match_idx) {
-  MATCH_T* match = getMatch(match_idx);
-  PEPTIDE_T* peptide = get_match_peptide(match);
+  Match* match = getMatch(match_idx);
+  Peptide* peptide = match->getPeptide();
 
-  return get_peptide_sequence(peptide);
+  return peptide->getSequence();
 }
 
 MODIFIED_AA_T* MPSM_Match::getModifiedSequence(int match_idx) {
-  return get_peptide_modified_aa_sequence(get_match_peptide(getMatch(match_idx)));
+  return getMatch(match_idx)->getPeptide()->getModifiedAASequence();
 } 
 
 int MPSM_Match::getMaxCharge() {
@@ -278,7 +278,7 @@ int MPSM_Match::getMaxCharge() {
 }
 
 int MPSM_Match::getCharge(int match_idx) {
-  get_match_charge(getMatch(match_idx));
+  getMatch(match_idx)->getCharge();
 }
 
 
@@ -355,8 +355,8 @@ FLOAT_T MPSM_Match::getBYIonFractionMatched() {
 void MPSM_Match::getSpectrumNeutralMasses(vector<FLOAT_T>& neutral_masses) {
 
   neutral_masses.clear();
-  MATCH_T* first_match = getMatch(0);
-  Spectrum* spectrum = get_match_spectrum(first_match);
+  Match* first_match = getMatch(0);
+  Spectrum* spectrum = first_match->getSpectrum();
 
   ZStateIndex& zstate_index = getZStateIndex();
 
@@ -368,12 +368,12 @@ void MPSM_Match::getSpectrumNeutralMasses(vector<FLOAT_T>& neutral_masses) {
 
 void MPSM_Match::getPeptideMasses(vector<FLOAT_T>& peptide_masses) {
   peptide_masses.clear();
-  MATCH_T* match = NULL;
+  Match* match = NULL;
 
   for (int idx=0;idx<numMatches();idx++) {
-    MATCH_T* match = getMatch(idx);
-    PEPTIDE_T* peptide = get_match_peptide(match);
-    FLOAT_T peptide_mass = get_peptide_peptide_mass(peptide);
+    Match* match = getMatch(idx);
+    Peptide* peptide = match->getPeptide();
+    FLOAT_T peptide_mass = peptide->getPeptideMass();
     peptide_masses.push_back(peptide_mass);
   }
 }
@@ -381,12 +381,12 @@ void MPSM_Match::getPeptideMasses(vector<FLOAT_T>& peptide_masses) {
 void MPSM_Match::getPeptideModifiedSequences(vector<string>& modified_sequences) {
   modified_sequences.clear();
 
-  MATCH_T* match = NULL;
+  Match* match = NULL;
 
   for (int idx = 0; idx < numMatches(); idx++) {
-    MATCH_T* match = getMatch(idx);
-    PEPTIDE_T* peptide = get_match_peptide(match);
-    char* seq = get_peptide_unshuffled_modified_sequence(peptide);
+    Match* match = getMatch(idx);
+    Peptide* peptide = match->getPeptide();
+    char* seq = peptide->getUnshuffledModifiedSequence();
     string string_seq(seq);
     modified_sequences.push_back(string_seq);
     free(seq);
@@ -411,11 +411,11 @@ FLOAT_T MPSM_Match::getRTimeAveDiff() {
 string MPSM_Match::getString() {
   string ans;
 
-  MATCH_T* match = NULL;
+  Match* match = NULL;
   for (int idx = 0; idx < numMatches(); idx++) {
-    MATCH_T* match = getMatch(idx);
-    PEPTIDE_T* peptide = get_match_peptide(match);
-    char* seq = get_peptide_modified_sequence_with_symbols(peptide);
+    Match* match = getMatch(idx);
+    Peptide* peptide = match->getPeptide();
+    char* seq = peptide->getModifiedSequenceWithSymbols();
     string string_seq(seq);
     if (idx == 0) 
       ans += string_seq;
@@ -495,10 +495,10 @@ string MPSM_Match::getSRankString() {
 
   ostringstream oss;
 
-  oss << get_match_rank(getMatch(0), XCORR);
+  oss << getMatch(0)->getRank(XCORR);
 
   for (int idx=1;idx<numMatches();idx++) {
-    oss << "," << get_match_rank(getMatch(idx), XCORR);
+    oss << "," << getMatch(idx)->getRank(XCORR);
   }
 
   return oss.str();
@@ -557,8 +557,8 @@ string MPSM_Match::getProteinIdsString() {
   vector<string> protein_ids;
 
   for (int idx=0;idx < matches_.size();idx++) {
-    PEPTIDE_T* peptide = get_match_peptide(matches_[idx]);
-    protein_ids.push_back(get_protein_ids_peptide_locations(peptide));
+    Peptide* peptide = matches_[idx]->getPeptide();
+    protein_ids.push_back(peptide->getProteinIdsLocations());
     
 
   }
@@ -572,7 +572,7 @@ FLOAT_T MPSM_Match::getXCorrSumDiff() {
 
   for (int idx=0;idx < matches_.size();idx++) {
 
-    ans -= get_match_score(matches_[idx], XCORR);
+    ans -= matches_[idx]->getScore(XCORR);
   }
 
   return ans;
@@ -581,10 +581,10 @@ FLOAT_T MPSM_Match::getXCorrSumDiff() {
 
 FLOAT_T MPSM_Match::getXCorrMaxDiff() {
 
-  FLOAT_T max_score = get_match_score(matches_[0], XCORR);
+  FLOAT_T max_score = matches_[0]->getScore(XCORR);
 
   for (int idx=1;idx < matches_.size();idx++) {
-    FLOAT_T current_score = get_match_score(matches_[idx], XCORR);
+    FLOAT_T current_score = matches_[idx]->getScore(XCORR);
     if (current_score > max_score) {
       max_score = current_score;
     }
@@ -599,8 +599,8 @@ FLOAT_T MPSM_Match::getAreaRatio() {
     return 1.0;
   }
 
-  FLOAT_T ans = get_match_zstate(matches_.at(1)).getArea() / 
-               get_match_zstate(matches_.at(0)).getArea();
+  FLOAT_T ans = matches_.at(1)->getZState().getArea() / 
+                matches_.at(0)->getZState().getArea();
 
   return ans;
 
@@ -613,14 +613,14 @@ FLOAT_T MPSM_Match::getMZ1RTimeDiff() {
   }
   //cerr << get_match_zstate(matches_.at(1)).getRTime() << endl;
   //cerr << get_match_zstate(matches_.at(0)).getRTime() << endl;
-  FLOAT_T ans = get_match_zstate(matches_.at(1)).getRTime() -
-                get_match_zstate(matches_.at(0)).getRTime();
+  FLOAT_T ans = matches_.at(1)->getZState().getRTime() -
+                matches_.at(0)->getZState().getRTime();
 
   return ans;
 }
 
 void MPSM_Match::getMatchedIons(
-  vector<map<PEAK_T*, vector<Ion*> > >& matched_peak_to_ion_vec) {
+  vector<map<Peak*, vector<Ion*> > >& matched_peak_to_ion_vec) {
 
   FLOAT_T mz_tolerance = 1.0;//get_double_parameter("mz-bin-width");
 
@@ -657,7 +657,7 @@ void MPSM_Match::getMatchedIons(
     //free(sequence);
 
   }
-  map<PEAK_T*, vector<Ion*> >::iterator find_iter;
+  map<Peak*, vector<Ion*> >::iterator find_iter;
 
   vector<int> num_matched_ions;
 
@@ -669,9 +669,9 @@ void MPSM_Match::getMatchedIons(
     
     num_matched_ions.push_back(0);
     //For each ion, find the max_intensity peak with in the the 
-    map<PEAK_T*, vector<Ion*> > temp;
+    map<Peak*, vector<Ion*> > temp;
     matched_peak_to_ion_vec.push_back(temp);
-    map<PEAK_T*, vector<Ion*> > &matched_peak_to_ion = matched_peak_to_ion_vec.at(seq_idx);
+    map<Peak*, vector<Ion*> > &matched_peak_to_ion = matched_peak_to_ion_vec.at(seq_idx);
 
     IonSeries* current_ion_series = ion_series_vec.at(seq_idx);
 
@@ -681,7 +681,7 @@ void MPSM_Match::getMatchedIons(
 
       Ion* ion = *ion_iter;
 
-      PEAK_T* peak = getSpectrum()->getMaxIntensityPeak(ion->getMassZ(), mz_tolerance);
+      Peak* peak = getSpectrum()->getMaxIntensityPeak(ion->getMassZ(), mz_tolerance);
       if (peak != NULL) {  
         num_matched_ions[seq_idx]++;
         find_iter = matched_peak_to_ion.find(peak);
@@ -717,23 +717,23 @@ void MPSM_Match::getMatchedIonIntensities(
   total_ion_intensity = getSpectrum()->getTotalEnergy();
 
 
-  vector<map<PEAK_T*, vector<Ion*> > > matched_peak_to_ion_vec;
+  vector<map<Peak*, vector<Ion*> > > matched_peak_to_ion_vec;
   getMatchedIons(matched_peak_to_ion_vec);
 
   ion_intensity1 = 0.0;
 
-  map<PEAK_T*, vector<Ion*> >::iterator peak_iter;
+  map<Peak*, vector<Ion*> >::iterator peak_iter;
 
-  set<PEAK_T*> all_assigned_peaks;
+  set<Peak*> all_assigned_peaks;
   
   //cerr <<"Summing up intensities"<<endl;
   for (peak_iter = matched_peak_to_ion_vec.at(0).begin();
     peak_iter != matched_peak_to_ion_vec.at(0).end();
     ++peak_iter) {
     
-    PEAK_T* peak = peak_iter->first;
+    Peak* peak = peak_iter->first;
     all_assigned_peaks.insert(peak_iter->first);
-    ion_intensity1 += get_peak_intensity(peak);
+    ion_intensity1 += peak->getIntensity();
 
   }
   //cerr <<"ion1:"<<ion_intensity1<<endl;
@@ -743,20 +743,20 @@ void MPSM_Match::getMatchedIonIntensities(
     for (peak_iter = matched_peak_to_ion_vec.at(1).begin();
       peak_iter != matched_peak_to_ion_vec.at(1).end();
       ++peak_iter) {
-      PEAK_T* peak = peak_iter->first;
+      Peak* peak = peak_iter->first;
       all_assigned_peaks.insert(peak_iter->first);
-      ion_intensity2 += get_peak_intensity(peak);
+      ion_intensity2 += peak->getIntensity();
     }
   }
   //cerr <<"Ion2:"<<ion_intensity2<<endl;
   ion_intensity12 = 0;
   
-  for (set<PEAK_T*>::iterator iter = all_assigned_peaks.begin();
+  for (set<Peak*>::iterator iter = all_assigned_peaks.begin();
     iter != all_assigned_peaks.end();
     ++iter) {
 
-    PEAK_T* peak = *iter;
-    ion_intensity12 += get_peak_intensity(peak);
+    Peak* peak = *iter;
+    ion_intensity12 += peak->getIntensity();
   }
   //cerr <<"Ion12:"<<ion_intensity12<<endl;
 }
@@ -790,7 +790,7 @@ ostream& operator <<(ostream& os, MPSM_Match& match_obj) {
   os << setprecision(precision);
 
   //cout <<"getting first_match"<<endl;
-  MATCH_T* first_match = match_obj.getMatch(0);
+  Match* first_match = match_obj.getMatch(0);
   //cout <<"Getting parent"<<endl;
   MPSM_MatchCollection* parent = match_obj.getParent();
   if (parent == NULL) {
@@ -798,7 +798,7 @@ ostream& operator <<(ostream& os, MPSM_Match& match_obj) {
   }
 
   //cout <<"Getting spectrum"<<endl;
-  Spectrum* spectrum = get_match_spectrum(first_match);
+  Spectrum* spectrum = first_match->getSpectrum();
   //cout <<"getting scan"<<endl;
   int scan = spectrum->getFirstScan();
   

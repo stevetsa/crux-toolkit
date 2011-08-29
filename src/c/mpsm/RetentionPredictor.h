@@ -1,7 +1,7 @@
 #ifndef RETENTIONPREDICTOR_H_
 #define RETENTIONPREDICTOR_H_
 
-#include "match.h"
+#include "Match.h"
 #include "MPSM_Match.h"
 
 
@@ -13,7 +13,7 @@ class RetentionPredictor {
     virtual ~RetentionPredictor();
 
     //override this.
-    virtual FLOAT_T predictRTime(MATCH_T* match);
+    virtual FLOAT_T predictRTime(Match* match);
     
     //create an instance of the retention predictor, depending
     //upon the parameter.
