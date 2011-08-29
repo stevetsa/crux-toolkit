@@ -9,8 +9,8 @@
 #include "objects.h"
 #include "Ion.h"
 #include "alphabet.h"
-#include "peptide.h"
-#include "peak.h"
+#include "Peptide.h"
+#include "Peak.h"
 #include "mass.h"
 #include "utils.h"
 #include <sys/types.h>
@@ -110,7 +110,7 @@ void Ion::initBasicIon(
     peptide_sequence_ = peptide;
   }
   // TODO get mass type from param file
-  peptide_mass_ = calc_sequence_mass(peptide, MONO); 
+  peptide_mass_ = Peptide::calcSequenceMass(peptide, MONO); 
   peak_ = NULL;
 }
 
@@ -314,8 +314,8 @@ void Ion::printGmtkSingle(
   FLOAT_T intensity = 0.0;
   FLOAT_T intensity_rank = 0.0;
   if (peak_ != NULL){
-    intensity = get_peak_intensity(peak_);
-    intensity_rank = get_peak_intensity_rank(peak_);
+    intensity = peak_->getIntensity();
+    intensity_rank = peak_->getIntensityRank();
     is_detected = 1;
   }
 
@@ -381,8 +381,8 @@ void Ion::printGmtkSingleBinary(
   float_array[2] = 0.0;                                   // 2
   int is_detected = 0;
   if (peak_ != NULL){
-    float_array[1] = get_peak_intensity(peak_);       // 1 
-    float_array[2] = get_peak_intensity_rank(peak_);  // 2 
+    float_array[1] = peak_->getIntensity();      //1
+    float_array[2] = peak_->getIntensityRank();  //2
     is_detected = 1; 
 
 #ifdef LOG_INTENSITY
@@ -570,16 +570,16 @@ void Ion::printGmtkPairedBinary(
   int first_is_detected = 0;
   if (first_ion->peak_ != NULL){
     // put in LOG_INTENSITY ?
-    float_array[2] = get_peak_intensity(first_ion->peak_);         // 2 
-    float_array[4] = get_peak_intensity_rank(first_ion->peak_);    // 4 
+    float_array[2] = first_ion->peak_->getIntensity();    //2
+    float_array[4] = first_ion->peak_->getIntensityRank();//4
     first_is_detected = 1; 
   }
 
   int second_is_detected = 0;
   if (second_ion->peak_ != NULL){
     // put in LOG_INTENSITY ?
-    float_array[3] = get_peak_intensity(second_ion->peak_);        // 3 
-    float_array[5] = get_peak_intensity_rank(second_ion->peak_);   // 5 
+    float_array[3] = second_ion->peak_->getIntensity();    //3
+    float_array[5] = second_ion->peak_->getIntensityRank();//5
     second_is_detected = 1; 
   }
 
@@ -714,7 +714,7 @@ void Ion::addModification(
  * Adds the given ION_MODIFICATION to this ion
  */
 void Ion::setPeak(
-  PEAK_T* peak ///< peak to add to this ion -in
+  Peak * peak ///< peak to add to this ion -in
   ){
   peak_ = peak;
 };
@@ -764,10 +764,8 @@ FLOAT_T Ion::getMass(
   if(reverse){
     if(mass_type == AVERAGE){
       mass += MASS_H2O_AVERAGE;
-      //return mass + MASS_H2O_AVERAGE;
     }else{
       mass += MASS_H2O_MONO;
-      //return mass + MASS_H2O_MONO;
     }
   }
   

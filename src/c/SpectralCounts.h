@@ -35,7 +35,7 @@ class SpectralCounts: public CruxApplication {
    * \typedef PeptideSet
    * \brief Collection of peptide objects (not a meta-peptide)
    */
-  typedef std::set<PEPTIDE_T*, bool(*)(PEPTIDE_T*, PEPTIDE_T*)> PeptideSet;
+  typedef std::set<Peptide*, bool(*)(Peptide*, Peptide*)> PeptideSet;
   /**
    * \typedef MetaMapping
    * \brief Mapping of peptideSet to MetaProtein
@@ -80,9 +80,9 @@ class SpectralCounts: public CruxApplication {
   void computeEmpai();
   void makeUniqueMapping();
   void getSpectra(std::map<std::pair<int,int>, Spectrum*>& spectra);
-  FLOAT_T sumMatchIntensity(MATCH_T* match,
+  FLOAT_T sumMatchIntensity(Match* match,
                           SpectrumCollection* spectra);
-  SCORER_TYPE_T get_qval_type(MATCH_COLLECTION_T* match_collection);
+  SCORER_TYPE_T get_qval_type(MatchCollection* match_collection);
 
   // member variables
   OutputFiles* output_;
@@ -94,7 +94,7 @@ class SpectralCounts: public CruxApplication {
   PARSIMONY_TYPE_T parsimony_;
   MEASURE_TYPE_T measure_;
   FLOAT_T bin_width_;
-  std::set<MATCH_T*> matches_;
+  std::set<Match*> matches_;
   PeptideToScore peptide_scores_;
   ProteinToScore protein_scores_;
   ProteinToPeptides protein_supporting_peptides_;

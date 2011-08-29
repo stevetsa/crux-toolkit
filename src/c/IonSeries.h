@@ -10,17 +10,11 @@
 #include <stdio.h>
 #include <vector>
 #include "objects.h"
-#include "peptide.h"
+#include "Peptide.h"
 #include "Ion.h"
 #include "IonConstraint.h"
 
 static const int MAX_NUM_ION_TYPE = 8; // number of different ion_types
-
-/**
- * \object IonIterator
- * \brief An object to iterate over all ion objects in the IonSeries
- */
-typedef std::vector<Ion*>::iterator IonIterator;
 
 /**
  * \class IonSeries

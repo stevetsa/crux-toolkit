@@ -4,8 +4,8 @@
 #include <cppunit/extensions/HelperMacros.h>
 #include <map>
 #include "crux-utils.h"
-#include "match.h"
-#include "peptide.h"
+#include "Match.h"
+#include "Peptide.h"
 #include "modifications.h"
 
 

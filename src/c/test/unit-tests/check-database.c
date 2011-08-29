@@ -5,24 +5,23 @@
 #include "mass.h"
 #include "objects.h"
 #include "Spectrum.h"
-#include "peak.h"
-#include "peptide.h"
-#include "peptide_src.h"
+#include "Peak.h"
+#include "Peptide.h"
+#include "PeptideSrc.h"
 #include "Protein.h"
-#include "database.h"
+#include "Database.h"
 #include "carp.h"
 #include "crux-utils.h"
-#include "database.h"
 
 
-static DATABASE_T* db;
+static Database* db;
 
 void db_setup(){
-  db = new_database("input-data/protein2.fasta", FALSE);  // not memmapped
+  db = new Database("input-data/protein2.fasta", FALSE);  // not memmapped
 }
 
 void db_teardown(){
-  free_database(db);
+  Database::freeDatabase(db);
 }
 
 START_TEST(test_create){

@@ -17,13 +17,13 @@
 
 #include "utils.h"
 #include "crux-utils.h"
-#include "peptide.h"
+#include "Peptide.h"
 #include "Protein.h"
-#include "index.h"
+#include "Index.h"
 #include "carp.h"
 #include "objects.h"
-#include "peptide_constraint.h"
-#include "database.h"
+#include "PeptideConstraint.h"
+#include "Database.h"
 
 
 /***********************************
@@ -36,7 +36,7 @@
  * \returns a SORTED_PEPTIDE_ITERATOR_T object.
  */
 SORTED_PEPTIDE_ITERATOR_T* new_sorted_peptide_iterator_database(
-  DATABASE_PEPTIDE_ITERATOR_T* database_peptide_iterator, ///< the peptide iterator to extend -in
+  DatabasePeptideIterator* database_peptide_iterator, ///< the peptide iterator to extend -in
   SORT_TYPE_T sort_type, ///< the sort type for this iterator -in
   BOOLEAN_T unique ///< only return unique peptides? -in
   );
@@ -71,7 +71,7 @@ BOOLEAN_T sorted_peptide_iterator_has_next(
  * returns each peptide in sorted order
  * \returns The next peptide in the database.
  */
-PEPTIDE_T* sorted_peptide_iterator_next(
+Peptide* sorted_peptide_iterator_next(
   SORTED_PEPTIDE_ITERATOR_T* peptide_iterator ///< the iterator of interest -in
   );
 

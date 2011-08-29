@@ -2,6 +2,7 @@
  * \file CreateIndex.cpp 
  * ORIGINAL AUTHOR: Chris Park
  * CRUX APPLICATION CONVERSION: Sean McIlwain
+ * Missed-cleavage Conversion: Kha Nguyen
  * \brief Given a protein fasta sequence database as input, generate
  * crux_index files that contain list of peptides in the database that
  * meet certain criteria (e.g. mass, length, trypticity) as output.
@@ -31,8 +32,6 @@ CreateIndex::~CreateIndex() {
  */
 int CreateIndex::main(int argc, char** argv) {
 
-  //return create_index_main(argc, argv);
-
   /* Declarations */
   int min_length;
   int max_length;
@@ -44,9 +43,9 @@ int CreateIndex::main(int argc, char** argv) {
   int missed_cleavages; 
 
   double mass_range;
-  PEPTIDE_CONSTRAINT_T* constraint;
+  PeptideConstraint* constraint;
   char* in_file = NULL;
-  INDEX_T* crux_index;
+  Index* crux_index;
   char* binary_fasta_file = NULL;
 
   /* Define optional command line arguments */ 
@@ -96,13 +95,13 @@ int CreateIndex::main(int argc, char** argv) {
   min_length = get_int_parameter("min-length");
   max_length = get_int_parameter("max-length");
 
-  missed_cleavages = get_boolean_parameter("missed-cleavages");
+  missed_cleavages = get_int_parameter("missed-cleavages");
   enzyme = get_enzyme_type_parameter("enzyme");
   digest = get_digest_type_parameter("digestion");
   mass_type = get_mass_type_parameter("isotopic-mass");
 
   /* create peptide constraint */
-  constraint = new_peptide_constraint(enzyme, digest, min_mass, max_mass, 
+  constraint = new PeptideConstraint(enzyme, digest, min_mass, max_mass, 
                                       min_length, max_length, 
                                       missed_cleavages, mass_type);
   
@@ -125,31 +124,26 @@ int CreateIndex::main(int argc, char** argv) {
   }
 
   /* create new index object */
-  crux_index = new_index(in_file,
+  crux_index = new Index(in_file,
                          out_dir,
                          constraint,
                          mass_range
                          );
   
   /* create crux_index files */
-  if(!create_index(crux_index,
-                   get_boolean_parameter("peptide-list"))){
+  if(!crux_index->create(get_boolean_parameter("peptide-list"))){
     carp(CARP_FATAL, "Failed to create index");
   }
   
   /* free index(frees constraint together) */
-  free_index(crux_index);     
+  Index::free(crux_index);
+     
   free(binary_fasta_file);
   free(out_dir);
   free(in_file);
   free_parameters();
 
-  /* successfull exit message */
-  //carp(CARP_INFO, "crux-create-index finished.");
-
   return 0;
-
-
 
 }
 

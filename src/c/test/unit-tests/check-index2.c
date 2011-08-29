@@ -5,12 +5,12 @@
 #include "mass.h"
 #include "objects.h"
 #include "Spectrum.h"
-#include "peak.h"
-#include "peptide.h"
-#include "peptide_src.h"
+#include "Peak.h"
+#include "Peptide.h"
+#include "PeptideSrc.h"
 #include "Protein.h"
-#include "database.h"
-#include "index.h"
+#include "Database.h"
+#include "Index.h"
 
 // declare things to set up
 

@@ -7,17 +7,17 @@
 
 // declare things to set up
 GENERATE_PEPTIDES_ITERATOR_T* gpiter1;
-DATABASE_T* dbase;
+Database* dbase;
 
 void gpiter_setup(){
   initialize_parameters();
-  dbase = new_database("input-data/test.fasta", FALSE);
+  dbase = new Database("input-data/test.fasta", FALSE);
   gpiter1 = new_generate_peptides_iterator_from_mass(1268, NULL, dbase);
   //gpiter1 = new_generate_peptides_iterator_from_mass(1566, index, NULL);
 }
 
 void gpiter_teardown(){
-  free_database(dbase);
+  Database::freeDatabase(dbase);
   free_generate_peptides_iterator(gpiter1);
 }
 
@@ -29,9 +29,9 @@ START_TEST(test_create){
   fail_unless( generate_peptides_iterator_has_next(gpiter1) == TRUE,
                "Iterator should have peptide as set up");
 
-  PEPTIDE_T* next_p = generate_peptides_iterator_next(gpiter1);
+  Peptide* next_p = generate_peptides_iterator_next(gpiter1);
   fail_unless( next_p != NULL, "Next returned a null peptide");
-  char* seq = get_peptide_sequence(next_p);
+  char* seq = next_p->getSequence();
   fail_unless( strcmp(seq, "ITNHLVAMIEK") == 0,
                "First peptide should be ITNHLVAMIEK but is %s", seq);
   fail_unless( get_double_parameter("precursor-window") == 3,
@@ -41,7 +41,7 @@ START_TEST(test_create){
 
   next_p = generate_peptides_iterator_next(gpiter1);
   free(seq);
-  seq = get_peptide_sequence(next_p);
+  seq = next_p->getSequence();
   fail_unless( strcmp(seq, "QGQVATVLSAPAK") == 0,
                "Second peptide should be QGQVATVLSAPAK but is %s", seq);
   free(seq);

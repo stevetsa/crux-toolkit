@@ -13,14 +13,14 @@
 #include <dirent.h>
 #include "utils.h"
 #include "crux-utils.h"
-#include "peptide.h"
+#include "Peptide.h"
 #include "Protein.h"
-#include "index.h"
+#include "Index.h"
 #include "carp.h"
 #include "objects.h"
-#include "peptide_constraint.h"
+#include "PeptideConstraint.h"
 #include "peptide_modifications.h"
-#include "database.h"
+#include "Database.h"
 #include "linked_list.h"
 #include "modified_peptides_iterator.h"
 
@@ -58,8 +58,8 @@ GENERATE_PEPTIDES_ITERATOR_T* new_generate_peptides_iterator(void);
  */
 GENERATE_PEPTIDES_ITERATOR_T* new_generate_peptides_iterator_from_mass(
   FLOAT_T neutral_mass, ///< The target mass (uncharged) for peptides
-  INDEX_T* index,     ///< The index from which to draw peptides OR
-  DATABASE_T* database///< The database from which to draw peptides
+  Index* index,     ///< The index from which to draw peptides OR
+  Database* database///< The database from which to draw peptides
 );
 
 /**
@@ -78,8 +78,8 @@ GENERATE_PEPTIDES_ITERATOR_T* new_generate_peptides_iterator_from_mass(
 GENERATE_PEPTIDES_ITERATOR_T* new_generate_peptides_iterator_from_mass_range(
   double min_mass,     ///< The min mass of peptides to generate -in
   double max_mass,     ///< The maximum mas of peptide to generate -in
-  INDEX_T* index,      ///< The index
-  DATABASE_T* database ///< The database
+  Index* index,      ///< The index
+  Database* database ///< The database
   );
 
 /**
@@ -98,8 +98,8 @@ GENERATE_PEPTIDES_ITERATOR_T* new_generate_peptides_iterator_from_mass_range(
 GENERATE_PEPTIDES_ITERATOR_T* new_generate_peptides_iterator_mods(
   double mass,                ///< target mass of peptides
   PEPTIDE_MOD_T* peptide_mod, ///< the peptide mod to apply
-  INDEX_T* index,             ///< index from which to draw peptides OR
-  DATABASE_T* dbase           ///< database from which to draw peptides
+  Index* index,             ///< index from which to draw peptides OR
+  Database* dbase           ///< database from which to draw peptides
   );
 
 
@@ -115,7 +115,7 @@ BOOLEAN_T generate_peptides_iterator_has_next(
 /**
  *\returns the next peptide in the iterator
  */
-PEPTIDE_T* generate_peptides_iterator_next(
+Peptide* generate_peptides_iterator_next(
   GENERATE_PEPTIDES_ITERATOR_T* generate_peptide_iterator ///< working iterator
   );
 

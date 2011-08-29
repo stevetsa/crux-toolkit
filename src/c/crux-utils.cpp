@@ -10,8 +10,6 @@
 #include "crux-utils.h"
 #include "parameter.h"
 
-#include <iostream>
-
 using namespace std;
 
 /**
@@ -1498,8 +1496,8 @@ void fit_two_parameter_weibull(
  */
 int prepare_protein_input(
   char* input_file,     ///< name of the fasta file or index directory
-  INDEX_T** index,      ///< return new index here OR
-  DATABASE_T** database)///< return new fasta database here
+  Index** index,      ///< return new index here OR
+  Database** database)///< return new fasta database here
 {
 
   int num_proteins = 0;
@@ -1507,24 +1505,24 @@ int prepare_protein_input(
 
   if (use_index == TRUE){
     carp(CARP_INFO, "Preparing protein index %s", input_file);
-    *index = new_index_from_disk(input_file);
+    *index = new Index(input_file);
 
     if (index == NULL){
       carp(CARP_FATAL, "Could not create index from disk for %s", input_file);
     }
-    num_proteins = get_index_num_proteins(*index);
+    num_proteins = (*index)->getNumProteins();
 
   } else {
     carp(CARP_INFO, "Preparing protein fasta file %s", input_file);
-    *database = new_database(input_file, FALSE);         
+    *database = new Database(input_file, FALSE);         
     if( database == NULL ){
       carp(CARP_FATAL, "Could not create protein database");
     } 
 
-    if(!parse_database(*database)){
+    if(!(*database)->parse()){
       carp(CARP_FATAL, "Error with protein database.");
     } 
-    num_proteins = get_database_num_proteins(*database);
+    num_proteins = (*database)->getNumProteins();
   }
   return num_proteins;
 }
@@ -1600,26 +1598,24 @@ int get_last_in_range_string(const char* range_string){
  * charged or -1 on error.
  */
 int choose_charge(FLOAT_T precursor_mz,    ///< m/z of spectrum precursor ion
-                  vector<PEAK_T*>& peaks)  ///< array of spectrum peaks
+                  vector<Peak*>& peaks)  ///< array of spectrum peaks
 {
   if(peaks.empty()){
     carp(CARP_ERROR, "Cannot determine charge state of empty peak array.");
     return -1;
   }
 
-  FLOAT_T max_peak_mz = get_peak_location(peaks.back());
+  FLOAT_T max_peak_mz = peaks.back()->getLocation();
   
   // sum peaks below and above the precursor m/z window separately
   FLOAT_T left_sum = 0.00001;
   FLOAT_T right_sum= 0.00001;
   for(unsigned int peak_idx = 0; peak_idx < peaks.size(); peak_idx++){
-    if(get_peak_location(peaks[peak_idx]) < precursor_mz - 20){
-      left_sum += get_peak_intensity(peaks[peak_idx]);
-
-    } else if(get_peak_location(peaks[peak_idx]) 
-              > precursor_mz + 20){
-      right_sum += get_peak_intensity(peaks[peak_idx]);
-
+    if (peaks[peak_idx]->getLocation() < precursor_mz - 20) {
+      left_sum += peaks[peak_idx]->getIntensity();
+    }
+    else if (peaks[peak_idx]->getLocation() > precursor_mz + 20) {
+      right_sum += peaks[peak_idx]->getIntensity();
     } // else, skip peaks around precursor
   }
 
