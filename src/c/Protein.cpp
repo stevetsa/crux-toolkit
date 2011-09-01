@@ -33,6 +33,9 @@ static const int FASTA_LINE = 50;
 static const int SMALLEST_MASS = 57;
 static const int LARGEST_MASS = 190;
 
+/**
+ * Set member variables to default values.
+ */
 void Protein::init() {
   database_ = NULL;
   offset_ = 0;
@@ -48,7 +51,6 @@ void Protein::init() {
 /**
  * \returns An (empty) protein object.
  */
-
 Protein::Protein() {
   init();
 }
@@ -57,13 +59,13 @@ Protein::Protein() {
  * \returns A new protein object(heavy).
  * The protein is does not constain a database, users must provide one.
  */
-
 Protein::Protein(
   const char*         id, ///< The protein sequence id. -in
   const char*   sequence, ///< The protein sequence. -in
   unsigned int length, ///< The length of the protein sequence. -in
   const char* annotation,  ///< Optional protein annotation.  -in
-  unsigned long int offset, ///< The file location in the source file in the database -in
+  unsigned long int offset, 
+  ///< The file location in the source file in the database -in
   unsigned int protein_idx, ///< The index of the protein in it's database.-in  
   Database* database ///< the database of its origin
   )
@@ -84,7 +86,8 @@ Protein::Protein(
  * \returns A new light protein object.
  */
 Protein* Protein::newLightProtein(
-  unsigned long int offset, ///< The file location in the source file in the database -in
+  unsigned long int offset, 
+  ///< The file location in the source file in the database -in
   unsigned int protein_idx ///< The index of the protein in it's database. -in
   )
 {
@@ -201,10 +204,12 @@ void Protein::print(
 /**
  * prints a binary representation of the protein
  * 
- * FORMAT
- * <int: id length><char: id><int: annotation length><char: annotation><int: sequence length><char: sequence>
+ * FORMAT (no line break)
+ * <int: id length><char: id><int: annotation length>
+    <char: annotation><int: sequence length><char: sequence>
  *
- * make sure when rading the binary data, add one to the length so that it will read in the terminating char as well
+ * Make sure when reading the binary data, add one to the length so
+ * that it will read in the terminating char as well.
  */
 void Protein::serialize(
   FILE* file ///< output stream -out
@@ -277,14 +282,16 @@ void Protein::copy(
  * protein must be a heap allocated
  * 
  * Assume memmap pointer is set at beginning of protein
- * Assume protein binary format
- * <int: id length><char: id><int: annotation length><char: annotation><int: sequence length><char: sequence>
+ * Assume protein binary format (no line break)
+ * <int: id length><char: id><int: annotation length>
+     <char: annotation><int: sequence length><char: sequence>
  *
  * modifies the *memmap pointer!
  * \returns TRUE if success. FALSE is failure.
  */
 bool Protein::parseProteinBinaryMemmap(
-  char** memmap ///< a pointer to a pointer to the memory mapped binary fasta file -in
+  char** memmap 
+  ///< a pointer to a pointer to the memory mapped binary fasta file -in
   )
 {
   int id_length = 0;
@@ -402,9 +409,9 @@ bool Protein::parseProteinFastaFile(
  * and the comment.
  */
 bool Protein::readTitleLine
-  (FILE* fasta_file,
-   char* name,
-   char* description)
+(FILE* fasta_file, ///< file to read -in
+ char* name, ///< write protein name here -out
+ char* description) ///< write description here -out
 {
   static char id_line[LONGEST_LINE];  // Line containing the ID and comment.
   int a_char;                         // The most recently read character.
@@ -535,7 +542,8 @@ bool Protein::readRawSequence
  * changed by prefixing with reverse_ or rand_, depending on how it
  * was randomized. 
  */
-void Protein::shuffle(DECOY_TYPE_T decoy_type){
+void Protein::shuffle(
+  DECOY_TYPE_T decoy_type){ ///< method for shuffling
   carp(CARP_DEBUG, "Shuffling protein %s as %s", 
        id_, decoy_type_to_string(decoy_type));
 
@@ -736,7 +744,8 @@ void Protein::setAnnotation(
  * sets the offset of the protein in the fasta file
  */
 void Protein::setOffset(
-  unsigned long int offset ///< The file location in the source file in the database -in
+  unsigned long int offset 
+  ///< The file location in the source file in the database -in
   )
 {
   offset_ = offset;
@@ -872,7 +881,9 @@ void Protein::peptideShuffleSequence(){
  * start and end residues in place.  Repeat up to three times if the
  * shuffled sequence doesn't change.
  */
-void Protein::shuffleRegion(int start, int end){
+void Protein::shuffleRegion(
+  int start, ///< index of peptide start
+  int end){///< index of last residue in peptide
 
   char buf[256]; // buffer for storing regions before shuffling
 

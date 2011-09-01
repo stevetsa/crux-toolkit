@@ -15,8 +15,6 @@
 #include "PeptideConstraint.h"
 
 
-/* CHRIS This is probably an object for which you can crib code for from an outside source. Even from in-house (like Charles).*/
-
 class Protein {
  protected:
   Database*  database_; ///< Which database is this protein part of
@@ -34,18 +32,18 @@ class Protein {
    * and the comment.
    */
   bool readTitleLine
-    (FILE* fasta_file,
-     char* name,
-     char* description);
+    (FILE* fasta_file,///< file to read
+     char* name,      ///< put protein name here
+     char* description);///< put protein description here
 
   
-  /****************************************************************************
+  /**
    * Read raw sequence until a '>' is encountered or too many letters
    * are read.  The new sequence is appended to the end of the given
    * sequence.
    *
    * Return: Was the sequence read completely?
-   ****************************************************************************/
+   **/
   static bool readRawSequence
     (FILE* fasta_file,   // Input Fasta file.
      char* name,         // Sequence ID (used in error messages).
@@ -62,11 +60,23 @@ class Protein {
    * cleavage site.
    */
   void peptideShuffleSequence();
-  void shuffleRegion(int start, int end);
+
+  /**
+   * Shuffle the region of the sequence between start and end, leaving
+   * start and end residues in place.  Repeat up to three times if the
+   * shuffled sequence doesn't change.
+   */
+  void shuffleRegion(
+    int start, ///< index of peptide start
+    int end);  ///< index of last residue in peptide
 
  public:
 
+  /**
+   * Initialize member variables to default values.
+   */
   void init();
+
   /**
    * \returns An (empty) protein object.
    */
@@ -80,8 +90,9 @@ class Protein {
     const char*   sequence, ///< The protein sequence.
     unsigned int length, ///< The length of the protein sequence.
     const char* annotation,  ///< Optional protein annotation.  -in
-    unsigned long int offset, ///< The file location in the source file in the database -in
-    unsigned int protein_idx, ///< The index of the protein in it's database. -in
+    unsigned long int offset, 
+    ///< The file location in the source file in the database -in
+    unsigned int protein_idx,///< The index of the protein in its database. -in
     Database* database ///< the database of its origin
   );         
 
@@ -89,8 +100,9 @@ class Protein {
    * \returns A new light protein object.
    */
   static Protein* newLightProtein(
-    unsigned long int offset, ///< The file location in the source file in the database -in
-    unsigned int protein_idx ///< The index of the protein in it's database. -in
+    unsigned long int offset, 
+    ///< The file location in the source file in the database -in
+    unsigned int protein_idx ///< The index of the protein in its database. -in
   );
 
   /**
@@ -137,18 +149,21 @@ class Protein {
 
   /**
    * Parses a protein from an memory mapped binary fasta file
-   * the protein_idx field of the protein must be added before or after you parse the protein
+   * the protein_idx field of the protein must be added before or
+   * after you parse the protein.
    * \returns TRUE if success. FALSE is failure.
    * protein must be a heap allocated
    * 
    * Assume memmap pointer is set at beginning of protein
-   * Assume protein binary format
-   * <int: id length><char: id><int: annotation length><char: annotation><int: sequence length><char: sequence>
+   * Assume protein binary format (no line break)
+   * <int: id length><char: id><int: annotation length>
+     <char: annotation><int: sequence length><char: sequence>
    *
    * modifies the *memmap pointer!
    */
   bool parseProteinBinaryMemmap(
-    char** memmap ///< a pointer to a pointer to the memory mapped binary fasta file -in
+    char** memmap 
+    ///< a pointer to a pointer to the memory mapped binary fasta file -in
   );
 
   /**
@@ -160,17 +175,9 @@ class Protein {
    */
   void shuffle(DECOY_TYPE_T decoy_type);
 
-  /** 
-   * Access routines of the form get_<object>_<field> and set_<object>_<field>. 
-   * FIXME Chris, could you create the get and set methods for the object fields?
-   */
-
   /**
    * Additional get and set methods
    */
-
-  /*PEPTIDE_T** get_protein_peptides(PROTEIN_T* protein, PEPTIDE_CONSTRAINT*
-   * peptide_constraint);*/
 
   /**
    *\returns the id of the protein
@@ -241,7 +248,8 @@ class Protein {
    * sets the offset of the protein in the fasta file
    */
   void setOffset(
-    unsigned long int offset ///< The file location in the source file in the database -in
+    unsigned long int offset 
+    ///< The file location in the source file in the database -in
     );
 
   /**
@@ -253,7 +261,7 @@ class Protein {
    * sets the protein_idx (if, idx=n, nth protein in the fasta file)
    */
   void setProteinIdx(
-    unsigned int protein_idx ///< The index of the protein in it's database. -in
+    unsigned int protein_idx ///< The index of the protein in its database. -in
   );
 
   /**
@@ -288,10 +296,12 @@ class Protein {
   /**
    * prints a binary representation of the protein
    * 
-   * FORMAT
-   * <int: id length><char: id><int: annotation length><char: annotation><int: sequence length><char: sequence>
+   * FORMAT (no line break)
+   * <int: id length><char: id><int: annotation length>
+     <char: annotation><int: sequence length><char: sequence>
    *
-   * make sure when rading the binary data, add one to the length so that it will read in the terminating char as well
+   * make sure when rading the binary data, add one to the length so
+   * that it will read in the terminating char as well.
    */
   void serialize(
     FILE* file ///< output stream -out

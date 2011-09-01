@@ -6,7 +6,6 @@
 #define PETPIDE_ITERATOR_H
 
 #include "peptide.h"
-//#include <iostream>
 
 class PeptideIterator{
 
@@ -36,12 +35,18 @@ class PeptideIterator{
  public:
   virtual ~PeptideIterator(){};
 
+  /**
+   * Return the next peptide in the iterator or NULL if none are left.
+   */
   PEPTIDE_T* next(){
     PEPTIDE_T* return_me = next_peptide_;
     has_next_ = queueNextPeptide();
     return return_me;
   }
   
+  /**
+   * Return true if there are more peptides to return or false if not.
+   */
   bool hasNext(){
     return has_next_;
   }

@@ -5,6 +5,11 @@
 #include "ModifiedPeptidesIterator.h"
 #include "SpectrumZState.h"
 
+/**
+ * Constructor that sets all fields with the given values.  Will
+ * return peptides in a window around the given m/z or mass with the
+ * given modifications applied.
+ */
 ModifiedPeptidesIterator::ModifiedPeptidesIterator(
   double mz,               ///< Spectrum precrusor mz
   SpectrumZState& zstate,  ///< Target mz of peptides
@@ -46,18 +51,32 @@ ModifiedPeptidesIterator::ModifiedPeptidesIterator(
   initialize();
 }
 
+/**
+ * Destructor that frees any peptides not yet returned via next().
+ */
 ModifiedPeptidesIterator::~ModifiedPeptidesIterator(){
   delete_linked_list(temp_peptide_list_);
   free_peptide(next_peptide_);
   delete peptide_source_;
 }
 
+/**
+ * Use parameter.cpp values to determine the range of masses to
+ * consider.
+ * \returns A pair with the minimum and maximum mass for generating
+ * peptides.  
+ */
 pair<FLOAT_T,FLOAT_T>ModifiedPeptidesIterator::getMinMaxMass()
 {
   return pair<FLOAT_T,FLOAT_T>(get_double_parameter("min-mass"),
                                get_double_parameter("max-mass"));
 }
 
+/**
+ * Use parameter.cpp for window type and window size to find the mass
+ * window around the given m/z or mass.
+ * \returns A pair with the minimum and maximum masses to search.
+ */
 pair<FLOAT_T,FLOAT_T> ModifiedPeptidesIterator::getMinMaxMass(
   double mz, ///< precursor mz for peptide window
   SpectrumZState& zstate, ///< charge/mass pair for peptide window

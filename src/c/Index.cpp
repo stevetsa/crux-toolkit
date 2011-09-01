@@ -246,7 +246,9 @@ int is_decoy_binary_fasta_name(const struct dirent *entry){
  * \returns A string with the name of the existing binary fasta file
  * for this index. 
  */
-char* Index::getBinaryFastaName(const char* index_name){
+char* Index::getBinaryFastaName(
+ const char* index_name ///< directory containing index
+){
   struct dirent** namelist = NULL;
   int num_files = scandir(index_name, &namelist, is_binary_fasta_name,
                           alphasort);
@@ -283,7 +285,9 @@ char* Index::getBinaryFastaName(const char* index_name){
  * \returns A string with the name of the existing binary fasta file
  * for this index or NULL if no file found.
  */
-char* Index::getDecoyBinaryFastaName(const char* index_name){
+char* Index::getDecoyBinaryFastaName(
+  const char* index_name ///< directory containing index
+){
   struct dirent** namelist = NULL;
   int num_files = scandir(index_name, &namelist, is_decoy_binary_fasta_name,
                           alphasort);
@@ -367,7 +371,9 @@ bool Index::setFieldsFromDisk() {
  * \brief Private function to take a header line from index_map and
  * set the appropriate value in the index.
  */
-void Index::setFieldFromMap(char* line){
+void Index::setFieldFromMap(
+  char* line ///< line read from map file
+){
   // parse the line
   char sharp[2] = "";
   char trait_name[64] = "";
@@ -646,6 +652,9 @@ Index::Index(
   }
 }
 
+/**
+ * \returns The number of proteins in the index
+ */
 int Index::getNumProteins(){
   // will be the same for decoy database, if present
   return database_->getNumProteins();
@@ -679,6 +688,9 @@ void Index::free(
   }
 }
 
+/**
+ * Destructor that frees the indexes database(s) and constraints.
+ */
 Index::~Index() {
 
   if (database_ != NULL){
@@ -705,8 +717,8 @@ Index::~Index() {
 }
 
 /**
- * write to the file stream various information of the
- * index files created
+ * Write to the file stream various information of the
+ * index files created.
  */
 bool Index::writeHeader(
   FILE* file ///< out put stream for crux_index_map -in
@@ -914,9 +926,9 @@ FILE* Index::sortBin(
   FILE* file, ///< the working file handle to the bin -in
   long bin_idx, ///< bin index in the file array -in
   unsigned int peptide_count, ///< the total peptide count in the bin -in
-  FILE* text_file,
-  const char* file_prefix,
-  Database* database
+  FILE* text_file, ///< optional file to print sequences to -in
+  const char* file_prefix, ///< beginning of index file names -in
+  Database* database ///< target or decoy database to use -in
   )
 {
   char* filename = NULL;
@@ -1326,7 +1338,8 @@ void Index::setDirectory(
 /**
  *\returns a pointer to the database
  */
-Database* Index::getDatabase(bool is_decoy)
+Database* Index::getDatabase(
+  bool is_decoy)///< if true, return decoy database
 {
   if( is_decoy ){
     return decoy_database_;
@@ -1443,14 +1456,14 @@ bool initialize_bin_peptide_iterator(
 
 
 /**
- * Instantiates a new bin_peptide_iterator from a gvien bin file handler.
+ * Instantiates a new bin_peptide_iterator from a gvien bin file handle.
  * \returns a new heap allocated bin_peptide_iterator object
  */
 BIN_PEPTIDE_ITERATOR_T* new_bin_peptide_iterator(
   Index* index, ///< The index object which we are iterating over -in
   FILE* file, ///< the bin to parse peptides
-  bool use_array,  ///< should I use array peptide_src or link list when parsing peptides -in
-  Database* database
+  bool use_array,  ///< use array peptide_src or link list when parsing peptides -in
+  Database* database ///< the index's database to use (target/decoy)
   )
 {
   if(use_array){
@@ -1547,7 +1560,7 @@ BIN_SORTED_PEPTIDE_ITERATOR_T* new_bin_sorted_peptide_iterator(
   Index* index, ///< The index object which we are iterating over -in
   FILE* file, ///< the working bin file handler -in
   unsigned int peptide_count, ///< the total peptide count in the bin -in
-  Database* database
+  Database* database ///< the index's database to use (target/decoy) -in
   )
 {
   // set peptide implementation to array peptide_src

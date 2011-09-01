@@ -71,7 +71,7 @@ class Index {
   PeptideConstraint* disk_constraint_;///< Defines peptides on disk
   PeptideConstraint* search_constraint_;///< Defines peptides being searched
   bool on_disk_; ///< Does this index exist on disk yet?
-  FLOAT_T mass_range_;  ///< the range of masses contained in each index file -in
+  FLOAT_T mass_range_;  ///< the range of masses in each index file -in
   bool is_unique_; ///< only unique peptides? -in
   DECOY_TYPE_T decoys_; ///< the type of decoys stored
 
@@ -171,17 +171,10 @@ class Index {
     FILE* file, ///< the working file handle to the bin -in
     long bin_idx, ///< bin index in the file array -in
     unsigned int peptide_count, ///< the total peptide count in the bin -in
-    FILE* text_file,
-    const char* file_prefix,
-    Database* database ///< needed for protein info
+    FILE* text_file, ///< optional file to write sequences to -in
+    const char* file_prefix, ///< beginning of index file names -in
+    Database* database ///< target or decoy database to use -in
     );
-
-  /*
-   * Returns the index filename appropriate for this peptide
-   */
-  char* getPeptideFileName(
-    PEPTIDE_T* peptide
-  );
 
   /**
    * The steps of creating an index that are repeated for the target and
@@ -259,7 +252,9 @@ class Index {
    * \returns A string with the name of the existing binary fasta file
    * for this index.
    */
-  static char* getBinaryFastaName(const char* index_name);
+  static char* getBinaryFastaName(
+    const char* index_name ///< directory containing index
+    );
 
   /**
    * \brief Looks in given directory for a file ending in
@@ -271,7 +266,9 @@ class Index {
    * \returns A string with the name of the existing binary fasta file
    * for this index.
    */
-  static char* getDecoyBinaryFastaName(const char* index_name);
+  static char* getDecoyBinaryFastaName(
+    const char* index_name ///< directory containing index
+    );
 
 
   /*********************************************
@@ -292,7 +289,7 @@ class Index {
   /**
    * \returns A pointer to the database.
    */
-  Database* getDatabase(bool is_decoy);
+  Database* getDatabase(bool is_decoy); ///< return target or decoy 
 
   /**
    *\returns a pointer to the peptides constraint
@@ -314,6 +311,9 @@ class Index {
   bool getIsUnique();
                            
 
+  /**
+   * \returns The number of proteins in the index.
+   */
   int getNumProteins();
 
   /**
@@ -340,7 +340,8 @@ void void_free_index_peptide_iterator(
 
 /**
  * The basic iterator functions.
- * \returns TRUE if there are additional peptides to iterate over, FALSE if not.
+ * \returns TRUE if there are additional peptides to iterate over,
+ * FALSE if not.
  */
 bool void_index_peptide_iterator_has_next(
     void* index_peptide_iterator ///< the iterator of interest -in
@@ -367,7 +368,7 @@ PEPTIDE_T* void_index_peptide_iterator_next(
 BIN_PEPTIDE_ITERATOR_T* new_bin_peptide_iterator(
   Index* index, ///< The index object which we are iterating over -in
   FILE* file, ///< the bin to parse peptides
-  bool use_array  ///< should I use array peptide_src or link list when parsing peptides -in
+  bool use_array  ///< use array peptide_src or link list -in
   );
 
 /**
@@ -375,16 +376,19 @@ BIN_PEPTIDE_ITERATOR_T* new_bin_peptide_iterator(
  * \returns The next peptide in the index.
  */
 PEPTIDE_T* bin_peptide_iterator_next(
-  BIN_PEPTIDE_ITERATOR_T* bin_peptide_iterator ///< the bin_peptide_iterator to get peptide -in
+  BIN_PEPTIDE_ITERATOR_T* bin_peptide_iterator 
+   ///< the bin_peptide_iterator to get peptide -in
   );
 
 /**
  * The basic iterator functions.
  * check to see if the bin_peptide_iterator has more peptides to return
- *\returns TRUE if there are additional peptides to iterate over, FALSE if not.
+ * \returns TRUE if there are additional peptides to iterate over,
+ * FALSE if not.
  */
 bool bin_peptide_iterator_has_next(
-  BIN_PEPTIDE_ITERATOR_T* bin_peptide_iterator ///< the bin_peptide_iterator to initialize -in
+  BIN_PEPTIDE_ITERATOR_T* bin_peptide_iterator 
+  ///< the bin_peptide_iterator to initialize -in
   );
 
 /**
@@ -400,14 +404,15 @@ void free_bin_peptide_iterator(
  ***********************************************/
 
 /**
- * Instantiates a new sorted_bin_peptide_iterator from a gvien bin file handler.
- * \returns a new heap allocated sorted_bin_peptide_iterator object
+ * Instantiates a new sorted_bin_peptide_iterator from a gvien bin
+ * file handle.
+ * \returns A new heap allocated sorted_bin_peptide_iterator object.
  */
 BIN_SORTED_PEPTIDE_ITERATOR_T* new_bin_sorted_peptide_iterator(
   Index* index, ///< The index object which we are iterating over -in
   FILE* file,///< the working file handler to the bin -in
   unsigned int peptide_count, ///< the total peptide count in the bin -in
-  Database* database
+  Database* database ///< target or decoy database
   );
 
 /**
@@ -415,23 +420,28 @@ BIN_SORTED_PEPTIDE_ITERATOR_T* new_bin_sorted_peptide_iterator(
  * \returns The next peptide in the index.
  */
 PEPTIDE_T* bin_sorted_peptide_iterator_next(
-  BIN_SORTED_PEPTIDE_ITERATOR_T* bin_sorted_peptide_iterator ///< the bin_peptide_iterator to get peptide -in
+  BIN_SORTED_PEPTIDE_ITERATOR_T* bin_sorted_peptide_iterator 
+  ///< the bin_peptide_iterator to get peptide -in
   );
 
 /**
  * The basic iterator functions.
- * check to see if the bin_sorted_peptide_iterator has more peptides to return
- *\returns TRUE if there are additional peptides to iterate over, FALSE if not.
+ * Check to see if the bin_sorted_peptide_iterator has more peptides
+ * to return.
+ *\returns TRUE if there are additional peptides to iterate over,
+ * FALSE if not.
  */
 bool bin_sorted_peptide_iterator_has_next(
-  BIN_SORTED_PEPTIDE_ITERATOR_T* bin_sorted_peptide_iterator ///< the bin_peptide_iterator to initialize -in
+  BIN_SORTED_PEPTIDE_ITERATOR_T* bin_sorted_peptide_iterator 
+  ///< the bin_peptide_iterator to initialize -in
   );
 
 /**
  * Frees an allocated bin_peptide_iterator object.
  */
 void free_bin_sorted_peptide_iterator(
-  BIN_SORTED_PEPTIDE_ITERATOR_T* bin_sorted_peptide_iterator ///< the iterator to free -in
+  BIN_SORTED_PEPTIDE_ITERATOR_T* bin_sorted_peptide_iterator 
+  ///< the iterator to free -in
   );
 
 
