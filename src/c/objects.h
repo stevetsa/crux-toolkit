@@ -23,7 +23,7 @@ class SpectrumZState;
 
 
 /**
- * \typedef PEAK_T 
+ * \class Peak 
  * A peak in a spectrum
  */
 class Peak;
@@ -58,10 +58,10 @@ typedef std::vector<Peak*>::const_iterator PeakIterator;
 class SpectrumCollection;
 
 /**
- * \typedef SPECTRUM_ITERATOR_T 
- * \brief An object to iterate over the spectra in a spectrum_collection
+ * \typedef SpectrumIterator
+ * \brief An object to iterate over the spectra in a SpectrumCollection
  */
-typedef struct spectrum_iterator SPECTRUM_ITERATOR_T;
+typedef std::vector<Spectrum*>::iterator SpectrumIterator;
 
 /**
  * \class FilteredSpectrumChargeIterator 
@@ -70,17 +70,17 @@ typedef struct spectrum_iterator SPECTRUM_ITERATOR_T;
 class FilteredSpectrumChargeIterator;
 
 /**
- * \typedef PEPTIDE_T
+ * \class Peptide
  * \brief A peptide subsequence of a protein
  */
-typedef struct peptide PEPTIDE_T;
+class Peptide;
 
 /**
- * \typedef PEPTIDE_CONSTRAINT_T
+ * \class PeptideConstraint
  * \brief An object representing constraints which a peptide may or may not
  * satisfy.
  */
-typedef struct peptide_constraint PEPTIDE_CONSTRAINT_T;
+class PeptideConstraint;
 
 /**
  * \typedef RESIDUE_ITERATOR_T 
@@ -218,6 +218,17 @@ enum _parsimony_type {
  */
 typedef enum _parsimony_type PARSIMONY_TYPE_T;
 
+/**
+ * \enum DECOY_TYPE_T
+ */
+enum DECOY_TYPE_T {
+  INVALID_DECOY_TYPE,
+  NO_DECOYS,
+  REVERSE_DECOYS,
+  PROTEIN_SHUFFLE_DECOYS,
+  PEPTIDE_SHUFFLE_DECOYS,
+  NUMBER_DECOY_TYPES
+};
 
 /**
  * \typedef WINDOW_TYPE_T
@@ -226,18 +237,16 @@ typedef enum _parsimony_type PARSIMONY_TYPE_T;
 typedef enum _window_type WINDOW_TYPE_T;
 
 /**
- * \typedef PEPTIDE_SRC_T
+ * \class PeptideSrc
  * \brief object for mapping a peptide to it's parent protein.
  */
-typedef struct peptide_src PEPTIDE_SRC_T;
-
+class PeptideSrc;
 
 /**
  * \class Protein
  * \brief A protein sequence
  */
 class Protein;
-
 
 /**
  * \class ProteinPeptideIterator
@@ -246,44 +255,31 @@ class Protein;
 class ProteinPeptideIterator;
 
 /**
- * \typedef DATABASE_T
+ * \class Database
  * \brief A database of protein sequences.
  */
-typedef struct database DATABASE_T;
+class Database;
 
 /**
- * \typedef DATABASE_PROTEIN_ITERATOR_T
+ * \class DatabaseProteinIterator
  * \brief An object to iterate over the proteins in a database 
  */
-typedef struct database_protein_iterator DATABASE_PROTEIN_ITERATOR_T;
+class DatabaseProteinIterator;
 
 /**
- * \typedef DATABASE_PEPTIDE_ITERATOR_T
+ * \class DatabasePeptideIterator
  * \brief An object to iterate over the peptides in a database 
  */
-typedef struct database_peptide_iterator DATABASE_PEPTIDE_ITERATOR_T;
-
+class DatabasePeptideIterator;
 
 /**
  * The enum for sort type (mass, length, lexical, none)
  */
-enum _sort_type {SORT_NONE, 
-                 SORT_MASS, 
-                 SORT_LENGTH, 
-                 SORT_LEXICAL, 
-                 NUMBER_SORT_TYPES };
-
-/**
- * \typedef SORT_TYPE_T
- * \brief The typedef for sort type (mass, length)
- */
-typedef enum _sort_type SORT_TYPE_T;
-
-/**
- * \typedef DATABASE_SORTED_PEPTIDE_ITERATOR_T
- * \brief An object to iterate over the peptides in a database in sorted order 
- */
-typedef struct database_sorted_peptide_iterator DATABASE_SORTED_PEPTIDE_ITERATOR_T;
+enum SORT_TYPE_T {SORT_NONE, 
+                  SORT_MASS, 
+                  SORT_LENGTH, 
+                  SORT_LEXICAL, 
+                  NUMBER_SORT_TYPES };
 
 /**
  * \typedef PEPTIDE_WRAPPER_T
@@ -292,23 +288,22 @@ typedef struct database_sorted_peptide_iterator DATABASE_SORTED_PEPTIDE_ITERATOR
 typedef struct peptide_wrapper PEPTIDE_WRAPPER_T;
 
 /**
- * \typedef INDEX_T
+ * \class Index
  * \brief An index of a database 
  */
-typedef struct index INDEX_T;
+class Index;
 
 /**
- * \typedef INDEX_PEPTIDE_ITERATOR_T
+ * \class IndexPeptideIterator
  * \brief An object to iterate over the peptides in an index
  */
-typedef struct index_peptide_iterator INDEX_PEPTIDE_ITERATOR_T;
-
+class IndexPeptideIterator;
 
 /**
- * \typedef INDEX_FILTERED_PEPTIDE_ITERATOR_T
- * \brief An iterator to filter out the peptides wanted from the index_peptide_iterator
+ * \brief An iterator to further filter peptides from an
+ * IndexPeptideIterator based on digestion.
  */
-typedef struct index_filtered_peptide_iterator INDEX_FILTERED_PEPTIDE_ITERATOR_T;
+class IndexFilteredPeptideIterator;
 
 /**
  * \typedef SORTED_PEPTIDE_ITERATOR_T
@@ -383,16 +378,16 @@ typedef struct bin_peptide_iterator BIN_PEPTIDE_ITERATOR_T;
 typedef struct bin_sorted_peptide_iterator BIN_SORTED_PEPTIDE_ITERATOR_T;
 
 /**
- * \typedef  PROTEIN_INDEX_T
+ * \class ProtienIndex
  * \brief Object to store the protein relation to the fasta file
  */
-typedef struct protein_index PROTEIN_INDEX_T;
+class ProteinIndex;
 
 /**
- * \typedef PROTEIN_INDEX_ITERATOR_T
+ * \class ProteinIndexIterator
  * \brief Object to iterate over the protein index in the protein index file
  */
-typedef struct protein_index_iterator PROTEIN_INDEX_ITERATOR_T;
+class ProteinIndexIterator;
 
 /**
  * \typedef IonIterator
@@ -414,10 +409,10 @@ class IonFilteredIterator;
 typedef struct loss_limit LOSS_LIMIT_T;
 
 /**
- * \typedef SCORER_T
+ * \class Scorer
  * \brief An object to score a spectrum v. ion_series or spectrum v. spectrum
  */
-typedef struct scorer SCORER_T;
+class Scorer;
 
 /**
  * The enum for scorer type
@@ -453,30 +448,6 @@ enum _scorer_type {
 typedef enum _scorer_type SCORER_TYPE_T;
 
 /**
- *\typedef GENERATE_PEPTIDES_ITERATOR_T
- *\brief An object that navigates the options and selects the correct peptide iterator to use
- */
-typedef struct generate_peptides_iterator_t GENERATE_PEPTIDES_ITERATOR_T;
-
-/**
- *\typedef HIT_T
- *\brief An object that contains the a protein and its score. 
- */
-typedef struct hit HIT_T;
-
-/**
- *\typedef HIT_COLLECTION_T
- *\brief An object that contains multiple hit objects
- */
-typedef struct hit_collection HIT_COLLECTION_T;
-
-/**
- *\typedef HIT_ITERATOR_T
- *\brief An object that navigates the hits in a hit collection
- */
-typedef struct hit_iterator HIT_ITERATOR_T;
-
-/**
  * The enum for protein scorer type
  */
 enum _protein_scorer_type { PROTEIN_SCORER_PVALUE, 
@@ -490,28 +461,28 @@ enum _protein_scorer_type { PROTEIN_SCORER_PVALUE,
 typedef enum _protein_scorer_type PROTEIN_SCORER_TYPE_T;
 
 /**
- *\typedef MATCH_T
+ *\class Match
  *\brief An object that contains the information of a peptide and the scoring of multiple types
  */
-typedef struct match MATCH_T;
+class Match;
 
 /**
- *\typedef MATCH_COLLECTION_T
+ *\class MatchCollection
  *\brief An object that contains mutiple match objects
  */
-typedef struct match_collection MATCH_COLLECTION_T;
+class MatchCollection;
 
 /**
- *\typedef MATCH_ITERATOR_T
+ *\class MatchIterator
  *\brief An object that navigates the matches
  */
-typedef struct match_iterator MATCH_ITERATOR_T;
+class MatchIterator;
 
 /**
- *\typedef MATCH_COLLECTION_ITERATOR_T
+ *\class MatchCollectionIterator
  *\brief An object that navigates the match_collection objects
  */
-typedef struct match_collection_iterator MATCH_COLLECTION_ITERATOR_T;
+class MatchCollectionIterator;
 
 /**
  * The enum for algorithm type (PERCOLATOR, CZAR, ALL)
@@ -562,7 +533,7 @@ typedef struct record RECORD_T;
  * \typedef HASH_T
  * \brief HASH_T hash table, contains the records
  */
-typedef struct our_hash HASH_T;
+typedef struct hash HASH_T;
 
 /**
  * \typedef HASH_ITERATOR_T
@@ -637,12 +608,6 @@ typedef struct _linked_list_head LINKED_LIST_T;
 typedef struct _linked_list_node LIST_POINTER_T;
 
 /**
- * \typedef modified_peptides_iterator_t is typedefed as
- * MODIFIED_PEPTIDES_ITERATOR_T 
- */
-typedef struct modified_peptides_iterator_t MODIFIED_PEPTIDES_ITERATOR_T;
-
-/**
  * \enum _xlink_site_t (typedefed as XLINK_SITE_T)
  * \brief An indication of the type of the crosslinking site that
  * may occur in a peptide.
@@ -686,7 +651,7 @@ enum COLTYPE_T{
  * \typedef peptideToScore
  * \brief Mapping of peptide object to scores
  */
-typedef std::map<PEPTIDE_T*, FLOAT_T, bool(*)(PEPTIDE_T*, PEPTIDE_T*) > PeptideToScore;
+typedef std::map<Peptide*, FLOAT_T, bool(*)(Peptide*, Peptide*) > PeptideToScore;
 
 /**
  * \typedef ProteinToScore

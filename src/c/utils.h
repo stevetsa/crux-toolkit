@@ -130,7 +130,7 @@ typedef void *malloc_t;
 /********************************************************************
  * Only free memory if the given pointer is non-null.
  ********************************************************************/
-#define myfree(x) if (x) free((char* ) (x))
+#define myfree(x) if (x) std::free((char* ) (x))
 
 /********************************************************************
  * Set the seed for the random number generator.
@@ -306,10 +306,6 @@ char** parse_file(
   int max_lines, 
   int* num_lines
   );
-
-#ifdef WIN32
-int snprintf(char *str,size_t size,const char *fmt,...);
-#endif
 
 #endif
 

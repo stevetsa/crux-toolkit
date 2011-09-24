@@ -10,16 +10,13 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
-#ifndef WIN32
 #include <sys/time.h>
 #include <unistd.h> 
-#endif
 #include <math.h>
 #include <assert.h>
 #include <errno.h>
 #include "utils.h"
 #include "carp.h"
-#include "WinCrux.h"
 
 #ifdef DARWIN
 
@@ -284,11 +281,7 @@ void my_srand
 #ifdef MYRAND
   my_rand(seed);
 #else
-#ifdef WIN32
- srand((unsigned int) seed);
-#else
   srand48(seed);
-#endif
 #endif
 }
 
@@ -563,6 +556,42 @@ void copy_int_array
     target[i] = source[i];
 }
 
+/**
+ * parses a file of length max_lines and returns an array of strings
+ */
+char** parse_file(
+  char* file_name,
+  int max_lines,
+  int* num_lines
+  ){
+
+  FILE *infile;
+  if (open_file(file_name, "r", 1, "input", "", &infile) == 0)
+    exit(1);
+
+  size_t buf_length = 1024;
+  char** lines = (char**) mycalloc(max_lines, sizeof(char*));
+  int line_idx = 0;
+  int length = 0;
+  while ((length = getline(&lines[line_idx], &buf_length, infile)) != -1){
+    char* line = lines[line_idx];
+    if (line[length-2] == '\n' || line[length-2] == '\r'){
+      line[length-2] = '\0';
+    } else if (line[length-1] == '\n' || line[length-1] == '\r'){
+      line[length-1]='\0';
+    }
+    line_idx++;
+    if (line_idx >= max_lines){
+      carp(CARP_FATAL, "Number of lines in %s exceeds maximum of %i!", 
+          file_name, max_lines);
+    }
+  }
+  free(lines[line_idx]);
+  fclose(infile);
+  *num_lines = line_idx;
+
+  return lines;
+}
 
 #ifdef MAIN
 
@@ -601,22 +630,6 @@ int main (int argc, char *argv[])
   }*/
   return(0);
 }
-
-#ifdef WIN32
-int snprintf(char *str,size_t size,const char *fmt,...)
-{
-   // FIXME:CEG This function needs to fully emulate the POSIX std snprintf
-   // need to fix return value and behavior when passing in a null buffer
-   int ret;
-   va_list ap;
-   
-   va_start(ap,fmt); 
-   ret = vsnprintf(str,size,fmt,ap);
-   str[size-1] = '\0';       
-    va_end(ap);    
-   return ret;    
-}
-#endif
 
 #endif
 

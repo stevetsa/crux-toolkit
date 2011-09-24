@@ -4,8 +4,8 @@
 #include "Spectrum.h"
 #include "MSObject.h"
 #include <cstring>
-#include "zlib/zlib.h"
-#include "ramp/ramp.h"
+#include "zlib.h"
+#include "ramp.h"
 #include "base64.h"
 
 //Macro for general large file support - RAMP toolkit style

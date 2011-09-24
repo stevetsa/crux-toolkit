@@ -43,8 +43,12 @@ LIBFILES= \
   crux-file-utils.h \
   crux-utils.cpp \
   crux-utils.h \
-  database.cpp \
-  database.h \
+  Database.cpp \
+  Database.h \
+  DatabaseProteinIterator.cpp \
+  DatabaseProteinIterator.h \
+  DatabasePeptideIterator.cpp \
+  DatabasePeptideIterator.h \
   CruxApplication.cpp \
   CruxApplication.h \
   CruxApplicationList.cpp \
@@ -61,12 +65,18 @@ LIBFILES= \
   ExtractRows.h \
   FilteredSpectrumChargeIterator.cpp \
   FilteredSpectrumChargeIterator.h \
-  generate_peptides_iterator.cpp \
-  generate_peptides_iterator.h \
+  GeneratePeptidesIterator.cpp \
+  GeneratePeptidesIterator.h \
   hash.cpp \
   hash.h \
-  index.cpp \
-  index.h \
+  Index.cpp \
+  Index.h \
+  IndexFile.cpp \
+  IndexFile.h \
+  IndexPeptideIterator.cpp \
+  IndexPeptideIterator.h \
+  IndexFilteredPeptideIterator.cpp \
+  IndexFilteredPeptideIterator.h \
   Ion.cpp \
   Ion.h \
   IonConstraint.cpp \
@@ -79,8 +89,8 @@ LIBFILES= \
   linked_list.h \
   mass.cpp \
   mass.h \
-  match.cpp \
-  match.h \
+  Match.cpp \
+  Match.h \
   MatchColumns.cpp \
   MatchColumns.h \
   MatchFileReader.cpp \
@@ -89,14 +99,18 @@ LIBFILES= \
   MatchFileWriter.h \
   MatchSearch.cpp \
   MatchSearch.h \
-  match_collection.cpp \
-  match_collection.h \
+  MatchCollection.cpp \
+  MatchCollection.h \
+  MatchCollectionIterator.cpp \
+  MatchCollectionIterator.h \
+  MatchIterator.cpp \
+  MatchIterator.h \
   MGFSpectrumCollection.cpp \
   MGFSpectrumCollection.h \
   modifications.cpp \
   modifications.h \
-  modified_peptides_iterator.cpp \
-  modified_peptides_iterator.h \
+  ModifiedPeptidesIterator.cpp \
+  ModifiedPeptidesIterator.h \
   MS2SpectrumCollection.cpp \
   MS2SpectrumCollection.h \
   MSToolkitSpectrumCollection.cpp \
@@ -110,14 +124,15 @@ LIBFILES= \
   parse_arguments.h \
   Peak.cpp \
   Peak.h \
-  peptide.cpp \
-  peptide_constraint.cpp \
-  peptide_constraint.h \
-  peptide.h \
+  Peptide.cpp \
+  Peptide.h \
+  PeptideConstraint.cpp \
+  PeptideConstraint.h \
+  PeptideIterator.h \
   peptide_modifications.cpp \
   peptide_modifications.h \
-  peptide_src.cpp \
-  peptide_src.h \
+  PeptideSrc.cpp \
+  PeptideSrc.h \
   Percolator.cpp \
   Percolator.h \
   PrintProcessedSpectra.cpp \
@@ -128,8 +143,10 @@ LIBFILES= \
   Protein.h \
   ProteinPeptideIterator.cpp \
   ProteinPeptideIterator.h \
-  protein_index.cpp \
-  protein_index.h \
+  ProteinIndex.cpp \
+  ProteinIndex.h \
+  ProteinIndexIterator.cpp \
+  ProteinIndexIterator.h \
   QRanker.cpp \
   QRanker.h \
   q-value.cpp \
@@ -137,8 +154,8 @@ LIBFILES= \
   SearchProgress.h \
   SequestSearch.cpp \
   SequestSearch.h \
-  scorer.cpp \
-  scorer.h \
+  Scorer.cpp \
+  Scorer.h \
   SortColumn.cpp \
   SortColumn.h \
   sorter.cpp \
@@ -296,7 +313,7 @@ dist-hook:
 	if test -z "$(SEARCH_ENABLED)"; then \
     sed -e '/#ifdef SEARCH_ENABLED/,/#else/d' \
         -e '/#endif \/\/ SEARCH_ENABLED/d' \
-        < match_search.cpp > $(distdir)/match_search.cpp; \
+        < MatchSearch.cpp > $(distdir)/MatchSearch.cpp; \
     sed -e '/#ifdef SEARCH_ENABLED/,/#else/d' \
         -e '/#endif \/\/ SEARCH_ENABLED/d' \
-        < sequest-search.cpp > $(distdir)/sequest-search.cpp; fi
+        < SequestSearch.cpp > $(distdir)/SequestSearch.cpp; fi

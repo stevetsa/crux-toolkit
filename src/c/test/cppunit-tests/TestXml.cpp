@@ -2,8 +2,8 @@
 #include <stdlib.h>
 #include <map>
 #include "TestXml.h"
-#include "match.h"
-#include "peptide.h"
+#include "Match.h"
+#include "Peptide.h"
 #include "modifications.h"
 #include "parameter.h"
 
