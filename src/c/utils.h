@@ -45,6 +45,13 @@ static const int LINELENGTH = 4096;
 extern int verbosity;
 
 #ifdef DARWIN
+#define INCLUDE_GETLINE
+#endif
+#ifdef WIN32
+#define INCLUDE_GETLINE
+#endif
+
+#ifdef INCLUDE_GETLINE
 /*********************************************************
  This function replaces the GNU extension of the same name.
  Reads a line from the given stream.
@@ -306,6 +313,10 @@ char** parse_file(
   int max_lines, 
   int* num_lines
   );
+
+#ifdef WIN32
+int snprintf(char *str,size_t size,const char *fmt,...);
+#endif
 
 #endif
 

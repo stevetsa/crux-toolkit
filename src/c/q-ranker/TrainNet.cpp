@@ -24,6 +24,7 @@ using namespace std;
 #include "Globals.h"
 #include "MSReader.h"
 #include "Spectrum.h"
+#include "WinCrux.h"
 
 
 

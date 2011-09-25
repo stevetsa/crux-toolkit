@@ -6,10 +6,10 @@
 #include "SortColumn.h"
 
 #include "DelimitedFile.h"
-
 #include "fdstream.hpp"
 
 #include <errno.h>
+#include "WinCrux.h"
 
 using namespace std;
 

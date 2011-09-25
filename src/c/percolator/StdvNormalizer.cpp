@@ -22,6 +22,9 @@ using namespace std;
 #include "StdvNormalizer.h"
 #include "SetHandler.h"
 #include "Globals.h"
+#ifdef WIN32
+#include "WinCrux.h"
+#endif
 
 StdvNormalizer::StdvNormalizer()
 {

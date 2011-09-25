@@ -10,15 +10,18 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
+#ifndef WIN32
 #include <sys/time.h>
 #include <unistd.h> 
+#endif
 #include <math.h>
 #include <assert.h>
 #include <errno.h>
 #include "utils.h"
 #include "carp.h"
+#include "WinCrux.h"
 
-#ifdef DARWIN
+#ifdef INCLUDE_GETLINE
 
 /*********************************************************
  This function replaces the GNU extension of the same name.
@@ -281,7 +284,11 @@ void my_srand
 #ifdef MYRAND
   my_rand(seed);
 #else
+#ifdef WIN32
+ srand((unsigned int) seed);
+#else
   srand48(seed);
+#endif
 #endif
 }
 
@@ -630,6 +637,22 @@ int main (int argc, char *argv[])
   }*/
   return(0);
 }
+
+#ifdef WIN32
+int snprintf(char *str,size_t size,const char *fmt,...)
+{
+   // FIXME:CEG This function needs to fully emulate the POSIX std snprintf
+   // need to fix return value and behavior when passing in a null buffer
+   int ret;
+   va_list ap;
+   
+   va_start(ap,fmt); 
+   ret = vsnprintf(str,size,fmt,ap);
+   str[size-1] = '\0';       
+    va_end(ap);    
+   return ret;    
+}
+#endif
 
 #endif
 

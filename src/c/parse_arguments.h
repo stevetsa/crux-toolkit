@@ -31,8 +31,11 @@
 #include <ctype.h>
 #include <string.h>
 #include <assert.h>
-#include <ctype.h>
+#ifndef WIN32
 #include <unistd.h>
+#else
+#undef NO_ERROR
+#endif
 #include "carp.h"
 #include "parse_arguments.h"
 #include "objects.h"
