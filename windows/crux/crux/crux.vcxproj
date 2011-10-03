@@ -136,6 +136,7 @@
     <ClCompile Include="..\..\..\src\c\SpectrumZState.cpp" />
     <ClCompile Include="..\..\..\src\c\StatColumn.cpp" />
     <ClCompile Include="..\..\..\src\c\utils.cpp" />
+    <ClCompile Include="..\..\..\src\c\WinCrux.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\src\c\alphabet.h" />

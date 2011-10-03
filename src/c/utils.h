@@ -24,9 +24,9 @@ typedef double FLOAT_T;
 typedef float FLOAT_T;
 #endif
 
-#define FALSE 0
-#define TRUE 1
-typedef short BOOLEAN_T;
+#define FALSE false
+#define TRUE true
+typedef bool BOOLEAN_T;
 
 typedef int VERBOSE_T;
 static const int INVALID_VERBOSE = 0;

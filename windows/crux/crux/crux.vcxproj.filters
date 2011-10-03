@@ -237,6 +237,9 @@
     <ClCompile Include="..\..\..\src\c\utils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\src\c\WinCrux.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\src\c\PrintProcessedSpectra.h">

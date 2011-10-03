@@ -421,7 +421,7 @@ void Index::setFieldFromMap(
     disk_constraint_->setMassType((MASS_TYPE_T)((int) value));
   }
   else if(strcmp("unique_peptides:", trait_name) == 0){
-    is_unique_ = (bool)value;
+    is_unique_ = (value == 0.0);
   }
   else if(strcmp("target_mass_range_for_index_file:", trait_name) == 0){
     mass_range_ = value;

@@ -21,13 +21,29 @@
 #define mkstemp _mktemp_s
 #define sleep(x) Sleep(1000 * (x))
 
+#undef NO_ERROR
+
 #define R_OK 04
 #define W_OK 02
 #define F_OK 00
 
 #define S_ISDIR(mode)  (((mode) & S_IFMT) == S_IFDIR)
 
-
 int gettimeofday(struct timeval *tv, struct timezone *tz);
+char *realpath(const char * file_name, char * resolved_name);
+
+typedef struct 
+{ 
+   HANDLE f; 
+   HANDLE m; 
+   void *p; 
+} SIMPLE_UNMMAP; 
+
+// map 'filename' and return a pointer to it.
+void *stub_mmap(const char *filename, SIMPLE_UNMMAP *un);
+
+// Release memory mapped file
+void stub_unmmap(SIMPLE_UNMMAP *un);
+
 #endif
 #endif
