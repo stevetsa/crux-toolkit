@@ -691,7 +691,7 @@ void QRanker :: train_many_target_nets()
 void QRanker::train_many_nets()
 {
   switch_iter =30;
-  niter = 40;
+  niter = 60;
    
   num_qvals = 14;
   qvals.resize(num_qvals,0.0);
@@ -859,7 +859,10 @@ int QRanker::set_command_line_options(int argc, char **argv)
         mu = atof(argv[arg+1]);
         arg++;
         cerr << "mu set to:"<<mu << endl;
-        
+      } else if (sarg == "--decay") {
+        weightDecay = atof(argv[arg+1]);
+        arg++;
+        cerr << "decay set to:"<<weightDecay<<endl; 
       } else {
         fnames.push_back(argv[arg]);
       }
