@@ -217,7 +217,7 @@ void TabDelimParser :: extract_psm_features(
   }
   cerr<<endl;
   */
-  int label = psmind_to_label[psmind];
+  //int label = psmind_to_label[psmind];
   
   int num_sequences = psmind_to_num_pep[psmind];
   int psm_offset = psmind_to_ofst[psmind];

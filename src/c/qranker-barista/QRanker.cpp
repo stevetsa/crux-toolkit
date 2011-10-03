@@ -56,7 +56,133 @@ void QRanker :: printNetResults(vector<int> &scores)
   cerr << endl;
 }
 
+void QRanker :: write_results(string prefix, NeuralNet& net) {
 
+
+
+  write_results(prefix, "train", net, trainset);
+  write_results(prefix, "test", net, testset);
+
+  trainset.clear();
+  testset.clear();
+  thresholdset.clear();
+  PSMScores::fillFeaturesFull(fullset, d);
+
+  write_results(prefix, "full", net, fullset);
+    
+
+
+
+}
+
+
+void QRanker :: write_results(
+  string prefix, 
+  string filename, 
+  NeuralNet &net, 
+  PSMScores& set
+  ) {
+
+  ostringstream s1;
+  s1 << prefix << "." << filename << ".txt";
+  ofstream f1(s1.str().c_str());
+
+  getOverFDR(set, net, qvals[4]);
+
+  d.load_psm_data_for_reporting_results();
+
+
+  f1 << "scan" << "\t" 
+     << "charge" << "\t" 
+     << "spectrum neutral mass" << "\t" 
+     << "peptide mass" << "\t" 
+     << "q-ranker score" << "\t" 
+     << "q-ranker q-value" << "\t" 
+     << "sequence" << "\t" 
+     << "rtime max diff" << "\t"
+     << "peptides/spectrum" << "\t"
+     << "nzstates" << "\t"
+     << "target/decoy"<<endl;
+
+  for(int i = 0; i < set.size(); i++)
+    {
+      //cout<<"Writing "<<i<<endl;
+      int psmind = set[i].psmind;
+      //cout<<"psmind:"<<psmind<<endl;
+      int num_pep = d.psmind2num_pep(psmind);
+      //cout<<"num_pep:"<<num_pep<<endl;
+      //write scan
+      f1 << d.psmind2scan(psmind) << "\t";
+      //write charges
+      int *charges = d.psmind2charges(psmind);
+      f1 << charges[0];
+      for(int k = 1; k < num_pep; k++)
+	{
+	  f1 << ",";
+	  int ch = charges[k];
+	  f1 << ch; 
+	}
+      f1 << "\t";
+      //write neutral_mass
+      double* neutral_mass = d.psmind2neutral_mass(psmind);
+      f1 << neutral_mass[0];
+      for(int k = 1; k < num_pep; k++)
+	{
+	  f1 << ",";
+	  double m = neutral_mass[k];
+	  f1 << m; 
+	}
+      f1 << "\t";
+
+      //write peptide mass
+      double* peptide_mass = d.psmind2peptide_mass(psmind);
+      f1 << peptide_mass[0];
+      for(int k = 1; k < num_pep; k++)
+	{
+	  f1 << ",";
+	  double m = peptide_mass[k];
+	  f1 << m; 
+	}
+      f1 << "\t";
+      f1 << set[i].score << "\t" << set[i].q << "\t";
+
+      //write peptide sequence
+      int *pepinds = d.psmind2pepinds(psmind);
+      f1 << d.ind2pep(pepinds[0]);
+      for(int k = 1; k < num_pep; k++)
+	{
+	  f1 << ",";
+	  f1 << d.ind2pep(pepinds[k]); 
+	}
+
+      //write rtime_max_diff
+      double rtime_max_diff = d.psmind2rtime_max_diff(psmind);
+      f1 << "\t" << rtime_max_diff;
+      
+      //write peptides/spectrum
+      double peptides_spectrum = d.psmind2num_pep(psmind);
+      f1 << "\t" << peptides_spectrum;
+
+      //write nzstates
+      int nzstates = d.psmind2nzstates(psmind);
+      f1 << "\t" << nzstates;
+
+      //write label
+      f1 << "\t" << set[i].label;
+      f1 << endl;
+
+
+      
+    }
+  //cout<<"Done writing"<<endl;
+  f1.close();
+  //cout<<"Done..."<<endl;  
+
+    
+
+
+} 
+/*
 void QRanker :: write_results(string filename, NeuralNet &net)
 {
 
@@ -163,7 +289,7 @@ void QRanker :: write_results(string filename, NeuralNet &net)
   f1.close();
   //cout<<"Done..."<<endl;
 }
-
+*/
 
 void QRanker :: write_results_max(string filename, NeuralNet &net)
 {
@@ -595,7 +721,7 @@ void QRanker::train_many_nets()
     }
   
   //set the linear flag: 1 if linear, 0 otherwise
-  int lf = 0; num_hu = 1;//5;
+  int lf = 0; //num_hu = 1;//5;
   if(num_hu == 1)
     lf = 1;
   //set whether there is bias in the linear units: 1 if yes, 0 otherwise
@@ -723,7 +849,17 @@ int QRanker::set_command_line_options(int argc, char **argv)
 
       string sarg(argv[arg]);
       if (sarg == "--nodeltacn") {
+        cerr << "delta cn turned off"<<endl;
         no_delta_cn = true;
+      } else if (sarg == "--num_hu") {
+        num_hu = atoi(argv[arg+1]);
+        arg++;
+        cerr << "num_hu set to:"<<num_hu<<endl;
+      } else if (sarg == "--mu") {
+        mu = atof(argv[arg+1]);
+        arg++;
+        cerr << "mu set to:"<<mu << endl;
+        
       } else {
         fnames.push_back(argv[arg]);
       }

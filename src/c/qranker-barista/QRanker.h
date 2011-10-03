@@ -37,6 +37,8 @@ public:
     void getMultiFDR(PSMScores &set, NeuralNet &n, vector<double> &qval);
     void printNetResults(vector<int> &scores);
     void write_results(string filename, NeuralNet &net);
+    void write_results(string prefix, string filename, NeuralNet& net, PSMScores& set);
+
     void write_results_max(string filename, NeuralNet &net);
     void write_max_nets(string filename, NeuralNet *max_net);
     void write_unique_peptides(string filename, NeuralNet* max_net);
