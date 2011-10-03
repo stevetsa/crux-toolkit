@@ -28,7 +28,7 @@ void MPSM_OutputFiles::writeMatches(MPSM_ZStateMap& charge_map) {
     iter != charge_map.end();
     ++iter) {
     ZStateIndex charge = iter -> first;
-    cout <<"Printing matches for "<<charge<<endl;
+    //cerr << "Printing matches for " << charge << endl;
 
     vector<MPSM_MatchCollection>& mpsm_match_collections = iter -> second;
 

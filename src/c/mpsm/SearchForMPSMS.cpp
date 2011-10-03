@@ -48,6 +48,7 @@ int SearchForMPSMS::main(int argc, char** argv) {
     "mpsm-top-n",
     "mpsm-do-sort",
     "rtime-predictor",
+    "mpsm-max-peptides",
     "mpsm-top-match"
   };
   int num_options = sizeof(option_list) / sizeof(char*);
@@ -71,8 +72,10 @@ int SearchForMPSMS::main(int argc, char** argv) {
   // open ms2 file
   SpectrumCollection* spectra = SpectrumCollectionFactory::create(ms2_file);
 
-  rtime_predictor_ = RetentionPredictor::createRetentionPredictor();
 
+
+  RetentionPredictor::createRetentionPredictor();
+  rtime_predictor_ = RetentionPredictor::getStaticRetentionPredictor();
   rtime_threshold_ = get_boolean_parameter("rtime-threshold");
   rtime_all2_threshold_ = get_double_parameter("rtime-all2-threshold");
   rtime_all3_threshold_ = get_double_parameter("rtime-all3-threshold");
@@ -173,25 +176,22 @@ int SearchForMPSMS::main(int argc, char** argv) {
         current_spectrum->getFirstScan());
       carp(CARP_INFO, "Searching for mpsms");
       search(spsm_map, mpsm_map);
-      cerr <<"Calculating xcorr,sp ranks"<<endl;
+      carp(CARP_DEBUG, "Calculating xcorr,sp ranks");
       mpsm_map.calcRanks();
       mpsm_map.sortMatches(XCORR);
       if (get_boolean_parameter("mpsm-do-sort")) {
         //spsm_map.calcDeltaCN();
         //spsm_map.calcZScores();
         //spsm_map.sortMatches(XCORR);
-        cerr<<"Calculating delta cn"<<endl;
+        carp(CARP_DEBUG, "Calculating delta cn");
         mpsm_map.calcDeltaCN();
-        cerr<<"Calculating zscores"<<endl;
+        //cerr<<"Calculating zscores"<<endl;
         //mpsm_map.calcZScores();
         //cerr<<"Calculating xcorr ranks"<<endl;
         
       }
       //print out map
-      //output the spsms.
-      //output_files.writeMatches(spsm_map);
-      //cerr<< "writing matches";
-      carp(CARP_INFO, "writing matches:%d",mpsm_map.size());
+      carp(CARP_DEBUG, "writing matches:%d",mpsm_map.size());
       output_files.writeMatches(mpsm_map);
       //cerr<<"Clear map"<<endl;
       //clear map and clean up match collections.
@@ -385,18 +385,26 @@ void SearchForMPSMS::search(
 
 }
 
+bool SearchForMPSMS::passHammingDistThreshold(MPSM_Match& match) {
+  //cerr <<"getHammingDist()"<<endl;
+  if (match.getHammingDist() > 2) {
+    return true;
+  } else {
+    //cerr << match.getSequenceString() << " is not unique enough!"<<endl;
+    //cerr << match.getHammingDist() << endl;
+    //carp(CARP_FATAL, "Exitting for now");
+    return false;
+  }
+  //cerr <<"Done getHammingDist()"<<endl;
+}
+
 bool SearchForMPSMS::passRTimeThreshold(
   MPSM_Match& match
 ) {
-
-  FLOAT_T rtime_max_diff = rtime_predictor_ -> calcMaxDiff(match);
-  ZStateIndex& zstate_index = match.getZStateIndex();
-
-  
-  
   bool ans = false;
-
   if (rtime_threshold_) {
+    FLOAT_T rtime_max_diff = rtime_predictor_ -> calcMaxDiff(match);
+    ZStateIndex zstate_index = match.calcZStateIndex();
     FLOAT_T fdiff = fabs(rtime_max_diff);
     if (zstate_index.numCharge(2) == match.numMatches()) {
       ans = fdiff <= rtime_all2_threshold_;
@@ -408,11 +416,6 @@ bool SearchForMPSMS::passRTimeThreshold(
   } else {
     ans = true;
   }
-
-  if (ans) {
-    match.setRTimeMaxDiff(rtime_max_diff);
-  }
-
   return ans;
 
 }
@@ -438,22 +441,15 @@ bool SearchForMPSMS::extendMatch(
     MPSM_Match& match_to_add = spsm_matches[idx];
 
     MPSM_Match new_match(orig_mpsm);
-    bool canadd = new_match.addMatch(match_to_add.getMatch(0));
-    if (!canadd) {
-      continue;
-    }
 
-    bool visited = new_mpsm_matches.visited(new_match, match_collection_idx);
-    if (visited) {
-      continue;
-    }
+    if (new_match.addMatch(match_to_add.getMatch(0)) && 
+        passHammingDistThreshold(new_match) && 
+        passRTimeThreshold(new_match)) {
 
-    bool pass_threshold = passRTimeThreshold(new_match);
-
-    if (pass_threshold) {
-      //cerr<<new_match<<":"<<new_match.getRTimeMaxDiff()<<endl;
-      new_mpsm_matches.insert(new_match, match_collection_idx);
-      match_added = true;
+      if (!new_mpsm_matches.visited(new_match, match_collection_idx)) {
+        new_mpsm_matches.insert(new_match, match_collection_idx);
+        match_added = true;
+      }
     }
   }
 
@@ -480,7 +476,7 @@ bool SearchForMPSMS::extendChargeMap(
 
     ZStateIndex zstate_index = map_iter->first;
     
-    carp(CARP_INFO,"mpsm_level:%d zstate size:%d",mpsm_level, zstate_index.size());
+    carp(CARP_DEBUG,"mpsm_level:%d zstate size:%d",mpsm_level, zstate_index.size());
     
     if (zstate_index.size() == mpsm_level) {
     
@@ -488,7 +484,7 @@ bool SearchForMPSMS::extendChargeMap(
         
       vector<MPSM_MatchCollection>& mpsm_match_collections = map_iter -> second;
       MPSM_MatchCollection& mpsm_target_match_collection =  mpsm_match_collections.at(0);
-
+      //cerr << "There are "<<mpsm_target_match_collection.numMatches()<<endl;
       for (map_iter2 = spsm_map.begin();
         map_iter2 != spsm_map.end();
         ++map_iter2) {
@@ -507,53 +503,56 @@ bool SearchForMPSMS::extendChargeMap(
           vector<MPSM_MatchCollection>& spsm_match_collections = map_iter2 -> second;
           MPSM_MatchCollection& spsm_target_match_collection = spsm_match_collections.at(0);
 
-          mpsm_target_match_collection.sortByScore(XCORR);
-          spsm_target_match_collection.sortByScore(XCORR);
+          //cerr << "There are "<<spsm_target_match_collection.numMatches()<<endl;
+          if (spsm_target_match_collection.numMatches() > 0) {
+            mpsm_target_match_collection.sortByScore(XCORR);
+            spsm_target_match_collection.sortByScore(XCORR);
 
-          int top_n = min(get_int_parameter("mpsm-top-n"), mpsm_target_match_collection.numMatches());
-          if (top_n < 0) { top_n = mpsm_target_match_collection.numMatches();}
+            int top_n = min(get_int_parameter("mpsm-top-n"), mpsm_target_match_collection.numMatches());
+            if (top_n < 0) { top_n = mpsm_target_match_collection.numMatches();}
 
-          for (int mpsm_idx = 0;
-            mpsm_idx < top_n;
-            mpsm_idx++) {
+            for (int mpsm_idx = 0;
+              mpsm_idx < top_n;
+              mpsm_idx++) {
 
-            MPSM_Match& mpsm_match = mpsm_target_match_collection[mpsm_idx];
-            //cerr <<"Extending "<<mpsm_match.getSequenceString() <<endl;
-            success |= extendMatch(
-              mpsm_match, 
-              spsm_target_match_collection,
-              current_mpsm_map,
-              0);
-          }
+              MPSM_Match& mpsm_match = mpsm_target_match_collection[mpsm_idx];
+              //cerr <<"Extending "<<mpsm_match.getSequenceString() <<endl;
+              success |= extendMatch(
+                mpsm_match, 
+                spsm_target_match_collection,
+                current_mpsm_map,
+                0);
+            }
 
-          if (success) {
+            if (success) {
 
-            for (int decoy_idx = 1; decoy_idx < spsm_match_collections.size();decoy_idx++) {
-              MPSM_MatchCollection& mpsm_decoy_match_collection = mpsm_match_collections.at(decoy_idx);
-              MPSM_MatchCollection& spsm_decoy_match_collection = spsm_match_collections.at(decoy_idx);
+              for (int decoy_idx = 1; decoy_idx < spsm_match_collections.size();decoy_idx++) {
+                MPSM_MatchCollection& mpsm_decoy_match_collection = mpsm_match_collections.at(decoy_idx);
+                MPSM_MatchCollection& spsm_decoy_match_collection = spsm_match_collections.at(decoy_idx);
 
 
-              mpsm_decoy_match_collection.sortByScore(XCORR);
-              spsm_decoy_match_collection.sortByScore(XCORR);
+                mpsm_decoy_match_collection.sortByScore(XCORR);
+                spsm_decoy_match_collection.sortByScore(XCORR);
+  
+                top_n = min(get_int_parameter("mpsm-top-n"), mpsm_decoy_match_collection.numMatches());
+                if (top_n < 0) { top_n = mpsm_decoy_match_collection.numMatches();}
+  
+                for (int mpsm_idx = 0;
+                  mpsm_idx < top_n;
+                  mpsm_idx++) {
+  
+                  MPSM_Match& mpsm_match = mpsm_decoy_match_collection[mpsm_idx];
+                  success |= extendMatch(
+                    mpsm_match,
+                    spsm_decoy_match_collection,
+                    current_mpsm_map,
+                    decoy_idx);
+                }
 
-              top_n = min(get_int_parameter("mpsm-top-n"), mpsm_decoy_match_collection.numMatches());
-              if (top_n < 0) { top_n = mpsm_decoy_match_collection.numMatches();}
-
-              for (int mpsm_idx = 0;
-                mpsm_idx < top_n;
-                mpsm_idx++) {
-
-                MPSM_Match& mpsm_match = mpsm_decoy_match_collection[mpsm_idx];
-                success |= extendMatch(
-                  mpsm_match,
-                  spsm_decoy_match_collection,
-                  current_mpsm_map,
-                  decoy_idx);
               }
 
             }
-
-          }
+          } /* if (spsm_target_match_collection.numMatches() > 0) */
 
 
 

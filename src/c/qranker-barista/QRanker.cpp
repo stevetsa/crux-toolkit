@@ -595,7 +595,7 @@ void QRanker::train_many_nets()
     }
   
   //set the linear flag: 1 if linear, 0 otherwise
-  int lf = 0; num_hu = 5;
+  int lf = 0; num_hu = 1;//5;
   if(num_hu == 1)
     lf = 1;
   //set whether there is bias in the linear units: 1 if yes, 0 otherwise
@@ -741,14 +741,14 @@ int QRanker::set_command_line_options(int argc, char **argv)
 int QRanker::main(int argc, char **argv) {
 
   if(!set_command_line_options(argc, argv))
-    return 0;
+    return -1;
   string dir = pars.get_output_dir();
 
   set_input_dir(dir);
   set_output_dir(dir);
   run();
-    
-  return 1;
+  cerr <<"Done qranker"<<endl;  
+  return 0;
 }   
 
 

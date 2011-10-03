@@ -2,6 +2,7 @@
 #include "MPSM_MatchCollection.h"
 #include "MPSM_Scorer.h"
 
+#include "RetentionPredictor.h"
 #include "SpectrumZState.h"
 
 #include <iostream>
@@ -65,15 +66,18 @@ bool Match_Compare2(Match* m1, Match* m2) {
   }
 }
 
-bool compareMPSM_MatchVisited(const MPSM_Match& m1, const MPSM_Match& m2) {
+bool compareMPSM_MatchVisited(
+  const vector<Match*>& m1, 
+  const vector<Match*>& m2
+  ) {
 
-  if (m1.numMatches() != m2.numMatches()) {
-    return m1.numMatches() < m2.numMatches();
+  if (m1.size() != m2.size()) {
+    return m1.size() < m2.size();
   }
 
-  vector<Match*> matches_1(m1.matches_.begin(), m1.matches_.end());
+  vector<Match*> matches_1(m1.begin(), m1.end());
   
-  vector<Match*> matches_2(m2.matches_.begin(), m2.matches_.end());
+  vector<Match*> matches_2(m2.begin(), m2.end());
 
   sort(matches_1.begin(), matches_1.end(), Match_Compare2);      
   sort(matches_2.begin(), matches_2.end(), Match_Compare2);
@@ -114,20 +118,10 @@ MPSM_Match::MPSM_Match() {
 MPSM_Match::MPSM_Match(Match* match) {
   parent_ = NULL;
   addMatch(match);
-  
-  rtime_max_diff_ = 0;
 
 }
 
-/*
-MPSM_Match::MPSM_Match(const MPSM_Match& mpsm_match) {
-  cout <<"Inside MPSM_Match constructor"<<endl;
-  parent_ = mpsm_match.parent_;
-  for (int idx = 0;idx < mpsm_match.matches_.size(); idx++) {
-    addMatch(mpsm_match.matches_[idx]);
-  }
-}
-*/
+
 
 MPSM_Match::~MPSM_Match() {
   matches_.clear();
@@ -172,7 +166,7 @@ BOOLEAN_T MPSM_Match::addMatch(Match* match) {
   sort(matches_.begin(), matches_.end(), MPSM_MatchCompare);
 
   
-
+  parent_ = NULL;
 
   invalidate();
   return true;
@@ -191,50 +185,36 @@ bool MPSM_Match::isDecoy() {
   return false;
 }
 
-
-BOOLEAN_T MPSM_Match::hasRTime(int match_idx) {
-  return FALSE;//return has_rtime[match_idx];
-}
-
-FLOAT_T MPSM_Match::getRTime(int match_idx) {
-  return 0;//return rtimes[match_idx];
-}
-
-void MPSM_Match::setRTime(int match_idx, FLOAT_T rtime) {
-  //rtimes[match_idx] = rtime;
-}
-
 void MPSM_Match::invalidate() {
 
-  zstate_valid_ = false;
-
-  for (int idx=0;idx < NUMBER_SCORER_TYPES;idx++) {
-    have_match_score_[idx] = false;
-    have_match_rank_[idx] = false;
+  if (parent_ != NULL) {
+    parent_->invalidate();
   }
+  match_scores_.clear();
+  match_rank_.clear();
 }
 
 
 ZStateIndex& MPSM_Match::getZStateIndex() {
-  if (!zstate_valid_) {
-    //TODO: validate the charge_index.
-    zstate_index_.clear();
-    for (int idx=0;idx < numMatches();idx++) {
-      Match* match = getMatch(idx);
-      zstate_index_.add(match->getZState());
-    }
-    zstate_valid_ = true;
+
+
+  if (parent_ == NULL) {
+    carp(CARP_FATAL, "Parent not set!");
+  } 
+
+  return parent_ -> getZStateIndex();
+}
+
+ZStateIndex MPSM_Match::calcZStateIndex() {
+  ZStateIndex zstate_index;
+  for (int idx=0;idx < numMatches();idx++) {
+    Match* match = getMatch(idx);
+    zstate_index.add(match->getZState());
   }
 
-  return zstate_index_;
+  return zstate_index;
+  
 }
-/*
-bool MPSM_Match::isChargeHomogeneous() {
-  return getChargeIndex().isHomogeneous();
-}
-*/
-
-
 
 
 Match* MPSM_Match::getMatch(int match_idx) const {
@@ -285,45 +265,49 @@ int MPSM_Match::getCharge(int match_idx) {
 FLOAT_T MPSM_Match::getScore(SCORER_TYPE_T match_mode) {
 
 
-  if (!have_match_score_[match_mode]) {
-    setScore(match_mode, MPSM_Scorer::score(*this, match_mode));
-  }
+  std::map<SCORER_TYPE_T, FLOAT_T>::iterator it = match_scores_.find(match_mode);
 
-  return match_scores_[match_mode];
+  if (it == match_scores_.end()) {
+    FLOAT_T score = MPSM_Scorer::score(*this, match_mode);
+    setScore(match_mode, score);
+    return score;
+  } else {
+    return it->second;
+  }
 }
 
 FLOAT_T MPSM_Match::getScoreConst(SCORER_TYPE_T match_mode) const {
 
-  if (!have_match_score_[match_mode]) {
+  std::map<SCORER_TYPE_T, FLOAT_T>::const_iterator iter = match_scores_.find(match_mode);
+
+  if (iter == match_scores_.end()) {
     carp(CARP_FATAL," Dont have score for %d",(int)match_mode);
+  } else {
+    return iter->second;
   }
-
-  return match_scores_[match_mode];
-
 }
 
 void MPSM_Match::setScore(SCORER_TYPE_T match_mode, FLOAT_T score) {
 
   match_scores_[match_mode] = score;
-  have_match_score_[match_mode] = true;
-
 }
 
 
 void MPSM_Match::setRank(SCORER_TYPE_T match_mode, int rank) {
   
   match_rank_[match_mode] = rank; 
-  have_match_rank_[match_mode] = true;
 }
 
 int MPSM_Match::getRank(SCORER_TYPE_T match_mode) {
-  if (!have_match_rank_[match_mode]) {
+
+
+  std::map<SCORER_TYPE_T, int>::iterator iter = match_rank_.find(match_mode);
+  if (iter == match_rank_.end()) {
 
     carp(CARP_FATAL,"Don't have match rank for %d!",(int)match_mode);
 
   }
-
-  return match_rank_[match_mode];
+  return iter->second;
 }
 
 void MPSM_Match::setBYIonPossible(int b_y_ion_possible) {
@@ -393,20 +377,9 @@ void MPSM_Match::getPeptideModifiedSequences(vector<string>& modified_sequences)
   }
 }
 
-void MPSM_Match::setRTimeMaxDiff(FLOAT_T rtime_max_diff) {
-  rtime_max_diff_ = rtime_max_diff;
-}
-
 FLOAT_T MPSM_Match::getRTimeMaxDiff() {
-  return rtime_max_diff_;
+  return RetentionPredictor::getStaticRetentionPredictor()->calcMaxDiff(*this);
 }
-
-FLOAT_T MPSM_Match::getRTimeAveDiff() {
-  
-  return 0;
-
-}
-
 
 string MPSM_Match::getString() {
   string ans;
@@ -474,8 +447,14 @@ bool MPSM_Match::operator ==(MPSM_Match& match_obj) {
 }
 
 
+void MPSM_Match::setDeltaCN(double delta_cn) {
+  //delta_cn_ = delta_cn;
+  (void)delta_cn;
+}
+
 double MPSM_Match::getDeltaCN() {
-  return (parent_ -> calcDeltaCNMatch(getScore(XCORR)));
+  return 0;//delta_cn_;
+
 }
 
 double MPSM_Match::getZScore() {
@@ -762,6 +741,96 @@ void MPSM_Match::getMatchedIonIntensities(
 }
 
 
+map<char,char> same;
+bool list_generated = false;
+void generate_list() {
+
+  same['I'] = 'L';
+  same['L'] = 'I';
+  same['E'] = 'Q';
+  same['Q'] = 'E';
+  same['Q'] = 'K';
+  same['K'] = 'Q';
+  same['D'] = 'N';
+  same['N'] = 'D';
+
+  list_generated=true;
+}
+
+
+bool same_char(char &c1, char& c2) {
+  if (c1==c2) return true;
+  if (!list_generated) {
+    generate_list();
+  }
+
+  if (same.find(c1) != same.end()) {
+    return same[c1] == c2;
+  }
+  return false;
+
+}
+
+
+int hamming_dist(Peptide* pep1, Peptide* pep2) {
+
+  //make sure that pep1 is the longest peptide.
+  if (pep1->getLength() < pep2->getLength()) {
+    return hamming_dist(pep2, pep1);
+  }
+
+  char* seq1 = pep1->getSequence();
+  char* seq2 = pep2->getSequence();
+
+  //cout<<seq1<<" "<<seq2;
+  int dist = pep1->getLength();
+  //cout << " " << dist << endl;
+
+
+  for (int idx=0;idx<pep2->getLength();idx++) {
+    if (same_char(seq1[idx],seq2[idx])) {
+      //cout<<seq1[idx]<<" is same as "<<seq2[idx]<<endl;
+      dist = dist - 1;
+    } else {
+      //cout<<seq1[idx]<<" is diff as "<<seq2[idx]<<endl;
+    }
+  }
+  //cout<<" "<<dist<<endl;
+  free(seq1);
+  free(seq2);
+  return dist;
+
+}
+
+int hamming_dist(Match* match1, Match* match2) {
+
+  return hamming_dist(match1->getPeptide(), match2->getPeptide());
+}
+
+
+int MPSM_Match::getHammingDist() {
+
+  if (matches_.size() == 1) 
+  {
+    return matches_[0]->getPeptide()->getLength();
+  } else {
+    int min_dist = 10000;
+    for (int idx1=0;idx1 < matches_.size()-1;idx1++) {
+
+      for (int idx2=idx1+1;idx2 < matches_.size();idx2++) {
+        int current = hamming_dist(matches_[idx1], matches_[idx2]);
+        if (current < min_dist) {
+          min_dist = current;
+        }
+  
+      }
+    }
+
+
+    return min_dist;
+  }
+}
+
 
 FLOAT_T MPSM_Match::getTICRatio() {
   
@@ -880,9 +949,16 @@ void MPSM_Match::sortMatches(vector<MPSM_Match>& matches, SCORER_TYPE_T match_mo
   sort(matches.begin(), matches.end(), compareMPSM_Match);
 }
 
+const vector<Match*>& MPSM_Match::getMatches() const {
+
+  return matches_;
+}
+
+
 bool CompareMPSM_MatchVisited::operator() (
-  const MPSM_Match& m1, 
-  const MPSM_Match& m2) const {
+  const vector<Match*>& m1, 
+  const vector<Match*>& m2
+  ) const {
 
     return compareMPSM_MatchVisited(m1, m2);
 }

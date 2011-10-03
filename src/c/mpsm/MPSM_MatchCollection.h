@@ -18,13 +18,16 @@ protected:
 
   std::vector<MPSM_Match> matches_;
 
-  std::set<MPSM_Match,CompareMPSM_MatchVisited> visited_;
+  std::set<vector<Match*>,CompareMPSM_MatchVisited> visited_;
 
   double zscore_mean_;
   double zscore_std_;
   double xcorr_2_;
   bool sorted_;
   SCORER_TYPE_T sort_mode_;
+  ZStateIndex zstate_index_;
+  bool zstate_valid_;
+
 public:
 
   MPSM_MatchCollection();
@@ -32,6 +35,8 @@ public:
   virtual ~MPSM_MatchCollection();
   
   void free();
+  void invalidate();
+  ZStateIndex& getZStateIndex();  
 
   
   bool addMatch(MPSM_Match& match);

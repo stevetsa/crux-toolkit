@@ -12,11 +12,11 @@ using namespace std;
 MPSM_MatchCollection::MPSM_MatchCollection() {
   spsm_matches_ = NULL;
   sorted_ = false;
-
+  zstate_valid_ = false;
 }
 
 MPSM_MatchCollection::MPSM_MatchCollection(MatchCollection* spsm_matches) {
-
+  
   spsm_matches_ = spsm_matches;
   MatchIterator *match_iter =
     new MatchIterator(spsm_matches, XCORR, FALSE);
@@ -36,6 +36,7 @@ MPSM_MatchCollection::MPSM_MatchCollection(MatchCollection* spsm_matches) {
   }
   delete match_iter;
   sorted_ = false;
+  zstate_valid_ = false;
 
   //cout <<"Num matches added:"<<matches_.size()<<endl;
   //cout <<"Matches total:"<<get_match_collection_match_total(spsm_matches)<<endl;
@@ -102,8 +103,50 @@ void MPSM_MatchCollection::calcDeltaCN() {
     xcorr_2_ = 0;
     return;
   }
+
   sortByScore(XCORR);
-  xcorr_2_ = getMatch(0).getScore(XCORR);
+  if (false) {
+    //Marina's Feature delta cn
+    for (int idx=0;idx < numMatches()-1;idx++) {
+      double delta_cn = 
+        (getMatch(idx).getScore(XCORR) - getMatch(idx+1).getScore(XCORR)) / 
+        getMatch(idx).getScore(XCORR);
+      getMatch(idx).setDeltaCN(delta_cn);
+    
+    }
+    getMatch(numMatches()-1).setDeltaCN(0);
+  } else if (false) {
+    //Percolator DeltaCN
+    if (numMatches() == 1) {
+      getMatch(0).setDeltaCN(0);
+    } else {
+      xcorr_2_ = getMatch(1).getScore(XCORR);
+      for (int idx = 0;idx < numMatches();idx++) {
+        double delta_cn = 0;
+        double xcorr = getMatch(idx).getScore(XCORR);
+        if (xcorr > 0) {
+          delta_cn = (xcorr - xcorr_2_) / xcorr;
+        }
+        getMatch(idx).setDeltaCN(delta_cn);
+      }
+
+
+    }
+
+
+  } else {
+    //Marina's Feature delta cn assigned to the first match, all others 0
+    if (numMatches() == 1) {
+      getMatch(0).setDeltaCN(0);
+    } else {
+      double delta_cn = (getMatch(0).getScore(XCORR) - getMatch(1).getScore(XCORR))/
+        getMatch(0).getScore(XCORR);
+      getMatch(0).setDeltaCN(delta_cn);
+      for (int idx = 1;idx < numMatches();idx++) {
+        getMatch(idx).setDeltaCN(0);
+      }
+    }
+  }
 }
 
 void MPSM_MatchCollection::calcRanks(SCORER_TYPE_T scorer_type) {
@@ -195,17 +238,11 @@ double MPSM_MatchCollection::getSpectrumRTime() {
   //return get_spectrum_rtime(get_match_spectrum(getMatch(0)[0]));
 }
 
-RetentionPredictor* rtime_predictor_ = NULL;
-
 double MPSM_MatchCollection::getPredictedRTime(MPSM_Match& match) {
   double ans = 0.0;
 
   if (match.numMatches() == 1) {
-    if (rtime_predictor_ == NULL) {
-      rtime_predictor_ = RetentionPredictor::createRetentionPredictor();
-    }
-    //cerr<<"Predicting retention time"<<endl;
-    ans = rtime_predictor_->predictRTime(match[0]);
+    ans = RetentionPredictor::getStaticRetentionPredictor()->predictRTime(match[0]);
   }
   return ans;
 
@@ -216,10 +253,29 @@ bool MPSM_MatchCollection::visited(
   MPSM_Match& match
   ) {
 
-  pair<set<MPSM_Match>::iterator,bool> ret;
-  ret = visited_.insert(match);
+  pair<set<vector<Match*> >::iterator,bool> ret;
+  ret = visited_.insert(match.getMatches());
   
   return !ret.second;
+}
+
+ZStateIndex& MPSM_MatchCollection::getZStateIndex() {
+
+  if (zstate_valid_) {
+    return zstate_index_;
+  } else if (numMatches() > 0) {
+    zstate_index_ = getMatch(0).calcZStateIndex();
+
+    zstate_valid_ = true;
+    return zstate_index_;
+  } else {
+    carp(CARP_WARNING, "No Matches!");
+    
+  }
+}
+
+void MPSM_MatchCollection::invalidate() {
+  zstate_valid_ = false;
 }
 
 

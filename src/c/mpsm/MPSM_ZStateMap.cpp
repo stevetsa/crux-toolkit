@@ -30,8 +30,8 @@ void MPSM_ZStateMap::insert(vector<MPSM_MatchCollection>& match_collection) {
 
 
   MPSM_ZStateMap::iterator cur_iter;
-
-  ZStateIndex& zstate_index = match_collection[0][0].getZStateIndex();
+  //cerr << "getZStateIndex():1"<<endl;
+  ZStateIndex& zstate_index = match_collection[0].getZStateIndex();
   cur_iter = find(zstate_index);
 
   if (cur_iter == end()) {
@@ -59,7 +59,8 @@ void MPSM_ZStateMap::insert(vector<MPSM_MatchCollection>& match_collection) {
 void MPSM_ZStateMap::insert(MPSM_MatchCollection& match_collection, int match_collection_idx) {
   MPSM_ZStateMap::iterator cur_iter;
   
-  ZStateIndex& zstate_index = match_collection[0].getZStateIndex();
+  //cerr << "getZStateIndex():2"<<endl;
+  ZStateIndex& zstate_index = match_collection.getZStateIndex();
   cur_iter = find(zstate_index);
 
   if (cur_iter == end()) {
@@ -83,8 +84,10 @@ void MPSM_ZStateMap::insert(MPSM_MatchCollection& match_collection, int match_co
 
 
 void MPSM_ZStateMap::insert(MPSM_Match& new_match, int match_collection_idx) {
-  ZStateIndex& zstate_index = new_match.getZStateIndex();
   
+  //cerr <<"Inserting match:"<<endl;
+  ZStateIndex zstate_index = new_match.calcZStateIndex();
+  //cerr <<"ZStateIndex:"<<zstate_index<<endl;
   MPSM_ZStateMap::iterator cur_iter = find(zstate_index);
 
   if (cur_iter == end()) {
@@ -224,7 +227,7 @@ bool MPSM_ZStateMap::visited(
   MPSM_Match& match, 
   int match_collection_idx) {
 
-  ZStateIndex& zstate_index = match.getZStateIndex();
+  ZStateIndex zstate_index = match.calcZStateIndex();
 
   MPSM_ZStateMap:iterator find_iter = find(zstate_index);
 

@@ -22,7 +22,7 @@ FLOAT_T RetentionPredictor::predictRTime(Match* match) {
   return 0.0;
 }
 
-double RetentionPredictor::calcMaxDiff(MPSM_Match& mpsm_match) {
+double RetentionPredictor::calcMaxDiff(const MPSM_Match& mpsm_match) {
   if (mpsm_match.numMatches() <= 1) return 0.0;
 
   vector<FLOAT_T> rtimes;
@@ -30,7 +30,7 @@ double RetentionPredictor::calcMaxDiff(MPSM_Match& mpsm_match) {
   for (int match_idx=0;
     match_idx < mpsm_match.numMatches();
     match_idx++) {
-      rtimes.push_back(predictRTime(mpsm_match[match_idx]));
+      rtimes.push_back(predictRTime(mpsm_match.getMatch(match_idx)));
     }
   
 
@@ -53,24 +53,42 @@ double RetentionPredictor::calcMaxDiff(MPSM_Match& mpsm_match) {
 }
 
 
-RetentionPredictor* RetentionPredictor::createRetentionPredictor() {
+RetentionPredictor* RetentionPredictor::predictor_ = NULL;
 
-  RTP_TYPE_T rtp_type = get_rtp_type_parameter("rtime-predictor");
+void RetentionPredictor::createRetentionPredictor() {
 
-  switch(rtp_type) {
-    case RTP_KROKHIN:
-      carp(CARP_DEBUG,"creating krokhin retention predictor");
-      return new KrokhinRetentionPredictor();
-    case RTP_PALMBALD:
-      carp(CARP_DEBUG,"creating palmbald retention predictor");
-      return new PalmbaldRetentionPredictor();
-    case RTP_AKLAMMER:
+  if (predictor_) {
+    delete predictor_;
+  } else {
+
+    RTP_TYPE_T rtp_type = get_rtp_type_parameter("rtime-predictor");
+
+    switch(rtp_type) {
+      case RTP_KROKHIN:
+        carp(CARP_DEBUG,"creating krokhin retention predictor");
+        predictor_ = new KrokhinRetentionPredictor();
+        break;
+      case RTP_PALMBALD:
+        carp(CARP_DEBUG,"creating palmbald retention predictor");
+        predictor_ = new PalmbaldRetentionPredictor();
+        break;
+      case RTP_AKLAMMER:
       carp(CARP_DEBUG,"creating aklammer retention predictor");
-      return new AKlammerStaticRetentionPredictor();
-    case RTP_INVALID:
-    default:
-      carp(CARP_WARNING,"Invalid retention time predictor: returning null");
-      return new NullRetentionPredictor();
-      
+      predictor_ = new AKlammerStaticRetentionPredictor();
+      break;
+      case RTP_INVALID:
+      default:
+        carp(CARP_WARNING,"Invalid retention time predictor: returning null");
+        predictor_ = new NullRetentionPredictor();
+        
+    }
   }
+}
+
+RetentionPredictor* RetentionPredictor::getStaticRetentionPredictor() {
+  if (predictor_ == NULL) {
+    carp(CARP_WARNING, "Retention predictor not created!");
+    createRetentionPredictor();
+  }
+  return predictor_;
 }

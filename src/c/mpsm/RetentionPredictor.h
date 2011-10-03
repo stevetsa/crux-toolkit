@@ -7,6 +7,9 @@
 
 class RetentionPredictor {
 
+  protected:
+    static RetentionPredictor* predictor_;
+
   public:
     RetentionPredictor();
     
@@ -15,11 +18,16 @@ class RetentionPredictor {
     //override this.
     virtual FLOAT_T predictRTime(Match* match);
     
-    //create an instance of the retention predictor, depending
+    //create the static instance of the retention predictor, depending
     //upon the parameter.
-    static RetentionPredictor* createRetentionPredictor();
+    static void createRetentionPredictor();
+    static RetentionPredictor* getStaticRetentionPredictor();
 
-    double calcMaxDiff(MPSM_Match& mpsm_match);
+    double calcMaxDiff(const MPSM_Match& mpsm_match);
+
+    
+    
+
 
 };
 

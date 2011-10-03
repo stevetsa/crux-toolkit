@@ -65,6 +65,11 @@ class SearchForMPSMS: public CruxApplication {
     MPSM_Match& match
   );
 
+  bool passHammingDistThreshold(
+    MPSM_Match& match
+  );
+
+
  public:
 
   SearchForMPSMS();

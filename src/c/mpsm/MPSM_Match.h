@@ -20,26 +20,13 @@ class MPSM_Match {
   std::vector<Match*> matches_; //the matches that the multi-match is from.
 
     
-  FLOAT_T match_scores_[NUMBER_SCORER_TYPES];
+  std::map<SCORER_TYPE_T, FLOAT_T> match_scores_;
   std::map<SCORER_TYPE_T, int> match_rank_;
-  std::bitset<NUMBER_SCORER_TYPES> have_match_score_;
-  std::bitset<NUMBER_SCORER_TYPES> have_match_rank_;
-
-  bool zstate_valid_;
-
-  ZStateIndex zstate_index_;
-
-    
-  FLOAT_T rtime_max_diff_;
 
   int b_y_ion_matched_;
   int b_y_ion_possible_;
   FLOAT_T b_y_ion_fraction_matched_;
-
-  /*
-  std::vector<bool> has_rtime;
-  std::vector<FLOAT_T> rtimes;
-  */
+  //double delta_cn_;
   void invalidate();
 
  public:
@@ -53,6 +40,7 @@ class MPSM_Match {
 
   std::string getSRankString();
 
+  void setDeltaCN(double delta_cn);
   double getDeltaCN();
   double getZScore();
   //void setXCorrRank(int xcorr_rank);
@@ -67,20 +55,15 @@ class MPSM_Match {
 
   BOOLEAN_T addMatch(Match* match);
 
-  BOOLEAN_T hasRTime(int match_idx);
-  FLOAT_T getRTime(int match_idx);
-  void setRTime(int match_idx, FLOAT_T rtime);
-
-  void setRTimeMaxDiff(FLOAT_T rtime_max_diff);
-  FLOAT_T getRTimeMaxDiff();
-
-  FLOAT_T getRTimeAveDiff();
-
-
   ZStateIndex& getZStateIndex();
+  ZStateIndex calcZStateIndex();
+
+  int getHammingDist();
+
 
   bool isChargeHomogeneous();
 
+  const vector<Match*>& getMatches() const;
 
   Match* getMatch(int match_idx) const;
   Match* operator [] (int match_idx);
@@ -122,6 +105,9 @@ class MPSM_Match {
 
   FLOAT_T getTICRatio();
 
+  FLOAT_T getRTimeMaxDiff();
+
+
   //Accessor functions for writing the match.
   int getFirstScan();
   std::string getChargeString();
@@ -155,14 +141,14 @@ class MPSM_Match {
   bool operator < (const MPSM_Match& match_obj) const;
   friend std::ostream& operator <<(std::ostream& os, MPSM_Match& match_obj);
   friend bool compareMPSM_Match(const MPSM_Match& c1, const MPSM_Match& c2);
-  friend bool compareMPSM_MatchVisited(const MPSM_Match& c1, const MPSM_Match& c2);
+  friend bool compareMPSM_MatchVisited(const std::vector<Match*>& c1, const std::vector<Match*>& c2);
 
 
 
 };
 
 struct CompareMPSM_MatchVisited {
-  bool operator() (const MPSM_Match& m1, const MPSM_Match& m2) const;
+  bool operator() (const std::vector<Match*>& m1, const std::vector<Match*>& m2) const;
 };
 
 #endif

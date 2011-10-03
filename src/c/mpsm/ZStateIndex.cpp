@@ -41,6 +41,18 @@ bool ZStateIndex::add(SpectrumZState& zstate) {
 
 }
 
+bool ZStateIndex::add(ZStateIndex zstates) {
+
+  bool ans = true;
+  for (int idx = 0;idx < zstates.size();idx++) {
+    ans &= add(zstates.at(idx));
+  }
+
+  return ans;
+
+}
+
+
 bool ZStateIndex::operator == (ZStateIndex& z) {
 
   //cerr <<"ZStateIndex::operator=="<<endl;

@@ -1492,7 +1492,6 @@ BOOLEAN_T parse_cmd_line_into_params_hash(int argc,
   update_aa_masses();
 
   translate_decoy_options();
-  
 
   // for compute-q-values, set algorithm to q-value (perc by default)
   if( strcmp(argv[0], "compute-q-values") == 0 ){
