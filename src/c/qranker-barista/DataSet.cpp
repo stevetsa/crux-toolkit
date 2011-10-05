@@ -20,6 +20,11 @@ Dataset::Dataset()
 
 Dataset::~Dataset()
 {
+  clear();
+}
+
+void Dataset:: clear()
+{
   delete[] psmind_to_features;
   delete[] psmind_to_label;
   delete[] psmind_to_pepind;
@@ -34,6 +39,7 @@ Dataset::~Dataset()
   delete[] protind_to_label;
   delete[] protind_to_num_all_pep;
 }
+
 
 void Dataset :: load_prot_data()
 {

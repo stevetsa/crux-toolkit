@@ -92,7 +92,9 @@ protected:
     string out_dir;
 
     TabDelimParser pars;
-
+    vector<string> fnames;
+    vector<string> extra_fnames;
+    int extra_fnames_exist;
 
 
 };

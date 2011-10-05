@@ -2,12 +2,24 @@
 
 bool QRanker::no_delta_cn;
 
-QRanker::QRanker() :  seed(0),selectionfdr(0.01),num_hu(5),mu(0.005),weightDecay(0.0000)
+QRanker::QRanker() :  
+  seed(0),
+  selectionfdr(0.01),
+  num_hu(5),mu(0.005),
+  weightDecay(0.0000),
+  max_net_gen(0),
+  max_net_targ(0),
+  nets(0),
+  extra_fnames_exist(0)
 {
 }
 
 QRanker::~QRanker()
 {
+  delete [] max_net_gen;
+  delete [] max_net_targ;
+  delete [] nets;
+
 }
 
 int QRanker :: getOverFDR(PSMScores &set, NeuralNet &n, double fdr)
@@ -56,9 +68,8 @@ void QRanker :: printNetResults(vector<int> &scores)
   cerr << endl;
 }
 
+
 void QRanker :: write_results(string prefix, NeuralNet& net) {
-
-
 
   write_results(prefix, "train", net, trainset);
   write_results(prefix, "test", net, testset);
@@ -69,9 +80,6 @@ void QRanker :: write_results(string prefix, NeuralNet& net) {
   PSMScores::fillFeaturesFull(fullset, d);
 
   write_results(prefix, "full", net, fullset);
-    
-
-
 
 }
 
@@ -81,7 +89,8 @@ void QRanker :: write_results(
   string filename, 
   NeuralNet &net, 
   PSMScores& set
-  ) {
+  ) 
+{
 
   ostringstream s1;
   s1 << prefix << "." << filename << ".txt";
@@ -158,7 +167,7 @@ void QRanker :: write_results(
       //write rtime_max_diff
       double rtime_max_diff = d.psmind2rtime_max_diff(psmind);
       f1 << "\t" << rtime_max_diff;
-      
+            
       //write peptides/spectrum
       double peptides_spectrum = d.psmind2num_pep(psmind);
       f1 << "\t" << peptides_spectrum;
@@ -508,7 +517,7 @@ void QRanker :: write_num_psm_per_spectrum(NeuralNet* max_net)
     }
     
   vector<int> counts;
-  counts.resize(11,0);
+  counts.resize(100,0);
 
   for(map<int,set<int> >::iterator it = scan_to_pepinds.begin();
       it != scan_to_pepinds.end(); it++)
@@ -757,8 +766,6 @@ void QRanker::train_many_nets()
 
   train_many_target_nets();  
  
-  
-
   //choose the best net for the selectionfdr
   int max_fdr = 0;
   int fdr = 0;
@@ -774,30 +781,19 @@ void QRanker::train_many_nets()
     }
   net = max_net_targ[ind];
 
-  
-  //write out the results of the target net
-  cerr << "target net results: ";
-  ostringstream s2;
-  s2 << res_prefix;
-  cout << s2.str() << endl;
-  write_results(s2.str(),net);
-  //write_results_max(s2.str(),net);
-  write_num_psm_per_spectrum(max_net_targ);
-
-  delete [] max_net_gen;
-  delete [] max_net_targ;
-  delete [] nets;
-
-
 }
 
 int QRanker::run( ) {
+
+  //set the seed
   srand(seed);
-  cout << "reading data\n";
   
-  ostringstream res;
-  res << out_dir << "/qranker_output";
-  res_prefix = res.str();
+  //run the parser
+  if(!pars.run(fnames))
+    return 0;
+  pars.clear();
+    
+  cout << "reading data\n";
   
   string summary_fn = "summary.txt";
   string psm_fn = "psm.txt";
@@ -807,39 +803,42 @@ int QRanker::run( ) {
   PSMScores::fillFeaturesSplit(trainset, testset, d, 0.5);
   thresholdset = trainset;
   train_many_nets();
-  return 0;
+  
+  //write out main the results of the target net
+  ostringstream res;
+  res << out_dir << "/qranker_output";
+  res_prefix = res.str();
+  
+  cerr << "target net results: ";
+  ostringstream s2;
+  s2 << res_prefix;
+  cout << s2.str() << endl;
+  write_results(s2.str(),net);
+  //write_results_max(s2.str(),net);
+  write_num_psm_per_spectrum(max_net_targ);
+  
+
+  if(extra_fnames_exist)
+    {
+      pars.clean_up(out_dir);
+      if(!pars.run(extra_fnames))
+	return 0;
+      pars.clear();
+      d.clear();
+      d.load_psm_data_for_training(summary_fn, psm_fn);
+      d.normalize_psms();
+      PSMScores::fillFeaturesFull(fullset, d);
+      write_results(s2.str(), "extra", net, fullset);
+      
+    }
+
+  pars.clean_up(out_dir);
+  return 1;
 }
 
 
-//int main(int argc, char **argv){
-/*
-int QRanker::main(int argc, char **argv) {
-  int capacity(10);
-  SQTParser sqtp(capacity);
-    
-  if(!sqtp.set_command_line_options(argc,argv))
-    return 0;
-  //num of spec features
-  sqtp.set_num_spec_features(0);
-  if(!sqtp.run())
-    return 0;
-  string dir = sqtp.get_output_dir();
-
-
-  QRanker qRanker;
-  qRanker.set_input_dir(dir);
-  qRanker.set_output_dir(dir);
-  qRanker.run();
-  
-  sqtp.clean_up(dir);
-  
-  return 0;
-}   
-*/
-
 int QRanker::set_command_line_options(int argc, char **argv)
 {
-  vector<string> fnames;
   int arg = 1;
 
   no_delta_cn = false;
@@ -863,16 +862,22 @@ int QRanker::set_command_line_options(int argc, char **argv)
         weightDecay = atof(argv[arg+1]);
         arg++;
         cerr << "decay set to:"<<weightDecay<<endl; 
-      } else {
+      }
+      else if (sarg == "--extra-files") {
+        string fn = argv[arg+1];
+	extra_fnames.push_back(fn);
+	extra_fnames_exist = 1;
+	arg++;
+	cerr << "--extra-files "<<fn<<endl; 
+      }
+      else {
         fnames.push_back(argv[arg]);
       }
       arg++;
     }
   string out_dir = "crux-output";
   pars.set_output_dir(out_dir);
-  if(!pars.run(fnames))
-    return 0;
-  pars.clear();
+  
   return 1;
 }
 
@@ -885,7 +890,8 @@ int QRanker::main(int argc, char **argv) {
 
   set_input_dir(dir);
   set_output_dir(dir);
-  run();
+  if(!run())
+    return -1;
   cerr <<"Done qranker"<<endl;  
   return 0;
 }   

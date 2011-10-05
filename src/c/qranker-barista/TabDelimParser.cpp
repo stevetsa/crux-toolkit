@@ -92,6 +92,14 @@ void TabDelimParser :: clear()
   delete[] psmind_to_neutral_mass; psmind_to_neutral_mass = (double*)0;
   delete[] psmind_to_peptide_mass; psmind_to_peptide_mass = (double*)0;
   delete[] psmind_to_rtime_max_diff; psmind_to_rtime_max_diff = (double*)0;
+  pep_to_ind.clear(); ind_to_pep.clear();
+  num_psm = 0;
+  num_pos_psm = 0;
+  num_neg_psm = 0;
+  num_pep = 0;
+  num_pep_in_all_psms = 0;
+  curr_ofst = 0;
+  psmind = 0;
 }
 
 
@@ -283,9 +291,9 @@ void TabDelimParser :: extract_psm_features(
 
   double max_artd = fabs(psmind_to_rtime_max_diff[psmind]);//fabs(atof(tokens[col_idx].c_str()));
 
-  if (max_artd != 0) {
-    cerr<<"Max artd:"<<max_artd<<endl;
-  }
+  //if (max_artd != 0) {
+  //cerr<<"Max artd:"<<max_artd<<endl;
+  //}
   double ln_experiment_size = logf(atof(tokens[matches_spectrum_col_idx].c_str()));
   
   //cerr << "Setting feature values"<<endl;
@@ -357,7 +365,7 @@ void TabDelimParser :: second_pass(ifstream &fin, int label)
 	  //get the scan
 	  int scan = atoi(tokens[scan_col_idx].c_str());
 	  psmind_to_scan[psmind] = scan;
-
+	  
           //get the max_rtime_diff;
           int col_offset = 0;
           if (label == -1) {
@@ -547,9 +555,10 @@ void TabDelimParser :: clean_up(string dir)
   cerr <<"Inside clean_up"<<endl;
   ostringstream fname;
       
-  //fname << out_dir << "/summary.txt";
-  //ofstream f_summary(fname.str().c_str());
-  
+  fname << out_dir << "/summary.txt";
+  remove(fname.str().c_str());
+  fname.str("");
+    
   fname << dir << "/psm.txt";
   remove(fname.str().c_str());
   fname.str("");
@@ -570,7 +579,17 @@ void TabDelimParser :: clean_up(string dir)
   fname.str("");
 
   //psmind_to_max_rtime_diff
-  fname << out_dir << "/psmind_to_max_rtime_diff.txt";
+  fname << out_dir << "/psmind_to_rtime_max_diff.txt";
+  remove(fname.str().c_str());
+  fname.str("");
+
+  //psmind_to_peptide_mass
+  fname << out_dir << "/psmind_to_peptide_mass.txt";
+  remove(fname.str().c_str());
+  fname.str("");
+
+  //psmind_to_neutral_mass
+  fname << out_dir << "/psmind_to_neutral_mass.txt";
   remove(fname.str().c_str());
   fname.str("");
 
@@ -617,7 +636,7 @@ int TabDelimParser :: run(vector<string> &filenames)
   for(unsigned int i = 0; i < filenames.size(); i++)
     {
       string fname = filenames[i];
-      cout << fname << endl;
+      cout << "parsing " << fname << endl;
       ifstream fin(fname.c_str());
       if(!fin.is_open())
 	{
@@ -658,6 +677,7 @@ int TabDelimParser :: run(vector<string> &filenames)
   f_psm.close();
   cout << psmind << " " << num_pos_psm << " " << num_neg_psm << endl;
   cerr <<"Saving data "<<out_dir<<endl;
+  
   save_data_in_binary(out_dir);
   cerr <<"Returning"<<endl;
   return 1;
