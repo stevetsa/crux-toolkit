@@ -24,7 +24,7 @@ class QRanker: public CruxApplication
 public:
 	QRanker();
 	virtual ~QRanker();
-
+	
     int run();
 
     void train_net_ranking(PSMScores &set, int interval);
@@ -37,12 +37,17 @@ public:
     void getMultiFDR(PSMScores &set, NeuralNet &n, vector<double> &qval);
     void printNetResults(vector<int> &scores);
     void write_results(string filename, NeuralNet &net);
-    void write_results(string prefix, string filename, NeuralNet& net, PSMScores& set);
+    void write_results(string prefix, string filename, PSMScores& set);
+    void write_results_extra(string prefix, NeuralNet& net);
+
+    void write_results_pvalue(string prefix);
+    int getOverFDRPvalue(PSMScores &set, double fdr);
+    void calcPvalue(PSMScores &set);
 
     void write_results_max(string filename, NeuralNet &net);
     void write_max_nets(string filename, NeuralNet *max_net);
     void write_unique_peptides(string filename, NeuralNet* max_net);
-    void write_num_psm_per_spectrum(NeuralNet* max_net);
+    void write_num_psm_per_spectrum(PSMScores &fullset, int r);
 
     inline void set_input_dir(string input_dir) {in_dir = input_dir; d.set_input_dir(input_dir);}
     inline void set_output_dir(string output_dir){out_dir = output_dir;}
@@ -87,6 +92,7 @@ protected:
     NeuralNet* max_net_gen;
     NeuralNet* max_net_targ;
     NeuralNet* nets;
+    NeuralNet* trained_nets;
 
     string in_dir;
     string out_dir;

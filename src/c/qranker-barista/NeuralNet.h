@@ -113,7 +113,7 @@ class Linear
 class NeuralNet {
  public:
  NeuralNet():is_linear(0){}
-  ~NeuralNet(){}
+   ~NeuralNet(){}
   void clear();
   void resize_states();
   void initialize(int nfeatures, int num_hu, int is_lin, int has_bias);

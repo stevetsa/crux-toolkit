@@ -229,6 +229,40 @@ void PSMScores::fillFeaturesFull(PSMScores& full, Dataset& d) {
 }
 
 
+void PSMScores::combineSets(PSMScores &set1, PSMScores &set2) {
+ 
+  int n1 = set1.size();
+  int n2 = set2.size();
+ 
+  PSMScoreHolder s;
+  scores.resize(n1+n1,s);
+  int num_pos = 0;
+  int num_neg = 0;
+  int idx = 0;
+  for (int i = 0; i < n1; i++)
+    {
+      scores[idx] = set1[i];
+      idx++;
+      if (set1[i].label == 1)
+	num_pos++;
+      else
+	num_neg++;
+  }
+  for (int i = 0; i < n2; i++)
+    {
+      scores[idx] = set2[i];
+      idx++;
+      if (set2[i].label == 1)
+	num_pos++;
+      else
+	num_neg++;
+  }
+
+  pos=num_pos;
+  neg=num_neg;
+  factor = (double)pos/(double)neg;
+
+}
 
 
 

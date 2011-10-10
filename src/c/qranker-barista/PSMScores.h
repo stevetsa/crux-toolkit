@@ -11,6 +11,7 @@ public:
   double score; 
   int psmind;
   double q;
+  double p;
   int label;
  PSMScoreHolder():score(0.0),psmind(0),q(0.0),label(0){;}
   virtual ~PSMScoreHolder() {;}
@@ -32,6 +33,7 @@ public:
     inline PSMScoreHolder& operator[](int ix){return scores[ix];}    
     void static fillFeaturesSplit(PSMScores& train,PSMScores& test,Dataset &d, double ratio);
     void static fillFeaturesFull(PSMScores& full,Dataset &d);
+    void combineSets(PSMScores &set1, PSMScores &set2);
     inline int size(){return scores.size();}
     inline void add_psm(PSMScoreHolder &psm){scores.push_back(psm);}
     void calc_factor();

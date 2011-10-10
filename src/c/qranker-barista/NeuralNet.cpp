@@ -215,7 +215,7 @@ void Linear :: update1(double mu, double weight_decay)
     }
 }
 
-/**************** Neural Net ********************/
+
 void NeuralNet :: make_random()
 {
   lin1.make_random();
@@ -264,6 +264,7 @@ NeuralNet& NeuralNet :: operator=(NeuralNet &N)
       lin2 = N.lin2;
     }
   resize_states();
+  return *this;
 }
 
 void NeuralNet :: copy(NeuralNet &N)

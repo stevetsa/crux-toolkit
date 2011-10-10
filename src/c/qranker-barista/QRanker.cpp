@@ -10,6 +10,7 @@ QRanker::QRanker() :
   max_net_gen(0),
   max_net_targ(0),
   nets(0),
+  trained_nets(0),
   extra_fnames_exist(0)
 {
 }
@@ -19,7 +20,7 @@ QRanker::~QRanker()
   delete [] max_net_gen;
   delete [] max_net_targ;
   delete [] nets;
-
+  delete [] trained_nets;
 }
 
 int QRanker :: getOverFDR(PSMScores &set, NeuralNet &n, double fdr)
@@ -35,6 +36,20 @@ int QRanker :: getOverFDR(PSMScores &set, NeuralNet &n, double fdr)
 
     }
   return set.calcOverFDR(fdr);
+}
+
+int QRanker :: getOverFDRPvalue(PSMScores &set, double fdr)
+{
+  for(int i = 0; i < set.size(); i++)
+    //hack!!!!
+    set[i].score = 1.0-set[i].p;
+  return set.calcOverFDR(fdr);
+}
+
+void QRanker :: calcPvalue(PSMScores &set)
+{
+  for(int i = 0; i < set.size(); i++)
+    set[i].p = (double)i/(double)set.size();
 }
 
 void QRanker :: getMultiFDR(PSMScores &set, NeuralNet &n, vector<double> &qvalues)
@@ -68,26 +83,63 @@ void QRanker :: printNetResults(vector<int> &scores)
   cerr << endl;
 }
 
-
-void QRanker :: write_results(string prefix, NeuralNet& net) {
-
-  write_results(prefix, "train", net, trainset);
-  write_results(prefix, "test", net, testset);
-
+void QRanker :: write_results_pvalue(string prefix) {
+  
+  d.load_psm_data_for_reporting_results();
+  
+  net.copy(trained_nets[1]);
+  getOverFDR(trainset, trained_nets[1], qvals[4]);
+  calcPvalue(trainset);
+  write_results(prefix, "train", trainset);
+  
+  net.copy(trained_nets[0]);
+  getOverFDR(testset, net, qvals[4]);
+  calcPvalue(testset);
+  write_results(prefix, "test", testset);
+    
+  //PSMScores::fillFeaturesFull(fullset, d);
+  fullset.combineSets(trainset,testset);
   trainset.clear();
   testset.clear();
   thresholdset.clear();
-  PSMScores::fillFeaturesFull(fullset, d);
+  int r = getOverFDRPvalue(fullset, qvals[4]);
+  write_results(prefix, "full", fullset);
+  write_num_psm_per_spectrum(fullset, r);
+  
+}
 
-  write_results(prefix, "full", net, fullset);
 
+void QRanker :: write_results_extra(string prefix, NeuralNet& net)
+{
+  d.load_psm_data_for_reporting_results();
+  getOverFDR(fullset, net, qvals[4]);
+  write_results(prefix, "extra", fullset);
+}    
+
+
+void QRanker :: write_results(string prefix, NeuralNet& net) {
+  
+  d.load_psm_data_for_reporting_results();
+  getOverFDR(trainset, net, qvals[4]);
+  write_results(prefix, "train", trainset);
+  getOverFDR(testset, net, qvals[4]);
+  write_results(prefix, "test", testset);
+    
+  //PSMScores::fillFeaturesFull(fullset, d);
+  fullset.combineSets(trainset,testset);
+  trainset.clear();
+  testset.clear();
+  thresholdset.clear();
+  int r = getOverFDR(fullset, net, qvals[4]);
+  write_results(prefix, "full", fullset);
+  write_num_psm_per_spectrum(fullset, r);
+  
 }
 
 
 void QRanker :: write_results(
   string prefix, 
   string filename, 
-  NeuralNet &net, 
   PSMScores& set
   ) 
 {
@@ -95,11 +147,6 @@ void QRanker :: write_results(
   ostringstream s1;
   s1 << prefix << "." << filename << ".txt";
   ofstream f1(s1.str().c_str());
-
-  getOverFDR(set, net, qvals[4]);
-
-  d.load_psm_data_for_reporting_results();
-
 
   f1 << "scan" << "\t" 
      << "charge" << "\t" 
@@ -191,114 +238,6 @@ void QRanker :: write_results(
 
 
 } 
-/*
-void QRanker :: write_results(string filename, NeuralNet &net)
-{
-
-  
-  //write out the results of the general net
-  ostringstream s1;
-  s1 << filename << ".txt";
-  //cout <<"Writing to :"<<s1.str()<<endl;
-  ofstream f1(s1.str().c_str());
-  trainset.clear();
-  testset.clear();
-  thresholdset.clear();
-  PSMScores::fillFeaturesFull(fullset, d);
-  getOverFDR(fullset,net, qvals[4]);
-  
-
-  cout <<"HERE"<<endl;
-  d.load_psm_data_for_reporting_results();
-
-
-  f1 << "scan" << "\t" 
-     << "charge" << "\t" 
-     << "spectrum neutral mass" << "\t" 
-     << "peptide mass" << "\t" 
-     << "q-ranker score" << "\t" 
-     << "q-ranker q-value" << "\t" 
-     << "sequence" << "\t" 
-     << "rtime max diff" << "\t"
-     << "peptides/spectrum" << "\t"
-     << "nzstates" << "\t"
-     << "target/decoy"<<endl;
-
-  for(int i = 0; i < fullset.size(); i++)
-    {
-      //cout<<"Writing "<<i<<endl;
-      int psmind = fullset[i].psmind;
-      //cout<<"psmind:"<<psmind<<endl;
-      int num_pep = d.psmind2num_pep(psmind);
-      //cout<<"num_pep:"<<num_pep<<endl;
-      //write scan
-      f1 << d.psmind2scan(psmind) << "\t";
-      //write charges
-      int *charges = d.psmind2charges(psmind);
-      f1 << charges[0];
-      for(int k = 1; k < num_pep; k++)
-	{
-	  f1 << ",";
-	  int ch = charges[k];
-	  f1 << ch; 
-	}
-      f1 << "\t";
-      //write neutral_mass
-      double* neutral_mass = d.psmind2neutral_mass(psmind);
-      f1 << neutral_mass[0];
-      for(int k = 1; k < num_pep; k++)
-	{
-	  f1 << ",";
-	  double m = neutral_mass[k];
-	  f1 << m; 
-	}
-      f1 << "\t";
-
-      //write peptide mass
-      double* peptide_mass = d.psmind2peptide_mass(psmind);
-      f1 << peptide_mass[0];
-      for(int k = 1; k < num_pep; k++)
-	{
-	  f1 << ",";
-	  double m = peptide_mass[k];
-	  f1 << m; 
-	}
-      f1 << "\t";
-      f1 << fullset[i].score << "\t" << fullset[i].q << "\t";
-
-      //write peptide sequence
-      int *pepinds = d.psmind2pepinds(psmind);
-      f1 << d.ind2pep(pepinds[0]);
-      for(int k = 1; k < num_pep; k++)
-	{
-	  f1 << ",";
-	  f1 << d.ind2pep(pepinds[k]); 
-	}
-
-      //write rtime_max_diff
-      double rtime_max_diff = d.psmind2rtime_max_diff(psmind);
-      f1 << "\t" << rtime_max_diff;
-      
-      //write peptides/spectrum
-      double peptides_spectrum = d.psmind2num_pep(psmind);
-      f1 << "\t" << peptides_spectrum;
-
-      //write nzstates
-      int nzstates = d.psmind2nzstates(psmind);
-      f1 << "\t" << nzstates;
-
-      //write label
-      f1 << "\t" << fullset[i].label;
-      f1 << endl;
-
-
-      
-    }
-  //cout<<"Done writing"<<endl;
-  f1.close();
-  //cout<<"Done..."<<endl;
-}
-*/
 
 void QRanker :: write_results_max(string filename, NeuralNet &net)
 {
@@ -306,14 +245,7 @@ void QRanker :: write_results_max(string filename, NeuralNet &net)
   ostringstream s1;
   s1 << filename << ".txt";
   ofstream f1(s1.str().c_str());
-  trainset.clear();
-  testset.clear();
-  thresholdset.clear();
-  PSMScores::fillFeaturesFull(fullset, d);
-  getOverFDR(fullset,net, qvals[4]);
-  
-  d.load_psm_data_for_reporting_results();
-
+ 
   set<int> scans_target;
   set<int> scans_decoy;
   
@@ -480,17 +412,8 @@ void QRanker :: write_unique_peptides(string filename, NeuralNet* max_net)
 }
 
 
-void QRanker :: write_num_psm_per_spectrum(NeuralNet* max_net)
+void QRanker :: write_num_psm_per_spectrum(PSMScores &fullset, int r)
 {
-  //write out the results of the general net
-  //ostringstream s1;
-  //s1 << filename << ".txt";
-  //ofstream f1(s1.str().c_str());
-  
-  int count = 5; 
-  net = max_net[count];
-  int r = getOverFDR(fullset,net, qvals[count]);
-      
   map<int,set<int> > scan_to_pepinds;
   int cn = 0;
   for(int i = 0; i < fullset.size();i++)
@@ -517,7 +440,7 @@ void QRanker :: write_num_psm_per_spectrum(NeuralNet* max_net)
     }
     
   vector<int> counts;
-  counts.resize(100,0);
+  counts.resize(25,0);
 
   for(map<int,set<int> >::iterator it = scan_to_pepinds.begin();
       it != scan_to_pepinds.end(); it++)
@@ -528,7 +451,6 @@ void QRanker :: write_num_psm_per_spectrum(NeuralNet* max_net)
   for(unsigned int i = 0; i < counts.size();i++)
     cout << i << " " << counts[i] << endl;
 
-  //f1.close();
 }
 
 
@@ -699,51 +621,6 @@ void QRanker :: train_many_target_nets()
 
 void QRanker::train_many_nets()
 {
-  switch_iter =30;
-  niter = 60;
-   
-  num_qvals = 14;
-  qvals.resize(num_qvals,0.0);
-  qvals1.resize(num_qvals,0.0);
-  qvals2.resize(num_qvals,0.0);
-
-  overFDRmulti.resize(num_qvals,0);
-  ave_overFDR.resize(num_qvals,0);
-  max_overFDR.resize(num_qvals,0); 
-  max_net_gen = new NeuralNet[num_qvals];
-  max_net_targ = new NeuralNet[num_qvals];
-  
-  double q = 0.0;
-  for(int count = 0; count < num_qvals; count++)
-    {
-      qvals[count] = q;
-      if (count < 2)
-	qvals1[count] = q;
-      else
-	qvals1[count] = q-0.005;
-      qvals2[count] = q+0.005;
-
-      if(q < 0.01)
-	q+=0.0025;
-      else
-	q+=0.01;
-    }
-  
-  //set the linear flag: 1 if linear, 0 otherwise
-  int lf = 0; //num_hu = 1;//5;
-  if(num_hu == 1)
-    lf = 1;
-  //set whether there is bias in the linear units: 1 if yes, 0 otherwise
-  int bs = 1;
-  
-  net.initialize(d.get_num_features(),num_hu,lf,bs);
-  for(int count = 0; count < num_qvals; count++){
-    max_net_gen[count] = net;
-  }
-
-  nets = new NeuralNet[2];
-  nets[0].clone(net);
-  nets[1].clone(net);
 
   cerr << "Before iterating\n";
   cerr << "trainset: ";
@@ -779,11 +656,11 @@ void QRanker::train_many_nets()
 	  ind = count;
 	}
     }
-  net = max_net_targ[ind];
-
+  net.copy(max_net_targ[ind]);
+  
 }
 
-int QRanker::run( ) {
+int QRanker::run() {
 
   //set the seed
   srand(seed);
@@ -802,8 +679,74 @@ int QRanker::run( ) {
   d.normalize_psms();
   PSMScores::fillFeaturesSplit(trainset, testset, d, 0.5);
   thresholdset = trainset;
-  train_many_nets();
+
+  switch_iter =30;
+  niter = 60;
+   
+  num_qvals = 14;
+  qvals.resize(num_qvals,0.0);
+  qvals1.resize(num_qvals,0.0);
+  qvals2.resize(num_qvals,0.0);
+
+  overFDRmulti.resize(num_qvals,0);
+  ave_overFDR.resize(num_qvals,0);
+  max_overFDR.resize(num_qvals,0); 
+  max_net_gen = new NeuralNet[num_qvals];
+  max_net_targ = new NeuralNet[num_qvals];
   
+  double q = 0.0;
+  for(int count = 0; count < num_qvals; count++)
+    {
+      qvals[count] = q;
+      if (count < 2)
+	qvals1[count] = q;
+      else
+	qvals1[count] = q-0.005;
+      qvals2[count] = q+0.005;
+
+      if(q < 0.01)
+	q+=0.0025;
+      else
+	q+=0.01;
+    }
+  
+  //set the linear flag: 1 if linear, 0 otherwise
+  int lf = 0; //num_hu = 1;//5;
+  if(num_hu == 1)
+    lf = 1;
+  //set whether there is bias in the linear units: 1 if yes, 0 otherwise
+  int bs = 0;
+  
+  net.initialize(d.get_num_features(),num_hu,lf,bs);
+  for(int count = 0; count < num_qvals; count++){
+    max_net_gen[count] = net;
+    max_net_targ[count] = net;
+  }
+
+  nets = new NeuralNet[2];
+  nets[0].clone(net);
+  nets[1].clone(net);
+
+  trained_nets = new NeuralNet[2];
+  train_many_nets();
+  trained_nets[0] = net;
+
+  trainset = testset;
+  testset = thresholdset;
+  thresholdset = trainset;
+
+  net.make_random();
+  for(int count = 0; count < num_qvals; count++){
+    max_net_gen[count] = net;
+    max_net_targ[count] = net;
+  }
+  overFDRmulti.assign(overFDRmulti.size(),0);
+  max_overFDR.assign(max_overFDR.size(),0);
+  ave_overFDR.assign(ave_overFDR.size(),0);
+  
+  train_many_nets();
+  trained_nets[1] = net;
+
   //write out main the results of the target net
   ostringstream res;
   res << out_dir << "/qranker_output";
@@ -813,11 +756,9 @@ int QRanker::run( ) {
   ostringstream s2;
   s2 << res_prefix;
   cout << s2.str() << endl;
-  write_results(s2.str(),net);
-  //write_results_max(s2.str(),net);
-  write_num_psm_per_spectrum(max_net_targ);
+  //write_results(s2.str(),net);
+  write_results_pvalue(s2.str());
   
-
   if(extra_fnames_exist)
     {
       pars.clean_up(out_dir);
@@ -828,10 +769,9 @@ int QRanker::run( ) {
       d.load_psm_data_for_training(summary_fn, psm_fn);
       d.normalize_psms();
       PSMScores::fillFeaturesFull(fullset, d);
-      write_results(s2.str(), "extra", net, fullset);
-      
+      write_results_extra(s2.str(),net);
     }
-
+      
   pars.clean_up(out_dir);
   return 1;
 }
