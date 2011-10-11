@@ -440,12 +440,14 @@ void QRanker :: write_num_psm_per_spectrum(PSMScores &fullset, int r)
     }
     
   vector<int> counts;
-  counts.resize(25,0);
 
   for(map<int,set<int> >::iterator it = scan_to_pepinds.begin();
       it != scan_to_pepinds.end(); it++)
     {
       int cnt =  (it->second).size();
+      while (counts.size() < cnt+1) {
+        counts.push_back(0);
+      }
       counts[cnt]++;
     }
   for(unsigned int i = 0; i < counts.size();i++)

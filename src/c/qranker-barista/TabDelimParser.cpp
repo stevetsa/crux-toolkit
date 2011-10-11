@@ -288,8 +288,8 @@ void TabDelimParser :: extract_psm_features(
 
   double ave_artd = 0; 
 
-
-  double max_artd = fabs(psmind_to_rtime_max_diff[psmind]);//fabs(atof(tokens[col_idx].c_str()));
+  double max_artd = 0;
+  //double max_artd = fabs(psmind_to_rtime_max_diff[psmind]);//fabs(atof(tokens[col_idx].c_str()));
 
   //if (max_artd != 0) {
   //cerr<<"Max artd:"<<max_artd<<endl;
