@@ -191,6 +191,7 @@ libcrux_la_CXXFLAGS = \
   -I$(top_srcdir)/src/c/MSToolkit/include \
   -I$(top_srcdir)/src/c/percolator/ \
   -I$(top_srcdir)/src/c/q-ranker/ \
+  -I$(top_srcdir)/src/c/hardklor/ \
   -I$(top_srcdir)/src/external/
 
 libcrux_la_SOURCES = $(LIBFILES)
@@ -227,10 +228,12 @@ crux_SOURCES = crux-main.cpp crux-main.h
 crux_CXXFLAGS = \
   $(AM_CXXFLAGS) \
   -DMAIN \
-  -I$(top_srcdir)/src/c/MSToolkit \
+  -I$(top_srcdir)/src/c/MSToolkit/include \
   -I$(top_srcdir)/src/c/percolator \
   -I$(top_srcdir)/src/c/q-ranker \
-  -I$(top_srcdir)/src/c/xlink
+  -I$(top_srcdir)/src/c/xlink \
+  -I$(top_srcdir)/src/c/hardklor
+
 crux_LDADD = \
   $(AM_LDFLAGS) \
   -L$(top_builddir)/src/c/xlink \
@@ -241,8 +244,10 @@ crux_LDADD = \
   -L$(top_builddir)/src/c/MSToolkit \
   -L$(top_builddir)/src/c/percolator \
   -L$(top_builddir)/src/c/q-ranker \
+  -L$(top_builddir)/src/c/hardklor \
   -lpercolator \
   -lqranker \
+  -lhardklor \
   -lmstoolkit \
   -lm -lpthread -ldl \
   -lArrayLibrary

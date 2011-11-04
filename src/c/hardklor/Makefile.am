@@ -54,8 +54,9 @@ libhardklor_la_SOURCES = \
   Smooth.h \
   Smooth.cpp \
   SpecAnalyzeSupport.cpp \
-  SpecAnalyzeSupport.h
-
+  SpecAnalyzeSupport.h \
+  CruxHardklorApplication.cpp \
+  CruxHardklorApplication.h
 
 libhardklor_la_CXXFLAGS = $(AM_CXXFLAGS) \
   -I$(top_srcdir)/src/c/ \

@@ -26,6 +26,7 @@
 #include "PrintVersion.h"
 #include "StatColumn.h"
 #include "SortColumn.h"
+#include "CruxHardklorApplication.h"
 
 /**
  * The starting point for crux.  Prints a general usage statement when
@@ -56,8 +57,10 @@ int main(int argc, char** argv){
   applications.add(new StatColumn());
   applications.add(new SortColumn());
 
-  applications.add(new PrintVersion());
+  applications.add(new CruxHardklorApplication());
 
+  applications.add(new PrintVersion());
+  
 
 
 
