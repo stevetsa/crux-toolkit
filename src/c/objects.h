@@ -39,11 +39,16 @@ enum _peak_sort_type {_PEAK_LOCATION, _PEAK_INTENSITY};
  */
 typedef enum _peak_sort_type PEAK_SORT_TYPE_T;
 
+
+namespace Crux {
+
 /**
  * \class Spectrum 
  * \brief A spectrum
  */
 class Spectrum;
+
+}
 
 /**
  * \typedef PeakIterator
@@ -61,7 +66,7 @@ class SpectrumCollection;
  * \typedef SpectrumIterator
  * \brief An object to iterate over the spectra in a SpectrumCollection
  */
-typedef std::vector<Spectrum*>::iterator SpectrumIterator;
+typedef std::vector<Crux::Spectrum*>::iterator SpectrumIterator;
 
 /**
  * \class FilteredSpectrumChargeIterator 

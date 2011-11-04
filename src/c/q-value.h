@@ -14,13 +14,15 @@
 #include "parameter.h"
 #include "Protein.h"
 #include "Peptide.h"
-#include "CruxSpectrum.h"
+#include "Spectrum.h"
 #include "parse_arguments.h" 
 #include "SpectrumCollection.h"
 #include "Scorer.h"
 #include "Match.h"
 #include "MatchCollection.h"
 #include "OutputFiles.h"
+
+
 
 FLOAT_T* compute_decoy_qvalues(
   FLOAT_T* target_scores,

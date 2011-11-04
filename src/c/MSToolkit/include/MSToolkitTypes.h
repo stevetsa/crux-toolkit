@@ -1,6 +1,8 @@
 #ifndef _MSTOOLKITTYPES_H
 #define _MSTOOLKITTYPES_H
 
+namespace MSToolkit {
+
 enum MSSpectrumType {
   MS1,
   MS2,
@@ -102,6 +104,8 @@ struct EZState {
   float pRTime;   //precursor area
   float pArea;    //precursor retention time
 };
+
+}
 
 #endif
 

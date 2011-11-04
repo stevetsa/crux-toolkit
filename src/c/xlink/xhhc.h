@@ -12,7 +12,7 @@
 
 /*Crux Includes*/
 #include "utils.h"
-#include "CruxSpectrum.h"
+#include "Spectrum.h"
 #include "carp.h"
 #include "PeptideConstraint.h"
 #include "Peptide.h"
@@ -25,6 +25,8 @@
 #include "objects.h"
 #include "crux-utils.h"
 #include "Ion.h"
+
+using namespace Crux;
 
 // get rid of these
 //#define PARAM_ESTIMATION_SAMPLE_COUNT 500
@@ -150,7 +152,7 @@ bool hhc_estimate_weibull_parameters_from_xcorrs(
   FLOAT_T* beta,
   FLOAT_T* shift,
   FLOAT_T* correlation,
-  CruxSpectrum* spectrum,
+  Spectrum* spectrum,
   int charge
   );
 

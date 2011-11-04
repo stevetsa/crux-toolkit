@@ -23,6 +23,7 @@ libmstoolkit_la_SOURCES = \
   $(MZPARSER_PATH)/RAMPface.cpp \
   $(MZPARSER_PATH)/saxhandler.cpp \
   $(MZPARSER_PATH)/saxmzmlhandler.cpp \
+  $(MZPARSER_PATH)/saxmzxmlhandler.cpp \
   $(MZPARSER_PATH)/Czran.cpp \
   $(EXPAT_PATH)/xmlparse.c \
   $(EXPAT_PATH)/xmlrole.c \

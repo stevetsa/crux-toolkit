@@ -49,6 +49,7 @@ typedef off_t f_off;
 
 using namespace std;
 
+namespace MSToolkit {
 class MSReader {
  public:
   //Constructors & Destructors
@@ -191,5 +192,6 @@ class MSReader {
 
 };
 
+}
 #endif
 

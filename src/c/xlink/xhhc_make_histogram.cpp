@@ -1,6 +1,8 @@
 #include "xhhc_ion_series.h"
 #include "xhhc_scorer.h"
 
+#include "Spectrum.h"
+
 #include "objects.h"
 #include "IonConstraint.h"
 #include "SpectrumCollectionFactory.h"
@@ -19,7 +21,7 @@ using namespace std;
 //typedef map<char, set<char> > BondMap;
 
 void plot_weibull(vector<pair<FLOAT_T, LinkedPeptide> >& scores, 
-                  CruxSpectrum* spectrum, 
+                  Spectrum* spectrum, 
                   int charge); 
 
 int main(int argc, char** argv) {
@@ -182,7 +184,7 @@ int main(int argc, char** argv) {
   cout << "decoys      " << filtered_ions.size() - num_ions << "<br>" << endl;
   cout << "total       " << filtered_ions.size() << "<br>" << endl;
 
-  CruxSpectrum* spectrum = new CruxSpectrum();
+  Spectrum* spectrum = new Spectrum();
   SpectrumCollection* collection = SpectrumCollectionFactory::create(ms2_file);
 
   XHHC_Scorer xhhc_scorer;
@@ -266,7 +268,7 @@ int main(int argc, char** argv) {
 
 // for running experiments. plots fit and pvalues
 void plot_weibull(vector<pair<FLOAT_T, LinkedPeptide> >& scores, 
-                  CruxSpectrum* spectrum, int charge) {
+                  Spectrum* spectrum, int charge) {
   
   ofstream target_fit_file ("fit.target");
   ofstream decoy_fit_file ("fit.decoy");

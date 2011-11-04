@@ -9,6 +9,8 @@
 
 using namespace std;
 
+
+namespace MSToolkit {
 class Spectrum {
  public:
   //Constructors & Destructors
@@ -142,6 +144,7 @@ class Spectrum {
 
 };
 
+}
 
 #endif
 

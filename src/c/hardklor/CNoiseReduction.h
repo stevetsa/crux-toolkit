@@ -7,6 +7,9 @@
 
 #define GC 5.5451774444795623
 
+
+using namespace MSToolkit;
+
 class CNoiseReduction {
 
 public:

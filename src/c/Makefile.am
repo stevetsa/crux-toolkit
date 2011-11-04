@@ -27,7 +27,8 @@ endif
 AM_CFLAGS = -Wall -W -Werror $(USEDOUBLES) $(USEDARWIN) $(SEARCH_ENABLED) \
             -D_LARGEFILE_SOURCE=1 -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE
 AM_CXXFLAGS = -Wall -W -Werror  $(USEDOUBLES) $(USEDARWIN) $(SEARCH_ENABLED) \
-            -D_LARGEFILE_SOURCE=1 -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE
+            -D_LARGEFILE_SOURCE=1 -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -DGCC \
+            -DHAVE_EXPAT_CONFIG_H
 
 LIBFILES= \
   Alphabet.cpp \
@@ -166,8 +167,8 @@ LIBFILES= \
   SpectrumCollection.h \
   SpectrumCollectionFactory.cpp \
   SpectrumCollectionFactory.h \
-  CruxSpectrum.cpp \
-  CruxSpectrum.h \
+  Spectrum.cpp \
+  Spectrum.h \
   SpectrumZState.cpp \
   SpectrumZState.h \
   StatColumn.cpp \
@@ -209,6 +210,7 @@ crux_get_ms2_spectrum_SOURCES = get_ms2_spectrum.cpp
 crux_get_ms2_spectrum_CXXFLAGS = $(AM_CFLAGS) -DMAIN -I$(top_srcdir)/src/c//MSToolkit
 crux_get_ms2_spectrum_LDADD = \
   $(AM_LDFLAGS) \
+  -lm -lpthread -ldl \
   libcrux.la -L$(top_builddir)/src/c/MSToolkit -lm -lmstoolkit
 
 crux_generate_peptides_SOURCES = generate_peptides.cpp
@@ -239,10 +241,10 @@ crux_LDADD = \
   -L$(top_builddir)/src/c/MSToolkit \
   -L$(top_builddir)/src/c/percolator \
   -L$(top_builddir)/src/c/q-ranker \
-  -lm \
   -lpercolator \
   -lqranker \
   -lmstoolkit \
+  -lm -lpthread -ldl \
   -lArrayLibrary
 
 xlink_predict_peptide_ions_SOURCES=./xlink/xhhc_predict_peptide_ions.cpp
@@ -270,7 +272,7 @@ xlink_score_spectrum_LDADD = \
   $(AM_LDFLAGS) \
   -L$(top_builddir)/src/c/MSToolkit \
   -L$(top_builddir)/src/c/xlink \
-  -lm \
+  -lm -lpthread -ldl \
   -lxlink \
   libcrux.la \
   -lmstoolkit
@@ -285,7 +287,7 @@ xlink_assign_ions_LDADD = \
   $(AM_LDFLAGS) \
   -L$(top_builddir)/src/c/MSToolkit \
   -L$(top_builddir)/src/c/xlink \
-  -lm \
+  -lm -lpthread -ldl \
   -lxlink \
   libcrux.la \
   -lmstoolkit

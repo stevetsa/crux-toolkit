@@ -9,9 +9,11 @@
 
 #include <stdio.h>
 #include "objects.h"
-#include "CruxSpectrum.h"
+#include "Spectrum.h"
 
 #include <vector>
+
+using namespace Crux;
 
 /**
  * \class SpectrumCollection

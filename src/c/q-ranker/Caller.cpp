@@ -33,6 +33,8 @@ using namespace std;
 #include "MSReader.h"
 #include "Spectrum.h"
 
+using namespace MSToolkit;
+
 namespace qranker {
 
 /**

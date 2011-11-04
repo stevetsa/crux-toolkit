@@ -4,6 +4,8 @@
 
 using namespace std;
 
+
+namespace MSToolkit {
 Spectrum::Spectrum(){
   //cout<<"in Spectrum constructor!"<<endl;
 
@@ -528,3 +530,4 @@ int Spectrum::compareMZRev(const void *p1, const void *p2){
   else return 0;
 }
 
+}

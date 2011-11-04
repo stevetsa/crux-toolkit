@@ -2,6 +2,8 @@
 #include <iostream>
 using namespace std;
 
+namespace MSToolkit {
+
 MSReader::MSReader(){
   fileIn=NULL;
   rampFileIn=NULL;
@@ -2626,3 +2628,4 @@ void MSReader::closeMZXML() {
 	delete msWriter;
 }
 */
+}

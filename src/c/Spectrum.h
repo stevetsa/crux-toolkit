@@ -14,10 +14,11 @@
 #include "Peak.h"
 
 #include "Spectrum.h"
+#include "MSToolkit/include/Spectrum.h"
 #include "SpectrumZState.h"
 
 /**
- * \class CruxSpectrum 
+ * \class Spectrum 
  * \brief A mass spectrum
 
  * A mass spectrum consists mainly of a list of peak objects along with
@@ -36,7 +37,10 @@
  * peaks but is convenient to have is stored as "min_peak_mz",
  * "max_peak_mz", and "total_energy".
  */
-class CruxSpectrum{
+
+namespace Crux {
+
+class Spectrum{
  protected:
   // member variables
   int              first_scan_;    ///< The number of the first scan
@@ -117,12 +121,12 @@ class CruxSpectrum{
   /**
    * Default constructor.
    */
-  CruxSpectrum();
+  Spectrum();
 
   /**
    * Constructor initializes spectrum with given values.
    */
-  CruxSpectrum
+  Spectrum
     (int               first_scan,         ///< number of the first scan -in
      int               last_scan,          ///< number of the last scan -in
      FLOAT_T           precursor_mz,       ///< m/z of the precursor
@@ -133,12 +137,12 @@ class CruxSpectrum{
   /**
    * Copy constructor.  Deep copy--allocates new peaks peak array. 
    */
-  CruxSpectrum(const CruxSpectrum& old_spec);
+  Spectrum(const Spectrum& old_spec);
 
   /**
    * Default destructor.
    */
-  ~CruxSpectrum();
+  ~Spectrum();
 
   /**
    * \returns the peak iterator that signifies the start of the peaks 
@@ -191,14 +195,14 @@ class CruxSpectrum{
    * Skips Header line "H"
    * \returns The newly allocated spectrum or NULL on error or EOF.
    */
-  static CruxSpectrum* newCruxSpectrumMs2(FILE* file, const char* filename = NULL); 
+  static Spectrum* newSpectrumMs2(FILE* file, const char* filename = NULL); 
   
 
   /**
    * Parse a spectrum from a file in mgf format.
    * \returns A newly allocated spectrum or NULL on error or EOF.
    */
-  static CruxSpectrum* newCruxSpectrumMgf(FILE* file, int scan_num, 
+  static Spectrum* newSpectrumMgf(FILE* file, int scan_num, 
                                   const char* filename = NULL); 
   
   /**
@@ -210,16 +214,16 @@ class CruxSpectrum{
   bool parseMs2(FILE* file, const char* filename = NULL); 
 
   /**
-   * Transfer values from an MSToolkit spectrum to the crux CruxSpectrum.
+   * Transfer values from an MSToolkit spectrum to the crux Spectrum.
    */
-  bool parseMstoolkitSpectrum(Spectrum* mst_spectrum, 
+  bool parseMstoolkitSpectrum(MSToolkit::Spectrum* mst_spectrum, 
                                 const char* filename = NULL);
 
   /**
    * Parse the spectrum from the tab-delimited result file
    *\returns the parsed spectrum , else returns NULL for failed parse
    */
-  static CruxSpectrum* parseTabDelimited(MatchFileReader& file); 
+  static Spectrum* parseTabDelimited(MatchFileReader& file); 
   
   /**
    * Normalize peak intensities so that they sum to unity.
@@ -332,13 +336,14 @@ class CruxSpectrum{
 
   /**
    * Creates and fills mz_peak_array_, the array of pointers to peaks
-   * in the CruxSpectrum's vector of peaks.  Peaks in the array are
+   * in the Spectrum's vector of peaks.  Peaks in the array are
    * indexed by ???
    */
   void populateMzPeakArray();
 
 };    
 
+}
 
 /**
  * Local Variables:

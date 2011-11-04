@@ -56,7 +56,8 @@ am_libmstoolkit_la_OBJECTS = libmstoolkit_la-adler32.lo \
 	libmstoolkit_la-mzp_base64.lo libmstoolkit_la-BasicSpectrum.lo \
 	libmstoolkit_la-mzParser.lo libmstoolkit_la-RAMPface.lo \
 	libmstoolkit_la-saxhandler.lo \
-	libmstoolkit_la-saxmzmlhandler.lo libmstoolkit_la-Czran.lo \
+	libmstoolkit_la-saxmzmlhandler.lo \
+	libmstoolkit_la-saxmzxmlhandler.lo libmstoolkit_la-Czran.lo \
 	libmstoolkit_la-xmlparse.lo libmstoolkit_la-xmlrole.lo \
 	libmstoolkit_la-xmltok.lo libmstoolkit_la-sqlite3.lo \
 	libmstoolkit_la-Spectrum.lo libmstoolkit_la-MSReader.lo \
@@ -148,7 +149,7 @@ SHELL = /bin/sh
 STRIP = strip
 USEDOUBLES_FALSE = 
 USEDOUBLES_TRUE = #
-VERSION = 1.35
+VERSION = 1.36
 ac_ct_AR = ar
 ac_ct_CC = gcc
 ac_ct_CXX = g++
@@ -217,6 +218,7 @@ libmstoolkit_la_SOURCES = \
   $(MZPARSER_PATH)/RAMPface.cpp \
   $(MZPARSER_PATH)/saxhandler.cpp \
   $(MZPARSER_PATH)/saxmzmlhandler.cpp \
+  $(MZPARSER_PATH)/saxmzxmlhandler.cpp \
   $(MZPARSER_PATH)/Czran.cpp \
   $(EXPAT_PATH)/xmlparse.c \
   $(EXPAT_PATH)/xmlrole.c \
@@ -310,6 +312,7 @@ include ./$(DEPDIR)/libmstoolkit_la-mzParser.Plo
 include ./$(DEPDIR)/libmstoolkit_la-mzp_base64.Plo
 include ./$(DEPDIR)/libmstoolkit_la-saxhandler.Plo
 include ./$(DEPDIR)/libmstoolkit_la-saxmzmlhandler.Plo
+include ./$(DEPDIR)/libmstoolkit_la-saxmzxmlhandler.Plo
 include ./$(DEPDIR)/libmstoolkit_la-sqlite3.Plo
 include ./$(DEPDIR)/libmstoolkit_la-trees.Plo
 include ./$(DEPDIR)/libmstoolkit_la-uncompr.Plo
@@ -506,6 +509,13 @@ libmstoolkit_la-saxmzmlhandler.lo: $(MZPARSER_PATH)/saxmzmlhandler.cpp
 #	source='$(MZPARSER_PATH)/saxmzmlhandler.cpp' object='libmstoolkit_la-saxmzmlhandler.lo' libtool=yes \
 #	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
 #	$(LIBTOOL) --tag=CXX --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libmstoolkit_la_CXXFLAGS) $(CXXFLAGS) -c -o libmstoolkit_la-saxmzmlhandler.lo `test -f '$(MZPARSER_PATH)/saxmzmlhandler.cpp' || echo '$(srcdir)/'`$(MZPARSER_PATH)/saxmzmlhandler.cpp
+
+libmstoolkit_la-saxmzxmlhandler.lo: $(MZPARSER_PATH)/saxmzxmlhandler.cpp
+	if $(LIBTOOL) --tag=CXX --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libmstoolkit_la_CXXFLAGS) $(CXXFLAGS) -MT libmstoolkit_la-saxmzxmlhandler.lo -MD -MP -MF "$(DEPDIR)/libmstoolkit_la-saxmzxmlhandler.Tpo" -c -o libmstoolkit_la-saxmzxmlhandler.lo `test -f '$(MZPARSER_PATH)/saxmzxmlhandler.cpp' || echo '$(srcdir)/'`$(MZPARSER_PATH)/saxmzxmlhandler.cpp; \
+	then mv -f "$(DEPDIR)/libmstoolkit_la-saxmzxmlhandler.Tpo" "$(DEPDIR)/libmstoolkit_la-saxmzxmlhandler.Plo"; else rm -f "$(DEPDIR)/libmstoolkit_la-saxmzxmlhandler.Tpo"; exit 1; fi
+#	source='$(MZPARSER_PATH)/saxmzxmlhandler.cpp' object='libmstoolkit_la-saxmzxmlhandler.lo' libtool=yes \
+#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
+#	$(LIBTOOL) --tag=CXX --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libmstoolkit_la_CXXFLAGS) $(CXXFLAGS) -c -o libmstoolkit_la-saxmzxmlhandler.lo `test -f '$(MZPARSER_PATH)/saxmzxmlhandler.cpp' || echo '$(srcdir)/'`$(MZPARSER_PATH)/saxmzxmlhandler.cpp
 
 libmstoolkit_la-Czran.lo: $(MZPARSER_PATH)/Czran.cpp
 	if $(LIBTOOL) --tag=CXX --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libmstoolkit_la_CXXFLAGS) $(CXXFLAGS) -MT libmstoolkit_la-Czran.lo -MD -MP -MF "$(DEPDIR)/libmstoolkit_la-Czran.Tpo" -c -o libmstoolkit_la-Czran.lo `test -f '$(MZPARSER_PATH)/Czran.cpp' || echo '$(srcdir)/'`$(MZPARSER_PATH)/Czran.cpp; \

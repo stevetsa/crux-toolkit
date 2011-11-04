@@ -12,7 +12,7 @@
 #include <assert.h>
 #include <ctype.h>
 #include "objects.h"
-#include "CruxSpectrum.h"
+#include "Spectrum.h"
 #include "utils.h"
 #include "mass.h"
 #include "parameter.h"
@@ -22,14 +22,14 @@
 #include <string>
 #include "DelimitedFile.h"
 #include "MatchFileReader.h"
-#include "MSToolkit/CruxSpectrum.h"
+#include "MSToolkit/include/Spectrum.h"
 
 using namespace std;
 
 /**
  * Default constructor.
  */
-CruxSpectrum::CruxSpectrum() :
+Spectrum::Spectrum() :
    first_scan_(0),
    last_scan_(0),
    precursor_mz_(0),
@@ -47,7 +47,7 @@ CruxSpectrum::CruxSpectrum() :
 /**
  * Constructor initializes spectrum with given values.
  */ 
-CruxSpectrum::CruxSpectrum
+Spectrum::Spectrum
 (int               first_scan,   ///< The number of the first scan -in
  int               last_scan,    ///< The number of the last scan -in
  FLOAT_T           precursor_mz, ///< The m/z of the precursor 
@@ -69,7 +69,7 @@ CruxSpectrum::CruxSpectrum
   mz_peak_array_ = NULL;
 
   for (unsigned int idx=0;idx<possible_z.size();idx++) {
-    CruxSpectrumZState zstate;
+    SpectrumZState zstate;
     zstate.setMZ(precursor_mz, possible_z.at(idx));
     zstates_.push_back(zstate);
   }
@@ -80,7 +80,7 @@ CruxSpectrum::CruxSpectrum
 /**
  * Default destructor.
  */
-CruxSpectrum::~CruxSpectrum()
+Spectrum::~Spectrum()
 {
   free_peak_vector(peaks_);
   
@@ -93,7 +93,7 @@ CruxSpectrum::~CruxSpectrum()
  * \returns the peak iterator that signifies the start of the peaks 
  * in the spectrum
  */
-PeakIterator CruxSpectrum::begin() {
+PeakIterator Spectrum::begin() {
 
   return peaks_.begin();
 }
@@ -102,14 +102,14 @@ PeakIterator CruxSpectrum::begin() {
  * \returns the peak iterator that signifies the end of the peaks 
  * in the spectrum
  */
-PeakIterator CruxSpectrum::end() {
+PeakIterator Spectrum::end() {
   return peaks_.end();
 }
 
 /**
  * Prints a spectrum object to file in ms2 format.
  */
-void CruxSpectrum::print(FILE* file) ///< output file to print at -out
+void Spectrum::print(FILE* file) ///< output file to print at -out
 {
   int mass_precision = get_int_parameter("mass-precision");
   fprintf(file, "S\t%06d\t%06d\t%.*f\n", 
@@ -147,8 +147,8 @@ void CruxSpectrum::print(FILE* file) ///< output file to print at -out
  * observed peaks.  Assumes intensities are in m/z bins from 0 to
  * max_mz_bin.  Only prints non-zero intensities.
  */
-void CruxSpectrum::printProcessedPeaks(
-  CruxSpectrumZState& zstate,           ///< print at this charge state
+void Spectrum::printProcessedPeaks(
+  SpectrumZState& zstate,           ///< print at this charge state
   FLOAT_T* intensities, ///< intensities of new peaks
   int max_mz_bin,       ///< num_bins in intensities
   FILE* file){          ///< print to this file
@@ -197,9 +197,9 @@ void CruxSpectrum::printProcessedPeaks(
 /**
  * Prints a spectrum object to file in xml format.
  */
-void CruxSpectrum::printXml(
+void Spectrum::printXml(
   FILE* file,           ///< output file to print at -out
-  CruxSpectrumZState& zstate,            ///< charge used for the search -in
+  SpectrumZState& zstate,            ///< charge used for the search -in
   int index              ///< used to output index to file
   ){
   int start_scan = first_scan_;
@@ -245,10 +245,10 @@ void CruxSpectrum::printXml(
 /**
  * Prints a spectrum object to file in sqt format.
  */
-void CruxSpectrum::printSqt(
+void Spectrum::printSqt(
   FILE* file,           ///< output file to print to -out
   int num_matches,      ///< number of peptides compared to this spec -in
-  CruxSpectrumZState& zstate            ///< charge used for the search -in
+  SpectrumZState& zstate            ///< charge used for the search -in
   ){
 
   fprintf(file,
@@ -269,8 +269,8 @@ void CruxSpectrum::printSqt(
 /**
  * Copy constructor.  Deep copy--allocates new peaks for peak vector.
  */
- CruxSpectrum::CruxSpectrum(
-  const CruxSpectrum& old_spectrum ///< the spectrum to take values from
+ Spectrum::Spectrum(
+  const Spectrum& old_spectrum ///< the spectrum to take values from
   ) :
  first_scan_(old_spectrum.first_scan_),
  last_scan_(old_spectrum.last_scan_),
@@ -305,12 +305,12 @@ void CruxSpectrum::printSqt(
  * Parses a spectrum from an .mgf file
  * \returns A newly allocated spectrum or NULL on error or EOF.
  */
-CruxSpectrum* CruxSpectrum::newCruxSpectrumMgf
+Spectrum* Spectrum::newSpectrumMgf
 (FILE* file, ///< the input file stream -in
  int scan_num, ///< assign the spectrum this scan number
  const char* filename) ///< filename of the spectrum
 {
-  CruxSpectrum* spectrum = new CruxSpectrum();
+  Spectrum* spectrum = new Spectrum();
   if( spectrum->parseMgf(file, scan_num, filename) ){
     return spectrum;
   } else {
@@ -324,7 +324,7 @@ CruxSpectrum* CruxSpectrum::newCruxSpectrumMgf
  * number.
  * \returns True if successfully parsed or false on error or EOF.
  */
-bool CruxSpectrum::parseMgf
+bool Spectrum::parseMgf
 (FILE* file, ///< the input file stream -in
  int scan_num, ///< scan number to give this spectrum
  const char* filename) ///< filename of the spectrum
@@ -485,7 +485,7 @@ bool CruxSpectrum::parseMgf
   }
 
   if (pepmass_found && charge_found) {
-    CruxSpectrumZState zstate;
+    SpectrumZState zstate;
     zstate.setMZ(precursor_mz_, charge);
     zstates_.push_back(zstate);
   } else {
@@ -534,13 +534,13 @@ bool CruxSpectrum::parseMgf
 
 /**
  * Parses a spectrum from an ms2 file.
- * \returns A newly allocated CruxSpectrum or NULL on error or EOF.
+ * \returns A newly allocated Spectrum or NULL on error or EOF.
  */
-CruxSpectrum* CruxSpectrum::newCruxSpectrumMs2
+Spectrum* Spectrum::newSpectrumMs2
   (FILE* file, ///< the input file stream -in
    const char* filename) ///< filename of the spectrum
 {
-  CruxSpectrum* spectrum = new CruxSpectrum();
+  Spectrum* spectrum = new Spectrum();
   if( spectrum->parseMs2(file, filename)){
     return spectrum;
   } else {
@@ -553,7 +553,7 @@ CruxSpectrum* CruxSpectrum::newCruxSpectrumMs2
  * Parses a spectrum from an ms2 file.
  * \returns True if successfully parsed or false on error or EOF.
  */
-bool CruxSpectrum::parseMs2
+bool Spectrum::parseMs2
   (FILE* file, ///< the input file stream -in
    const char* filename) ///< filename of the spectrum
 {
@@ -705,7 +705,7 @@ bool CruxSpectrum::parseMs2
  * \returns true if success. false is failure.
  * 
  */
-bool CruxSpectrum::parseSLine
+bool Spectrum::parseSLine
   (char* line, ///< 'S' line to parse -in
    int buf_length ///< line length -in
    )
@@ -786,7 +786,7 @@ bool CruxSpectrum::parseSLine
  * \returns TRUE if success. FALSE is failure.
  * 
  */
-bool CruxSpectrum::parseZLine(char* line)  ///< 'Z' line to parse -in
+bool Spectrum::parseZLine(char* line)  ///< 'Z' line to parse -in
 {
   int tokens;
   char line_name;
@@ -825,7 +825,7 @@ bool CruxSpectrum::parseZLine(char* line)  ///< 'Z' line to parse -in
    }  
 
 
-  CruxSpectrumZState zstate;
+  SpectrumZState zstate;
   zstate.setSinglyChargedMass(m_h_plus, charge);
 
   zstates_.push_back(zstate);
@@ -841,7 +841,7 @@ bool CruxSpectrum::parseZLine(char* line)  ///< 'Z' line to parse -in
  * Parses the 'D' line of the a spectrum
  * \returns TRUE if success. FALSE is failure.
  */
-bool CruxSpectrum::parseDLine(char* line)  ///< 'D' line to parse -in 
+bool Spectrum::parseDLine(char* line)  ///< 'D' line to parse -in 
 {
   string d_line = line;
   d_lines_v_.push_back(d_line);
@@ -853,7 +853,7 @@ bool CruxSpectrum::parseDLine(char* line)  ///< 'D' line to parse -in
  * Parses the 'I' line of the a spectrum
  * \returns TRUE if success. FALSE is failure.
  */
-bool CruxSpectrum::parseILine(char* line)  ///< 'I' line to parse -in
+bool Spectrum::parseILine(char* line)  ///< 'I' line to parse -in
 {
    string line_str(line);
    // remove the newline (windows or unix style)
@@ -873,7 +873,7 @@ bool CruxSpectrum::parseILine(char* line)  ///< 'I' line to parse -in
  * \returns TRUE if success. FALSE is failure.
  * 
  */
-bool CruxSpectrum::parseEZLine(string line_str) ///< 'EZ' line to parse -in
+bool Spectrum::parseEZLine(string line_str) ///< 'EZ' line to parse -in
 {
 
   vector<string> tokens;
@@ -903,7 +903,7 @@ bool CruxSpectrum::parseEZLine(string line_str) ///< 'EZ' line to parse -in
   carp(CARP_DETAILED_DEBUG, "EZLine-RTime:%f", rtime);
   carp(CARP_DETAILED_DEBUG, "EZLine-Area:%f", area);
 
-  CruxSpectrumZState ezstate;
+  SpectrumZState ezstate;
   ezstate.setSinglyChargedMass(m_h_plus, charge);
   ezstate.setRTime(rtime);
   ezstate.setArea(area);
@@ -916,11 +916,11 @@ bool CruxSpectrum::parseEZLine(string line_str) ///< 'EZ' line to parse -in
 
 
 /**
- * Transfer values from an MSToolkit spectrum to the crux CruxSpectrum.
+ * Transfer values from an MSToolkit spectrum to the crux Spectrum.
  * \returns TRUE if success. FALSE is failure.
  */
-bool CruxSpectrum::parseMstoolkitCruxSpectrum
-  (MSToolkit::CruxSpectrum* mst_spectrum, ///< the input MSToolkit spectrum -in
+bool Spectrum::parseMstoolkitSpectrum
+  (MSToolkit::Spectrum* mst_spectrum, ///< the input MSToolkit spectrum -in
   const char* filename ///< filename of the spectrum
   ) {
 
@@ -932,7 +932,7 @@ bool CruxSpectrum::parseMstoolkitCruxSpectrum
   d_lines_v_.clear();
   if( mz_peak_array_ ){ delete [] mz_peak_array_; }
 
-  MSToolkit::CruxSpectrum* mst_real_spectrum = (MSToolkit::CruxSpectrum*)mst_spectrum;
+  MSToolkit::Spectrum* mst_real_spectrum = (MSToolkit::Spectrum*)mst_spectrum;
 
   //set first_scan, last_scan, and precursor_mz.
   first_scan_ = mst_real_spectrum->getScanNumber();
@@ -951,7 +951,7 @@ bool CruxSpectrum::parseMstoolkitCruxSpectrum
   //add possible charge states.
   if(  mst_real_spectrum->sizeZ() > 0 ){
     for (int z_idx = 0; z_idx < mst_real_spectrum -> sizeZ(); z_idx++) {
-      CruxSpectrumZState zstate;
+      SpectrumZState zstate;
       zstate.setSinglyChargedMass(
         mst_real_spectrum->atZ(z_idx).mz,
         mst_real_spectrum->atZ(z_idx).z);
@@ -963,12 +963,12 @@ bool CruxSpectrum::parseMstoolkitCruxSpectrum
     // add either +1 or +2, +3
     
     if( charge == 1 ){
-      CruxSpectrumZState zstate;
+      SpectrumZState zstate;
       zstate.setMZ(precursor_mz_, 1);
       zstates_.push_back(zstate);
 
     } else if( charge == 0 ){
-      CruxSpectrumZState zstate;
+      SpectrumZState zstate;
       zstate.setMZ(precursor_mz_, 2);
       zstates_.push_back(zstate);
       zstate.setMZ(precursor_mz_, 3);
@@ -986,7 +986,7 @@ bool CruxSpectrum::parseMstoolkitCruxSpectrum
  * Adds a peak to the spectrum given a intensity and location
  * calls update_spectrum_fields to update num_peaks, min_peak ...
  */
-bool CruxSpectrum::addPeak
+bool Spectrum::addPeak
 ( FLOAT_T intensity, ///< the intensity of peak to add -in
   FLOAT_T location_mz ///< the location of peak to add -in
   )
@@ -1004,10 +1004,10 @@ bool CruxSpectrum::addPeak
 
 /**
  * Creates and fills mz_peak_array_, the array of pointers to peaks
- * in the CruxSpectrum's vector of peaks.  Peaks in the array are
+ * in the Spectrum's vector of peaks.  Peaks in the array are
  * indexed by ???
  */
-void CruxSpectrum::populateMzPeakArray()
+void Spectrum::populateMzPeakArray()
 {
   if (has_mz_peak_array_ == true){
     return;
@@ -1041,7 +1041,7 @@ void CruxSpectrum::populateMzPeakArray()
  * spectrum object that it needs.
  * TODO: reimplement with faster peak lookup
  */
-Peak * CruxSpectrum::getNearestPeak(
+Peak * Spectrum::getNearestPeak(
   FLOAT_T mz, ///< the mz of the peak around which to sum intensities -in
   FLOAT_T max ///< the maximum distance to get intensity -in
   )
@@ -1078,7 +1078,7 @@ Peak * CruxSpectrum::getNearestPeak(
 /**
  * Updates num_peaks, min_peak_mz, max_peak_mz, total_energy.
  */
-void CruxSpectrum::updateFields(
+void Spectrum::updateFields(
   FLOAT_T intensity, ///< the intensity of the peak that has been added -in
   FLOAT_T location ///< the location of the peak that has been added -in
   )
@@ -1099,7 +1099,7 @@ void CruxSpectrum::updateFields(
 /**
  * \returns The number of the first scan.
  */
-int CruxSpectrum::getFirstScan()
+int Spectrum::getFirstScan()
 {
   return first_scan_;
 }
@@ -1107,7 +1107,7 @@ int CruxSpectrum::getFirstScan()
 /**
  * \returns The number of the last scan.
  */
-int CruxSpectrum::getLastScan()
+int Spectrum::getLastScan()
 {
   return last_scan_;
 }
@@ -1115,7 +1115,7 @@ int CruxSpectrum::getLastScan()
 /**
  * \returns The m/z of the precursor.
  */
-FLOAT_T CruxSpectrum::getPrecursorMz()
+FLOAT_T Spectrum::getPrecursorMz()
 {
   return precursor_mz_;
 }
@@ -1123,7 +1123,7 @@ FLOAT_T CruxSpectrum::getPrecursorMz()
 /**
  * \returns The minimum m/z of all peaks.
  */
-FLOAT_T CruxSpectrum::getMinPeakMz()
+FLOAT_T Spectrum::getMinPeakMz()
 {
   return min_peak_mz_;
 }
@@ -1131,7 +1131,7 @@ FLOAT_T CruxSpectrum::getMinPeakMz()
 /**
  * \returns The maximum m/z of all peaks.
  */
-FLOAT_T CruxSpectrum::getMaxPeakMz()
+FLOAT_T Spectrum::getMaxPeakMz()
 {
   return max_peak_mz_;
 }
@@ -1139,7 +1139,7 @@ FLOAT_T CruxSpectrum::getMaxPeakMz()
 /**
  * \returns The number of peaks.
  */
-int CruxSpectrum::getNumPeaks()
+int Spectrum::getNumPeaks()
 {
   return (int)peaks_.size();
 }
@@ -1148,7 +1148,7 @@ int CruxSpectrum::getNumPeaks()
 /**
  * \returns The sum of intensities in all peaks.
  */
-double CruxSpectrum::getTotalEnergy()
+double Spectrum::getTotalEnergy()
 {
   return total_energy_;
 }
@@ -1157,7 +1157,7 @@ double CruxSpectrum::getTotalEnergy()
  * \returns A read-only reference to the vector of possible chare
  * states for this spectrum.  If EZ states are available, return those.
  */
-const vector<CruxSpectrumZState>& CruxSpectrum::getZStates() {
+const vector<SpectrumZState>& Spectrum::getZStates() {
   if (ezstates_.size() != 0) {
     return ezstates_;
   } else {
@@ -1172,9 +1172,9 @@ const vector<CruxSpectrumZState>& CruxSpectrum::getZStates() {
  *  spectrum: all of them or the one selected by the parameter.
  * /returns A vector of charge states to consider for this spectrum.
  */ 
-vector<CruxSpectrumZState> CruxSpectrum::getZStatesToSearch() {
+vector<SpectrumZState> Spectrum::getZStatesToSearch() {
 
-  vector<CruxSpectrumZState> select_zstates;
+  vector<SpectrumZState> select_zstates;
   const char* charge_str = get_string_parameter_pointer("spectrum-charge");
 
   
@@ -1203,7 +1203,7 @@ vector<CruxSpectrumZState> CruxSpectrum::getZStatesToSearch() {
 /**
  * \returns the ZState at the requested index
  */
-const CruxSpectrumZState& CruxSpectrum::getZState(
+const SpectrumZState& Spectrum::getZState(
   int idx ///< the zstate index
 ) {
   return getZStates().at(idx);
@@ -1213,14 +1213,14 @@ const CruxSpectrumZState& CruxSpectrum::getZState(
 /**
  * \returns The number of possible charge states of this spectrum.
  */
-unsigned int CruxSpectrum::getNumZStates() {
+unsigned int Spectrum::getNumZStates() {
   return getZStates().size();
 }
 
 /**
  * \returns The intensity of the peak with the maximum intensity.
  */
-FLOAT_T CruxSpectrum::getMaxPeakIntensity()
+FLOAT_T Spectrum::getMaxPeakIntensity()
 {
   FLOAT_T max_intensity = -1;
 
@@ -1237,11 +1237,11 @@ FLOAT_T CruxSpectrum::getMaxPeakIntensity()
  * Parse the spectrum from the tab-delimited result file.
  *\returns The parsed spectrum, else returns NULL for failed parse.
  */
-CruxSpectrum* CruxSpectrum::parseTabDelimited(
+Spectrum* Spectrum::parseTabDelimited(
   MatchFileReader& file ///< output stream -out
   ) {
 
-  CruxSpectrum* spectrum = new CruxSpectrum();
+  Spectrum* spectrum = new Spectrum();
 
   spectrum->first_scan_ = file.getInteger(SCAN_COL);
   spectrum->last_scan_ = spectrum->first_scan_;
@@ -1253,7 +1253,7 @@ CruxSpectrum* CruxSpectrum::parseTabDelimited(
 
   FLOAT_T neutral_mass = file.getFloat(SPECTRUM_NEUTRAL_MASS_COL);
   
-  CruxSpectrumZState zstate;
+  SpectrumZState zstate;
 
   zstate.setNeutralMass(neutral_mass, charge);
 
@@ -1276,7 +1276,7 @@ CruxSpectrum* CruxSpectrum::parseTabDelimited(
 /**
  * Normalize peak intensities so that they sum to unity.
  */
-void CruxSpectrum::sumNormalize()
+void Spectrum::sumNormalize()
 {
   for(int peak_idx = 0; peak_idx < (int)peaks_.size(); peak_idx++){
     Peak * peak = peaks_[peak_idx];
@@ -1288,7 +1288,7 @@ void CruxSpectrum::sumNormalize()
 /**
  * Populate peaks with rank information.
  */
-void CruxSpectrum::rankPeaks()
+void Spectrum::rankPeaks()
 {
   sort_peaks(peaks_, _PEAK_INTENSITY);
   sorted_by_intensity_ = true;

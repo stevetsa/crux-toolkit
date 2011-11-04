@@ -7,7 +7,7 @@
 #include "MS2SpectrumCollection.h" 
 #include "crux-utils.h"
 #include "parameter.h"
-#include "CruxSpectrum.h"
+#include "Spectrum.h"
 
 /**
  * Instantiates a new spectrum_collection object from a filename. 

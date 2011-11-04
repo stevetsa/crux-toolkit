@@ -1,7 +1,7 @@
 #include "xhhc_scorer.h"
 #include "xhhc.h"
 
-#include "CruxSpectrum.h"
+#include "Spectrum.h"
 
 #include <fstream>
 
