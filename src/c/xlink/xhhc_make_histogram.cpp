@@ -184,8 +184,8 @@ int main(int argc, char** argv) {
 
   CruxSpectrum* spectrum = new CruxSpectrum();
   SpectrumCollection* collection = SpectrumCollectionFactory::create(ms2_file);
-  //SCORER_T* scorer = new_scorer(XCORR);
-  Scorer xhhc_scorer;
+
+  XHHC_Scorer xhhc_scorer;
   if(!collection->getSpectrum(scan_num, spectrum)){
     carp(CARP_ERROR, "failed to find spectrum with  scan_num: %d", scan_num);
     delete collection;
@@ -197,7 +197,7 @@ int main(int argc, char** argv) {
   // Pragya's open modification method
   if (open_modification) {
   FLOAT_T mod_mass;
-    SCORER_T* scorer = new_scorer(XCORR);
+    Scorer* scorer = new Scorer(XCORR);
     IonSeries* ion_series = NULL; 
     IonConstraint* ion_constraint = 
 	IonConstraint::newIonConstraintSequestXcorr(charge);
@@ -206,12 +206,12 @@ int main(int argc, char** argv) {
     // for every precursor in the mass window
     for (vector<LinkedPeptide>::iterator ion = filtered_ions.begin(); ion != filtered_ions.end(); ++ion) {
       if (ion->size() == 2) {
-	vector<Peptide> peptides = ion->peptides();
+	vector<XHHC_Peptide> peptides = ion->peptides();
 	// score the first peptide with modification of second peptide	
         mod_mass = linker_mass + peptides[1].mass(MONO);	
 	ion_series = new IonSeries((char*)peptides[0].sequence().c_str(), ion->charge(), ion_constraint);
 	hhc_predict_ions(ion_series, mod_mass, peptides[0].link_site());
-	score = score_spectrum_v_ion_series(scorer, spectrum, ion_series);
+	score = scorer->scoreSpectrumVIonSeries(spectrum, ion_series);
 	//score = xhhc_scorer.score_spectrum_vs_series(spectrum, ion_series);
         ss.str("");
 	ss << peptides[0].sequence() << " mod " << peptides[1].sequence() << ", " << peptides[0].link_site();
@@ -221,7 +221,7 @@ int main(int argc, char** argv) {
 	ion_series = new IonSeries((char*)peptides[1].sequence().c_str(), ion->charge(), ion_constraint);
 	hhc_predict_ions(ion_series, mod_mass, peptides[1].link_site());
         //score = xhhc_scorer.score_spectrum_vs_series(spectrum, ion_series);
-	score = score_spectrum_v_ion_series(scorer, spectrum, ion_series);
+	score = scorer->scoreSpectrumVIonSeries(spectrum, ion_series);
 	ss.str("");
 	ss << peptides[1].sequence() << " mod " << peptides[0].sequence() << ", " << peptides[1].link_site();
         scores.insert(make_pair(score, ss.str()));
@@ -245,7 +245,7 @@ int main(int argc, char** argv) {
     for (vector<LinkedPeptide>::iterator ion = filtered_ions.begin(); ion != filtered_ions.end(); ++ion) {
       ion_series.clear();
       ion_series.add_linked_ions(*ion);
-      score = xhhc_scorer.score_spectrum_vs_series(spectrum, ion_series);
+      score = xhhc_scorer.scoreSpectrumVsSeries(spectrum, ion_series);
      //score = hhc_score_spectrum_v_ion_series(scorer, spectrum, ion_series);
       scores.push_back(make_pair(score, *ion));
     }
@@ -279,8 +279,8 @@ void plot_weibull(vector<pair<FLOAT_T, LinkedPeptide> >& scores,
   int num_targets = 0;
   int num_decoys = 0;
 
-  FLOAT_T decoy_scores_array[num_scores];
-  FLOAT_T target_scores_array[num_scores];
+  FLOAT_T* decoy_scores_array = new FLOAT_T[num_scores];
+  FLOAT_T* target_scores_array = new FLOAT_T[num_scores];
 
   for (vector<pair<FLOAT_T, LinkedPeptide> >::iterator score_pair = scores.begin();
 	score_pair != scores.end(); ++score_pair) {
@@ -321,6 +321,9 @@ void plot_weibull(vector<pair<FLOAT_T, LinkedPeptide> >& scores,
 	* exp(- pow((x+shift_decoy)/eta_decoy, beta_decoy));
       decoy_fit_file << x << "\t" << y << endl;
   }
+
+  delete target_scores_array;
+  delete decoy_scores_array;
 
   cout << "target correlation " << correlation_target << " <br>" << endl;
   cout << "decoy correlation " << correlation_decoy << " <br>" << endl;

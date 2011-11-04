@@ -16,7 +16,7 @@ int main(int argc, char** argv) {
   int posB = 0;
   FLOAT_T linker_mass = 0;
   int charge = 1; 
-  BOOLEAN_T print_spectrum = FALSE;
+  bool print_spectrum = false;
 
 
   /* Verbosity level for set-up/command line reading */
@@ -27,7 +27,7 @@ int main(int argc, char** argv) {
   const char* option_list[NUM_OPTIONS] = {
     "verbosity",
     "version",
-    "xcorr-use-flanks",
+    "use-flanking-peaks",
     "print-theoretical-spectrum"
   };
 
@@ -96,7 +96,7 @@ int main(int argc, char** argv) {
     carp(CARP_INFO,"writing theoretical spectrum");
     map<int, FLOAT_T> theoretical;
 
-    Scorer::xlink_create_map_theoretical(ion_series,
+    XHHC_Scorer::xlinkCreateMapTheoretical(ion_series,
 					 theoretical);
 
 

@@ -23,6 +23,7 @@
 #include "utils.h"
 #include "objects.h"
 #include "Peak.h"
+#include "Index.h"
 
 #include "CruxApplication.h"
 
@@ -32,7 +33,7 @@ using namespace std;
 /**
  * The number of features used to represent a PSM for Percolator or q-ranker.
  */
-const unsigned int NUM_FEATURES = 20;
+const unsigned int NUM_FEATURES = 16;
 
 /**
  *\returns a heap copy of the given string
@@ -62,7 +63,7 @@ int compare_float(FLOAT_T float_a, FLOAT_T float_b);
  * precision is 2, a and b must be equal when rounded to two decimal
  * places.
  */
-BOOLEAN_T is_equal(FLOAT_T a, FLOAT_T b, int precision);
+bool is_equal(FLOAT_T a, FLOAT_T b, int precision);
 
 /**
  * \brief Parses the filename and path of given string.
@@ -147,7 +148,7 @@ char* get_full_filename(const char* path, const char* filename);
 /**
  *\returns TRUE if float_a is between the interaval of min and max, else FALSE
  */
-inline BOOLEAN_T compare_float_three(FLOAT_T float_a, FLOAT_T min, FLOAT_T max);
+inline bool compare_float_three(FLOAT_T float_a, FLOAT_T min, FLOAT_T max);
 
 /**
  * returns the file size of the given filename
@@ -165,7 +166,7 @@ long get_filesize(char *FileName);
 */
 int create_output_directory(
   const char *output_folder, // Name of output folder.
-  BOOLEAN_T overwrite  // Whether or not to overwrite an existing dir 
+  bool overwrite  // Whether or not to overwrite an existing dir 
 ); 
 
 /**
@@ -173,14 +174,14 @@ int create_output_directory(
  * Returns TRUE if a directory, FALSE otherwise.
  * Terminates program if unable to determine status of file.
  */
-BOOLEAN_T is_directory(const char *FileName);
+bool is_directory(const char *FileName);
 
 /**
  * deletes a given directory and it's files inside.
  * assumes that there's no sub directories, only files
  * \returns TRUE if successfully deleted directory
  */
-BOOLEAN_T delete_dir(char* dir);
+bool delete_dir(char* dir);
 
 /**
  * given a fasta_file name it returns a name with the name_tag add to the end
@@ -192,6 +193,21 @@ char* generate_name(
   const char* name_tag,
   const char* file_extension,
   const char* suffix
+  );
+/**
+ * \brief Take a filename, strip its leading path information (if
+ * any) and file extension (if any).  Tries all file extensions until
+ * one is found.  Add a new path (if given) and a new suffix (exension).
+ *
+ * If given ../dir/filename.ext, [.txt, .ext, t], .new-ext, otherdir
+ * would return  otherdir/filename.new-ext 
+ * \returns A heap allocated filename
+ */
+char* generate_name_path(
+  const char* filename,
+  vector<const char*> old_suffixes,
+  const char* new_suffix,
+  const char* new_path
   );
 
 /**
@@ -221,14 +237,14 @@ char* generate_name_path(
 FILE* create_file_in_path(
   const char* filename,  ///< the filename to create & open -in
   const char* directory,  ///< the directory to open the file in -in
-  BOOLEAN_T overwrite  ///< replace the file (T) or die if exists (F)
+  bool overwrite  ///< replace the file (T) or die if exists (F)
   );
 
 /**
  * check if the string has the correct suffix
  * \returns TRUE, if the string starts with the suffix, else FALSE
  */
-BOOLEAN_T prefix_compare(
+bool prefix_compare(
   const char* string, ///< The string to compare -in
   const char* prefix  ///< The prefix to find in the string -in
   );
@@ -237,7 +253,7 @@ BOOLEAN_T prefix_compare(
  * check if the string has the correct suffix
  * \returns TRUE, if the string starts with the suffix, else FALSE
  */
-BOOLEAN_T suffix_compare(
+bool suffix_compare(
   const char* string, ///< The string to compare -in
   const char* suffix  ///< The suffix to find in the string -in
   );
@@ -246,7 +262,7 @@ BOOLEAN_T suffix_compare(
  * checks if each AA is an AA
  *\returns TRUE if sequence is valid else, FALSE
  */
-BOOLEAN_T valid_peptide_sequence(const char* sequence);
+bool valid_peptide_sequence(const char* sequence);
 
 /**
  * quickSort for FLOAT_Ts
@@ -254,10 +270,44 @@ BOOLEAN_T valid_peptide_sequence(const char* sequence);
 void quicksort(FLOAT_T numbers[], int array_size);
 
 /**
+ * User define our upper and our lower bounds.
+ * The random number will always be 
+ * between low and high, inclusive.
+ * There is no seeding in this function, user must do it for themselves
+ *\returns a random number between the interval user provides
+ */
+int get_random_number_interval(
+  int low, ///< the number for lower bound -in
+  int high ///< the number for higher bound -in
+  );
+
+/**
  * \brief Shuffle an array of FLOAT_Ts.  Uses the Knuth algorithm.  Uses
  * get_random_number_interval() to generate random numbers. 
  */
 void shuffle_floats(FLOAT_T* array, int size);
+
+/**
+ * \brief Shuffles an array of elements.  Uses the Knuth algorithm.  Uses
+ * get_random_number_interval() to generate random numbers. 
+ */
+template<typename T>
+void shuffle_array(T* array, int size){
+  if( array == NULL ){
+    carp(CARP_ERROR, "Cannot shuffle NULL array.");
+    return;
+  }
+
+  int idx, switch_idx;
+  int last_element_idx = size - 1;
+  T temp_value;
+  for(idx=0; idx < size; idx++){
+    switch_idx = get_random_number_interval(idx, last_element_idx);
+    temp_value = array[idx];
+    array[idx] = array[switch_idx];
+    array[switch_idx] = temp_value;
+  }
+}
 
 /**
  * \brief Comparison function for reverse sorting floats.
@@ -278,18 +328,6 @@ char** generate_feature_name_array();
  */
 int get_number_digits(
   int number ///< the number to count digits
-  );
-
-/**
- * User define our upper and our lower bounds.
- * The random number will always be 
- * between low and high, inclusive.
- * There is no seeding in this function, user must do it for themselves
- *\returns a random number between the interval user provides
- */
-int get_random_number_interval(
-  int low, ///< the number for lower bound -in
-  int high ///< the number for higher bound -in
   );
 
 /**
@@ -326,18 +364,14 @@ void fit_two_parameter_weibull(
     FLOAT_T* correlation ///< the best correlation -out
     );
 
-BOOLEAN_T string_to_mass_type(char*, MASS_TYPE_T*);
-BOOLEAN_T mass_type_to_string(MASS_TYPE_T, char*);
-//BOOLEAN_T string_to_peptide_type(char*, PEPTIDE_TYPE_T*);
-//BOOLEAN_T peptide_type_to_string(PEPTIDE_TYPE_T type, char* type_str);
-BOOLEAN_T string_to_sort_type(char*, SORT_TYPE_T*);
-BOOLEAN_T sort_type_to_string(SORT_TYPE_T, char*);
-BOOLEAN_T string_to_algorithm_type(char*, ALGORITHM_TYPE_T*);
-BOOLEAN_T algorithm_type_to_string(ALGORITHM_TYPE_T, char*);
-BOOLEAN_T string_to_scorer_type(char*, SCORER_TYPE_T*);
-BOOLEAN_T scorer_type_to_string(SCORER_TYPE_T, char*);
-BOOLEAN_T string_to_ion_type(char* , ION_TYPE_T*);
-BOOLEAN_T ion_type_to_string(ION_TYPE_T, char*);
+bool string_to_mass_type(char*, MASS_TYPE_T*);
+bool mass_type_to_string(MASS_TYPE_T, char*);
+bool string_to_algorithm_type(char*, ALGORITHM_TYPE_T*);
+bool algorithm_type_to_string(ALGORITHM_TYPE_T, char*);
+bool string_to_scorer_type(char*, SCORER_TYPE_T*);
+bool scorer_type_to_string(SCORER_TYPE_T, char*);
+bool string_to_ion_type(char* , ION_TYPE_T*);
+bool ion_type_to_string(ION_TYPE_T, char*);
 
 // new style of type_to_string and string_to_type functions
 // requires an invalid value for each enum
@@ -355,6 +389,8 @@ QUANT_LEVEL_TYPE_T string_to_quant_level_type(char* name);
 char * quant_level_type_to_string(QUANT_LEVEL_TYPE_T type);
 COLTYPE_T string_to_column_type(char* name);
 COMPARISON_T string_to_comparison(char* name);
+DECOY_TYPE_T string_to_decoy_type(const char* name);
+char* decoy_type_to_string(DECOY_TYPE_T type);
 
 /**
  * \brief Open either the index or fasta file and prepare it for
@@ -363,8 +399,8 @@ COMPARISON_T string_to_comparison(char* name);
  */
 int prepare_protein_input(
   char* input_file,      ///< name of the fasta file or index directory
-  INDEX_T** index,       ///< return new index here OR
-  DATABASE_T** database);///< return new fasta database here
+  Index** index,       ///< return new index here OR
+  Database** database);///< return new fasta database here
 
 /**
  *  Read the string of the form <first>-<last> and returns <first>
@@ -396,6 +432,14 @@ void strcat_formatted
  const char* lead_string,        // Appears at the start of each line.
  const char* extension           // Text to add.
  );
+
+/**
+ * Check parameter values for what kind of decoys are requested.  Make
+ * sure it is compatible with other search parameters and fail if not.  
+ * \returns Zero if no decoys are searched, one if there are decoys
+ * with an index search, or num-decoys-per-target for a fasta search.
+ */
+int get_num_decoys(bool have_index);
 
 
 #endif

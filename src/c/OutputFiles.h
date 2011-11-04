@@ -20,7 +20,7 @@
 #include "carp.h"
 #include "parameter.h"
 #include "objects.h"
-#include "match_collection.h"
+#include "MatchCollection.h"
 #include "MatchFileWriter.h"
 
 class OutputFiles{
@@ -29,17 +29,17 @@ class OutputFiles{
   OutputFiles(CruxApplication* application);///< command printing files
 
   ~OutputFiles();
-  void writeHeaders(int num_proteins = 0);
+  void writeHeaders(int num_proteins = 0, bool isMixedTargetDecoy = false);
   void writeHeaders(const std::vector<bool>& add_this_col);
   void writeFeatureHeader(char** feature_names = NULL,
                           int num_names = 0);
   void writeFooters();
-  void writeMatches(MATCH_COLLECTION_T* matches,
-                    std::vector<MATCH_COLLECTION_T*>& decoy_matches_array,
+  void writeMatches(MatchCollection* matches,
+                    std::vector<MatchCollection*>& decoy_matches_array,
                     SCORER_TYPE_T rank_type = XCORR,
                     Spectrum* spectrum = NULL);
-  void writeMatches(MATCH_COLLECTION_T* matches);
-  void writeMatchFeatures(MATCH_T* match, 
+  void writeMatches(MatchCollection* matches);
+  void writeMatchFeatures(Match* match, 
                           double* features,
                           int num_features);
   void writeRankedProteins(ProteinToScore& proteinToScore,
@@ -73,22 +73,22 @@ class OutputFiles{
   void makeTargetDecoyList();
 
   void printMatchesXml(
-                       MATCH_COLLECTION_T* target_matches,
-                       vector<MATCH_COLLECTION_T*>& decoy_matches_array,
+                       MatchCollection* target_matches,
+                       vector<MatchCollection*>& decoy_matches_array,
                        Spectrum* spectrum,
                        SCORER_TYPE_T rank_type);
  
 
   void printMatchesTab(
-    MATCH_COLLECTION_T*  target_matches, ///< from real peptides
-    std::vector<MATCH_COLLECTION_T*>& decoy_matches_array,  
+    MatchCollection*  target_matches, ///< from real peptides
+    std::vector<MatchCollection*>& decoy_matches_array,  
                            ///< array of collections from shuffled peptides
     SCORER_TYPE_T rank_type,
     Spectrum* spectrum = NULL);
 
   void printMatchesSqt(
-    MATCH_COLLECTION_T*  target_matches, ///< from real peptides
-    std::vector<MATCH_COLLECTION_T*>& decoy_matches_array,  
+    MatchCollection*  target_matches, ///< from real peptides
+    std::vector<MatchCollection*>& decoy_matches_array,  
                            ///< array of collections from shuffled peptides
   Spectrum* spectrum = NULL);
 

@@ -2,6 +2,7 @@
  * \file CreateIndex.cpp 
  * ORIGINAL AUTHOR: Chris Park
  * CRUX APPLICATION CONVERSION: Sean McIlwain
+ * Missed-cleavage Conversion: Kha Nguyen
  * \brief Given a protein fasta sequence database as input, generate
  * crux_index files that contain list of peptides in the database that
  * meet certain criteria (e.g. mass, length, trypticity) as output.
@@ -42,9 +43,9 @@ int CreateIndex::main(int argc, char** argv) {
   int missed_cleavages; 
 
   double mass_range;
-  PEPTIDE_CONSTRAINT_T* constraint;
+  PeptideConstraint* constraint;
   char* in_file = NULL;
-  INDEX_T* crux_index;
+  Index* crux_index;
   char* binary_fasta_file = NULL;
 
   /* Define optional command line arguments */ 
@@ -61,7 +62,8 @@ int CreateIndex::main(int argc, char** argv) {
     "custom-enzyme", 
     "digestion", 
     "missed-cleavages",
-    "peptide-list"
+    "peptide-list",
+    "decoys"
   };
   int num_options = sizeof(option_list) / sizeof(char*);
 
@@ -94,13 +96,14 @@ int CreateIndex::main(int argc, char** argv) {
   min_length = get_int_parameter("min-length");
   max_length = get_int_parameter("max-length");
 
-  missed_cleavages = get_boolean_parameter("missed-cleavages");
+  missed_cleavages = get_int_parameter("missed-cleavages");
   enzyme = get_enzyme_type_parameter("enzyme");
   digest = get_digest_type_parameter("digestion");
   mass_type = get_mass_type_parameter("isotopic-mass");
+  DECOY_TYPE_T decoys = get_decoy_type_parameter("decoys");
 
   /* create peptide constraint */
-  constraint = new_peptide_constraint(enzyme, digest, min_mass, max_mass, 
+  constraint = new PeptideConstraint(enzyme, digest, min_mass, max_mass, 
                                       min_length, max_length, 
                                       missed_cleavages, mass_type);
   
@@ -116,38 +119,34 @@ int CreateIndex::main(int argc, char** argv) {
      fail if --overwrite is false */
   char* out_dir = get_string_parameter("index name");
   carp(CARP_DEBUG, "New index name is '%s'", out_dir);
-  BOOLEAN_T overwrite = get_boolean_parameter("overwrite");
+  bool overwrite = get_boolean_parameter("overwrite");
   if( (!overwrite) && (chdir(out_dir) == 0)){
       carp(CARP_FATAL, "Index '%s' already exists. Use " \
            "--overwrite T to replace.", out_dir);
   }
 
   /* create new index object */
-  crux_index = new_index(in_file,
+  crux_index = new Index(in_file,
                          out_dir,
                          constraint,
-                         mass_range
+                         mass_range,
+                         decoys
                          );
   
   /* create crux_index files */
-  if(!create_index(crux_index,
-                   get_boolean_parameter("peptide-list"))){
+  if(!crux_index->create(get_boolean_parameter("peptide-list"))){
     carp(CARP_FATAL, "Failed to create index");
   }
   
   /* free index(frees constraint together) */
-  free_index(crux_index);     
+  Index::free(crux_index);
+     
   free(binary_fasta_file);
   free(out_dir);
   free(in_file);
   free_parameters();
 
-  /* successfull exit message */
-  //carp(CARP_INFO, "crux-create-index finished.");
-
   return 0;
-
-
 
 }
 

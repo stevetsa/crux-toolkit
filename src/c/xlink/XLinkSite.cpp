@@ -53,7 +53,7 @@ XLinkSite::~XLinkSite() {
  * \returns whether the peptide contains this site at the supplied sequence index.
  */
 bool XLinkSite::hasSite(
-  PEPTIDE_T* peptide, ///<peptide object pointer 
+  Peptide* peptide, ///<peptide object pointer 
   int idx             ///<sequence index
   ) const {
   
@@ -61,13 +61,13 @@ bool XLinkSite::hasSite(
     case XLINKSITE_NTERM:
       if (idx == 0) {
         
-        PEPTIDE_SRC_T* src = get_peptide_peptide_src(peptide);
+        PeptideSrc* src = peptide->getPeptideSrc();
         while (src != NULL) {
-          carp(CARP_DEBUG,"nterm peptide start_idx:%d",get_peptide_src_start_idx(src));
-          if (get_peptide_src_start_idx(src) == 1) {
+          carp(CARP_DEBUG,"nterm peptide start_idx:%d",src->getStartIdx());
+          if (src->getStartIdx() == 1) {
             return true;
           }
-          src = get_peptide_src_next_association(src);
+          src = src->getNextAssociation();
         }
       }
       return false;
@@ -76,7 +76,7 @@ bool XLinkSite::hasSite(
       return true;
       break;
     case XLINKSITE_AA:
-      return get_peptide_sequence_pointer(peptide)[idx] == aa_;
+      return peptide->getSequencePointer()[idx] == aa_;
       break;
     case XLINKSITE_UNKNOWN:
     default:

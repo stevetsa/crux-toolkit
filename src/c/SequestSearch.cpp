@@ -16,6 +16,7 @@
 #include "FilteredSpectrumChargeIterator.h"
 #include "SearchProgress.h"
 #include "SpectrumCollectionFactory.h"
+#include "ModifiedPeptidesIterator.h"
 
 using namespace std;
 
@@ -61,6 +62,7 @@ int SequestSearch::main(int argc,   ///< number of cmd line tokens
     "output-dir",
     "scan-number",
     "fileroot",
+    "decoys",
     "num-decoys-per-target",
     "decoy-location"
   };
@@ -77,8 +79,8 @@ int SequestSearch::main(int argc,   ///< number of cmd line tokens
   char* input_file = get_string_parameter("protein database");
 
   // Prepare input, fasta or index 
-  INDEX_T* index = NULL;
-  DATABASE_T* database = NULL;
+  Index* index = NULL;
+  Database* database = NULL;
   int num_proteins = prepare_protein_input(input_file, &index, &database); 
   free(input_file);
 
@@ -104,13 +106,14 @@ int SequestSearch::main(int argc,   ///< number of cmd line tokens
 
   // Prepare output files 
   
+  bool combine_target_decoy = get_boolean_parameter("tdc");
   OutputFiles output_files(this); 
-  output_files.writeHeaders(num_proteins);
+  output_files.writeHeaders(num_proteins, combine_target_decoy);
 
   // get search parameters for match_collection
-  BOOLEAN_T combine_target_decoy = get_boolean_parameter("tdc");
   int num_decoy_files = get_int_parameter("num-decoy-files");
-  int num_decoys_per_target = get_int_parameter("num-decoys-per-target");
+  bool have_index = (index != NULL);
+  int num_decoys_per_target = get_num_decoys(have_index); 
 
   SearchProgress progress;
 
@@ -134,13 +137,13 @@ int SequestSearch::main(int argc,   ///< number of cmd line tokens
     progress.report(spectrum->getFirstScan(), zstate.getCharge());
 
     // create empty match collections to store results in
-    MATCH_COLLECTION_T* target_psms = new_empty_match_collection(FALSE); 
-    set_match_collection_zstate(target_psms, zstate);
+    MatchCollection* target_psms = new MatchCollection(false); 
+    target_psms->setZState(zstate);
 
-    vector<MATCH_COLLECTION_T*> decoy_psm_collections;
+    vector<MatchCollection*> decoy_psm_collections;
     for(int decoy_idx=0; decoy_idx < num_decoys_per_target; decoy_idx++){
-      MATCH_COLLECTION_T* psms = new_empty_match_collection(TRUE);
-      set_match_collection_zstate(psms, zstate);
+      MatchCollection* psms = new MatchCollection(true);
+      psms->setZState(zstate);
       decoy_psm_collections.push_back(psms);
     }
 
@@ -151,80 +154,75 @@ int SequestSearch::main(int argc,   ///< number of cmd line tokens
       PEPTIDE_MOD_T* peptide_mod = peptide_mods[mod_idx];
 
       // get peptide iterator
-
-      MODIFIED_PEPTIDES_ITERATOR_T* peptide_iterator =
-        new_modified_peptides_iterator_from_zstate(
-                                               mz,
-                                               zstate,
-                                               peptide_mod, 
-                                               FALSE, // not decoy
-                                               index,
-                                               database);
+      ModifiedPeptidesIterator* peptide_iterator =
+        new ModifiedPeptidesIterator(mz,
+                                     zstate,
+                                     peptide_mod, 
+                                     false, // not decoy
+                                     index,
+                                     database);
 
       // add matches to targets
-      int added = add_matches(target_psms,
-                              spectrum,
+      int added = target_psms->addMatches(spectrum,
                               zstate,
                               peptide_iterator,
-                              FALSE, // not decoy
-                              FALSE, // don't save scores for p-values
-                              TRUE,  // do preliminary Sp scoring
-                              TRUE   // filter by Sp
+                              false, // not decoy
+                              false, // don't save scores for p-values
+                              true,  // do preliminary Sp scoring
+                              true   // filter by Sp
                               ); 
 
       // add matches to each decoy
       for(int decoy_idx = 0; decoy_idx < num_decoys_per_target; decoy_idx++){
 
         // get new peptide iterator
-        free_modified_peptides_iterator(peptide_iterator);
-        peptide_iterator =
-          new_modified_peptides_iterator_from_zstate(
-                                                 mz,
-                                                 zstate,
-                                                 peptide_mod, 
-                                                 TRUE,  // is decoy
-                                                 index,
-                                                 database);
+        delete peptide_iterator;
+        peptide_iterator = new ModifiedPeptidesIterator(mz,
+                                                        zstate,
+                                                        peptide_mod, 
+                                                        true,  // is decoy
+                                                        index,
+                                                        database);
         // add matches
-        MATCH_COLLECTION_T* cur_decoys = decoy_psm_collections.at(decoy_idx);
-        add_matches(cur_decoys,
-                    spectrum,
+        MatchCollection* cur_decoys = decoy_psm_collections.at(decoy_idx);
+        cur_decoys->setTargetExperimentSize(target_psms->getExperimentSize());
+        cur_decoys->addMatches(spectrum,
                     zstate,
                     peptide_iterator,
-                    TRUE,  // is decoy
-                    FALSE, // don't save scores for p-values
-                    TRUE,  // do preliminary Sp scoring
-                    TRUE   // filter by Sp
+                    true,  // is decoy
+                    false, // don't save scores for p-values
+                    true,  // do preliminary Sp scoring
+                    true   // filter by Sp
                     ); 
       }
 
       carp(CARP_DEBUG, "Found %d peptides.", added);
 
       // clean up for next peptide mod
-      free_modified_peptides_iterator(peptide_iterator);
+      delete peptide_iterator;
 
     } // next peptide mod
 
     // print matches
-    int total_matches = get_match_collection_match_total(target_psms);
+    int total_matches = target_psms->getMatchTotal();
 
     if( total_matches == 0 ){
       carp(CARP_WARNING, "No matches found for spectrum %i, charge %i.",
            spectrum->getFirstScan(), zstate.getCharge());
-      progress.increment(FALSE);
+      progress.increment(false);
 
     }else{  
       printMatches(output_files, target_psms, decoy_psm_collections,
                     spectrum, combine_target_decoy, num_decoy_files);
-      progress.increment(TRUE);
+      progress.increment(true);
     }
 
     // clean up
-    free_match_collection(target_psms);
-    vector<MATCH_COLLECTION_T*>::iterator it = decoy_psm_collections.begin();
+    delete target_psms;
+    vector<MatchCollection*>::iterator it = decoy_psm_collections.begin();
     for(; it < decoy_psm_collections.end(); ++it){
-      MATCH_COLLECTION_T* psms = *it;
-      free_match_collection(psms);
+      MatchCollection* psms = *it;
+      delete psms;
     }
 
   } // next spectrum
@@ -236,8 +234,8 @@ int SequestSearch::main(int argc,   ///< number of cmd line tokens
     free_peptide_mod(peptide_mods[mod_idx]);
   }
   free(peptide_mods);
-  free_index(index);
-  free_database(database);
+  Index::free(index);
+  Database::freeDatabase(database);
 
   carp(CARP_INFO, "Elapsed time: %.3g s", wall_clock() / 1e6);
   carp(CARP_INFO, "Finished crux sequest-search");
@@ -278,26 +276,26 @@ int SequestSearch::main(int argc,   ///< number of cmd line tokens
  */
 void SequestSearch::printMatches(
   OutputFiles& output_files,       ///< files to print to
-  MATCH_COLLECTION_T* target_psms, ///< target psms to print
-  vector<MATCH_COLLECTION_T*>& decoy_psms,///< decoy psms to print
+  MatchCollection* target_psms, ///< target psms to print
+  vector<MatchCollection*>& decoy_psms,///< decoy psms to print
   Spectrum* spectrum,            ///< all matches are to this spec
-  BOOLEAN_T combine_target_decoy,  ///< merge targets and decoys?
+  bool combine_target_decoy,  ///< merge targets and decoys?
   int num_decoy_files              ///< merge decoys?
 ){ 
 
   if( combine_target_decoy ){
 
     // merge all collections
-    MATCH_COLLECTION_T* all_psms = target_psms;
+    MatchCollection* all_psms = target_psms;
     for(size_t decoy_idx = 0; decoy_idx < decoy_psms.size(); decoy_idx++){
-      merge_match_collections(decoy_psms.at(decoy_idx), all_psms);
+      MatchCollection::merge(decoy_psms.at(decoy_idx), all_psms);
     }
 
     // sort and rank
-    populate_match_rank_match_collection(all_psms, SP);
-    save_top_sp_match(all_psms);
-    populate_match_rank_match_collection(all_psms, XCORR);
-    vector<MATCH_COLLECTION_T*> empty_list;
+    all_psms->populateMatchRank(SP);
+    all_psms->saveTopSpMatch();
+    all_psms->populateMatchRank(XCORR);
+    vector<MatchCollection*> empty_list;
     output_files.writeMatches(all_psms, // target matches
                               empty_list,     // decoy matches
                               XCORR,    // use XCORR rank for cutoff
@@ -309,18 +307,19 @@ void SequestSearch::printMatches(
     if( num_decoy_files == 1 ){ // combine decoys
 
       // merge decoys
-      MATCH_COLLECTION_T* merged_decoy_psms = decoy_psms.at(0);
+      MatchCollection* merged_decoy_psms = decoy_psms.at(0);
       for(size_t decoy_idx = 1; decoy_idx < decoy_psms.size(); decoy_idx++){
-        merge_match_collections(decoy_psms.at(decoy_idx),
+        MatchCollection::merge(decoy_psms.at(decoy_idx),
                                 merged_decoy_psms);
       }
       
-      // sort and rank
-      populate_match_rank_match_collection(merged_decoy_psms, SP);
-      save_top_sp_match(merged_decoy_psms);
-      populate_match_rank_match_collection(merged_decoy_psms, XCORR);
-
-      vector<MATCH_COLLECTION_T*> decoy_list(1, merged_decoy_psms);
+      // re-sort and rank if we merged multiple collections
+      if( decoy_psms.size() > 1 ){
+        merged_decoy_psms->populateMatchRank(SP);
+        merged_decoy_psms->saveTopSpMatch();
+        merged_decoy_psms->populateMatchRank(XCORR);
+      }
+      vector<MatchCollection*> decoy_list(1, merged_decoy_psms);
       output_files.writeMatches(target_psms, decoy_list, 
                                 XCORR, spectrum);
       
@@ -328,7 +327,7 @@ void SequestSearch::printMatches(
       // TODO write a version of OutputFiles::writeMatches that takes
       // a vector of decoy match collections
       int num_decoys = decoy_psms.size();
-      vector<MATCH_COLLECTION_T*> decoy_psm_array;
+      vector<MatchCollection*> decoy_psm_array;
       for(int decoy_idx = 0; decoy_idx < num_decoys; decoy_idx++){
         decoy_psm_array.push_back(decoy_psms.at(decoy_idx));
       }

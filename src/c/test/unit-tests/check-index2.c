@@ -6,11 +6,11 @@
 #include "objects.h"
 #include "Spectrum.h"
 #include "Peak.h"
-#include "peptide.h"
-#include "peptide_src.h"
+#include "Peptide.h"
+#include "PeptideSrc.h"
 #include "Protein.h"
-#include "database.h"
-#include "index.h"
+#include "Database.h"
+#include "Index.h"
 
 // declare things to set up
 

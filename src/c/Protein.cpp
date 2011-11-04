@@ -9,14 +9,16 @@
 #include <ctype.h>
 #include <vector>
 #include "utils.h"
+#include "crux-utils.h"
 #include "parameter.h"
 #include "objects.h"
-#include "peptide.h"
+#include "Peptide.h"
 #include "Protein.h"
-#include "peptide_src.h"
-#include "database.h"
+#include "PeptideSrc.h"
+#include "Database.h"
 #include "carp.h"
-#include "peptide_constraint.h"
+#include "PeptideConstraint.h"
+#include "ProteinPeptideIterator.h"
 
 using namespace std;
 
@@ -31,6 +33,9 @@ static const int FASTA_LINE = 50;
 static const int SMALLEST_MASS = 57;
 static const int LARGEST_MASS = 190;
 
+/**
+ * Set member variables to default values.
+ */
 void Protein::init() {
   database_ = NULL;
   offset_ = 0;
@@ -46,7 +51,6 @@ void Protein::init() {
 /**
  * \returns An (empty) protein object.
  */
-
 Protein::Protein() {
   init();
 }
@@ -55,15 +59,15 @@ Protein::Protein() {
  * \returns A new protein object(heavy).
  * The protein is does not constain a database, users must provide one.
  */
-
 Protein::Protein(
   const char*         id, ///< The protein sequence id. -in
   const char*   sequence, ///< The protein sequence. -in
   unsigned int length, ///< The length of the protein sequence. -in
   const char* annotation,  ///< Optional protein annotation.  -in
-  unsigned long int offset, ///< The file location in the source file in the database -in
+  unsigned long int offset, 
+  ///< The file location in the source file in the database -in
   unsigned int protein_idx, ///< The index of the protein in it's database.-in  
-  DATABASE_T* database ///< the database of its origin
+  Database* database ///< the database of its origin
   )
 {
   init();
@@ -74,7 +78,7 @@ Protein::Protein(
   setOffset(offset);
   setProteinIdx(protein_idx);
   setIsLight(false);
-  database_ = copy_database_ptr(database); 
+  database_ = Database::copyPtr(database); 
   is_memmap_ = false;
 }         
 
@@ -82,7 +86,8 @@ Protein::Protein(
  * \returns A new light protein object.
  */
 Protein* Protein::newLightProtein(
-  unsigned long int offset, ///< The file location in the source file in the database -in
+  unsigned long int offset, 
+  ///< The file location in the source file in the database -in
   unsigned int protein_idx ///< The index of the protein in it's database. -in
   )
 {
@@ -105,7 +110,7 @@ bool Protein::toHeavy()
     return true;
   }
   
-  FILE* file = get_database_file(database_);
+  FILE* file = database_->getFile();
   
   // rewind to the begining of the protein to include ">" line
   fseek(file, offset_, SEEK_SET);
@@ -199,10 +204,12 @@ void Protein::print(
 /**
  * prints a binary representation of the protein
  * 
- * FORMAT
- * <int: id length><char: id><int: annotation length><char: annotation><int: sequence length><char: sequence>
+ * FORMAT (no line break)
+ * <int: id length><char: id><int: annotation length>
+    <char: annotation><int: sequence length><char: sequence>
  *
- * make sure when rading the binary data, add one to the length so that it will read in the terminating char as well
+ * Make sure when reading the binary data, add one to the length so
+ * that it will read in the terminating char as well.
  */
 void Protein::serialize(
   FILE* file ///< output stream -out
@@ -275,14 +282,16 @@ void Protein::copy(
  * protein must be a heap allocated
  * 
  * Assume memmap pointer is set at beginning of protein
- * Assume protein binary format
- * <int: id length><char: id><int: annotation length><char: annotation><int: sequence length><char: sequence>
+ * Assume protein binary format (no line break)
+ * <int: id length><char: id><int: annotation length>
+     <char: annotation><int: sequence length><char: sequence>
  *
  * modifies the *memmap pointer!
  * \returns TRUE if success. FALSE is failure.
  */
 bool Protein::parseProteinBinaryMemmap(
-  char** memmap ///< a pointer to a pointer to the memory mapped binary fasta file -in
+  char** memmap 
+  ///< a pointer to a pointer to the memory mapped binary fasta file -in
   )
 {
   int id_length = 0;
@@ -400,9 +409,9 @@ bool Protein::parseProteinFastaFile(
  * and the comment.
  */
 bool Protein::readTitleLine
-  (FILE* fasta_file,
-   char* name,
-   char* description)
+(FILE* fasta_file, ///< file to read -in
+ char* name, ///< write protein name here -out
+ char* description) ///< write description here -out
 {
   static char id_line[LONGEST_LINE];  // Line containing the ID and comment.
   int a_char;                         // The most recently read character.
@@ -526,6 +535,53 @@ bool Protein::readRawSequence
  * Thanks Bill!
  */
 
+/**
+ * Change the sequence of a protein to be a randomized version of
+ * itself.  The method of randomization is dependant on the
+ * decoy_type (shuffle or reverse).  The name of the protein is also
+ * changed by prefixing with reverse_ or rand_, depending on how it
+ * was randomized. 
+ */
+void Protein::shuffle(
+  DECOY_TYPE_T decoy_type){ ///< method for shuffling
+  char* decoy_str = decoy_type_to_string(decoy_type);
+  carp(CARP_DEBUG, "Shuffling protein %s as %s", 
+       id_, decoy_str);
+  free(decoy_str);
+
+  switch(decoy_type){
+  case NO_DECOYS:
+    return;
+
+  case REVERSE_DECOYS:
+    reverse(sequence_, sequence_ + strlen(sequence_));
+    break;
+
+  case PROTEIN_SHUFFLE_DECOYS:
+    carp(CARP_DEBUG, "shuffling");
+    shuffle_array(sequence_, strlen(sequence_));
+    break;
+
+  case PEPTIDE_SHUFFLE_DECOYS:
+    peptideShuffleSequence();
+    break;
+    
+  case INVALID_DECOY_TYPE:
+  case NUMBER_DECOY_TYPES:
+    carp(CARP_FATAL, "Illegal decoy type for shuffling protein.");
+    break;
+  }
+
+  // change the protein name
+  const char* prefix = "rand_";
+  if( decoy_type == REVERSE_DECOYS ){
+    prefix = "reverse_";
+  }
+  char* new_name = cat_string(prefix, id_);
+  free(id_);
+  id_= new_name;
+
+}
 
 /** 
  * Access routines of the form get_<object>_<field> and set_<object>_<field>. 
@@ -672,25 +728,22 @@ void Protein::setAnnotation(
   const char* annotation ///< the sequence to add -in
   )
 {
+  free(annotation_);
+  annotation_ = NULL;
+
   if( annotation == NULL ){
     return;
   }
 
-  if(!is_light_){
-    free(annotation_);
-  }
-  int annotation_length = strlen(annotation) +1; // +\0
-  char * copy_annotation = 
-    (char *)mymalloc(sizeof(char)*annotation_length);
-  annotation_ =
-    strncpy(copy_annotation, annotation, annotation_length);  
+  annotation_ = my_copy_string(annotation);
 }
 
 /**
  * sets the offset of the protein in the fasta file
  */
 void Protein::setOffset(
-  unsigned long int offset ///< The file location in the source file in the database -in
+  unsigned long int offset 
+  ///< The file location in the source file in the database -in
   )
 {
   offset_ = offset;
@@ -745,16 +798,16 @@ bool Protein::getIsLight()
  * sets the database for protein
  */
 void Protein::setDatabase(
-  DATABASE_T*  database ///< Which database is this protein part of -in
+  Database*  database ///< Which database is this protein part of -in
   )
 {
-  database_ = copy_database_ptr(database);
+  database_ = Database::copyPtr(database);
 }
 
 /**
  *\returns Which database is this protein part of
  */
-DATABASE_T* Protein::getDatabase()
+Database* Protein::getDatabase()
 {
   return database_;
 }
@@ -766,6 +819,99 @@ bool protein_id_less_than(Protein* protein_one, Protein* protein_two){
   int compare = strcmp(protein_one->getIdPointer(),
                        protein_two->getIdPointer());
   return (compare > 0);
+}
+
+/**
+ * Rearrange the sequence_ between cleavage sites, keeping residues
+ * on either side of a cleavage in place.  Get enzyme from
+ * parameters.  Cases of NO_ENZYME or NON_SPECIFIC_DIGEST are the same
+ * as shuffling the whole protein.  Same behavior for full and partial
+ * digest, min/max length/mass and missed cleavages, i.e. shuffle
+ * between every cleavage site.
+ */
+void Protein::peptideShuffleSequence(){
+  if( sequence_ == NULL ){
+    carp(CARP_WARNING, "Cannot shuffle a NULL sequence");
+    return;
+  }
+  if( length_ < 2 ){
+    return;
+  }
+ 
+  // get the digest rule
+  ENZYME_T enzyme = get_enzyme_type_parameter("enzyme");
+  // cases where peptide-shuffle is really protein shuffle
+  if( enzyme == NO_ENZYME 
+      || get_digest_type_parameter("digestion") == NON_SPECIFIC_DIGEST){
+    this->shuffle(PROTEIN_SHUFFLE_DECOYS);
+    return;
+  }
+
+  // store valid cleavage locations
+  vector<int> cleave_after_here;
+
+  // traverse the sequence to penultimate residue
+  for(size_t seq_offset = 0; seq_offset < length_ - 1; seq_offset++){
+    // mark each valid location (mark x for cleavage between x and y)
+    if( ProteinPeptideIterator::validCleavagePosition(sequence_ + seq_offset, 
+                                                      enzyme) ){
+      cleave_after_here.push_back(seq_offset);
+    }
+  }
+
+  // shuffle between each cleavage site (leave a and b in place)
+  int start = 0; // shuffle between prot first residue and first site
+  int end = -1;
+  vector<int>::iterator next_position = cleave_after_here.begin();
+  for(; next_position != cleave_after_here.end(); ++next_position){
+    end = *next_position;
+    shuffleRegion(start, end);
+    start = end + 1; // hold in place both sides of the cleavage site
+  }
+
+  // shuffle end of sequence
+  end = length_ - 1;
+  if( start < end ){
+    shuffleRegion(start, end);
+  }
+}
+
+/**
+ * Shuffle the region of the sequence between start and end, leaving
+ * start and end residues in place.  Repeat up to three times if the
+ * shuffled sequence doesn't change.
+ */
+void Protein::shuffleRegion(
+  int start, ///< index of peptide start
+  int end){///< index of last residue in peptide
+
+  int sub_seq_length = end - start - 1;
+  char* buf = new char[sub_seq_length + 1];
+  if( sub_seq_length > 1 ){
+    carp(CARP_DETAILED_DEBUG, "Shuffle from %d to %d.", start+1, end);
+
+    // store the sequence before shuffling not including the unmoved residues
+    strncpy(buf, sequence_ + start + 1, sub_seq_length);
+    buf[sub_seq_length] = '\0';
+
+    shuffle_array(sequence_ + start + 1, sub_seq_length);
+
+    // check to see if it changed
+    bool has_changed = strncmp(buf, sequence_ + start, sub_seq_length + 2);
+    // try reshuffling up to three more times
+    int count = 0;
+    while( (count < 3) && (has_changed == false)){
+      shuffle_array(sequence_ + start + 1, sub_seq_length);
+      has_changed = strncmp(buf, sequence_ + start, sub_seq_length + 2);
+      count++;
+    }
+    if( !has_changed ){
+        carp(CARP_WARNING, "Unable to generate a shuffled sequence "
+             "different than the original for sequence %s of protein %s "
+             "at position %d.", buf, id_, start);
+    }
+  }
+  delete [] buf;
 }
 
 
