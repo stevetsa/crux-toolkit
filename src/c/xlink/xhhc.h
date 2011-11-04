@@ -12,7 +12,7 @@
 
 /*Crux Includes*/
 #include "utils.h"
-#include "Spectrum.h"
+#include "CruxSpectrum.h"
 #include "carp.h"
 #include "peptide_constraint.h"
 #include "peptide.h"
@@ -150,7 +150,7 @@ BOOLEAN_T hhc_estimate_weibull_parameters_from_xcorrs(
   FLOAT_T* beta,
   FLOAT_T* shift,
   FLOAT_T* correlation,
-  Spectrum* spectrum,
+  CruxSpectrum* spectrum,
   int charge
   );
 

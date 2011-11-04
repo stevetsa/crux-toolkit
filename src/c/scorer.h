@@ -15,7 +15,7 @@
 #include <dirent.h>
 #include <string>
 #include "objects.h"
-#include "Spectrum.h"
+#include "CruxSpectrum.h"
 #include "peptide.h"
 #include "Ion.h"
 

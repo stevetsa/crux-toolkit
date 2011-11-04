@@ -7,7 +7,7 @@
 
 //CRUX INCLUDES
 #include "objects.h"
-#include "Spectrum.h"
+#include "CruxSpectrum.h"
 #include "SpectrumCollectionFactory.h"
 #include "FilteredSpectrumChargeIterator.h"
 

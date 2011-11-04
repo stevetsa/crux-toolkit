@@ -1,6 +1,6 @@
 distdir = $(PACKAGE)_$(VERSION)
 
-SUBDIRS = ArrayLibrary MSToolkit percolator q-ranker xlink .
+SUBDIRS = ArrayLibrary MSToolkit percolator q-ranker xlink hardklor .
 
 # Crux can use either single or double precision floating poinnt.
 if USEDOUBLES
@@ -147,8 +147,8 @@ LIBFILES= \
   SpectrumCollection.h \
   SpectrumCollectionFactory.cpp \
   SpectrumCollectionFactory.h \
-  Spectrum.cpp \
-  Spectrum.h \
+  CruxSpectrum.cpp \
+  CruxSpectrum.h \
   SpectrumZState.cpp \
   SpectrumZState.h \
   utils.cpp \
@@ -160,14 +160,13 @@ LIBFILES= \
 noinst_LTLIBRARIES = libcrux.la
 libcrux_la_CFLAGS = \
   $(AM_CFLAGS) \
-  -I$(top_srcdir)/src/c/MSToolkit \
+  -I$(top_srcdir)/src/c/MSToolkit/include \
   -I$(top_srcdir)/src/c/percolator/ \
   -I$(top_srcdir)/src/c/q-ranker/
 
 libcrux_la_CXXFLAGS = \
   $(AM_CXXFLAGS) \
-  -I$(top_srcdir)/src/c/MSToolkit \
-  -I$(top_srcdir)/src/c/MSToolkit/RAMP \
+  -I$(top_srcdir)/src/c/MSToolkit/include \
   -I$(top_srcdir)/src/c/percolator/ \
   -I$(top_srcdir)/src/c/q-ranker/
 

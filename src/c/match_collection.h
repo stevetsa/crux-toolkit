@@ -23,7 +23,7 @@
 #include <time.h>
 #include "carp.h"
 #include "parse_arguments.h"
-#include "Spectrum.h"
+#include "CruxSpectrum.h"
 #include "SpectrumCollection.h"
 #include "Ion.h"
 #include "IonSeries.h"

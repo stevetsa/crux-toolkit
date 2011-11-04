@@ -19,7 +19,7 @@
 #include "IonFilteredIterator.h"
 #include "IonSeries.h"
 #include "crux-utils.h"
-#include "Spectrum.h"
+#include "CruxSpectrum.h"
 #include "scorer.h"
 #include "parameter.h"
 #include "unistd.h"

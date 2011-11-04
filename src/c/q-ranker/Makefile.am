@@ -50,10 +50,10 @@ libqranker_la_SOURCES = \
 
 libqranker_la_CXXFLAGS = $(AM_CXXFLAGS) \
   -I$(top_srcdir)/src/c/ArrayLibrary \
-  -I$(top_srcdir)/src/c/MSToolkit \
-  -I$(top_srcdir)/src/c/MSToolkit/zLib \
-  -I$(top_srcdir)/src/c/MSToolkit/RAMP \
-  -D_LARGEFILE_SOURCE
+  -I$(top_srcdir)/src/c/MSToolkit/include \
+  -D_LARGEFILE_SOURCE \
+  -D_FILE_OFFSET_BITS=64 \
+  -DGCC
 
 noinst_LTLIBRARIES = libqranker.la
 

@@ -6,7 +6,7 @@
 //CRUX includes
 #include "IonSeries.h"
 #include "scorer.h"
-#include "Spectrum.h"
+#include "CruxSpectrum.h"
 #include "SpectrumCollection.h"
 
 // should this be somewhere else?

@@ -350,10 +350,10 @@ and test set, -1 -- negative train set, -2 -- negative in test set.","",TRUE_IF_
 
 
 void Caller::readRetentionTime(string filename) {
-  MSToolkit::MSReader r;
-  MSToolkit::Spectrum s;
+  MSReader r;
+  Spectrum s;
 
-  r.setFilter(MSToolkit::MS2);
+  r.setFilter(MS2);
   
   char* cstr = new char [filename.size()+1];
   strcpy (cstr, filename.c_str());

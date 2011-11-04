@@ -9,7 +9,7 @@
 
 #include <stdio.h>
 #include "objects.h"
-#include "Spectrum.h"
+#include "CruxSpectrum.h"
 
 #include <vector>
 

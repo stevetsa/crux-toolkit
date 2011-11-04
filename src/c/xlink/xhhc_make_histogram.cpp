@@ -19,7 +19,7 @@ using namespace std;
 //typedef map<char, set<char> > BondMap;
 
 void plot_weibull(vector<pair<FLOAT_T, LinkedPeptide> >& scores, 
-                  Spectrum* spectrum, 
+                  CruxSpectrum* spectrum, 
                   int charge); 
 
 int main(int argc, char** argv) {
@@ -182,7 +182,7 @@ int main(int argc, char** argv) {
   cout << "decoys      " << filtered_ions.size() - num_ions << "<br>" << endl;
   cout << "total       " << filtered_ions.size() << "<br>" << endl;
 
-  Spectrum* spectrum = new Spectrum();
+  CruxSpectrum* spectrum = new CruxSpectrum();
   SpectrumCollection* collection = SpectrumCollectionFactory::create(ms2_file);
   //SCORER_T* scorer = new_scorer(XCORR);
   Scorer xhhc_scorer;
@@ -266,7 +266,7 @@ int main(int argc, char** argv) {
 
 // for running experiments. plots fit and pvalues
 void plot_weibull(vector<pair<FLOAT_T, LinkedPeptide> >& scores, 
-                  Spectrum* spectrum, int charge) {
+                  CruxSpectrum* spectrum, int charge) {
   
   ofstream target_fit_file ("fit.target");
   ofstream decoy_fit_file ("fit.decoy");
