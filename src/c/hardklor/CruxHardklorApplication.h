@@ -1,9 +1,8 @@
 /**
- * \file StatColumn.h 
+ * \file CruxHardklorApplication.h 
  * AUTHOR: Sean McIlwain
- * CREATE DATE: 6 December 2010
- * \brief Given a delimited file and a column-name, print out statistics
- * for that column (n, min, max, sum, average, median).
+ * CREATE DATE: 4 November 2011
+ * \brief Interface for calling hardklor.
  *****************************************************************************/
 #ifndef CRUXHARDKLORAPPLICATION_H
 #define CRUXHARDKLORAPPLICATION_H
@@ -20,6 +19,8 @@ class CruxHardklorApplication: public CruxApplication {
   char delimiter_;
   bool header_;
 
+  //Calls the main method in HardklorApp
+  int hardklorMain(int argc, char* argv[]);
 
  public:
 
@@ -48,6 +49,10 @@ class CruxHardklorApplication: public CruxApplication {
    */
   virtual std::string getDescription();
 
+  /**
+   * \returns whether the application needs the output directory or not. (default false).
+   */
+  virtual bool needsOutputDirectory();
 };
 
 

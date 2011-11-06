@@ -45,6 +45,7 @@ libhardklor_la_SOURCES = \
   FFT.cpp \
   FFT-HK.h \
   FFT-HK.cpp \
+  HardklorApp.cpp \
   HardklorTypes.h \
   mercury.h \
   resource1.h \

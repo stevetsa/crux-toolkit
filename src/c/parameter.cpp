@@ -340,6 +340,15 @@ void initialize_parameters(void){
       "The charge state of the peptide.",
       "Argument for predict-peptide-ions", "false");
 
+  /* hardklor arguments */
+  set_string_parameter("spectra", NULL,
+                       "The name of a file from which to parse "
+                       "high-resolution spectra. The file may be "
+                       "in MS1, FIXME or FIXME format.",
+    "Argument, not option, for hardklor",
+    "false");
+
+
   /* *** Initialize Options (command line and param file) *** */
 
   /* options for all executables */
@@ -990,6 +999,129 @@ void initialize_parameters(void){
       "Minimum number of points for estimating the "
       "Weibull parameters.  Default=4000.",
       "Available for crux search-for-xlinks", "true");
+
+
+  /* hardklor parameters */
+  //TODO, fix these!
+
+
+  set_string_parameter("hk-algorithm", "basic",
+    "Choose the algorithm for analyzing combinations of "
+    "multiple peptide or protein isotope distributions. "
+    "(basic|fewest-peptides|fast-fewest-peptides|"
+    "fewest-peptides-choice|fast-fewest-peptides-choice) "
+    "Default=basic.", "Available for crux hardklor", "false");
+
+  set_string_parameter("cdm", "B",
+    "Choose the charge state determination method. (B|F|P|Q|S). "
+    "Default=B.",
+    "Available for crux hardklor", "false");
+
+  set_int_parameter("min-charge", 1, 1, BILLION,
+    "Set the minimum charge state to look for when analyzing a spectrum. "
+    "Default=1.",
+    "Available for crux hardklor", "false");
+
+  set_int_parameter("max-charge", 3, 1, BILLION,
+    "Set the maximum charge state to look for when analyzing a spectrum. "
+    "Default=3.",
+    "Available for crux hardklor", "false");
+
+  set_double_parameter("corr", 0.90, 0,1.0, 
+    "Set the correlation threshold [0,1.0] to accept a predicted "
+    "isotope distribution.  Default=0.90",
+    "Available for crux hardklor", "false");
+
+  set_int_parameter("depth", 3, 1, BILLION,
+    "Set the depth of combinatorial analysis. Default 3.",
+    "Available for crux hardklor", "false");
+
+  set_boolean_parameter("intersection", true,
+    "When set to true, set peak detection to intersection mode. "
+    "Default true.",
+    "Available for crux hardklor",
+    "false");
+
+  set_string_parameter("averagine-mod", "",
+    "Include alternative averagine models in the analysis that  "
+    "incorporate additional atoms or isotopic enrichments.",
+    "Available for crux hardklor",
+    "false");
+
+  set_string_parameter("mzxml-filter", "none",
+    "Set a filter for mzXML files. Default=none",
+    "Available for crux hardklor",
+    "false");
+
+  set_boolean_parameter("no-base", false,
+    "Specify \"no base\" averagine. Only modified averagine models "
+    "will be used in the analysis. Default = F ",
+    "Available for crux hardklor",
+    "false");
+
+  set_int_parameter("max-p", 10, 1, BILLION,
+    "Set the maximum number of peptides or proteins that are "
+    "estimated from the peaks found in a spectrum segment. The "
+    "default value is 10.",
+    "Available for crux hardklor", "false");  
+
+  set_double_parameter("resolution", 100000, 1, BILLION,
+    "Set the resolution of the observed spectra at m/z 400. "
+    "Used in conjunction with --instrument The default is 100000.",
+    "Available for crux hardklor",
+    "false");
+
+  set_string_parameter("instrument", "fticr",
+    "Type of instrument (fticr|orbi|tof|qit) on which the data was "
+    "collected. Used in conjuction with --resolution. The default is fticr.",
+    "Available for crux hardklor",
+    "false");
+
+  set_int_parameter("smooth", 0, 0, BILLION,
+    "Apply polynomial Savitsky-Golay smoothing of the mass spectra "
+    "prior to analysis. The integer supplied with the flag sets the "
+    "width of the smoothing window. A larger width makes smoother peaks, "
+    "but has more alteration of peak intensity. By default there is no smoothing (0).",
+    "Available for crux hardklor", "false");  
+
+  //scan-number already defined.
+
+  set_int_parameter("sensitivity", 1, 0, 3,
+    "Set the sensitivity level. There are four levels, 0 (low), 1 (moderate), "
+    "2 (high), and 3 (max). The default value is 1.",
+    "Available for crux hardklor", "false");
+
+  set_double_parameter("signal-to-noise", 3.0, 0.0, BILLION,
+    "Set the signal-to-noise threshold. Any integer or decimal "
+    "value greater than or equal to 0.0 is valid. The default value is 3.0.",
+    "Available for crux hardklor", "false");
+
+  set_double_parameter("sn-window", 50.0, 0.0, BILLION,
+    "Set the signal-to-noise window length (in m/z). Because noise may "
+    "be non-uniform across a spectra, this value adjusts the segment size "
+    "considered when calculating a signal-over-noise ratio. The default "
+    "value is 50.0.",
+    "Available for crux hardklor", "false");
+
+  set_boolean_parameter("union-mode", false,
+    "Set peak detection to union mode. Spectra are analyzed for peaks "
+    "in overlapping segments. When union mode is set, peaks are accepted "
+    "regardless of whether they appear in one segment or two overlapping "
+    "segments. Default = F.",
+    "Available for crux hardklor", "false");
+
+  set_string_parameter("mz-window", "",
+    "Restrict analysis to only a small window in each segment ( (min-max) in m/z). "
+    "The user must specify the starting and ending m/z values between which "
+    "the analysis will be performed. By default the whole spectrum is analyzed.",
+    "Available for crux hardklor", "false");
+
+  set_double_parameter("max-width", 5.0, 0.0, BILLION,
+    "Set the maximum width of any set of peaks in a spectrum when computing the "
+    "results (in m/z). Thus, if the value was 5.0, then sets of peaks greater "
+    "than 5 m/z are divided into smaller sets prior to analysis. The default value is 5.0.",
+    "Available for crux hardklor", "false");
+
 
   /* crux-util parameters */
 

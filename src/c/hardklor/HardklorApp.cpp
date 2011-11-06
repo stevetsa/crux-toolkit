@@ -8,9 +8,14 @@
 #include "CHardklorSetting.h"
 #include "CHardklorVariant.h"
 
+#include "CruxHardklorApplication.h"
+
 using namespace std;
 
-int main(int argc, char* argv[]) {
+
+
+int CruxHardklorApplication::hardklorMain(int argc, char* argv[]) {
+//int main(int argc, char* argv[]) {
   int i;
 	unsigned int j;
   bool bConf;
