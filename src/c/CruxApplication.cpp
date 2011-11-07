@@ -49,17 +49,13 @@ void CruxApplication::initialize(
   ) {
 
   // Verbosity level for set-up/command line reading 
-  cerr <<"Seting verbosity level"<<endl;
   set_verbosity_level(CARP_WARNING);
 
   // Initialize parameter.c and set default values
-  cerr <<"Initialize parameters"<<endl;
   initialize_parameters();
 
   // Define optional and required arguments
-  cerr <<"Select cmd line options"<<endl;
   select_cmd_line_options(option_list, num_options);
-  cerr <<"Select cmd line arguments"<<endl;
   select_cmd_line_arguments(argument_list, num_arguments);
 
   // Parse the command line, including optional params file
@@ -67,12 +63,9 @@ void CruxApplication::initialize(
   string cmd_name = this->getName();
   char* full_cmd = cat_string("crux ", cmd_name.c_str());
 
-  cerr <<"parsing arguments and options"<<endl;
   parse_cmd_line_into_params_hash(argc, argv, cmd_name.c_str());
 
   free(full_cmd);
-
-  cerr <<"starting program"<<endl;
 
   carp(CARP_INFO, "Beginning %s.", 
        this->getName().c_str());

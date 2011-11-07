@@ -12,6 +12,47 @@
 
 using namespace std;
 
+template<typename TValue>
+static string to_string(
+  const TValue& value
+  ) {
+
+  int precision = get_int_parameter("precision");
+  std::ostringstream oss;
+  oss << std::setprecision(precision);
+  oss << value;
+  std::string out_string = oss.str();
+  return out_string;
+}
+
+
+template<typename TValue>
+static bool get_range_from_string(
+  const char* const_range_string, 
+  TValue& first, 
+  TValue& last) {
+
+  char* range_string = my_copy_string(const_range_string);
+
+  bool ret;
+
+  char* dash = strchr(range_string, '-');
+  if( dash == NULL ){ // a single number
+    ret = DelimitedFile::from_string(first, range_string);
+    last=first;
+  } else {
+
+    *dash = '\0';
+    ret = DelimitedFile::from_string(first,range_string);
+    *dash = '-';
+    *dash++;
+    ret &= DelimitedFile::from_string(last,dash);
+  }
+  free(range_string);
+  return ret;    
+
+}
+
 
 void writeIsotopeDat(
   string& filename
@@ -67,40 +108,35 @@ CruxHardklorApplication::~CruxHardklorApplication() {
  */
 int CruxHardklorApplication::main(int argc, char** argv) {
 
-  cerr << "CruxHardklorApplication: start()"<<endl;
-
    /* Define optional command line arguments */
   const char* option_list[] = {
     "fileroot",
     "output-dir",
     "overwrite",
-/*    "hk-algorithm",
-    "cdm",
-    "min-charge",
-    "max-charge",
-    "corr",
-    "depth",
-    "intersection",
-    "averagine-mod",
-    "mzxml-filter",
-    "no-base",
-    "max-p",
-    "resolution",
-    "instrument",
-    "smooth",
-    "scan-number",
-    "sensitivity",
-    "signal-to-noise",
-    "sn-window",
-    "union-mode",
-    "mz-window",
-    "max-width",
-*/
+//    "hardklor-algorithm",
+//    "cdm",
+//    "min-charge",
+//    "max-charge",
+//    "corr",
+//    "depth",
+//    "intersection",
+//    "averagine-mod",
+//    "mzxml-filter",
+//    "no-base",
+//    "max-p",
+//    "resolution",
+//    "instrument",
+//    "smooth",
+//    "scan-number",
+//    "sensitivity",
+//    "signal-to-noise",
+//    "sn-window",
+//    "union-mode",
+//    "mz-window",
+//    "max-width",
     "parameter-file",
     "verbosity"
   };
-
-  
 
   int num_options = sizeof(option_list) / sizeof(char*);
 
@@ -110,17 +146,13 @@ int CruxHardklorApplication::main(int argc, char** argv) {
 
   /* Initialize the application */
 
-  cerr <<"Initializing with "<<num_arguments<<" argument(s) and "<<num_options<<" options"<<endl;
-
   initialize(argument_list, num_arguments,
     option_list, num_options, argc, argv);
-
-  cerr <<"Calling hardklor main"<<endl;
 
   const char* output_directory = get_string_parameter_pointer("output-dir");
   string fileroot = string(get_string_parameter_pointer("fileroot"));
 
-  // build output filename
+  /* build output filename */
   string output_filename = makeFileName(output_directory, fileroot, "hardklor.mono.txt");
   string hardklor_dat_filename = makeFileName(output_directory, fileroot, "Hardklor.dat");
   writeHardklorDat(hardklor_dat_filename);
@@ -128,26 +160,115 @@ int CruxHardklorApplication::main(int argc, char** argv) {
   string isotope_dat_filename = makeFileName(output_directory, fileroot, "ISOTOPE.DAT");
   writeIsotopeDat(isotope_dat_filename);
 
-
+  /* build argument list */
   vector<string> hk_args_vec;
   hk_args_vec.push_back("hardklor");
-  hk_args_vec.push_back(get_string_parameter("spectra"));
+  hk_args_vec.push_back(get_string_parameter_pointer("spectra"));
   hk_args_vec.push_back(output_filename);
+
+  //Add options
   hk_args_vec.push_back("-hdat");
   hk_args_vec.push_back(hardklor_dat_filename);
+
   hk_args_vec.push_back("-mdat");
   hk_args_vec.push_back(isotope_dat_filename);
 
+  hk_args_vec.push_back("-a");
+  hk_args_vec.push_back(get_string_parameter_pointer("hardklor-algorithm"));
 
+  hk_args_vec.push_back("-cdm");
+  hk_args_vec.push_back(get_string_parameter_pointer("cdm"));
+
+  hk_args_vec.push_back("-chMin");
+  hk_args_vec.push_back(to_string(get_int_parameter("min-charge")));
+
+  hk_args_vec.push_back("-chMax");
+  hk_args_vec.push_back(to_string(get_int_parameter("max-charge")));
+
+  hk_args_vec.push_back("-corr");
+  hk_args_vec.push_back(to_string(get_double_parameter("corr")));
+
+  hk_args_vec.push_back("-d");
+  hk_args_vec.push_back(to_string(get_int_parameter("depth")));
+
+  if (get_boolean_parameter("intersection")) {
+    hk_args_vec.push_back("-i");
+  }
+
+  if (string(get_string_parameter_pointer("averagine-mod")) !=  "__NULL_STR") {
+    hk_args_vec.push_back("-m");
+    hk_args_vec.push_back(get_string_parameter_pointer("averagine-mod"));
+  }
+
+  if (string(get_string_parameter_pointer("mzxml-filter")) != "none") { 
+    hk_args_vec.push_back("-mF");
+    hk_args_vec.push_back(get_string_parameter_pointer("mzxml-filter"));
+  }
+
+  if (get_boolean_parameter("no-base")) {
+    hk_args_vec.push_back("-nb");
+  }  
+  
+  hk_args_vec.push_back("-p");
+  hk_args_vec.push_back(to_string(get_int_parameter("max-p")));
+
+  hk_args_vec.push_back("-res");
+  hk_args_vec.push_back(to_string(get_double_parameter("resolution")));
+  hk_args_vec.push_back(get_string_parameter("instrument"));
+
+  hk_args_vec.push_back("-s");
+  hk_args_vec.push_back(to_string(get_int_parameter("smooth")));
+
+  if (string(get_string_parameter_pointer("scan-number")) != "__NULL_STR") {
+    const char* scan_numbers=get_string_parameter_pointer("scan-number");
+    int first_scan;
+    int last_scan;
+    get_range_from_string(scan_numbers, first_scan, last_scan);
+
+    hk_args_vec.push_back("-sc");
+    hk_args_vec.push_back(to_string(first_scan));
+    hk_args_vec.push_back(to_string(last_scan));
+  }
+
+  hk_args_vec.push_back("-sl");
+  hk_args_vec.push_back(to_string(get_int_parameter("sensitivity")));
+
+  hk_args_vec.push_back("-sn");
+  hk_args_vec.push_back(to_string(get_double_parameter("signal-to-noise")));
+
+  hk_args_vec.push_back("-snWin");
+  hk_args_vec.push_back(to_string(get_double_parameter("sn-window")));
+  
+  if (get_boolean_parameter("union-mode")) {
+    hk_args_vec.push_back("-u");
+  }
+
+  if (string(get_string_parameter_pointer("mz-window")) != "__NULL_STR") {
+    double first;
+    double last;
+    if (get_range_from_string(get_string_parameter_pointer("mz-window"), first, last)) {
+      hk_args_vec.push_back("-w");
+      hk_args_vec.push_back(to_string(first));
+      hk_args_vec.push_back(to_string(last));
+    }
+  }    
+
+  hk_args_vec.push_back("-win");
+  hk_args_vec.push_back(to_string(get_double_parameter("max-width")));
+  
+
+
+  /* build argv line */
   int hk_argc = hk_args_vec.size();
 
   char** hk_argv = new char*[hk_argc];
 
   for (int idx = 0;idx < hk_argc ; idx++) {
     hk_argv[idx] = (char*)hk_args_vec[idx].c_str();
-    cerr << "hk_argv["<<idx<<"]="<<hk_argv[idx]<<endl;
+    //cerr << "hk_argv["<<idx<<"]="<<hk_argv[idx]<<endl;
   }
 
+  /* Call hardklorMain */
   int ret = hardklorMain(hk_argc, hk_argv);
 
   delete []hk_argv;
@@ -856,16 +977,6 @@ void writeHardklorDat(
   os <<"108" << "\t" << "Sx" << "\t" << "31.972070" << endl;  
 
 }
-
-void writeMercuryDat() {
-
-  
-}
-
-
-
-
-
 
 /*
  * Local Variables:
