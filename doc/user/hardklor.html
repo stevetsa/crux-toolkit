@@ -157,7 +157,7 @@ accurate.</li>
 for speed. Use this method if there is sufficient memory on the
 system.</li>
 </ul>
-The default setting is Basic.</li>
+The default setting is fast-fewest-peptides.</li>
 
 <li>
 <code>--cdm B|F|P|Q|S</code> &ndash; Choose the charge state
@@ -177,7 +177,7 @@ distances.</li>
 <code>S</code> &ndash; Senko method, or combined Fast Fourier
 Transform and Patterson algorithm.</li>
 </ul>
-The default setting is B.</li>
+The default setting is Q.</li>
 
 <li>
 <code>--min-charge &lt;int&gt;</code> &ndash; Set the minimum charge
@@ -187,13 +187,13 @@ state to look for when analyzing a spectrum. The default value is
 <li>
 <code>--max-charge &lt;int&gt;</code> &ndash; Set the maximum charge
 state to look for when analyzing a spectrum. The default value is
-3.</li>
+5.</li>
 
 <li>
 <code>--corr &lt;float&gt;</code> &ndash; Set the correlation
 threshold to accept a predicted isotope distribution. Valid values are
 any decimal value between 0.0 and 1.0, inclusive. The default value is
-0.90.</li>
+0.85.</li>
 
 <li>
 <code>--depth &lt;int&gt;</code> &ndash; Set the depth of
@@ -202,10 +202,8 @@ peptide distributions that can be combined to estimate the observed
 data at any given spectrum segment. The default value is 3.</li>
 
 <li>
-<code>--intersection T|F</code> &ndash; When set to true, set peak
-detection to intersection mode. Spectra are analyzed for peaks in
-overlapping segments. When intersection mode is set, peaks are only
-accepted if they appear in two overlapping segments. Default = T.</li>
+<code>--distribution-area T|F</code> &ndash; Reports peptide intensities
+as the distribution area. Default false.</li>
 
 <li>
 <code>--averagine-mod &lt;string&gt;</code> &ndash; Include alternative
@@ -265,24 +263,23 @@ as 'first-last' which will include scans 'first' and 'last'.  Default
 <code>--sensitivity 0|1|2|3</code> &ndash; Set the sensitivity
 level. There are four levels, 0 (low), 1 (moderate), 2 (high), and 3
 (max). Increasing the sensitivity may increase computation time. The
-default value is 1.</li>
+default value is 2.</li>
 
 <li>
 <code>--signal-to-noise &lt;float&gt;</code> &ndash; Set the
 signal-to-noise threshold. Any integer or decimal value greater than
-or equal to 0.0 is valid. The default value is 3.0.</li>
+or equal to 0.0 is valid. The default value is 1.0.</li>
 
 <li>
 <code>--sn-window &lt;float&gt;</code> &ndash; Set the signal-to-noise
 window length (in m/z). Because noise may be non-uniform across a
 spectra, this value adjusts the segment size considered when
-calculating a signal-over-noise ratio. The default value is 50.0.</li>
+calculating a signal-over-noise ratio. The default value is 250.0.</li>
 
 <li>
-<code>--union-mode T|F</code> &ndash; Set peak detection to union
-mode. Spectra are analyzed for peaks in overlapping segments. When
-union mode is set, peaks are accepted regardless of whether they
-appear in one segment or two overlapping segments. Default = F.</li>
+<code>--static-sn T|F</code> &ndash; If true, Hardklor will calculate
+the noise level across the spectrum, then select a floor of this set
+of noise levels to apply to the whole spectrum.  Default is true.</li>
 
 <li>
 <code>--mz-window &lt;double&gt;-&lt;double&gt;</code> &ndash; Restrict
@@ -296,7 +293,7 @@ analyzed.</li>
 of any set of peaks in a spectrum when computing the results (in
 m/z). Thus, if the value was 5.0, then sets of peaks greater than 5
 m/z are divided into smaller sets prior to analysis. The default value
-is 5.0.</li>
+is 4.0.</li>
 
 <li>
 <code>--parameter-file &lt;filename&gt;</code> &ndash; A file
@@ -311,6 +308,54 @@ following messages, including all those at lower verbosity levels:
 0-fatal errors, 10-non-fatal errors, 20-warnings, 30-information on
 the progress of execution, 40-more progress information, 50-debug
 info, 60-detailed debug info. Default = 30.</li>
+
+<!-- Other parameters
+<li>
+<code>--no-split T|F</code> - user can decide not to divide the spectrum into windows. 
+    Only good for specialized, small spectra. Leave this at FALSE.<br>
+</li>
+<li>
+<code>--xml-output T|F</code> - write the output to an xml file. 
+    This was a user request because they had an xml parser they liked.
+</li>
+<li>
+<code>--zero-intensity-values T|F</code> - For processed spectra (Thermo spectra), 
+   a lot of intensity data points are represented as zeros. You can choose to 
+   include these in your Hardklor analysis. I do not recommend it, leave this at FALSE.
+</li>
+<li>
+<code>--custom-molecule &lt;atomic formula%gt;</code> - instead of using averagine, 
+search your data for a specific molecule. This is generally not useful for shotgun data. 
+</li>
+<li>
+<code>--signal-to-noise-algorithm STD|ASN|AVG</code> - Use a different signal to noise algorithm.
+The published algorithm (and default) has the code STD (for standard). I have a few others: 
+1. ASN, advanced signal to noise, 2. AVG, boxcar averaging, 3. MIX, combines ASN and AVG. 
+There are also codes of V2, V2ASN, and V2MIX that can be used, but they require a much longer 
+and separate discussion. After you have finished making your initial tests, ask me about these 
+options again as they are probably what can be toggled to best improve your results.
+</li>
+<li>
+-ppMatch, -ppm, and -ppWin are all parameters for use with ASN and MIX above.
+</li>
+
+<code>--reference-filter &lt;string&rt;</code> - Can filter out spectra based on the 
+reference line in the spectrum header. 
+
+Here's my recommended settings for overriding default values:
+
+-d 2
+-corr 0.90
+-sl 3
+-sn 0
+-win 5.25
+-p 12
+-da true
+
+
+
+-->
+
 
 </ul>
 
