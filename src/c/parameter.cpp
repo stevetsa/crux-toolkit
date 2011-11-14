@@ -26,7 +26,7 @@ static const FLOAT_T SMART_MZ_OFFSET = 0.68;
 static const char* parameter_type_strings[NUMBER_PARAMETER_TYPES] = { 
   "INT_ARG", "DOUBLE_ARG", "STRING_ARG", "MASS_TYPE_T", "DIGEST_T", 
   "ENZYME_T", 
-  "BOOLEAN_T", "SCORER_TYPE_T", "ION_TYPE_T",
+  "bool", "SCORER_TYPE_T", "ION_TYPE_T",
   "ALGORITHM_TYPE_T", "WINDOW_TYPE_T", "MEASURE_TYPE_T", 
   "PARSIMONY_TYPE_T", "QUANT_LEVEL_TYPE_T", "DECOY_TYPE_T"};
 
@@ -43,24 +43,30 @@ HASH_T* max_values; // for numeric parameters
 
 AA_MOD_T* list_of_mods[MAX_AA_MODS]; // list containing all aa mods
                                     // in param file, c-,n-term mods at end
+AA_MOD_T** list_of_variable_mods = NULL; // pointer to first non-fixed mod
 AA_MOD_T** list_of_c_mods = NULL; // pointer to first c_term mod in list
 AA_MOD_T** list_of_n_mods = NULL; //pointer to first n_term mod in list
-int num_mods = 0;
-int num_c_mods = 0;
-int num_n_mods = 0;//require num_mods + num_c_mods + num_n_mods <= MAX_AA_MODS
+int fixed_c_mod = -1; // position in list_of_mods or -1 if not present
+int fixed_n_mod = -1; // position in list_of_mods or -1 if not present
+int num_fixed_mods = 0;
+int num_mods = 0;     // ANY_POSITION mods
+int num_c_mods = 0; // variable c-term mods
+int num_n_mods = 0; // variable n-term mods
+//require num_mods + num_c_mods + num_n_mods + 
+//(fixed_c_mod > -1) + (fixed_n_mod > -1) <= MAX_AA_MODS
 
-BOOLEAN_T parameter_initialized = FALSE; //have param values been initialized
-BOOLEAN_T usage_initialized = FALSE; // have the usages been initialized?
-BOOLEAN_T type_initialized = FALSE; // have the types been initialized?
+bool parameter_initialized = false; //have param values been initialized
+bool usage_initialized = false; // have the usages been initialized?
+bool type_initialized = false; // have the types been initialized?
 
-BOOLEAN_T parameter_plasticity = TRUE; // can the parameters be changed?
+bool parameter_plasticity = true; // can the parameters be changed?
 
 char* pre_cleavage_list;
 char* post_cleavage_list;
 int pre_list_size;
 int post_list_size;
-BOOLEAN_T pre_for_inclusion;
-BOOLEAN_T post_for_inclusion;
+bool pre_for_inclusion;
+bool post_for_inclusion;
 
 /************************************
  * Private function declarations
@@ -79,7 +85,7 @@ void parse_parameter_file(
  * Requires (or at least only makes sense after) 
  * parse_cmd_line_into_params_hash() has been run.
  */
-BOOLEAN_T check_option_type_and_bounds(const char* name);
+bool check_option_type_and_bounds(const char* name);
 
 void check_parameter_consistency();
 void parse_custom_enzyme(const char* rule_str);
@@ -87,17 +93,17 @@ void parse_custom_enzyme(const char* rule_str);
 /**
  *
  */
-BOOLEAN_T string_to_param_type(const char*, PARAMETER_TYPE_T* );
+bool string_to_param_type(const char*, PARAMETER_TYPE_T* );
 
-BOOLEAN_T set_boolean_parameter(
+bool set_boolean_parameter(
  const char* name,       ///< the name of the parameter looking for -in
- BOOLEAN_T   set_value,  ///< the value to be set -in
+ bool   set_value,  ///< the value to be set -in
  const char* usage,      ///< message for the usage statement
  const char* filenotes,  ///< additional information for the params file
  const char* foruser     ///< "true" if should be revealed to user
  );
 
-BOOLEAN_T set_int_parameter(
+bool set_int_parameter(
  const char*     name,  ///< the name of the parameter looking for -in
  int set_value,  ///< the value to be set -in
  int min_value,  ///< the value to be set -in
@@ -107,7 +113,7 @@ BOOLEAN_T set_int_parameter(
  const char* foruser     ///< "true" if should be revealed to user
  );
 
-BOOLEAN_T set_double_parameter(
+bool set_double_parameter(
  const char*     name,  ///< the name of the parameter looking for -in
  double set_value,  ///< the value to be set -in
  double min_value,  ///< the value to be set -in
@@ -117,7 +123,7 @@ BOOLEAN_T set_double_parameter(
  const char* foruser     ///< "true" if should be revealed to user
   );
 
-BOOLEAN_T set_string_parameter(
+bool set_string_parameter(
  const char*     name,  ///< the name of the parameter looking for -in
  const char* set_value,  ///< the value to be set -in
  const char* usage,      ///< string to print in usage statement
@@ -125,7 +131,7 @@ BOOLEAN_T set_string_parameter(
  const char* foruser
   );
 
-BOOLEAN_T set_mass_type_parameter(
+bool set_mass_type_parameter(
  const char*     name,  ///< the name of the parameter looking for -in
  MASS_TYPE_T set_value,  ///< the value to be set -in
  const char* usage,      ///< string to print in usage statement
@@ -133,7 +139,7 @@ BOOLEAN_T set_mass_type_parameter(
  const char* foruser
   );
 
-BOOLEAN_T set_digest_type_parameter(
+bool set_digest_type_parameter(
  const char*     name,  ///< the name of the parameter looking for -in
  DIGEST_T set_value,  ///< the value to be set -in
  const char* usage,      ///< string to print in usage statement
@@ -141,7 +147,7 @@ BOOLEAN_T set_digest_type_parameter(
  const char* foruser
   );
 
-BOOLEAN_T set_enzyme_type_parameter(
+bool set_enzyme_type_parameter(
  const char*     name,  ///< the name of the parameter looking for -in
  ENZYME_T set_value,  ///< the value to be set -in
  const char* usage,      ///< string to print in usage statement
@@ -149,7 +155,7 @@ BOOLEAN_T set_enzyme_type_parameter(
  const char* foruser
   );
 
-BOOLEAN_T set_digest_type_parameter(
+bool set_digest_type_parameter(
  const char*     name,  ///< the name of the parameter looking for -in
  DIGEST_T set_value,  ///< the value to be set -in
  const char* usage,      ///< string to print in usage statement
@@ -157,7 +163,7 @@ BOOLEAN_T set_digest_type_parameter(
  const char* foruser
   );
 
-BOOLEAN_T set_enzyme_type_parameter(
+bool set_enzyme_type_parameter(
  const char*     name,  ///< the name of the parameter looking for -in
  ENZYME_T set_value,  ///< the value to be set -in
  const char* usage,      ///< string to print in usage statement
@@ -165,7 +171,7 @@ BOOLEAN_T set_enzyme_type_parameter(
  const char* foruser
   );
 
-BOOLEAN_T set_window_type_parameter(
+bool set_window_type_parameter(
  const char*     name,  ///< the name of the parameter looking for -in
  WINDOW_TYPE_T set_value,  ///< the value to be set -in
  const char* usage,      ///< string to print in usage statement
@@ -173,42 +179,42 @@ BOOLEAN_T set_window_type_parameter(
  const char* foruser
   );
 
-BOOLEAN_T set_algorithm_type_parameter(
+bool set_algorithm_type_parameter(
  const char* name,
  ALGORITHM_TYPE_T set_value,
  const char* usage,
  const char* filenotes,
  const char* foruser);
 
-BOOLEAN_T set_scorer_type_parameter(
+bool set_scorer_type_parameter(
  const char* name,
  SCORER_TYPE_T set_value,
  const char* usage,      ///< string to print in usage statement
  const char* filenotes,   ///< additional info for param file
  const char* foruser);
 
-BOOLEAN_T set_ion_type_parameter(
+bool set_ion_type_parameter(
  const char* name,
  ION_TYPE_T set_value,
  const char* usage,
  const char* filenotes,
  const char* foruser);
 
-BOOLEAN_T set_parsimony_type_parameter(
+bool set_parsimony_type_parameter(
   const char* name, ///< the name of the parameter looking for -in
   PARSIMONY_TYPE_T set_value, ///< the value to be set -in
   const char* usage, ///< string to print in usage statement
   const char* filenotes, ///<additional infor for param file
   const char* foruser); 
 
-BOOLEAN_T set_quant_level_parameter(
+bool set_quant_level_parameter(
   const char* name, ///< the name of the parameter looking for -in
   QUANT_LEVEL_TYPE_T set_value, ///< the value to be set -in
   const char* usage, ///< string to print in usage statement
   const char* filenotes, ///<additional infor for param file
   const char* foruser); 
 
-BOOLEAN_T set_measure_type_parameter(
+bool set_measure_type_parameter(
   const char* name, ///< the name of the parameter looking for -in
   MEASURE_TYPE_T set_value, ///< the value to be set -in
   const char* usage, ///< string to print in usage statement
@@ -222,13 +228,13 @@ bool set_decoy_type_parameter(
   const char* filenotes, ///<additional infor for param file
   const char* foruser);
  
-BOOLEAN_T select_cmd_line(  
+bool select_cmd_line(  
   const char** option_names, ///< list of options to be allowed for main -in
   int    num_options,  ///< number of optons in that list -in
   int (*parse_argument_set)(const char*, const char*, void*, enum argument_type) ///< function point to choose arguments or options 
   );
 
-BOOLEAN_T update_aa_masses();
+bool update_aa_masses();
 void read_mods_from_file(char* param_file);
 
 /************************************
@@ -288,8 +294,8 @@ void initialize_parameters(void){
   post_list_size = 0;
   pre_cleavage_list = NULL;
   post_cleavage_list = NULL;
-  pre_for_inclusion = TRUE;
-  post_for_inclusion = FALSE;
+  pre_for_inclusion = true;
+  post_for_inclusion = false;
 
   /* *** Initialize Arguments *** */
 
@@ -338,7 +344,7 @@ void initialize_parameters(void){
   /* *** Initialize Options (command line and param file) *** */
 
   /* options for all executables */
-  set_boolean_parameter("version", FALSE, "Print version number and quit.",
+  set_boolean_parameter("version", false, "Print version number and quit.",
       "Available for all crux programs.  On command line use '--version T'.",
       "true");
   set_int_parameter("verbosity", CARP_INFO, CARP_FATAL, CARP_MAX,
@@ -352,7 +358,7 @@ void initialize_parameters(void){
       "Set additional options with values in the given file.",
       "Available for all crux programs. Any options specified on the "
       "command line will override values in the parameter file.", "true");
-  set_boolean_parameter("overwrite", FALSE, 
+  set_boolean_parameter("overwrite", false, 
       "Replace existing files (T) or exit if attempting to "
       "overwrite (F). Default=F.",
       "Available for all crux programs.  Applies to parameter file "
@@ -451,14 +457,14 @@ void initialize_parameters(void){
 		    " includes peptides containing one or more potential cleavage sites.",
 		    "true");	    
 
-  set_boolean_parameter("unique-peptides", TRUE,
+  set_boolean_parameter("unique-peptides", true,
       "Generate peptides only once, even if they appear in more "
       "than one protein (T,F).  Default=F.",
       "Available from command line or parameter file for "
       "crux-genereate-peptides. Returns one line per peptide "
       "when true or one line per peptide per protein occurence when false.  ",
       "true");
-  set_boolean_parameter("peptide-list", FALSE,
+  set_boolean_parameter("peptide-list", false,
                         "Create an ASCII version of the peptide list.  "
                         "Default=F.",
                         "Creates an ASCII file in the output directory "
@@ -466,7 +472,7 @@ void initialize_parameters(void){
                         "true");
   
   /* more generate_peptide parameters */
-  set_boolean_parameter("output-sequence", FALSE, 
+  set_boolean_parameter("output-sequence", false, 
       "Print peptide sequence (T,F). Default=F.",
       "Available only for crux-generate-peptides.", "true");
 
@@ -485,24 +491,20 @@ void initialize_parameters(void){
       "possible psms for each spectrum. Default is the SEQUEST-style xcorr."
       " Crux also offers a p-value calculation for each psm based on xcorr "
       "or sp (xcorr-pvalue, sp-pvalue).", "false"); 
-  set_boolean_parameter("compute-sp", FALSE,
+  set_boolean_parameter("compute-sp", false,
       "Compute the Sp score for all candidate peptides.  Default=F",
       "Available for search-for-matches.  Sp scoring is always done for "
       "sequest-search.", "true");
-  set_boolean_parameter("compute-p-values", FALSE, 
+  set_boolean_parameter("compute-p-values", false, 
       "Compute p-values for the main score type. Default=F.",
       "Currently only implemented for XCORR.", "true");
-  set_boolean_parameter("use-mstoolkit", FALSE,
+  set_boolean_parameter("use-mstoolkit", false,
       "Use MSToolkit to parse spectra. Default=F.",
       "Available for crux-search-for-matches", "true");
   set_string_parameter("scan-number", NULL,
       "Search only select spectra specified as a single "
       "scan number or as a range as in x-y.  Default=search all.",
       "The search range x-y is inclusive of x and y.", "true");
-  set_boolean_parameter("xcorr-var-bin", FALSE,
-    "Use variable binning for XCORR.  If set to true, mz-bin-width, " 
-    "and mz-bin-offset parameters are utilized",
-    "Available for crux-search-for-matches.","true");
   /* N.B. Use NaN to indicate that no user preference was specified.
    * In this case, the default value depends on the mass type. */
   set_double_parameter("mz-bin-width", NaN(), 0.0, BILLION,
@@ -581,10 +583,10 @@ void initialize_parameters(void){
                     "Replaces number-decoy-set.  Determined by decoy-location"
                     " and num-decoys-per-target",
                     "", "false");
-  set_boolean_parameter("tdc", FALSE,
+  set_boolean_parameter("tdc", false,
       "Target-decoy competition. puts decoy psms in target file. ",
       "Now hidden from the user", "false");
-  set_boolean_parameter("decoy-p-values", FALSE,
+  set_boolean_parameter("decoy-p-values", false,
                         "Store all decoy p-values in a file",
                         "", "false");
   set_int_parameter("max-rank-preliminary", 500, 0, BILLION, 
@@ -639,6 +641,15 @@ void initialize_parameters(void){
       "Available from parameter file for crux-generate-peptides and "
       "crux-search-for-matches and the "
       "the same must be used for crux compute-q-value.", "true");
+  set_string_parameter("cmod-fixed", "NO MODS",
+      "Specify a fixed modification to apply to the C-terminus of peptides.",
+      "Available from parameter file for crux sequest-search and "
+      "search-for-matches.", "true");
+  set_string_parameter("nmod-fixed", "NO MODS",
+      "Specify a fixed modification to apply to the N-terminus of peptides.",
+      "Available from parameter file for crux sequest-search and "
+      "search-for-matches.", "true");
+
   set_int_parameter("max-mods", MAX_PEPTIDE_LENGTH, 0, MAX_PEPTIDE_LENGTH,
       "The maximum number of modifications that can be applied to a single " 
       "peptide.  Default=no limit.",
@@ -648,12 +659,12 @@ void initialize_parameters(void){
       "The maximum number of modified amino acids that can appear in one "
       "peptide.  Each aa can be modified multiple times.  Default=no limit.",
       "Available from parameter file for search-for-matches.", "true");
-  set_boolean_parameter("display-summed-mod-masses", TRUE,
+  set_boolean_parameter("display-summed-mod-masses", true,
       "When a residue has multiple modifications, print the sum of those "
       "modifications rather than listing each in a comma-separated list.  "
       "Default=T.",
       "Available in the parameter file for any command that prints peptides "
-      "sequences.  Example: TRUE is SE[12.40]Q and FALSE is SE[10.00,2.40]Q",
+      "sequences.  Example: true is SE[12.40]Q and false is SE[10.00,2.40]Q",
       "true" );
   set_int_parameter("mod-precision", MOD_MASS_PRECISION, 0, 20,//arbitrary
       "Set the precision for modifications as written to .txt files.",
@@ -701,14 +712,14 @@ void initialize_parameters(void){
       "into text.", "false");
 
   // **** percolator options. ****
-  set_boolean_parameter("feature-file", FALSE,
+  set_boolean_parameter("feature-file", false,
      "Optional file into which psm features are printed. Default=F.",
      "Available for percolator and q-ranker.  File will be named "
      "<fileroot>.percolator.features.txt or <fileroot>.qranker.features.txt.",
      "true");
 
   // **** q-ranker options. ****
-  set_boolean_parameter("no-xval", FALSE, 
+  set_boolean_parameter("no-xval", false, 
       "Turn off cross-validation to select hyperparameters.",
       "Available for q-ranker.", "true");
 
@@ -726,7 +737,7 @@ void initialize_parameters(void){
       "The ion series to predict (b,y,by). Default='by' (both b and y ions).",
       "Only available for crux-predict-peptide-ions.  Set automatically to "
       "'by' for searching.", "true");
-  set_boolean_parameter("precursor-ions", FALSE,
+  set_boolean_parameter("precursor-ions", false,
       "Predict the precursor ions, and all associated ions "
       "(neutral-losses, multiple charge states) consistent with the "
       "other specified options. (T,F) Default=F.",
@@ -739,7 +750,7 @@ void initialize_parameters(void){
       "Predict the given number of isotope peaks (0|1|2). Default=0.",
       "Only available for crux-predict-peptide-ion.  Automatically set to "
       "0 for Sp scoring and 1 for xcorr scoring.", "true");
-  set_boolean_parameter("flanking", FALSE, 
+  set_boolean_parameter("flanking", false, 
       "Predict flanking peaks for b and y ions (T,F). Default=F.",
       "Only available for crux-predict-peptide-ion.", "true");
   set_string_parameter("max-ion-charge", "peptide",
@@ -784,7 +795,7 @@ void initialize_parameters(void){
        "Abundance Factor, SIN is Spectral Index Normalized and EMPAI is "
        "Exponentially Modified Protein Abundance Index",
        "true");
-  set_boolean_parameter("unique-mapping", FALSE,
+  set_boolean_parameter("unique-mapping", false,
        "Ignore peptides with multiple mappings to proteins (T,F). Default=F.",
        "Available for spectral-counts.",
        "true");
@@ -882,7 +893,7 @@ void initialize_parameters(void){
       "For parameter file only.  Default=no mass change.", "false");
 
   /* get-ms2-spectrum options */
-  set_boolean_parameter("stats", FALSE, 
+  set_boolean_parameter("stats", false, 
       "Print to stdout additional information about the spectrum.",
       "Avaliable only for crux-get-ms2-spectrum.  Does not affect contents "
       "of the output file.", "true");
@@ -904,17 +915,17 @@ void initialize_parameters(void){
       "Position of xlink on peptide B",
       "Available for xlink-predict-peptide-ions.", "false");
 
-  set_boolean_parameter("print-theoretical-spectrum", FALSE,
+  set_boolean_parameter("print-theoretical-spectrum", false,
       "Print the theoretical spectrum",
       "Available for xlink-predict-peptide-ions (Default=F).",
       "true");
 
-  set_boolean_parameter("use-mgf", FALSE,
+  set_boolean_parameter("use-mgf", false,
       "Use MGF file format for parsing files",
       "Available for search-for-xlinks program (Default=F).",
       "true");
 
-  set_boolean_parameter("use-old-xlink", TRUE /* Turn to false later */,
+  set_boolean_parameter("use-old-xlink", true /* Turn to false later */,
       "Use old xlink searching algorihtm",
       "Available for search-for-xlinks program (Default=F).",
       "false");
@@ -926,22 +937,22 @@ void initialize_parameters(void){
 
   // **** search-xlink options ****
 
-  set_boolean_parameter("xlink-print-db", FALSE,
+  set_boolean_parameter("xlink-print-db", false,
     "Print the database in tab delimited format to xlink_peptides.txt",
     "Used for testing the candidate generatation (Default=F).",
     "false");
 
-  set_boolean_parameter("xlink-include-linears", TRUE, 
+  set_boolean_parameter("xlink-include-linears", true, 
       "Include linear peptides in the "
       "database.  Default=T.",
       "Available for crux search-for-xlinks program (Default=T).",
       "true");
-  set_boolean_parameter("xlink-include-deadends", TRUE, 
+  set_boolean_parameter("xlink-include-deadends", true, 
       "Include dead-end peptides in the "
       "database.  Default=T.",
       "Available for crux search-for-xlinks program.",
       "true");
-  set_boolean_parameter("xlink-include-selfloops", TRUE, 
+  set_boolean_parameter("xlink-include-selfloops", true, 
       "Include self-loop peptides in the "
       "database.  Default=T.",
       "Available for crux search-for-xlinks program.",
@@ -983,7 +994,7 @@ void initialize_parameters(void){
 
   /* crux-util parameters */
 
-  set_boolean_parameter("ascending", TRUE,
+  set_boolean_parameter("ascending", true,
     "Sort in ascending order.  Otherwise, descending. "
     "Default: True.",
     "Available for sort-by-column", "true");
@@ -1008,7 +1019,7 @@ void initialize_parameters(void){
     "value of the column",
     "Available for the delimited utility programs", "false");
 
-  set_boolean_parameter("header", TRUE,
+  set_boolean_parameter("header", true,
     "Print the header line of the tsv file. Default=T.",
     "Available for crux extract-columns and extract-rows",
     "true");
@@ -1029,9 +1040,9 @@ void initialize_parameters(void){
 
   
   // now we have initialized the parameters
-  parameter_initialized = TRUE;
-  usage_initialized = TRUE;
-  type_initialized = TRUE;
+  parameter_initialized = true;
+  usage_initialized = true;
+  type_initialized = true;
 
 }
 
@@ -1041,13 +1052,13 @@ void initialize_parameters(void){
  * must be used.  Must be called after initialize_parameters
  * This is the interface for parse_argument_set_req()
  */
-BOOLEAN_T select_cmd_line_arguments(  //remove options from name
+bool select_cmd_line_arguments(  //remove options from name
   const char** option_names,
   int    num_options 
   ){
   select_cmd_line( option_names, num_options, 
                    &parse_arguments_set_req);
-  return TRUE;
+  return true;
 }
 
 /*
@@ -1055,13 +1066,13 @@ BOOLEAN_T select_cmd_line_arguments(  //remove options from name
  * can be used.  Must be called after initialize_parameters
  * This is the interface for parse_argument_set_opt()
  */
-BOOLEAN_T select_cmd_line_options(  //remove options from name
+bool select_cmd_line_options(  //remove options from name
   const char** option_names,
   int    num_options 
   ){
   select_cmd_line( option_names, num_options, 
                    &parse_arguments_set_opt);
-  return TRUE;
+  return true;
 }
 /*
  * Private function for doing the work of select_cmd_line_options
@@ -1069,17 +1080,17 @@ BOOLEAN_T select_cmd_line_options(  //remove options from name
  * the last function call which is now set with a function pointer
  * 
  */
-BOOLEAN_T select_cmd_line(  //remove options from name
+bool select_cmd_line(  //remove options from name
   const char** option_names,
   int    num_options, 
   int (*parse_arguments_set_ptr)(const char*, const char*, void*, enum argument_type) 
   ){
 
   carp(CARP_DETAILED_DEBUG, "Selecting options");
-  BOOLEAN_T success = TRUE;
+  bool success = true;
 
   if( (num_options < 1) || (option_names == NULL) ){
-    success = FALSE; //?
+    success = false; //?
     return success;
   }
 
@@ -1107,7 +1118,7 @@ BOOLEAN_T select_cmd_line(  //remove options from name
 
     if( //strcmp(type_ptr, "PEPTIDE_TYPE_T") == 0 ||
         strcmp((char*)type_ptr, "MASS_TYPE_T") == 0 ||
-        strcmp((char*)type_ptr, "BOOLEAN_T") == 0 ||
+        strcmp((char*)type_ptr, "bool") == 0 ||
         strcmp((char*)type_ptr, "SCORER_TYPE_T") == 0 ){
       type_ptr = (void*)"STRING_ARG";
     }
@@ -1130,11 +1141,11 @@ BOOLEAN_T select_cmd_line(  //remove options from name
  * helper used below.  look for param file name, die if error
  * return null if not found
  */
-BOOLEAN_T find_param_filename(int argc, 
+bool find_param_filename(int argc, 
                               char** argv, 
                               char* filename_buffer, 
                               int buffer_size){
-  BOOLEAN_T success = TRUE;
+  bool success = true;
   int i;
   int param_file_index = -1;
   for( i=0; i< argc; i++){
@@ -1154,14 +1165,14 @@ BOOLEAN_T find_param_filename(int argc,
 
     if( strlen(param_filename) < (unsigned)buffer_size ){
       strcpy(filename_buffer, param_filename);
-      success = TRUE;
+      success = true;
     }
     else{
       carp(CARP_FATAL, "Parameter filename is too long");
     }
   }
   else{ //parameter_file_index < 0, i.e. no paramter file option
-    success = FALSE;
+    success = false;
   }
 
   return success;
@@ -1186,7 +1197,7 @@ void translate_decoy_options(){
   int max_rank_preliminary = get_int_parameter("max-rank-preliminary");
 
   // store new values here
-  BOOLEAN_T tdc = FALSE;  // target-decoy competitition
+  bool tdc = false;  // target-decoy competitition
   int new_num_decoy_files = -1;
   int new_max_rank_preliminary = max_rank_preliminary; 
 
@@ -1204,7 +1215,7 @@ void translate_decoy_options(){
 
   // set new values
   if( strcmp(location, "target-file") == 0 ){
-    tdc = TRUE;
+    tdc = true;
     new_num_decoy_files = 0;
 
     if( max_rank_preliminary > 0 ){  // scale to num decoys
@@ -1212,10 +1223,10 @@ void translate_decoy_options(){
                                 (1 + num_decoy_per_target);
     }
   }else if( strcmp(location, "one-decoy-file") == 0 ){
-    tdc = FALSE;
+    tdc = false;
     new_num_decoy_files = 1;
   }else if( strcmp(location, "separate-decoy-files") == 0 ){
-    tdc = FALSE;
+    tdc = false;
     new_num_decoy_files = num_decoy_per_target;
   }else{
     carp(CARP_FATAL, "Unrecoginzed decoy location '%s'."
@@ -1233,10 +1244,10 @@ void translate_decoy_options(){
   sprintf(buffer, "%i", new_max_rank_preliminary);
   update_hash_value(parameters, "max-rank-preliminary", buffer);
 
-  if( tdc == TRUE ){
-    update_hash_value(parameters, "tdc", (void*)"TRUE");
+  if( tdc == true ){
+    update_hash_value(parameters, "tdc", (void*)"true");
   }else{
-    update_hash_value(parameters, "tdc", (void*)"FALSE");
+    update_hash_value(parameters, "tdc", (void*)"false");
   }
 }
 
@@ -1266,35 +1277,6 @@ static void set_mz_bin_width()
 }
 
 /**
- * Get the m/z bin width parameter. If xcorr-var-bin is TRUE, then 
- * return the mz-bin-width parameter, otherwise return based upon the 
- * fragment-mass parameter.
- */
-double get_mz_bin_width() {
-  if (get_boolean_parameter("xcorr-var-bin")) {
-    return get_double_parameter("mz-bin-width");
-  } else {
-    if (get_mass_type_parameter("fragment-mass") == MONO) {
-      return BIN_WIDTH_MONO;
-    } else {
-      return BIN_WIDTH_AVERAGE;
-    }
-  }
-}
-
-/** 
- * Get the m/z bin offset parameter. If NEW_BINNING is defined, then
- * return the mz-bin-offset parameter, otherwise return 0.
- */ 
-double get_mz_bin_offset() {
-  if (get_boolean_parameter("xcorr-var-bin")) {
-    return get_double_parameter("mz-bin-offset");
-  } else {
-    return SMART_MZ_OFFSET;
-  }
-}
-
-/**
  * Set the use-flanking-peaks parameter.  If the value was set by
  * user, set to that value.  Otherwise, set according to what command
  * is being run.  Defaults are F for search-for-matches and T for
@@ -1306,20 +1288,20 @@ void set_flanking_peaks(const char* exe_name){
   // if it is the default value, it was not set by the user
   if( strcmp(value, "unset") == 0 ){
     if( strcmp(exe_name, "search-for-matches") == 0 ){
-      value = "FALSE";
+      value = "false";
     } else {
-      value = "TRUE";
+      value = "true";
     }
   } else { // use the value set by the user
     if( value[0] == 'T' || value[0] == 't' ){
-      value = "TRUE";
+      value = "true";
     } else if( value[0] == 'F' || value[0] == 'f' ){
-      value = "FALSE";
+      value = "false";
     } //else don't change, let check find error
   }
-  // set the new value and change type to BOOLEAN_T
+  // set the new value and change type to bool
   update_hash_value(parameters, "use-flanking-peaks", value);
-  update_hash_value(types, "use-flanking-peaks", (void*)"BOOLEAN_T");
+  update_hash_value(types, "use-flanking-peaks", (void*)"bool");
   check_option_type_and_bounds("use-flanking-peaks");
 }
 
@@ -1328,14 +1310,14 @@ void set_flanking_peaks(const char* exe_name){
  * option (if present), parse it's values into the hash, and parse
  * the command line options and arguments into the hash.
  * Main then retrieves the values through get_<type>_parameter.
- * \returns TRUE is command line is successfully parsed.
+ * \returns true is command line is successfully parsed.
  */
-BOOLEAN_T parse_cmd_line_into_params_hash(int argc, 
+bool parse_cmd_line_into_params_hash(int argc, 
                                           char** argv, 
                                           const char* exe_name){
   carp(CARP_DETAILED_DEBUG, "Parameter.c is parsing the command line");
   assert(parameter_initialized && usage_initialized && type_initialized);
-  BOOLEAN_T success = TRUE;
+  bool success = true;
   int i;
   /* first look for parameter-file option and parse values in file before
      command line values.  Checks types and bounds, exiting if invalid */
@@ -1440,7 +1422,7 @@ BOOLEAN_T parse_cmd_line_into_params_hash(int argc,
   set_flanking_peaks(exe_name);
 
 
-  parameter_plasticity = FALSE;
+  parameter_plasticity = false;
 
   // Set m/z bin width based on mass type.
   set_mz_bin_width();
@@ -1461,7 +1443,7 @@ BOOLEAN_T parse_cmd_line_into_params_hash(int argc,
 // error code instead of dying
 void parse_custom_enzyme(const char* rule_str){
 
-  BOOLEAN_T success = TRUE;
+  bool success = true;
   int len = strlen(rule_str);
   int idx = 0;
   int pipe_idx = 0;
@@ -1476,7 +1458,7 @@ void parse_custom_enzyme(const char* rule_str){
   // check that there isn't a second
   for(idx = idx+1; idx < len; idx++){
     if( rule_str[idx] == '|' ){
-      success = FALSE;      
+      success = false;      
       break;
     }
   }
@@ -1493,36 +1475,36 @@ void parse_custom_enzyme(const char* rule_str){
   // 3. check that braces match and set inclusion
   // pre-list
   if(pipe_idx < 1){
-    success = FALSE;
+    success = false;
   }else if(rule_str[pre_first_idx-1] == '[' && 
            rule_str[pre_end_idx] == ']'){
-    pre_for_inclusion = TRUE;
+    pre_for_inclusion = true;
   }else if(rule_str[pre_first_idx-1] == '{' && 
            rule_str[pre_end_idx] == '}'){
-    pre_for_inclusion = FALSE;
+    pre_for_inclusion = false;
   }else{
-    success = FALSE;
+    success = false;
   }
 
   // post list
   if(pipe_idx + 2 >= len ){
-    success = FALSE;
+    success = false;
   }else if(rule_str[post_first_idx-1] == '[' && 
            rule_str[post_end_idx] == ']'){
-    post_for_inclusion = TRUE;
+    post_for_inclusion = true;
   }else if(rule_str[post_first_idx-1] == '{' && 
            rule_str[post_end_idx] == '}'){
-    post_for_inclusion = FALSE;
+    post_for_inclusion = false;
   }else{
-    success = FALSE;
+    success = false;
   }
 
   // check that braces aren't empty 
   if(pre_first_idx >= pre_end_idx || post_first_idx >= post_end_idx ){
-    success = FALSE;
+    success = false;
   }
 
-  if( success == FALSE ){
+  if( success == false ){
     carp(CARP_FATAL, "Custom enzyme syntax '%s' is incorrect.  "
          "Must be of the form [AZ]|[AZ] or with [] replaced by {}. "
          "AZ is a list of residues (letters A-Z) required [] or prohibited {}. "
@@ -1549,14 +1531,14 @@ void parse_custom_enzyme(const char* rule_str){
     free(pre_cleavage_list);
     pre_cleavage_list = NULL;
     pre_list_size = 0;
-    pre_for_inclusion = FALSE;
+    pre_for_inclusion = false;
   }
 
   if(strncmp( rule_str+post_first_idx-1, "[X]", post_list_size+2) == 0){
     free(post_cleavage_list);
     post_cleavage_list = NULL;
     post_list_size = 0;
-    post_for_inclusion = FALSE;
+    post_for_inclusion = false;
   }
 
 }
@@ -1621,9 +1603,9 @@ void check_parameter_consistency(){
  *   that it is a legal value (within min/max for
  *   numeric, correct word for specialized type 
  */
-BOOLEAN_T check_option_type_and_bounds(const char* name){
+bool check_option_type_and_bounds(const char* name){
 
-  BOOLEAN_T success = TRUE;
+  bool success = true;
   char die_str[SMALL_BUFFER];
   char* type_str = (char*)get_hash_value(types, name);
   char* value_str = (char*)get_hash_value(parameters, name);
@@ -1647,7 +1629,7 @@ BOOLEAN_T check_option_type_and_bounds(const char* name){
   case DOUBLE_P:
     if( atof(value_str) < atof(min_str) || 
         atof(value_str) > atof(max_str) ){
-      success = FALSE;
+      success = false;
       sprintf(die_str, 
               "The option '%s' must be between %s and %s.  %s is out of bounds",
               name, min_str, max_str, value_str);
@@ -1661,7 +1643,7 @@ BOOLEAN_T check_option_type_and_bounds(const char* name){
     carp(CARP_DETAILED_DEBUG, "found mass_type opt with value %s ", 
          value_str);
     if( ! string_to_mass_type( value_str, &mass_type )){
-      success = FALSE;
+      success = false;
       sprintf(die_str, "Illegal mass-type.  Must be 'mono' or 'average'");
     }
     break;
@@ -1669,7 +1651,7 @@ BOOLEAN_T check_option_type_and_bounds(const char* name){
       carp(CARP_DETAILED_DEBUG, "found digest_type param, value '%s' ", 
            value_str);
     if( string_to_digest_type(value_str) == INVALID_DIGEST){
-      success = FALSE;
+      success = false;
       sprintf(die_str, "Illegal digest value. "
               "Must be full-digest or partial-digest.");
     }
@@ -1678,7 +1660,7 @@ BOOLEAN_T check_option_type_and_bounds(const char* name){
       carp(CARP_DETAILED_DEBUG, "found enzyme_type param, value '%s' ", 
            value_str);
     if( string_to_enzyme_type(value_str) == INVALID_ENZYME){
-      success = FALSE;
+      success = false;
       sprintf(die_str, "Illegal enzyme. Must be trypsin, chymotrypsin, "
               ", elastase, or no-enzyme.");
     }
@@ -1686,10 +1668,11 @@ BOOLEAN_T check_option_type_and_bounds(const char* name){
   case BOOLEAN_P:
     carp(CARP_DETAILED_DEBUG, "found boolean_type param, value '%s'", 
          value_str);
-    if( value_str[0] != 'T' && value_str[0] != 'F'){
-      success =  FALSE;
+    if( (value_str[0] != 'T') && (value_str[0] != 'F') && 
+        (value_str[0] != 't') && (value_str[0] != 'f') ){
+      success =  false;
       sprintf(die_str, 
-              "Illegal boolean value '%s' for option '%s'.  Must be T or F",
+              "Illegal boolean value '%s' for option '%s'.  Must be T/t or F/f",
               value_str, name);
     }
     break;
@@ -1698,13 +1681,13 @@ BOOLEAN_T check_option_type_and_bounds(const char* name){
          value_str);
     //check for legal type
     if(! string_to_scorer_type( value_str, &scorer_type)){
-      success = FALSE;
+      success = false;
       sprintf(die_str, "Illegal score value '%s' for option '%s'.  "
       "Must be sp, xcorr or xcorr-pvalue.", value_str, name);
     }else if((scorer_type != SP ) &&   //check for one of the accepted types
              (scorer_type != XCORR ) &&
              (scorer_type != LOGP_BONF_WEIBULL_XCORR )){
-      success = FALSE;
+      success = false;
       sprintf(die_str, "Illegal score value '%s' for option '%s'.  "
       "Must be sp, xcorr or xcorr-pvalue.", value_str, name);
     }
@@ -1713,7 +1696,7 @@ BOOLEAN_T check_option_type_and_bounds(const char* name){
     carp(CARP_DETAILED_DEBUG, "found algorithm_type param, value '%s'",
          value_str);
     if(! string_to_algorithm_type( value_str, &algorithm_type)){
-      success = FALSE;
+      success = false;
       sprintf(die_str, "Illegal score value '%s' for option '%s'.  "
               "Must be percolator, curve-fit, or none.", value_str, name);
     }
@@ -1722,7 +1705,7 @@ BOOLEAN_T check_option_type_and_bounds(const char* name){
     carp(CARP_DETAILED_DEBUG, "found ion_type param, value '%s'",
          value_str);
     if( !string_to_ion_type(value_str, &ion_type)){
-      success = FALSE;
+      success = false;
       sprintf(die_str, "Illegal ion type '%s' for option '%s'.  "
               "Must be b,y,by.", value_str, name);
     }
@@ -1731,7 +1714,7 @@ BOOLEAN_T check_option_type_and_bounds(const char* name){
     carp(CARP_DETAILED_DEBUG, "found window type param, value '%s'",
          value_str);
     if(string_to_window_type(value_str) == WINDOW_INVALID) {
-      success = FALSE;
+      success = false;
       sprintf(die_str, "Illegal window type '%s' for option '%s'.  "
               "Must be (mass, mz, ppm)", value_str, name);
     }
@@ -1740,7 +1723,7 @@ BOOLEAN_T check_option_type_and_bounds(const char* name){
     carp(CARP_DETAILED_DEBUG, "found measure type param, value '%s'",
 	 value_str);
     if (string_to_measure_type(value_str) == MEASURE_INVALID){
-      success = FALSE;
+      success = false;
       sprintf(die_str, "Illegal measure type '%s' for option '%s'. "
 	      "Must be (NSAF, SIN, EMPAI)", value_str, name);
     }
@@ -1749,7 +1732,7 @@ BOOLEAN_T check_option_type_and_bounds(const char* name){
     carp(CARP_DETAILED_DEBUG, "found parsimony type param, value '%s'",
      value_str);
     if (string_to_parsimony_type(value_str) == PARSIMONY_INVALID){
-      success = FALSE;
+      success = false;
       sprintf(die_str, "Illegal parsimony type '%s' for option '%s'. "
 	      "Must be (none, simple, greedy)", value_str, name);
     }
@@ -1758,7 +1741,7 @@ BOOLEAN_T check_option_type_and_bounds(const char* name){
     carp(CARP_DETAILED_DEBUG, "found quant level type param, value");// '%s'",
     //	 value_str);
     if (string_to_quant_level_type(value_str) == QUANT_LEVEL_INVALID){
-      success = FALSE;
+      success = false;
       sprintf(die_str, "Illegal quantitation level type '%s' for option '%s'. "
 	      "Must be (peptide, protein)", value_str, name);
     }
@@ -1766,7 +1749,7 @@ BOOLEAN_T check_option_type_and_bounds(const char* name){
   case DECOY_TYPE_P:
     carp(CARP_DETAILED_DEBUG, "found decoy type param, value");
     if (string_to_decoy_type(value_str) == INVALID_DECOY_TYPE){
-      success = FALSE;
+      success = false;
       sprintf(die_str, "Illegal decoy type '%s' for option '%s'. "
 	      "Must be one of none, reverse, protein-shuffle, peptide-shuffle",
               value_str, name);
@@ -1813,11 +1796,11 @@ void print_mods_parameter_file(FILE* param_file,
     // standard mods have the format mass:aa_list:max
     if( strcmp(name, "mod") == 0 ){
       int max = aa_mod_get_max_per_peptide(mod_list[mod_idx]);
-      BOOLEAN_T* aas_modified = aa_mod_get_aa_list(mod_list[mod_idx]);
+      bool* aas_modified = aa_mod_get_aa_list(mod_list[mod_idx]);
       char aa_str[PARAMETER_BUFFER] = "";
       char* aa_str_ptr = aa_str;
       for(int aa_idx = 0; aa_idx < AA_LIST_LENGTH; aa_idx++){
-        if( aas_modified[aa_idx] == TRUE ){
+        if( aas_modified[aa_idx] == true ){
           sprintf(aa_str_ptr, "%c", (aa_idx + 'A'));
           aa_str_ptr++;
         }
@@ -1877,7 +1860,7 @@ void print_parameter_file(char** filename){
   carp(CARP_DEBUG, "Printing parameter file");
   prefix_fileroot_to_name(filename);
   char* output_dir = get_string_parameter("output-dir");
-  BOOLEAN_T overwrite = get_boolean_parameter("overwrite");
+  bool overwrite = get_boolean_parameter("overwrite");
   FILE* param_file = create_file_in_path(*filename, 
                                          output_dir, 
                                          overwrite);
@@ -1938,8 +1921,8 @@ void free_parameters(void){
   num_n_mods = 0;
   list_of_c_mods = NULL;
   list_of_n_mods = NULL;
-  parameter_initialized = FALSE;
-  parameter_plasticity = TRUE;
+  parameter_initialized = false;
+  parameter_plasticity = true;
 }
 
 /**
@@ -2028,9 +2011,9 @@ void parse_parameter_file(
  * Each of the following functions searches through the hash table of
  * parameters, looking for one whose name matches the string.  The
  * function returns the corresponding value.
- * \returns TRUE if paramater value is TRUE, else FALSE
+ * \returns true if paramater value is true, else false
  */ 
-BOOLEAN_T get_boolean_parameter(
+bool get_boolean_parameter(
  const char*     name  ///< the name of the parameter looking for -in
  )
 {
@@ -2046,9 +2029,9 @@ BOOLEAN_T get_boolean_parameter(
   //check type
   char* type_str = (char*)get_hash_value(types, name);
   PARAMETER_TYPE_T type;
-  BOOLEAN_T found = string_to_param_type(type_str, &type);
+  bool found = string_to_param_type(type_str, &type);
  
-  if(found == FALSE || type != BOOLEAN_P){
+  if(found == false || type != BOOLEAN_P){
     carp(CARP_ERROR, "Request for boolean parameter '%s' which is of type %s",
          name, type_str);
   }
@@ -2064,18 +2047,24 @@ BOOLEAN_T get_boolean_parameter(
           value,
           PARAMETER_LENGTH);
 
-  if ((strcmp(buffer, "TRUE") == 0) || (strcmp(buffer, "T") == 0)){
-    return(TRUE);
+  
+  if ((strcmp(buffer,"TRUE") == 0) || 
+      (strcmp(buffer, "true") == 0) || 
+      (strcmp(buffer, "T") == 0)){
+    return(true);
   } 
-  else if ((strcmp(buffer, "FALSE") == 0) || (strcmp(buffer, "F") == 0)){
-    return(FALSE);
+  else if ((strcmp(buffer,"FALSE") == 0) || 
+           (strcmp(buffer, "false") == 0) || 
+            (strcmp(buffer, "F") == 0)){
+
+    return(false);
   } 
   else {
     carp(CARP_FATAL, "Invalid Boolean parameter %s. ", buffer);
   }
   
   carp(CARP_FATAL, "parameter name: %s, doesn't exist", name);
-  return FALSE; // Return value to avoid compiler warning
+  return false; // Return value to avoid compiler warning
 }
 
 /**
@@ -2104,9 +2093,9 @@ int get_int_parameter(
   //check type
   char* type_str = (char*)get_hash_value(types, name);
   PARAMETER_TYPE_T type;
-  BOOLEAN_T found = string_to_param_type(type_str, &type);
+  bool found = string_to_param_type(type_str, &type);
 
-  if(found==FALSE || type != INT_P){
+  if(found==false || type != INT_P){
     carp(CARP_ERROR, "Request for int parameter '%s' which is of type %s",
          name, type_str);
   }
@@ -2147,9 +2136,9 @@ double get_double_parameter(
   //check type
   char* type_str = (char*)get_hash_value(types, name);
   PARAMETER_TYPE_T type;
-  BOOLEAN_T found = string_to_param_type(type_str, &type);
+  bool found = string_to_param_type(type_str, &type);
 
-  if(found==FALSE || type != DOUBLE_P){
+  if(found==false || type != DOUBLE_P){
     carp(CARP_ERROR, "Request for double parameter '%s' which is of type %s",
          name, type_str);
   }
@@ -2256,7 +2245,7 @@ MASS_TYPE_T get_mass_type_parameter(
    ){
   char* param_value_str = (char*)get_hash_value(parameters, name);
   MASS_TYPE_T param_value;
-  BOOLEAN_T success = string_to_mass_type(param_value_str, &param_value);
+  bool success = string_to_mass_type(param_value_str, &param_value);
 
   if( ! success ){
     carp(CARP_FATAL, 
@@ -2354,7 +2343,7 @@ char get_delimiter_parameter(
 ALGORITHM_TYPE_T get_algorithm_type_parameter(const char* name){
   char* param_value_str = (char*)get_hash_value(parameters, name);
   ALGORITHM_TYPE_T param_value;
-  BOOLEAN_T success = string_to_algorithm_type(param_value_str, &param_value);
+  bool success = string_to_algorithm_type(param_value_str, &param_value);
 
   if(!success){
     carp(CARP_FATAL, "Algorithm_type parameter %s has the value %s "
@@ -2367,7 +2356,7 @@ ALGORITHM_TYPE_T get_algorithm_type_parameter(const char* name){
 SCORER_TYPE_T get_scorer_type_parameter(const char* name){
   char* param_value_str = (char*)get_hash_value(parameters, name);
   SCORER_TYPE_T param_value;
-  BOOLEAN_T success = string_to_scorer_type(param_value_str, &param_value);
+  bool success = string_to_scorer_type(param_value_str, &param_value);
 
   if(!success){
     carp(CARP_FATAL, "Scorer_type parameter %s has the value %s " 
@@ -2379,7 +2368,7 @@ SCORER_TYPE_T get_scorer_type_parameter(const char* name){
 ION_TYPE_T get_ion_type_parameter(const char* name){
   char* param_value_str = (char*)get_hash_value(parameters, name);
   ION_TYPE_T param_value;
-  BOOLEAN_T success = string_to_ion_type(param_value_str, &param_value);
+  bool success = string_to_ion_type(param_value_str, &param_value);
 
   if(!success){
     carp(CARP_FATAL, 
@@ -2409,42 +2398,42 @@ COMPARISON_T get_comparison_parameter(const char* name) {
  **************************************************
  */
 
-BOOLEAN_T reset_parameter(const char* name, const char* value){
+bool reset_parameter(const char* name, const char* value){
   return add_or_update_hash(parameters, name, value);
 }
 
-BOOLEAN_T set_boolean_parameter(
+bool set_boolean_parameter(
  const char* name,       ///< the name of the parameter looking for -in
- BOOLEAN_T   set_value,  ///< the value to be set -in
+ bool   set_value,  ///< the value to be set -in
  const char* usage,      ///< message for the usage statement
  const char* filenotes,  ///< additional information for the params file
  const char* foruser     ///< "true" if should be revealed to user
 )
 {
-  BOOLEAN_T result;
+  bool result;
     
   // check if parameters can be changed
   if(!parameter_plasticity){
     carp(CARP_ERROR, "can't change parameters once they are confirmed");
-    return FALSE;
+    return false;
   }
 
   const char* bool_str;
   if(set_value){
-    bool_str = "TRUE";
+    bool_str = "true";
   }
   else{
-    bool_str = "FALSE";
+    bool_str = "false";
   }
   result = add_or_update_hash(parameters, name, bool_str);
   result = add_or_update_hash(usages, name, usage);
   result = add_or_update_hash(file_notes, name, filenotes);
   result = add_or_update_hash(for_users, name, foruser);
-  result = add_or_update_hash(types, name, (void*)"BOOLEAN_T");
+  result = add_or_update_hash(types, name, (void*)"bool");
   return result;
 }
 
-BOOLEAN_T set_int_parameter(
+bool set_int_parameter(
  const char*     name,  ///< the name of the parameter looking for -in
  int set_value,  ///< the value to be set -in
  int min_value,  ///< the minimum accepted value -in
@@ -2454,13 +2443,13 @@ BOOLEAN_T set_int_parameter(
  const char* foruser     ///< true if should be revealed to user
   )
 {
-  BOOLEAN_T result;
+  bool result;
   char buffer[PARAMETER_LENGTH];
   
   // check if parameters can be changed
   if(!parameter_plasticity){
     carp(CARP_ERROR, "can't change parameters once they are confirmed");
-    return FALSE;
+    return false;
   }
   
   //stringify default, min, and max values and set
@@ -2480,7 +2469,7 @@ BOOLEAN_T set_int_parameter(
   return result;
 }
 
-BOOLEAN_T set_double_parameter(
+bool set_double_parameter(
  const char*     name,  ///< the name of the parameter looking for -in
  double set_value,  ///< the value to be set -in
  double min_value,  ///< the value to be set -in
@@ -2490,13 +2479,13 @@ BOOLEAN_T set_double_parameter(
  const char* foruser     ///< "true" if should be revealed to user
   )
 {
-  BOOLEAN_T result;
+  bool result;
   char buffer[PARAMETER_LENGTH];
   
   // check if parameters can be changed
   if(!parameter_plasticity){
     carp(CARP_ERROR, "can't change parameters once they are confirmed");
-    return FALSE;
+    return false;
   }
   
   // convert to string
@@ -2518,9 +2507,9 @@ BOOLEAN_T set_double_parameter(
 
 /**
  * temporary replacement for function, return name once all exe's are fixed
- * \returns TRUE if paramater value is set, else FALSE
+ * \returns true if paramater value is set, else false
  */ 
-BOOLEAN_T set_string_parameter(
+bool set_string_parameter(
  const char*     name,  ///< the name of the parameter looking for -in
  const char* set_value,  ///< the value to be set -in
  const char* usage,
@@ -2528,12 +2517,12 @@ BOOLEAN_T set_string_parameter(
  const char* foruser
   )
 {
-  BOOLEAN_T result;
+  bool result;
 
   // check if parameters can be changed
   if(!parameter_plasticity){
     carp(CARP_ERROR, "can't change parameters once they are confirmed");
-    return FALSE;
+    return false;
   }
   
   if( set_value == NULL ){
@@ -2549,7 +2538,7 @@ BOOLEAN_T set_string_parameter(
   return result;
 }
 
-BOOLEAN_T set_mass_type_parameter(
+bool set_mass_type_parameter(
  const char*     name,  ///< the name of the parameter looking for -in
  MASS_TYPE_T set_value,  ///< the value to be set -in
  const char* usage,      ///< string to print in usage statement
@@ -2557,13 +2546,13 @@ BOOLEAN_T set_mass_type_parameter(
  const char* foruser
  )
 {
-  BOOLEAN_T result;
+  bool result;
   char value_str[265] ;
 
   // check if parameters can be changed
   if(!parameter_plasticity){
     carp(CARP_ERROR, "can't change parameters once they are confirmed");
-    return FALSE;
+    return false;
   }
   
   /* stringify the value */
@@ -2578,7 +2567,7 @@ BOOLEAN_T set_mass_type_parameter(
 
 }
 
-BOOLEAN_T set_digest_type_parameter(
+bool set_digest_type_parameter(
  const char*     name,  ///< the name of the parameter looking for -in
  DIGEST_T set_value,  ///< the value to be set -in
  const char* usage,      ///< string to print in usage statement
@@ -2586,12 +2575,12 @@ BOOLEAN_T set_digest_type_parameter(
  const char* foruser
   )
 {
-  BOOLEAN_T result = TRUE;
+  bool result = true;
   
   // check if parameters can be changed
   if(!parameter_plasticity){
     carp(CARP_ERROR, "can't change parameters once they are confirmed");
-    return FALSE;
+    return false;
   }
   
   /* stringify the value */
@@ -2608,7 +2597,7 @@ BOOLEAN_T set_digest_type_parameter(
 
 }
 
-BOOLEAN_T set_enzyme_type_parameter(
+bool set_enzyme_type_parameter(
  const char*     name,  ///< the name of the parameter looking for -in
  ENZYME_T set_value,  ///< the value to be set -in
  const char* usage,      ///< string to print in usage statement
@@ -2616,12 +2605,12 @@ BOOLEAN_T set_enzyme_type_parameter(
  const char* foruser
   )
 {
-  BOOLEAN_T result = TRUE;
+  bool result = true;
   
   // check if parameters can be changed
   if(!parameter_plasticity){
     carp(CARP_ERROR, "can't change parameters once they are confirmed");
-    return FALSE;
+    return false;
   }
   
   /* stringify the value */
@@ -2637,19 +2626,19 @@ BOOLEAN_T set_enzyme_type_parameter(
 
 }
 
-BOOLEAN_T set_window_type_parameter(
+bool set_window_type_parameter(
  const char*     name,  ///< the name of the parameter looking for -in
  WINDOW_TYPE_T set_value,  ///< the value to be set -in
  const char* usage,      ///< string to print in usage statement
  const char* filenotes,   ///< additional info for param file
  const char* foruser
   ) {
-  BOOLEAN_T result = TRUE;
+  bool result = true;
   
   // check if parameters can be changed
   if(!parameter_plasticity){
     carp(CARP_ERROR, "can't change parameters once they are confirmed");
-    return FALSE;
+    return false;
   }
   
   /* stringify the value */
@@ -2665,19 +2654,19 @@ BOOLEAN_T set_window_type_parameter(
 
 }
 
-BOOLEAN_T set_measure_type_parameter(
+bool set_measure_type_parameter(
   const char* name, ///< the name of the parameter looking for -in
   MEASURE_TYPE_T set_value, ///< the value to be set -in
   const char* usage, ///< string to print in usage statement
   const char* filenotes, ///<additional infor for param file
   const char* foruser 
   ){
-  BOOLEAN_T result = TRUE;
+  bool result = true;
 
   // check if parameters can be changed
   if(!parameter_plasticity){
     carp(CARP_ERROR, "can't change parameters once they are confirmed");
-    return FALSE;
+    return false;
   }
   
   /* stringify the value */
@@ -2700,12 +2689,12 @@ bool set_decoy_type_parameter(
   const char* filenotes, ///<additional infor for param file
   const char* foruser 
   ){
-  BOOLEAN_T result = TRUE;
+  bool result = true;
 
   // check if parameters can be changed
   if(!parameter_plasticity){
     carp(CARP_ERROR, "can't change parameters once they are confirmed");
-    return FALSE;
+    return false;
   }
   
   /* stringify the value */
@@ -2721,19 +2710,19 @@ bool set_decoy_type_parameter(
   
 }
 
-BOOLEAN_T set_parsimony_type_parameter(
+bool set_parsimony_type_parameter(
   const char* name, ///< the name of the parameter looking for -in
   PARSIMONY_TYPE_T set_value, ///< the value to be set -in
   const char* usage, ///< string to print in usage statement
   const char* filenotes, ///<additional infor for param file
   const char* foruser 
   ){
-  BOOLEAN_T result = TRUE;
+  bool result = true;
 
   // check if parameters can be changed
   if(!parameter_plasticity){
     carp(CARP_ERROR, "can't change parameters once they are confirmed");
-    return FALSE;
+    return false;
   }
   
   /* stringify the value */
@@ -2749,19 +2738,19 @@ BOOLEAN_T set_parsimony_type_parameter(
   
 }
 
-BOOLEAN_T set_quant_level_parameter(
+bool set_quant_level_parameter(
   const char* name, ///< the name of the parameter looking for -in
   QUANT_LEVEL_TYPE_T set_value, ///< the value to be set -in
   const char* usage, ///< string to print in usage statement
   const char* filenotes, ///<additional infor for param file
   const char* foruser 
   ){
-  BOOLEAN_T result = TRUE;
+  bool result = true;
 
   // check if parameters can be changed
   if(!parameter_plasticity){
     carp(CARP_ERROR, "can't change parameters once they are confirmed");
-    return FALSE;
+    return false;
   }
   
   /* stringify the value */
@@ -2777,20 +2766,20 @@ BOOLEAN_T set_quant_level_parameter(
   
 }
 
-BOOLEAN_T set_algorithm_type_parameter(
+bool set_algorithm_type_parameter(
  const char* name,
  ALGORITHM_TYPE_T set_value,
  const char* usage,
  const char* filenotes,
  const char* foruser)
 {
-  BOOLEAN_T result = TRUE;
+  bool result = true;
   char value_str[SMALL_BUFFER];
   
   // check if parameters can be changed
   if(!parameter_plasticity){
     carp(CARP_ERROR, "can't change parameters once they are confirmed");
-    return FALSE;
+    return false;
   }
   /* stringify value */
   algorithm_type_to_string(set_value, value_str);
@@ -2805,20 +2794,20 @@ BOOLEAN_T set_algorithm_type_parameter(
 }
 
 
-BOOLEAN_T set_scorer_type_parameter(
+bool set_scorer_type_parameter(
  const char* name,
  SCORER_TYPE_T set_value,
  const char* usage, 
  const char* filenotes,
  const char* foruser)
 {
-  BOOLEAN_T result = TRUE;
+  bool result = true;
   char value_str[SMALL_BUFFER];
   
   // check if parameters can be changed
   if(!parameter_plasticity){
     carp(CARP_ERROR, "can't change parameters once they are confirmed");
-    return FALSE;
+    return false;
   }
   /* stringify value */
   scorer_type_to_string(set_value, value_str);
@@ -2834,20 +2823,20 @@ BOOLEAN_T set_scorer_type_parameter(
   return result;
 }
 
-BOOLEAN_T set_ion_type_parameter(
+bool set_ion_type_parameter(
  const char* name,
  ION_TYPE_T set_value,
  const char* usage,
  const char* filenotes,
  const char* foruser)
 {
-  BOOLEAN_T result = TRUE;
+  bool result = true;
   char value_str[SMALL_BUFFER];
 
   // check if parameters can be changed
   if(!parameter_plasticity){
     carp(CARP_ERROR, "can't change parameters once they are confirmed");
-    return FALSE;
+    return false;
   }
   
   /* stringify value */
@@ -2864,10 +2853,10 @@ BOOLEAN_T set_ion_type_parameter(
  * Routines that return crux enumerated types. 
  */
 
-BOOLEAN_T string_to_param_type(const char* name, PARAMETER_TYPE_T* result ){
-  BOOLEAN_T success = TRUE;
+bool string_to_param_type(const char* name, PARAMETER_TYPE_T* result ){
+  bool success = true;
   if( name == NULL ){
-    return FALSE;
+    return false;
   }
 
   int param_type = convert_enum_type_str(
@@ -2875,7 +2864,7 @@ BOOLEAN_T string_to_param_type(const char* name, PARAMETER_TYPE_T* result ){
   (*result) = (PARAMETER_TYPE_T)param_type;
 
   if( param_type == -10 ){
-    success = FALSE;
+    success = false;
   }
   return success;
 }
@@ -2883,8 +2872,8 @@ BOOLEAN_T string_to_param_type(const char* name, PARAMETER_TYPE_T* result ){
 /*
  * Applies any static mods to the aa masses
  */
-BOOLEAN_T update_aa_masses(){
-  BOOLEAN_T success = TRUE;
+bool update_aa_masses(){
+  bool success = true;
   int aa;
   char aa_str[2];
   aa_str[1] = '\0';
@@ -2909,7 +2898,7 @@ BOOLEAN_T update_aa_masses(){
 int get_aa_mod_list
   (AA_MOD_T*** mods) ///< the address of an array of pointers
 {
-  *mods = list_of_mods;
+  *mods = list_of_variable_mods;
   return num_mods;
 
 }
@@ -2950,7 +2939,34 @@ int get_all_aa_mod_list
   (AA_MOD_T*** mods) ///< the address of an array of pointers
 {
   *mods = list_of_mods;
-  return num_mods + num_c_mods + num_n_mods;
+  return num_mods + num_c_mods + num_n_mods + num_fixed_mods;
+}
+ 
+/**
+ * \returns The index of the C_TERM or N_TERM fixed modification in
+ * the global list of modifications.
+ */
+int get_fixed_mod_index(MOD_POSITION_T position){
+  int index = -1;
+  switch(position){
+  case N_TERM:
+    index = fixed_n_mod;
+    break;
+  case C_TERM:
+    index = fixed_c_mod;
+    break;
+  case ANY_POSITION:
+    carp(CARP_ERROR, "Getting non-terminal fixed mods not implemented.");
+    break;
+  }
+  return index;
+}
+
+/**
+ * \returns the number of fixed terminal modifications: 0, 1, or 2.
+ */
+int get_num_fixed_mods(){
+  return num_fixed_mods;
 }
 
 /* Helper functions for read_mods_from_file */
@@ -2979,7 +2995,8 @@ char* read_mass_change(AA_MOD_T* mod, char* line, char separator,
   }
   char* next = line;
   char* decimal = NULL;
-  while(*next != separator){
+  // read to end of line, colon, or whitespace
+  while(*next != '\0' && *next != separator && *next != ' ' && *next != '\t'){
     if(*next == '.'){
       decimal = next;
     }
@@ -3011,7 +3028,7 @@ char* read_mass_change(AA_MOD_T* mod, char* line, char separator,
 char* set_aa_list(AA_MOD_T* mod, char* line, char separator){
   carp(CARP_DETAILED_DEBUG, "token points to %s", line);
 
-  BOOLEAN_T* aa_list = aa_mod_get_aa_list(mod);
+  bool* aa_list = aa_mod_get_aa_list(mod);
   while( *line != '\0' && *line != ':'){
     char aa = toupper( *line );
     carp(CARP_DETAILED_DEBUG, "aa is %c", aa);
@@ -3020,8 +3037,8 @@ char* set_aa_list(AA_MOD_T* mod, char* line, char separator){
       carp(CARP_FATAL, "The letter '%c' in the aa list is invalid.", aa);
     }
     carp(CARP_DETAILED_DEBUG, "aa index is %d", aa - 'A');
-    aa_list[aa - 'A'] = TRUE;
-    //mod->aa_list[aa - 'A'] = TRUE;
+    aa_list[aa - 'A'] = true;
+    //mod->aa_list[aa - 'A'] = true;
     carp(CARP_DETAILED_DEBUG, "Set %c to true index %d", aa, (int)(aa-'A'));
     line++;
   }
@@ -3071,12 +3088,12 @@ char* read_prevents_cleavage(AA_MOD_T* mod, char* line, char separator) {
     case 'T':
     case 't':
       carp(CARP_DEBUG, "prevents_cleavage set to true %s",line);
-      aa_mod_set_prevents_cleavage(mod, TRUE);
+      aa_mod_set_prevents_cleavage(mod, true);
       break;
     case 'F':
     case 'f':
       carp(CARP_DEBUG, "prevents_cleavage set to false %s", line);
-      aa_mod_set_prevents_cleavage(mod, FALSE);
+      aa_mod_set_prevents_cleavage(mod, false);
       break;
   }
 
@@ -3101,12 +3118,12 @@ char* read_prevents_xlink(AA_MOD_T* mod, char* line, char separator) {
     case 'T':
     case 't':
       carp(CARP_DEBUG, "prevents_xlink set to true %s",line);
-      aa_mod_set_prevents_xlink(mod, TRUE);
+      aa_mod_set_prevents_xlink(mod, true);
       break;
     case 'F':
     case 'f':
       carp(CARP_DEBUG, "prevents_xlink set to false %s",line);
-      aa_mod_set_prevents_xlink(mod, FALSE);
+      aa_mod_set_prevents_xlink(mod, false);
       break;
   }
 
@@ -3130,14 +3147,15 @@ char* read_prevents_xlink(AA_MOD_T* mod, char* line, char separator) {
  * \returns void
  */
 void read_max_distance(AA_MOD_T* mod, char* line){
-  //carp(CARP_DEBUG, "token points to %s", line);
-  if( *line == '\0' ){
-    carp(CARP_FATAL,
-         "Missing maximum distance from protein terminus for mod %s", line);
-  }
+  int max_distance = atoi(line);
 
-  aa_mod_set_max_distance(mod, atoi(line));
- 
+  // make sure it's 0 because the file says 0; if not, default to max
+  if( max_distance == 0 && *line != '0' ){
+    max_distance = MAX_PROTEIN_SEQ_LENGTH;
+  }
+  aa_mod_set_max_distance(mod, max_distance);
+
+  return;
 }
 
 /**
@@ -3212,9 +3230,9 @@ int read_mods(
 
       // set all bools to true
       int i = 0;
-      BOOLEAN_T* aa_list = aa_mod_get_aa_list(cur_mod);
+      bool* aa_list = aa_mod_get_aa_list(cur_mod);
       for(i=0; i<AA_LIST_LENGTH; i++){
-        aa_list[i] = TRUE;
+        aa_list[i] = true;
       }
       // set type to c-/n-term and max to 1
       aa_mod_set_position(cur_mod, position);
@@ -3249,11 +3267,39 @@ void read_mods_from_file(char* param_filename){
 
   // get first mod
   int total_num_mods = 0;
-  int max_precision = MOD_MASS_PRECISION;
+  int max_precision = 0;  // gets updated with max seen in param file
 
+  // start with fixed terminal mods
+  total_num_mods = read_mods(param_file, 0, "nmod-fixed=", 
+                             N_TERM, max_precision);
+  // keep track of where we stored the fixed mod
+  if( total_num_mods == 1 ){
+    fixed_n_mod = 0;  // first in list
+  } else if (total_num_mods > 1){
+    carp(CARP_FATAL, 
+         "Cannot specify more than one fixed n-terminal modification.");
+  }
+  rewind( param_file );
+
+  total_num_mods = read_mods(param_file, total_num_mods, "cmod-fixed=", 
+                             C_TERM, max_precision);
+  // keep track of where we stored the fixed mod
+  if( total_num_mods == 1 && fixed_n_mod == -1 ){
+    fixed_c_mod = 0;  // first in list
+  } else if( total_num_mods == 2 ){
+    fixed_c_mod = 1;  // second in list
+  } else if (total_num_mods > 2){
+    carp(CARP_FATAL, 
+         "Cannot specify more than one fixed n-terminal modification.");
+  }
+  rewind( param_file );
+  num_fixed_mods = total_num_mods;
+
+  // now get the variable mods
+  list_of_variable_mods = &list_of_mods[total_num_mods];
   total_num_mods = read_mods(param_file, total_num_mods,
                              "mod=", ANY_POSITION, max_precision);
-  num_mods = total_num_mods;  // set global var
+  num_mods = total_num_mods - num_fixed_mods;  // set global var
 
   // Read the file again to get the cmods
   rewind( param_file );
@@ -3261,8 +3307,9 @@ void read_mods_from_file(char* param_filename){
   // set cmod pointer to next in array
   list_of_c_mods = &list_of_mods[total_num_mods];
 
-  total_num_mods = read_mods(param_file, total_num_mods, "cmod=", C_TERM, max_precision);
-  num_c_mods = total_num_mods - num_mods;
+  total_num_mods = read_mods(param_file, total_num_mods, "cmod=", 
+                             C_TERM, max_precision);
+  num_c_mods = total_num_mods - num_mods - num_fixed_mods;
 
   // if no cmods present, don't point to the list of mods
   if( num_c_mods == 0){
@@ -3275,8 +3322,9 @@ void read_mods_from_file(char* param_filename){
   // set nmod pointer to next in array
   list_of_n_mods = &list_of_mods[total_num_mods];
 
-  total_num_mods = read_mods(param_file, total_num_mods, "nmod=", N_TERM, max_precision);
-  num_n_mods = total_num_mods - num_mods - num_c_mods;
+  total_num_mods = read_mods(param_file, total_num_mods, "nmod=", 
+                             N_TERM, max_precision);
+  num_n_mods = total_num_mods - num_mods - num_c_mods - num_fixed_mods;
 
   // if no nmods present, don't point to the list of mods
   if( num_n_mods == 0){

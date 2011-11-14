@@ -1,5 +1,5 @@
-mod=79.90:STY:2
-cmod=33.3:10
+mod=79.9:STY:2
+cmod-fixed=33.3        
 overwrite=T
 seed=7
 precision=2

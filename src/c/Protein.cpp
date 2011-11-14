@@ -897,12 +897,12 @@ void Protein::shuffleRegion(
     shuffle_array(sequence_ + start + 1, sub_seq_length);
 
     // check to see if it changed
-    bool has_changed = strncmp(buf, sequence_ + start, sub_seq_length + 2);
+    bool has_changed = strncmp(buf, sequence_ + start, sub_seq_length + 2) != 0;
     // try reshuffling up to three more times
     int count = 0;
     while( (count < 3) && (has_changed == false)){
       shuffle_array(sequence_ + start + 1, sub_seq_length);
-      has_changed = strncmp(buf, sequence_ + start, sub_seq_length + 2);
+      has_changed = strncmp(buf, sequence_ + start, sub_seq_length + 2) != 0;
       count++;
     }
     if( !has_changed ){

@@ -15,6 +15,7 @@
 #include "carp.h"
 #include "PeptideConstraint.h"
 #include "Database.h"
+#include "Alphabet.h"
 
 static const int MAX_INDEX_FILES = 1024;
 
@@ -74,6 +75,7 @@ class Index {
   FLOAT_T mass_range_;  ///< the range of masses in each index file -in
   bool is_unique_; ///< only unique peptides? -in
   DECOY_TYPE_T decoys_; ///< the type of decoys stored
+  FLOAT_T* static_mods_; ///< static mod for each amino acid
 
   /* Private Functions */
 
@@ -276,9 +278,9 @@ class Index {
    *********************************************/
 
   /**
-   * \returns A newly allocated copy of the directory name.
+   * \returns A const pointer to the directory name.
    */
-  char* getDirectory();
+  const char* getDirectory();
 
   /**
    * Sets the directory of the index.

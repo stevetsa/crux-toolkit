@@ -78,7 +78,7 @@ case $host in
       AC_DEFINE(Cygwin, [], [Using cygwin])
       MACHID="cygwin"
       ;;
-   *darwin*)
+   *darwin10*)
       AC_DEFINE(MACOSX, [], [Using MacOS X])
       MACHID="darwin"
       ;;
@@ -142,6 +142,7 @@ echo \
         Configuration parameters
         ========================
 
+  host                        $host
   Install path:               ${prefix}
   Version:                    ${VERSION}
   C compiler:                 ${CC}

@@ -67,7 +67,22 @@ PEPTIDE_MOD_T* new_peptide_mod(){
   for(i=0; i<MAX_AA_MODS;i++){
     new_mod->aa_mod_counts[i] = 0;
   }
-   
+  // add any fixed terminal mods by setting their count to 1
+  int index = get_fixed_mod_index(N_TERM); 
+  AA_MOD_T** list = NULL;
+  get_all_aa_mod_list(&list);
+  if( index > -1 ){
+    new_mod->aa_mod_counts[index] = 1;
+    new_mod->num_mods++;
+    new_mod->mass_change += aa_mod_get_mass_change(list[index]);
+  }
+  index = get_fixed_mod_index(C_TERM); 
+  if( index > -1 ){
+    new_mod->aa_mod_counts[index] = 1;
+    new_mod->num_mods++;
+    new_mod->mass_change += aa_mod_get_mass_change(list[index]);
+  }
+
   return new_mod;
 }
 
@@ -144,9 +159,10 @@ int generate_peptide_mod_list_TESTER(
   LINKED_LIST_T* final_list = new_list( new_peptide_mod() );
   int final_counter = 1;
 
-  // for each aa_mod
-  int mod_list_idx = 0;
-  for(mod_list_idx=0; mod_list_idx < num_aa_mods; mod_list_idx++){
+  // for each non-fixed aa_mod
+  int num_fixed_mods = get_num_fixed_mods();
+  for(int mod_list_idx = num_fixed_mods; mod_list_idx < num_aa_mods; 
+      mod_list_idx++){
 
     AA_MOD_T* cur_aa_mod = aa_mod_list[mod_list_idx];
     int cur_mod_max = aa_mod_get_max_per_peptide(cur_aa_mod);
@@ -257,9 +273,9 @@ int generate_peptide_mod_list_TESTER(
 /**
  * \brief Given the sequence, a modification, and the position for the sequence
  * modification, determine whether this modification is valid.
- * \returns TRUE if the modification can be applied.
+ * \returns true if the modification can be applied.
  */
-BOOLEAN_T is_sequence_position_modifiable(
+bool is_sequence_position_modifiable(
   char* sequence, 
   int position, 
   AA_MOD_T* mod) {
@@ -269,26 +285,26 @@ BOOLEAN_T is_sequence_position_modifiable(
     if (aa_mod_get_prevents_cleavage(mod)) {
       //make sure that position is not the beginning or end.
       if (position == 0 || sequence[position+1] == '\0') {
-        return FALSE;
+        return false;
       } else {
-        return TRUE;
+        return true;
       }
     } else {
       //modification doesn't prevent cleavage, return true.
-      return TRUE;
+      return true;
     }
   } else {
     //aa is not modifiable by this modificationa
-    return FALSE;
+    return false;
   }
 }
 
 /**
  * \brief Given the sequence, a modification, and the position for the sequence
  * modification, determine whether this modification is valid.
- * \returns TRUE if the modification can be applied.
+ * \returns true if the modification can be applied.
  */
-BOOLEAN_T is_sequence_position_modifiable(
+bool is_sequence_position_modifiable(
   MODIFIED_AA_T* sequence,
   int position,
   AA_MOD_T* mod) {
@@ -298,16 +314,16 @@ BOOLEAN_T is_sequence_position_modifiable(
     if (aa_mod_get_prevents_cleavage(mod)) {
       //make sure that position is not the beginning or end.
       if (position == 0 || sequence[position+1] == MOD_SEQ_NULL) {
-        return FALSE;
+        return false;
       } else {
-        return TRUE;
+        return true;
       }
     } else {
       //modification doesn't prevent cleavage, return true.
-      return TRUE;
+      return true;
     }
   } else {
-    return FALSE;
+    return false;
   }
 }
 
@@ -317,20 +333,20 @@ BOOLEAN_T is_sequence_position_modifiable(
  *
  * Assumes that an amino acid can be modified by more than one aa_mod,
  * but not more than once by a sligle aa_mod.
- * \returns TRUE if the sequence can be modified, else FALSE
+ * \returns true if the sequence can be modified, else false
  */
-BOOLEAN_T is_peptide_modifiable
+bool is_peptide_modifiable
  (Peptide* peptide,          ///< The peptide to apply mods to
   PEPTIDE_MOD_T* peptide_mod){ ///< The mods to apply
 
   // a NULL peptide cannot be modified
   if( peptide == NULL ){
-    return FALSE;
+    return false;
   }
   // peptide mods with no aa mods can be applied to any peptide
   if( peptide_mod == NULL || 
       peptide_mod_get_num_aa_mods( peptide_mod ) == 0 ){
-    return TRUE;
+    return true;
   }
 
   char* sequence = peptide->getSequence();
@@ -342,9 +358,8 @@ BOOLEAN_T is_peptide_modifiable
   int num_aa_mods = get_all_aa_mod_list(&all_mods);
   assert( num_aa_mods < MAX_AA_MODS );
 
-  BOOLEAN_T success = TRUE;
-  int amod_idx = 0;
-  for(amod_idx = 0; amod_idx < num_aa_mods; amod_idx++){
+  bool success = true;
+  for(int amod_idx = 0; amod_idx < num_aa_mods; amod_idx++){
 
     // FIRST: check to see if it is included in this pmod
     if( peptide_mod->aa_mod_counts[amod_idx] == 0 ){
@@ -360,16 +375,16 @@ BOOLEAN_T is_peptide_modifiable
     switch( aa_mod_get_position(cur_aa_mod) ){
     case C_TERM: 
       if( max_distance < peptide->getCDistance()){ 
-        //return FALSE; 
-        success = FALSE;
+        success = false;
       }
       break;
+
     case N_TERM:
       if( max_distance < peptide->getNDistance()){ 
-        //return FALSE; 
-        success = FALSE;
+        success = false;
       }
       break;
+
       // count leagal locations for this aa mod, compare with counts
     case ANY_POSITION:
       // look for an aa in the seq where this mod can be placed
@@ -381,61 +396,19 @@ BOOLEAN_T is_peptide_modifiable
       }// end of sequence
       
       if( locations_count < peptide_mod->aa_mod_counts[amod_idx] ){
-        //return FALSE; 
-        success = FALSE;
+        //return false; 
+        success = false;
       }
       break;
+
     }// end of switch
 
-    if( success == FALSE ){
+    if( success == false ){
       break; // done look at any more aa_mods
     }
   }// next in aa_mod list
-  /*
-  // now check position-specific modifications
-  AA_MOD_T** c_mods = NULL;
-  int num_c_mods = get_c_mod_list(&c_mods);
-  int last_mod = amod_idx;
-  for(amod_idx = 0; amod_idx < num_c_mods; amod_idx++){
-    // first see if it is included in this pmod
-    if( peptide_mod->aa_mod_counts[amod_idx+last_mod] == 0 ){
-      continue;
-    }
-    
-    AA_MOD_T* cur_aa_mod = c_mods[amod_idx];
-    int max_distance = aa_mod_get_max_distance(cur_aa_mod);
-    
-    carp(CARP_DETAILED_DEBUG, "c mod max distance %d, this distance %d",
-         max_distance, get_peptide_c_distance( peptide ));
-    if( get_peptide_c_distance( peptide ) > max_distance ){
-      return FALSE;
-    }
-  }// next aa mod in list
 
-  printf("checking n-mods for modifyability\n");
-  AA_MOD_T** n_mods = NULL;
-  int num_n_mods = get_n_mod_list(&n_mods);
-  last_mod += amod_idx;
-  for(amod_idx = 0; amod_idx < num_n_mods; amod_idx++){
-    printf("for index (%d+%d, count is %d\n", last_mod, amod_idx, peptide_mod->aa_mod_counts[amod_idx+last_mod]);
-    // first see if it is included in this pmod
-    if( peptide_mod->aa_mod_counts[amod_idx+last_mod] == 0 ){
-      continue;
-    }
-    
-    AA_MOD_T* cur_aa_mod = n_mods[amod_idx];
-    int max_distance = aa_mod_get_max_distance(cur_aa_mod);
-    
-    carp(CARP_DETAILED_DEBUG, "n mod max distance %d, this distance %d",
-         max_distance, get_peptide_n_distance( peptide ));
-    if( get_peptide_n_distance( peptide ) > max_distance ){
-      return FALSE;
-    }
-  }// next aa mod in list
-  */
-  // found locations for all aa_mods in the seq
   free(sequence);
-  //return TRUE;
   return success;
 }
 
@@ -716,14 +689,14 @@ int apply_mod_to_seq(
   }
 
   // special case: positional mods
-  if( C_TERM == aa_mod_get_position(mod) ){
+  if( N_TERM == aa_mod_get_position(mod) ){
     //MODIFIED_AA_T* seq_copy = copy_mod_aa_seq(seq);
     MODIFIED_AA_T* seq_copy = copy_mod_aa_seq(seq, seq_len);
     modify_aa( &seq_copy[0], mod );
     push_back_linked_list(return_list, seq_copy);
     return 1;  // one added to list
   }
-  if( N_TERM == aa_mod_get_position(mod)){
+  if( C_TERM == aa_mod_get_position(mod)){
     //MODIFIED_AA_T* seq_copy = copy_mod_aa_seq(seq);
     MODIFIED_AA_T* seq_copy = copy_mod_aa_seq(seq, seq_len);
     /*
