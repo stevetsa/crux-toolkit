@@ -238,7 +238,7 @@ spectrum segment. The default value is 10.</li>
 <li>
 <code>--resolution &lt;double&gt;</code> &ndash;
 Set the resolution of the observed spectra at m/z 400. Used in
-conjunction with <code>--instrument</code> The default is 100000.</li>
+conjunction with <code>--instrument</code>. The default is 100000.</li>
 
 <li>
 <code>--instrument fticr|orbi|tof|qit</code> &ndash;
@@ -251,8 +251,8 @@ Savitsky-Golay smoothing of the mass spectra prior to analysis. The
 integer supplied with the flag sets the width of the smoothing
 window, which is the number of m/z data points to the right and left
 of the smoothed data point. A larger width makes smoother peaks, 
-but has more alteration of peak intensity. By default there 
-is no smoothing.</li>
+but makes more changes to the observed peak intensities. By default
+no smoothing is applied.</li>
 
 <li>
 <code>--scan-number &lt;number range&gt;</code> &ndash; A single scan
@@ -263,8 +263,8 @@ as 'first-last' which will include scans 'first' and 'last'.  Default
 <li>
 <code>--sensitivity 0|1|2|3</code> &ndash; Set the sensitivity
 level. There are four levels, 0 (low), 1 (moderate), 2 (high), and 3
-(max). Increasing the sensitivity may increase computation time. The
-default value is 2.</li>
+(max). Increasing the sensitivity will increase computation time, but
+will also yield more isotope distributions. The default value is 2.</li>
 
 <li>
 <code>--signal-to-noise &lt;float&gt;</code> &ndash; Set the
