@@ -358,6 +358,50 @@ bool algorithm_type_to_string(ALGORITHM_TYPE_T type, char* type_str){
   return success;
 }
 
+/* 
+ * The string version of HARDKLOR_ALGORITHM_T
+ */
+static const char* hardklor_algorithm_type_strings[NUMBER_HK_ALGORITHM_TYPES] =
+  {"invalid", "basic", "fewest-peptides", "fast-fewest-peptides", 
+   "fewest-peptides-choice", "fast-fewest-peptides-choice" };
+
+static const char* hardklor_hardklor_algorithm_type_strings[NUMBER_HK_ALGORITHM_TYPES] =
+  {"invalid", "Basic", "FewestPeptides", "FastFewestPeptides",
+   "FewestPeptidesChoice", "FastFewestPeptidesChoice" };
+
+HARDKLOR_ALGORITHM_T string_to_hardklor_algorithm_type(
+  char* name
+  ) {
+
+  int hk_algorithm = convert_enum_type_str(name, INVALID_ENUM_STRING,
+    hardklor_algorithm_type_strings, NUMBER_HK_ALGORITHM_TYPES);
+
+  if (hk_algorithm < 0) {
+    hk_algorithm = 0;
+  }
+
+  return (HARDKLOR_ALGORITHM_T)hk_algorithm;
+
+}
+
+char* hardklor_algorithm_type_to_string(
+  HARDKLOR_ALGORITHM_T type
+  ){
+
+  char* type_str = my_copy_string(hardklor_algorithm_type_strings[type]);
+
+  return type_str;
+}
+
+char* hardklor_hardklor_algorithm_type_to_string(
+  HARDKLOR_ALGORITHM_T type
+  ){
+
+  char *type_str = my_copy_string(hardklor_hardklor_algorithm_type_strings[type]);
+
+  return type_str;
+}
+
 /*
  * The string version of SCORER_TYPE_T
  */

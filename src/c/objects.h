@@ -507,6 +507,19 @@ enum _algorithm {PERCOLATOR_ALGORITHM,
 typedef enum _algorithm ALGORITHM_TYPE_T;
 
 /**
+ * the enum for hardklor algorithm type
+ */
+enum _hardklor_algorithm {INVALID_HK_ALGORITHM,
+                          BASIC_HK_ALGORITHM,
+                          FEWEST_PEPTIDES_HK_ALGORITHM,
+                          FAST_FEWEST_PEPTIDES_HK_ALGORITHM,
+                          FEWEST_PEPTIDES_CHOICE_HK_ALGORITHM,
+                          FAST_FEWEST_PEPTIDES_CHOICE_HK_ALGORITHM,
+                          NUMBER_HK_ALGORITHM_TYPES };
+
+typedef enum _hardklor_algorithm HARDKLOR_ALGORITHM_T;
+
+/**
  * One value for each command that can be passed to crux
  * (e.g. search-for-matches, sequest-search, percolator).
  */

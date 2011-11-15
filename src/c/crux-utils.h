@@ -392,6 +392,11 @@ COMPARISON_T string_to_comparison(char* name);
 DECOY_TYPE_T string_to_decoy_type(const char* name);
 char* decoy_type_to_string(DECOY_TYPE_T type);
 
+HARDKLOR_ALGORITHM_T string_to_hardklor_algorithm_type(char* name);
+char* hardklor_algorithm_type_to_string(HARDKLOR_ALGORITHM_T type);
+char* hardklor_hardklor_algorithm_type_to_string(HARDKLOR_ALGORITHM_T type);
+
+
 /**
  * \brief Open either the index or fasta file and prepare it for
  * searching.  Die if the input file cannot be found or read.

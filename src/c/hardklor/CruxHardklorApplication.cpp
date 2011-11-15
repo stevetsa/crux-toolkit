@@ -113,7 +113,7 @@ int CruxHardklorApplication::main(int argc, char** argv) {
     "fileroot",
     "output-dir",
     "overwrite",
-//    "hardklor-algorithm",
+    "hardklor-algorithm",
 //    "cdm",
 //    "min-charge",
 //    "max-charge",
@@ -263,10 +263,17 @@ int CruxHardklorApplication::main(int argc, char** argv) {
 
   char** hk_argv = new char*[hk_argc];
 
-  for (int idx = 0;idx < hk_argc ; idx++) {
+  ofstream command_line("command.sh");
+  command_line << "hardklor";
+
+  hk_argv[0] = (char*)hk_args_vec[0].c_str();
+  for (int idx = 1;idx < hk_argc ; idx++) {
     hk_argv[idx] = (char*)hk_args_vec[idx].c_str();
-    //cerr << "hk_argv["<<idx<<"]="<<hk_argv[idx]<<endl;
+    command_line << " " << hk_argv[idx];
+    cerr << "hk_argv["<<idx<<"]="<<hk_argv[idx]<<endl;
   }
+
+  command_line.close();
 
   /* Call hardklorMain */
   int ret = hardklorMain(hk_argc, hk_argv);

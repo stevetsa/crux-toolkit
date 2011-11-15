@@ -76,6 +76,7 @@ enum parameter_type {
   SCORER_TYPE_P,     ///< parameters of type SCORER_TYPE_T
   ION_TYPE_P,        ///< parameters of type ION_TYPE_T
   ALGORITHM_TYPE_P,  ///< parameters of type ALGORITHM_TYPE_T
+  HARDKLOR_ALGORITHM_TYPE_P, ///< parameters of type HARDKLOR_ALGORITHM_T
   WINDOW_TYPE_P,     ///< parameters of type WINDOW_TYPE_T
   MEASURE_TYPE_P,    ///< parameters of type MEASURE_TYPE_T
   PARSIMONY_TYPE_P,  ///< parameters of type PARSIMONY_TYPE_T

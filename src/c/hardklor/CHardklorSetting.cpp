@@ -182,5 +182,27 @@ void CHardklorSetting::clearVariant(){
 }
 
 void CHardklorSetting::out(char *s){
-  sprintf(s,"minCh:%d maxCh:%d d:%d p:%d s:%d corr:%lf sn:%lf res:%d,%lf win:%lf sl:%d v:%d\n",minCharge,maxCharge,depth,peptide,smooth,corr,sn,msType,res400,winSize,sl,variant->size());
+  sprintf(s,"minCh:%d maxCh:%d d:%d p:%d s:%d corr:%lf sn:%lf res:%d,%lf win:%lf sl:%d v:%d nb:%d i:%d snWin:%lf mF:%d a:%d cdm:%c sc:%i %i w:%lf %lf\n",
+    minCharge,
+    maxCharge,
+    depth,
+    peptide,
+    smooth,
+    corr,
+    sn,
+    msType,
+    res400,
+    winSize,
+    sl,
+    variant->size(),
+    noBase,
+    iAnalysis,
+    snWindow,
+    mzXMLFilter,
+    algorithm,
+    chargeMode,
+    scan.iLower,
+    scan.iUpper,
+    window.dLower,
+    window.dUpper);
 }

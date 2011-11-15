@@ -26,8 +26,9 @@ static const char* parameter_type_strings[NUMBER_PARAMETER_TYPES] = {
   "INT_ARG", "DOUBLE_ARG", "STRING_ARG", "MASS_TYPE_T", "DIGEST_T", 
   "ENZYME_T", 
   "bool", "SCORER_TYPE_T", "ION_TYPE_T",
-  "ALGORITHM_TYPE_T", "WINDOW_TYPE_T", "MEASURE_TYPE_T", 
-  "PARSIMONY_TYPE_T", "QUANT_LEVEL_TYPE_T", "DECOY_TYPE_T"};
+  "HARDKLOR_ALGORITHM_T", "ALGORITHM_TYPE_T", "WINDOW_TYPE_T", 
+  "MEASURE_TYPE_T", "PARSIMONY_TYPE_T", "QUANT_LEVEL_TYPE_T", 
+  "DECOY_TYPE_T"};
 
 //one hash for parameter values, one for usage statements, one for types
 // all hashes keyed on parameter/option name
@@ -184,6 +185,13 @@ bool set_algorithm_type_parameter(
  const char* usage,
  const char* filenotes,
  const char* foruser);
+
+bool set_hardklor_algorithm_type_parameter(
+  const char* name,
+  HARDKLOR_ALGORITHM_T set_value,
+  const char* usage,
+  const char* filenotes,
+  const char* foruser);
 
 bool set_scorer_type_parameter(
  const char* name,
@@ -1000,21 +1008,18 @@ void initialize_parameters(void){
       "Weibull parameters.  Default=4000.",
       "Available for crux search-for-xlinks", "true");
 
-
   /* hardklor parameters */
-  //TODO, fix these!
-
-
-  set_string_parameter("hardklor-algorithm", "basic",
+  set_hardklor_algorithm_type_parameter(
+    "hardklor-algorithm", FAST_FEWEST_PEPTIDES_HK_ALGORITHM, 
     "Choose the algorithm for analyzing combinations of "
     "multiple peptide or protein isotope distributions. "
     "(basic | fewest-peptides | fast-fewest-peptides | "
     "fewest-peptides-choice | fast-fewest-peptides-choice) "
-    "Default=basic.", "Available for crux hardklor", "true");
+    "Default=fast-fewest-peptides.", "Available for crux hardklor", "true");
 
-  set_string_parameter("cdm", "B",
+  set_string_parameter("cdm", "Q",
     "Choose the charge state determination method. (B|F|P|Q|S). "
-    "Default=B.",
+    "Default=Q.",
     "Available for crux hardklor", "true");
 
   set_int_parameter("min-charge", 1, 1, BILLION,
@@ -1022,25 +1027,19 @@ void initialize_parameters(void){
     "Default=1.",
     "Available for crux hardklor", "true");
 
-  set_int_parameter("max-charge", 3, 1, BILLION,
+  set_int_parameter("max-charge", 5, 1, BILLION,
     "Set the maximum charge state to look for when analyzing a spectrum. "
-    "Default=3.",
+    "Default=5.",
     "Available for crux hardklor", "true");
 
-  set_double_parameter("corr", 0.90, 0,1.0, 
+  set_double_parameter("corr", 0.85, 0,1.0, 
     "Set the correlation threshold [0,1.0] to accept a predicted "
-    "isotope distribution.  Default=0.90",
+    "isotope distribution.  Default=0.85",
     "Available for crux hardklor", "true");
 
   set_int_parameter("depth", 3, 1, BILLION,
     "Set the depth of combinatorial analysis. Default 3.",
     "Available for crux hardklor", "true");
-
-  set_boolean_parameter("intersection", true,
-    "When set to true, set peak detection to intersection mode. "
-    "Default true.",
-    "Available for crux hardklor",
-    "false");
 
   set_string_parameter("averagine-mod", "__NULL_STR",
     "Include alternative averagine models in the analysis that  "
@@ -1086,28 +1085,21 @@ void initialize_parameters(void){
 
   //scan-number already defined.
 
-  set_int_parameter("sensitivity", 1, 0, 3,
+  set_int_parameter("sensitivity", 2, 0, 3,
     "Set the sensitivity level. There are four levels, 0 (low), 1 (moderate), "
-    "2 (high), and 3 (max). The default value is 1.",
+    "2 (high), and 3 (max). The default value is 2.",
     "Available for crux hardklor", "true");
 
-  set_double_parameter("signal-to-noise", 3.0, 0.0, BILLION,
+  set_double_parameter("signal-to-noise", 1.0, 0.0, BILLION,
     "Set the signal-to-noise threshold. Any integer or decimal "
-    "value greater than or equal to 0.0 is valid. The default value is 3.0.",
+    "value greater than or equal to 0.0 is valid. The default value is 1.0.",
     "Available for crux hardklor", "true");
 
-  set_double_parameter("sn-window", 50.0, 0.0, BILLION,
+  set_double_parameter("sn-window", 250.0, 0.0, BILLION,
     "Set the signal-to-noise window length (in m/z). Because noise may "
     "be non-uniform across a spectra, this value adjusts the segment size "
     "considered when calculating a signal-over-noise ratio. The default "
-    "value is 50.0.",
-    "Available for crux hardklor", "true");
-
-  set_boolean_parameter("union-mode", false,
-    "Set peak detection to union mode. Spectra are analyzed for peaks "
-    "in overlapping segments. When union mode is set, peaks are accepted "
-    "regardless of whether they appear in one segment or two overlapping "
-    "segments. Default = F.",
+    "value is 250.0.",
     "Available for crux hardklor", "true");
 
   set_string_parameter("mz-window", "__NULL_STR",
@@ -1116,10 +1108,10 @@ void initialize_parameters(void){
     "the analysis will be performed. By default the whole spectrum is analyzed.",
     "Available for crux hardklor", "true");
 
-  set_double_parameter("max-width", 5.0, 0.0, BILLION,
+  set_double_parameter("max-width", 4.0, 0.0, BILLION,
     "Set the maximum width of any set of peaks in a spectrum when computing the "
     "results (in m/z). Thus, if the value was 5.0, then sets of peaks greater "
-    "than 5 m/z are divided into smaller sets prior to analysis. The default value is 5.0.",
+    "than 5 m/z are divided into smaller sets prior to analysis. The default value is 4.0.",
     "Available for crux hardklor", "true");
 
 
@@ -1832,6 +1824,15 @@ bool check_option_type_and_bounds(const char* name){
               "Must be percolator, curve-fit, or none.", value_str, name);
     }
     break;
+  case HARDKLOR_ALGORITHM_TYPE_P:
+    if (string_to_hardklor_algorithm_type(value_str) == INVALID_HK_ALGORITHM) {
+      success = false;
+      sprintf(die_str, "Illegal value '%s' for option '%s'.   "
+                       "Must be basic, fewest-peptides, fast-fewest-peptides, "
+                       "fewest-peptides-choice, or fast-fewest-peptides-choice",
+                        value_str, name);
+    }
+    break;
   case ION_TYPE_P:
     carp(CARP_DETAILED_DEBUG, "found ion_type param, value '%s'",
          value_str);
@@ -2370,6 +2371,21 @@ ENZYME_T get_enzyme_type_parameter( const char* name ){
   }
   return enzyme_type;
 }
+
+HARDKLOR_ALGORITHM_T get_hardklor_algorithm( const char* name ){
+
+  char* param = (char*)get_hash_value(parameters, name);
+  
+  HARDKLOR_ALGORITHM_T hk_algorithm = 
+    string_to_hardklor_algorithm_type(param);
+
+  if ( hk_algorithm == INVALID_HK_ALGORITHM) {
+    carp(CARP_FATAL, "Hardklor-algorithm parameter %s has "
+      "the value %s which is not of the correct type.",name,param);
+  }
+  return hk_algorithm;
+}
+
 
 MASS_TYPE_T get_mass_type_parameter(
    const char* name
@@ -2922,6 +2938,33 @@ bool set_algorithm_type_parameter(
   result = add_or_update_hash(for_users, name, foruser);
   result = add_or_update_hash(types, name, (void*)"ALGORITHM_TYPE_T");
   return result;
+}
+
+bool set_hardklor_algorithm_type_parameter(
+  const char* name,
+  HARDKLOR_ALGORITHM_T set_value,
+  const char* usage,
+  const char* filenotes,
+  const char* foruser) {
+
+  bool result = true;
+  
+  // check if parameters can be changed
+  if(!parameter_plasticity){
+    carp(CARP_ERROR, "can't change parameters once they are confirmed");
+    return false;
+  }
+  /* stringify value */
+  char* value_str = hardklor_algorithm_type_to_string(set_value);
+  carp(CARP_DETAILED_DEBUG, "setting algorithm type to %s", value_str);  
+
+  result = add_or_update_hash(parameters, name, value_str);
+  result = add_or_update_hash(usages, name, usage);
+  result = add_or_update_hash(file_notes, name, filenotes);
+  result = add_or_update_hash(for_users, name, foruser);
+  result = add_or_update_hash(types, name, (void*)"HARDKLOR_ALGORITHM_TYPE_T");
+  return result;
+  
 }
 
 
