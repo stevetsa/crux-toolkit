@@ -18,9 +18,6 @@
     <ClCompile Include="..\..\..\src\c\alphabet.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\c\analyze_psms.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\src\c\carp.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -69,13 +66,7 @@
     <ClCompile Include="..\..\..\src\c\FilteredSpectrumChargeIterator.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\c\generate_peptides.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\src\c\GeneratePeptidesIterator.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\c\get_ms2_spectrum.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\src\c\hash.cpp">
@@ -177,9 +168,6 @@
     <ClCompile Include="..\..\..\src\c\Percolator.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\c\predict_peptide_ions.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\src\c\PrintProcessedSpectra.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -238,6 +226,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\src\c\WinCrux.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Z:\projects\crux-windows-port\src\c\analyze_psms.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

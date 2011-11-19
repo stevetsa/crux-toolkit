@@ -243,68 +243,6 @@ bool myfwrite
   return true;
 }
 
-#ifdef MYRAND
-static const int MY_RAND_MAX = 4096;
-
-
-/********************************************************************
- * Primary function for the built-in random number generator. 
- ********************************************************************/
-static double my_rand
-  (long seed)
-{
-  static long stored_seed = 0;
-
-  /* If this is the first call, just set the seed. */
-  if (stored_seed == 0) {
-    stored_seed = seed;
-  }
-
-  /* Otherwise, create a new pseudorandom number. */
-  else {
-    stored_seed = abs((stored_seed / 3) * stored_seed + 7718);
-  }
-
-  /* Make sure the pseudorandom number is in the right range. */
-  return((double)(stored_seed % MY_RAND_MAX) / (double)MY_RAND_MAX);
-}
-#else
-/* The stupid include file doesn't have these prototypes. */
-void srand48();
-double drand48();
-
-#endif
-
-/********************************************************************
- * See .h file for description.
- ********************************************************************/
-void my_srand
-  (long seed)
-{
-#ifdef MYRAND
-  my_rand(seed);
-#else
-#ifdef WIN32
- srand((unsigned int) seed);
-#else
-  srand48(seed);
-#endif
-#endif
-}
-
-/********************************************************************
- * See .h file for description.
- ********************************************************************/
-double my_drand
-  (void)
-{
-#ifdef MYRAND
-  return(my_rand(0));
-#else
-  return(drand48());
-#endif
-}
-
 /**********************************************************************
  * Compute a logarithm.
  **********************************************************************/
@@ -625,17 +563,7 @@ int main (int argc, char *argv[])
   }
   fclose(outfile);
 
-  /* Test the random number generator. 
-  seed = time(0);
-  my_srand(seed);
-  printf("\nSome random numbers (seed=%ld): \n", seed);
-  for (i = 0; i < 10; i++) {
-    for (j = 0; j < 10; j++) {
-      printf("%6.4f ", my_drand());
-    }
-    printf("\n");
-  }*/
-  return(0);
+   return(0);
 }
 
 #ifdef WIN32

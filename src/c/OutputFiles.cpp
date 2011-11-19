@@ -277,7 +277,7 @@ void OutputFiles::writeHeaders(int num_proteins, bool isMixedTargetDecoy){
   // write headers one file at a time for tab and sqt
   for(int file_idx = 0; file_idx < num_files_; file_idx++){
     if( delim_file_array_ ){
-      bool has_decoy = (bool)file_idx; // only first file (idx 0) is target
+      bool has_decoy = file_idx != 0; // only first file (idx 0) is target
       if( isMixedTargetDecoy ){ // unless it is both
         has_decoy = true;
       }
@@ -312,7 +312,7 @@ void OutputFiles::writeHeaders(const vector<bool>& add_this_col){
   for(int file_idx = 0; file_idx < num_files_; file_idx++){
     if( delim_file_array_ ){
         delim_file_array_[file_idx]->addColumnNames(application_, 
-                                                    (bool)file_idx, 
+                                                    file_idx != 0, 
                                                     add_this_col);
         delim_file_array_[file_idx]->writeHeader();
     }

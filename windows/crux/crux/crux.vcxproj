@@ -13,10 +13,11 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{C4BCBCF8-E852-46CF-AF83-65353359B218}</ProjectGuid>
     <RootNamespace>crux</RootNamespace>
+    <ProjectName>crux-library</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
@@ -47,6 +48,9 @@
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <ProjectReference>
+      <UseLibraryDependencyInputs>true</UseLibraryDependencyInputs>
+    </ProjectReference>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -63,7 +67,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\src\c\alphabet.cpp" />
-    <ClCompile Include="..\..\..\src\c\analyze_psms.cpp" />
     <ClCompile Include="..\..\..\src\c\carp.cpp" />
     <ClCompile Include="..\..\..\src\c\ComputeQValues.cpp" />
     <ClCompile Include="..\..\..\src\c\CreateIndex.cpp" />
@@ -81,8 +84,6 @@
     <ClCompile Include="..\..\..\src\c\ExtractRows.cpp" />
     <ClCompile Include="..\..\..\src\c\FilteredSpectrumChargeIterator.cpp" />
     <ClCompile Include="..\..\..\src\c\GeneratePeptidesIterator.cpp" />
-    <ClCompile Include="..\..\..\src\c\generate_peptides.cpp" />
-    <ClCompile Include="..\..\..\src\c\get_ms2_spectrum.cpp" />
     <ClCompile Include="..\..\..\src\c\hash.cpp" />
     <ClCompile Include="..\..\..\src\c\Index.cpp" />
     <ClCompile Include="..\..\..\src\c\IndexFile.cpp" />
@@ -116,7 +117,6 @@
     <ClCompile Include="..\..\..\src\c\PeptideSrc.cpp" />
     <ClCompile Include="..\..\..\src\c\peptide_modifications.cpp" />
     <ClCompile Include="..\..\..\src\c\Percolator.cpp" />
-    <ClCompile Include="..\..\..\src\c\predict_peptide_ions.cpp" />
     <ClCompile Include="..\..\..\src\c\PrintProcessedSpectra.cpp" />
     <ClCompile Include="..\..\..\src\c\PrintVersion.cpp" />
     <ClCompile Include="..\..\..\src\c\Protein.cpp" />
@@ -137,6 +137,7 @@
     <ClCompile Include="..\..\..\src\c\StatColumn.cpp" />
     <ClCompile Include="..\..\..\src\c\utils.cpp" />
     <ClCompile Include="..\..\..\src\c\WinCrux.cpp" />
+    <ClCompile Include="Z:\projects\crux-windows-port\src\c\analyze_psms.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\src\c\alphabet.h" />

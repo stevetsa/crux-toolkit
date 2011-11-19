@@ -765,7 +765,7 @@ Protein* Database::getProteinByIdString(
   //this even faster if needed.
   Protein* protein = NULL;
   if (is_hashed_) {
-    map<char*, Protein*>::iterator find_iter;
+    map<char*, Protein*, cmp_str>::iterator find_iter;
     find_iter = protein_map_->find((char*)protein_id);
 
     if (find_iter != protein_map_->end()) {

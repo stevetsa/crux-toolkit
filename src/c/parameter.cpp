@@ -1336,7 +1336,7 @@ bool parse_cmd_line_into_params_hash(int argc,
      check options for legal values, and put values in hash 
      overwriting file parameters */ 
 
-  success = parse_arguments_into_hash(argc, argv, parameters, 0); 
+  success = parse_arguments_into_hash(argc, argv, parameters, 0) != 0; 
 
   if( success ){
     // check each option value

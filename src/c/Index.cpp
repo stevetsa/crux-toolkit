@@ -188,7 +188,7 @@ Index::Index() {
 #ifdef DARWIN
 int is_binary_fasta_name(struct dirent *entry){
 #else
-int is_binary_fasta_name(const struct dirent *entry){
+int is_binary_fasta_name(struct dirent *entry){
 #endif
 
 
@@ -221,7 +221,7 @@ int is_binary_fasta_name(const struct dirent *entry){
 #ifdef DARWIN
 int is_decoy_binary_fasta_name(struct dirent *entry){
 #else
-int is_decoy_binary_fasta_name(const struct dirent *entry){
+int is_decoy_binary_fasta_name(struct dirent *entry){
 #endif
 
 

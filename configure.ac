@@ -78,7 +78,7 @@ case $host in
       AC_DEFINE(Cygwin, [], [Using cygwin])
       MACHID="cygwin"
       ;;
-   *darwin10*)
+   *darwin*)
       AC_DEFINE(MACOSX, [], [Using MacOS X])
       MACHID="darwin"
       ;;
