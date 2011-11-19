@@ -1041,6 +1041,11 @@ void initialize_parameters(void){
     "Set the depth of combinatorial analysis. Default 3.",
     "Available for crux hardklor", "true");
 
+  set_boolean_parameter("distribution-area", false,
+    "Reports peptide intensities as the distribution area. Default false.",
+    "Available for crux hardklor",
+    "true");
+
   set_string_parameter("averagine-mod", "__NULL_STR",
     "Include alternative averagine models in the analysis that  "
     "incorporate additional atoms or isotopic enrichments.",
@@ -1076,13 +1081,6 @@ void initialize_parameters(void){
     "Available for crux hardklor",
     "true");
 
-  set_int_parameter("smooth", 0, 0, BILLION,
-    "Apply polynomial Savitsky-Golay smoothing of the mass spectra "
-    "prior to analysis. The integer supplied with the flag sets the "
-    "width of the smoothing window. A larger width makes smoother peaks, "
-    "but has more alteration of peak intensity. By default there is no smoothing (0).",
-    "Available for crux hardklor", "true");  
-
   //scan-number already defined.
 
   set_int_parameter("sensitivity", 2, 0, 3,
@@ -1100,6 +1098,12 @@ void initialize_parameters(void){
     "be non-uniform across a spectra, this value adjusts the segment size "
     "considered when calculating a signal-over-noise ratio. The default "
     "value is 250.0.",
+    "Available for crux hardklor", "true");
+
+  set_boolean_parameter("static-sn", true, 
+    "If true, Hardklor will calculate the local noise levels across the "
+    "spectrum using --sn-window, then select a floor of this set of noise "
+    "levels to apply to the whole spectrum.",
     "Available for crux hardklor", "true");
 
   set_string_parameter("mz-window", "__NULL_STR",

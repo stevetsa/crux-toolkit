@@ -242,6 +242,11 @@ int get_max_ion_charge_parameter(
   const char* name
   );
 
+HARDKLOR_ALGORITHM_T get_hardklor_algorithm(
+  const char* name
+  );
+
+
 double get_mz_bin_width();
  
 double get_mz_bin_offset();

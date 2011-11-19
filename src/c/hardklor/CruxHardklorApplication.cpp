@@ -117,23 +117,23 @@ int CruxHardklorApplication::main(int argc, char** argv) {
 //    "cdm",
 //    "min-charge",
 //    "max-charge",
-//    "corr",
-//    "depth",
-//    "intersection",
+    "corr",
+    "depth",
+    "distribution-area",
 //    "averagine-mod",
 //    "mzxml-filter",
 //    "no-base",
-//    "max-p",
+    "max-p",
 //    "resolution",
 //    "instrument",
 //    "smooth",
 //    "scan-number",
-//    "sensitivity",
-//    "signal-to-noise",
+    "sensitivity",
+    "signal-to-noise",
 //    "sn-window",
 //    "union-mode",
 //    "mz-window",
-//    "max-width",
+    "max-width",
     "parameter-file",
     "verbosity"
   };
@@ -174,7 +174,13 @@ int CruxHardklorApplication::main(int argc, char** argv) {
   hk_args_vec.push_back(isotope_dat_filename);
 
   hk_args_vec.push_back("-a");
-  hk_args_vec.push_back(get_string_parameter_pointer("hardklor-algorithm"));
+
+  HARDKLOR_ALGORITHM_T hk_algorithm = get_hardklor_algorithm("hardklor-algorithm");
+  char* hk_algorithm_str = 
+    hardklor_hardklor_algorithm_type_to_string(hk_algorithm);
+
+  hk_args_vec.push_back(hk_algorithm_str);
+  free(hk_algorithm_str);
 
   hk_args_vec.push_back("-cdm");
   hk_args_vec.push_back(get_string_parameter_pointer("cdm"));
@@ -191,8 +197,12 @@ int CruxHardklorApplication::main(int argc, char** argv) {
   hk_args_vec.push_back("-d");
   hk_args_vec.push_back(to_string(get_int_parameter("depth")));
 
-  if (get_boolean_parameter("intersection")) {
-    hk_args_vec.push_back("-i");
+  hk_args_vec.push_back("-da");
+
+  if (get_boolean_parameter("distribution-area")) {
+    hk_args_vec.push_back("true");
+  } else {
+    hk_args_vec.push_back("false");
   }
 
   if (string(get_string_parameter_pointer("averagine-mod")) !=  "__NULL_STR") {
@@ -216,9 +226,6 @@ int CruxHardklorApplication::main(int argc, char** argv) {
   hk_args_vec.push_back(to_string(get_double_parameter("resolution")));
   hk_args_vec.push_back(get_string_parameter("instrument"));
 
-  hk_args_vec.push_back("-s");
-  hk_args_vec.push_back(to_string(get_int_parameter("smooth")));
-
   if (string(get_string_parameter_pointer("scan-number")) != "__NULL_STR") {
     const char* scan_numbers=get_string_parameter_pointer("scan-number");
     int first_scan;
@@ -239,8 +246,10 @@ int CruxHardklorApplication::main(int argc, char** argv) {
   hk_args_vec.push_back("-snWin");
   hk_args_vec.push_back(to_string(get_double_parameter("sn-window")));
   
-  if (get_boolean_parameter("union-mode")) {
-    hk_args_vec.push_back("-u");
+  if (get_boolean_parameter("static-sn")) {
+    hk_args_vec.push_back("true");
+  } else {
+    hk_args_vec.push_back("false");
   }
 
   if (string(get_string_parameter_pointer("mz-window")) != "__NULL_STR") {

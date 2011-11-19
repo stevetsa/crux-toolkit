@@ -237,7 +237,9 @@ spectrum segment. The default value is 10.</li>
 
 <li>
 <code>--resolution &lt;double&gt;</code> &ndash;
-Set the resolution of the observed spectra at m/z 400. Used in
+Set the resolution of the observed spectra at m/z 400. Resolution
+is a unitless quantity defined as the mass of the peak divided by the
+associated width at half maximum height (FWHM).  Used in
 conjunction with <code>--instrument</code>. The default is 100000.</li>
 
 <li>
@@ -270,7 +272,8 @@ calculating a signal-over-noise ratio. The default value is 250.0.</li>
 
 <li>
 <code>--static-sn &lt;T|F&gt;</code> &ndash; If true, Hardklor will calculate
-the noise level across the spectrum, then select a floor of this set
+the local noise levels across the spectrum using <code>--sn-window</code>, 
+then select a floor of this set
 of noise levels to apply to the whole spectrum.  Default is true.</li>
 
 <li>
