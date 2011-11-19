@@ -10,6 +10,7 @@
 #include "CruxApplication.h"
 
 #include <string>
+#include <fstream>
 
 class CruxHardklorApplication: public CruxApplication {
 
@@ -21,6 +22,43 @@ class CruxHardklorApplication: public CruxApplication {
 
   //Calls the main method in HardklorApp
   int hardklorMain(int argc, char* argv[]);
+
+  /**
+   * writes the ISOTOPE.DAT file for hardklor
+   */
+  void writeIsotopeDat(
+    std::string& filename ///<path for dat file
+  );
+
+  /**
+   * write the ISOTOPE.DAT to an output stream
+   */
+  void writeIsotopeDat(
+    std::ostream& os ///< the output stream to use
+  );
+
+  /**
+   * writes the Hardklor.dat to a path
+   */
+  void writeHardklorDat(
+    std::string& filename ///<path to write the Hardklor.dat to
+    );  
+
+  /**
+   * writes the Hardklor.dat to a stream
+   */
+  void writeHardklorDat(
+    std::ostream& os ///< stream to write to.
+    );  
+
+  /**
+   * \returns the filename 'output_directory'/'fileroot'.'name' 
+   */
+  std::string makeFileName(
+    const std::string& output_directory, ///< the directory
+    const std::string& fileroot, ///< the fileroot
+    const std::string& name ///< the name of the file
+    );
 
  public:
 

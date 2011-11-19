@@ -4,17 +4,16 @@
  * for that column (n, min, max, sum, average, stddev, median).
  *****************************************************************************/
 #include "CruxHardklorApplication.h"
-
 #include "DelimitedFile.h"
-#include "OutputFiles.h"
-#include <fstream>
-
 
 using namespace std;
 
+/**
+ * \returns the string of a variable
+ */
 template<typename TValue>
 static string to_string(
-  const TValue& value
+  const TValue& value 
   ) {
 
   int precision = get_int_parameter("precision");
@@ -25,12 +24,17 @@ static string to_string(
   return out_string;
 }
 
-
+/**
+ * converts a string in #-# format to
+ * a first and last variable
+ * \returns whether the extraction was successful or not
+ */
 template<typename TValue>
 static bool get_range_from_string(
-  const char* const_range_string, 
-  TValue& first, 
-  TValue& last) {
+  const char* const_range_string, ///< the string to extract 
+  TValue& first,  ///< the first value
+  TValue& last ///< the last value
+  ) {
 
   char* range_string = my_copy_string(const_range_string);
 
@@ -53,41 +57,6 @@ static bool get_range_from_string(
 
 }
 
-
-void writeIsotopeDat(
-  string& filename
-  );
-
-void writeIsotopeDat(
-  ostream & os
-  );
-
-void writeHardklorDat(
-  string& filename
-  );
-
-void writeHardklorDat(
-  ostream& os
-  );
-
-string makeFileName(
-  const string& output_directory,
-  const string& fileroot,
-  const string& name ) {
-
-    ostringstream name_builder;
-    name_builder << output_directory;
-    if( output_directory.at(output_directory.length()-1) != '/' ){
-        name_builder << "/";
-    }
-
-  if( fileroot != "__NULL_STR" ){
-    name_builder << fileroot << ".";
-  }
-  name_builder << name;
-
-  return name_builder.str();
-}
 
 
 /**
@@ -114,25 +83,23 @@ int CruxHardklorApplication::main(int argc, char** argv) {
     "output-dir",
     "overwrite",
     "hardklor-algorithm",
-//    "cdm",
-//    "min-charge",
-//    "max-charge",
+    "cdm",
+    "min-charge",
+    "max-charge",
     "corr",
     "depth",
     "distribution-area",
-//    "averagine-mod",
-//    "mzxml-filter",
-//    "no-base",
+    "averagine-mod",
+    "mzxml-filter",
+    "no-base",
     "max-p",
-//    "resolution",
-//    "instrument",
-//    "smooth",
-//    "scan-number",
+    "resolution",
+    "instrument",
+    "scan-number",
     "sensitivity",
     "signal-to-noise",
-//    "sn-window",
-//    "union-mode",
-//    "mz-window",
+    "sn-window",
+    "mz-window",
     "max-width",
     "parameter-file",
     "verbosity"
@@ -272,17 +239,11 @@ int CruxHardklorApplication::main(int argc, char** argv) {
 
   char** hk_argv = new char*[hk_argc];
 
-  ofstream command_line("command.sh");
-  command_line << "hardklor";
-
   hk_argv[0] = (char*)hk_args_vec[0].c_str();
   for (int idx = 1;idx < hk_argc ; idx++) {
     hk_argv[idx] = (char*)hk_args_vec[idx].c_str();
-    command_line << " " << hk_argv[idx];
-    cerr << "hk_argv["<<idx<<"]="<<hk_argv[idx]<<endl;
+    carp(CARP_DEBUG, "hk_argv[%d]=%s", idx, hk_argv[idx]);
   }
-
-  command_line.close();
 
   /* Call hardklorMain */
   int ret = hardklorMain(hk_argc, hk_argv);
@@ -314,20 +275,24 @@ bool CruxHardklorApplication::needsOutputDirectory() {
   return true;
 }
 
-
-
-
-void writeIsotopeDat(
-  string& filename) {
+/**
+ * writes the ISOTOPE.DAT file for hardklor
+ */
+void CruxHardklorApplication::writeIsotopeDat(
+  string& filename ///<path for dat file
+) {
 
   ofstream fout(filename.c_str());
   writeIsotopeDat(fout);
   fout.close();
 }
 
-void writeIsotopeDat(
-  ostream& os) {
-
+/**
+ * write the ISOTOPE.DAT to an output stream
+ */
+void CruxHardklorApplication::writeIsotopeDat(
+  ostream& os ///< the output stream to use
+  ) {
 
   os <<"X  2" << endl;
   os <<"1  0.9" << endl;
@@ -870,16 +835,24 @@ void writeIsotopeDat(
   os <<"35.967080  0.00013"<<endl;
 }
 
-void writeHardklorDat(
-  string& filename) {
+
+/**
+ * writes the Hardklor.dat to a path
+ */
+void CruxHardklorApplication::writeHardklorDat(
+  string& filename ///<path to write the Hardklor.dat to
+  ) {
 
   ofstream fout(filename.c_str());
   writeHardklorDat(fout);
   fout.close();
 }
 
-void writeHardklorDat(
-  ostream& os
+/**
+ * writes the Hardklor.dat to a stream
+ */
+void CruxHardklorApplication::writeHardklorDat(
+  ostream& os ///< stream to write to.
   ) {
 
   os << "0" << "\t" << "X"  << "\t" << "0"         << endl;
@@ -992,6 +965,29 @@ void writeHardklorDat(
   os <<"107" << "\t" << "Ox" << "\t" << "15.9949141" << endl;
   os <<"108" << "\t" << "Sx" << "\t" << "31.972070" << endl;  
 
+}
+
+/**
+ * \returns the filename 'output_directory'/'fileroot'.'name' 
+ */
+string CruxHardklorApplication::makeFileName(
+  const string& output_directory, ///< the directory
+  const string& fileroot, ///< the fileroot
+  const string& name ///< the name of the file
+  ) {
+
+    ostringstream name_builder;
+    name_builder << output_directory;
+    if( output_directory.at(output_directory.length()-1) != '/' ){
+        name_builder << "/";
+    }
+
+  if( fileroot != "__NULL_STR" ){
+    name_builder << fileroot << ".";
+  }
+  name_builder << name;
+
+  return name_builder.str();
 }
 
 /*

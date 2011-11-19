@@ -55,10 +55,10 @@ int CruxHardklorApplication::hardklorMain(int argc, char* argv[]) {
   
 
   //Create all the output files that will be used
-  char buf[500];
+//  char buf[500];
   for(i=0;i<hp.size();i++){
-    hp.queue(i).out(buf);
-    cerr << i << ":" << buf << endl;
+//    hp.queue(i).out(buf);
+//    cerr << i << ":" << buf << endl;
     fptr.clear();
     fptr.open(&hp.queue(i).outFile[0],ios::out);
     fptr.close();
