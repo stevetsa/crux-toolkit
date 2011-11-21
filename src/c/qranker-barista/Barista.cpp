@@ -1732,6 +1732,7 @@ int Barista :: set_command_line_options(int argc, char *argv[])
 	{
 	  if(!sqtp.set_input_sources(ms2_source, sqt_source, sqt_decoy_source))
 	    carp(CARP_FATAL, "could not extract features for training");
+	  sqtp.set_num_hits_per_spectrum(1);
 	}
       else
 	{

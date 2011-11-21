@@ -423,11 +423,75 @@ void SQTParser :: extract_psm_features(sqt_match &m, enzyme enz, double *x, int 
   x[13]=(double)cntEnz(pep,enz);
   // number of sequence_comparisons
   //x[14] = log(m.num_sequence_comparisons);
-  x[14] = m.num_sequence_comparisons;
+  //x[14] = m.num_sequence_comparisons;
   //difference between measured and calculated mass
   x[15] = m.precursor_mass-m.calc_mass[i];
   // absolute value of difference between measured and calculated mass
   x[16] = m.precursor_mass-m.calc_mass[i];
+}
+
+void SQTParser :: extract_psm_features(sqt_match &m, enzyme enz, double *x, int i, int hits_read)
+{
+  string pep = m.peptides[i];
+  memset(x,0,sizeof(double)*num_features);
+  
+  //log rank by Sp
+  if (m.sp_rank[i] > 0)
+    x[0] = log(m.sp_rank[i]);
+  else
+    x[0] = 0.0;
+  
+  //deltaLCN
+  x[1] = 0.0;
+    
+  //deltaCN
+  x[2] = 0.0;
+  if(i < hits_read-1)
+  x[2] = (m.xcorr_score[i] - m.xcorr_score[i+1])/m.xcorr_score[i];
+  //x[2] = m.delta_cn[i];
+  
+  //xcorr score
+  x[3] = m.xcorr_score[i];
+  
+  //sp score
+  x[4] = m.sp_score[i];
+  
+  //matched ions/predicted ions
+  if(m.num_total_ions[i] > 0)
+    x[5] = m.num_ions_matched[i]/m.num_total_ions[i];
+  else
+    x[5] = 0.0;
+  
+  //observed mass
+  x[6] = m.precursor_mass;
+
+  //peptide length
+  x[7] = pep.size();
+  
+  //charge
+  x[8] = 0.0; x[9] = 0.0; x[10] = 0.0;
+  if (m.charge == 1)
+    x[8] = 1.0;
+  if(m.charge == 2)
+    x[9] = 1.0;
+  if(m.charge == 3)
+    x[10] = 1.0;
+  
+  //whether n-terminus and c-terminus have proper cleavage sites
+  x[11]=isEnz(pep.at(0),pep.at(2),enz);        
+  x[12]=isEnz(pep.at(pep.size()-3),pep.at(pep.size()-1),enz);
+  // missed cleavages
+  x[13]=(double)cntEnz(pep,enz);
+  
+  // number of sequence_comparisons
+  //x[14] = log(m.num_sequence_comparisons);
+  //x[14] = m.num_sequence_comparisons;
+  
+  //difference between measured and calculated mass
+  x[15] = m.precursor_mass-m.calc_mass[i];
+  // absolute value of difference between measured and calculated mass
+  x[16] = fabs(m.precursor_mass-m.calc_mass[i]);
+  
 }
 
 
@@ -437,7 +501,8 @@ void SQTParser :: extract_features(sqt_match &m, string &decoy_prefix, int hits_
   for (int i = 0; i < min(hits_read,final_hits); i++)
     {
       //write the feature vector out to file
-      extract_psm_features(m, enz, x, i);
+      //extract_psm_features(m, enz, x, i);
+      extract_psm_features(m, enz, x, i, hits_read);
       
       if (num_spec_features > 0)
 	{

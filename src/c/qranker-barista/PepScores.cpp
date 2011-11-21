@@ -139,7 +139,7 @@ void PepScores::fillFeaturesFull(PepScores& full, Dataset& d) {
       full.scores[i].label = label;
       int *protinds = d.pepind2protinds(i);
       int label1 = d.protind2label(protinds[0]);
-      assert(label==label1);
+      //assert(label==label1);
       if (full.scores[i].label == 1)
 	num_pos++;
       else

@@ -27,6 +27,7 @@ echo plot 0 notitle with dots >> $gnuplot
 
 # Create the index.
 db=worm+contaminants
+#db=worm
 if [[ -e $db ]]; then
   echo Skipping create-index.
 else

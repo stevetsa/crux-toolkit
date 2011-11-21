@@ -99,6 +99,7 @@ class SQTParser{
   static double isElastasic(const char n,const char c);
   static double isEnz(const char n,const char c, enzyme enz);
   void extract_psm_features(sqt_match &m, enzyme enz, double *x, int i);
+  void extract_psm_features(sqt_match &m, enzyme enz, double *x, int i, int hits_read);
   void extract_features(sqt_match &m, string &decoy_prefix, int hits_read, int final_hits,enzyme enz);
   void add_matches_to_tables(sqt_match &m, string &decoy_prefix, int hits_read, int final_hits);
   void allocate_feature_space();
