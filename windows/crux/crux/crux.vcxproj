@@ -43,7 +43,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>\\psf\Home\projects\crux-windows-port\src\c\xlink;\\psf\Home\projects\crux-windows-port\src\c\q-ranker;\\psf\Home\projects\crux-windows-port\src\c\percolator;\\psf\Home\projects\crux-windows-port\src\c\MSToolkit;\\psf\Home\projects\crux-windows-port\src\c\MSToolkit\RAMP;\\psf\Home\projects\crux-windows-port\src\c\ArrayLibrary;\\psf\Home\projects\crux-windows-port\src\external;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;USE_DOUBLES;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>SEARCH_ENABLED;WIN32;USE_DOUBLES;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -70,7 +70,6 @@
     <ClCompile Include="..\..\..\src\c\carp.cpp" />
     <ClCompile Include="..\..\..\src\c\ComputeQValues.cpp" />
     <ClCompile Include="..\..\..\src\c\CreateIndex.cpp" />
-    <ClCompile Include="..\..\..\src\c\crux-main.cpp" />
     <ClCompile Include="..\..\..\src\c\crux-utils.cpp" />
     <ClCompile Include="..\..\..\src\c\CruxApplication.cpp" />
     <ClCompile Include="..\..\..\src\c\CruxApplicationList.cpp" />

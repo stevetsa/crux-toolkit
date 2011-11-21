@@ -33,9 +33,6 @@
     <ClCompile Include="..\..\..\src\c\CruxApplicationList.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\c\crux-main.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\src\c\crux-utils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

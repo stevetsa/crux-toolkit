@@ -461,13 +461,15 @@ const char* date_and_time
   if (first_time) {
     date_stream = (FILE *)popen("date", "r");
     if( fgets(the_date, MAX_HOST_NAME, date_stream) == NULL ){ return NULL; }
-    pclose(date_stream);
+    // FIXME pclose(date_stream);
   }
 
   /* Remove the EOL. */
+#ifdef WIN32
   assert(the_date[strlen(the_date)-1] == '\n');
-  the_date[strlen(the_date)-1] = '\0';
-
+#else
+  the_date[strlen(the_date)-1] = '\n';
+#endif
   first_time = false;
   return(the_date);
 }

@@ -38,7 +38,7 @@ SpectrumCollection::SpectrumCollection (
   }
   
   if(access(absolute_path_file, F_OK)){
-    free(absolute_path_file);
+    // FIXEME can't refer to memory after freeing it! free(absolute_path_file);
     carp(CARP_FATAL, "File %s could not be opened\n", absolute_path_file);
   }
   filename_ = absolute_path_file;
