@@ -4,60 +4,9 @@
  * for that column (n, min, max, sum, average, stddev, median).
  *****************************************************************************/
 #include "CruxHardklorApplication.h"
-#include "DelimitedFile.h"
+#include "DelimitedFileWriter.h"
 
 using namespace std;
-
-/**
- * \returns the string of a variable
- */
-template<typename TValue>
-static string to_string(
-  const TValue& value 
-  ) {
-
-  int precision = get_int_parameter("precision");
-  std::ostringstream oss;
-  oss << std::setprecision(precision);
-  oss << value;
-  std::string out_string = oss.str();
-  return out_string;
-}
-
-/**
- * converts a string in #-# format to
- * a first and last variable
- * \returns whether the extraction was successful or not
- */
-template<typename TValue>
-static bool get_range_from_string(
-  const char* const_range_string, ///< the string to extract 
-  TValue& first,  ///< the first value
-  TValue& last ///< the last value
-  ) {
-
-  char* range_string = my_copy_string(const_range_string);
-
-  bool ret;
-
-  char* dash = strchr(range_string, '-');
-  if( dash == NULL ){ // a single number
-    ret = DelimitedFile::from_string(first, range_string);
-    last=first;
-  } else {
-
-    *dash = '\0';
-    ret = DelimitedFile::from_string(first,range_string);
-    *dash = '-';
-    *dash++;
-    ret &= DelimitedFile::from_string(last,dash);
-  }
-  free(range_string);
-  return ret;    
-
-}
-
-
 
 /**
  * \returns a blank CruxHardklorApplication object
@@ -116,15 +65,12 @@ int CruxHardklorApplication::main(int argc, char** argv) {
   initialize(argument_list, num_arguments,
     option_list, num_options, argc, argv);
 
-  const char* output_directory = get_string_parameter_pointer("output-dir");
-  string fileroot = string(get_string_parameter_pointer("fileroot"));
-
-  /* build output filename */
-  string output_filename = makeFileName(output_directory, fileroot, "hardklor.mono.txt");
-  string hardklor_dat_filename = makeFileName(output_directory, fileroot, "Hardklor.dat");
+  /* Write the dat files */
+  string output_filename = make_file_path("hardklor.mono.txt");
+  string hardklor_dat_filename = make_file_path("Hardklor.dat");
   writeHardklorDat(hardklor_dat_filename);
 
-  string isotope_dat_filename = makeFileName(output_directory, fileroot, "ISOTOPE.DAT");
+  string isotope_dat_filename = make_file_path("ISOTOPE.DAT");
   writeIsotopeDat(isotope_dat_filename);
 
   /* build argument list */
@@ -153,16 +99,16 @@ int CruxHardklorApplication::main(int argc, char** argv) {
   hk_args_vec.push_back(get_string_parameter_pointer("cdm"));
 
   hk_args_vec.push_back("-chMin");
-  hk_args_vec.push_back(to_string(get_int_parameter("min-charge")));
+  hk_args_vec.push_back(DelimitedFileWriter::to_string(get_int_parameter("min-charge")));
 
   hk_args_vec.push_back("-chMax");
-  hk_args_vec.push_back(to_string(get_int_parameter("max-charge")));
+  hk_args_vec.push_back(DelimitedFileWriter::to_string(get_int_parameter("max-charge")));
 
   hk_args_vec.push_back("-corr");
-  hk_args_vec.push_back(to_string(get_double_parameter("corr")));
+  hk_args_vec.push_back(DelimitedFileWriter::to_string(get_double_parameter("corr")));
 
   hk_args_vec.push_back("-d");
-  hk_args_vec.push_back(to_string(get_int_parameter("depth")));
+  hk_args_vec.push_back(DelimitedFileWriter::to_string(get_int_parameter("depth")));
 
   hk_args_vec.push_back("-da");
 
@@ -187,10 +133,10 @@ int CruxHardklorApplication::main(int argc, char** argv) {
   }  
   
   hk_args_vec.push_back("-p");
-  hk_args_vec.push_back(to_string(get_int_parameter("max-p")));
+  hk_args_vec.push_back(DelimitedFileWriter::to_string(get_int_parameter("max-p")));
 
   hk_args_vec.push_back("-res");
-  hk_args_vec.push_back(to_string(get_double_parameter("resolution")));
+  hk_args_vec.push_back(DelimitedFileWriter::to_string(get_double_parameter("resolution")));
   hk_args_vec.push_back(get_string_parameter("instrument"));
 
   if (string(get_string_parameter_pointer("scan-number")) != "__NULL_STR") {
@@ -198,20 +144,20 @@ int CruxHardklorApplication::main(int argc, char** argv) {
     int first_scan;
     int last_scan;
     get_range_from_string(scan_numbers, first_scan, last_scan);
-
+    
     hk_args_vec.push_back("-sc");
-    hk_args_vec.push_back(to_string(first_scan));
-    hk_args_vec.push_back(to_string(last_scan));
+    hk_args_vec.push_back(DelimitedFileWriter::to_string(first_scan));
+    hk_args_vec.push_back(DelimitedFileWriter::to_string(last_scan));
   }
 
   hk_args_vec.push_back("-sl");
-  hk_args_vec.push_back(to_string(get_int_parameter("sensitivity")));
+  hk_args_vec.push_back(DelimitedFileWriter::to_string(get_int_parameter("sensitivity")));
 
   hk_args_vec.push_back("-sn");
-  hk_args_vec.push_back(to_string(get_double_parameter("signal-to-noise")));
+  hk_args_vec.push_back(DelimitedFileWriter::to_string(get_double_parameter("signal-to-noise")));
 
   hk_args_vec.push_back("-snWin");
-  hk_args_vec.push_back(to_string(get_double_parameter("sn-window")));
+  hk_args_vec.push_back(DelimitedFileWriter::to_string(get_double_parameter("sn-window")));
   
   if (get_boolean_parameter("static-sn")) {
     hk_args_vec.push_back("true");
@@ -224,13 +170,13 @@ int CruxHardklorApplication::main(int argc, char** argv) {
     double last;
     if (get_range_from_string(get_string_parameter_pointer("mz-window"), first, last)) {
       hk_args_vec.push_back("-w");
-      hk_args_vec.push_back(to_string(first));
-      hk_args_vec.push_back(to_string(last));
+      hk_args_vec.push_back(DelimitedFileWriter::to_string(first));
+      hk_args_vec.push_back(DelimitedFileWriter::to_string(last));
     }
   }    
 
   hk_args_vec.push_back("-win");
-  hk_args_vec.push_back(to_string(get_double_parameter("max-width")));
+  hk_args_vec.push_back(DelimitedFileWriter::to_string(get_double_parameter("max-width")));
   
 
 
@@ -965,29 +911,6 @@ void CruxHardklorApplication::writeHardklorDat(
   os <<"107" << "\t" << "Ox" << "\t" << "15.9949141" << endl;
   os <<"108" << "\t" << "Sx" << "\t" << "31.972070" << endl;  
 
-}
-
-/**
- * \returns the filename 'output_directory'/'fileroot'.'name' 
- */
-string CruxHardklorApplication::makeFileName(
-  const string& output_directory, ///< the directory
-  const string& fileroot, ///< the fileroot
-  const string& name ///< the name of the file
-  ) {
-
-    ostringstream name_builder;
-    name_builder << output_directory;
-    if( output_directory.at(output_directory.length()-1) != '/' ){
-        name_builder << "/";
-    }
-
-  if( fileroot != "__NULL_STR" ){
-    name_builder << fileroot << ".";
-  }
-  name_builder << name;
-
-  return name_builder.str();
 }
 
 /*

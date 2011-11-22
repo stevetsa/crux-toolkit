@@ -756,6 +756,34 @@ void prefix_fileroot_to_name(char** name) {
 }
 
 /**
+ * \returns the filepath 'output_dir'/'fileroot'.'filename' 
+ */
+string make_file_path(
+  const string& filename ///< the name of the file
+  ) {
+
+  string output_directory = 
+    string(get_string_parameter_pointer("output-dir"));
+  string fileroot = 
+    string(get_string_parameter_pointer("fileroot"));
+
+  ostringstream name_builder;
+  name_builder << output_directory;
+  
+  if ( output_directory.at(output_directory.length()-1) != '/' ){
+        name_builder << "/";
+  }
+
+  if( fileroot != "__NULL_STR" ){
+    name_builder << fileroot << ".";
+  }
+
+  name_builder << filename;
+
+  return name_builder.str();
+}
+
+/**
  * \brief Check if the string has the correct prefix
  * \returns true if the string starts with the given prefix or if the
  * prefix is NULL, else false.

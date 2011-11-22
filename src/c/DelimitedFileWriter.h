@@ -123,7 +123,7 @@ class DelimitedFileWriter {
    * use the --precision option value.
    */
   template<typename TValue>
-  static std::string to_string(TValue& value) {
+  static std::string to_string(TValue value) {
 
     std::ostringstream oss;
     oss << std::setprecision(get_int_parameter("precision")) << std::fixed;

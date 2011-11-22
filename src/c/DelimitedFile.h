@@ -506,6 +506,7 @@ class DelimitedFile {
   /**
    * convert string to data type
    */
+/*
   template<typename TValue>  
   static bool from_string(
     TValue& value,
@@ -515,7 +516,7 @@ class DelimitedFile {
     std::istringstream iss(s);
     return !(iss >> std::dec >> value).fail();
   }   
-  
+*/  
   /**
    * Allows object to be printed to a stream
    */

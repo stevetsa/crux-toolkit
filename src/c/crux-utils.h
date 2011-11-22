@@ -22,11 +22,14 @@
 #include "carp.h"
 #include "utils.h"
 #include "objects.h"
+#include "parameter.h"
 #include "Peak.h"
 #include "Index.h"
 
 #include "CruxApplication.h"
 
+
+#include<sstream>
 #include<vector>
 
 using namespace std;
@@ -137,6 +140,14 @@ char* cat_string(const char* string_one, const char* string_two);
  * is added as a suffix.
  */
 void prefix_fileroot_to_name(char** name);
+
+/**
+ * \returns the filepath 'output_dir'/'fileroot'.'filename' 
+ */
+string make_file_path(
+  const std::string& filename ///< the name of the file
+  );
+
 
 /**
  * given the path and the filename return a file with path
@@ -408,15 +419,60 @@ int prepare_protein_input(
   Database** database);///< return new fasta database here
 
 /**
- *  Read the string of the form <first>-<last> and returns <first>
- *  or -1 if the range is invalid.
+ * convert string to data type
+ * \returns whether the conversion was successful or not.
  */
-int get_first_in_range_string(const char* range_string);
+template<typename TValue>  
+static bool from_string(
+  TValue& value,
+  const std::string& s
+  ) {
+
+  std::istringstream iss(s);
+  return !(iss >> std::dec >> value).fail();
+}   
+
 /**
- *  Read the string of the form <first>-<last> and returns <last>
- *  or -1 if the range is invalid.
+ * converts a string in #-# format to
+ * a first and last variable
+ * \returns whether the extraction was successful or not
  */
-int get_last_in_range_string(const char* range_string);
+
+template<typename TValue>
+static bool get_range_from_string(
+  const char* const_range_string, ///< the string to extract 
+  TValue& first,  ///< the first value
+  TValue& last ///< the last value
+  ) {
+
+  char* range_string = my_copy_string(const_range_string);
+
+  bool ret;
+
+  char* dash = strchr(range_string, '-');
+  if( dash == NULL ){ // a single number
+    ret = from_string(first, range_string);
+    last=first;
+  } else {
+
+    *dash = '\0';
+    ret = from_string(first,range_string);
+    *dash = '-';
+    *dash++;
+    ret &= from_string(last,dash);
+  }
+
+  //invalid if more than one dash
+  dash = strchr(dash + 1, '-');
+  if (dash != NULL) {
+    ret = false;
+  }
+
+  free(range_string);
+  return ret;    
+}
+
+
 
 /**
  * \brief  Decide if a spectrum has precursor charge of +1 or more (+2
