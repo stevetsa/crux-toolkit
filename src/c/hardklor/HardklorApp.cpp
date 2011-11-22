@@ -13,8 +13,11 @@
 using namespace std;
 
 
-
+#ifdef CRUX
 int CruxHardklorApplication::hardklorMain(int argc, char* argv[]) {
+#else
+int main(int argc, char* argv[]) {
+#endif
   int i;
 	unsigned int j;
   bool bConf;

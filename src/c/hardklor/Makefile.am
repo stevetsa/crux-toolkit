@@ -65,7 +65,8 @@ libhardklor_la_CXXFLAGS = $(AM_CXXFLAGS) \
   -DGCC \
   -D_LARGEFILE_SOURCE \
   -DHAVE_EXPAT_CONFIG_H \
-  -D_FILE_OFFSET_BITS=64
+  -D_FILE_OFFSET_BITS=64 \
+  -DCRUX
 
 
 noinst_LTLIBRARIES = libhardklor.la
