@@ -1485,7 +1485,7 @@ int Barista :: run_tries_multi_task()
   
   //report_all_results_xml();
   //report_all_fdr_counts();
-  report_all_results_tab();
+  //report_all_results_tab();
 
    return 0;
 
@@ -1773,7 +1773,7 @@ int Barista :: set_command_line_options(int argc, char *argv[])
 
       //num of spec features
       if(spec_features_flag)
-	sqtp.set_num_spec_features(7);
+	sqtp.set_num_spec_features(3);
       else
 	sqtp.set_num_spec_features(0);
       if(!sqtp.run())

@@ -14,7 +14,7 @@ class BipartiteGraph{
   struct Range {int p; int len;};
  BipartiteGraph():nranges(0),nindices(0), ranges((Range*)0), indices((int*)0){}
   ~BipartiteGraph(){clear();}
-  void clear(){if(ranges)delete[] ranges; if(indices)delete[] indices;nranges=0;nindices=0;}
+  void clear(){if(ranges)delete[] ranges; ranges = (Range*)0; if(indices)delete[] indices; indices = (int*)0; nranges=0;nindices=0;}
   void create_bipartite_graph(map<int, set<int> > data);
 
   bool is_index_in_range(int index, int range);

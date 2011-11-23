@@ -15,17 +15,12 @@ SQTParser :: SQTParser()
     num_neg_pep(0),
     num_prot(0),
     num_pos_prot(0),
-    num_neg_prot(0),
-    psmind(0),
+    num_neg_prot(0), 
+    num_cur_psm(0),
+    num_cur_prot(0), prot_offset(0),
     num_prot_not_found_in_db(0),
     x(0), 
     xs(0), 
-    psmind_to_pepind(0), 
-    psmind_to_scan(0),
-    psmind_to_charge(0), 
-    psmind_to_label(0), 
-    pepind_to_label(0),
-    protind_to_label(0), 
     protind_to_num_all_pep(0)
 {
   int capacity = 10;
@@ -44,7 +39,7 @@ SQTParser :: SQTParser()
   //num_psm_features
   num_features = 17;
   //num_spec_features 
-  num_spec_features = 7;
+  num_spec_features = 3;
   
   //final_hits_per_spectrum
   fhps = 3;
@@ -70,12 +65,6 @@ void SQTParser :: clear()
   clear_matches();
   delete[] x; x = (double*)0;
   delete[] xs; xs = (double*)0;
-  delete[] psmind_to_pepind; psmind_to_pepind = (int*)0;
-  delete[] psmind_to_scan; psmind_to_scan = (int*)0;
-  delete[] psmind_to_charge; psmind_to_charge = (int*)0;
-  delete[] psmind_to_label; psmind_to_label = (int*)0;
-  delete[] pepind_to_label; pepind_to_label = (int*)0;
-  delete[] protind_to_label; protind_to_label = (int*)0;
   delete[] protind_to_num_all_pep; protind_to_num_all_pep = (int*)0;
 }
 
@@ -149,8 +138,8 @@ void SQTParser :: add_matches_to_tables(sqt_match &m, string &decoy_prefix, int 
 	  protein_pos++;
 	}
       //record the psm label
-      psmind_to_label_map[num_psm] = label;
-
+      f_psmind_to_label.write((char*)(&label),sizeof(int));
+      
       string pep = m.peptides[i];
       int pep_ind = -1;
       //add peptide to pep_to_ind and ind_to_pep maps
@@ -167,8 +156,8 @@ void SQTParser :: add_matches_to_tables(sqt_match &m, string &decoy_prefix, int 
 	  set<int> t;
 	  pepind_to_protinds_map[pep_ind] = t;
 	  //set the label of the new peptide
-	  pepind_to_label_map[pep_ind] = label;
- 	  //augment num_pep count
+	  f_pepind_to_label.write((char*)(&label),sizeof(int));
+	  //augment num_pep count
 	  num_pep++;
 	  if(label == 1)
 	    num_pos_pep++;
@@ -182,17 +171,21 @@ void SQTParser :: add_matches_to_tables(sqt_match &m, string &decoy_prefix, int 
 	  //if(pep.compare(p) != 0)
 	  //   cout << "warning : did not find peptide index in ind_to_pep_table\n"; 
 	}
+      //augment the pepinds_to_psminds table
+      (pepind_to_psminds_map[pep_ind]).insert(num_psm);
       
+
       for(set<string>::iterator it = proteins.begin(); it != proteins.end();it++)
 	{
 	  string prot = *it;
 	  //if the label is -1 but the protein name does not contain decoy_prefix_,
 	  // we don't include it
+	  //add prot to tables
 	  if((prot.find(decoy_prefix) == string::npos) && (label == -1))
-	    num_mixed_labels++;
+	    num_mixed_labels++; 
 	  else
 	    {
-	      //add prot to tables
+
 	      int prot_ind = -1;
 	      if (prot_to_ind.find(prot) == prot_to_ind.end())
 		{
@@ -204,13 +197,13 @@ void SQTParser :: add_matches_to_tables(sqt_match &m, string &decoy_prefix, int 
 		  set<int> t;
 		  protind_to_pepinds_map[prot_ind] = t;
 		  //set the prot label
-		  protind_to_label_map[prot_ind] = label;
-  		  num_prot++;
+		  f_protind_to_label.write((char*)(&label),sizeof(int));
+		  num_prot++; num_cur_prot++;
 		  if(label == 1)
 		    num_pos_prot++;
 		  else
 		    num_neg_prot++;
-
+		  
 		  //find the prot in the prot_to_num_all_pep
 		  int cnt = 0;
 		  if(protein_to_num_all_pep_map.find(prot) == protein_to_num_all_pep_map.end())
@@ -235,27 +228,15 @@ void SQTParser :: add_matches_to_tables(sqt_match &m, string &decoy_prefix, int 
 		    protind_to_num_all_pep_map[prot_ind] = cnt;
 		}
 	      else
-		{
-		  prot_ind = prot_to_ind[prot];
-		  string p = ind_to_prot[prot_ind];
-		  if(prot.compare(p) != 0)
-		    {
-		      //cout << "did not find protein in the ind_to_prot_table\n";
-		    }
-		}
-	      //augment the pepinds_to_psminds table
-	      (pepind_to_psminds_map[pep_ind]).insert(num_psm);
+		prot_ind = prot_to_ind[prot];
+	      
 	      //augment the pepind_to_protinds table
 	      (pepind_to_protinds_map[pep_ind]).insert(prot_ind);
 	      //augment to protind_to_pepinds table
 	      protind_to_pepinds_map[prot_ind].insert(pep_ind);
 	    }
-	  
 	}
-      //remember the file a psm belongs to
-      psmind_to_fname[num_psm] = cur_fname;
-
-       //augment num psms
+      //augment num psms
       num_psm++;
       if (label == 1)
 	num_pos_psm++;
@@ -277,61 +258,122 @@ void SQTParser :: allocate_feature_space()
       xs = new double[num_spec_features];
       memset(xs,0,sizeof(double)*num_spec_features);
     }
-  //space for psminfo
-  psmind_to_pepind = new int[num_psm];
-  memset(psmind_to_pepind,0,sizeof(int)*num_psm);
-  psmind_to_scan = new int[num_psm];
-  memset(psmind_to_scan,0,sizeof(int)*num_psm);
-  psmind_to_charge = new int[num_psm];
-  memset(psmind_to_charge,0,sizeof(int)*num_psm);
-  psmind_to_label = new int[num_psm];
-  memset(psmind_to_label,0,sizeof(int)*num_psm);
-  //space for pep info
-  pepind_to_label = new int[num_pep];
-  memset(pepind_to_label,0,sizeof(int)*num_pep);
-  //space for prot info
-  protind_to_label = new int[num_prot];
-  memset(protind_to_label,0,sizeof(int)*num_prot);
-  //space for prot to number of all peptides info
-  protind_to_num_all_pep = new int[num_prot];
-  memset(protind_to_num_all_pep,0,sizeof(int)*num_prot);
 }
 
 
-void SQTParser :: fill_graphs()
+void SQTParser :: fill_graphs_and_save_data(string &out_dir)
 {
-  pepind_to_psminds.create_bipartite_graph(pepind_to_psminds_map);
-  pepind_to_protinds.create_bipartite_graph(pepind_to_protinds_map);
-  protind_to_pepinds.create_bipartite_graph(protind_to_pepinds_map);
-  for(map<int,int>::iterator it = psmind_to_label_map.begin(); it != psmind_to_label_map.end(); it++)
-    psmind_to_label[it->first] = it->second;
-  for(map<int,int>::iterator it = pepind_to_label_map.begin(); it != pepind_to_label_map.end(); it++)
-    pepind_to_label[it->first] = it->second;
-  for(map<int,int>::iterator it = protind_to_label_map.begin(); it != protind_to_label_map.end(); it++)
+  ostringstream fname;
+  
+  //space for prot to number of all peptides info
+  protind_to_num_all_pep = new int[num_cur_prot];
+  memset(protind_to_num_all_pep,0,sizeof(int)*num_cur_prot);
+  for(map<int,string>::iterator it = ind_to_prot.begin(); it != ind_to_prot.end(); it++)
     {
-      protind_to_label[it->first] = it->second;
       int protind = it->first;
+      if(protind < prot_offset)
+	continue;
       //if did not find the protein in the count of all proteins, then just get the cound of observed proteins
       if(protind_to_num_all_pep_map.find(protind) == protind_to_num_all_pep_map.end())
 	{
 	  int cnt = (protind_to_pepinds_map[protind]).size();
-	  protind_to_num_all_pep[protind] = cnt;
+	  protind_to_num_all_pep[protind-prot_offset] = cnt;
 	}
       else
 	{
 	  int cnt = protind_to_num_all_pep_map[protind];
-	  protind_to_num_all_pep[protind] = cnt;
+	  protind_to_num_all_pep[protind-prot_offset] = cnt;
 	}
     }
-  pepind_to_protinds_map.clear();
-  protind_to_pepinds_map.clear();
-  psmind_to_label_map.clear();
-  pepind_to_label_map.clear();
-  protind_to_label_map.clear();
+  
+  //protind_to_num_all_pep
   protein_to_num_all_pep_map.clear();
   protind_to_num_all_pep_map.clear();
-} 
+  fname << out_dir << "/protind_to_num_all_pep.txt";
+  f_protind_to_num_all_pep.write((char*)protind_to_num_all_pep,sizeof(int)*num_cur_prot);
+  fname.str("");
+  delete[] protind_to_num_all_pep; protind_to_num_all_pep = (int*)0;
+  
 
+  //ind_to_pep
+  fname << out_dir << "/ind_to_pep.txt";
+  ofstream f_ind_to_pep(fname.str().c_str());
+  for(map<int,string>::iterator it = ind_to_pep.begin(); it != ind_to_pep.end(); it++)
+    f_ind_to_pep << it->first << " " << it->second << "\n";
+  f_ind_to_pep.close();
+  fname.str("");
+  ind_to_pep.clear();
+
+  //pep_to_ind
+  fname << out_dir << "/pep_to_ind.txt";
+  ofstream f_pep_to_ind(fname.str().c_str());
+  for(map<string,int>::iterator it = pep_to_ind.begin(); it != pep_to_ind.end(); it++)
+    f_pep_to_ind << it->first << " " << it->second << "\n";
+  f_pep_to_ind.close();
+  fname.str("");
+  pep_to_ind.clear();
+
+  //prot_to_ind
+  fname << out_dir << "/prot_to_ind.txt";
+  ofstream f_prot_to_ind(fname.str().c_str(),ios::binary);
+  for(map<string,int>::iterator it = prot_to_ind.begin(); it != prot_to_ind.end(); it++)
+    f_prot_to_ind << it->first << " " << it->second << "\n";
+  f_prot_to_ind.close();
+  fname.str("");
+  prot_to_ind.clear();
+
+  //ind_to_prot
+  fname << out_dir << "/ind_to_prot.txt";
+  ofstream f_ind_to_prot(fname.str().c_str(),ios::binary);
+  for(map<int,string>::iterator it = ind_to_prot.begin(); it != ind_to_prot.end(); it++)
+    f_ind_to_prot << it->first << " " << it->second << "\n";
+  f_ind_to_prot.close();
+  fname.str("");
+  ind_to_prot.clear();
+  
+  //pepind_to_psminds
+  pepind_to_psminds.create_bipartite_graph(pepind_to_psminds_map);
+  pepind_to_psminds_map.clear();
+  fname << out_dir << "/pepind_to_psminds.txt";
+  ofstream f_pepind_to_psminds(fname.str().c_str(),ios::binary);
+  pepind_to_psminds.save(f_pepind_to_psminds);
+  f_pepind_to_psminds.close();
+  fname.str("");
+  pepind_to_psminds.clear();
+    
+  //pepind_to_protinds
+  pepind_to_protinds.create_bipartite_graph(pepind_to_protinds_map);
+  pepind_to_protinds_map.clear();
+  fname << out_dir << "/pepind_to_protinds.txt";
+  ofstream f_pepind_to_protinds(fname.str().c_str(),ios::binary);
+  pepind_to_protinds.save(f_pepind_to_protinds);
+  f_pepind_to_protinds.close();
+  fname.str("");
+  pepind_to_protinds.clear();
+
+  //protind_to_pepinds
+  protind_to_pepinds.create_bipartite_graph(protind_to_pepinds_map);
+  protind_to_pepinds_map.clear();
+  fname << out_dir << "/protind_to_pepinds.txt";
+  ofstream f_protind_to_pepinds(fname.str().c_str(),ios::binary);
+  protind_to_pepinds.save(f_protind_to_pepinds);
+  f_protind_to_pepinds.close();
+  fname.str("");
+  protind_to_pepinds.clear();
+  
+  //write out data summary
+  fname << out_dir << "/summary.txt";
+  ofstream f_summary(fname.str().c_str());
+  //psm info
+  f_summary << num_features+num_spec_features << " " << num_psm << " " << num_pos_psm << " " << num_neg_psm << endl;
+  //peptide info
+  f_summary << num_pep << " " << num_pos_pep << " " << num_neg_pep << endl;
+  //protein info
+  f_summary << num_prot << " " << num_pos_prot << " " << num_neg_prot << endl;
+  f_summary.close();
+  fname.str("");
+
+} 
 
   
 /********* extracting features **********************************************************/
@@ -494,10 +536,9 @@ void SQTParser :: extract_psm_features(sqt_match &m, enzyme enz, double *x, int 
   
 }
 
-
-void SQTParser :: extract_features(sqt_match &m, string &decoy_prefix, int hits_read, int final_hits,enzyme enz)
+void SQTParser :: extract_features(sqt_match &m, int hits_read, int final_hits,enzyme enz)
 {
-  int protein_pos = 0;
+
   for (int i = 0; i < min(hits_read,final_hits); i++)
     {
       //write the feature vector out to file
@@ -511,8 +552,8 @@ void SQTParser :: extract_features(sqt_match &m, string &decoy_prefix, int hits_
 	  string scan_str = scan_stream.str();
 	  //if((m.scan %10000) == 0 && i == 0)
 	  //cout << scan_str << endl;
-	  if(psmind % 5000 == 0)
-	    carp(CARP_INFO, "PMS number %d", psmind);
+	  if(num_cur_psm % 5000 == 0)
+	    carp(CARP_INFO, "PMS number %d", num_cur_psm);
 	  string peptide = m.peptides[i];
 	  int pos = peptide.find(".");
 	  string pept = peptide.substr(pos+1,peptide.size());
@@ -521,16 +562,8 @@ void SQTParser :: extract_features(sqt_match &m, string &decoy_prefix, int hits_
 	  
 	  if(num_spec_features == 3)
 	      sfg.get_spec_features_m3(m.scan, m.charge,pept,xs);
-	  if(num_spec_features == 6)
-	    sfg.get_spec_features_m6(m.scan, m.charge,pept,xs);
 	  if(num_spec_features == 7)
 	    sfg.get_spec_features_m7(m.scan, m.charge,pept,xs);
-	  
-	  if(num_spec_features == 59)
-	    {
-	      sfg.get_spec_features_m7(m.scan, m.charge,pept,xs);
-	      sfg.get_spec_features_aa_end(m.scan, m.charge,pept,xs+7);
-	    }
 
 	  //write out features
 	  f_psm.write((char*)x, sizeof(double)*num_features);
@@ -541,54 +574,21 @@ void SQTParser :: extract_features(sqt_match &m, string &decoy_prefix, int hits_
 	f_psm.write((char*)x, sizeof(double)*num_features);
 
       //write psm tables
-      psmind_to_scan[psmind] = m.scan;
-      psmind_to_charge[psmind] = m.charge;
+      int scan = m.scan;
+      f_psmind_to_scan.write((char*)(&scan),sizeof(int));
+
+      int charge = m.charge;
+      f_psmind_to_charge.write((char*)(&charge),sizeof(int));
+      
+      double precursor_mass = m.precursor_mass;
+      f_psmind_to_precursor_mass.write((char*)(&precursor_mass),sizeof(double));
+      
       //get the pepind of the peptide
       string pep = m.peptides[i];
       int pepind = pep_to_ind[pep];
-      psmind_to_pepind[psmind] = pepind;
-          
-      //check the protein to peptide and peptide to protein tables
-      //collect proteins
-      set<string> proteins;
-      int label = 0;
-      // go through the proteins of the match
-      for (int j = 0; j < m.num_proteins_in_match[i]; j++)
-	{
-	  string prot = m.proteins[protein_pos];
-	  proteins.insert(prot);
-	  if(prot.find(decoy_prefix) != string::npos)
-	    label = -1;
-	  else
-	    label = 1;
-	  protein_pos++;
-	}
-      assert(psmind_to_label[psmind] == label);
-      //assert(pepind_to_label[pepind] == label);
+      f_psmind_to_pepind.write((char*)(&pepind),sizeof(int));
 
-      //go through the proteins
-      for(set<string>::iterator it = proteins.begin(); it != proteins.end();it++)
-	{
-	  string prot = *it;
-	  //if the label is -1 but the protein name does not contain decoy_prefix_,
-	  // we don't include it
-	  if((prot.find(decoy_prefix) == string::npos) && (label == -1))
-	    ;
-	  else
-	    {
-	      int protind = prot_to_ind[prot];
-	      if(!protind_to_pepinds.is_index_in_range(pepind,protind))
-#ifndef CRUX
-		carp(CARP_WARNING, "peptide was not found in protein to peptide table");
-#endif
-	      if(!pepind_to_protinds.is_index_in_range(protind,pepind))
-#ifndef CRUX
-		carp(CARP_WARNING, "peptide was not found in peptide to protein table");
-#endif
-	      assert(protind_to_label[protind] == label);
-	    }
-	}
-      psmind++;
+      num_cur_psm++;
     }
 }
 
@@ -702,7 +702,7 @@ int SQTParser :: parse_sqt_spectrum_matches(ifstream &is, sqt_match &m)
   
 }
 
-void SQTParser :: read_sqt_file(ifstream &is, string &decoy_prefix, int final_hits, enzyme enz, int pass)
+void SQTParser :: read_sqt_file(ifstream &is, string &decoy_prefix, int final_hits, enzyme enz)
 {
 
   string line;
@@ -720,143 +720,10 @@ void SQTParser :: read_sqt_file(ifstream &is, string &decoy_prefix, int final_hi
     {
       assert(tempstr.compare("S") == 0);
       num_hits = parse_sqt_spectrum_matches(is,m);
-      if (pass == 1)
-	add_matches_to_tables(m, decoy_prefix, num_hits, final_hits);
-      else
-	extract_features(m, decoy_prefix, num_hits, final_hits,enz);
+      add_matches_to_tables(m, decoy_prefix, num_hits, final_hits);
+      extract_features(m, num_hits, final_hits,enz);
     }
   
-
-}
-
-void SQTParser :: save_data_in_binary(string out_dir)
-{
-
-  ostringstream fname;
-  //write out data summary
-  fname << out_dir << "/summary.txt";
-  ofstream f_summary(fname.str().c_str());
-  //psm info
-  //psm info
-  f_summary << num_features+num_spec_features << " " << num_psm << " " << num_pos_psm << " " << num_neg_psm << endl;
-  //peptide info
-  f_summary << num_pep << " " << num_pos_pep << " " << num_neg_pep << endl;
-  //protein info
-  f_summary << num_prot << " " << num_pos_prot << " " << num_neg_prot << endl;
-  f_summary.close();
-  fname.str("");
-  
-  //psmind_to_pepind
-  fname << out_dir << "/psmind_to_pepind.txt";
-  ofstream f_psmind_to_pepind(fname.str().c_str(),ios::binary);
-  f_psmind_to_pepind.write((char*)psmind_to_pepind,sizeof(int)*num_psm);
-  f_psmind_to_pepind.close();
-  fname.str("");
-
-  //psmind_to_scan
-  fname << out_dir << "/psmind_to_scan.txt";
-  ofstream f_psmind_to_scan(fname.str().c_str(),ios::binary);
-  f_psmind_to_scan.write((char*)psmind_to_scan,sizeof(int)*num_psm);
-  f_psmind_to_scan.close();
-  fname.str("");
-
-  //psmind_to_charge
-  fname << out_dir << "/psmind_to_charge.txt";
-  ofstream f_psmind_to_charge(fname.str().c_str(),ios::binary);
-  f_psmind_to_charge.write((char*)psmind_to_charge,sizeof(int)*num_psm);
-  f_psmind_to_charge.close();
-  fname.str("");
-
-  //psmind_to_label
-  fname << out_dir << "/psmind_to_label.txt";
-  ofstream f_psmind_to_label(fname.str().c_str(),ios::binary);
-  f_psmind_to_label.write((char*)psmind_to_label,sizeof(int)*num_psm);
-  f_psmind_to_label.close();
-  fname.str("");
-
-  //psmind_to_fname
-  fname << out_dir << "/psmind_to_fname.txt";
-  ofstream f_psmind_to_fname(fname.str().c_str(),ios::binary);
-  for(map<int,string>::iterator it = psmind_to_fname.begin(); it != psmind_to_fname.end(); it++)
-    f_psmind_to_fname << it->first << " " << it->second << "\n";
-  f_psmind_to_fname.close();
-  fname.str("");
-
-  //pepind_to_label
-  fname << out_dir << "/pepind_to_label.txt";
-  ofstream f_pepind_to_label(fname.str().c_str(),ios::binary);
-  f_pepind_to_label.write((char*)pepind_to_label,sizeof(int)*num_pep);
-  f_pepind_to_label.close();
-  fname.str("");
-
-  //pepind_to_psminds
-  fname << out_dir << "/pepind_to_psminds.txt";
-  ofstream f_pepind_to_psminds(fname.str().c_str(),ios::binary);
-  pepind_to_psminds.save(f_pepind_to_psminds);
-  f_pepind_to_psminds.close();
-  fname.str("");
-
-  //pepind_to_protinds
-  fname << out_dir << "/pepind_to_protinds.txt";
-  ofstream f_pepind_to_protinds(fname.str().c_str(),ios::binary);
-  pepind_to_protinds.save(f_pepind_to_protinds);
-  f_pepind_to_protinds.close();
-  fname.str("");
-
-  //ind_to_pep
-  fname << out_dir << "/ind_to_pep.txt";
-  ofstream f_ind_to_pep(fname.str().c_str(),ios::binary);
-  for(map<int,string>::iterator it = ind_to_pep.begin(); it != ind_to_pep.end(); it++)
-    f_ind_to_pep << it->first << " " << it->second << "\n";
-  f_ind_to_pep.close();
-  fname.str("");
-
-  //pep_to_ind
-  fname << out_dir << "/pep_to_ind.txt";
-  ofstream f_pep_to_ind(fname.str().c_str(),ios::binary);
-  for(map<string,int>::iterator it = pep_to_ind.begin(); it != pep_to_ind.end(); it++)
-    f_pep_to_ind << it->first << " " << it->second << "\n";
-  f_pep_to_ind.close();
-  fname.str("");
-
-  //protind_to_label
-  fname << out_dir << "/protind_to_label.txt";
-  ofstream f_protind_to_label(fname.str().c_str(),ios::binary);
-  f_protind_to_label.write((char*)protind_to_label,sizeof(int)*num_prot);
-  f_protind_to_label.close();
-  fname.str("");
-  
-  //protind_to_num_all_pep
-  fname << out_dir << "/protind_to_num_all_pep.txt";
-  ofstream f_protind_to_num_all_pep(fname.str().c_str(),ios::binary);
-  f_protind_to_num_all_pep.write((char*)protind_to_num_all_pep,sizeof(int)*num_prot);
-  f_protind_to_num_all_pep.close();
-  fname.str("");
-
-
-  //protind_to_pepinds
-  fname << out_dir << "/protind_to_pepinds.txt";
-  ofstream f_protind_to_pepinds(fname.str().c_str(),ios::binary);
-  protind_to_pepinds.save(f_protind_to_pepinds);
-  f_protind_to_pepinds.close();
-  fname.str("");
-
-  //ind_to_prot
-  fname << out_dir << "/ind_to_prot.txt";
-  ofstream f_ind_to_prot(fname.str().c_str(),ios::binary);
-  for(map<int,string>::iterator it = ind_to_prot.begin(); it != ind_to_prot.end(); it++)
-    f_ind_to_prot << it->first << " " << it->second << "\n";
-  f_ind_to_prot.close();
-  fname.str("");
-
-  //prot_to_ind
-  fname << out_dir << "/prot_to_ind.txt";
-  ofstream f_prot_to_ind(fname.str().c_str(),ios::binary);
-  for(map<string,int>::iterator it = prot_to_ind.begin(); it != prot_to_ind.end(); it++)
-    f_prot_to_ind << it->first << " " << it->second << "\n";
-  f_prot_to_ind.close();
-  fname.str("");
-
 
 }
 
@@ -954,6 +821,140 @@ void SQTParser :: clean_up(string dir)
 }
 
 
+
+void SQTParser :: open_files(string &out_dir)
+{
+
+  ostringstream fname;
+
+  //if(append_dir_exists)
+  if(0)
+    {
+      cout << "appending to tables in directory " << out_dir << endl;
+      fname << out_dir << "/psm.txt";
+      f_psm.open(fname.str().c_str(), ios::binary | ios:: app);
+      fname.str("");
+           
+      //psmind_to_label
+      fname << out_dir << "/psmind_to_label.txt";
+      f_psmind_to_label.open(fname.str().c_str(), ios::binary | ios :: app);
+      fname.str("");
+
+      //psmind_to_pepind
+      fname << out_dir << "/psmind_to_pepind.txt";
+      f_psmind_to_pepind.open(fname.str().c_str(),ios::binary | ios :: app);
+      fname.str("");
+      
+      //psmind_to_scan
+      fname << out_dir << "/psmind_to_scan.txt";
+      f_psmind_to_scan.open(fname.str().c_str(),ios::binary | ios :: app);
+      fname.str("");
+      
+      //psmind_to_charge
+      fname << out_dir << "/psmind_to_charge.txt";
+      f_psmind_to_charge.open(fname.str().c_str(),ios::binary | ios :: app);
+      fname.str("");
+
+      //psmind_to_precursor_mass
+      fname << out_dir << "/psmind_to_precursor_mass.txt";
+      f_psmind_to_precursor_mass.open(fname.str().c_str(),ios::binary | ios :: app);
+      fname.str("");
+
+      //pepind_to_label
+      fname << out_dir << "/pepind_to_label.txt";
+      f_pepind_to_label.open(fname.str().c_str(),ios::binary | ios :: app);
+      fname.str("");
+
+      //protind_to_label
+      fname << out_dir << "/protind_to_label.txt";
+      f_protind_to_label.open(fname.str().c_str(),ios::binary | ios :: app);
+      fname.str("");
+  
+      fname << out_dir << "/protind_to_num_all_pep.txt";
+      f_protind_to_num_all_pep.open(fname.str().c_str(),ios::binary | ios :: app);
+      fname.str("");
+      
+      fname << out_dir << "/psmind_to_fname.txt";
+      f_psmind_to_fname.open(fname.str().c_str(),ios::binary | ios :: app);
+      fname.str("");
+
+    }
+  else
+    {
+      fname << out_dir << "/psm.txt";
+      f_psm.open(fname.str().c_str(), ios::binary);
+      fname.str("");
+           
+      //psmind_to_label
+      fname << out_dir << "/psmind_to_label.txt";
+      f_psmind_to_label.open(fname.str().c_str(),ios::binary);
+      fname.str("");
+
+      //psmind_to_pepind
+      fname << out_dir << "/psmind_to_pepind.txt";
+      f_psmind_to_pepind.open(fname.str().c_str(),ios::binary);
+      fname.str("");
+      
+      //psmind_to_scan
+      fname << out_dir << "/psmind_to_scan.txt";
+      f_psmind_to_scan.open(fname.str().c_str(),ios::binary);
+      fname.str("");
+      
+      //psmind_to_charge
+      fname << out_dir << "/psmind_to_charge.txt";
+      f_psmind_to_charge.open(fname.str().c_str(),ios::binary );
+      fname.str("");
+
+      //psmind_to_precursor_mass
+      fname << out_dir << "/psmind_to_precursor_mass.txt";
+      f_psmind_to_precursor_mass.open(fname.str().c_str(),ios::binary );
+      fname.str("");
+
+      //pepind_to_label
+      fname << out_dir << "/pepind_to_label.txt";
+      f_pepind_to_label.open(fname.str().c_str(),ios::binary);
+      fname.str("");
+
+      //protind_to_label
+      fname << out_dir << "/protind_to_label.txt";
+      f_protind_to_label.open(fname.str().c_str(),ios::binary);
+      fname.str("");
+      
+      fname << out_dir << "/protind_to_num_all_pep.txt";
+      f_protind_to_num_all_pep.open(fname.str().c_str(),ios::binary);
+      fname.str("");
+
+      fname << out_dir << "/fileind_to_fname.txt";
+      f_fileind_to_fname.open(fname.str().c_str(),ios::binary);
+      fname.str("");
+
+      fname << out_dir << "/psmind_to_fname.txt";
+      f_psmind_to_fname.open(fname.str().c_str(),ios::binary);
+      fname.str("");
+    }
+
+}
+
+void SQTParser :: close_files()
+{
+
+  ostringstream fname;
+  
+  f_psm.close();
+  f_psmind_to_label.close();
+  f_psmind_to_pepind.close();
+  f_psmind_to_scan.close();
+  f_psmind_to_charge.close();
+  f_psmind_to_precursor_mass.close();
+
+  f_pepind_to_label.close();
+  f_protind_to_label.close();
+  f_protind_to_num_all_pep.close();
+  f_fileind_to_fname.close();
+  f_psmind_to_fname.close();
+}
+
+
 int SQTParser::cntEnzConstraints(string& seq,enzyme enz) {
   int cnt = 0;
   unsigned int pos=0;
@@ -1032,39 +1033,10 @@ int SQTParser :: run()
       f_db.close();
     }
 
-  int pass;
-  //input sqt file
-  int num_files_read = 0;
-  for(unsigned int i = 0; i < sqt_file_names.size(); i++)
-    {
-      cur_fname = sqt_file_names[i];
-      carp(CARP_INFO, "parsing file %s", cur_fname.c_str());
-      ifstream f_sqt(cur_fname.c_str());
-      if(!f_sqt.is_open())
-	{
-	  carp(CARP_WARNING, "could not open sqt file: %s", cur_fname.c_str());
-	  continue;
-	}
-      //first pass
-      pass = 1;
-      read_sqt_file(f_sqt, decoy_prefix, fhps,e,pass);
-      f_sqt.close();
-      num_files_read++;
-    }
-  if(num_files_read < 1)
-    {
-      carp(CARP_WARNING, "could not parse any sqt files");
-      return 0;
-    }
-
   allocate_feature_space();
-  fill_graphs();
-  
-  ostringstream fname;
-  fname << out_dir << "/psm.txt";
-  f_psm.open(fname.str().c_str());
-  fname.str("");
-    
+  open_files(out_dir);
+  cout << "parsing files:\n";
+  int num_files_read = 0;
   for(unsigned int i = 0; i < sqt_file_names.size(); i++)
     {
       if(num_spec_features>0)
@@ -1081,16 +1053,26 @@ int SQTParser :: run()
 	  sfg.read_ms2_file();
 	  sfg.initialize_aa_tables();
 	}
-      //second pass
-      pass = 2;
+
       cur_fname = sqt_file_names[i];
-      carp(CARP_INFO, "extracting features from file %s", cur_fname.c_str()); 
+      carp(CARP_INFO, "parsing file %s", cur_fname.c_str());
+      f_fileind_to_fname << i << " " << cur_fname << endl;
+      f_psmind_to_fname.write((char*)(&num_psm),sizeof(int));
       ifstream f_sqt(cur_fname.c_str());
-      read_sqt_file(f_sqt, decoy_prefix, fhps,e,pass);
+      if(!f_sqt.is_open())
+	{
+	  carp(CARP_WARNING, "could not open sqt file: %s", cur_fname.c_str());
+	  continue;
+	}
+      read_sqt_file(f_sqt, decoy_prefix, fhps,e);
       f_sqt.close();
-      
+      num_files_read++;
     }
-  f_psm.close();
+  if(num_files_read < 1)
+    {
+      carp(CARP_WARNING, "could not parse any sqt files");
+      return 0;
+    }
   
   carp(CARP_INFO, "Number of spectra: %d", num_spectra);
   carp(CARP_INFO, "Number of PSMs: total %d positives %d negatives %d", num_psm, num_pos_psm, num_neg_psm);
@@ -1107,10 +1089,12 @@ int SQTParser :: run()
     }
 
   //save the data
-  save_data_in_binary(out_dir);
-
+  fill_graphs_and_save_data(out_dir);
+  close_files();
+  
   return 1;
 }
+
 
 void SQTParser :: read_list_of_files(string &list, vector<string> &fnames)
 {
