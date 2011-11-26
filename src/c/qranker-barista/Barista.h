@@ -49,7 +49,8 @@ class Barista : public CruxApplication
     max_peptides(0),   
     max_fdr_psm(0),
     max_fdr_pep(0){}
-  ~Barista(){delete[] net_clones; net_clones = 0;}
+  ~Barista(){clear();}
+  void clear();
   void print_description();
   int set_command_line_options(int argc, char *argv[]);
   void setup_for_training(int trn_to_tst);
@@ -74,7 +75,11 @@ class Barista : public CruxApplication
   void write_results_prot(string &out_dir, int fdr);
   void report_all_results();
   void get_pep_seq(string &pep, string &seq, string &n, string &c);
+  void get_tab_delim_proteins(string protein_str, vector<string> &proteins);
+  void write_protein_special_case_xml(ofstream &os, int i);
   void write_results_prot_xml(ofstream &os);
+  void write_subset_protein_special_case_xml(ofstream &os, int i);
+  void write_results_subset_prot_xml(ofstream &os);
   void write_results_peptides_xml(ofstream &os);
   void write_results_psm_xml(ofstream &os);
   void report_all_results_xml();
@@ -82,6 +87,7 @@ class Barista : public CruxApplication
   void write_results_peptides_tab(ofstream &os);
   void write_results_psm_tab(ofstream &os);
   void report_all_results_tab();
+  void report_all_results_xml_tab();
   void report_prot_fdr_counts(vector<double> &qvals, ofstream &of);
   void report_psm_fdr_counts(vector<double> &qvals, ofstream &of);
   void report_pep_fdr_counts(vector<double> &qvals, ofstream &of);

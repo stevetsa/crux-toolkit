@@ -21,7 +21,8 @@ SQTParser :: SQTParser()
     num_prot_not_found_in_db(0),
     x(0), 
     xs(0), 
-    protind_to_num_all_pep(0)
+    protind_to_num_all_pep(0),
+    cur_fileind(0)
 {
   int capacity = 10;
   m.xcorr_rank.reserve(capacity);
@@ -66,6 +67,36 @@ void SQTParser :: clear()
   delete[] x; x = (double*)0;
   delete[] xs; xs = (double*)0;
   delete[] protind_to_num_all_pep; protind_to_num_all_pep = (int*)0;
+
+    pep_to_ind.clear();
+  ind_to_pep.clear();
+  pepind_to_protinds.clear();
+  pepind_to_protinds_map.clear();
+  pepind_to_psminds.clear();
+  pepind_to_psminds_map.clear();
+
+  prot_to_ind.clear();
+  ind_to_prot.clear();
+  protind_to_pepinds_map.clear();
+  protind_to_pepinds.clear();
+  protein_to_num_all_pep_map.clear();
+  protind_to_num_all_pep_map.clear();
+
+  num_features = 0;
+  num_spec_features = 0;
+  num_spectra = 0;
+  num_psm = 0;
+  num_pos_psm = 0;
+  num_neg_psm = 0;
+  num_pep = 0;
+  num_pos_pep = 0;
+  num_neg_pep = 0;
+  num_prot = 0;
+  num_pos_prot = 0;
+  num_neg_prot = 0;
+  num_cur_prot = 0;
+  prot_offset = 0;
+
 }
 
 void SQTParser :: set_enzyme(string &enz)
@@ -587,6 +618,8 @@ void SQTParser :: extract_features(sqt_match &m, int hits_read, int final_hits,e
       string pep = m.peptides[i];
       int pepind = pep_to_ind[pep];
       f_psmind_to_pepind.write((char*)(&pepind),sizeof(int));
+      
+      f_psmind_to_fileind.write((char*)(&cur_fileind),sizeof(int));
 
       num_cur_psm++;
     }
@@ -704,7 +737,7 @@ int SQTParser :: parse_sqt_spectrum_matches(ifstream &is, sqt_match &m)
 
 void SQTParser :: read_sqt_file(ifstream &is, string &decoy_prefix, int final_hits, enzyme enz)
 {
-
+  int cn = 0;
   string line;
   string tempstr;
   is >> tempstr;
@@ -722,9 +755,11 @@ void SQTParser :: read_sqt_file(ifstream &is, string &decoy_prefix, int final_hi
       num_hits = parse_sqt_spectrum_matches(is,m);
       add_matches_to_tables(m, decoy_prefix, num_hits, final_hits);
       extract_features(m, num_hits, final_hits,enz);
+      cn++;
+      //if(cn > 10000)
+      //break;
     }
   
-
 }
 
 
@@ -762,8 +797,8 @@ void SQTParser :: clean_up(string dir)
   remove(fname.str().c_str());
   fname.str("");
 
-  //psmind_to_fname
-  fname << out_dir << "/psmind_to_fname.txt";
+  //psmind_to_fileind
+  fname << out_dir << "/psmind_to_fileind.txt";
   remove(fname.str().c_str());
   fname.str("");
 
@@ -874,8 +909,8 @@ void SQTParser :: open_files(string &out_dir)
       f_protind_to_num_all_pep.open(fname.str().c_str(),ios::binary | ios :: app);
       fname.str("");
       
-      fname << out_dir << "/psmind_to_fname.txt";
-      f_psmind_to_fname.open(fname.str().c_str(),ios::binary | ios :: app);
+      fname << out_dir << "/psmind_to_fileind.txt";
+      f_psmind_to_fileind.open(fname.str().c_str(),ios::binary | ios :: app);
       fname.str("");
 
     }
@@ -928,8 +963,8 @@ void SQTParser :: open_files(string &out_dir)
       f_fileind_to_fname.open(fname.str().c_str(),ios::binary);
       fname.str("");
 
-      fname << out_dir << "/psmind_to_fname.txt";
-      f_psmind_to_fname.open(fname.str().c_str(),ios::binary);
+      fname << out_dir << "/psmind_to_fileind.txt";
+      f_psmind_to_fileind.open(fname.str().c_str(),ios::binary);
       fname.str("");
     }
 
@@ -951,7 +986,7 @@ void SQTParser :: close_files()
   f_protind_to_label.close();
   f_protind_to_num_all_pep.close();
   f_fileind_to_fname.close();
-  f_psmind_to_fname.close();
+  f_psmind_to_fileind.close();
 }
 
 
@@ -1055,9 +1090,9 @@ int SQTParser :: run()
 	}
 
       cur_fname = sqt_file_names[i];
+      cur_fileind = i;
       carp(CARP_INFO, "parsing file %s", cur_fname.c_str());
       f_fileind_to_fname << i << " " << cur_fname << endl;
-      f_psmind_to_fname.write((char*)(&num_psm),sizeof(int));
       ifstream f_sqt(cur_fname.c_str());
       if(!f_sqt.is_open())
 	{
@@ -1522,7 +1557,6 @@ int SQTParser :: collect_ms2_files(string &ms2_source, string &sqt_target_source
 
 int SQTParser :: set_input_sources(string &ms2_source, string &sqt_target_source, string &sqt_decoy_source)
 {
-  
   int intStat;
   struct stat stFileInfo;
   intStat = stat(ms2_source.c_str(), &stFileInfo);
@@ -1540,6 +1574,7 @@ int SQTParser :: set_input_sources(string &ms2_source, string &sqt_target_source
     {
       string ext_ms2 = ".ms2";
       string ext_sqt = ".sqt";
+      
       if(is_ending(ms2_source, ext_ms2))
       	{
 	  if(!is_ending(sqt_target_source, ext_sqt))
@@ -1552,6 +1587,7 @@ int SQTParser :: set_input_sources(string &ms2_source, string &sqt_target_source
 	      carp(CARP_WARNING,  "expecting decoy sqt file to accompany the ms2 file and the target sqt file for the separate searches");
 	      return 0;
 	    }
+	  
 	  sqt_file_names.push_back(sqt_target_source);
 	  ms2_file_names.push_back(ms2_source);
 	  sqt_file_names.push_back(sqt_decoy_source);

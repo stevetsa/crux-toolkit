@@ -134,12 +134,8 @@ void PepScores::fillFeaturesFull(PepScores& full, Dataset& d) {
   for (int i = 0; i < n; i++)
     {
       full.scores[i].pepind = i;
-      int *psminds = d.pepind2psminds(i);
-      int label = d.psmind2label(psminds[0]);
+      int label = d.pepind2label(i);
       full.scores[i].label = label;
-      int *protinds = d.pepind2protinds(i);
-      int label1 = d.protind2label(protinds[0]);
-      //assert(label==label1);
       if (full.scores[i].label == 1)
 	num_pos++;
       else
@@ -169,8 +165,7 @@ void PepScores::fillFeaturesSplit(PepScores& train,PepScores& test, Dataset& d, 
   for (int i = 0; i < num_pep; i++)
     {
       all_examples[i].pepind = i;
-      int *psminds = d.pepind2psminds(i);
-      int label = d.psmind2label(psminds[0]);
+      int label = d.pepind2label(i);
       all_examples[i].label = label;
     }
   

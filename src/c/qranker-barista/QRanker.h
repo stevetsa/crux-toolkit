@@ -44,7 +44,11 @@ public:
     void getMultiFDR(PSMScores &set, NeuralNet &n, vector<double> &qval);
     void getMultiFDRXCorr(PSMScores &set, vector<double> &qval);
     void printNetResults(vector<int> &scores);
-    void write_results(string filename, NeuralNet &net);
+    void write_results();
+    void write_results_psm_tab(ofstream &os);
+    void get_pep_seq(string &pep, string &seq, string &n, string &c);
+    void write_results_psm_xml(ofstream &os);
+
     void write_max_nets(string filename, NeuralNet *max_net);
     void write_unique_peptides(string filename, NeuralNet* max_net);
     void write_num_psm_per_spectrum(NeuralNet* max_net);

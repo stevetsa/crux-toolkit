@@ -83,24 +83,92 @@ void QRanker :: printNetResults(vector<int> &scores)
 }
 
 
-void QRanker :: write_results(string filename, NeuralNet &net)
+
+
+void QRanker :: write_results()
 {
   //write out the results of the general net
-  ofstream f1(filename.c_str());
   trainset.clear();
   testset.clear();
   thresholdset.clear();
+  d.load_labels_psm_training();
   PSMScores::fillFeaturesFull(fullset, d);
+  d.clear_labels_psm_training();
   getOverFDR(fullset,net, qvals[4]);
- 
-  f1 << "q-value" << "\t" << "qranker score" <<"\t" << "scan" << "\t" << "charge" << "\t" << "peptide" << "\t" << "filename" << endl;
+  d.clear_data_psm_training();
+
+  ostringstream fname;
+  fname << out_dir << "/" << fileroot << "qranker.target.psms.txt";
+  d.load_data_all_results();
+  d.load_data_psm_results();
+    ofstream f1(fname.str().c_str()); 
+  write_results_psm_tab(f1);
+  f1.close();
+  fname.str("");
+
+  fname << out_dir << "/" << fileroot << "qranker_output.xml";
+  ofstream f2(fname.str().c_str()); 
+  write_results_psm_tab(f2);
+  f2.close();
+
+  d.clear_data_all_results();
+  d.clear_data_psm_results();
+  
+}
+
+void QRanker :: write_results_psm_tab(ofstream &os)
+{
+  os << "q-value" << "\t" << "qranker score" <<"\t" << "scan" << "\t" << "charge" << "\t" << "peptide" << "\t" << "filename" << endl;
   for(int i = 0; i < fullset.size(); i++)
     {
       int psmind = fullset[i].psmind;
       int pepind = d.psmind2pepind(psmind);
-      f1 << fullset[i].q << "\t" << fullset[i].score << "\t" << d.psmind2scan(psmind) << "\t" << d.psmind2charge(psmind) << "\t" << d.ind2pep(pepind) << "\t" << d.psmind2fname(psmind) << endl;
+      os << fullset[i].q << "\t" << fullset[i].score << "\t" << d.psmind2scan(psmind) << "\t" << d.psmind2charge(psmind) << "\t" << d.ind2pep(pepind) << "\t" << d.psmind2fname(psmind) << endl;
     }
-  f1.close();
+}
+
+
+void QRanker :: get_pep_seq(string &pep, string &seq, string &n, string &c)
+{
+  string tmp;
+  int pos;
+  pos = pep.find(".");
+  n = pep.at(pos-1); 
+  tmp = pep.substr(pos+1, pep.size());
+
+  pos = tmp.find(".");
+  c = tmp.at(pos+1);
+  seq = tmp.substr(0, pos);
+}
+
+
+void QRanker :: write_results_psm_xml(ofstream &os)
+{
+  os << "<psms>" <<endl;
+  int cn = 0;
+  for(int i = 0; i < fullset.size(); i++)
+    {
+      int psmind = fullset[i].psmind;
+      if(fullset[i].label == 1)
+	{
+	  cn++;
+	  //write out proteins
+	  os << " <psm psm_id=" << "\"" << psmind << "\"" << ">" << endl;
+	  os << "  <q_value>" << fullset[i].q << "</q_value>" << endl;
+	  os << "  <score>" << fullset[i].score << "</score>" << endl;
+	  os << "  <scan>" << d.psmind2scan(psmind) << "</scan>" << endl;
+	  os << "  <charge>" << d.psmind2charge(psmind) << "</charge>" << endl;
+	  os << "  <precursor_mass>" << d.psmind2precursor_mass(psmind) << "</precursor_mass>" << endl;
+	  int pepind = d.psmind2pepind(psmind);
+	  string pep = d.ind2pep(pepind);
+	  string seq, n,c;
+	  get_pep_seq(pep,seq,n,c);
+	  os << "  <peptide_seq n =\"" << n << "\" c=\"" << c << "\" seq=\"" << seq << "\"/>" << endl;
+	  os << "  <file_name>" << d.psmind2fname(psmind) << "</file_name>" << endl;
+	  os << " </psm>" << endl;  
+	}
+    }
+  os << "</psms>" << endl;
 }
 
 
@@ -246,7 +314,7 @@ void QRanker :: train_net_sigmoid(PSMScores &set, int interval)
       ind = rand()%(interval);
       //pass both through the net
       r = net.fprop(d.psmind2features(set[ind].psmind));
-      label = d.psmind2label(set[ind].psmind);
+      label = set[ind].label;
       double a = exp(label*r[0]);
       net.clear_gradients();
       gc[0] = -a/((1+a)*(1+a))*label;
@@ -268,7 +336,7 @@ void QRanker :: train_net_hinge(PSMScores &set, int interval)
       ind = rand()%(interval);
       //pass both through the net
       r = net.fprop(d.psmind2features(set[ind].psmind));
-      label = d.psmind2label(set[ind].psmind);
+      label = set[ind].label;
       if(label*r[0]<1)
 	{
 	  net.clear_gradients();
@@ -443,14 +511,14 @@ void QRanker :: train_many_general_nets()
 	     qvals[3], overFDRmulti[3], qvals[4], overFDRmulti[4], qvals[5], overFDRmulti[5],
 	     qvals[6], overFDRmulti[6], qvals[7], overFDRmulti[7], qvals[8], overFDRmulti[8],
 	     qvals[9], overFDRmulti[9], qvals[10], overFDRmulti[10], qvals[11], overFDRmulti[11],
-	     qvals[12], overFDRmulti[12], qvals[13], overFDRmulti[13], qvals[14], overFDRmulti[14]);
+	     qvals[12], overFDRmulti[12], qvals[13], overFDRmulti[13]);
 	getMultiFDR(testset,net,qvals);
 	carp(CARP_INFO, "testset %.2f:%d %.2f:%d %.2f:%d  %.2f:%d %.2f:%d %.2f:%d %.2f:%d %.2f:%d %.2f:%d  %.2f:%d %.2f:%d %.2f:%d %.2f:%d %.2f:%d\n ", 
 	     qvals[0], overFDRmulti[0], qvals[1], overFDRmulti[1], qvals[2], overFDRmulti[2],
 	     qvals[3], overFDRmulti[3], qvals[4], overFDRmulti[4], qvals[5], overFDRmulti[5],
 	     qvals[6], overFDRmulti[6], qvals[7], overFDRmulti[7], qvals[8], overFDRmulti[8],
 	     qvals[9], overFDRmulti[9], qvals[10], overFDRmulti[10], qvals[11], overFDRmulti[11],
-	     qvals[12], overFDRmulti[12], qvals[13], overFDRmulti[13], qvals[14], overFDRmulti[14]);
+	     qvals[12], overFDRmulti[12], qvals[13], overFDRmulti[13]);
 	
 	/*
 	cout << "Iteration " << i << " : \n";
@@ -504,14 +572,14 @@ void QRanker :: train_many_target_nets()
 		 qvals[3], overFDRmulti[3], qvals[4], overFDRmulti[4], qvals[5], overFDRmulti[5],
 		 qvals[6], overFDRmulti[6], qvals[7], overFDRmulti[7], qvals[8], overFDRmulti[8],
 		 qvals[9], overFDRmulti[9], qvals[10], overFDRmulti[10], qvals[11], overFDRmulti[11],
-		 qvals[12], overFDRmulti[12], qvals[13], overFDRmulti[13], qvals[14], overFDRmulti[14]);
+		 qvals[12], overFDRmulti[12], qvals[13], overFDRmulti[13]);
 	    getMultiFDR(testset,net,qvals);
 	    carp(CARP_INFO, "testset %.2f:%d %.2f:%d %.2f:%d  %.2f:%d %.2f:%d %.2f:%d %.2f:%d %.2f:%d %.2f:%d  %.2f:%d %.2f:%d %.2f:%d %.2f:%d %.2f:%d\n ", 
 		 qvals[0], overFDRmulti[0], qvals[1], overFDRmulti[1], qvals[2], overFDRmulti[2],
 		 qvals[3], overFDRmulti[3], qvals[4], overFDRmulti[4], qvals[5], overFDRmulti[5],
 		 qvals[6], overFDRmulti[6], qvals[7], overFDRmulti[7], qvals[8], overFDRmulti[8],
 		 qvals[9], overFDRmulti[9], qvals[10], overFDRmulti[10], qvals[11], overFDRmulti[11],
-		 qvals[12], overFDRmulti[12], qvals[13], overFDRmulti[13], qvals[14], overFDRmulti[14]);
+		 qvals[12], overFDRmulti[12], qvals[13], overFDRmulti[13]);
 	    
 	    /*
 	    cout << "Iteration " << i << " : \n";
@@ -584,14 +652,14 @@ void QRanker::train_many_nets()
        qvals[3], overFDRmulti[3], qvals[4], overFDRmulti[4], qvals[5], overFDRmulti[5],
        qvals[6], overFDRmulti[6], qvals[7], overFDRmulti[7], qvals[8], overFDRmulti[8],
        qvals[9], overFDRmulti[9], qvals[10], overFDRmulti[10], qvals[11], overFDRmulti[11],
-       qvals[12], overFDRmulti[12], qvals[13], overFDRmulti[13], qvals[14], overFDRmulti[14]);
+       qvals[12], overFDRmulti[12], qvals[13], overFDRmulti[13]);
   getMultiFDRXCorr(testset,qvals);
   carp(CARP_INFO, "trainset %.2f:%d %.2f:%d %.2f:%d  %.2f:%d %.2f:%d %.2f:%d %.2f:%d %.2f:%d %.2f:%d  %.2f:%d %.2f:%d %.2f:%d %.2f:%d %.2f:%d \n", 
        qvals[0], overFDRmulti[0], qvals[1], overFDRmulti[1], qvals[2], overFDRmulti[2],
        qvals[3], overFDRmulti[3], qvals[4], overFDRmulti[4], qvals[5], overFDRmulti[5],
        qvals[6], overFDRmulti[6], qvals[7], overFDRmulti[7], qvals[8], overFDRmulti[8],
        qvals[9], overFDRmulti[9], qvals[10], overFDRmulti[10], qvals[11], overFDRmulti[11],
-       qvals[12], overFDRmulti[12], qvals[13], overFDRmulti[13], qvals[14], overFDRmulti[14]);
+       qvals[12], overFDRmulti[12], qvals[13], overFDRmulti[13]);
   
   /*
   cout << "Before iterating\n";
@@ -648,16 +716,16 @@ int QRanker::run( ) {
   res << out_dir << "/qranker_output";
   res_prefix = res.str();
     
-  d.load_psm_data_for_training();
+  d.load_data_psm_training();
   d.normalize_psms();
+  d.load_labels_psm_training();
   PSMScores::fillFeaturesSplit(trainset, testset, d, 0.5);
   thresholdset = trainset;
+  d.clear_labels_psm_training();
   train_many_nets();
+  
+  write_results();
 
-  d.load_psm_data_for_reporting_results();
-  ostringstream fname;
-  fname << out_dir << "/" << fileroot << "qranker.target.psms.txt";
-  write_results(fname.str(),net);
   return 0;
 }
 

@@ -172,7 +172,8 @@ class SQTParser{
   vector<string> db_file_names;
 
   string cur_fname;
-    
+  int cur_fileind;
+  
   //files for writing out data
   ofstream f_psm;
   ofstream f_psmind_to_label;
@@ -184,7 +185,7 @@ class SQTParser{
   ofstream f_protind_to_label;
   ofstream f_protind_to_num_all_pep;
   ofstream f_fileind_to_fname;
-  ofstream f_psmind_to_fname;
+  ofstream f_psmind_to_fileind;
   
   //final hits per spectrum
   int fhps;

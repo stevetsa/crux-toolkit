@@ -385,6 +385,21 @@ int Barista :: getOverFDRPep(PepScores &s, NeuralNet &n,double fdr)
 }
 
 /*****************************************************/
+void Barista :: clear()
+{
+  trainset.clear();
+  testset.clear();
+  peptrainset.clear();
+  peptestset.clear();
+  psmtrainset.clear();
+  psmtestset.clear();
+  delete[] net_clones; net_clones = 0;
+  max_psm_inds.clear();
+  max_psm_scores.clear();
+  used_peptides.clear();
+  pepind_to_max_psmind.clear();
+}
+
 
 double Barista :: get_protein_score_parsimonious(int protind, NeuralNet &n)
 {
@@ -521,45 +536,309 @@ void Barista :: report_all_results()
   write_results_prot(out_dir, fdr_trn);
 }
 
-
 void Barista :: get_pep_seq(string &pep, string &seq, string &n, string &c)
 {
   string tmp;
-  size_t pos;
-  
+  int pos;
   pos = pep.find(".");
-  if(pos != string::npos)
-    n = pep.at(pos-1); 
+  n = pep.at(pos-1); 
   tmp = pep.substr(pos+1, pep.size());
 
   pos = tmp.find(".");
-  if(pos != string::npos)
-    c = tmp.at(pos+1);
+  c = tmp.at(pos+1);
   seq = tmp.substr(0, pos);
+}
+
+void Barista :: get_tab_delim_proteins(string protein_str, vector<string> &proteins)
+{
+  proteins.clear();
+  string str = protein_str;
+  size_t pos = str.find(1);
+  while(pos != string::npos)
+    {
+      if(pos == 0)
+	str = str.substr(1,str.size()-1);
+      else
+	{
+	  string prot = str.substr(0,pos);
+	  str = str.substr(pos+1,str.size()-1);
+	  proteins.push_back(prot);
+	}
+      pos = str.find(1);
+    }
+  proteins.push_back(str);
+}
+
+
+void Barista :: write_protein_special_case_xml(ofstream &os, int i)
+{
+
+  string protein_str;
+  vector<string> tab_delim_proteins;
+  
+  int protind = trainset[i].protind;
+  int group = trainset[i].group_number;
+  os << " <protein_group group_id=" << "\"" << group << "\"" << ">" << endl;
+  os << "  <q_value>" << trainset[i].q << "</q_value>" << endl;
+  os << "  <score>" << trainset[i].score << "</score>" << endl;
+  os << "  <protein_ids>" << endl;
+  protein_str = d.ind2prot(protind);
+  get_tab_delim_proteins(protein_str, tab_delim_proteins);
+  for(unsigned int k = 0; k < tab_delim_proteins.size(); k++)
+    os << "   <protein_id>" << tab_delim_proteins[k] << "</protein_id>" <<endl;
+  
+  vector<int> complement = trainset[i].protind2complement[protind];
+  if(complement.size() != 0)
+    {
+      for(unsigned int k = 0; k < complement.size(); k++)
+	{
+	  int pepind = complement[k];
+	  string pep = d.ind2pep(pepind);
+	  string seq, n, c;
+	  get_pep_seq(pep, seq, n, c);
+	  os << "   <alternative_peptide_id>" << seq << "</alternative_peptide_id>"<< endl;
+	}
+    }
+  
+  for(unsigned int j = 0; j < trainset[i].indistinguishable_protinds.size(); j++)
+    {
+      int ind = trainset[i].indistinguishable_protinds[j];
+      if(d.protind2label(ind) == 1)
+	{
+	  //os << "   <protein_id>" << d.ind2prot(ind) << "</protein_id> " << endl;;
+	  protein_str = d.ind2prot(ind);
+	  get_tab_delim_proteins(protein_str, tab_delim_proteins);
+	  for(unsigned int k = 0; k < tab_delim_proteins.size(); k++)
+	    os << "   <protein_id>" << tab_delim_proteins[k] << "</protein_id>" <<endl;
+	  
+	  vector<int> complement = trainset[i].protind2complement[ind];
+	  if(complement.size() != 0)
+	    {
+	      for(unsigned int k = 0; k < complement.size(); k++)
+		{
+		  int pepind = complement[k];
+		  string pep = d.ind2pep(pepind);
+		  string seq, n, c;
+		  get_pep_seq(pep, seq, n, c);
+		  os << "   <alternative_peptide_id>" << seq << "</alternative_peptide_id>"<< endl;
+		}
+	    }
+	}
+    }
+  os << "  </protein_ids>" << endl;
+  
+  //write out peptides
+  os << "  <peptide_ids>" << endl;
+  vector<int> intersection = trainset[i].intersection;
+  for( unsigned int j = 0; j < intersection.size(); j++)
+    {
+      int pepind = intersection[j];
+      string pep = d.ind2pep(pepind);
+      string seq, n, c;
+      get_pep_seq(pep, seq, n, c);
+      os << "   <peptide_id>" << seq << "</peptide_id>"<< endl; 
+    }
+  os << "  </peptide_ids>" << endl;
+  os << " </protein_group>" << endl;
 }
 
 
 void Barista :: write_results_prot_xml(ofstream &os)
 {
+  string protein_str;
+  vector<string> tab_delim_proteins;
   os << "<proteins>" <<endl;
   int cn = 0;
   for(int i = 0; i < trainset.size(); i++)
     {
-      if(trainset[i].label == 1)
+      int protind = trainset[i].protind;
+      int group = trainset[i].group_number;
+      if(d.protind2label(protind) == 1)
 	{
 	  cn++;
+	  if(trainset[i].has_complement == 1)
+	    {
+	      write_protein_special_case_xml(os, i);
+	      continue;
+	    }
 	  //write out proteins
-	  int protind = trainset[i].protind;
-	  os << " <protein_group p:group_id=" << cn << ">" << endl;
+	  os << " <protein_group group_id=" << "\"" << group << "\"" << ">" << endl;
 	  os << "  <q_value>" << trainset[i].q << "</q_value>" << endl;
 	  os << "  <score>" << trainset[i].score << "</score>" << endl;
 	  os << "  <protein_ids>" << endl;
-	  os << "   <protein_id>" << d.ind2prot(protind) << "</protein_id>" <<endl;
-	  for(unsigned int j = 0; j < trainset[i].subset_protinds.size(); j++)
+	  protein_str = d.ind2prot(protind);
+	  get_tab_delim_proteins(protein_str, tab_delim_proteins);
+	  //os << "   <protein_id>" << d.ind2prot(protind) << "</protein_id>" <<endl;
+	  for(unsigned int k = 0; k < tab_delim_proteins.size(); k++)
+	    os << "   <protein_id>" << tab_delim_proteins[k] << "</protein_id>" <<endl;
+	  
+	  for(unsigned int j = 0; j < trainset[i].indistinguishable_protinds.size(); j++)
 	    {
-	      int ind = trainset[i].subset_protinds[j];
+	      int ind = trainset[i].indistinguishable_protinds[j];
 	      if(d.protind2label(ind) == 1)
-		os << "   <protein_id>" << d.ind2prot(ind) << "</protein_id> " << endl;;
+		{
+		  protein_str = d.ind2prot(ind);
+		  get_tab_delim_proteins(protein_str, tab_delim_proteins);
+		  for(unsigned int k = 0; k < tab_delim_proteins.size(); k++)
+		    os << "   <protein_id>" << tab_delim_proteins[k] << "</protein_id>" <<endl;
+		}
+	    }
+	  os << "  </protein_ids>" << endl;
+	
+	  //write out peptides
+
+	  os << "  <peptide_ids>" << endl;
+	  int num_pep = d.protind2num_pep(protind);
+	  int *pepinds = d.protind2pepinds(protind);
+	  for( int j = 0; j < num_pep; j++)
+	    {
+	      int pepind = pepinds[j];
+	      string pep = d.ind2pep(pepind);
+	      string seq, n, c;
+	      get_pep_seq(pep, seq, n, c);
+	      os << "   <peptide_id>" << seq << "</peptide_id>"<< endl; 
+	    }
+	  os << "  </peptide_ids>" << endl;
+	  os << " </protein_group>" << endl;
+	}
+
+    }
+  os << "</proteins>" << endl;
+}
+
+void Barista :: write_subset_protein_special_case_xml(ofstream &os, int i)
+{
+  string protein_str;
+  vector<string> tab_delim_proteins;
+
+  //write out proteins
+  int protind = trainset.get_subset_prot(i).protind;
+  int group = trainset.get_subset_prot(i).group_number;
+  os << " <protein_group group_id=" << "\"" << group << "\"";
+  vector<int> parent_groups = trainset.get_subset_prot(i).parent_groups;
+  if(parent_groups.size() == 0)
+    cout << "problem: no parent groups" << endl;
+  os << " parent_group_ids=" << "\""; 
+  for(unsigned int k = 0; k < parent_groups.size()-1; k++)
+    os << parent_groups[k] << ","; 
+  os << parent_groups[parent_groups.size()-1] << "\"";
+  os << ">" << endl;
+
+  os << "  <protein_ids>" << endl;
+  protein_str = d.ind2prot(protind);
+  get_tab_delim_proteins(protein_str, tab_delim_proteins);
+  //os << "   <protein_id>" << d.ind2prot(protind) << "</protein_id>" <<endl;
+  for(unsigned int k = 0; k < tab_delim_proteins.size(); k++)
+    os << "   <protein_id>" << tab_delim_proteins[k] << "</protein_id>" <<endl;
+
+  vector<int> complement = trainset.get_subset_prot(i).protind2complement[protind];
+  if(complement.size() != 0)
+    {
+      for(unsigned int k = 0; k < complement.size(); k++)
+	{
+	  int pepind = complement[k];
+	  string pep = d.ind2pep(pepind);
+	  string seq, n, c;
+	  get_pep_seq(pep, seq, n, c);
+	  os << "   <alternative_peptide_id>" << seq << "</alternative_peptide_id>"<< endl;
+	}
+    }
+  
+  for(unsigned int j = 0; j < trainset.get_subset_prot(i).indistinguishable_protinds.size(); j++)
+    {
+      int ind = trainset.get_subset_prot(i).indistinguishable_protinds[j];
+      if(d.protind2label(ind) == 1)
+	{
+	  protein_str = d.ind2prot(ind);
+	  get_tab_delim_proteins(protein_str, tab_delim_proteins);
+	  for(unsigned int k = 0; k < tab_delim_proteins.size(); k++)
+	    os << "   <protein_id>" << tab_delim_proteins[k] << "</protein_id>" <<endl;
+	  
+	  vector<int> complement = trainset.get_subset_prot(i).protind2complement[ind];
+	  if(complement.size() != 0)
+	    {
+	      for(unsigned int k = 0; k < complement.size(); k++)
+		{
+		  int pepind = complement[k];
+		  string pep = d.ind2pep(pepind);
+		  string seq, n, c;
+		  get_pep_seq(pep, seq, n, c);
+		  os << "   <alternative_peptide_id>" << seq << "</alternative_peptide_id>"<< endl;
+		}
+	    }
+	  
+	}
+    }
+  os << "  </protein_ids>" << endl;
+  
+  //write out peptides
+  os << "  <peptide_ids>" << endl;
+  vector<int> intersection = trainset.get_subset_prot(i).intersection;
+  for( unsigned int j = 0; j < intersection.size(); j++)
+    {
+      int pepind = intersection[j];
+      string pep = d.ind2pep(pepind);
+      string seq, n, c;
+      get_pep_seq(pep, seq, n, c);
+      os << "   <peptide_id>" << seq << "</peptide_id>"<< endl; 
+    }
+  os << "  </peptide_ids>" << endl;
+  os << " </protein_group>" << endl;
+  
+}
+
+
+
+void Barista :: write_results_subset_prot_xml(ofstream &os)
+{
+  string protein_str;
+  vector<string> tab_delim_proteins;
+  os << "<subset_proteins>" <<endl;
+
+  int num_subset_prot = trainset.get_num_subsets();
+
+  int cn = 0;
+  for(int i = 0; i < num_subset_prot; i++)
+    {
+      int protind = trainset.get_subset_prot(i).protind;
+      int group = trainset.get_subset_prot(i).group_number;
+      if(d.protind2label(protind) == 1)
+	{
+	  cn++;
+
+	  if(trainset.get_subset_prot(i).has_complement == 1)
+	    {
+	      write_subset_protein_special_case_xml(os, i);
+	      continue;
+	    }
+
+	  //write out proteins
+	  os << " <protein_group group_id=" << "\"" << group << "\"";
+	  vector<int> parent_groups = trainset.get_subset_prot(i).parent_groups;
+	  if(parent_groups.size() == 0)
+	    cout << "problem: no parent groups" << endl;
+	  os << " parent_group_ids=" << "\""; 
+	  for(unsigned int k = 0; k < parent_groups.size()-1; k++)
+	    os << parent_groups[k] << ","; 
+	  os << parent_groups[parent_groups.size()-1] << "\"";
+	  os << ">" << endl;
+	  os << "  <protein_ids>" << endl;
+	  protein_str = d.ind2prot(protind);
+	  get_tab_delim_proteins(protein_str, tab_delim_proteins);
+	  //os << "   <protein_id>" << d.ind2prot(protind) << "</protein_id>" <<endl;
+	  for(unsigned int k = 0; k < tab_delim_proteins.size(); k++)
+	    os << "   <protein_id>" << tab_delim_proteins[k] << "</protein_id>" <<endl;
+	  
+	  for(unsigned int j = 0; j < trainset.get_subset_prot(i).indistinguishable_protinds.size(); j++)
+	    {
+	      int ind = trainset.get_subset_prot(i).indistinguishable_protinds[j];
+	      if(d.protind2label(ind) == 1)
+		{
+		  protein_str = d.ind2prot(ind);
+		  get_tab_delim_proteins(protein_str, tab_delim_proteins);
+		  for(unsigned int k = 0; k < tab_delim_proteins.size(); k++)
+		    os << "   <protein_id>" << tab_delim_proteins[k] << "</protein_id>" <<endl;
+		}
 	    }
 	  os << "  </protein_ids>" << endl;
 	
@@ -576,13 +855,12 @@ void Barista :: write_results_prot_xml(ofstream &os)
 	      os << "   <peptide_id>" << seq << "</peptide_id>"<< endl; 
 	    }
 	  os << "  </peptide_ids>" << endl;
-
 	  os << " </protein_group>" << endl;
 	}
-      
     }
-  os << "</proteins>" << endl;
+  os << "</subset_proteins>" << endl;
 }
+
 
 void Barista :: write_results_peptides_xml(ofstream &os)
 {
@@ -590,15 +868,15 @@ void Barista :: write_results_peptides_xml(ofstream &os)
   int cn = 0;
   for(int i = 0; i < peptrainset.size(); i++)
     {
+      int pepind = peptrainset[i].pepind;
       if(peptrainset[i].label == 1)
 	{
 	  cn++;
 	  //write out proteins
-	  int pepind = peptrainset[i].pepind;
 	  string pep = d.ind2pep(pepind);
 	  string seq, n, c;
 	  get_pep_seq(pep, seq, n, c);
-	  os << " <peptide p:peptide_id=\"" << seq << "\">" << endl;
+	  os << " <peptide peptide_id=\"" << seq << "\">" << endl;
 	  os << "  <q_value>" << peptrainset[i].q << "</q_value>" << endl;
 	  os << "  <score>" << peptrainset[i].score << "</score>" << endl;
 	  //write out peptides
@@ -636,21 +914,23 @@ void Barista :: write_results_psm_xml(ofstream &os)
   int cn = 0;
   for(int i = 0; i < psmtrainset.size(); i++)
     {
+      int psmind = psmtrainset[i].psmind;
       if(psmtrainset[i].label == 1)
 	{
 	  cn++;
 	  //write out proteins
-	  int psmind = psmtrainset[i].psmind;
-	  os << " <psm p:psm_id=" << psmind << ">" << endl;
+	  os << " <psm psm_id=" << "\"" << psmind << "\"" << ">" << endl;
 	  os << "  <q_value>" << psmtrainset[i].q << "</q_value>" << endl;
 	  os << "  <score>" << psmtrainset[i].score << "</score>" << endl;
 	  os << "  <scan>" << d.psmind2scan(psmind) << "</scan>" << endl;
 	  os << "  <charge>" << d.psmind2charge(psmind) << "</charge>" << endl;
+	  os << "  <precursor_mass>" << d.psmind2precursor_mass(psmind) << "</precursor_mass>" << endl;
 	  int pepind = d.psmind2pepind(psmind);
 	  string pep = d.ind2pep(pepind);
 	  string seq, n,c;
 	  get_pep_seq(pep,seq,n,c);
 	  os << "  <peptide_seq n =\"" << n << "\" c=\"" << c << "\" seq=\"" << seq << "\"/>" << endl;
+	  os << "  <file_name>" << d.psmind2fname(psmind) << "</file_name>" << endl;
 	  os << " </psm>" << endl;  
 	}
     }
@@ -658,32 +938,33 @@ void Barista :: write_results_psm_xml(ofstream &os)
 }
 
 
+
 void Barista :: report_all_results_xml()
 {
-
-  trainset.clear();
-  testset.clear();
-  ProtScores::fillProteinsFull(trainset, d);
-  cout << "finished training, making parsimonious protein set\n";
-  trainset.make_meta_set(d);
-  int fdr_trn = getOverFDRProtParsimonious(trainset,max_net_prot,selectionfdr);
-  cout << "total proteins parsimonious at q<" << selectionfdr << ": " << fdr_trn << endl;
-  int fdr_trn_psm = getOverFDRPSM(psmtrainset, max_net_psm, selectionfdr); 
-  cout << "peptides at q< " << selectionfdr << ": " << getOverFDRPep(peptrainset, max_net_pep, selectionfdr) << endl;
-  cout << "psms at q< " << selectionfdr << ": " << fdr_trn_psm << endl;
-
   ostringstream fname;
-  fname << out_dir << "/barista_output.xml";
+  fname << out_dir << "/" << fileroot << "barista_output.xml";
   ofstream of(fname.str().c_str());
   of << "<barista_output>" << endl;
   of << endl;
+  
+  d.load_data_prot_results();
   write_results_prot_xml(of);
+  write_results_subset_prot_xml(of);
+  d.clear_data_prot_results();
+  
+  d.load_data_pep_results();
   write_results_peptides_xml(of);
+  d.clear_data_pep_results();
+  
+  
+  d.load_data_psm_results();
   write_results_psm_xml(of);
+  d.clear_data_psm_results();
+  
   of << endl;
   of << "</barista_output>" << endl;
   of.close();
-
+    
 }
 
 /*************************************************************************/
@@ -691,6 +972,7 @@ void Barista :: write_results_prot_tab(ofstream &os)
 {
   os << "group number" << "\t" << "q-value" << "\t" << "barista score" << "\t";
   os << "proteins" << "\t" << "peptides-scan.charge" << endl;
+
   int cn = 0;
   for(int i = 0; i < trainset.size(); i++)
     {
@@ -699,18 +981,21 @@ void Barista :: write_results_prot_tab(ofstream &os)
 	  cn++;
 	  //write out proteins
 	  int protind = trainset[i].protind;
-	  os << cn << "\t";
+	  int group = trainset[i].group_number;
+	  os << group << "\t";
 	  os << trainset[i].q << "\t";
 	  os << trainset[i].score << "\t";
 	  os << d.ind2prot(protind); 
-	  for(unsigned int j = 0; j < trainset[i].subset_protinds.size(); j++)
+	  for(unsigned int j = 0; j < trainset[i].indistinguishable_protinds.size(); j++)
 	    {
-	      int ind = trainset[i].subset_protinds[j];
+	      int ind = trainset[i].indistinguishable_protinds[j];
 	      if(d.protind2label(ind) == 1)
-		os << "," << d.ind2prot(ind);
+		{
+		  os << "," << d.ind2prot(ind);
+		}
 	    }
 	  os << "\t";
-	
+	  
 	  //write out peptides
 	  int num_pep = d.protind2num_pep(protind);
 	  int *pepinds = d.protind2pepinds(protind);
@@ -721,7 +1006,7 @@ void Barista :: write_results_prot_tab(ofstream &os)
 	  get_pep_seq(pep, seq, n, c);
 	  int psmind = pepind_to_max_psmind[pepind];
 	  if(psmind > -1)
-	    os << seq <<  "-" << d.psmind2scan(psmind) << "." << d.psmind2charge(psmind);
+	    os << pep <<  "-" << d.psmind2scan(psmind) << "." << d.psmind2charge(psmind);
 	  else
 	    {
 #ifndef CRUX
@@ -732,10 +1017,11 @@ void Barista :: write_results_prot_tab(ofstream &os)
 	    {
 	      pepind = pepinds[j];
 	      pep = d.ind2pep(pepind);
+	      string seq, n, c;
 	      get_pep_seq(pep, seq, n, c);
 	      psmind = pepind_to_max_psmind[pepind];
 	      if(psmind > -1)
-		os << "," << seq <<  "-" << d.psmind2scan(psmind) << "." << d.psmind2charge(psmind);
+		os << "," << pep <<  "-" << d.psmind2scan(psmind) << "." << d.psmind2charge(psmind);
 	      else
 		{
 #ifndef CRUX
@@ -746,7 +1032,6 @@ void Barista :: write_results_prot_tab(ofstream &os)
 	  os << endl;
 	}
     }
-
 }
 
 void Barista :: write_results_peptides_tab(ofstream &os)
@@ -764,7 +1049,7 @@ void Barista :: write_results_peptides_tab(ofstream &os)
 	  string pep = d.ind2pep(pepind);
 	  string seq, n, c;
 	  get_pep_seq(pep, seq, n, c);
-	  os << seq << "\t";
+	  os << pep << "\t";
 	  os << peptrainset[i].q << "\t";
 	  os << peptrainset[i].score << "\t";
 	  //write out peptides
@@ -799,19 +1084,67 @@ void Barista :: write_results_psm_tab(ofstream &os)
 	  string pep = d.ind2pep(pepind);
 	  string seq, n,c;
 	  get_pep_seq(pep,seq,n,c);
-	  os << seq << "\t";
+	  os << pep << "\t";
 	  os << d.psmind2fname(psmind) << endl;
 	}
     }
 }
 
+
+
+void Barista :: report_all_results_tab()
+{
+  ofstream of;
+  ostringstream fname;
+  
+  d.load_data_psm_results();
+
+  fname << out_dir << "/" << fileroot << "barista.target.proteins.txt";
+  of.open(fname.str().c_str());
+  d.load_data_prot_results();
+  write_results_prot_tab(of);
+  d.clear_data_prot_results();
+  of.close();
+  fname.str("");
+  
+  fname << out_dir << "/" << fileroot << "barista.target.peptides.txt";
+  of.open(fname.str().c_str());
+  d.load_data_pep_results();
+  write_results_peptides_tab(of);
+  d.clear_data_pep_results();
+  of.close();
+  fname.str("");
+
+  fname << out_dir << "/" << fileroot << "barista.target.psms.txt";
+  of.open(fname.str().c_str());
+  d.load_data_psm_results();
+  write_results_psm_tab(of);
+  d.clear_data_psm_results();
+  of.close();
+  fname.str("");
+  
+  d.clear_data_psm_results();
+
+}
+
+void Barista :: report_all_results_xml_tab()
+{
+  d.load_data_all_results();;
+  setup_for_reporting_results();
+  
+  report_all_results_xml();
+  report_all_results_tab();
+  
+  d.clear_data_all_results();
+}
+
 void Barista :: setup_for_reporting_results()
 {
-  d.load_psm_data_for_reporting_results();
-  d.load_prot_data_for_reporting_results();
-
+  d.load_labels_prot_training();
+  d.load_aux_data();
   trainset.clear();
   testset.clear();
+
   ProtScores::fillProteinsFull(trainset, d);
 #ifdef CRUX
   carp(CARP_INFO, "finished training, making parsimonious protein set");
@@ -819,6 +1152,7 @@ void Barista :: setup_for_reporting_results()
   cout << "finished training, making parsimonious protein set\n";
 #endif
   trainset.make_meta_set(d);
+  d.clear_aux_data();
 
   psmtrainset.clear();
   psmtestset.clear();
@@ -826,6 +1160,7 @@ void Barista :: setup_for_reporting_results()
   peptrainset.clear();
   peptestset.clear();
   PepScores::fillFeaturesFull(peptrainset, d);
+  d.clear_labels_prot_training();
   
   int fdr_trn = getOverFDRProtParsimonious(trainset,max_net_prot,selectionfdr);
 #ifdef CRUX
@@ -842,32 +1177,10 @@ void Barista :: setup_for_reporting_results()
   cout << "peptides at q< " << selectionfdr << ": " << getOverFDRPep(peptrainset, max_net_pep, selectionfdr) << endl;
   cout << "psms at q< " << selectionfdr << ": " << fdr_trn_psm << endl;
 #endif
-}
+  d.clear_labels_psm_training();
 
-
-void Barista :: report_all_results_tab()
-{
-  setup_for_reporting_results();
-
-  ofstream of;
-  ostringstream fname;
-  fname << out_dir << "/" << fileroot << "barista.target.proteins.txt";
-  of.open(fname.str().c_str());
-  write_results_prot_tab(of);
-  of.close();
-  fname.str("");
-  
-  fname << out_dir << "/" << fileroot << "barista.target.peptides.txt";
-  of.open(fname.str().c_str());
-  write_results_peptides_tab(of);
-  of.close();
-  fname.str("");
-
-  fname << out_dir << "/" << fileroot << "barista.target.psms.txt";
-  of.open(fname.str().c_str());
-  write_results_psm_tab(of);
-  of.close();
-  fname.str("");
+  d.clear_data_psm_training();
+  d.clear_data_prot_training();
   
 }
 
@@ -1179,7 +1492,7 @@ void Barista :: train_net(double selectionfdr, int interval)
 	{
 	  int ind = rand()%interval;
 	  int protind = trainset[ind].protind;
-	  int label = d.protind2label(protind);
+	  int label = trainset[ind].label;
 	  err_sum += train_hinge(protind,label);
 	}
       int fdr_trn = getOverFDRProt(trainset,net,selectionfdr);
@@ -1250,12 +1563,12 @@ void Barista :: train_net_multi_task(double selectionfdr, int interval)
 	{
 	  int ind = rand()%trainset.size();
 	  int protind = trainset[ind].protind;
-	  int label = d.protind2label(protind);
+	  int label = trainset[ind].label;
 	  err_sum += train_hinge(protind,label);
 
 	  ind = rand()%interval;
 	  int psmind = psmtrainset[ind].psmind;
-	  label = d.psmind2label(psmind);
+	  label = psmtrainset[ind].label;
 	  train_hinge_psm(psmind,label);
 
 	}
@@ -1332,11 +1645,9 @@ void Barista :: setup_for_training(int trn_to_tst)
 #else
   cout << "loading data" << endl;
 #endif
-  d.load_psm_data_for_training();
-  d.normalize_psms();
-  d.load_prot_data_for_training();
-
-
+  d.load_data_prot_training();
+  d.load_labels_prot_training();
+  d.load_aux_data();
   if(trn_to_tst)
     {
 #ifdef CRUX
@@ -1361,7 +1672,8 @@ void Barista :: setup_for_training(int trn_to_tst)
 #endif
     }
   thresholdset = trainset;
-  
+  d.clear_aux_data();
+
   if(trn_to_tst)
     PSMScores::fillFeaturesSplit(psmtrainset, psmtestset, d, 0.5);
   else
@@ -1370,7 +1682,10 @@ void Barista :: setup_for_training(int trn_to_tst)
     PepScores::fillFeaturesSplit(peptrainset, peptestset, d, 0.5);
   else
     PepScores::fillFeaturesFull(peptrainset, d);
-  
+  d.clear_labels_prot_training();
+
+  d.load_data_psm_training();
+  d.normalize_psms();
 
   num_features = d.get_num_features();
   int has_bias = 1;
@@ -1457,7 +1772,7 @@ int Barista :: run_tries_multi_task()
 {
   setup_for_training(2);
   srand(seed);
-
+  
 #ifdef CRUX
   carp(CARP_INFO, "training the model");
 #else
@@ -1482,11 +1797,10 @@ int Barista :: run_tries_multi_task()
   if(interval > psmtrainset.size() || interval < 10)
   interval/=2;
   train_net_multi_task(selectionfdr, interval);
-  
-  //report_all_results_xml();
+    
   //report_all_fdr_counts();
-  //report_all_results_tab();
-
+  report_all_results_xml_tab();
+  
    return 0;
 
 }
