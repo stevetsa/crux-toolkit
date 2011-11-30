@@ -5,6 +5,8 @@
 #ifndef XmlTok_INCLUDED
 #define XmlTok_INCLUDED 1
 
+#include "expat.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif

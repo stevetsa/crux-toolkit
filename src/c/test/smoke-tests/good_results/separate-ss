@@ -2,7 +2,7 @@ H	SQTGenerator Crux
 H	SQTGeneratorVersion 1.0
 H	Comment Crux was written by...
 H	Comment ref...
-H	StartTime	Tue Nov  1 16:53:11 2011
+H	StartTime	Tue Nov 29 16:23:36 2011
 H	EndTime                               
 H	Database	small-yeast.fasta
 H	Comment	Database shuffled; these are decoy matches
@@ -2365,7 +2365,7 @@ H	SQTGenerator Crux
 H	SQTGeneratorVersion 1.0
 H	Comment Crux was written by...
 H	Comment ref...
-H	StartTime	Tue Nov  1 16:53:11 2011
+H	StartTime	Tue Nov 29 16:23:36 2011
 H	EndTime                               
 H	Database	small-yeast.fasta
 H	Comment	Database shuffled; these are decoy matches
@@ -4728,16 +4728,17 @@ scan	charge	spectrum precursor m/z	spectrum neutral mass	peptide mass	delta_cn	s
 159	2	745.7500	1489.4827	1486.6195	1.16445863	10.49388313	3	-0.00195638	2	2	26	4	SPQGNTLNNEPGMK	trypsin-full-digest	YNL166C(201)	KL	SPMPQNNTLGGENK	4
 159	2	745.7500	1489.4827	1488.7063	1.65527105	16.10622406	2	-0.06388148	3	3	24	4	FPISALNVSFEHK	trypsin-full-digest	YDR037W(97)	KY	FHVSISNPEFLAK	4
 159	2	745.7500	1489.4827	1490.6510	0.00000000	2.07540607	4	-0.25453031	4	1	24	4	EVHNVDEMVFSGK	trypsin-full-digest	YOR168W(736)	KN	ESVMEHNFGDVVK	4
-INFO: CPU: ranunculus
-INFO: Tue Nov  1 16:53:11 PDT 2011
+INFO: CPU: n001.grid.gs.washington.edu
+INFO: Tue Nov 29 16:23:36 PST 2011
 COMMAND LINE: crux sequest-search --output-dir ss --fileroot separate --parameter-file params/separate-ss demo.ms2 small-yeast.fasta
 INFO: Preparing protein fasta file small-yeast.fasta
 INFO: Reading in ms2 file demo.ms2
+INFO: get_range_from_string: start()
 INFO: Created 1 peptide mods, keeping 1 with 255 or fewer aa mods
 INFO: Searching spectrum number 96 (2+), search number 100
-INFO: Elapsed time: 2.5 s
+INFO: Elapsed time: 3.38 s
 INFO: Finished crux sequest-search
-INFO: Elapsed time: 2.5 s
+INFO: Elapsed time: 3.4 s
 INFO: Finished crux sequest-search.
 INFO: Return Code:0
 # Which isotopes to use in calculating fragment ion mass.
@@ -4935,6 +4936,11 @@ Y=0.000000
 # Available for all crux programs.  On command line use '--version T'.
 version=false
 
+# Set the resolution of the observed spectra at m/z 400. Used in
+# conjunction with --instrument The default is 100000.
+# Available for crux hardklor
+resolution=100000.000000
+
 # The minimum length of peptides to consider. Default=6.
 # Used from the command line or parameter file by crux-create-index and
 # crux-generate-peptides.  Parameter file only for
@@ -4964,6 +4970,13 @@ digestion=full-digest
 # Available for all crux programs.  Applies to parameter file as well as
 # index, search, and analysis output files.
 overwrite=F
+
+# Choose the algorithm for analyzing combinations of multiple peptide or
+# protein isotope distributions. (basic | fewest-peptides |
+# fast-fewest-peptides | fewest-peptides-choice |
+# fast-fewest-peptides-choice) Default=fast-fewest-peptides.
+# Available for crux hardklor
+hardklor-algorithm=fast-fewest-peptides
 
 # Set additional options with values in the given file.
 # Available for all crux programs. Any options specified on the command
@@ -5018,14 +5031,30 @@ input-ms2=__NULL_STR
 # search-for-matches from parameter file.
 print-search-progress=100
 
+# Restrict analysis to only a small window in each segment ( (min-max)
+# in m/z). The user must specify the starting and ending m/z values
+# between which the analysis will be performed. By default the whole
+# spectrum is analyzed.
+# Available for crux hardklor
+mz-window=__NULL_STR
+
 # Use MSToolkit to parse spectra. Default=F.
 # Available for crux-search-for-matches
 use-mstoolkit=false
+
+# Set the signal-to-noise threshold. Any integer or decimal value
+# greater than or equal to 0.0 is valid. The default value is 1.0.
+# Available for crux hardklor
+signal-to-noise=1.000000
 
 # The estimated percent of target scores that are drawn from the null
 # distribution.
 # Used by compute-q-values, percolator and q-ranker
 pi-zero=1.000000
+
+# Reports peptide intensities as the distribution area. Default false.
+# Available for crux hardklor
+distribution-area=false
 
 # Prefix added to output file names. Default=none. 
 # Used by crux search-for-matches, crux sequest-search, crux percolator
@@ -5036,6 +5065,12 @@ fileroot=separate
 # Available for q-ranker.
 no-xval=false
 
+# If true, Hardklor will calculate the local noise levels across the
+# spectrum using --sn-window, then select a floor of this set of noise
+# levels to apply to the whole spectrum.
+# Available for crux hardklor
+static-sn=true
+
 # Sort in ascending order.  Otherwise, descending. Default: True.
 # Available for sort-by-column
 ascending=true
@@ -5044,6 +5079,11 @@ ascending=true
 # Available for search-for-matches.  Sp scoring is always done for
 # sequest-search.
 compute-sp=false
+
+# Set the correlation threshold [0,1.0] to accept a predicted isotope
+# distribution.  Default=0.85
+# Available for crux hardklor
+corr=0.850000
 
 # Set level of output to stderr (0-100).  Default=30.
 # Available for all crux programs.  Each level prints the following
@@ -5070,6 +5110,10 @@ display-summed-mod-masses=true
 # per line.
 peptide-list=false
 
+# Choose the charge state determination method. (B|F|P|Q|S). Default=Q.
+# Available for crux hardklor
+cdm=Q
+
 # Print the theoretical spectrum
 # Available for xlink-predict-peptide-ions (Default=F).
 print-theoretical-spectrum=false
@@ -5077,6 +5121,11 @@ print-theoretical-spectrum=false
 # Use MGF file format for parsing files
 # Available for search-for-xlinks program (Default=F).
 use-mgf=false
+
+# Set the maximum charge state to look for when analyzing a spectrum.
+# Default=5.
+# Available for crux hardklor
+max-charge=5
 
 # Number of decoy peptides to search for every target peptide
 # searched.Only valid for fasta searches when --decoys is not none.
@@ -5116,6 +5165,15 @@ search-decoy-pvalue-file=search.decoy.p.txt
 # Available for crux search-for-xlinks. 
 precursor-window-decoy=20.000000
 
+# Set the depth of combinatorial analysis. Default 3.
+# Available for crux hardklor
+depth=3
+
+# Specify "no base" averagine. Only modified averagine models will be
+# used in the analysis. Default = F 
+# Available for crux hardklor
+no-base=false
+
 # Print the header line of the tsv file. Default=T.
 # Available for crux extract-columns and extract-rows
 header=true
@@ -5133,11 +5191,20 @@ output-dir=ss
 # Available for crux search-for-xlinks program.
 xlink-include-deadends=true
 
+# Type of instrument (fticr|orbi|tof|qit) on which the data was
+# collected. Used in conjuction with --resolution. The default is fticr.
+# Available for crux hardklor
+instrument=fticr
+
 # The maximum length of peptides to consider. Default=50.
 # Available from command line or parameter file for crux-create-index 
 # and crux-generate-peptides. Parameter file only for
 # crux-search-for-matches.
 max-length=50
+
+# Set a filter for mzXML files. Default=none
+# Available for crux hardklor
+mzxml-filter=none
 
 # Generate peptides only once, even if they appear in more than one
 # protein (T,F).  Default=F.
@@ -5166,6 +5233,11 @@ max-mass=7200.000000
 # crux-search-for-matches.
 min-mass=200.000000
 
+# Set the maximum number of peptides or proteins that are estimated from
+# the peaks found in a spectrum segment. The default value is 10.
+# Available for crux hardklor
+max-p=10
+
 # Set the precision for scores written to sqt and text files. Default=8.
 # Available from parameter file for crux search-for-matches, percolator,
 # and compute-q-values.
@@ -5190,6 +5262,13 @@ threshold=0.010000
 # search-for-matches.
 nmod-fixed=NO MODS
 
+# Set the maximum width of any set of peaks in a spectrum when computing
+# the results (in m/z). Thus, if the value was 5.0, then sets of peaks
+# greater than 5 m/z are divided into smaller sets prior to analysis.
+# The default value is 4.0.
+# Available for crux hardklor
+max-width=4.000000
+
 # Specify a fixed modification to apply to the C-terminus of peptides.
 # Available from parameter file for crux sequest-search and
 # search-for-matches.
@@ -5199,6 +5278,13 @@ cmod-fixed=NO MODS
 # Available for percolator and q-ranker.  File will be named
 # <fileroot>.percolator.features.txt or <fileroot>.qranker.features.txt.
 feature-file=false
+
+# Set the signal-to-noise window length (in m/z). Because noise may be
+# non-uniform across a spectra, this value adjusts the segment size
+# considered when calculating a signal-over-noise ratio. The default
+# value is 250.0.
+# Available for crux hardklor
+sn-window=250.000000
 
 # Enzyme to use for in silico digestion of proteins.
 # <string>=trypsin|chymotrypsin|elastase|clostripain|
@@ -5231,9 +5317,19 @@ h2o=0
 # Available for spectral-counts.
 unique-mapping=false
 
+# Set the sensitivity level. There are four levels, 0 (low), 1
+# (moderate), 2 (high), and 3 (max). The default value is 2.
+# Available for crux hardklor
+sensitivity=2
+
 # Compute p-values for the main score type. Default=F.
 # Currently only implemented for XCORR.
 compute-p-values=false
+
+# Include alternative averagine models in the analysis that  incorporate
+# additional atoms or isotopic enrichments.
+# Available for crux hardklor
+averagine-mod=__NULL_STR
 
 # The number of PSMs per spectrum writen to the output  file(s). 
 # Default=5.
@@ -5255,6 +5351,11 @@ xlink-include-linears=true
 # For create-index, store the decoys in the index.  For search, either
 # use decoys in the index or generate them from the fasta file.
 decoys=peptide-shuffle
+
+# Set the minimum charge state to look for when analyzing a spectrum.
+# Default=1.
+# Available for crux hardklor
+min-charge=1
 
 # Print peptide sequence (T,F). Default=F.
 # Available only for crux-generate-peptides.
@@ -5288,7 +5389,7 @@ H	SQTGenerator Crux
 H	SQTGeneratorVersion 1.0
 H	Comment Crux was written by...
 H	Comment ref...
-H	StartTime	Tue Nov  1 16:53:11 2011
+H	StartTime	Tue Nov 29 16:23:36 2011
 H	EndTime                               
 H	Database	small-yeast.fasta
 H	DBSeqLength	?

@@ -1,4 +1,6 @@
 #include "CHardklorParser.h"
+#include <stdlib.h>
+#include <string.h>
 
 using namespace std;
 
@@ -29,7 +31,7 @@ void CHardklorParser::parse(char* cmd) {
 	string atom;
 	string isotope;
 	string percent;
-	bool badMod;
+	bool badMod = false;
 	int atomNum;
 	bool bNew;
 

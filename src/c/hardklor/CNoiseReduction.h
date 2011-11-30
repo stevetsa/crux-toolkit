@@ -31,12 +31,12 @@ public:
   bool DeNoiseD(Spectrum& sp);
   int NearestPeak(Spectrum& sp, double mz);
   bool ScanAverage(Spectrum& sp, char* file, int width, float cutoff);
-  bool NewScanAverage(Spectrum& sp, char* file, int width, float cutoff, int scanNum=0);
+  bool NewScanAverage(Spectrum& sp, char* file, int width, /*float cutoff,*/ int scanNum=0);
   //bool ScanAverage(Spectrum& sp, vector<Spectrum>& vs, int pivot, float cutoff, double cp=0.0);
   //bool ScanAverage(Spectrum& sp, deque<Spectrum>& vs, int pivot, float cutoff);
   //bool ScanAverageBuffered(Spectrum& sp, char* file, int width, float cutoff, int scanNum=0);
-  bool ScanAveragePlusDeNoise(Spectrum& sp, char* file, int width, float cutoff, int scanNum=0);
-  bool NewScanAveragePlusDeNoise(Spectrum& sp, char* file, int width, float cutoff, int scanNum=0);
+  bool ScanAveragePlusDeNoise(Spectrum& sp, char* file, int width, /*float cutoff,*/ int scanNum=0);
+  bool NewScanAveragePlusDeNoise(Spectrum& sp, char* file, int width, /*float cutoff,*/ int scanNum=0);
 
   int pos;
 

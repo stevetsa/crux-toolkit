@@ -19,6 +19,7 @@
 #include <unistd.h>
 #include <time.h>
 #include <algorithm>
+#include <limits>
 #include "carp.h"
 #include "utils.h"
 #include "objects.h"
@@ -32,7 +33,6 @@
 #include<sstream>
 #include<vector>
 
-using namespace std;
 /**
  * The number of features used to represent a PSM for Percolator or q-ranker.
  */
@@ -144,7 +144,7 @@ void prefix_fileroot_to_name(char** name);
 /**
  * \returns the filepath 'output_dir'/'fileroot'.'filename' 
  */
-string make_file_path(
+std::string make_file_path(
   const std::string& filename ///< the name of the file
   );
 
@@ -216,7 +216,7 @@ char* generate_name(
  */
 char* generate_name_path(
   const char* filename,
-  vector<const char*> old_suffixes,
+  std::vector<const char*> old_suffixes,
   const char* new_suffix,
   const char* new_path
   );
@@ -445,6 +445,11 @@ static bool get_range_from_string(
   TValue& last ///< the last value
   ) {
 
+  if (const_range_string == NULL) {
+    first = (TValue)0;
+    last = std::numeric_limits<TValue>::max();
+    return true;
+  }
   char* range_string = my_copy_string(const_range_string);
 
   bool ret;
@@ -458,7 +463,7 @@ static bool get_range_from_string(
     *dash = '\0';
     ret = from_string(first,range_string);
     *dash = '-';
-    *dash++;
+    dash++;
     ret &= from_string(last,dash);
   }
 
@@ -481,7 +486,7 @@ static bool get_range_from_string(
  * charged.
  */
 int choose_charge(FLOAT_T precursor_mz,         ///< m/z of spectrum precursor ion
-		  vector<Peak*>& peaks); ///< array of spectrum peaks
+		  std::vector<Peak*>& peaks); ///< array of spectrum peaks
 
 /**
  *\brief Extend a given string with lines not exceeding a specified width, 

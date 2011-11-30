@@ -68,7 +68,7 @@ class CHardklor{
   void Analyze();
   int compareData(const void*, const void*);
   double LinReg(float *match, float *mismatch);
-  void WriteParams(fstream& fptr, int format=1); 
+  //void WriteParams(fstream& fptr, int format=1); 
   void WritePepLine(SSObject& obj, CPeriodicTable* PT, fstream& fptr, int format=0); 
   void WriteScanLine(Spectrum& s, fstream& fptr, int format=0); 
 

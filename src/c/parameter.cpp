@@ -10,6 +10,7 @@
 #include "crux-utils.h"
 #include "parameter.h"
 
+using namespace std;
 
 //TODO:  in all set, change result=add_... to result= result && add_...
 

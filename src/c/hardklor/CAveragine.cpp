@@ -1,6 +1,9 @@
 #include <iomanip>
 #include <iostream>
+#include <stdlib.h>
+#include <string.h>
 #include "CAveragine.h"
+
 using namespace std;
 
 CAveragine::CAveragine(char* fn, char* fn2){
@@ -141,7 +144,7 @@ void CAveragine::loadTable(char* c){
   while(!feof(f)){
 
     enrich->push_back(a);
-		fscanf(f,"%2s\t%d\n",&enrich->at(i).symbol,&enrich->at(i).numIsotopes);
+		fscanf(f,"%2s\t%d\n",enrich->at(i).symbol,&enrich->at(i).numIsotopes);
     enrich->at(i).mass = new vector<double>;
     enrich->at(i).abundance = new vector<double>;
 

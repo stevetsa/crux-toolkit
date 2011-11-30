@@ -1,4 +1,6 @@
 #include "CHardklorSetting.h"
+#include <stdio.h>
+#include <string.h>
 
 using namespace std;
 
@@ -56,7 +58,7 @@ CHardklorSetting::CHardklorSetting(){
 }
 
 CHardklorSetting::CHardklorSetting(const CHardklorSetting& c){
-  int i;
+  size_t i;
 
 	//Copy variant list
   variant = new vector<CHardklorVariant>;
@@ -117,7 +119,7 @@ CHardklorSetting::~CHardklorSetting(){
 }
 
 CHardklorSetting& CHardklorSetting::operator=(const CHardklorSetting& c){
-  int i;
+  size_t i;
   if (this!=&c){
 		delete variant;
     variant = new vector<CHardklorVariant>;
@@ -194,7 +196,7 @@ void CHardklorSetting::out(char *s){
     res400,
     winSize,
     sl,
-    variant->size(),
+    (int)variant->size(),
     noBase,
     iAnalysis,
     snWindow,

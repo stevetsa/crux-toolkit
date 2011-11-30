@@ -520,7 +520,7 @@ void CSplitSpectrum::IntersectionAnalysis(){
 	 of peaks is cut between the two peaks that have a maximum distance from each other.
 */
 void CSplitSpectrum::MakeAnalysis(double winSize){
-	int i,j,k;
+	int i,j=0,k;
 	CSpecAnalyze sa;
 
 	double startMZ;
@@ -755,7 +755,7 @@ void CSplitSpectrum::NewSNPass(double gapSize){
 
   while(true){
     
-    if(i==wholeSpec->size()){
+    if(i==(unsigned int)wholeSpec->size()){
       endA=i-1;
       break;
     }

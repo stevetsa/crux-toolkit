@@ -21,7 +21,7 @@
 #endif /* ndef COMPILED_FROM_DSP */
 
 #include "ascii.h"
-#include "expat.h"
+//#include "expat.h"
 
 #ifdef XML_UNICODE
 #define XML_ENCODE_MAX XML_UTF16_ENCODE_MAX

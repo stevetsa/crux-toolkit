@@ -7,7 +7,7 @@ PERCOLATOR_LIB = ../../percolator/.libs/libpercolator.a
 ARRAY_LIB = ../../ArrayLibrary/.libs/libArrayLibrary.a
 
 UNIT_LIB  = cppunit-1.12.1/src/cppunit/.libs/libcppunit.a 
-LDFLAGS   = -ldl
+LDFLAGS   = -lpthread -ldl
 
 TESTS = \
 	main.cpp \

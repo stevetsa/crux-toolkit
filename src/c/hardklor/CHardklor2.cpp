@@ -349,7 +349,7 @@ void CHardklor2::Centroid(Spectrum& s, Spectrum& out){
 bool CHardklor2::CheckForPeak(vector<Result>& vMR, Spectrum& s, int index){
 	double dif=100.0;
 	double massDif;
-	bool match=false;
+	//bool match=false;
 
 	int mid=s.size()/2;
 	int upper=s.size();
@@ -447,16 +447,16 @@ bool CHardklor2::MatchSubSpectrum(Spectrum& s, int peakIndex, pepHit& pep){
 	double da;
 
 	//keep track of best hits
-	double bestCorr;
-	double bestDA;
-	int bestCharge;
-	double bestMass;
+	double bestCorr=0.0;
+	double bestDA=-1;
+	int bestCharge=-1;
+	double bestMass=-1;
 	vector<int> bestMatchIndex;
 	vector<float> bestMatchPeak;
 	int matchCount;
 	int bestMatchCount;
 	int thisMaxIndex=0;
-	int bestVariant;
+	int bestVariant=-1;
 
 	mercuryModel* model=NULL;
 
@@ -794,7 +794,7 @@ void CHardklor2::QuickCharge(Spectrum& s, int index, vector<int>& v){
 void CHardklor2::QuickHardklor(Spectrum& s, vector<pepHit>& vPeps) {
 
 	//iterators
-	int i,j,k,n,m,x;
+	int i,j,k,n,m=0,x;
 	unsigned int varCount;
 	unsigned int v;
 
@@ -840,20 +840,26 @@ void CHardklor2::QuickHardklor(Spectrum& s, vector<pepHit>& vPeps) {
 
 	//best hit variables
 	double bestCorr;
-	double bestLow;
-	double bestHigh;
-	double bestDA;
-	int bestCharge;
-	double bestMass;
+	double bestLow=0;
+	double bestHigh=0;
+	double bestDA=0;
+	int bestCharge=-1;
+	double bestMass=-1;
 	vector<int> bestMatchIndex;
 	vector<float> bestMatchPeak;
 	int bestMatchCount;
 	pepHit bestPH;
-	bool bestKeepPH;
-	int bestOverlap;
-	int bestLowIndex;
-	int bestHighIndex;
-	int bestVariant;
+        bestPH.area = 0.0;
+        bestPH.intensity = 0.0;
+        bestPH.corr = 0.0;
+        bestPH.charge = 0;
+        bestPH.monoMass = 0.0;
+        bestPH.variantIndex = 0;
+	bool bestKeepPH = false;
+	int bestOverlap = -1;
+	int bestLowIndex = -1;
+	int bestHighIndex = -1;
+	int bestVariant = -1;
 
 	//Results
 	pepHit ph;
@@ -1135,7 +1141,7 @@ void CHardklor2::RefineHits(vector<pepHit>& vPeps, Spectrum& s){
 	unsigned int i;
 	int j;
 	double lowp,highp;
-	bool bRestart=true;
+	//bool bRestart=true;
 	vector<pepHit> vTmpHit;
 	vector<int> vPepMask;
 	list<int> vList;

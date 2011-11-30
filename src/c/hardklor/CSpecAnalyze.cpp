@@ -527,8 +527,8 @@ void CSpecAnalyze::MakePredictions(vector<CHardklorVariant>& var){
   char v[64];
   float intensity;
 
-  int maxPeak;
-  int matchMaxPeak;
+  int maxPeak = 0;
+  int matchMaxPeak = 0;
   int matchIndex;
 
   int matchCount;
@@ -685,7 +685,7 @@ void CSpecAnalyze::MakePredictions(vector<CHardklorVariant>& var){
     }
 		
     //if we reach the maximum peptides allowed, stop making predictions
-    if(predPep->size() == userParams.peptide) {
+    if(predPep->size() == (size_t)userParams.peptide) {
       return;
     }
   }

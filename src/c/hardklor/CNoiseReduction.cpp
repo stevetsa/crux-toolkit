@@ -144,7 +144,7 @@ bool CNoiseReduction::DeNoise(Spectrum& sp){
     s[i].getRawFilter(cFilter2,256);
     if(strcmp(cFilter1,cFilter2)==0) {
       v.push_back(i);
-      if(v.size()==cs.ppWin) break;
+      if((int)v.size()==cs.ppWin) break;
     }
   }
 
@@ -199,7 +199,7 @@ bool CNoiseReduction::DeNoise(Spectrum& sp){
       ppm=fabs( (s[v[j]].at(index).mz-s[pos].at(i).mz)/s[pos].at(i).mz * 1000000);
       if(ppm<cs.ppm) matchCount++;
     }
-    if(matchCount>=cs.ppMatch || matchCount==v.size()) sp.add(s[pos].at(i));
+    if(matchCount>=cs.ppMatch || matchCount==(int)v.size()) sp.add(s[pos].at(i));
   }
   sp.setScanNumber(s[pos].getScanNumber());
   sp.setScanNumber(s[pos].getScanNumber(true),true);
@@ -515,8 +515,10 @@ bool CNoiseReduction::ScanAverage(Spectrum& sp, char* file, int width, float cut
   return true;
 }
 
-bool CNoiseReduction::NewScanAverage(Spectrum& sp, char* file, int width, float cutoff, int scanNum){
+bool CNoiseReduction::NewScanAverage(Spectrum& sp, char* file, int width, /*float cutoff,*/ int scanNum){
   
+  
+
   Spectrum ts;
 
   vector<int> vPos;
@@ -1114,7 +1116,7 @@ bool CNoiseReduction::ScanAverageBuffered(Spectrum& sp, char* file, int width, f
 }
 */
 
-bool CNoiseReduction::ScanAveragePlusDeNoise(Spectrum& sp, char* file, int width, float cutoff, int scanNum){
+bool CNoiseReduction::ScanAveragePlusDeNoise(Spectrum& sp, char* file, int width, /*float cutoff,*/ int scanNum){
   
   Spectrum ts;
   Spectrum ps;
@@ -1324,13 +1326,13 @@ bool CNoiseReduction::DeNoiseB(Spectrum& sp){
 
   if(pos==0){
     if((cs.scan.iLower>0)) {
-      if(!ScanAveragePlusDeNoise(sp,&cs.inFile[0],cs.ppWin,0.1f,cs.scan.iLower)) return false;
+      if(!ScanAveragePlusDeNoise(sp,&cs.inFile[0],cs.ppWin,/*0.1f,*/cs.scan.iLower)) return false;
     } else {
-      ScanAveragePlusDeNoise(sp,&cs.inFile[0],cs.ppWin,0.1f);
+      ScanAveragePlusDeNoise(sp,&cs.inFile[0],cs.ppWin/*,0.1f*/);
     }
     pos=1;
   } else {
-    ScanAveragePlusDeNoise(sp,NULL,cs.ppWin,0.1f);
+    ScanAveragePlusDeNoise(sp,NULL,cs.ppWin/*,0.1f*/);
   }
 
   if(sp.getScanNumber()==0) return false;
@@ -1348,13 +1350,13 @@ bool CNoiseReduction::DeNoiseC(Spectrum& sp){
 
   if(pos==0){
     if(cs.scan.iLower>0) {
-      if(!NewScanAveragePlusDeNoise(sp,cs.inFile,cs.ppWin,0.1f,cs.scan.iLower)) return false;
+      if(!NewScanAveragePlusDeNoise(sp,cs.inFile,cs.ppWin,/*0.1f,*/cs.scan.iLower)) return false;
     } else {
-      NewScanAveragePlusDeNoise(sp,cs.inFile,cs.ppWin,0.1f);
+      NewScanAveragePlusDeNoise(sp,cs.inFile,cs.ppWin/*,0.1f*/);
     }
     pos=1;
   } else {
-    NewScanAveragePlusDeNoise(sp,NULL,cs.ppWin,0.1f);
+    NewScanAveragePlusDeNoise(sp,NULL,cs.ppWin/*,0.1f*/);
   }
 
   if(sp.getScanNumber()==0) return false;
@@ -1372,13 +1374,13 @@ bool CNoiseReduction::DeNoiseD(Spectrum& sp){
 
   if(pos==0){
     if(cs.scan.iLower>0) {
-      if(!NewScanAverage(sp,cs.inFile,cs.ppWin,0.1f,cs.scan.iLower)) return false;
+      if(!NewScanAverage(sp,cs.inFile,cs.ppWin,/*0.1f,*/cs.scan.iLower)) return false;
     } else {
-      NewScanAverage(sp,cs.inFile,cs.ppWin,0.1f);
+      NewScanAverage(sp,cs.inFile,cs.ppWin/*,0.1f*/);
     }
     pos=1;
   } else {
-    NewScanAverage(sp,NULL,cs.ppWin,0.1f);
+    NewScanAverage(sp,NULL,cs.ppWin/*,0.1f*/);
   }
 
   if(sp.getScanNumber()==0) return false;
@@ -1410,7 +1412,7 @@ double CNoiseReduction::CParam(Spectrum& sp, int tot){
   else return d/j;
 }
 
-bool CNoiseReduction::NewScanAveragePlusDeNoise(Spectrum& sp, char* file, int width, float cutoff, int scanNum){
+bool CNoiseReduction::NewScanAveragePlusDeNoise(Spectrum& sp, char* file, int width, /*float cutoff,*/ int scanNum){
   
   Spectrum ts;
 

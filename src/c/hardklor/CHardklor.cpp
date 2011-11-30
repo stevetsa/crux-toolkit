@@ -177,7 +177,7 @@ void CHardklor::Analyze() {
   bool bCutMe=false;
   bool ReadScan=false;
   bool bFirst=true;
-  CSplitSpectrum* cSS;
+  CSplitSpectrum* cSS = NULL;
   int winCount=0;
 
   //Ouput file info to user
@@ -242,7 +242,7 @@ void CHardklor::Analyze() {
   if(cs.xml){
     fptr << "<Hardklor>" << endl;
     fptr << "<File InputFilename=\"" << cs.inFile << "\" OutputFilename=\"" << cs.outFile << "\">" << endl;
-    WriteParams(fptr,1);
+    //WriteParams(fptr,1);
   }
  
   //Reset some basic stat counters
@@ -710,7 +710,7 @@ void CHardklor::BasicMethod(float *match, float *mismatch,SSObject *combo,
   SSObject recCombo;
   
   double RCorr;
-  double bestRCorr = combo->corr;
+  //double bestRCorr = combo->corr;
   int a,k,n;
 	float intensity;
 
@@ -787,8 +787,8 @@ void CHardklor::SemiCompleteMethod(float *match, float *mismatch,SSObject *combo
   SSObject bestCombo = *combo;
   SSObject recCombo;
   
-  double RCorr;
-  double bestRCorr = combo->corr;
+  double RCorr = -1.0;
+  //double bestRCorr = combo->corr;
   int a,k,n;
 
 	float *sumMatch;
@@ -802,7 +802,7 @@ void CHardklor::SemiCompleteMethod(float *match, float *mismatch,SSObject *combo
 	};
 	
   //Iterate through all predicted peptides
-  for(k=start; k<sa.predPep->size(); k++) {
+  for(k=start; k<(int)sa.predPep->size(); k++) {
 
     //check each variant
     for(n=0; n<sa.predPep->at(k).VariantListSize(); n++){
@@ -844,7 +844,7 @@ void CHardklor::SemiCompleteMethod(float *match, float *mismatch,SSObject *combo
 	if(depth<maxDepth){
 
 		//Iterate through all predicted peptides
-		for(k=start; k<sa.predPep->size(); k++) {
+		for(k=start; k<(int)sa.predPep->size(); k++) {
 
 			//check each variant
 			for(n=0; n<sa.predPep->at(k).VariantListSize(); n++){
@@ -886,12 +886,12 @@ void CHardklor::SemiCompleteFastMethod(float *match, float *mismatch,SSObject *c
   SSObject bestCombo = *combo;
   SSObject recCombo;
   
-  double RCorr;
-  double bestRCorr = combo->corr;
+  double RCorr = -1.0;
+  //double bestRCorr = combo->corr;
   int a,b,k,n;
 
 	int numArrays=0;
-	for(k=start;k<sa.predPep->size();k++){
+	for(k=start;k<(int)sa.predPep->size();k++){
 		numArrays+=sa.predPep->at(k).VariantListSize();
 	};
 
@@ -911,7 +911,7 @@ void CHardklor::SemiCompleteFastMethod(float *match, float *mismatch,SSObject *c
 	
 	b=0;
   //Iterate through all predicted peptides
-  for(k=start; k<sa.predPep->size(); k++) {
+  for(k=start; k<(int)sa.predPep->size(); k++) {
 
     //check each variant
     for(n=0; n<sa.predPep->at(k).VariantListSize(); n++){
@@ -960,7 +960,7 @@ void CHardklor::SemiCompleteFastMethod(float *match, float *mismatch,SSObject *c
 
 		//Iterate through all predicted peptides
 		b=0;
-		for(k=start; k<sa.predPep->size(); k++) {
+		for(k=start; k<(int)sa.predPep->size(); k++) {
 
 			//check each variant
 			for(n=0; n<sa.predPep->at(k).VariantListSize(); n++){
@@ -997,8 +997,8 @@ void CHardklor::DynamicMethod(float *match, float *mismatch,SSObject *combo,
   SSObject bestCombo = *combo;
   SSObject recCombo;
   
-  double RCorr;
-  double bestRCorr = combo->corr;
+  double RCorr = -1.0;
+  //double bestRCorr = combo->corr;
   int a,k,n;
 
 	float *sumMatch;
@@ -1012,7 +1012,7 @@ void CHardklor::DynamicMethod(float *match, float *mismatch,SSObject *combo,
 	};
 	
   //Iterate through all predicted peptides
-  for(k=start; k<sa.predPep->size(); k++) {
+  for(k=start; k<(int)sa.predPep->size(); k++) {
 
     //check each variant
     for(n=0; n<sa.predPep->at(k).VariantListSize(); n++){
@@ -1064,7 +1064,7 @@ void CHardklor::DynamicSemiCompleteMethod(float *match, float *mismatch,SSObject
   SSObject recCombo;
   
   double RCorr;
-  double bestRCorr = combo->corr;
+  //double bestRCorr = combo->corr;
   int a,b,k,n;
 
 	vector<double> vecCorr;
@@ -1081,7 +1081,7 @@ void CHardklor::DynamicSemiCompleteMethod(float *match, float *mismatch,SSObject
 	
   //Iterate through all predicted peptides
 	b=0;
-  for(k=start; k<sa.predPep->size(); k++) {
+  for(k=start; k<(int)sa.predPep->size(); k++) {
 
     //check each variant
     for(n=0; n<sa.predPep->at(k).VariantListSize(); n++){
@@ -1128,7 +1128,7 @@ void CHardklor::DynamicSemiCompleteMethod(float *match, float *mismatch,SSObject
 	if(depth < maxDepth) {
 
 		//Iterate through all predicted peptides
-		for(k=start; k<sa.predPep->size(); k++) {
+		for(k=start; k<(int)sa.predPep->size(); k++) {
 
 			//check each variant
 			for(n=0; n<sa.predPep->at(k).VariantListSize(); n++){
@@ -1211,11 +1211,11 @@ void CHardklor::SemiSubtractiveMethod(SSObject *combo, int maxDepth){
 		depthCombo = bestCombo;
 
 		//Iterate through all predicted peptides
-		for(k=0; k<sa.predPep->size(); k++) {
+		for(k=0; k<(int)sa.predPep->size(); k++) {
 
 			//Skip peptides we have already analyzed.
 			bSkip=false;
-			for(n=0;n<bestCombo.pepVar->size();n++){
+			for(n=0;n<(int)bestCombo.pepVar->size();n++){
 				if(bestCombo.pepVar->at(n).iLower==k) {
 					bSkip=true;
 					break;
@@ -1332,7 +1332,7 @@ void CHardklor::FewestPeptidesMethod(SSObject *combo, int maxDepth){
 	};
 	*/
 
-	while(depth < maxDepth && depth < sa.predPep->size()) {
+	while(depth < maxDepth && depth < (int)sa.predPep->size()) {
 
 		countDown=comboListCounter;
 		comboListCounter=0;
@@ -1348,7 +1348,7 @@ void CHardklor::FewestPeptidesMethod(SSObject *combo, int maxDepth){
 			for(a=0;a<sa.mismatchSize;a++) priorMismatch[a]=0;
 
 			//recreate prior match and mismatch data
-			for(n=0;n<comboList.at(pos).pepVar->size();n++){
+			for(n=0;n<(int)comboList.at(pos).pepVar->size();n++){
 				pepID = comboList.at(pos).pepVar->at(n).iLower;
 				varID = comboList.at(pos).pepVar->at(n).iUpper;
 
@@ -1482,7 +1482,7 @@ void CHardklor::FewestPeptidesChoiceMethod(SSObject *combo, int maxDepth){
 	comboList.push_back(*combo);
 	comboListCounter++;
 
-	while(depth < maxDepth && depth < sa.predPep->size()) {
+	while(depth < maxDepth && depth < (int)sa.predPep->size()) {
 
 		countDown=comboListCounter;
 		comboListCounter=0;
@@ -1495,7 +1495,7 @@ void CHardklor::FewestPeptidesChoiceMethod(SSObject *combo, int maxDepth){
 			for(a=0;a<sa.mismatchSize;a++) priorMismatch[a]=0;
 
 			//recreate prior match and mismatch data
-			for(n=0;n<comboList.at(0).pepVar->size();n++){
+			for(n=0;n<(int)comboList.at(0).pepVar->size();n++){
 				pepID = comboList.at(0).pepVar->at(n).iLower;
 				varID = comboList.at(0).pepVar->at(n).iUpper;
 
@@ -1647,7 +1647,7 @@ void CHardklor::FastFewestPeptidesMethod(SSObject *combo, int maxDepth){
 
 	//cout << "In method, everything initialized" << endl;
 
-	while(depth < maxDepth && depth < sa.predPep->size()) {
+	while(depth < maxDepth && depth < (int)sa.predPep->size()) {
 
 		if(storeA){
 			if(depth < maxDepth-1) {
@@ -1945,7 +1945,7 @@ void CHardklor::FastFewestPeptidesChoiceMethod(SSObject *combo, int maxDepth){
 
 	//cout << "In method, everything initialized" << endl;
 
-	while(depth < maxDepth && depth < sa.predPep->size()) {
+	while(depth < maxDepth && depth < (int)sa.predPep->size()) {
 
 		if(storeA){
 			for(a=0;a<widthA;a++){
@@ -2271,7 +2271,8 @@ void CHardklor::WriteScanLine(Spectrum& s, fstream& fptr, int format){
   }
 }
 
+/*
 void CHardklor::WriteParams(fstream& fptr, int format){
 
 }
-
+*/

@@ -28,6 +28,7 @@
 #include <vector>
 #include <stdio.h>
 #include <iostream>
+#include <stdint.h>
 #include <string>
 #include <string.h>
 #include "expat.h"

@@ -144,7 +144,7 @@ void CMercury8::Intro() {
 /***************************************************/
 //This function reads the ISOTOPE.DAT file that must be in the same
 //folder as the application.
-void CMercury8::InitializeData(char* fn) {
+void CMercury8::InitializeData(const char* fn) {
 
   FILE *ElementFile;
   int  i, Z;
@@ -157,7 +157,7 @@ void CMercury8::InitializeData(char* fn) {
   for (Z=0; Z<=MAXAtomNo; Z++) {
     Element[Z].Symbol[0]=Element[Z].Symbol[1]=Element[Z].Symbol[2]=0;
 
-    fscanf(ElementFile,"%2s %d\n", &Element[Z].Symbol,&Element[Z].NumIsotopes);
+    fscanf(ElementFile,"%2s %d\n", Element[Z].Symbol,&Element[Z].NumIsotopes);
     strcpy(Orig[Z].Symbol,Element[Z].Symbol);
     Orig[Z].NumIsotopes = Element[Z].NumIsotopes;
 
@@ -299,14 +299,14 @@ void CMercury8::AddElement(char Atom[3], int Ecount, int Acount) {
 int CMercury8::ParseMF(char MF[], int *elementcount) {
   int COND, ERRFLAG;
   int atomcount;
-  char Atom[3], errorch;
+  char Atom[3], errorch ='\0';
 
   atomcount=0; COND=0; ERRFLAG=0;
   Atom[0] = Atom[1] = Atom[2] = '\0';
 
   unsigned int pos=0;
   unsigned int peek=0;
-  unsigned int count=0;
+  //unsigned int count=0;
   char digit[2];
   bool bFirst=true;
   atomcount=0;
@@ -470,7 +470,7 @@ void CMercury8::CalcFreq(complex* FreqData, int Ecount, int NumPoints, int MassR
 //	0: Success
 //	1: Invalid molecular formula
 //	2: Cannot write to file
-int CMercury8::GoMercury(char* MolForm, int Charge, char* filename) {
+int CMercury8::GoMercury(char* MolForm, int Charge, const char* filename) {
   
   unsigned int i;
   int	 NumElements=0;			/* Number of elements in molecular formula */
@@ -532,12 +532,12 @@ int CMercury8::GoMercury(char* MolForm, int Charge, char* filename) {
 //or after user intervention, such as Enrich().
 void CMercury8::Reset(){
   unsigned int i;
-	int j;
+  int j;
   
   for (i=0;i<20;i++) AtomicNum[i]=0;
   for (i=0; i<=MAXAtomNo; i++)  Element[i].NumAtoms = 0;
   
-  for (i=0;i<(int)EnrichAtoms.size();i++){
+  for (i=0;i<EnrichAtoms.size();i++){
     for (j=0;j<Element[EnrichAtoms[i]].NumIsotopes;j++){
       Element[EnrichAtoms[i]].IsoProb[j] = Orig[EnrichAtoms[i]].IsoProb[j];
     }
@@ -579,10 +579,10 @@ void CMercury8::AccurateMass(int NumElements, int Charge){
   if (showOutput){
     if (Charge != 0) {
       printf("Average Molecular Weight: %.3lf, at m/z: %.3f\n",MW,MW/fabs((double)Charge));
-      printf("Average Integer MW: %ld, at m/z: %.3f\n\n",intMW,(float)intMW/fabs((double)Charge));
+      printf("Average Integer MW: %ld, at m/z: %.3f\n\n",(long)intMW,(float)intMW/fabs((double)Charge));
     } else {
       printf("Average Molecular Weight: %.3lf\n",MW);
-      printf("Average Integer MW: %ld\n\n",intMW);
+      printf("Average Integer MW: %ld\n\n",(long)intMW);
     }
   }
 
@@ -714,6 +714,10 @@ void CMercury8::ConvertMass(complex* Data, int NumPoints, int PtsPerAmu,
 
   int i;
   double mass, ratio, CorrIntMW;
+
+  //These are here to prevent warnings...
+  (unsigned int)charge;
+  (unsigned int)MIintMW;
 
   if (IntMolVar == 0) ratio = 1;
   else ratio = sqrt(MolVar) / sqrt(IntMolVar);
@@ -876,10 +880,10 @@ void CMercury8::Mercury(int NumElements, int Charge) {
   if (showOutput){
     if (Charge != 0) {
       printf("Average Molecular Weight: %.3lf, at m/z: %.3f\n",MW,MW/fabs((double)Charge));
-      printf("Average Integer MW: %ld, at m/z: %.3f\n\n",intMW,(float)intMW/fabs((double)Charge));
+      printf("Average Integer MW: %ld, at m/z: %.3f\n\n",(long)intMW,(float)intMW/fabs((double)Charge));
     } else {
       printf("Average Molecular Weight: %.3lf\n",MW);
-      printf("Average Integer MW: %ld\n\n",intMW);
+      printf("Average Integer MW: %ld\n\n",(long)intMW);
     }
   }
  
