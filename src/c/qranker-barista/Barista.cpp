@@ -321,14 +321,20 @@ double Barista :: get_peptide_score(int pepind, NeuralNet &n)
   int num_psm = d.pepind2num_psm(pepind);
   int *psminds = d.pepind2psminds(pepind);
   double max_sc = -100000000.0;
+  int max_ind = 0;
   for(int i = 0; i < num_psm; i++)
     {
       int psmind = psminds[i];
       double *feat = d.psmind2features(psmind);
       double *sc = n.fprop(feat);
       if(max_sc < sc[0])
-	max_sc = sc[0];
+	{
+	  max_sc = sc[0];
+	  max_ind = i;
+	}
     }
+  if((int)pepind_to_max_psmind.size() == d.get_num_peptides())
+    pepind_to_max_psmind[pepind] = psminds[max_ind];
   return max_sc;
 }
 
@@ -430,7 +436,6 @@ double Barista :: get_protein_score_parsimonious(int protind, NeuralNet &n)
 		  max_ind = j;
 		}
 	    }
-	  pepind_to_max_psmind[pepind] = psminds[max_ind];
 	  sm += max_sc;
 	}
     }
@@ -441,8 +446,7 @@ double Barista :: get_protein_score_parsimonious(int protind, NeuralNet &n)
 
 int Barista :: getOverFDRProtParsimonious(ProtScores &set, NeuralNet &n, double fdr)
 {
-  pepind_to_max_psmind.clear();
-  pepind_to_max_psmind.resize(d.get_num_peptides(),-1);
+  
   int total_num_pep = d.get_num_peptides();
   used_peptides.clear();
   used_peptides.resize(total_num_pep,0);
@@ -884,8 +888,8 @@ void Barista :: write_results_peptides_xml(ofstream &os)
 	  if(psmind > -1)
 	    os << "  <main_psm_id>"<< psmind << "</main_psm_id>" << endl;
 	  else
-	    cout << "warning: did not assign peptide max psmind\n";
-	  
+	    cout << "warning: did not assign peptide" << pep  << " ind " << pepind << " max psmind\n";
+	    	  
 	  //print out all the psms in which this peptide is present
 	  int num_psm = d.pepind2num_psm(pepind);
 	  int *psminds = d.pepind2psminds(pepind);
@@ -1025,7 +1029,7 @@ void Barista :: write_results_prot_tab(ofstream &os)
 	      else
 		{
 #ifndef CRUX
-		  cout << "warning: did not assign peptide max psmind\n";
+		  cout << "warning: did not assign peptide" << pep  << " ind " << pepind << " max psmind\n";
 #endif
 		}
 	    }
@@ -1129,11 +1133,11 @@ void Barista :: report_all_results_tab()
 
 void Barista :: report_all_results_xml_tab()
 {
-  d.load_data_all_results();;
+  d.load_data_all_results();
   setup_for_reporting_results();
   
   report_all_results_xml();
-  report_all_results_tab();
+  //report_all_results_tab();
   
   d.clear_data_all_results();
 }
@@ -1170,8 +1174,11 @@ void Barista :: setup_for_reporting_results()
 #endif
   int fdr_trn_psm = getOverFDRPSM(psmtrainset, max_net_psm, selectionfdr);
 
+  pepind_to_max_psmind.clear();
+  pepind_to_max_psmind.resize(d.get_num_peptides(),-1);
+  int fdr_trn_pep = getOverFDRPep(peptrainset, max_net_pep, selectionfdr);
 #ifdef CRUX
-  carp(CARP_INFO, "peptides at q<%.2f: %d", selectionfdr,getOverFDRPep(peptrainset, max_net_pep, selectionfdr));
+  carp(CARP_INFO, "peptides at q<%.2f: %d", selectionfdr, fdr_trn_pep);
   carp(CARP_INFO, "psms at q<%.2f: %d", selectionfdr, fdr_trn_psm);
 #else 
   cout << "peptides at q< " << selectionfdr << ": " << getOverFDRPep(peptrainset, max_net_pep, selectionfdr) << endl;

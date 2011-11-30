@@ -520,8 +520,8 @@ void SQTParser :: extract_psm_features(sqt_match &m, enzyme enz, double *x, int 
   //deltaCN
   x[2] = 0.0;
   if(i < hits_read-1)
-  x[2] = (m.xcorr_score[i] - m.xcorr_score[i+1])/m.xcorr_score[i];
-  //x[2] = m.delta_cn[i];
+    x[2] = (m.xcorr_score[i] - m.xcorr_score[i+1])/m.xcorr_score[i];
+  x[2] = m.delta_cn[i];
   
   //xcorr score
   x[3] = m.xcorr_score[i];
@@ -756,7 +756,7 @@ void SQTParser :: read_sqt_file(ifstream &is, string &decoy_prefix, int final_hi
       add_matches_to_tables(m, decoy_prefix, num_hits, final_hits);
       extract_features(m, num_hits, final_hits,enz);
       cn++;
-      //if(cn > 10000)
+      //if(cn > 200)
       //break;
     }
   

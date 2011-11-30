@@ -417,11 +417,28 @@ void Dataset :: load_data_all_results()
   f_ind_to_pep.close();
   fname.str("");
 
+  //ind_to_prot
+  fname << in_dir << "/ind_to_prot.txt";
+  ifstream f_ind_to_prot(fname.str().c_str(),ios::binary);
+ 
+  string prot;
+  f_ind_to_prot >> ind;
+  f_ind_to_prot >> prot;
+  while(!f_ind_to_prot.eof())
+    {
+      ind_to_prot[ind] = prot;
+      f_ind_to_prot >> ind;
+      f_ind_to_prot >> prot;
+    }
+  f_ind_to_prot.close();
+  fname.str("");
+
 }
 
 void Dataset :: clear_data_all_results()
 {
   ind_to_pep.clear();
+  ind_to_prot.clear();
 }
 
 void Dataset :: load_data_prot_results()
@@ -454,22 +471,7 @@ void Dataset :: load_data_prot_results()
   f_protind_to_label.close();
   fname.str("");
 
-  //ind_to_prot
-  fname << in_dir << "/ind_to_prot.txt";
-  ifstream f_ind_to_prot(fname.str().c_str(),ios::binary);
-  int ind;
-  string prot;
-  f_ind_to_prot >> ind;
-  f_ind_to_prot >> prot;
-  while(!f_ind_to_prot.eof())
-    {
-      ind_to_prot[ind] = prot;
-      f_ind_to_prot >> ind;
-      f_ind_to_prot >> prot;
-    }
-  f_ind_to_prot.close();
-  fname.str("");
-
+  
 
 }
 
@@ -478,7 +480,6 @@ void Dataset :: clear_data_prot_results()
   ostringstream fname;
   protind_to_pepinds.clear();
   delete [] protind_to_label; protind_to_label = (int*)0;
-  ind_to_prot.clear();
 }
 
 

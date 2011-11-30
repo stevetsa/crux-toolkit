@@ -88,6 +88,24 @@ created:</p>
 </li>
 
 <li>
+ <b> qranker_output.xml </b>: An xml file containing ranked list of target peptide-spectrum matches. The
+ following entries are included:
+<ol>
+<li> psm_id: PSM identifier. </li>
+<li>q-value: The minimal PSM-level false discovery rate at which this
+  PSM is deemed significant.  This q-value is computed based on the
+  ranking of the PSMs induced by the Barista score.</li>
+<li>score: The score assigned to the PSM by Barista.  Higher
+  values correspond to more confident identifications.</code>
+<li>scan: the scan number</li>
+<li>charge: the inferred charge state</li>
+<li> precursor_mass: precrusor mass as recorded during the MS1 scan </li>
+<li>peptide: the peptide sequence</li>
+<li>filename: name of the file in which the PSM appears</li>
+</ol>
+</li>
+
+<li>
 <b>qranker.target.psm.txt</b>: a tab-delimited file containing a
 ranked list of target peptide-spectrum matches with the associated
 Q-ranker scores and q-values.  The following columns are included:
@@ -104,12 +122,13 @@ Q-ranker scores and q-values.  The following columns are included:
 </ol>
 </li>
 
+
 <li>
 <b>qranker.log.txt</b>: a file where the program reports its progress. 
 </li>
 
 <li>
-<b>barista.params.txt</b>: a file with the values of all the options
+<b>qranker.params.txt</b>: a file with the values of all the options
 given to the current run.
 </li>
 

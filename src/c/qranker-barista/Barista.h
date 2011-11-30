@@ -37,7 +37,7 @@ class Barista : public CruxApplication
     fileroot(""), 
     seed(0), 
     selectionfdr(0.01), 
-    nepochs(15), 
+    nepochs(20), 
     num_features(0), 
     num_hu(3), 
     mu(0.05),
