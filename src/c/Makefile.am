@@ -1,6 +1,6 @@
 distdir = $(PACKAGE)_$(VERSION)
 
-SUBDIRS = ArrayLibrary MSToolkit percolator q-ranker xlink hardklor .
+SUBDIRS = ArrayLibrary MSToolkit percolator q-ranker xlink hardklor bullseye .
 
 # Crux can use either single or double precision floating poinnt.
 if USEDOUBLES
