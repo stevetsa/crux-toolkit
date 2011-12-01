@@ -521,7 +521,7 @@ void SQTParser :: extract_psm_features(sqt_match &m, enzyme enz, double *x, int 
   x[2] = 0.0;
   if(i < hits_read-1)
     x[2] = (m.xcorr_score[i] - m.xcorr_score[i+1])/m.xcorr_score[i];
-  x[2] = m.delta_cn[i];
+  //x[2] = m.delta_cn[i];
   
   //xcorr score
   x[3] = m.xcorr_score[i];
