@@ -192,6 +192,7 @@ libcrux_la_CXXFLAGS = \
   -I$(top_srcdir)/src/c/percolator/ \
   -I$(top_srcdir)/src/c/q-ranker/ \
   -I$(top_srcdir)/src/c/hardklor/ \
+  -I$(top_srcdir)/src/c/bullseye/ \
   -I$(top_srcdir)/src/external/
 
 libcrux_la_SOURCES = $(LIBFILES)
@@ -232,7 +233,8 @@ crux_CXXFLAGS = \
   -I$(top_srcdir)/src/c/percolator \
   -I$(top_srcdir)/src/c/q-ranker \
   -I$(top_srcdir)/src/c/xlink \
-  -I$(top_srcdir)/src/c/hardklor
+  -I$(top_srcdir)/src/c/hardklor \
+  -I$(top_srcdir)/src/c/bullseye
 
 crux_LDADD = \
   $(AM_LDFLAGS) \
@@ -245,9 +247,11 @@ crux_LDADD = \
   -L$(top_builddir)/src/c/percolator \
   -L$(top_builddir)/src/c/q-ranker \
   -L$(top_builddir)/src/c/hardklor \
+  -L$(top_builddir)/src/c/bullseye \
   -lpercolator \
   -lqranker \
   -lhardklor \
+  -lbullseye \
   -lmstoolkit \
   -lm -lpthread -ldl \
   -lArrayLibrary

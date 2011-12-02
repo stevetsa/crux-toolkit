@@ -1119,6 +1119,62 @@ void initialize_parameters(void){
     "than 5 m/z are divided into smaller sets prior to analysis. The default value is 4.0.",
     "Available for crux hardklor", "true");
 
+  /* bullseye parameters */
+  set_string_parameter("MS1 spectra", NULL, 
+    "The name of a file from which to parse high-resolution spectra of intact peptides.\n"
+    " The file may be in MS1 (.ms1), binary MS1 (.bms1), compressed MS1 (.cms1), or "
+    "mzXML (.mzXML) format. ",
+    "Argument for crux bullseye.", "false");
+
+  set_string_parameter("MS2 spectra", NULL, 
+    "The name of a file from which to parse peptide fragmentation spectra.\n The file may "
+    "be in MS2 (.ms2), binary MS2 (.bms2), compressed MS2 (.cms2) or mzXML (.mzXML) format. ",
+    "Argument for crux bullseye.", "false");
+
+  set_double_parameter("max-persist", 2.0, 0, BILLION,
+    "Ignore peptides that persist for this length. The unit of time is whatever unit is "
+    "used in your data file (usually minutes). These peptides are considered contaminants." 
+    " Default = 2.0.",
+    "Available for crux bullseye", "true");
+
+  set_boolean_parameter("exact-match", false, 
+    "Require an exact match to the precursor ion. Rather than use wide precursor boundaries, "
+    "this flag forces Bullseye to match precursors to the base isotope peak identified in "
+    "Hardklor. The tolerance is set with the --persist-tolerance flag. Default = F.",
+    "Available for crux bullseye", "true");
+
+  set_int_parameter("gap-tolerance", 1, 0, BILLION,
+    "Gap size tolerance when checking for peptides across consecutive MS1 scans. Used in "
+    "conjunction with --scan-tolerance. Default = 1.",
+    "Available for crux bullseye", "true");
+
+  //max-mass already exists
+  //min-mass already exists
+  
+  set_double_parameter("exact-tolerance", 10.0, 0, BILLION,
+    "Set the tolerance (+/-ppm) for exact match searches. Default = 10.0.",
+    "Available for crux bullseye", "true");
+
+  set_double_parameter("persist-tolerance", 10.0, 0, BILLION,
+    "Set the tolerance (+/-ppm) for finding persistent peptides. Default = 10.0.",
+    "Available for crux bullseye", "true");
+
+  set_int_parameter("scan-tolerance", 3, 0, BILLION,
+    "Number of consecutive MS1 scans over which a peptide must be observed to "
+    "be considered real. Gaps in persistence are allowed when setting --gap-tolerance. "
+    "Default = 3.",
+    "Available for crux bullseye", "true");
+
+  set_double_parameter("retention-tolerance", 0.5, 0, BILLION,
+    "Set the tolerance (+/-units) around the retention time over which a peptide "
+    "can be matched to the MS/MS spectrum. The unit of time is whatever unit is "
+    "used in your data file (usually minutes). Default = 0.5.",
+    "Available for crux bullseye", "true");
+
+  set_string_parameter("spectrum-format", "__NULL_STR",
+    "The format to write the output spectra to. By default, the spectra will be "
+    "output in the same format as the MS/MS input.",
+    "Available for crux bullseye", "true");
 
   /* crux-util parameters */
 

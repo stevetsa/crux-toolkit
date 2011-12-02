@@ -1,6 +1,9 @@
 #include "CKronik2.h"
 #include "Spectrum.h"
 #include "MSReader.h"
+#ifdef CRUX
+#include "CruxBullseyeApplication.h"
+#endif
 #include <iostream>
 #include <iomanip>
 #include <vector>
@@ -16,9 +19,11 @@ double ppmTolerance;
 double rtTolerance;
 bool bMatchPrecursorOnly;
 
-
+#ifdef CRUX
+int CruxBullseyeApplication::bullseyeMain(int argc, char* argv[]){
+#else
 int main(int argc, char* argv[]){
-
+#endif
   int i;
   CKronik2 p1;
 

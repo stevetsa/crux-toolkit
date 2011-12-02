@@ -13,12 +13,14 @@ AM_CXXFLAGS = -Wall \
 libbullseye_la_SOURCES = \
 	CKronik2.h \
 	CKronik2.cpp \
-	bullseye.cpp
+	bullseye.cpp \
+        CruxBullseyeApplication.cpp
 
 
 libbullseye_la_CXXFLAGS = $(AM_CXXFLAGS) \
   -I$(top_srcdir)/src/c/ \
   -I$(top_srcdir)/src/c/MSToolkit/include \
+  -I$(top_srcdir)/src/c/hardklor \
   -DGCC \
   -D_LARGEFILE_SOURCE \
   -DHAVE_EXPAT_CONFIG_H \

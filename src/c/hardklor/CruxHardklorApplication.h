@@ -15,50 +15,39 @@
 class CruxHardklorApplication: public CruxApplication {
 
  protected:
-  std::string delimited_filename_;
-  std::string column_name_string_;
-  char delimiter_;
-  bool header_;
 
   //Calls the main method in HardklorApp
-  int hardklorMain(int argc, char* argv[]);
+  static int hardklorMain(int argc, char* argv[]);
+
+
 
   /**
    * writes the ISOTOPE.DAT file for hardklor
    */
-  void writeIsotopeDat(
+  static void writeIsotopeDat(
     std::string& filename ///<path for dat file
   );
 
   /**
    * write the ISOTOPE.DAT to an output stream
    */
-  void writeIsotopeDat(
+  static void writeIsotopeDat(
     std::ostream& os ///< the output stream to use
   );
 
   /**
    * writes the Hardklor.dat to a path
    */
-  void writeHardklorDat(
+  static void writeHardklorDat(
     std::string& filename ///<path to write the Hardklor.dat to
     );  
 
   /**
    * writes the Hardklor.dat to a stream
    */
-  void writeHardklorDat(
+  static void writeHardklorDat(
     std::ostream& os ///< stream to write to.
     );  
-
-  /**
-   * \returns the filename 'output_directory'/'fileroot'.'name' 
-   */
-  std::string makeFileName(
-    const std::string& output_directory, ///< the directory
-    const std::string& fileroot, ///< the fileroot
-    const std::string& name ///< the name of the file
-    );
 
  public:
 
@@ -91,6 +80,12 @@ class CruxHardklorApplication: public CruxApplication {
    * \returns whether the application needs the output directory or not. (default false).
    */
   virtual bool needsOutputDirectory();
+
+  static int main(
+    const std::string& input_spectra
+  );
+  
+
 };
 
 

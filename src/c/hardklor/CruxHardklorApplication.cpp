@@ -65,6 +65,16 @@ int CruxHardklorApplication::main(int argc, char** argv) {
   initialize(argument_list, num_arguments,
     option_list, num_options, argc, argv);
 
+  string input_spectra(get_string_parameter("spectra"));
+
+  return main(input_spectra);
+
+}
+
+int CruxHardklorApplication::main(
+  const string& input_spectra
+  ) {
+
   /* Write the dat files */
   string output_filename = make_file_path("hardklor.mono.txt");
   string hardklor_dat_filename = make_file_path("Hardklor.dat");
@@ -76,7 +86,7 @@ int CruxHardklorApplication::main(int argc, char** argv) {
   /* build argument list */
   vector<string> hk_args_vec;
   hk_args_vec.push_back("hardklor");
-  hk_args_vec.push_back(get_string_parameter_pointer("spectra"));
+  hk_args_vec.push_back(input_spectra);
   hk_args_vec.push_back(output_filename);
 
   //Add options
