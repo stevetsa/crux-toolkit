@@ -3,7 +3,11 @@
 /******************************/
 
 SQTParser :: SQTParser() 
-  : num_mixed_labels(0),
+  : database_exists(0), 
+    num_prot_not_found_in_db(0),
+    num_pos_prot_not_found_in_db(0),
+    num_neg_prot_not_found_in_db(0),
+    num_mixed_labels(0),
     num_features(0),
     num_spec_features(0),
     num_spectra(0),
@@ -18,7 +22,6 @@ SQTParser :: SQTParser()
     num_neg_prot(0), 
     num_cur_psm(0),
     num_cur_prot(0), prot_offset(0),
-    num_prot_not_found_in_db(0),
     x(0), 
     xs(0), 
     protind_to_num_all_pep(0),
@@ -236,27 +239,36 @@ void SQTParser :: add_matches_to_tables(sqt_match &m, string &decoy_prefix, int 
 		    num_neg_prot++;
 		  
 		  //find the prot in the prot_to_num_all_pep
-		  int cnt = 0;
-		  if(protein_to_num_all_pep_map.find(prot) == protein_to_num_all_pep_map.end())
+		  if(database_exists)
 		    {
-		      for(map<string,int>::iterator itt = protein_to_num_all_pep_map.begin();
-			  itt != protein_to_num_all_pep_map.end(); itt++)
+		      int cnt = 0;
+		      if(protein_to_num_all_pep_map.find(prot) == protein_to_num_all_pep_map.end())
 			{
-			  string protein = itt->first;
-			  if(protein.find(prot) != string :: npos)
-			    cnt = itt->second;
+			  /*
+			  for(map<string,int>::iterator itt = protein_to_num_all_pep_map.begin();
+			      itt != protein_to_num_all_pep_map.end(); itt++)
+			    {
+			      string protein = itt->first;
+			      if(protein.find(prot) != string :: npos)
+				cnt = itt->second;
+			    }
+			  */
 			}
+		      else
+			cnt = protein_to_num_all_pep_map[prot];
+		      //add the cnt to protind_to_num_all_pep_map
+		      if(cnt == 0)
+			{
+			  num_prot_not_found_in_db++;
+			  if(label == 1)
+			    num_pos_prot_not_found_in_db++;
+			  else
+			    num_neg_prot_not_found_in_db++;
+			  //carp(CARP_WARNING, "did not find protein %s from sqt file in the database ", prot.c_str());
+			}
+		      else
+			protind_to_num_all_pep_map[prot_ind] = cnt;
 		    }
-		  else
-		    cnt = protein_to_num_all_pep_map[prot];
-		  //add the cnt to protind_to_num_all_pep_map
-		  if(cnt == 0)
-		    {
-		      num_prot_not_found_in_db++;
-		      //carp(CARP_WARNING, "did not find protein %s from sqt file in the database ", prot.c_str());
-		    }
-		  else
-		    protind_to_num_all_pep_map[prot_ind] = cnt;
 		}
 	      else
 		prot_ind = prot_to_ind[prot];
@@ -304,16 +316,31 @@ void SQTParser :: fill_graphs_and_save_data(string &out_dir)
       int protind = it->first;
       if(protind < prot_offset)
 	continue;
-      //if did not find the protein in the count of all proteins, then just get the cound of observed proteins
-      if(protind_to_num_all_pep_map.find(protind) == protind_to_num_all_pep_map.end())
+      //if database does not exist
+      if(!database_exists)
+	{
+	  int cnt = (protind_to_pepinds_map[protind]).size();
+	  protind_to_num_all_pep[protind-prot_offset] = cnt;
+	}
+      //if did not see any decoy proteins in the database or did not see half of the total proteins in the database
+      else if ( ((double)num_prot_not_found_in_db > (double)num_prot/3.0))
 	{
 	  int cnt = (protind_to_pepinds_map[protind]).size();
 	  protind_to_num_all_pep[protind-prot_offset] = cnt;
 	}
       else
 	{
-	  int cnt = protind_to_num_all_pep_map[protind];
-	  protind_to_num_all_pep[protind-prot_offset] = cnt;
+	  //if did not find the protein in the count of all proteins, then just get the cound of observed proteins
+	  if(protind_to_num_all_pep_map.find(protind) == protind_to_num_all_pep_map.end())
+	    {
+	      int cnt = (protind_to_pepinds_map[protind]).size();
+	      protind_to_num_all_pep[protind-prot_offset] = cnt;
+	    }
+	  else
+	    {
+	      int cnt = protind_to_num_all_pep_map[protind];
+	      protind_to_num_all_pep[protind-prot_offset] = cnt;
+	    }
 	}
     }
   
@@ -583,8 +610,8 @@ void SQTParser :: extract_features(sqt_match &m, int hits_read, int final_hits,e
 	  string scan_str = scan_stream.str();
 	  //if((m.scan %10000) == 0 && i == 0)
 	  //cout << scan_str << endl;
-	  if(num_cur_psm % 5000 == 0)
-	    carp(CARP_INFO, "PMS number %d", num_cur_psm);
+	  if(num_cur_psm % 1 == 0)
+	    carp(CARP_INFO, "PSM number %d", num_cur_psm);
 	  string peptide = m.peptides[i];
 	  int pos = peptide.find(".");
 	  string pept = peptide.substr(pos+1,peptide.size());
@@ -763,6 +790,212 @@ void SQTParser :: read_sqt_file(ifstream &is, string &decoy_prefix, int final_hi
 }
 
 
+int SQTParser :: check_input_dir(string &in_dir)
+{
+  
+  ostringstream fname;
+  fname << in_dir << "/summary.txt";
+  ifstream f_summary(fname.str().c_str());
+  if(!f_summary.is_open())
+    {
+      carp(CARP_INFO,"could not open %s", fname.str().c_str());
+      //cout << "could not open " << fname.str() << endl;
+      return 0;
+    }
+  f_summary.close();
+  fname.str("");
+      
+  fname << in_dir << "/psm.txt";
+  ifstream f_psm(fname.str().c_str(), ios::binary);
+  if(!f_psm.is_open())
+    {
+      carp(CARP_INFO,"could not open %s", fname.str().c_str());
+      return 0;
+    }
+  f_psm.close();
+  fname.str("");
+  
+  
+  //psmind_to_label
+  fname << in_dir << "/psmind_to_label.txt";
+  ifstream f_psmind_to_label(fname.str().c_str(),ios::binary);
+  if(!f_psmind_to_label.is_open())
+    {
+      carp(CARP_INFO,"could not open %s", fname.str().c_str());
+      return 0;
+    }
+  f_psmind_to_label.close();
+  fname.str("");
+
+  //psmind_to_pepind
+  fname << in_dir << "/psmind_to_pepind.txt";
+  ifstream f_psmind_to_pepind(fname.str().c_str(),ios::binary);
+  if(!f_psmind_to_pepind.is_open())
+    {
+      carp(CARP_INFO,"could not open %s", fname.str().c_str());
+      return 0;
+    }
+  f_psmind_to_pepind.close();
+  fname.str("");
+      
+  //psmind_to_scan
+  fname << in_dir << "/psmind_to_scan.txt";
+  ifstream f_psmind_to_scan(fname.str().c_str(),ios::binary);
+  if(!f_psmind_to_scan.is_open())
+    {
+      carp(CARP_INFO,"could not open %s", fname.str().c_str());
+      return 0;
+    }
+  f_psmind_to_scan.close();
+  fname.str("");
+      
+  //psmind_to_charge
+  fname << in_dir << "/psmind_to_charge.txt";
+  ifstream f_psmind_to_charge(fname.str().c_str(),ios::binary );
+  if(!f_psmind_to_charge.is_open())
+    {
+      carp(CARP_INFO,"could not open %s", fname.str().c_str());
+      return 0;
+    }
+  f_psmind_to_charge.close();
+  fname.str("");
+
+  //psmind_to_precursor_mass
+  fname << in_dir << "/psmind_to_precursor_mass.txt";
+  ifstream f_psmind_to_precursor_mass(fname.str().c_str(),ios::binary );
+  if(!f_psmind_to_precursor_mass.is_open())
+    {
+      carp(CARP_INFO,"could not open %s", fname.str().c_str());
+      return 0;
+    }
+  f_psmind_to_precursor_mass.close();
+  fname.str("");
+  
+  //psmind_to_fileind
+  fname << in_dir << "/psmind_to_fileind.txt";
+  ifstream f_psmind_to_fileind(fname.str().c_str(),ios::binary );
+  if(!f_psmind_to_fileind.is_open())
+    {
+      carp(CARP_INFO,"could not open %s", fname.str().c_str());
+      return 0;
+    }
+  f_psmind_to_fileind.close();
+  fname.str("");
+  
+  //fileind_to_fname
+  fname << in_dir << "/fileind_to_fname.txt";
+  ifstream f_fileind_to_fname(fname.str().c_str(),ios::binary );
+  if(!f_fileind_to_fname.is_open())
+    {
+      carp(CARP_INFO,"could not open %s", fname.str().c_str());
+      return 0;
+    }
+  f_fileind_to_fname.close();
+  fname.str("");
+
+  //pepind_to_label
+  fname << in_dir << "/pepind_to_label.txt";
+  ifstream f_pepind_to_label(fname.str().c_str(),ios::binary);
+  if(!f_pepind_to_label.is_open())
+    {
+      carp(CARP_INFO,"could not open %s", fname.str().c_str());
+      return 0;
+    }  
+  f_pepind_to_label.close();
+  fname.str("");
+  
+  //protind_to_label
+  fname << in_dir << "/protind_to_label.txt";
+  ifstream f_protind_to_label(fname.str().c_str(),ios::binary);
+  if(!f_protind_to_label.is_open())
+    {
+      carp(CARP_INFO,"could not open %s", fname.str().c_str());
+      return 0;
+    }
+  f_protind_to_label.close();
+  fname.str("");
+  
+  fname << in_dir << "/protind_to_num_all_pep.txt";
+  ifstream f_protind_to_num_all_pep(fname.str().c_str(),ios::binary);
+  if(!f_protind_to_num_all_pep.is_open())
+    {
+      carp(CARP_INFO,"could not open %s", fname.str().c_str());
+      return 0;
+    }
+  f_protind_to_num_all_pep.close();
+  fname.str("");
+
+  
+  //ind_to_pep
+  fname << in_dir << "/ind_to_pep.txt";
+  ifstream f_ind_to_pep(fname.str().c_str());
+  if(!f_ind_to_pep.is_open())
+    {
+      carp(CARP_INFO,"could not open %s", fname.str().c_str());
+      return 0;
+    }
+  f_ind_to_pep.close();
+  fname.str("");
+  
+  //pep_to_ind
+  fname << in_dir << "/pep_to_ind.txt";
+  ifstream f_pep_to_ind(fname.str().c_str());
+  if(!f_pep_to_ind.is_open())
+    {
+      carp(CARP_INFO,"could not open %s", fname.str().c_str());
+      return 0;
+    }
+  f_pep_to_ind.close();
+  fname.str("");
+  
+  //ind_to_prot
+  fname << in_dir << "/ind_to_prot.txt";
+  ifstream f_ind_to_prot(fname.str().c_str(),ios::binary);
+  if(!f_ind_to_prot.is_open())
+    {
+      carp(CARP_INFO,"could not open %s", fname.str().c_str());
+      return 0;
+    }
+  f_ind_to_prot.close();
+  fname.str("");
+  
+  //prot_to_ind
+  fname << in_dir << "/prot_to_ind.txt";
+  ifstream f_prot_to_ind(fname.str().c_str(),ios::binary);
+  if(!f_prot_to_ind.is_open())
+    {
+      carp(CARP_INFO,"could not open %s", fname.str().c_str());
+      return 0;
+    }
+  f_prot_to_ind.close();
+  fname.str("");
+  
+  //pepind_to_protinds
+  fname << in_dir << "/pepind_to_protinds.txt";
+  ifstream f_pepind_to_protinds(fname.str().c_str(),ios::binary);
+  if(!f_pepind_to_protinds.is_open())
+    {
+      carp(CARP_INFO,"could not open %s", fname.str().c_str());
+      return 0;
+    }
+  f_pepind_to_protinds.close();
+  fname.str("");
+    
+  //pepind_to_psminds
+  fname << in_dir << "/pepind_to_psminds.txt";
+  ifstream f_pepind_to_psminds(fname.str().c_str(),ios::binary);
+  if(!f_pepind_to_psminds.is_open())
+    {
+      carp(CARP_INFO,"could not open %s", fname.str().c_str());
+      return 0;
+    }
+  f_pepind_to_psminds.close();
+  fname.str("");
+  
+
+  return 1;
+}
+
 
 void SQTParser :: clean_up(string dir)
 {
@@ -792,6 +1025,11 @@ void SQTParser :: clean_up(string dir)
   remove(fname.str().c_str());
   fname.str("");
 
+  //psmind_to_precursor_mass
+  fname << out_dir << "/psmind_to_precursor_mass.txt";
+  remove(fname.str().c_str());
+  fname.str("");
+
   //psmind_to_label
   fname << out_dir << "/psmind_to_label.txt";
   remove(fname.str().c_str());
@@ -799,6 +1037,11 @@ void SQTParser :: clean_up(string dir)
 
   //psmind_to_fileind
   fname << out_dir << "/psmind_to_fileind.txt";
+  remove(fname.str().c_str());
+  fname.str("");
+
+  //fileind_to_fname
+  fname << out_dir << "/fileind_to_fname.txt";
   remove(fname.str().c_str());
   fname.str("");
 
@@ -1054,20 +1297,23 @@ void SQTParser :: digest_database(ifstream &f_db, enzyme e)
 int SQTParser :: run()
 {
   //parse database
-  for(unsigned int i = 0; i < db_file_names.size(); i++)
+  if(database_exists)
     {
-      db_name = db_file_names[i];
-      ifstream f_db(db_name.c_str());
-      if(!f_db.is_open())
+      for(unsigned int i = 0; i < db_file_names.size(); i++)
 	{
-	  carp(CARP_WARNING, "could not open database file: %s", db_name.c_str());
-	  return 0;
+	  db_name = db_file_names[i];
+	  ifstream f_db(db_name.c_str());
+	  if(!f_db.is_open())
+	    {
+	      carp(CARP_WARNING, "could not open database file: %s", db_name.c_str());
+	      return 0;
+	    }
+	  carp(CARP_INFO,"digesting database %s", db_name.c_str());
+	  digest_database(f_db, e);
+	  f_db.close();
 	}
-      carp(CARP_INFO,"digesting database %s", db_name.c_str());
-      digest_database(f_db, e);
-      f_db.close();
     }
-
+  
   allocate_feature_space();
   open_files(out_dir);
   cout << "parsing files:\n";
@@ -1114,8 +1360,16 @@ int SQTParser :: run()
   carp(CARP_INFO, "Number of peptides: total %d positives %d negatives %d", num_pep, num_pos_pep, num_neg_pep);
   carp(CARP_INFO, "Number of proteins: total %d positives %d negatives %d", num_prot, num_pos_prot, num_neg_prot);
 
-  if(num_prot_not_found_in_db > 0)
-    carp(CARP_WARNING, "The database did not contain %d of the proteins that were found in the sqt files", num_prot_not_found_in_db);
+  if(database_exists)
+    {
+      if( (double)num_prot_not_found_in_db > (double)num_prot/4.0)
+	{
+	  if( num_neg_prot_not_found_in_db == num_neg_prot && (double)num_pos_prot_not_found_in_db < (double)num_pos_prot/2.0)
+	    carp(CARP_WARNING, "The database did not contain any of the decoy proteins that were found in the sqt files. This might mean that only target but the decoy database was provided.");
+	  else
+	    carp(CARP_WARNING, "The database did not contain %d of the % d proteins that were found in the sqt files. This might mean that the database does not match sqt files.", num_prot_not_found_in_db, num_prot);
+	}
+    }
 
   if(num_neg_prot == 0)
     {
@@ -1145,20 +1399,205 @@ void SQTParser :: read_list_of_files(string &list, vector<string> &fnames)
 }
 
 
-int SQTParser :: check_files(vector <string> &filenames)
+int SQTParser :: check_files(string &in_dir)
 {
-  ifstream ftry;
-  for(unsigned int i = 0; i < filenames.size(); i++)
+    ostringstream fname;
+  fname << in_dir << "/summary.txt";
+  ifstream f_summary(fname.str().c_str());
+  if(!f_summary.is_open())
     {
-      string fname = filenames[i];
-      ftry.open(fname.c_str());
-      if(!ftry.is_open())
-	{
-	  cout << "could not open file " << fname << endl;
-	  return 0;
-	}
-      ftry.close();
+      cout << "could not open " << fname.str() << endl;
+      return 0;
     }
+  f_summary.close();
+  fname.str("");
+      
+  fname << in_dir << "/psm.txt";
+  ifstream f_psm(fname.str().c_str(), ios::binary);
+  if(!f_psm.is_open())
+    {
+      cout << "could not open " << fname.str() << endl;
+      return 0;
+    }
+  f_psm.close();
+  fname.str("");
+  
+  
+  //psmind_to_label
+  fname << in_dir << "/psmind_to_label.txt";
+  ifstream f_psmind_to_label(fname.str().c_str(),ios::binary);
+  if(!f_psmind_to_label.is_open())
+    {
+      cout << "could not open " << fname.str() << endl;
+      return 0;
+    }
+  f_psmind_to_label.close();
+  fname.str("");
+
+  //psmind_to_pepind
+  fname << in_dir << "/psmind_to_pepind.txt";
+  ifstream f_psmind_to_pepind(fname.str().c_str(),ios::binary);
+  if(!f_psmind_to_pepind.is_open())
+    {
+      cout << "could not open " << fname.str() << endl;
+      return 0;
+    }
+  f_psmind_to_pepind.close();
+  fname.str("");
+      
+  //psmind_to_scan
+  fname << in_dir << "/psmind_to_scan.txt";
+  ifstream f_psmind_to_scan(fname.str().c_str(),ios::binary);
+  if(!f_psmind_to_scan.is_open())
+    {
+      cout << "could not open " << fname.str() << endl;
+      return 0;
+    }
+  f_psmind_to_scan.close();
+  fname.str("");
+      
+  //psmind_to_charge
+  fname << in_dir << "/psmind_to_charge.txt";
+  ifstream f_psmind_to_charge(fname.str().c_str(),ios::binary );
+  if(!f_psmind_to_charge.is_open())
+    {
+      cout << "could not open " << fname.str() << endl;
+      return 0;
+    }
+  f_psmind_to_charge.close();
+  fname.str("");
+
+  //psmind_to_precursor_mass
+  fname << in_dir << "/psmind_to_precursor_mass.txt";
+  ifstream f_psmind_to_precursor_mass(fname.str().c_str(),ios::binary );
+  if(!f_psmind_to_precursor_mass.is_open())
+    {
+      cout << "could not open " << fname.str() << endl;
+      return 0;
+    }
+  f_psmind_to_precursor_mass.close();
+  fname.str("");
+  
+  //psmind_to_fileind
+  fname << in_dir << "/psmind_to_fileind.txt";
+  ifstream f_psmind_to_fileind(fname.str().c_str(),ios::binary );
+  if(!f_psmind_to_fileind.is_open())
+    {
+      cout << "could not open " << fname.str() << endl;
+      return 0;
+    }
+  f_psmind_to_fileind.close();
+  fname.str("");
+  
+  //fileind_to_fname
+  fname << in_dir << "/fileind_to_fname.txt";
+  ifstream f_fileind_to_fname(fname.str().c_str(),ios::binary );
+  if(!f_fileind_to_fname.is_open())
+    {
+      cout << "could not open " << fname.str() << endl;
+      return 0;
+    }
+  f_fileind_to_fname.close();
+  fname.str("");
+
+  //pepind_to_label
+  fname << in_dir << "/pepind_to_label.txt";
+  ifstream f_pepind_to_label(fname.str().c_str(),ios::binary);
+  if(!f_pepind_to_label.is_open())
+    {
+      cout << "could not open " << fname.str() << endl;
+      return 0;
+    }  
+  f_pepind_to_label.close();
+  fname.str("");
+  
+  //protind_to_label
+  fname << in_dir << "/protind_to_label.txt";
+  ifstream f_protind_to_label(fname.str().c_str(),ios::binary);
+  if(!f_protind_to_label.is_open())
+    {
+      cout << "could not open " << fname.str() << endl;
+      return 0;
+    }
+  f_protind_to_label.close();
+  fname.str("");
+  
+  fname << in_dir << "/protind_to_num_all_pep.txt";
+  ifstream f_protind_to_num_all_pep(fname.str().c_str(),ios::binary);
+  if(!f_protind_to_num_all_pep.is_open())
+    {
+      cout << "could not open " << fname.str() << endl;
+      return 0;
+    }
+  f_protind_to_num_all_pep.close();
+  fname.str("");
+
+  
+  //ind_to_pep
+  fname << in_dir << "/ind_to_pep.txt";
+  ifstream f_ind_to_pep(fname.str().c_str());
+  if(!f_ind_to_pep.is_open())
+    {
+      cout << "could not open " << fname.str() << endl;
+      return 0;
+    }
+  f_ind_to_pep.close();
+  fname.str("");
+  
+  //pep_to_ind
+  fname << in_dir << "/pep_to_ind.txt";
+  ifstream f_pep_to_ind(fname.str().c_str());
+  if(!f_pep_to_ind.is_open())
+    {
+      cout << "could not open " << fname.str() << endl;
+      return 0;
+    }
+  f_pep_to_ind.close();
+  fname.str("");
+  
+  //ind_to_prot
+  fname << in_dir << "/ind_to_prot.txt";
+  ifstream f_ind_to_prot(fname.str().c_str(),ios::binary);
+  if(!f_ind_to_prot.is_open())
+    {
+      cout << "could not open " << fname.str() << endl;
+      return 0;
+    }
+  f_ind_to_prot.close();
+  fname.str("");
+  
+  //prot_to_ind
+  fname << in_dir << "/prot_to_ind.txt";
+  ifstream f_prot_to_ind(fname.str().c_str(),ios::binary);
+  if(!f_prot_to_ind.is_open())
+    {
+      cout << "could not open " << fname.str() << endl;
+      return 0;
+    }
+  f_prot_to_ind.close();
+  fname.str("");
+  
+  //pepind_to_protinds
+  fname << in_dir << "/pepind_to_protinds.txt";
+  ifstream f_pepind_to_protinds(fname.str().c_str(),ios::binary);
+  if(!f_pepind_to_protinds.is_open())
+    {
+      cout << "could not open " << fname.str() << endl;
+      return 0;
+    }
+  f_pepind_to_protinds.close();
+  fname.str("");
+    
+  //pepind_to_psminds
+  fname << in_dir << "/pepind_to_psminds.txt";
+  ifstream f_pepind_to_psminds(fname.str().c_str(),ios::binary);
+  if(!f_pepind_to_psminds.is_open())
+    {
+      cout << "could not open " << fname.str() << endl;
+      return 0;
+    }
+  f_pepind_to_psminds.close();
+  fname.str("");
   return 1;
 }
 
@@ -1280,7 +1719,9 @@ int SQTParser :: set_database_source(string &db_source)
       else 
 	read_list_of_files(db_source, db_file_names);
     }
-     
+    
+  database_exists = 1;
+ 
   return 1;
 }
 

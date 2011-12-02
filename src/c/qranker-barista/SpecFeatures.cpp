@@ -124,6 +124,7 @@ void SpecFeaturesGenerator :: read_processed_ms2_file()
 	{
 	  getline(f_ms2,line);
 	  f_ms2 >> tempstr;
+	  
 	}
       if (tempstr.compare("S") == 0)
 	{

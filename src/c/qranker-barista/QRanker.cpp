@@ -951,12 +951,13 @@ int QRanker :: set_command_line_options(int argc, char *argv[])
     }
   else
     {
-      if(argc-arg < 3)
+      //if(argc-arg < 3)
+      if(argc-arg < 2)
 	{
 	  print_description();
 	  return 0;
 	} 
-      db_source = argv[arg]; arg++; 
+      //db_source = argv[arg]; arg++; 
       ms2_source = argv[arg]; arg++;
       sqt_source = argv[arg];
 
@@ -998,8 +999,8 @@ int QRanker :: set_command_line_options(int argc, char *argv[])
 	fparam << "use spec features=F" << endl;
       fparam.close();
 
-      if(!sqtp.set_database_source(db_source))
-	carp(CARP_FATAL, "could not extract features for training");
+      //if(!sqtp.set_database_source(db_source))
+      //carp(CARP_FATAL, "could not extract features for training");
        if(separate_search_flag)
 	{
 	  if(!sqtp.set_input_sources(ms2_source, sqt_source, sqt_decoy_source))
@@ -1031,6 +1032,10 @@ int QRanker :: set_command_line_options(int argc, char *argv[])
 	 carp(CARP_FATAL, "Could not proceed with training.");
        sqtp.clear();
     }
+
+  if(!sqtp.check_input_dir(in_dir))
+    carp(CARP_FATAL, "Please re-run with database, ms2 input and sqt input.");
+
   return 1;
   
 }

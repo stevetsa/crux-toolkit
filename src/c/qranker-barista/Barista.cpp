@@ -868,6 +868,8 @@ void Barista :: write_results_subset_prot_xml(ofstream &os)
 
 void Barista :: write_results_peptides_xml(ofstream &os)
 {
+  string protein_str;
+  vector<string> tab_delim_proteins;
   os << "<peptides>" <<endl;
   int cn = 0;
   for(int i = 0; i < peptrainset.size(); i++)
@@ -903,7 +905,13 @@ void Barista :: write_results_peptides_xml(ofstream &os)
 	  int *protinds = d.pepind2protinds(pepind);
 	  os << "  <protein_ids>" << endl;
 	  for(int j = 0; j < num_prot; j++)
-	    os << "   <protein_id>" << d.ind2prot(protinds[j]) << "</protein_id>" << endl;
+	    {
+	      protein_str = d.ind2prot(protinds[j]);
+	      get_tab_delim_proteins(protein_str, tab_delim_proteins);
+	      for(unsigned int k = 0; k < tab_delim_proteins.size(); k++)
+		os << "   <protein_id>" << tab_delim_proteins[k] << "</protein_id>" <<endl;
+	      //os << "   <protein_id>" << d.ind2prot(protinds[j]) << "</protein_id>" << endl;
+	    }
 	  os << "  </protein_ids>" << endl;
 	  os << " </peptide>" << endl;  
 	}
@@ -1652,6 +1660,7 @@ void Barista :: setup_for_training(int trn_to_tst)
 #else
   cout << "loading data" << endl;
 #endif
+   
   d.load_data_prot_training();
   d.load_labels_prot_training();
   d.load_aux_data();
@@ -1913,6 +1922,8 @@ int Barista :: set_command_line_options(int argc, char *argv[])
 	    {
 	      arg++;
 	      dir_with_tables = argv[arg];
+	      if(dir_with_tables.at(dir_with_tables.size()-1) == '/')
+		dir_with_tables = dir_with_tables.substr(0, dir_with_tables.size()-1);
 	      found_dir_with_tables = 1;
 	      cout << "INFO: directory with preprocessed data: " << dir_with_tables << endl;
 	    }
@@ -2100,8 +2111,12 @@ int Barista :: set_command_line_options(int argc, char *argv[])
       if(!sqtp.run())
 	carp(CARP_FATAL, "Could not proceed with training.");
       sqtp.clear();
-      
     }
+  
+  if(!sqtp.check_input_dir(in_dir))
+    carp(CARP_FATAL, "Please re-run with database, ms2 input and sqt input.");
+
+  
   return 1;
   
 }
@@ -2111,7 +2126,7 @@ int Barista::main(int argc, char **argv) {
     
   if(!set_command_line_options(argc,argv))
     return 1;
-  
+   
   run_tries_multi_task();
   if(skip_cleanup_flag != 1)
     sqtp.clean_up(out_dir);

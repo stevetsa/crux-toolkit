@@ -76,7 +76,7 @@ class SQTParser{
   int collect_ms2_files(string &ms2_source, string &sqt_source);
   int set_input_sources(string &ms2_source, string &sqt_source);
   void read_list_of_files(string &list, vector<string> &fnames);
-  int check_files(vector <string> &filenames);
+  int check_files(string &in_dir);
 
   /********* for separate database searches ********************************************/
   int match_target_sqt_to_ms2(string &sqt_source, string &prefix);
@@ -108,13 +108,18 @@ class SQTParser{
   void open_files(string &out_dir);
   void close_files();
   void clean_up(string dir);
+  int check_input_dir(string &in_dir);
   
   //spec features generator
   SpecFeaturesGenerator sfg;
   
-
  protected:
   //auxiliary variables
+  int database_exists;
+  int num_prot_not_found_in_db;
+  int num_pos_prot_not_found_in_db;
+  int num_neg_prot_not_found_in_db;
+
   sqt_match m;
   int num_mixed_labels;
   map<int,set<int> > pepind_to_protinds_map;
@@ -139,7 +144,7 @@ class SQTParser{
   int num_cur_prot;
   int prot_offset;
   
-  int num_prot_not_found_in_db;
+  
 
   //psm feature vector
   double *x;
