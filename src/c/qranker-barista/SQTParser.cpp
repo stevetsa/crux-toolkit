@@ -610,7 +610,7 @@ void SQTParser :: extract_features(sqt_match &m, int hits_read, int final_hits,e
 	  string scan_str = scan_stream.str();
 	  //if((m.scan %10000) == 0 && i == 0)
 	  //cout << scan_str << endl;
-	  if(num_cur_psm % 1 == 0)
+	  if(num_cur_psm % 5000 == 0)
 	    carp(CARP_INFO, "PSM number %d", num_cur_psm);
 	  string peptide = m.peptides[i];
 	  int pos = peptide.find(".");
