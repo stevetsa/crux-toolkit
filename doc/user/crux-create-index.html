@@ -21,9 +21,12 @@
 
 <blockquote>
 Given a protein fasta sequence database as input, generate an index of
-all of its peptides and save it to disk.  This index can be provided
-as input to <code>crux search-for-matches</code> instead of the fasta
-file to speed up the search.</blockquote>
+all of its peptides and save it to disk.  Optionally, the index may
+also include decoy peptides to be used for post-processing commands
+such as <code>crux percolator</code>, <code>crux q-ranker</code>
+<code>crux compute-q-values</code> or <code>crux barista</code>.  The
+index can be provided as input to <code>crux search-for-matches</code>
+instead of the fasta file to speed up the search.</blockquote>
 
 <p>
 <B>Input:</B>
@@ -40,11 +43,16 @@ file to speed up the search.</blockquote>
 <UL>
 
 <p>
-The program writes three types of files to the specified output
+The program writes four types of files to the specified output
 directory: binary index files, a binary sequence file, and a text file
-with settings.  The binary sequence file will be have the same name as
-the input fasta file, but ending with '<code>binary_fasta</code>'.
-The text file is named '<code>README</code>'.</p>
+with settings, a fasta file with decoy protein sequences to be used
+during search.  The binary sequence file will have the same name as
+the input fasta file, but ending with '<code>binary_fasta</code>'. The
+fasta file with decoy protein sequences will have the same name is the
+input fasta file, with ending '<code>-random.fasta</code> if the
+random shuffling is used and '<code>-reverse.fasta</code> if the
+protein sequences are reversed (see options below).  The text file is
+named '<code>README</code>'.</p>
 
 </UL>
 <B>Options:</B>
@@ -122,6 +130,15 @@ peptide mass. Default = average.</li>
 <code>--peptide-list &lt;T|F&gt;</code> &ndash; Create in the output
 directory a text file listing all of the peptides in the database,
 along with their neutral masses, one per line.  Default = F.</li>
+
+<li>
+<code>--decoys &lt;string&gt;</code> &ndash; Include a decoy version
+of every peptide by shuffling or reversing the target sequence.
+Possible values are <code>none, reverse, protein-shuffle,
+peptide-shuffle</code>. Use 'reverse' to reverse each protein sequence,
+'protein-shuffle' to shuffle each protein sequence, or 'peptide-shuffle'
+to shuffle the sequence between enzyme cleavage sites, leaving the
+termini in place. Use 'none' for no decoys.  Default=protein-shuffle. 
 
 <li>
 <code>--overwrite &lt;T|F&gt;</code> Replace existing files if true (T) or

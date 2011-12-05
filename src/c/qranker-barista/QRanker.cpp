@@ -752,9 +752,8 @@ int QRanker::set_command_line_options(int argc, char **argv)
 void QRanker :: print_description()
 {
   cout << endl;
-  cout << "\t crux q-ranker [options] <protein database> <spectra> <search results>" << endl <<endl;
+  cout << "\t crux q-ranker [options] <spectra> <search results>" << endl <<endl;
   cout << "REQUIRED ARGUMENTS:" << endl << endl;
-  cout << "\t <protein database> Directory with FASTA files , list of FASTA files or a single FASTA file with the protein database used for the search." << endl;
   cout << "\t <spectra> Directory with ms2 files, list of ms2 files or a single ms2 file used for database search." << endl;
   cout << "\t <search results> Directory with sqt files, list of sqt files or a single sqt file with psms generated during search." << endl;
   cout << endl;
@@ -788,6 +787,7 @@ int QRanker :: set_command_line_options(int argc, char *argv[])
   int found_dir_with_tables = 0;
   int spec_features_flag = 1;
   int arg = 1;
+  int database_exists = 0;
   
   while (arg < argc)
     {
@@ -941,10 +941,19 @@ int QRanker :: set_command_line_options(int argc, char *argv[])
 	  print_description();
 	  return 0;
 	} 
-      //db_source = argv[arg]; arg++; 
-      ms2_source = argv[arg]; arg++;
-      sqt_source = argv[arg];
-
+      if(argc-arg == 2)
+	{
+	  //db_source = argv[arg]; arg++; 
+	  ms2_source = argv[arg]; arg++;
+	  sqt_source = argv[arg];
+	}
+      if(argc-arg == 3)
+	{
+	  db_source = argv[arg]; arg++; 
+	  ms2_source = argv[arg]; arg++;
+	  sqt_source = argv[arg];
+	  database_exists = 1;
+	}
       //set the output directory
       if(!sqtp.set_output_dir(output_directory, overwrite_flag))
       	return 0;
@@ -983,9 +992,12 @@ int QRanker :: set_command_line_options(int argc, char *argv[])
 	fparam << "use spec features=F" << endl;
       fparam.close();
 
-      //if(!sqtp.set_database_source(db_source))
-      //carp(CARP_FATAL, "could not extract features for training");
-       if(separate_search_flag)
+      if(database_exists)
+	{
+	  if(!sqtp.set_database_source(db_source))
+	    carp(CARP_FATAL, "could not extract features for training");
+	}
+      if(separate_search_flag)
 	{
 	  if(!sqtp.set_input_sources(ms2_source, sqt_source, sqt_decoy_source))
 	    carp(CARP_FATAL, "could not extract features for training");

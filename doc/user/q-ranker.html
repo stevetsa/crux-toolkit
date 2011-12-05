@@ -28,7 +28,7 @@ proteomics data sets."</a>  <i>Journal of Proteome Research.</i>
 
 <blockquote>
 <code>crux q-ranker [options]
-  &lt;protein&nbsp;database&nbsp;folder&gt; &lt;spectra&gt; &lt;search&nbsp;results&gt;</code>
+  &lt;spectra&gt; &lt;search&nbsp;results&gt;</code>
 </blockquote>
 
 
@@ -36,21 +36,6 @@ proteomics data sets."</a>  <i>Journal of Proteome Research.</i>
 <b>Required Input:</b></p>
 
 <ul>
-
-<li>
-<b>protein database</b> &ndash; The program requires the FASTA format
-protein database files against which the search was performed. The
-protein database input may be a concatenated database or separate
-target and decoy databases; the latter is supported with the
-<code>--separate-searches</code> option, described below. In either
-case, Q-ranker distinguishes between target and decoy proteins based on
-the presence of a decoy prefix on the sequence identifiers (see
-the <code>--decoy-prefix</code> option, below).  The database can be
-provided in three different ways: (1) as a a single FASTA file with
-suffix ".fa", ".fsa" or ".fasta", (2) as a text file containing a list
-of FASTA files, one per line, or (3) as a directory containing
-multiple FASTA files (identified via the filename suffixes ".fa",
-".fsa" or ".fasta").</li>
 
 <li>
 <b>spectra</b> &ndash; The fragmentation spectra must be provided
@@ -207,6 +192,95 @@ forced to use minimal feature set by setting the --use-spec-features
 option to F. Default T.
 
 </ul>
+
+</ul>
+
+<p>
+<b>Selected Examples of Use:</b></p>
+
+<ul>
+
+<li> 
+<b> Search was done against concatenated target-decoy database. </b>
+
+<ol>
+  <li> To analyse single files, with decoy prefix random_ (the
+  default for the decoy prefix is set to decoy_). The output is in
+  the directory crux-output by default:
+    <br> <br>
+    <code> crux q-ranker --decoy-prefix random_ spectra.ms2 matches.sqt </code>
+    <br><br>
+  </li>
+
+  <li> Assume that directory spectra-dir contains 10 ms2 files, and
+  directory matches-dir constains the 10 sqt files, corresponding to
+  searches against a single target-decoy database, with decoy prefix
+  reverse_. To analyse lists of ms2 and sqt files in the directores,
+  overwriting previous results:
+    <br> <br>
+    <code> crux q-ranker --decoy-prefix reverse_ --overwrite T spectra-list.txt matches-list.txt </code>
+    <br><br>
+  </li>
+
+  <li> To specify directories with ms2 and sqt files, and the output directory called results-dir: 
+    <br> <br>
+    <code> crux q-ranker --decoy-prefix reverse_ --output-dir results-dir spectra-dir matches-dir </code>
+    <br><br>
+  </li>
+  
+  <li> Q-ranker uses reach feature set by default. When analysing large dataset, it
+  may be desirable to speed up the feature extraction step and to revert to
+  minimal feature set:
+    <br> <br>
+    <code> crux q-ranker --decoy-prefix reverse_ --output-dir results --overwrite T --use-spec-features F spectra-list.txt matches-list.txt </code>
+    <br><br>
+  </li>
+  
+</ol>
+</li>
+
+<li> <b> Separate searches were done against target and decoy databases. </b>
+<br>
+The searches against the target database are provided as the required
+&lt search results &gt argument. To specify the searches against the decoy
+database, use --separate-searches option.
+
+<ol>
+<li> To analyse a single ms2 file and sqt files matches-target.sqt and matches-decoy.sqt:
+    <br> <br>
+    <code> crux q-ranker --decoy-prefix random_ --use-separate-searches matches-decoy.sqt spectra.ms2 matches-target.sqt </code>
+    <br><br>
+</li>
+
+<li> If ms2 files are in spectra-dir directory, sqt files are in matches-target-dir and matches-decoy-dir:
+    <br> <br>
+    <code> crux q-ranker --decoy-prefix random_ --use-separate-searches matches-decoy-dir spectra-dir matches-target-dir </code>
+    <br><br>
+</li>
+
+<li> If ms2 files are listed in spectra-list.txt, sqt files are listed in matches-target-list.txt and matches-decoy-list.txt:
+    <br> <br>
+    <code> crux q-ranker --decoy-prefix random_ --use-separate-searches matches-decoy-list.txt spectra-list.txt matches-target-list.txt </code>
+    <br><br>
+</li>
+</ol>
+</li>
+
+<li> <b> Running Q-ranker with Crux database search </b>
+
+<ol>
+<li>
+Please use crux sequest-search because it produces database search
+results in the sqt format, compatible with q-ranker input. (see
+<a href="crux-sequest-search.html"> sequest-search</a>).
+</li>
+</ol>
+
+</li>
+
+</ul>
+
+
 
 <hr></hr>
 
