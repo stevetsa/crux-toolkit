@@ -1362,7 +1362,7 @@ int SQTParser :: run()
 
   if(database_exists)
     {
-      if( (double)num_prot_not_found_in_db > (double)num_prot/4.0)
+      if( (double)num_prot_not_found_in_db > (double)num_prot/3.0)
 	{
 	  if( num_neg_prot_not_found_in_db == num_neg_prot && (double)num_pos_prot_not_found_in_db < (double)num_pos_prot/2.0)
 	    carp(CARP_WARNING, "The database did not contain any of the decoy proteins that were found in the sqt files. This might mean that only target but the decoy database was provided.");

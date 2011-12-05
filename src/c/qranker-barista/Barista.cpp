@@ -980,6 +980,105 @@ void Barista :: report_all_results_xml()
 }
 
 /*************************************************************************/
+
+void Barista :: write_results_prot_special_case_tab(ofstream &os, int i)
+{
+  //write out protein
+  int protind = trainset[i].protind;
+  int group = trainset[i].group_number;
+  os << group << "\t";
+  os << trainset[i].q << "\t";
+  os << trainset[i].score << "\t";
+  os << d.ind2prot(protind); 
+  vector<int> complement = trainset[i].protind2complement[protind];
+  if(complement.size() != 0)
+    {
+      os << "(";
+      int pepind = complement[0];
+      string pep = d.ind2pep(pepind);
+      string seq, n, c;
+      get_pep_seq(pep, seq, n, c);
+      os << pep;
+      for(unsigned int k = 1; k < complement.size(); k++)
+	{
+	  pepind = complement[k];
+	  pep = d.ind2pep(pepind);
+	  get_pep_seq(pep, seq, n, c);
+	  os << "," << pep;
+	}
+      os << ")";
+    }
+  
+  for(unsigned int j = 0; j < trainset[i].indistinguishable_protinds.size(); j++)
+    {
+      int ind = trainset[i].indistinguishable_protinds[j];
+      if(d.protind2label(ind) == 1)
+	{
+	  os << "," << d.ind2prot(ind);
+	  vector<int> complement = trainset[i].protind2complement[protind];
+	  if(complement.size() != 0)
+	    {
+	      os << "(";
+	      int pepind = complement[0];
+	      string pep = d.ind2pep(pepind);
+	      string seq, n, c;
+	      get_pep_seq(pep, seq, n, c);
+	      int psmind = pepind_to_max_psmind[pepind];
+	      if(psmind > -1)
+		os << "," << pep <<  "-" << d.psmind2scan(psmind) << "." << d.psmind2charge(psmind);
+	      for(unsigned int k = 1; k < complement.size(); k++)
+		{
+		  pepind = complement[k];
+		  pep = d.ind2pep(pepind);
+		  get_pep_seq(pep, seq, n, c);
+		  psmind = pepind_to_max_psmind[pepind];
+		  if(psmind > -1)
+		    os << "," << pep <<  "-" << d.psmind2scan(psmind) << "." << d.psmind2charge(psmind);
+      		}
+	      os << ")";
+	    }
+	}
+    }
+  os << "\t";
+  
+  //write out peptides
+  int num_pep = d.protind2num_pep(protind);
+  int *pepinds = d.protind2pepinds(protind);
+  //write the first one
+  int pepind = pepinds[0];
+  string pep = d.ind2pep(pepind);
+  string seq, n, c;
+  get_pep_seq(pep, seq, n, c);
+  int psmind = pepind_to_max_psmind[pepind];
+  if(psmind > -1)
+    os << pep <<  "-" << d.psmind2scan(psmind) << "." << d.psmind2charge(psmind);
+  else
+    {
+#ifndef CRUX
+      cout << "warning: did not assign peptide max psmind\n";
+#endif
+    }
+  for( int j = 1; j < num_pep; j++)
+    {
+      pepind = pepinds[j];
+      pep = d.ind2pep(pepind);
+      string seq, n, c;
+      get_pep_seq(pep, seq, n, c);
+      psmind = pepind_to_max_psmind[pepind];
+      if(psmind > -1)
+	os << "," << pep <<  "-" << d.psmind2scan(psmind) << "." << d.psmind2charge(psmind);
+      else
+	{
+#ifndef CRUX
+	  cout << "warning: did not assign peptide" << pep  << " ind " << pepind << " max psmind\n";
+#endif
+	}
+    }
+  os << endl;
+
+
+}
+
 void Barista :: write_results_prot_tab(ofstream &os)
 {
   os << "group number" << "\t" << "q-value" << "\t" << "barista score" << "\t";
@@ -991,6 +1090,11 @@ void Barista :: write_results_prot_tab(ofstream &os)
       if(trainset[i].label == 1)
 	{
 	  cn++;
+	  if(trainset[i].has_complement == 1)
+	    {
+	      write_results_prot_special_case_tab(os, i);
+	      continue;
+	    }
 	  //write out proteins
 	  int protind = trainset[i].protind;
 	  int group = trainset[i].group_number;
@@ -1045,6 +1149,203 @@ void Barista :: write_results_prot_tab(ofstream &os)
 	}
     }
 }
+
+
+void Barista :: write_subset_protein_special_case_tab(ofstream &os, int i)
+{
+  //write out protein
+  int protind = trainset[i].protind;
+  int group = trainset[i].group_number;
+  os << group << "\t";
+  
+  vector<int> parent_groups = trainset.get_subset_prot(i).parent_groups;
+  if(parent_groups.size() > 0)
+    {
+      os << parent_groups[0]; 
+      for(unsigned int k = 1; k < parent_groups.size(); k++)
+	os << "," << parent_groups[k];
+    } 
+  os << "\t";
+
+  os << d.ind2prot(protind); 
+  vector<int> complement = trainset[i].protind2complement[protind];
+  if(complement.size() != 0)
+    {
+      os << "(";
+      int pepind = complement[0];
+      string pep = d.ind2pep(pepind);
+      string seq, n, c;
+      get_pep_seq(pep, seq, n, c);
+      os << pep;
+      for(unsigned int k = 1; k < complement.size(); k++)
+	{
+	  pepind = complement[k];
+	  pep = d.ind2pep(pepind);
+	  get_pep_seq(pep, seq, n, c);
+	  os << "," << pep;
+	}
+      os << ")";
+    }
+  
+  for(unsigned int j = 0; j < trainset[i].indistinguishable_protinds.size(); j++)
+    {
+      int ind = trainset[i].indistinguishable_protinds[j];
+      if(d.protind2label(ind) == 1)
+	{
+	  os << "," << d.ind2prot(ind);
+	  vector<int> complement = trainset[i].protind2complement[protind];
+	  if(complement.size() != 0)
+	    {
+	      os << "(";
+	      int pepind = complement[0];
+	      string pep = d.ind2pep(pepind);
+	      string seq, n, c;
+	      get_pep_seq(pep, seq, n, c);
+	      int psmind = pepind_to_max_psmind[pepind];
+	      if(psmind > -1)
+		os << "," << pep <<  "-" << d.psmind2scan(psmind) << "." << d.psmind2charge(psmind);
+	      for(unsigned int k = 1; k < complement.size(); k++)
+		{
+		  pepind = complement[k];
+		  pep = d.ind2pep(pepind);
+		  get_pep_seq(pep, seq, n, c);
+		  psmind = pepind_to_max_psmind[pepind];
+		  if(psmind > -1)
+		    os << "," << pep <<  "-" << d.psmind2scan(psmind) << "." << d.psmind2charge(psmind);
+      		}
+	      os << ")";
+	    }
+	}
+    }
+  os << "\t";
+  
+  //write out peptides
+  int num_pep = d.protind2num_pep(protind);
+  int *pepinds = d.protind2pepinds(protind);
+  //write the first one
+  int pepind = pepinds[0];
+  string pep = d.ind2pep(pepind);
+  string seq, n, c;
+  get_pep_seq(pep, seq, n, c);
+  int psmind = pepind_to_max_psmind[pepind];
+  if(psmind > -1)
+    os << pep <<  "-" << d.psmind2scan(psmind) << "." << d.psmind2charge(psmind);
+  else
+    {
+#ifndef CRUX
+      cout << "warning: did not assign peptide max psmind\n";
+#endif
+    }
+  for( int j = 1; j < num_pep; j++)
+    {
+      pepind = pepinds[j];
+      pep = d.ind2pep(pepind);
+      string seq, n, c;
+      get_pep_seq(pep, seq, n, c);
+      psmind = pepind_to_max_psmind[pepind];
+      if(psmind > -1)
+	os << "," << pep <<  "-" << d.psmind2scan(psmind) << "." << d.psmind2charge(psmind);
+      else
+	{
+#ifndef CRUX
+	  cout << "warning: did not assign peptide" << pep  << " ind " << pepind << " max psmind\n";
+#endif
+	}
+    }
+  os << endl;
+
+
+}
+
+
+void Barista :: write_results_subset_prot_tab(ofstream &os)
+{
+  string protein_str;
+  vector<string> tab_delim_proteins;
+  
+  os << "group number" << "\t" << "parent group numbers" << "\t";
+  os << "proteins" << "\t" << "peptides-scan.charge" << endl;
+
+  int num_subset_prot = trainset.get_num_subsets();
+  
+  int cn = 0;
+  for(int i = 0; i < num_subset_prot; i++)
+    {
+      int protind = trainset.get_subset_prot(i).protind;
+      int group = trainset.get_subset_prot(i).group_number;
+      if(d.protind2label(protind) == 1)
+	{
+	  cn++;
+	  
+	  if(trainset.get_subset_prot(i).has_complement == 1)
+	    {
+	      write_subset_protein_special_case_tab(os, i);
+	      continue;
+	    }
+	  
+	  os << group << "\t";
+	  vector<int> parent_groups = trainset.get_subset_prot(i).parent_groups;
+	  if(parent_groups.size() > 0)
+	    {
+	      os << parent_groups[0]; 
+	      for(unsigned int k = 1; k < parent_groups.size(); k++)
+		os << "," << parent_groups[k];
+	    } 
+	  os << "\t";
+	  
+	  //write out proteins
+	  os << d.ind2prot(protind); 
+	  for(unsigned int j = 0; j < trainset[i].indistinguishable_protinds.size(); j++)
+	    {
+	      int ind = trainset[i].indistinguishable_protinds[j];
+	      if(d.protind2label(ind) == 1)
+		{
+		  os << "," << d.ind2prot(ind);
+		}
+	    }
+	  os << "\t";
+	  
+	  //write out peptides
+	  int num_pep = d.protind2num_pep(protind);
+	  int *pepinds = d.protind2pepinds(protind);
+	  //write the first one
+	  int pepind = pepinds[0];
+	  string pep = d.ind2pep(pepind);
+	  string seq, n, c;
+	  get_pep_seq(pep, seq, n, c);
+	  int psmind = pepind_to_max_psmind[pepind];
+	  if(psmind > -1)
+	    os << pep <<  "-" << d.psmind2scan(psmind) << "." << d.psmind2charge(psmind);
+	  else
+	    {
+#ifndef CRUX
+	      cout << "warning: did not assign peptide max psmind\n";
+#endif
+	    }
+	  for( int j = 1; j < num_pep; j++)
+	    {
+	      pepind = pepinds[j];
+	      pep = d.ind2pep(pepind);
+	      string seq, n, c;
+	      get_pep_seq(pep, seq, n, c);
+	      psmind = pepind_to_max_psmind[pepind];
+	      if(psmind > -1)
+		os << "," << pep <<  "-" << d.psmind2scan(psmind) << "." << d.psmind2charge(psmind);
+	      else
+		{
+#ifndef CRUX
+		  cout << "warning: did not assign peptide" << pep  << " ind " << pepind << " max psmind\n";
+#endif
+		}
+	    }
+	  
+	  os << endl;
+	}
+    }
+
+}
+
+
 
 void Barista :: write_results_peptides_tab(ofstream &os)
 {
@@ -1108,16 +1409,21 @@ void Barista :: report_all_results_tab()
 {
   ofstream of;
   ostringstream fname;
-  
+    
   d.load_data_psm_results();
 
+  d.load_data_prot_results();  
   fname << out_dir << "/" << fileroot << "barista.target.proteins.txt";
   of.open(fname.str().c_str());
-  d.load_data_prot_results();
   write_results_prot_tab(of);
-  d.clear_data_prot_results();
   of.close();
   fname.str("");
+  fname << out_dir << "/" << fileroot << "barista.target.subset-proteins.txt";
+  of.open(fname.str().c_str());
+  write_results_subset_prot_tab(of);
+  of.close();
+  fname.str("");
+  d.clear_data_prot_results();
   
   fname << out_dir << "/" << fileroot << "barista.target.peptides.txt";
   of.open(fname.str().c_str());
@@ -1126,12 +1432,10 @@ void Barista :: report_all_results_tab()
   d.clear_data_pep_results();
   of.close();
   fname.str("");
-
+  
   fname << out_dir << "/" << fileroot << "barista.target.psms.txt";
   of.open(fname.str().c_str());
-  d.load_data_psm_results();
   write_results_psm_tab(of);
-  d.clear_data_psm_results();
   of.close();
   fname.str("");
   
@@ -1145,7 +1449,7 @@ void Barista :: report_all_results_xml_tab()
   setup_for_reporting_results();
   
   report_all_results_xml();
-  //report_all_results_tab();
+  report_all_results_tab();
   
   d.clear_data_all_results();
 }
@@ -1963,22 +2267,6 @@ int Barista :: set_command_line_options(int argc, char *argv[])
   
   if(found_dir_with_tables)
     {
-      DIR *dp;
-      if((dp = opendir(dir_with_tables.c_str())) == NULL)
-	{
-	  cout << " FATAL: could not open directory " << dir_with_tables << " for reading" << endl;
-	  return 0;
-	}
-      ostringstream fn;
-      fn << dir_with_tables << "/" << "psm.txt";
-      ifstream f_try(fn.str().c_str());
-      if(!f_try.is_open())
-	{
-	  cout << "FATAL: given directory does not seem to contain preprocessed data" << endl;
-	  return 0;
-	}
-      f_try.close();
-
       //set input and output dirs
       sqtp.set_output_dir(dir_with_tables, overwrite_flag);
       set_input_dir(dir_with_tables);

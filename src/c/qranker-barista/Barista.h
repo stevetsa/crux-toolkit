@@ -37,7 +37,7 @@ class Barista : public CruxApplication
     fileroot(""), 
     seed(0), 
     selectionfdr(0.01), 
-    nepochs(20), 
+    nepochs(1), 
     num_features(0), 
     num_hu(3), 
     mu(0.05),
@@ -83,7 +83,10 @@ class Barista : public CruxApplication
   void write_results_peptides_xml(ofstream &os);
   void write_results_psm_xml(ofstream &os);
   void report_all_results_xml();
+  void write_results_prot_special_case_tab(ofstream &os, int i);
   void write_results_prot_tab(ofstream &os);
+  void write_subset_protein_special_case_tab(ofstream &os, int i);
+  void write_results_subset_prot_tab(ofstream &os);
   void write_results_peptides_tab(ofstream &os);
   void write_results_psm_tab(ofstream &os);
   void report_all_results_tab();

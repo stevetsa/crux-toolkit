@@ -888,22 +888,6 @@ int QRanker :: set_command_line_options(int argc, char *argv[])
 
   if(found_dir_with_tables)
     {
-      DIR *dp;
-      if((dp = opendir(dir_with_tables.c_str())) == NULL)
-	{
-	  cout << " FATAL: could not open directory " << dir_with_tables << " for reading" << endl;
-	  return 0;
-	}
-      ostringstream fn;
-      fn << dir_with_tables << "/" << "psm.txt";
-      ifstream f_try(fn.str().c_str());
-      if(!f_try.is_open())
-	{
-	  cout << "FATAL: given directory does not seem to contain preprocessed data" << endl;
-	  return 0;
-	}
-      f_try.close();
-
       sqtp.set_output_dir(dir_with_tables, overwrite_flag);
       set_input_dir(dir_with_tables);
       set_output_dir(output_directory);
