@@ -1148,8 +1148,15 @@ void initialize_parameters(void){
     "conjunction with --scan-tolerance. Default = 1.",
     "Available for crux bullseye", "true");
 
-  //max-mass already exists
-  //min-mass already exists
+  set_double_parameter("bullseye-min-mass", 600, 0, BILLION,
+      "The minimum mass of peptides to consider. Default=600.",
+      "Available from command line or parameter file for crux bullseye",
+      "true");
+
+  set_double_parameter("bullseye-max-mass", 8000, 1, BILLION, 
+      "The maximum mass of peptides to consider. Default=8000.",
+      "Available from command line or parameter file for crux bullseye",
+      "true");
   
   set_double_parameter("exact-tolerance", 10.0, 0, BILLION,
     "Set the tolerance (+/-ppm) for exact match searches. Default = 10.0.",

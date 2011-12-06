@@ -56,8 +56,8 @@ int CruxBullseyeApplication::main(int argc, char** argv) {
     "persist-tolerance",
     "gap-tolerance",
     "scan-tolerance",
-    "max-mass",
-    "min-mass",
+    "bullseye-max-mass",
+    "bullseye-min-mass",
     "retention-tolerance",
     "spectrum-format",
     "parameter-file",
@@ -125,6 +125,15 @@ int CruxBullseyeApplication::main(int argc, char** argv) {
     DelimitedFileWriter::to_string(get_double_parameter("persist-tolerance"))
     );
   
+  be_args_vec.push_back("-n");
+  be_args_vec.push_back(
+    DelimitedFileWriter::to_string(get_double_parameter("bullseye-min-mass"))
+    );
+
+  be_args_vec.push_back("-m");
+  be_args_vec.push_back(
+    DelimitedFileWriter::to_string(get_double_parameter("bullseye-max-mass")));
+
   be_args_vec.push_back("-s"); 
   be_args_vec.push_back(
     //TODO- I don't know why bullseye.cpp adds 1 to the value passed in...
