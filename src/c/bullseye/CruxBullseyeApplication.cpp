@@ -101,26 +101,40 @@ int CruxBullseyeApplication::main(int argc, char** argv) {
   be_args_vec.push_back("bullseye");
   
   /* add flags */
+  
   be_args_vec.push_back("-c");
-  be_args_vec.push_back(DelimitedFileWriter::to_string(get_double_parameter("max-persist")));
+  be_args_vec.push_back(
+    DelimitedFileWriter::to_string(get_double_parameter("max-persist"))
+    );
   
   if (get_boolean_parameter("exact-match")) {
     be_args_vec.push_back("-e");
     be_args_vec.push_back("-p");
-    be_args_vec.push_back(DelimitedFileWriter::to_string(get_double_parameter("exact-tolerance")));
+    be_args_vec.push_back(
+      DelimitedFileWriter::to_string(get_double_parameter("exact-tolerance"))
+      );
   }
   
   be_args_vec.push_back("-g");
-  be_args_vec.push_back(DelimitedFileWriter::to_string(get_int_parameter("gap-tolerance")));
+  be_args_vec.push_back(
+    DelimitedFileWriter::to_string(get_int_parameter("gap-tolerance"))
+    );
   
   be_args_vec.push_back("-r");
-  be_args_vec.push_back(DelimitedFileWriter::to_string(get_double_parameter("persist-tolerance")));
-
-  be_args_vec.push_back("-s");
-  be_args_vec.push_back(DelimitedFileWriter::to_string(get_int_parameter("scan-tolerance")));
-
+  be_args_vec.push_back(
+    DelimitedFileWriter::to_string(get_double_parameter("persist-tolerance"))
+    );
+  
+  be_args_vec.push_back("-s"); 
+  be_args_vec.push_back(
+    //TODO- I don't know why bullseye.cpp adds 1 to the value passed in...
+    DelimitedFileWriter::to_string<int>(get_int_parameter("scan-tolerance")-1)
+    );
+  
   be_args_vec.push_back("-t");
-  be_args_vec.push_back(DelimitedFileWriter::to_string(get_double_parameter("retention-tolerance")));
+  be_args_vec.push_back(
+    DelimitedFileWriter::to_string(get_double_parameter("retention-tolerance"))
+    );
   
 
 
