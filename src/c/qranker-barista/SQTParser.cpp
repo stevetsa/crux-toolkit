@@ -783,7 +783,7 @@ void SQTParser :: read_sqt_file(ifstream &is, string &decoy_prefix, int final_hi
       add_matches_to_tables(m, decoy_prefix, num_hits, final_hits);
       extract_features(m, num_hits, final_hits,enz);
       cn++;
-      //if(cn > 200)
+      //if(cn > 10)
       //break;
     }
   

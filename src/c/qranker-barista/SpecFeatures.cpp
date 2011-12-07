@@ -1,6 +1,6 @@
 #include "SpecFeatures.h"
 
-SpecFeaturesGenerator :: SpecFeaturesGenerator(): max_mz(1024),ts_main_ion((double**)0),
+SpecFeaturesGenerator :: SpecFeaturesGenerator(): max_mz(1025),ts_main_ion((double**)0),
 						  ts_m3((double**)0),ts_m6((double**)0),ts_m7((double**)0)
 {
   peaks.resize(max_mz,0.0);
@@ -8,14 +8,19 @@ SpecFeaturesGenerator :: SpecFeaturesGenerator(): max_mz(1024),ts_main_ion((doub
 
 SpecFeaturesGenerator :: ~SpecFeaturesGenerator()
 {
-  if(f_ms2.is_open())
-    f_ms2.close();
+  //if(f_ms2.is_open())
+  //f_ms2.close();
+  clear();
 }
 
 void SpecFeaturesGenerator :: clear()
 {
   spec_to_pos_in_file.clear();
   max_mz = 0;
+  clear_tspec(ts_m3,3); ts_m3 = 0;
+  clear_tspec(ts_m6,6); ts_m6 = 0;
+  clear_tspec(ts_m7,7); ts_m7 = 0;
+  clear_tspec(ts_main_ion, NUM_AA*2); ts_main_ion = 0;
   if(f_ms2.is_open())
     f_ms2.close();
 }
@@ -100,9 +105,9 @@ void SpecFeaturesGenerator :: read_processed_spectrum(string &tempstr)
 	  istringstream intens(tempstr);
 	  double y;
 	  intens >> y;
-	  if(x > max_mz)
+	  if(x >= max_mz)
 	    {
-	      max_mz = x;
+	      max_mz = x+1;
 	      peaks.resize(max_mz,0.0);
 	    }
 	  peaks[x] = y;
@@ -124,7 +129,6 @@ void SpecFeaturesGenerator :: read_processed_ms2_file()
 	{
 	  getline(f_ms2,line);
 	  f_ms2 >> tempstr;
-	  
 	}
       if (tempstr.compare("S") == 0)
 	{
@@ -201,8 +205,8 @@ void SpecFeaturesGenerator :: read_spectrum(string &tempstr)
 	  intens_values.push_back(y);
 	  //update max_mz
 	  int mz_bin = (int)(x/bin_width_mono+0.5);
-	  if(mz_bin > max_mz)
-	    max_mz = mz_bin;
+	  if(mz_bin >= max_mz)
+	    max_mz = mz_bin+1;
 	}
       f_ms2 >> tempstr;
     }
@@ -289,7 +293,7 @@ void SpecFeaturesGenerator :: process_observed_spectrum()
 
   if((int)peaks.size() != max_mz)
     peaks.resize(max_mz);
-  peaks.assign(peaks.size(),0);
+  peaks.assign(peaks.size(),0.0);
 
 
   assert(mz_values.size() == intens_values.size());
@@ -330,12 +334,11 @@ void SpecFeaturesGenerator :: process_observed_spectrum()
        }
 
        //update max mz over all spectra
-       if(mz > max_mz)
+       if(mz >= max_mz)
 	 {
-	   max_mz = mz;
+	   max_mz = mz+1;
 	   peaks.resize(max_mz,0.0);
 	 }
-
        // sqrt the original intensity
        peak_intensity = sqrt(peak_intensity);
        if(peak_intensity > max_peak_intensity)
@@ -425,7 +428,7 @@ void SpecFeaturesGenerator :: get_processed_observed_spectrum(string &spec)
   
   if((int)peaks.size() < max_mz)
     peaks.resize(max_mz);
-  peaks.assign(peaks.size(),0);
+  peaks.assign(peaks.size(),0.0);
   string tempstr;
   read_processed_spectrum(tempstr);
   ostringstream spec_read;
