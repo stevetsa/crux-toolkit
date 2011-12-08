@@ -4,14 +4,16 @@
 
 #include "objects.h"
 #include "IonConstraint.h"
-#include "scorer.h"
+#include "Scorer.h"
 #include "SpectrumCollectionFactory.h"
 
 
 #include <math.h>
 #include <assert.h>
 #include <ctype.h>
+#ifndef WIN32
 #include <unistd.h>
+#endif
 #include <iostream>
 #include <fstream>
 #define bin_width_mono 1.0005079
@@ -34,7 +36,7 @@ int main(int argc, char** argv){
   const char* option_list[NUM_OPTIONS] = {
     "verbosity",
     "version",
-    "xcorr-use-flanks",
+    "use-flanking-peaks",
     "xlink-score-method"
   };
 
@@ -106,8 +108,8 @@ int main(int argc, char** argv){
 
   cout <<"LinkedPeptide:"<<lp<<" mass:"<<lp.mass(MONO)<<endl;
   
-  Scorer xhhc_scorer;
-  xhhc_scorer.set_print(false);
+  XHHC_Scorer xhhc_scorer;
+  xhhc_scorer.setPrint(false);
 
 
 
@@ -121,7 +123,7 @@ int main(int argc, char** argv){
     
     ion_series.add_linked_ions(lp);
        
-    double score = xhhc_scorer.score_spectrum_vs_series(spectrum, ion_series);
+    double score = xhhc_scorer.scoreSpectrumVsSeries(spectrum, ion_series);
 
     cout <<score<<endl;
 
@@ -133,14 +135,14 @@ int main(int argc, char** argv){
     
     LinkedIonSeries ion_seriesA;
     ion_seriesA.add_linked_ions(lp, 1);
-    double scoreA = xhhc_scorer.score_spectrum_vs_series(spectrum, ion_seriesA);
+    double scoreA = xhhc_scorer.scoreSpectrumVsSeries(spectrum, ion_seriesA);
     
     LinkedIonSeries ion_seriesB;
     ion_seriesB.add_linked_ions(lp, 2);
 
     
 
-    double scoreB = xhhc_scorer.score_spectrum_vs_series(spectrum, ion_seriesB);
+    double scoreB = xhhc_scorer.scoreSpectrumVsSeries(spectrum, ion_seriesB);
 
     if (scoreA > scoreB)
       cout << scoreA << "\t" << scoreB << endl;
@@ -294,10 +296,10 @@ double get_concat_score(char* peptideA, char* peptideB, int link_site, int charg
     
     }
 
-    SCORER_T* scorer = new_scorer(XCORR); 
+    Scorer* scorer = new Scorer(XCORR); 
 
     // calculate the score
-    FLOAT_T score = score_spectrum_v_ion_series(scorer, spectrum, ion_series);
+    FLOAT_T score = scorer->scoreSpectrumVIonSeries(spectrum, ion_series);
     return score;
 
 
@@ -372,22 +374,22 @@ FLOAT_T* get_observed_raw(Spectrum* spectrum, int charge) {
 void print_spectrum(Spectrum* spectrum, LinkedIonSeries& ion_series) {
 
 
-      SCORER_T* scorer = new_scorer(XCORR);
-      create_intensity_array_observed(scorer, spectrum, ion_series.charge());
+      Scorer* scorer = new Scorer(XCORR);
+      scorer->createIntensityArrayObserved(spectrum, ion_series.charge());
 
       FLOAT_T* observed_raw = get_observed_raw(spectrum, ion_series.charge());
-      FLOAT_T* observed_processed = get_intensity_array_observed(scorer);
+      FLOAT_T* observed_processed = scorer->getIntensityArrayObserved();
 
 
-      FLOAT_T max_mz = get_scorer_sp_max_mz(scorer);
+      FLOAT_T max_mz = scorer->getSpMaxMz();
 
         
 
 
-      Scorer xhhc_scorer(max_mz);
+      XHHC_Scorer xhhc_scorer(max_mz);
 
       FLOAT_T* theoretical = (FLOAT_T*)mycalloc((size_t)max_mz, sizeof(FLOAT_T));
-      xhhc_scorer.hhc_create_intensity_array_theoretical(ion_series, theoretical);
+      xhhc_scorer.hhcCreateIntensityArrayTheoretical(ion_series, theoretical);
 
 
       

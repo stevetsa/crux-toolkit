@@ -7,13 +7,11 @@
 <blockquote> 
 <h1>Release notes for Crux</h1>
 
-<h2>Version 1.36</h2> Month day, 2011
+<h2>Version 1.37</h2> Month day, 2011
 
 <h3>Major enhancements</h3>
 
 <ul>
-
-<li>
 
 </ul>
 
@@ -22,21 +20,105 @@
 <ul>
 
 <li>
+Q-ranker now computes posterior error probabilities.
+
+<li>
+A pair of options, <code>cterm-fixed</code>
+and <code>nterm-fixed</code> allow fixed terminal peptide
+modifications, i.e. a mass shift applied to every peptide on either or
+both termini.
+
+<li>
+Spectrum processing was changed to include the highest m/z fragment peaks.
+Xcorrs have changed slightly as a result.
+
+</ul>
+<hr>
+<h2>Version 1.36</h2> August 4, 2011
+
+<h3>Tide changes</h3>
+
+<ul>
+
+<li>
+Added support for user-specifiable variable and static amino acid
+modifications.</li>
+
+<li>
+Tide's version of XCorr has been modified so that it is always
+identical to those of a recent version SEQUEST.</li>
+
+<li>
+Added support for user-specifiable maximum number of missed enzyme
+cleavage points.</li>
+
+<li>
+Tide now performs basic charge state inference when this information
+is missing from the spectrum input files.</li>
+
+<li>
+User-specifiable output formatting, using new
+the <code>tide-results</code> utility, including
+  <ul>
+  <li>Text format with user-specifiable fields.
+  <li>SQT format.
+  <li>PepXML format.
+  <li>Choose whether to display all proteins in which each peptide occurs or
+just one representative.
+  </ul>
+
+<li>
+Note that new file formats are created
+by <code>tide-index</code>. Index files created by previous versions
+of Tide should not be used with the new version.</li>
+
+</ul>
+-
+<!--
+<h3>Major enhancements</h3>
+
+<ul>
+
+<li>
+
+</ul>
+-->
+<h3>Minor changes</h3>
+
+<ul>
+<li>
+Q-ranker now reports q-values instead of false discovery rates.</li>
+
+<li>
+Corrected several errors in the pep.xml output, related to reporting
+the spectrum filename, charge, and neutral mass.</li>
+
+<li>
+Changed the <code>missed-cleavages</code> option to allow specifying
+the maximum number of missed cleavages in a peptide rather than
+specifying none/any.</li>
+
+<li>
 Fixed a bug that did not print the spectrum file name correctly in the
-.pep.xml files.
+pep.xml files.</li>
 
 <li>
-Fixed error reporting for <code>crux spectral-counts</code> when the input
-psm file does not contain the required q-values.
+Improved the error message produced by <code>crux
+spectral-counts</code> when the input PSM file does not contain the
+required q-values.</li>
 
 <li>
-Made the use of flanking peaks optional with <code>use-flanking-peaks</code>.
-Flanking peaks are not used by default for 
-<code>crux search-for-matches</code>.
+Previously, Crux's theoretical spectrum includes two flanking peaks
+around each b- and y-ion.  The new
+Boolean flag <code>use-flanking-peaks</code>, allows these to be
+either on or off.  Flanking peaks are by default in 
+<code>crux sequest-search</code> but are not used by default
+in <code>crux search-for-matches</code>.</li>
 
 </ul>
 
-<hr>
+<hr></hr>
+
 <h2>Version 1.35</h2> March 23, 2011
 
 <h3>Major enhancements</h3>
@@ -74,7 +156,7 @@ Added an <code>nterm</code> option to the link argument of <code>crux
 search-for-xlinks</code>.</li>
 
 </ul>
-<hr>
+
 <hr></hr>
 
 <h2>Version 1.34</h3> December 22, 2010

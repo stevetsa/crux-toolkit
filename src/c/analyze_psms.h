@@ -10,7 +10,7 @@
 #include "OutputFiles.h"
 #include "q-value.h"
 #include "PercolatorCInterface.h"
-#include "QRankerCInterface.h"
+//#include "QRankerCInterface.h"
 
 /**
  * \brief Takes a directory containing PSM files and a protein index
@@ -29,14 +29,26 @@ void analyze_matches_main(
  * for a search against the sequence database fasta_file. Optionally 
  * puts the percolator PSM feature vectors into feature_file, if it is 
  * not NULL.
- * \returns a pointer to a MATCH_COLLECTION_T object
+ * \returns a pointer to a MatchCollection object
  * \callgraph
  */
-MATCH_COLLECTION_T* run_percolator_or_qranker(
+MatchCollection* run_percolator_or_qranker(
   COMMAND_T command,                                          
   char* input_directory, 
   char* fasta_file, 
   OutputFiles& output);
+
+/**
+ * Compute posterior error probabilities (PEP) from the given target
+ * and decoy scores.
+ * \returns A newly allocated array of PEP for the target scores
+ * sorted.
+ */
+double* compute_PEP(double* target_scores, ///< scores for target matches
+                    int num_targets,       ///< size of target_scores
+                    double* decoy_scores,  ///< scores for decoy matches
+                    int num_decoys);       ///< size of decoy_scores
+
 
 #endif //ANALYZE_PSMS_H
 

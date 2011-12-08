@@ -10,20 +10,22 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <ctype.h>
+#ifndef WIN32
 #include <dirent.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#endif
 #include <time.h>
 
 #include "utils.h"
 #include "crux-utils.h"
-#include "peptide.h"
+#include "Peptide.h"
 #include "Protein.h"
-#include "index.h"
+#include "Index.h"
 #include "carp.h"
 #include "objects.h"
-#include "peptide_constraint.h"
-#include "database.h"
+#include "PeptideConstraint.h"
+#include "Database.h"
 
 
 /***********************************
@@ -32,23 +34,13 @@
 
 
 /**
- * Instantiates a new sorted_peptide_iterator from a database_peptide_iterator
- * \returns a SORTED_PEPTIDE_ITERATOR_T object.
- */
-SORTED_PEPTIDE_ITERATOR_T* new_sorted_peptide_iterator_database(
-  DATABASE_PEPTIDE_ITERATOR_T* database_peptide_iterator, ///< the peptide iterator to extend -in
-  SORT_TYPE_T sort_type, ///< the sort type for this iterator -in
-  BOOLEAN_T unique ///< only return unique peptides? -in
-  );
-
-/**
  * Instantiates a new sorted_peptide_iterator from a bin_peptide_iterator
  * \returns a SORTED_PEPTIDE_ITERATOR_T object.
  */
 SORTED_PEPTIDE_ITERATOR_T* new_sorted_peptide_iterator_bin(
   BIN_PEPTIDE_ITERATOR_T* bin_peptide_iterator, ///< the peptide iterator to extend -in
   SORT_TYPE_T sort_type, ///< the sort type for this iterator -in
-  BOOLEAN_T unique, ///< only return unique peptides? -in
+  bool unique, ///< only return unique peptides? -in
   unsigned int peptide_count ///< the total peptide count in the bin -in
   );
 
@@ -63,7 +55,7 @@ void free_sorted_peptide_iterator(
  * The basic iterator functions.
  * \returns TRUE if there are additional peptides to iterate over, FALSE if not.
  */
-BOOLEAN_T sorted_peptide_iterator_has_next(
+bool sorted_peptide_iterator_has_next(
   SORTED_PEPTIDE_ITERATOR_T* peptide_iterator ///< the iterator of interest -in
   );
 
@@ -71,7 +63,7 @@ BOOLEAN_T sorted_peptide_iterator_has_next(
  * returns each peptide in sorted order
  * \returns The next peptide in the database.
  */
-PEPTIDE_T* sorted_peptide_iterator_next(
+Peptide* sorted_peptide_iterator_next(
   SORTED_PEPTIDE_ITERATOR_T* peptide_iterator ///< the iterator of interest -in
   );
 

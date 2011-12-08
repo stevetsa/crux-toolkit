@@ -6,9 +6,12 @@
 
 #include <errno.h>
 #include <sys/stat.h>
+#ifndef WIN32
 #include <unistd.h>
+#endif
 #include "crux-utils.h"
 #include "parameter.h"
+#include "WinCrux.h"
 
 using namespace std;
 
@@ -29,29 +32,51 @@ static const int MAX_ULPS = 2;
 
 /* Functions for converting custom types to and from strings */
 
+static const int INVALID_ENUM_STRING = -10;
+/**
+ * The string version of the decoy types
+ */
+static const char* decoy_type_strings[NUMBER_DECOY_TYPES] = 
+  { "invalid", "none", "reverse", "protein-shuffle", "peptide-shuffle" };
+
+DECOY_TYPE_T string_to_decoy_type(const char* name){
+  int decoy_int = convert_enum_type_str(name, INVALID_ENUM_STRING, 
+                                        decoy_type_strings, 
+                                        NUMBER_DECOY_TYPES);
+  if( decoy_int < 0 ){
+    decoy_int = 0;
+  }
+
+  return (DECOY_TYPE_T)decoy_int;
+}
+
+char* decoy_type_to_string(DECOY_TYPE_T type){
+  return my_copy_string(decoy_type_strings[type]);
+}
+
 /**
  * The string version of isotopic mass type (average, mono)
  */
 static const char* mass_type_strings[NUMBER_MASS_TYPES] = {"average", "mono"};
 
-BOOLEAN_T string_to_mass_type(char* name, MASS_TYPE_T* result){
-  BOOLEAN_T success = TRUE;
+bool string_to_mass_type(char* name, MASS_TYPE_T* result){
+  bool success = true;
   //this is copied from parameter.c::get_peptide_mass_type
-  int mass_type = convert_enum_type_str(
-                          name, -10, mass_type_strings, NUMBER_MASS_TYPES);
+  int mass_type = convert_enum_type_str(name, INVALID_ENUM_STRING, 
+                                        mass_type_strings, NUMBER_MASS_TYPES);
 
   (*result) = (MASS_TYPE_T)mass_type;
 
   if( mass_type < 0 ){
-    success = FALSE;
+    success = false;
   }
   return success;
 }
 
-BOOLEAN_T mass_type_to_string(MASS_TYPE_T type, char* type_str){
-  BOOLEAN_T success = TRUE;
+bool mass_type_to_string(MASS_TYPE_T type, char* type_str){
+  bool success = true;
   if( (int)type > NUMBER_MASS_TYPES ){
-    success = FALSE;
+    success = false;
     type_str = NULL;
   }
 
@@ -69,7 +94,7 @@ static const char* digest_type_strings[NUMBER_DIGEST_TYPES] =
   {"invalid", "full-digest", "partial-digest", "non-specific-digest"};
 
 DIGEST_T string_to_digest_type(char* name){
-  int clev_int = convert_enum_type_str(name, -10, 
+  int clev_int = convert_enum_type_str(name, INVALID_ENUM_STRING, 
                                        digest_type_strings, 
                                        NUMBER_DIGEST_TYPES);
   if( clev_int < 0 ){
@@ -100,7 +125,7 @@ static const char* enzyme_type_strings[NUMBER_ENZYME_TYPES] =
    "custom-enzyme"};
 
 ENZYME_T string_to_enzyme_type(char* name){
-  int enz_int = convert_enum_type_str(name, -10, 
+  int enz_int = convert_enum_type_str(name, INVALID_ENUM_STRING, 
                                       enzyme_type_strings, 
                                       NUMBER_ENZYME_TYPES);
   if( enz_int < 0 ){
@@ -127,9 +152,9 @@ static const char* window_type_strings[NUMBER_WINDOW_TYPES] =
   {"invalid", "mass", "mz", "ppm"};
 
 WINDOW_TYPE_T string_to_window_type(char* name){
-  int window_int = convert_enum_type_str(name, -10, 
-                                      window_type_strings, 
-                                      NUMBER_WINDOW_TYPES);
+  int window_int = convert_enum_type_str(name, INVALID_ENUM_STRING, 
+                                         window_type_strings, 
+                                         NUMBER_WINDOW_TYPES);
   if( window_int < 0 ){
     window_int = 0;
   }
@@ -154,7 +179,7 @@ static const char* parsimony_type_strings[NUMBER_PARSIMONY_TYPES] =
   {"invalid", "simple", "greedy", "none"};
 
 PARSIMONY_TYPE_T string_to_parsimony_type(char* name){
-  int parsimony_int = convert_enum_type_str(name, -10,
+  int parsimony_int = convert_enum_type_str(name, INVALID_ENUM_STRING,
 					    parsimony_type_strings,
 					    NUMBER_PARSIMONY_TYPES);
   if ( parsimony_int < 0 ){
@@ -184,9 +209,9 @@ static const char* measure_type_strings[NUMBER_MEASURE_TYPES] =
   {"invalid", "SIN", "NSAF", "EMPAI"};
 
 MEASURE_TYPE_T string_to_measure_type(char* name){
-  int measure_int = convert_enum_type_str(name, -10,
-					    measure_type_strings,
-					    NUMBER_PARSIMONY_TYPES);
+  int measure_int = convert_enum_type_str(name, INVALID_ENUM_STRING,
+                                          measure_type_strings,
+                                          NUMBER_PARSIMONY_TYPES);
   if ( measure_int < 0 ){
     measure_int = 0;
   }
@@ -212,9 +237,9 @@ static const char* quant_level_type_strings[NUMBER_QUANT_LEVEL_TYPES] =
   {"invalid", "peptide", "protein"};
 
 QUANT_LEVEL_TYPE_T string_to_quant_level_type(char* name){
-  int quant_int = convert_enum_type_str(name, -10,
-					    quant_level_type_strings,
-					    NUMBER_QUANT_LEVEL_TYPES);
+  int quant_int = convert_enum_type_str(name, INVALID_ENUM_STRING,
+                                        quant_level_type_strings,
+                                        NUMBER_QUANT_LEVEL_TYPES);
   if ( quant_int < 0 ){
     quant_int = 0;
   }
@@ -242,7 +267,7 @@ static const char* column_type_strings[NUMBER_COLTYPES] =
 COLTYPE_T string_to_column_type(char* name) {
   int coltype_int = convert_enum_type_str(
     name, 
-    -10,
+    INVALID_ENUM_STRING,
     column_type_strings,
     NUMBER_COLTYPES);
 
@@ -263,7 +288,7 @@ static const char* comparison_type_strings[NUMBER_COMPARISONS] =
 COMPARISON_T string_to_comparison(char* name) {
   int comparison_int = convert_enum_type_str(
     name,
-    -10,
+    INVALID_ENUM_STRING,
     comparison_type_strings,
     NUMBER_COMPARISONS);
 
@@ -275,96 +300,30 @@ COMPARISON_T string_to_comparison(char* name) {
   
 }
 
-
-
-/**
- * The string version of peptide cleavage type
- */
-/*
-static char* peptide_type_strings[NUMBER_PEPTIDE_TYPES] = 
-{"tryptic", "partial", "N_TRYPTIC", "C_TRYPTIC", "NOT_TRYPTIC", "all"};
-
-BOOLEAN_T string_to_peptide_type(char* name, PEPTIDE_TYPE_T* result){
-
-  BOOLEAN_T success = TRUE;
-  //this is copied from parameter.c::get_peptide_mass_type
-  int pep_type = convert_enum_type_str(
-                     name, -10, peptide_type_strings, NUMBER_PEPTIDE_TYPES);
-  (*result) = (PEPTIDE_TYPE_T)pep_type;
-
-  if( pep_type < 0 ){
-    success = FALSE;
-  }
-  return success;
-}
-
-BOOLEAN_T peptide_type_to_string(PEPTIDE_TYPE_T type, char* type_str){
-  BOOLEAN_T success = TRUE;
-  if( (int)type > NUMBER_PEPTIDE_TYPES){
-    success = FALSE;
-    type_str = NULL;
-  }
-
-  //type_str = peptide_type_strings[type];
-  strcpy(type_str, peptide_type_strings[type]);
-
-  return success;
-}
-*/
-/**
- * The string version of peptide sort types
- */
-static const char* sort_type_strings[NUMBER_SORT_TYPES] =
-  { "none", "mass", "length", "lexical" };
-
-BOOLEAN_T string_to_sort_type(char* name, SORT_TYPE_T* result){
-  BOOLEAN_T success = TRUE;
-
-  int sort_type = convert_enum_type_str(
-                        name, -10, sort_type_strings, NUMBER_SORT_TYPES);
-  (*result) = (SORT_TYPE_T)sort_type;
-
-  if( sort_type < 0){
-    success = FALSE;
-  }
-  return success;
-}
-
-BOOLEAN_T sort_type_to_string(SORT_TYPE_T type, 
-                              char* type_str){
-  BOOLEAN_T success = TRUE;
-  if( (int)type > NUMBER_SORT_TYPES ){
-    success = FALSE;
-    type_str = NULL;
-  }
-  strcpy(type_str, sort_type_strings[type]);
-  return success;
-}
-
 /*
  * The string version of ion types
  */
 static const char* ion_type_strings[NUMBER_ION_TYPES] = {
   "a", "b", "c", "x", "y", "z", "p", "by", "bya", "all" };
 
-BOOLEAN_T string_to_ion_type(char* name, ION_TYPE_T* result){
-  BOOLEAN_T success = TRUE;
+bool string_to_ion_type(char* name, ION_TYPE_T* result){
+  bool success = true;
 
-  int ion_type = convert_enum_type_str(
-                       name, -10, ion_type_strings, NUMBER_ION_TYPES);
+  int ion_type = convert_enum_type_str(name, INVALID_ENUM_STRING, 
+                                       ion_type_strings, NUMBER_ION_TYPES);
   (*result) = (ION_TYPE_T)ion_type;
 
   if( ion_type < 0){
-    success = FALSE;
+    success = false;
   }
   return success;
 }
 
-BOOLEAN_T ion_type_to_string(ION_TYPE_T type,
+bool ion_type_to_string(ION_TYPE_T type,
                              char* type_str){
-  BOOLEAN_T success = TRUE;
+  bool success = true;
   if( (int)type > NUMBER_ION_TYPES ){
-    success = FALSE;
+    success = false;
     type_str = NULL;
   }
   strcpy(type_str, ion_type_strings[type]);
@@ -376,27 +335,26 @@ BOOLEAN_T ion_type_to_string(ION_TYPE_T type,
  */
 static const char* algorithm_type_strings[NUMBER_ALGORITHM_TYPES] = 
   {"percolator", "rczar", "curve-fit",
-   //"qvalue",
    "none", "all", "q-ranker"};
 
-BOOLEAN_T string_to_algorithm_type(char* name, ALGORITHM_TYPE_T* result){
-  BOOLEAN_T success = TRUE;
+bool string_to_algorithm_type(char* name, ALGORITHM_TYPE_T* result){
+  bool success = true;
 
-  int algorithm_type = convert_enum_type_str(name, -10,
+  int algorithm_type = convert_enum_type_str(name, INVALID_ENUM_STRING,
                                              algorithm_type_strings,
                                              NUMBER_ALGORITHM_TYPES);
   (*result) = (ALGORITHM_TYPE_T)algorithm_type;
 
   if(algorithm_type < 0){
-    success = FALSE;
+    success = false;
   }
   return success;
 }
 
-BOOLEAN_T algorithm_type_to_string(ALGORITHM_TYPE_T type, char* type_str){
-  BOOLEAN_T success = TRUE;
+bool algorithm_type_to_string(ALGORITHM_TYPE_T type, char* type_str){
+  bool success = true;
   if( (int)type > NUMBER_ALGORITHM_TYPES){
-    success = FALSE;
+    success = false;
     type_str = NULL;
   }
   strcpy(type_str, algorithm_type_strings[type]);
@@ -429,23 +387,24 @@ static const char* scorer_type_strings[NUMBER_SCORER_TYPES] =
 //TODO: this should probably be changed, these strings are the option args
 //Instead could have an if block in string_to_type
 
-BOOLEAN_T string_to_scorer_type(char* name, SCORER_TYPE_T* result){
-  BOOLEAN_T success = TRUE;
+bool string_to_scorer_type(char* name, SCORER_TYPE_T* result){
+  bool success = true;
 
-  int scorer_type = convert_enum_type_str(name, -10, scorer_type_strings,
+  int scorer_type = convert_enum_type_str(name, INVALID_ENUM_STRING, 
+                                          scorer_type_strings,
                                           NUMBER_SCORER_TYPES);
   (*result) = (SCORER_TYPE_T)scorer_type;
 
   if( scorer_type < 0){
-    success = FALSE;
+    success = false;
   }
   return success;
 }
 
-BOOLEAN_T scorer_type_to_string(SCORER_TYPE_T type, char* type_str){
-  BOOLEAN_T success = TRUE;
+bool scorer_type_to_string(SCORER_TYPE_T type, char* type_str){
+  bool success = true;
   if( (int)type > NUMBER_SCORER_TYPES){
-    success = FALSE;
+    success = false;
     type_str = NULL;
   }
   strcpy(type_str, scorer_type_strings[type]);
@@ -504,30 +463,30 @@ char* copy_string_part(const char* src, int length){
 }
 
 /**
- * Compares two numbers and returns TRUE if when rounded to the given
+ * Compares two numbers and returns true if when rounded to the given
  * precision they are equal.  Otherwise, returns false.  
- * E.g. is_equal(0.10, 0.14, 1) -> TRUE. is_equal(0.10, 0.15, 1) -> FALSE
+ * E.g. is_equal(0.10, 0.14, 1) -> true. is_equal(0.10, 0.15, 1) -> false
  */
-BOOLEAN_T is_equal(FLOAT_T a, FLOAT_T b, int precision){
-  a = (a * pow(10, precision)) + 0.5;
-  b = (b * pow(10, precision)) + 0.5;
+bool is_equal(FLOAT_T a, FLOAT_T b, int precision){
+  a = (a * pow(10.0, (FLOAT_T) precision)) + 0.5;
+  b = (b * pow(10.0, (FLOAT_T) precision)) + 0.5;
 
   if( (int)a == (int)b ){
-    return TRUE;
+    return true;
   }
   // else
-  return FALSE;
+  return false;
 }
 
 /**
- *\returns TRUE if float_a is between the interaval of min and max, else FALSE
+ *\returns true if float_a is between the interaval of min and max, else false
  */
-inline BOOLEAN_T compare_float_three(FLOAT_T float_a, FLOAT_T min, FLOAT_T max){
+inline bool compare_float_three(FLOAT_T float_a, FLOAT_T min, FLOAT_T max){
   if(compare_float(float_a, min) == -1 ||
      compare_float(float_a, max) ==  1){
-    return FALSE;
+    return false;
   }
-  return TRUE;
+  return true;
 }
 
 /**
@@ -693,9 +652,9 @@ char* signed_int_to_char(int i){
 }
 /**
  * Gives the peptide type as defined by the string
- * Returns FALSE if the string is not a valid type
+ * Returns false if the string is not a valid type
  */
-//BOOLEAN_T string_to_peptide_type
+//bool string_to_peptide_type
 
 /**
  *prints the peptide type given it's enum value
@@ -729,6 +688,7 @@ void print_peptide_type(PEPTIDE_TYPE_T peptide_type, FILE* file){
 char* cat_string(const char* string_one, const char* string_two){
   int len_one = strlen(string_one);
   int len_two = strlen(string_two);
+  
   char* result = (char*)mycalloc(len_one + len_two + 1, sizeof(char));
   strncpy(result, string_one, len_one);
   strncpy(&result[len_one], string_two, len_two);
@@ -756,37 +716,37 @@ void prefix_fileroot_to_name(char** name) {
 
 /**
  * \brief Check if the string has the correct prefix
- * \returns TRUE if the string starts with the given prefix or if the
- * prefix is NULL, else FALSE.
+ * \returns true if the string starts with the given prefix or if the
+ * prefix is NULL, else false.
  */
-BOOLEAN_T prefix_compare(
+bool prefix_compare(
   const char* string, ///< The string to check
   const char* prefix  ///< The prefix to find in the string
   )
 {
   if( prefix == NULL ){
-    return TRUE;
+    return true;
   }
 
   int len = strlen(string);
   int len_prefix = strlen(prefix);
 
   if(len_prefix > len){
-    return FALSE;
+    return false;
   }
   
   if(strncmp(string, prefix, len_prefix) == 0){
-    return TRUE;
+    return true;
   }
   
-  return FALSE;
+  return false;
 }
 
 /**
  * \brief Check if the string has the correct suffix
- * \returns TRUE if the end of the string matches the given suffix, else FALSE
+ * \returns true if the end of the string matches the given suffix, else false
  */
-BOOLEAN_T suffix_compare(
+bool suffix_compare(
   const char* string, ///< The string to check
   const char* suffix  ///< The suffix to find in the string
   )
@@ -797,7 +757,7 @@ BOOLEAN_T suffix_compare(
     int suffix_idx = suffix_len;
 
     if( suffix_len > string_len ){
-      return FALSE;
+      return false;
     }
 
     //compare name and ext from end of strings backwards
@@ -806,11 +766,11 @@ BOOLEAN_T suffix_compare(
       //   string_idx, string[string_idx], suffix_idx, suffix[suffix_idx]);
       // if they stop matching, don't change filename
       if( suffix[suffix_idx] != string[string_idx--]){
-        return FALSE;
+        return false;
       }
     }
 
-  return TRUE;
+  return true;
 }
 
 /**
@@ -825,7 +785,6 @@ char* get_full_filename(const char* path, const char* filename){
     result = my_copy_string(filename);
   }else{
     // TODO (BF 26-Feb-08) don't add second / if path already ends in /
-    
     char* ready_path = cat_string(path, "/");
     result = cat_string(ready_path, filename);
     free(ready_path);
@@ -857,21 +816,21 @@ long get_filesize(char *FileName){
 */
 int create_output_directory(
   const char *output_folder, // Name of output folder.
-  BOOLEAN_T overwrite  // Whether or not to overwrite an existing dir 
+  bool overwrite  // Whether or not to overwrite an existing dir 
 ) 
 {
 
   int result = -1;
-  BOOLEAN_T path_is_directory = FALSE;
-  BOOLEAN_T path_exists = FALSE;
+  bool path_is_directory = false;
+  bool path_exists = false;
   struct stat stat_buffer;
 
   // Does the output directory alredy exist?
   if (stat(output_folder, &stat_buffer)) {
     if (errno == ENOENT) {
       // stat failed because the path doesn't exist.
-      path_exists = FALSE;
-      path_is_directory = FALSE;
+      path_exists = false;
+      path_is_directory = false;
     }
     else {
       // stat failed for some other reason
@@ -885,7 +844,7 @@ int create_output_directory(
     }
   }
   else {
-    path_exists = TRUE;
+    path_exists = true;
     path_is_directory = S_ISDIR(stat_buffer.st_mode);
   }
 
@@ -949,10 +908,10 @@ int create_output_directory(
 
 /**
  * returns whether the given filename is a directory.
- * Returns TRUE if a directory, FALSE otherwise.
+ * Returns true if a directory, false otherwise.
  * Terminates program if unable to determine status of file.
  */
-BOOLEAN_T is_directory(const char *FileName){
+bool is_directory(const char *FileName){
     struct stat file;
     if(stat(FileName,&file) == 0){
       // return directory status
@@ -966,16 +925,16 @@ BOOLEAN_T is_directory(const char *FileName){
         FileName,
         error
       );
-      return FALSE; // Avoid compiler warning
+      return false; // Avoid compiler warning
     }
 }
 
 /**
  * deletes a given directory and it's files inside.
  * assumes that there's no sub directories, only files
- * \returns TRUE if successfully deleted directory
+ * \returns true if successfully deleted directory
  */
-BOOLEAN_T delete_dir(char* dir) {
+bool delete_dir(char* dir) {
   struct dirent **namelist =NULL;
   int num_file =0;
   int result;
@@ -984,7 +943,7 @@ BOOLEAN_T delete_dir(char* dir) {
   // does the directory to remove exist?, if so move into it..
   if(chdir(dir) == -1){
     carp(CARP_DETAILED_DEBUG, "Could not find directory '%s' to remove", dir);
-    return FALSE;
+    return false;
   }
 
   // collect all files in dir
@@ -1000,15 +959,44 @@ BOOLEAN_T delete_dir(char* dir) {
   //chdir(".."); // assumes the directory to delete is in cwd
   if( chdir(cwd) == -1 ){ 
     free(cwd);
-    return FALSE;
+    return false;
   }
   result = rmdir(dir);
-  if(result == FALSE){
+  if(result == false){
     free(cwd);
-    return FALSE;
+    return false;
   }
   free(cwd);
-  return TRUE;
+  return true;
+}
+
+/**
+ * \brief Take a filename, strip its leading path information (if
+ * any) and file extension (if any).  Tries all file extensions until
+ * one is found.  Add a new path (if given) and a new suffix (exension).
+ *
+ * If given ../dir/filename.ext, [.txt, .ext, t], .new-ext, otherdir
+ * would return  otherdir/filename.new-ext 
+ * \returns A heap allocated filename
+ */
+char* generate_name_path(
+  const char* filename,
+  vector<const char*> old_suffixes,
+  const char* new_suffix,
+  const char* new_path
+  ){
+
+  // check the filename for the extension.  Use the first that matches
+  for(size_t suffix_idx = 0; suffix_idx < old_suffixes.size(); suffix_idx++){
+    if( has_extension(filename, old_suffixes[suffix_idx])){
+      return generate_name_path(filename, old_suffixes[suffix_idx],
+                                new_suffix, new_path);
+    }
+  }
+  // if we got to here, none of the suffixes were found, so it
+  // doesn't matter which we use
+  return generate_name_path(filename, "", new_suffix, new_path);
+
 }
 
 /**
@@ -1118,17 +1106,17 @@ char* generate_name(
 
 /**
  * checks if each AA is an AA
- *\returns TRUE if sequence is valid else, FALSE
+ *\returns true if sequence is valid else, false
  */
-BOOLEAN_T valid_peptide_sequence(const char* sequence){
+bool valid_peptide_sequence(const char* sequence){
   // iterate over all AA and check if with in range
   while(sequence[0] != '\0'){
     if(sequence[0] < 65 || sequence[0] > 90 ){
-      return FALSE;
+      return false;
     }
     ++sequence;
   }
-  return TRUE;
+  return true;
 }
 
 /**
@@ -1142,7 +1130,7 @@ BOOLEAN_T valid_peptide_sequence(const char* sequence){
 FILE* create_file_in_path(
   const char* filename,  ///< the filename to create & open -in
   const char* directory,  ///< the directory to open the file in -in
-  BOOLEAN_T overwrite  ///< replace file (T) or die if exists (F)
+  bool overwrite  ///< replace file (T) or die if exists (F)
   )
 {
   char* file_full_path = get_full_filename(directory, filename);
@@ -1172,6 +1160,7 @@ FILE* create_file_in_path(
   }
   
   file = fopen(file_full_path, "w+"); //read and write, replace existing
+
   if(file == NULL){
     carp(CARP_FATAL, "Failed to create and open file: %s", file_full_path);
   }
@@ -1191,25 +1180,21 @@ char** generate_feature_name_array()
   name_array = (char**)mycalloc(NUM_FEATURES, sizeof(char *));
   name_array[0] =  my_copy_string("XCorr");
   name_array[1] =  my_copy_string("DeltCN");
-  name_array[2] =  my_copy_string("DeltLCN");
-  name_array[3] =  my_copy_string("Sp");
-  name_array[4] =  my_copy_string("lnrSp");
-  name_array[5] =  my_copy_string("dM");
-  name_array[6] =  my_copy_string("absdM");
-  name_array[7] =  my_copy_string("Mass");
-  name_array[8] =  my_copy_string("ionFrac");
-  name_array[9] =  my_copy_string("lnSM");
-  name_array[10] =  my_copy_string("enzN");
-  name_array[11] =  my_copy_string("enzC");
-  name_array[12] =  my_copy_string("enzInt");
-  name_array[13] =  my_copy_string("pepLen");
-  name_array[14] =  my_copy_string("charge1");
-  name_array[15] =  my_copy_string("charge2");
-  name_array[16] =  my_copy_string("charge3");
-  name_array[17] =  my_copy_string("numPep");
-  name_array[18] =  my_copy_string("numProt");
-  name_array[19] =  my_copy_string("pepSite");
-  
+  name_array[2] =  my_copy_string("Sp");
+  name_array[3] =  my_copy_string("lnrSp");
+  name_array[4] =  my_copy_string("dM");
+  name_array[5] =  my_copy_string("absdM");
+  name_array[6] =  my_copy_string("Mass");
+  name_array[7] =  my_copy_string("ionFrac");
+  name_array[8] =  my_copy_string("lnSM");
+  name_array[9] =  my_copy_string("enzN");
+  name_array[10] =  my_copy_string("enzC");
+  name_array[11] =  my_copy_string("enzInt");
+  name_array[12] =  my_copy_string("pepLen");
+  name_array[13] =  my_copy_string("charge1");
+  name_array[14] =  my_copy_string("charge2");
+  name_array[15] =  my_copy_string("charge3");
+
   return name_array;
 }
 
@@ -1467,33 +1452,43 @@ void fit_two_parameter_weibull(
  */
 int prepare_protein_input(
   char* input_file,     ///< name of the fasta file or index directory
-  INDEX_T** index,      ///< return new index here OR
-  DATABASE_T** database)///< return new fasta database here
+  Index** index,      ///< return new index here OR
+  Database** database)///< return new fasta database here
 {
 
   int num_proteins = 0;
-  BOOLEAN_T use_index = is_directory(input_file);
+  bool use_index = is_directory(input_file);
 
-  if (use_index == TRUE){
+  if (use_index == true){
     carp(CARP_INFO, "Preparing protein index %s", input_file);
-    *index = new_index_from_disk(input_file);
+    *index = new Index(input_file);
 
     if (index == NULL){
       carp(CARP_FATAL, "Could not create index from disk for %s", input_file);
     }
-    num_proteins = get_index_num_proteins(*index);
+    num_proteins = (*index)->getNumProteins();
+
+    // check that the index decoys are compatible with the search
+    DECOY_TYPE_T search_decoys = get_decoy_type_parameter("decoys");
+    DECOY_TYPE_T index_decoys = (*index)->getDecoyType();
+    if( search_decoys != NO_DECOYS && search_decoys != index_decoys ){
+      carp(CARP_FATAL, 
+           "Cannot search for %s decoys using an index with %s decoys",
+           decoy_type_to_string(search_decoys), 
+           decoy_type_to_string(index_decoys));
+    }
 
   } else {
     carp(CARP_INFO, "Preparing protein fasta file %s", input_file);
-    *database = new_database(input_file, FALSE);         
+    *database = new Database(input_file, false);         
     if( database == NULL ){
       carp(CARP_FATAL, "Could not create protein database");
     } 
 
-    if(!parse_database(*database)){
+    if(!(*database)->parse()){
       carp(CARP_FATAL, "Error with protein database.");
     } 
-    num_proteins = get_database_num_proteins(*database);
+    num_proteins = (*database)->getNumProteins();
   }
   return num_proteins;
 }
@@ -1652,6 +1647,57 @@ void strcat_formatted
   strcat(string_to_extend, lead_string);
   strcat(string_to_extend, &(extension[i_string]));
   strcat(string_to_extend, "\n");
+}
+
+/**
+ * Check parameter values for what kind of decoys are requested.  Make
+ * sure it is compatible with other search parameters and fail if not.  
+ * \returns Zero if no decoys are searched, one if there are decoys
+ * with an index search, or num-decoys-per-target for a fasta search.
+ */
+int get_num_decoys(bool have_index){
+
+  int requested_decoys_per_target = get_int_parameter("num-decoys-per-target");
+  if( requested_decoys_per_target == 0 ){
+    return 0;
+  }  else if( requested_decoys_per_target > 1 && have_index ){
+    carp(CARP_FATAL, 
+         "Cannot search %d decoys per target. The index contains only one.", 
+         requested_decoys_per_target);
+  }
+
+  DECOY_TYPE_T decoy_type = get_decoy_type_parameter("decoys");
+
+  switch(decoy_type){
+  case NO_DECOYS:
+    return 0;
+
+    // valid for index or database
+  case REVERSE_DECOYS: 
+  case PEPTIDE_SHUFFLE_DECOYS:
+    if( have_index ){
+      return 1;
+    } else { // searching fasta
+      return  requested_decoys_per_target; 
+    }
+
+    //only valid for index
+  case PROTEIN_SHUFFLE_DECOYS:
+    if( have_index ){
+      return 1;
+    } else {
+      carp(CARP_FATAL, 
+           "Cannot generate shuffle whole proteins for fasta search.  Either "
+           "convert fasta to index or use reverse or peptide shuffling.");
+    }
+
+  case INVALID_DECOY_TYPE: // already checked in parameters...but
+  case NUMBER_DECOY_TYPES:
+    carp(CARP_FATAL, "Invalid decoy type.");
+  }
+
+  // shouldn't get here
+  return 0;
 }
 
 

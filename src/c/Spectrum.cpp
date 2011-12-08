@@ -16,7 +16,7 @@
 #include "utils.h"
 #include "mass.h"
 #include "parameter.h"
-#include "scorer.h"
+#include "Scorer.h"
 #include "carp.h"
 #include <vector>
 #include <string>
@@ -710,7 +710,7 @@ bool Spectrum::parseSLine
    int buf_length ///< line length -in
    )
 {
-  char spliced_line[buf_length];
+  char *spliced_line = new char[buf_length];
   int line_index = 0;
   int spliced_line_index = 0;
   int read_first_scan;

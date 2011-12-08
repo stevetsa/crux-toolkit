@@ -21,13 +21,13 @@ echo set terminal png >> $gnuplot
 echo set xlabel \"q-value threshold\" >> $gnuplot
 echo set ylabel \"Number of accepted PSMs\" >> $gnuplot
 echo set xrange \[0:0.1\] >> $gnuplot
+echo set yrange \[0:3000\] >> $gnuplot
 echo set key center right >> $gnuplot
 # Insert dummy plot so we can use "replot" consistently below.
 echo plot 0 notitle with dots >> $gnuplot 
 
 # Create the index.
 db=worm+contaminants
-#db=worm
 if [[ -e $db ]]; then
   echo Skipping create-index.
 else
@@ -67,15 +67,11 @@ for searchtool in sequest-search search-for-matches; do
       $db $shortname
   fi
   if [[ $searchtool == "sequest-search" ]]; then
-    $CRUX extract-columns $shortname/qvalues.target.txt \
-        "decoy q-value (xcorr)" > $shortname/qvalues.xcorr.decoy.txt
-    echo replot \"$shortname/qvalues.xcorr.decoy.txt\" using 1:0 title \
-         \"$shortname XCorr \(decoy\)\" with lines >> $gnuplot
+    $CRUX extract-columns $shortname/qvalues.target.txt "decoy q-value (xcorr)" > $shortname/qvalues.xcorr.decoy.txt
+    echo replot \"$shortname/qvalues.xcorr.decoy.txt\" using 1:0 title \"$shortname XCorr \(decoy\)\" with lines >> $gnuplot
   else  
-    $CRUX extract-columns $shortname/qvalues.target.txt \
-         "Weibull est. q-value" > $shortname/qvalues.weibull.txt
-    echo replot \"$shortname/qvalues.weibull.txt\" using 1:0 \
-         title \"$shortname XCorr \(Weibull\)\" with lines >> $gnuplot
+    $CRUX extract-columns $shortname/qvalues.target.txt "Weibull est. q-value" > $shortname/qvalues.weibull.txt
+    echo replot \"$shortname/qvalues.weibull.txt\" using 1:0 title \"$shortname XCorr \(Weibull\)\" with lines >> $gnuplot
   fi
   
   # Run Crux percolator
@@ -88,52 +84,44 @@ for searchtool in sequest-search search-for-matches; do
       $db $shortname 
   fi
 
-  $CRUX extract-columns $shortname/percolator.target.txt "percolator q-value" \
-        > $shortname/qvalues.percolator.txt
-  echo replot \"$shortname/qvalues.percolator.txt\" using 1:0 \
-        title \"$shortname crux percolator\" with lines >> $gnuplot
+  $CRUX extract-columns $shortname/percolator.target.txt "percolator q-value" > $shortname/qvalues.percolator.txt
+  echo replot \"$shortname/qvalues.percolator.txt\" using 1:0 title \"$shortname crux percolator\" with lines >> $gnuplot
 
   # Run q-ranker.
-  if [[ $searchtool == "search-for-matches" ]]; then
-    echo QRanker does not work with crux search-for-matches.
+  if [[ -e $shortname/qranker.target.txt ]]; then
+    echo Skipping q-ranker.
   else
-    if [[ -e $shortname/qranker.target.psms.txt ]]; then
-      echo Skipping q-ranker
-    else
-      $CRUX q-ranker --output-dir $shortname --decoy-prefix rand_ \
-           --use-spec-features F \
-           --separate-search $shortname/sequest.decoy.sqt . \
-           ./051708-worm-ASMS-10.ms2 $shortname/sequest.target.sqt
-    fi
-    $CRUX extract-columns $shortname/qranker.target.psms.txt "q-value" \
-          > $shortname/qvalues.qranker.txt
-    echo replot \"$shortname/qvalues.qranker.txt\" using 1:0 \
-         title \"$shortname q-ranker\" with lines >> $gnuplot
+    $CRUX q-ranker \
+      --output-dir $shortname \
+      --feature-file T \
+      $db $shortname
   fi
+  $CRUX extract-columns $shortname/qranker.target.txt "q-ranker q-value" > $shortname/qvalues.qranker.txt
 
   
+  echo replot \"$shortname/qvalues.qranker.txt\" using 1:0 title \"$shortname q-ranker\" with lines >> $gnuplot
+  
   # Run Lukas's percolator
-  # THIS DOES NOT WORK WITH PERCOLATOR 1.17 BECAUSE XML IS REQUIRED. --Bill
-  # if [[ $searchtool == "search-for-matches" ]]; then
-  #   echo Stand-alone Percolator does not work with crux search-for-matches.
-  # elif [[ `which percolator` == "" ]]; then
-  #   echo Skipping stand-alone Percolator -- not installed.
-  # else
-  #   if [[ -e $shortname/l-percolator.features.tsv ]]; then
-  #     echo Skipping stand-alone Percolator.
-  #   else
-  #     percolator \
-  #       --tab-out $shortname/l-percolator.features.tsv \
-  #       --gist-out $shortname/l-percolator.gist.txt \
-  #       --weights $shortname/l-percolator.weights.txt \
-  #       --results $shortname/l-percolator.tsv \
-  #       --sqt-out $shortname/l-percolator.sqt \
-  #       --xml-output $shortname/l-percolator.xml \
-  #       $shortname/sequest.target.sqt \
-  #       $shortname/sequest.decoy.sqt
-  #   fi
-  #   echo replot \"$shortname/l-percolator.tsv\" using 3:0 title \"Stand-alone percolator\" with lines >> $gnuplot
-  # fi
+  if [[ $searchtool == "search-for-matches" ]]; then
+    echo Stand-alone Percolator does not work with crux search-for-matches.
+  elif [[ `which percolator` == "" ]]; then
+    echo Skipping stand-alone Percolator -- not installed.
+  else
+    if [[ -e $shortname/l-percolator.features.tsv ]]; then
+      echo Skipping stand-alone Percolator.
+    else
+      percolator \
+        --tab-out $shortname/l-percolator.features.tsv \
+        --gist-out $shortname/l-percolator.gist.txt \
+        --weights $shortname/l-percolator.weights.txt \
+        --results $shortname/l-percolator.tsv \
+        --sqt-out $shortname/l-percolator.sqt \
+        --xml-output $shortname/l-percolator.xml \
+        $shortname/sequest.target.sqt \
+        $shortname/sequest.decoy.sqt
+    fi
+    echo replot \"$shortname/l-percolator.tsv\" using 3:0 title \"Stand-alone percolator\" with lines >> $gnuplot
+  fi
   
 done
 

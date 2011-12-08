@@ -39,7 +39,7 @@ FLOAT_T ProteinPeptideIterator::calculateSubsequenceMass (
  * list or an exclusion list.  A cleavage can happen before/after the
  * given residue if it is either in the inclusion list or is not in
  * the exculsion list.
- * \returns TRUE if the residue is in the inclusion list or not in the
+ * \returns true if the residue is in the inclusion list or not in the
  * exclusion list.
  */
 bool ProteinPeptideIterator::isResidueLegal(char aa, 
@@ -48,28 +48,27 @@ bool ProteinPeptideIterator::isResidueLegal(char aa,
                            bool for_inclusion){
 
   // The logic for returning for_inclusion:
-  // For an inclusion list (TRUE), once we find the aa it passes (TRUE)
-  // For an exclusion list (FALSE), once we find the aa, it fails (FALSE)
+  // For an inclusion list (true), once we find the aa it passes (true)
+  // For an exclusion list (false), once we find the aa, it fails (false)
   int idx=0;
   for(idx=0; idx < list_size; idx++){
     if( aa == aa_list[idx] ){ return for_inclusion; }
   }
   // or if we got to the end of the list and didn't find a match
-  // for inclusion, it fails (!TRUE)
-  // for exclusion, it passes (!FALSE)
+  // for inclusion, it fails (!true)
+  // for exclusion, it passes (!false)
   return ! for_inclusion;
 }
 
 /**
  * Compares the first and second amino acids in the given sequence to
  * see if they conform to the cleavage rules of the given enzyme.  For
- * NO_ENZYME, always returns TRUE.
+ * NO_ENZYME, always returns true.
  *
- * \returns TRUE if this is a valid cleavage position for the given enzyme.
+ * \returns true if this is a valid cleavage position for the given enzyme.
  */
 bool ProteinPeptideIterator::validCleavagePosition(
    char* sequence,
-   //   PEPTIDE_TYPE_T cleavage
    ENZYME_T enzyme
 ){
 
@@ -77,18 +76,18 @@ bool ProteinPeptideIterator::validCleavagePosition(
 
   case TRYPSIN:
     if ((sequence[0] == 'K' || sequence[0] == 'R') && (sequence[1] != 'P')){
-      return TRUE;
+      return true;
     } else {
-      return FALSE;
+      return false;
     }
     break;
     
   case CHYMOTRYPSIN:
     if ((sequence[0] == 'F' || sequence[0] == 'W' || sequence[0] == 'Y') 
         && (sequence[1] != 'P')){
-      return TRUE;
+      return true;
     } else {
-      return FALSE;
+      return false;
     }
     break;
     break;
@@ -97,57 +96,57 @@ bool ProteinPeptideIterator::validCleavagePosition(
     if ((sequence[0] == 'A' || sequence[0] == 'L' ||
          sequence[0] == 'I' || sequence[0] == 'V') 
         && (sequence[1] != 'P')){
-      return TRUE;
+      return true;
     } else {
-      return FALSE;
+      return false;
     }
     break;
 
   case CLOSTRIPAIN:
     if (sequence[0] == 'R'){
-      return TRUE;
+      return true;
     } else {
-      return FALSE;
+      return false;
     }
     break;
 
   case CYANOGEN_BROMIDE:
     if (sequence[0] == 'M'){
-      return TRUE;
+      return true;
     } else {
-      return FALSE;
+      return false;
     }
     break;
 
   case IODOSOBENZOATE:
     if (sequence[0] == 'W'){
-      return TRUE;
+      return true;
     } else {
-      return FALSE;
+      return false;
     }
     break;
 
   case PROLINE_ENDOPEPTIDASE:
     if (sequence[0] == 'P'){
-      return TRUE;
+      return true;
     } else {
-      return FALSE;
+      return false;
     }
     break;
 
   case STAPH_PROTEASE:
     if (sequence[0] == 'E'){
-      return TRUE;
+      return true;
     } else {
-      return FALSE;
+      return false;
     }
     break;
 
   case ASPN:
     if (sequence[1] == 'D'){
-      return TRUE;
+      return true;
     } else {
-      return FALSE;
+      return false;
     }
     break;
 
@@ -155,9 +154,9 @@ bool ProteinPeptideIterator::validCleavagePosition(
     if ((sequence[0] == 'F' || sequence[0] == 'L' ||
          sequence[0] == 'W' || sequence[0] == 'Y') 
         && (sequence[1] != 'P')){
-      return TRUE;
+      return true;
     } else {
-      return FALSE;
+      return false;
     }
     break;
 
@@ -168,9 +167,9 @@ bool ProteinPeptideIterator::validCleavagePosition(
          sequence[0] == 'W' || sequence[0] == 'F' ||
          sequence[0] == 'Y' ) 
         && (sequence[1] != 'P')){
-      return TRUE;
+      return true;
     } else {
-      return FALSE;
+      return false;
     }
     break;
 
@@ -189,7 +188,7 @@ bool ProteinPeptideIterator::validCleavagePosition(
     break;
 
   case NO_ENZYME:
-    return TRUE;
+    return true;
     break;
 
   case INVALID_ENZYME:
@@ -199,7 +198,7 @@ bool ProteinPeptideIterator::validCleavagePosition(
 
   }// end switch
 
-  return FALSE;
+  return false;
 }
 
 /**
@@ -223,33 +222,29 @@ void ProteinPeptideIterator::selectPeptides(
     int  nterm_num_cleavages, 
     int* cterm_allowed_cleavages, 
     int  cterm_num_cleavages, 
-    bool skip_cleavage_locations){
+    int  int_num_skip_cleavages){
 
   // to avoid checking a lot of C-term before our current N-term cleavage
-  int previous_cterm_cleavage_start= 0; 
+  int previous_cterm_cleavage_start= 0;
 
-  PEPTIDE_CONSTRAINT_T* constraint = peptide_constraint_;
+  PeptideConstraint* constraint = peptide_constraint_;
   int nterm_idx, cterm_idx;
 
   // for each possible n-term (start) position...
   for (nterm_idx=0; nterm_idx < nterm_num_cleavages; nterm_idx++){
-    
+
     // check all possible c-term (end) positions
+
     int next_cterm_cleavage_start = previous_cterm_cleavage_start;
     bool no_new_cterm_cleavage_start = true;
     for (cterm_idx = previous_cterm_cleavage_start; 
          cterm_idx < cterm_num_cleavages; cterm_idx++){
 
-      // if missed cleavages are not allowed and we have skipped one, do next nterm
-      if( (skip_cleavage_locations == false)
-          &&
-          ((*cumulative_cleavages_)[nterm_allowed_cleavages[nterm_idx]] 
-           < 
-           (*cumulative_cleavages_)[cterm_allowed_cleavages[cterm_idx]-1])
-          ){
-        break;
+      if ((*cumulative_cleavages_)[cterm_allowed_cleavages[cterm_idx]-1] - \
+	  (*cumulative_cleavages_)[nterm_allowed_cleavages[nterm_idx]] \
+	  > int_num_skip_cleavages) {
+	break;
       }
-      
       if (cterm_allowed_cleavages[cterm_idx] 
           <= nterm_allowed_cleavages[nterm_idx]){
         continue;
@@ -260,14 +255,14 @@ void ProteinPeptideIterator::selectPeptides(
         cterm_allowed_cleavages[cterm_idx] - nterm_allowed_cleavages[nterm_idx];
       
       // if too short, try next cterm position
-      if (length < get_peptide_constraint_min_length(constraint)){
+      if (length < constraint->getMinLength()){
         continue;
         // if too long, go to next nterm (start) position
-      } else if (length > get_peptide_constraint_max_length(constraint)){
+      } else if (length > constraint->getMaxLength()){
         break;
       } else if (no_new_cterm_cleavage_start){
         next_cterm_cleavage_start = cterm_idx;
-        no_new_cterm_cleavage_start = FALSE;
+        no_new_cterm_cleavage_start = false;
       }
      
       // check our mass constraint
@@ -276,8 +271,8 @@ void ProteinPeptideIterator::selectPeptides(
 
       // TODO: if too small, try next cterm (end), if too large, try
       // next nterm (start), else in range so add peptide
-      if ((get_peptide_constraint_min_mass(constraint) <= peptide_mass) && 
-          (peptide_mass <= get_peptide_constraint_max_mass(constraint))){ 
+      if ((constraint->getMinMass() <= peptide_mass) && 
+          (peptide_mass <= constraint->getMaxMass())){ 
 
         // we have found a peptide
         nterm_cleavage_positions_->push_back(nterm_allowed_cleavages[nterm_idx] + 1);
@@ -315,11 +310,10 @@ void ProteinPeptideIterator::prepareMc(
     int missed_cleavages)
 {
   Protein* protein = protein_;
-  MASS_TYPE_T mass_type = get_peptide_constraint_mass_type(peptide_constraint_);
+  MASS_TYPE_T mass_type = peptide_constraint_->getMassType();
   double* mass_array = (double*)mycalloc(protein->getLength()+1, sizeof(double));
 
-  //  PEPTIDE_TYPE_T pep_type = get_peptide_type_parameter("cleavages");
-  ENZYME_T enzyme = get_peptide_constraint_enzyme(peptide_constraint_);
+  ENZYME_T enzyme = peptide_constraint_->getEnzyme();
   FLOAT_T mass_h2o = MASS_H2O_AVERAGE;
 
   // set correct H2O mass
@@ -341,7 +335,7 @@ void ProteinPeptideIterator::prepareMc(
 
   // calculate our cleavage positions and masses
   for(start_idx = 1; start_idx < protein->getLength()+1; start_idx++){
-    int sequence_idx = start_idx - 1; 
+    int sequence_idx = start_idx - 1;
     mass_array[start_idx] = mass_array[start_idx-1] + 
       get_mass_amino_acid(protein->getSequencePointer()[sequence_idx], mass_type);
 
@@ -375,7 +369,7 @@ void ProteinPeptideIterator::prepareMc(
   // now determine the cleavage positions that actually match our constraints
 
   DIGEST_T digestion = 
-    get_peptide_constraint_digest(peptide_constraint_);
+    peptide_constraint_->getDigest();
 
   switch (digestion){
 
@@ -408,7 +402,7 @@ void ProteinPeptideIterator::prepareMc(
       this->selectPeptides(
         all_positions, protein->getLength(),
         all_positions+1, protein->getLength(), // len-1?
-        TRUE); // for unspecific ends, allow internal cleavage sites
+        500); // for unspecific ends, allow internal cleavage sites
       break;
 
   case INVALID_DIGEST:
@@ -467,7 +461,7 @@ unsigned int ProteinPeptideIterator::countMaxPeptides(
  */
 ProteinPeptideIterator::ProteinPeptideIterator(
   Protein* protein, ///< the protein's peptide to iterate -in
-  PEPTIDE_CONSTRAINT_T* peptide_constraint ///< the peptide constraints -in
+  PeptideConstraint* peptide_constraint ///< the peptide constraints -in
   )
 {
 
@@ -483,11 +477,11 @@ ProteinPeptideIterator::ProteinPeptideIterator(
 
   peptide_idx_ = 0;
   peptide_constraint_ 
-    = copy_peptide_constraint_ptr(peptide_constraint);
+    = PeptideConstraint::copyPtr(peptide_constraint);
   cur_start_ = 0; 
   cur_length_ = 1;  
   num_mis_cleavage_ 
-    = get_peptide_constraint_num_mis_cleavage(peptide_constraint_);
+    = peptide_constraint_->getNumMisCleavage();
   protein_ = protein;
 
   nterm_cleavage_positions_ = new vector<int>();
@@ -515,7 +509,7 @@ ProteinPeptideIterator::ProteinPeptideIterator(
  */
 ProteinPeptideIterator::~ProteinPeptideIterator() 
 {
-  free_peptide_constraint(peptide_constraint_);
+  PeptideConstraint::free(peptide_constraint_);
   free(mass_array_); 
   delete nterm_cleavage_positions_; 
   delete peptide_lengths_; 
@@ -525,7 +519,7 @@ ProteinPeptideIterator::~ProteinPeptideIterator()
 
 /**
  * The basic iterator functions.
- * \returns TRUE if there are additional peptides, FALSE if not.
+ * \returns true if there are additional peptides, false if not.
  */
 bool ProteinPeptideIterator::hasNext()
 {
@@ -536,7 +530,7 @@ bool ProteinPeptideIterator::hasNext()
  * \returns The next peptide in the protein, in an unspecified order
  * the Peptide is new heap allocated object, user must free it
  */
-PEPTIDE_T* ProteinPeptideIterator::next()
+Peptide* ProteinPeptideIterator::next()
 {
   if( !has_next_){
     carp(CARP_DEBUG, "Returning null");
@@ -549,7 +543,7 @@ PEPTIDE_T* ProteinPeptideIterator::next()
   FLOAT_T peptide_mass = (*peptide_masses_)[cleavage_idx];
 
   // create new peptide
-  PEPTIDE_T* peptide = new_peptide(current_length, peptide_mass, 
+  Peptide* peptide = new Peptide(current_length, peptide_mass, 
                                    protein_, current_start);//, peptide_type);
   // update position of iterator
   ++current_cleavage_idx_;

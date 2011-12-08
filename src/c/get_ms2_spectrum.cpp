@@ -12,12 +12,15 @@
 #include <assert.h>
 #include <ctype.h>
 #include <vector>
+#ifndef WIN32
+#include <unistd.h>
+#endif
 #include "parameter.h"
 #include "carp.h"
 #include "Spectrum.h"
 #include "Peak.h"
 #include "SpectrumCollectionFactory.h"
-#include "unistd.h"
+#include "WinCrux.h"
 
 /****************************************************************************
  * Read a string into either a single positive integer or a range of
@@ -55,7 +58,7 @@ static const int NUM_MS2_ARGUMENTS = 2;
 int main(int argc, char** argv){
 
   /* Declarations */
-  BOOLEAN_T options = FALSE; ///< do we want options?
+  bool options = false; ///< do we want options?
 
   /* Define optional command line arguments */
   int num_options = NUM_MS2_OPTIONS;

@@ -24,6 +24,7 @@ MatchFileWriter::MatchFileWriter()
     num_columns_(0){
   for(int col_type = 0; col_type < NUMBER_MATCH_COLUMNS; col_type++){
     match_to_print_[col_type] = false;
+    match_precision_[col_type] = 0;
   }
   setPrecision();
 } 
@@ -37,6 +38,7 @@ MatchFileWriter::MatchFileWriter(const char* filename)
     num_columns_(0){
   for(int col_type = 0; col_type < NUMBER_MATCH_COLUMNS; col_type++){
     match_to_print_[col_type] = false;
+    match_precision_[col_type] = 0;
   }
   setPrecision();
 }
@@ -84,11 +86,15 @@ void MatchFileWriter::setPrecision(){
     case XCORR_SCORE_COL:
     case PVALUE_COL:
     case WEIBULL_QVALUE_COL:
+    case WEIBULL_PEP_COL:
     case DECOY_XCORR_QVALUE_COL:
+    case DECOY_XCORR_PEP_COL:
     case PERCOLATOR_SCORE_COL:
     case PERCOLATOR_QVALUE_COL:
+    case PERCOLATOR_PEP_COL:
     case QRANKER_SCORE_COL:
     case QRANKER_QVALUE_COL:
+    case QRANKER_PEP_COL:
     case SIN_SCORE_COL:
     case NSAF_SCORE_COL:
     case EMPAI_SCORE_COL:
@@ -146,7 +152,8 @@ void MatchFileWriter::addColumnName(MATCH_COLUMNS_T column_type){
  * Adds which columns to print based on the COMMAND_TYPE_T. Only for
  * search-for-matches, sequest-search and spectral-counts.
  */
-void MatchFileWriter::addColumnNames(CruxApplication* application, bool has_decoys){
+void MatchFileWriter::addColumnNames(CruxApplication* application, 
+                                     bool has_decoys){
 
   COMMAND_T command = application->getCommand();
 
@@ -188,6 +195,9 @@ void MatchFileWriter::addColumnNames(CruxApplication* application, bool has_deco
       addColumnName(BY_IONS_MATCHED_COL);
       addColumnName(BY_IONS_TOTAL_COL);
     }
+    if( has_decoys ){
+      addColumnName(DECOY_MATCHES_SPECTRUM_COL);
+    }
     break;
 
   case SEQUEST_COMMAND:      ///< sequest-search
@@ -196,6 +206,9 @@ void MatchFileWriter::addColumnNames(CruxApplication* application, bool has_deco
       addColumnName(SP_RANK_COL);
       addColumnName(BY_IONS_MATCHED_COL);
       addColumnName(BY_IONS_TOTAL_COL);
+    }
+    if( has_decoys ){
+      addColumnName(DECOY_MATCHES_SPECTRUM_COL);
     }
     break;
 
@@ -283,9 +296,11 @@ void MatchFileWriter::addColumnNames
   case QVALUE_COMMAND:       ///< compute-q-values
     if( cols_to_print[PVALUE_COL] ){
       addColumnName(WEIBULL_QVALUE_COL);
+      addColumnName(WEIBULL_PEP_COL);
       //addColumnName(WEIBULL_PEPTIDE_QVALUE_COL);
     } else {
       addColumnName(DECOY_XCORR_QVALUE_COL);
+      addColumnName(DECOY_XCORR_PEP_COL);
       //addColumnName(DECOY_XCORR_PEPTIDE_QVALUE_COL);
     }
     break;
@@ -294,11 +309,13 @@ void MatchFileWriter::addColumnNames
     addColumnName(PERCOLATOR_SCORE_COL);
     addColumnName(PERCOLATOR_RANK_COL);
     addColumnName(PERCOLATOR_QVALUE_COL);
+    addColumnName(PERCOLATOR_PEP_COL);
     break;
 
   case QRANKER_COMMAND:
     addColumnName(QRANKER_SCORE_COL);
     addColumnName(QRANKER_QVALUE_COL);
+    addColumnName(QRANKER_PEP_COL);
     break;
   }
 
