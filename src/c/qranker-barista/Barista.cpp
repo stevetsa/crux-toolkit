@@ -2149,6 +2149,88 @@ void Barista :: print_description()
 
 }
 
+int Barista :: crux_set_command_line_options(int argc, char *argv[])
+{
+  const char* option_list[] = {
+    "qb-enzyme",
+    "decoy-prefix",
+    "separate-searches",
+    "fileroot",
+    "output-dir",
+    "overwrite",
+    "skip-cleanup",
+    "re-run",
+    "use-spec-features",
+    "parameter-file"
+  };
+  int num_options = sizeof(option_list)/sizeof(char*);
+
+  const char* argument_list[] = {
+    "database",
+    "spectra",
+    "search results"
+  };
+  int num_arguments = sizeof(argument_list)/sizeof(char*);
+
+  initialize(argument_list, num_arguments, 
+	     option_list, num_options,
+	     argc, argv);
+
+  carp(CARP_INFO, "Log file success!");
+  
+  string db_source;
+  string sqt_source;
+  string ms2_source;
+
+  string sqt_decoy_source;
+  int separate_search_flag = 0;
+
+  string output_directory = "crux-output";
+  string fileroot = "";
+  int fileroot_exists = 0;
+
+  string enzyme = "trypsin";
+
+  string decoy_prefix = "rand_";
+
+  string dir_with_tables = "";
+  int found_dir_with_tables = 0;
+
+  bool spec_features_flag = true;
+
+  bool skip_cleanup_flag = false;
+  
+  db_source = get_string_parameter_pointer("database");
+  ms2_source = get_string_parameter_pointer("spectra");
+  sqt_source = get_string_parameter_pointer("search results");
+
+  spec_features_flag = get_boolean_parameter("use-spec-features");
+  skip_cleanup_flag = get_boolean_parameter("skip-cleanup");
+  
+  sqt_decoy_source = get_string_parameter_pointer("separate-searches"); 
+  if(sqt_decoy_source != "__NULL_STR")
+    separate_search_flag = 1;
+  
+  dir_with_tables = get_string_parameter_pointer("re-run"); 
+  if(dir_with_tables != "__NULL_STR")
+    found_dir_with_tables = 1;
+  
+  output_directory = get_string_parameter_pointer("output-dir");
+  fileroot = get_string_parameter_pointer("fileroot");
+  if(fileroot != "__NULL_STR")
+    fileroot_exists = 1;
+ 
+  enzyme = get_string_parameter_pointer("qb-enzyme");
+  
+  decoy_prefix = get_string_parameter_pointer("decoy-prefix");
+  
+  return 1;
+
+  
+}
+
+
+
 int Barista :: set_command_line_options(int argc, char *argv[])
 {
   string db_source;
@@ -2411,16 +2493,25 @@ int Barista :: set_command_line_options(int argc, char *argv[])
 
 int Barista::main(int argc, char **argv) {
  //int main(int argc, char **argv){
-    
-  if(!set_command_line_options(argc,argv))
+
+  if(!crux_set_command_line_options(argc,argv))
     return 1;
+
+  //if(!set_command_line_options(argc,argv))
+  //return 1;
    
-  run_tries_multi_task();
-  if(skip_cleanup_flag != 1)
-    sqtp.clean_up(out_dir);
+  //run_tries_multi_task();
+  //if(skip_cleanup_flag != 1)
+  //sqtp.clean_up(out_dir);
   
   return 0;
 }   
+
+bool Barista :: needsOutputDirectory()
+{
+  return true;
+}
+
 
 string Barista::getName() {
   return "barista";

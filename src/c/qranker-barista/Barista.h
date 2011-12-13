@@ -52,6 +52,7 @@ class Barista : public CruxApplication
   ~Barista(){clear();}
   void clear();
   void print_description();
+  int crux_set_command_line_options(int argc, char *argv[]);
   int set_command_line_options(int argc, char *argv[]);
   void setup_for_training(int trn_to_tst);
   void setup_for_reporting_results();
@@ -108,6 +109,7 @@ class Barista : public CruxApplication
   virtual int main(int argc, char** argv);
   virtual std::string getName();
   virtual std::string getDescription();
+  virtual bool needsOutputDirectory();
 
 
   double check_gradients_hinge_one_net(int protind, int label);

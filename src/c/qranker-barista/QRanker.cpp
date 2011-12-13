@@ -842,10 +842,9 @@ int QRanker :: crux_set_command_line_options(int argc, char *argv[])
     fileroot_exists = 1;
  
   enzyme = get_string_parameter_pointer("qb-enzyme");
-  cout << enzyme << endl;
 
   decoy_prefix = get_string_parameter_pointer("decoy-prefix");
-  cout << decoy_prefix << endl;
+
   return 1;
 
   

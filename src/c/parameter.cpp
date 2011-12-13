@@ -718,7 +718,10 @@ void initialize_parameters(void){
      "<fileroot>.percolator.features.txt or <fileroot>.qranker.features.txt.",
      "true");
 
-  // **** q-ranker arguments ****
+  // **** q-ranker-barista arguments ****
+  set_string_parameter("database", NULL,
+		       "The program requires the FASTA format protein database files against which the search was performed. The protein database input may be a concatenated database or separate target and decoy databases; the latter is supported with the --separate-searches option, described below. In either case, Barista distinguishes between target and decoy proteins based on the presence of a decoy prefix on the sequence identifiers (see the --decoy-prefix option, below). The database can be provided in three different ways: (1) as a a single FASTA file with suffix \".fa\", \".fsa\" or \".fasta\", (2) as a text file containing a list of FASTA files, one per line, or (3) as a directory containing multiple FASTA files (identified via the filename suffixes \".fa\", \".fsa\" or \".fasta\").", "argument for barista", "true");
+
   set_string_parameter("spectra", NULL,
 		       "The fragmentation spectra must be provided in MS2 format. Like the database, the spectra can be specified in three different ways: (1) as a single file with suffix \".ms2\", (2) as a text file containing a list of MS2 files or (3) as a directory in which all the MS2 files can be found.", "argument for q-ranker and barista", "true");
   
