@@ -339,7 +339,7 @@ int SearchForMPSMS::main(int argc, char** argv) {
 }// end main
 
 string SearchForMPSMS::getName() {
-  return "search-for-mpsms";
+  return "chimera-search";
 }
 
 string SearchForMPSMS::getDescription() {
