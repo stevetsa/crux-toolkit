@@ -57,10 +57,12 @@ public:
     inline void set_output_dir(string output_dir){out_dir = output_dir;}
     void print_description();
     int set_command_line_options(int argc, char **argv);
+    int crux_set_command_line_options(int argc, char *argv[]);
 
     virtual int main(int argc, char** argv);
     virtual std::string getName();
     virtual std::string getDescription();
+    virtual bool needsOutputDirectory();
 
 protected:
 

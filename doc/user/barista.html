@@ -366,13 +366,13 @@ given to the current run.
 <ul>
 
 <li>
-<code>--enzyme trypsin|chymotrypsin|elastase</code> &ndash; The enzyme
+<code>--qb-enzyme trypsin|chymotrypsin|elastase</code> &ndash; The enzyme
 used to digest the proteins in the experiment.  Default =
 trypsin.</li>
 
 <li>
 <code>--decoy-prefix &lt;string&gt;</code> &ndash; Specifies the
-prefix of the protein names that indicates a decoy. Default = decoy_.
+prefix of the protein names that indicates a decoy. Default = rand_.
 </li>
 
 <li>
@@ -428,8 +428,12 @@ been set to true when Barista was run the first time.</li>
 <code>--use-spec-features &lt;T/F&gt;</code> &ndash; Barista uses
 enriched feature set derived from the spectra in ms2 files. It can be
 forced to use minimal feature set by setting the --use-spec-features
-option to F. Default T.
+option to F. Default T.</li>
 
+<li><code>--parameter-file &lt;filename&gt;</code> &ndash; 
+A file containing command-line or additional parameters.  See
+the <a href="parameter-file.html">parameter documentation</a> page
+for details.  Default = no parameter file.</li>
 
 
 </ul>
