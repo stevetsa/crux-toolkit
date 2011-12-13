@@ -157,6 +157,10 @@ class Spectrum{
    */
   void print(FILE* file); ///< output file to print at -out
 
+  void print(
+    std::ostream& os ///< stream to print to -out
+    );
+
   /**
    * Prints a spectrum with the given intensities instead of the
    * observed peaks.  Assumes intensities are in m/z bins from 0 to
@@ -256,6 +260,8 @@ class Spectrum{
    * \returns the ZState at the requested index
    */
   const SpectrumZState& getZState(int idx);
+
+  void addZState(const SpectrumZState& zstate);
 
   /**
    * Considers the spectrum-charge parameter and returns the

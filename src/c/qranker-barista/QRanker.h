@@ -38,11 +38,16 @@ public:
     void printNetResults(vector<int> &scores);
     void write_results(string filename, NeuralNet &net);
     void write_results(string prefix, string filename, PSMScores& set);
+    void write_results(string predix, string filename, PSMScores& set, Dataset& dataset);
     void write_results_extra(string prefix, NeuralNet& net);
 
     void write_results_pvalue(string prefix);
     int getOverFDRPvalue(PSMScores &set, double fdr);
     void calcPvalue(PSMScores &set);
+    void calcPvalue(
+      PSMScores& target_set, 
+      PSMScores& target_decoy_set
+      );
 
     void write_results_max(string filename, NeuralNet &net);
     void write_max_nets(string filename, NeuralNet *max_net);

@@ -14,17 +14,21 @@ Dataset::Dataset()
     psmind_to_rtime_max_diff(0),
     psmind_to_nzstates(0),
     protind_to_label(0),
-    protind_to_num_all_pep(0)
+    protind_to_num_all_pep(0),
+    have_normalization_pars(false)
 {
 }
 
 Dataset::~Dataset()
 {
+  cerr <<"Inside ~Dataset"<<endl;
   clear();
+  cerr <<"Done ~Dataset"<<endl;
 }
 
 void Dataset:: clear()
 {
+  
   delete[] psmind_to_features;
   delete[] psmind_to_label;
   delete[] psmind_to_pepind;
@@ -38,6 +42,7 @@ void Dataset:: clear()
   delete[] psmind_to_charge;
   delete[] protind_to_label;
   delete[] protind_to_num_all_pep;
+  
 }
 
 
@@ -287,6 +292,8 @@ void Dataset :: load_psm_data_for_training(string &summary_fn, string &psm_fn)
   f_summary.close();
   fname.str("");
 
+  cerr << "Dataset:"<<num_features<<" "<<num_psms<<" "<<num_pos_psms<<" "<<num_neg_psms<<endl;
+
   //psm features
   long begin,end;
   fname << in_dir << "/" << psm_fn;
@@ -312,6 +319,13 @@ void Dataset :: load_psm_data_for_training(string &summary_fn, string &psm_fn)
   f_psmind_to_label.close();
   fname.str("");
 
+  //psmind_to_scan
+  fname << in_dir << "/psmind_to_scan.txt";
+  ifstream f_psmind_to_scan(fname.str().c_str(),ios::binary);
+  psmind_to_scan = new int[num_psms];
+  f_psmind_to_scan.read((char*)psmind_to_scan,sizeof(int)*num_psms);
+  f_psmind_to_scan.close();
+  fname.str("");
 }
 
 
@@ -423,25 +437,36 @@ void Dataset :: load_psm_data_for_reporting_results()
 
 void Dataset :: normalize_psms()
 {
+
+  if (!have_normalization_pars) {
+    cerr <<"GENERATING NORMALIZATION PARAMETERS"<<endl;
   for (int i = 0; i < num_features; i++)
     {
       double mean = 0;
       for (int j = 0; j < num_psms; j++)
 	mean += psmind_to_features[num_features*j+i];
       mean /= num_psms;
-      
+
+      mean_vector.push_back(mean);
+  
       double std = 0;
       for (int j = 0; j < num_psms; j++)
 	{
-	  psmind_to_features[num_features*j+i] -= mean;
+	  
 	  std += psmind_to_features[num_features*j+i]*psmind_to_features[num_features*j+i];
 	}
       std = sqrt(std/num_psms);
+      std_vector.push_back(std);
+    }
+    have_normalization_pars = true;
+  }
 
-      for (int j = 0; j < num_psms; j++)
-	{
-	  if(std > 0)
-	    psmind_to_features[num_features*j+i] /= std;
+  for (int i = 0; i < num_features; i++) {
+    for (int j = 0; j < num_psms; j++) {
+         
+         psmind_to_features[num_features*j+i] -= mean_vector[i];
+	  if(std_vector[i] > 0)
+	    psmind_to_features[num_features*j+i] /= std_vector[i];
 	}
 
       double sm = 0;

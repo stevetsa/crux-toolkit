@@ -13,6 +13,8 @@
 #include "SpectrumCollectionFactory.h"
 #include "MPSM_Scorer.h"
 
+#include <fstream>
+
 using namespace std;
 
 AssignIonsMPSMSpectrum::AssignIonsMPSMSpectrum() {
@@ -169,12 +171,14 @@ int AssignIonsMPSMSpectrum::main(int argc, char** argv) {
   //now iterate through all of the peaks and print out the matched ones.
   cerr <<"Printing results"<<endl;
 
-  cout << "m/z\tintensity";
+  ofstream fout("assign.txt");
+
+  fout << "m/z\tintensity";
   
   for (int seq_idx=0;seq_idx < peptide_sequences.size();seq_idx++) {
-    cout << "\tmatched_"<<seq_idx;
+    fout << "\tmatched_"<<seq_idx;
   }
-  cout <<"\tmatch type"<<endl;
+  fout <<"\toverlap"<<endl;
 
   for (PeakIterator peak_iter = spectrum->begin();
     peak_iter != spectrum->end();
@@ -184,36 +188,78 @@ int AssignIonsMPSMSpectrum::main(int argc, char** argv) {
     if (peak->getLocation() < 400 || peak->getLocation() > 1400) {
       continue;
     }
-    cout << peak->getLocation() << "\t" <<
+    fout << peak->getLocation() << "\t" <<
             peak->getIntensity();
 
     //cerr << get_peak_location(peak) << endl;
 
-    int type = 0;
 
     
-
+    int num_matched = 0;
     for (int seq_idx = 0;seq_idx < peptide_sequences.size();seq_idx++) {
       //cerr <<"finding matched peak in seq:"<<seq_idx<<endl;
-      cout << "\t";
+      fout << "\t";
       find_iter = matched_peak_to_ion_vec[seq_idx].find(peak);
-  
       if (find_iter != matched_peak_to_ion_vec[seq_idx].end()) {
-        cout << "1";
-        type = type + seq_idx + 1;
+        num_matched++;
+        fout << peak->getIntensity();
+      } else {
+        fout << "0" ;
       }
     }
 
-    cout << "\t" << type << endl;
-
+    if (num_matched > 1) {
+      fout << "\t" <<  peak->getIntensity() << endl;
+    }  else {
+      fout << "\t" <<  "0" << endl;
+    }
 
   }
+
+  fout.close();
 
   for (int seq_idx = 0;seq_idx<peptide_sequences.size();seq_idx++) {
     cerr << "Number of ions assigned to "<<peptide_sequences[seq_idx]<<":"<<num_matched_ions[seq_idx]<<endl;
     cerr << "Total ions for "<<peptide_sequences[seq_idx]<<":"<<ion_series_vec[seq_idx]->getNumIons()<<endl;
   }
 
+  ofstream gnuplot("annotate.gnuplot");
+  gnuplot << "set terminal png" << endl;
+  gnuplot << "set xrange[300:*]"<<endl;
+  gnuplot << "plot \"assign.txt\" using 1:2 with impulses lc rgb \"grey\" lt 1 notitle";
+  for (int seq_idx=0;seq_idx<peptide_sequences.size();seq_idx++) {
+    string sequence = peptide_sequences[seq_idx];
+    int charge = charge_states[seq_idx];
+    int index = seq_idx+3;
+    string color = "";
+    switch(seq_idx) {
+      case 0: 
+        color = "red";
+        break;
+      case 1:
+        color = "blue";
+        break;
+      case 2: 
+        color = "purple";
+        break;
+      case 3:
+        color = "orange";
+        break;
+      case 4:
+        color = "cyan";
+        break;
+      case 5:
+        color = "violet";
+        break;
+      
+    }
+
+    gnuplot << ", \"\" using 1:"<<index<<" with impulses lc rgb \""<<color<<"\" title \"" << sequence << "(+"<<charge<<")\"";
+
+  }
+  gnuplot << ", \"\" using 1:"<<(peptide_sequences.size()+3)<<" with impulses lc rgb \"green\" title \"Overlap\"" << endl;
+
+  gnuplot.close();
 
 
   return 0;

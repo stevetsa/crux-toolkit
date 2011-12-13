@@ -387,6 +387,10 @@ void SearchForMPSMS::search(
 
 bool SearchForMPSMS::passHammingDistThreshold(MPSM_Match& match) {
   //cerr <<"getHammingDist()"<<endl;
+
+  return true;
+  /*
+
   if (match.getHammingDist() > 2) {
     return true;
   } else {
@@ -396,6 +400,7 @@ bool SearchForMPSMS::passHammingDistThreshold(MPSM_Match& match) {
     return false;
   }
   //cerr <<"Done getHammingDist()"<<endl;
+  */
 }
 
 bool SearchForMPSMS::passRTimeThreshold(

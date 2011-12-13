@@ -5,6 +5,8 @@
  * \brief code to support working with spectra
  ****************************************************************************/
 
+#include <iomanip>
+#include <ios>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -12,7 +14,7 @@
 #include <assert.h>
 #include <ctype.h>
 #include "objects.h"
-#include "Spectrum.h"
+#include "Spectrum.h" 
 #include "utils.h"
 #include "mass.h"
 #include "parameter.h"
@@ -23,6 +25,7 @@
 #include "DelimitedFile.h"
 #include "MatchFileReader.h"
 #include "MSToolkit/Spectrum.h"
+
 
 using namespace std;
 
@@ -111,36 +114,68 @@ PeakIterator Spectrum::end() {
  */
 void Spectrum::print(FILE* file) ///< output file to print at -out
 {
+  ostringstream oss;
+  print(oss);
+  string string_spectrum = oss.str();
+  fprintf(file,"%s",string_spectrum.c_str());
+}
+
+void Spectrum::print(
+  ostream& os ///< stream to print to -out
+) {
+
   int mass_precision = get_int_parameter("mass-precision");
-  fprintf(file, "S\t%06d\t%06d\t%.*f\n", 
-         first_scan_,
-         last_scan_,
-         mass_precision,
-         precursor_mz_);
+
+  // print 'S' line
+  os << "S\t" <<
+        first_scan_ << "\t" <<
+        last_scan_ << "\t" <<
+        std::fixed <<
+        std::setprecision(mass_precision) << 
+        precursor_mz_ << endl;
 
   // print 'I' line
   for(size_t line_idx = 0; line_idx < i_lines_v_.size(); line_idx++){
-    fprintf(file, "%s\n", (i_lines_v_[line_idx]).c_str());
+    os << i_lines_v_[line_idx] << endl;
   }
+
+  if (ezstates_.size() != 0) {
+    for (size_t z_idx = 0; z_idx < getNumZStates();z_idx++) {
+      os << "I\tEZ\t" <<
+         ezstates_[z_idx].getCharge() << "\t" <<
+         std::fixed <<
+         std::setprecision(mass_precision) <<
+         ezstates_[z_idx].getSinglyChargedMass() << "\t" <<
+         ezstates_[z_idx].getRTime() << "\t" <<
+         ezstates_[z_idx].getArea() << endl;
+    }
+
+  }
+
   
   // print 'Z', 'D' line
-  for(size_t z_idx = 0; z_idx < zstates_.size(); z_idx++){
-    fprintf(file, "Z\t%d\t%.*f\n", zstates_[z_idx].getCharge(), mass_precision,
-            zstates_[z_idx].getSinglyChargedMass());
+  for(size_t z_idx = 0; z_idx < getNumZStates(); z_idx++){
+    os << "Z" << "\t" << 
+      getZState(z_idx).getCharge() << "\t" <<
+      std::fixed <<
+      std::setprecision(mass_precision) <<
+      getZState(z_idx).getSinglyChargedMass() << endl;
+
     // are there any 'D' lines to print?
     if(z_idx < d_lines_v_.size() ){
-      fprintf(file, "%s", d_lines_v_[z_idx].c_str());
+      os << d_lines_v_[z_idx] << endl;
     }
   }
 
   // print peaks
   for(int peak_idx = 0; peak_idx < (int)peaks_.size(); ++peak_idx){
-    fprintf(file, "%.*f %.4f\n",
-            mass_precision,
-            peaks_[peak_idx]->getLocation(),
-            peaks_[peak_idx]->getIntensity());
+    os << std::setprecision(mass_precision) << std::fixed <<
+      peaks_[peak_idx]->getLocation() << " " << 
+      std::setprecision(4) << std::fixed <<
+      peaks_[peak_idx]->getIntensity() << endl;
   }
 }
+
 
 /**
  * Prints a spectrum in ms2 format with the given intensities instead of the
@@ -858,11 +893,13 @@ bool Spectrum::parseILine(char* line)  ///< 'I' line to parse -in
    string line_str(line);
    // remove the newline (windows or unix style)
    line_str.erase( line_str.find_first_of("\r\n") );
-   i_lines_v_.push_back(line_str);
 
    if (line_str.find("EZ") != string::npos) {
      return parseEZLine(line_str);
+   } else {
+     i_lines_v_.push_back(line_str);
    }
+   
 
 
   return true;
@@ -1244,6 +1281,19 @@ const SpectrumZState& Spectrum::getZState(
   int idx ///< the zstate index
 ) {
   return getZStates().at(idx);
+}
+
+void Spectrum::addZState(
+  const SpectrumZState& zstate
+  ) {
+
+  if (ezstates_.size() != 0) {
+    ezstates_.push_back(zstate);
+  } else {
+    zstates_.push_back(zstate);
+  }
+  
+
 }
 
 

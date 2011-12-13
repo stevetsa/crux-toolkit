@@ -134,8 +134,99 @@ void PSMScores::calcMultiOverFDR(vector<double> &fdr, vector<int> &overFDR) {
 }
 
 
+void PSMScores::fillFeaturesSplit(
+  PSMScores& train, 
+  PSMScores& test,
+  Dataset& d,
+  double ratio) {
 
 
+  //split by scan, make sure that all psm's corresponding to 
+  //a scan are in the same set.
+  map<int,vector<int> >scan_to_psmindices;
+
+  int num_psms = d.get_num_psms();
+  assert (ratio >0 && ratio < 1);
+  
+  for (int i = 0; i < num_psms; i++) {
+    int psmind = i;
+    int scan = d.psmind2scan(i);
+    if (scan_to_psmindices.find(scan) == scan_to_psmindices.end()) {
+      vector<int> indices;
+      scan_to_psmindices[scan] = indices;
+    }
+    scan_to_psmindices[scan].push_back(psmind);
+  }
+ 
+  int num_scans = scan_to_psmindices.size();
+
+  int n = num_scans;
+  int k = (int) (n * ratio);
+  int l = n-k;
+
+  vector<int> all_scans;
+
+  for (map<int, vector<int> >::iterator iter = scan_to_psmindices.begin();
+    iter != scan_to_psmindices.end();
+    ++iter) {
+    all_scans.push_back(iter->first);
+  }
+
+  random_shuffle(all_scans.begin(), all_scans.end()); 
+  int num_pos_train = 0;
+  int num_neg_train = 0;
+
+  for (int scan_idx=0;scan_idx < k;scan_idx++) {
+
+    int scan = all_scans.at(scan_idx);
+    vector<int> psmindices = scan_to_psmindices[scan];
+
+
+
+    for (int psm_idx = 0;psm_idx < psmindices.size();psm_idx++) { 
+
+      PSMScoreHolder psm;
+      psm.psmind=psmindices.at(psm_idx);
+      psm.label = d.psmind2label(psm.psmind);
+      train.scores.push_back(psm);
+      if (psm.label == 1) {
+        num_pos_train++;
+      } else {
+        num_neg_train++;
+      }
+    }
+  }
+  
+  train.pos=num_pos_train;
+  train.neg=num_neg_train;
+  train.factor=(double)num_pos_train/(double)num_neg_train;
+
+  int num_pos_test = 0;
+  int num_neg_test = 0;
+  for (int scan_idx=k;scan_idx < num_scans;scan_idx++) {
+
+    int scan = all_scans.at(scan_idx);
+    vector<int> psmindices = scan_to_psmindices[scan];
+    for (int psm_idx=0;psm_idx < psmindices.size();psm_idx++) {
+      PSMScoreHolder psm;
+      psm.psmind = psmindices.at(psm_idx);
+      psm.label = d.psmind2label(psm.psmind);
+      test.scores.push_back(psm);
+      if (psm.label == 1) {
+        num_pos_test++;
+      } else {
+        num_neg_test++;
+      }
+    }
+  }
+
+  test.pos = num_pos_test;
+  test.neg = num_neg_test;
+  test.factor = (double)num_pos_test / (double)num_neg_test; 
+
+}
+
+/*
 void PSMScores::fillFeaturesSplit(PSMScores& train,PSMScores& test, Dataset& d, double ratio) {
  
   int num_psms = d.get_num_psms();
@@ -202,7 +293,7 @@ void PSMScores::fillFeaturesSplit(PSMScores& train,PSMScores& test, Dataset& d, 
   test.factor = train.pos/(double)train.neg;
   
 }
-
+*/
 
 void PSMScores::fillFeaturesFull(PSMScores& full, Dataset& d) {
  
@@ -235,7 +326,7 @@ void PSMScores::combineSets(PSMScores &set1, PSMScores &set2) {
   int n2 = set2.size();
  
   PSMScoreHolder s;
-  scores.resize(n1+n1,s);
+  scores.resize(n1+n2,s);
   int num_pos = 0;
   int num_neg = 0;
   int idx = 0;
@@ -264,8 +355,22 @@ void PSMScores::combineSets(PSMScores &set1, PSMScores &set2) {
 
 }
 
+bool comparePValue(const PSMScoreHolder& a, const PSMScoreHolder& b) {
+  return a.p < b.p;
+}
+
+bool compareScore(const PSMScoreHolder& a, const PSMScoreHolder& b) {
+  return a.score > b.score;
+}
 
 
+void PSMScores::sortByPValue() {
+  sort(scores.begin(), scores.end(), comparePValue);
+}
+
+void PSMScores::sortByScore() {
+  sort(scores.begin(), scores.end(), compareScore);
+}
 
 
 

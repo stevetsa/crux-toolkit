@@ -96,6 +96,11 @@ class Dataset
   int *protind_to_num_all_pep;
   map <int, string> ind_to_prot;
 
+  bool have_normalization_pars;
+  vector<double> mean_vector;
+  vector<double> std_vector;
+
+
   string in_dir;
 };
 
