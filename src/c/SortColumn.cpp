@@ -10,7 +10,6 @@
 #include "fdstream.hpp"
 
 #include <errno.h>
-#include "WinCrux.h"
 
 using namespace std;
 

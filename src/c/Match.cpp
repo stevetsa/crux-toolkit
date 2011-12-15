@@ -11,9 +11,7 @@
 #include <string.h>
 #include <assert.h>
 #include <ctype.h>
-#ifndef WIN32
 #include <unistd.h>
-#endif
 #include <set>
 #include <map>
 #include "carp.h"
@@ -632,10 +630,6 @@ void Match::printOneMatchField(
     output_file->setColumnCurrentRow((MATCH_COLUMNS_T)column_idx, 
                              getScore(LOGP_QVALUE_WEIBULL_XCORR));
     break;
-  case WEIBULL_PEP_COL:
-    output_file->setColumnCurrentRow((MATCH_COLUMNS_T)column_idx,
-                                     getScore(LOGP_WEIBULL_PEP));
-    break;
 #ifdef NEW_COLUMNS
   case WEIBULL_PEPTIDE_QVALUE_COL:
     if ((scores_computed[LOGP_QVALUE_WEIBULL_XCORR] == true) &&
@@ -649,12 +643,6 @@ void Match::printOneMatchField(
     if (null_peptide_ == false) {
       output_file->setColumnCurrentRow((MATCH_COLUMNS_T)column_idx, 
               getScore(DECOY_XCORR_QVALUE));
-    }
-    break;
-  case DECOY_XCORR_PEP_COL:
-    if (null_peptide_ == false) {
-      output_file->setColumnCurrentRow((MATCH_COLUMNS_T)column_idx,
-                                       getScore(DECOY_XCORR_PEP));
     }
     break;
 #ifdef NEW_COLUMNS
@@ -677,10 +665,6 @@ void Match::printOneMatchField(
     output_file->setColumnCurrentRow((MATCH_COLUMNS_T)column_idx, 
                                      getScore(PERCOLATOR_QVALUE));
     break;
-  case PERCOLATOR_PEP_COL:
-    output_file->setColumnCurrentRow((MATCH_COLUMNS_T)column_idx, 
-                                     getScore(PERCOLATOR_PEP));
-    break;
 #ifdef NEW_COLUMNS
   case PERCOLATOR_PEPTIDE_QVALUE_COL:
     if ( match->best_per_peptide == true) {
@@ -696,10 +680,6 @@ void Match::printOneMatchField(
   case QRANKER_QVALUE_COL:
     output_file->setColumnCurrentRow((MATCH_COLUMNS_T)column_idx, 
                                      getScore(QRANKER_QVALUE));
-    break;
-  case QRANKER_PEP_COL:
-    output_file->setColumnCurrentRow((MATCH_COLUMNS_T)column_idx, 
-                                     getScore(QRANKER_PEP));
     break;
 #ifdef NEW_COLUMNS
   case QRANKER_PEPTIDE_QVALUE_COL:
@@ -1255,7 +1235,7 @@ Match* Match::parseTabDelimited(
   }
 
   // get experiment size
-  match->ln_experiment_size_ = log((FLOAT_T) result_file.getInteger(MATCHES_SPECTRUM_COL));
+  match->ln_experiment_size_ = log(result_file.getInteger(MATCHES_SPECTRUM_COL));
   match->num_target_matches_ = result_file.getInteger(MATCHES_SPECTRUM_COL);
   if (!result_file.empty(DECOY_MATCHES_SPECTRUM_COL)){
         match->num_decoy_matches_ = result_file.getInteger(DECOY_MATCHES_SPECTRUM_COL);

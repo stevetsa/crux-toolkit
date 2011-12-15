@@ -415,7 +415,7 @@ typedef struct loss_limit LOSS_LIMIT_T;
 class Scorer;
 
 /**
- * The enum for scorer type.  Scores are indexed by this type in the Match.
+ * The enum for scorer type
  */
 enum _scorer_type { 
   SP,                  ///< SEQUEST preliminary score
@@ -423,23 +423,19 @@ enum _scorer_type {
 
   DECOY_XCORR_QVALUE,  ///< q-value derived from empirical null (decoys)
   DECOY_XCORR_PEPTIDE_QVALUE,
-  DECOY_XCORR_PEP,     ///< posterior error prob for xcorrs (target/decoy)
 
   LOGP_WEIBULL_XCORR,
   LOGP_BONF_WEIBULL_XCORR,
   LOGP_QVALUE_WEIBULL_XCORR,
-  LOGP_WEIBULL_PEP,    ///< posterior error prob from weibull p-values
   LOGP_PEPTIDE_QVALUE_WEIBULL,
 
   PERCOLATOR_SCORE,
   PERCOLATOR_QVALUE,
   PERCOLATOR_PEPTIDE_QVALUE,
-  PERCOLATOR_PEP,      ///< posterior error prob from percolator scores
 
   QRANKER_SCORE,
   QRANKER_QVALUE,
   QRANKER_PEPTIDE_QVALUE,
-  QRANKER_PEP,        ///< posterior error prob from q-ranker scores
 
   NUMBER_SCORER_TYPES,
   INVALID_SCORER_TYPE
@@ -537,7 +533,7 @@ typedef struct record RECORD_T;
  * \typedef HASH_T
  * \brief HASH_T hash table, contains the records
  */
-typedef struct our_hash HASH_T;
+typedef struct hash HASH_T;
 
 /**
  * \typedef HASH_ITERATOR_T

@@ -9,7 +9,6 @@
 
 #include "crux-utils.h"
 #include "parameter.h"
-#include "WinCrux.h"
 
 
 //TODO:  in all set, change result=add_... to result= result && add_...
@@ -323,6 +322,10 @@ void initialize_parameters(void){
   set_string_parameter("ms2 file", NULL,
                        "File containing spectra to be searched.",
     "Argument, not option, for create-psm-files, get-ms2-spec, and search",
+    "false");
+  set_string_parameter("embedding matrix", NULL,
+                       "File containing embedding matrix to be used in scoring.",
+    "Argument, not option, for search",
     "false");
 
   /* get-ms2-spectrum */
@@ -690,7 +693,7 @@ void initialize_parameters(void){
   set_double_parameter("beta", 0.075, 0, 1, "Not for general users.",
       "Only used to set scorer->sp_beta which is used to score sp.", 
       "false"); 
-  set_double_parameter("max-mz", 4000, 0, BILLION, 
+  set_double_parameter("max-mz", 2200, 0, BILLION, 
       "Used in scoring sp.",
       "Hide from users", "false");
   set_double_parameter("fraction-top-scores-to-fit", 0.55, 0, 1, 
@@ -1260,15 +1263,8 @@ static void set_mz_bin_width()
 {
   double new_value = get_double_parameter("mz-bin-width");
 
-#ifdef WIN32
-  // Peculiarities of Windows floating point handling 
-  // results in us getting 0.0 here rather than Nan
-  // FIXME: is there a more portable way of checking
-  // that a floating point value has not been set?
-  if (new_value == 0.0) {
-#else
   if (isnan(new_value)) {
-#endif
+
     // If no width specified, choose based on mass type.
     if (get_mass_type_parameter("fragment-mass") == MONO) {
       new_value = BIN_WIDTH_MONO;

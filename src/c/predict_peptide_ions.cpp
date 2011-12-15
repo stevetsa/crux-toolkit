@@ -12,9 +12,7 @@
 #include <string.h>
 #include <assert.h>
 #include <ctype.h>
-#ifndef WIN32
 #include <unistd.h>
-#endif
 #include "carp.h"
 #include "crux-utils.h"
 #include "objects.h"
@@ -22,7 +20,6 @@
 #include "Ion.h"
 #include "IonSeries.h"
 #include "IonConstraint.h"
-#include "Peptide.h"
 
 using namespace std;
 

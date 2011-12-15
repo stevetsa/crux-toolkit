@@ -12,13 +12,8 @@
 #define SCORER_H
 
 #include <stdio.h>
-#ifndef WIN32
 #include <dirent.h>
-#endif
 #include <string>
-#ifdef WIN32
-#include "windirent.h"
-#endif
 #include "objects.h"
 #include "Spectrum.h"
 #include "Peptide.h"
@@ -46,6 +41,7 @@ class Scorer {
   /// used for xcorr
   FLOAT_T* observed_; ///< used for Xcorr: observed spectrum intensity array
   FLOAT_T* theoretical_; ///< used for Xcorr: theoretical spectrum intensity array
+  FLOAT_T* observed_matrix_prod_;
 
   /**
    * Initializes an empty scorer object

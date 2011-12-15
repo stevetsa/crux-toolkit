@@ -1,6 +1,6 @@
 distdir = $(PACKAGE)_$(VERSION)
 
-SUBDIRS = ArrayLibrary MSToolkit percolator q-ranker xlink posterior-error .
+SUBDIRS = ArrayLibrary MSToolkit percolator q-ranker xlink .
 
 # Crux can use either single or double precision floating poinnt.
 if USEDOUBLES
@@ -183,8 +183,7 @@ libcrux_la_CFLAGS = \
   $(AM_CFLAGS) \
   -I$(top_srcdir)/src/c/MSToolkit \
   -I$(top_srcdir)/src/c/percolator/ \
-  -I$(top_srcdir)/src/c/q-ranker/ \
-  -I$(top_srcdir)/src/c/posterior-error/
+  -I$(top_srcdir)/src/c/q-ranker/
 
 libcrux_la_CXXFLAGS = \
   $(AM_CXXFLAGS) \
@@ -192,7 +191,6 @@ libcrux_la_CXXFLAGS = \
   -I$(top_srcdir)/src/c/MSToolkit/RAMP \
   -I$(top_srcdir)/src/c/percolator/ \
   -I$(top_srcdir)/src/c/q-ranker/ \
-  -I$(top_srcdir)/src/c/posterior-error/ \
   -I$(top_srcdir)/src/external/
 
 libcrux_la_SOURCES = $(LIBFILES)
@@ -231,7 +229,6 @@ crux_CXXFLAGS = \
   -I$(top_srcdir)/src/c/MSToolkit \
   -I$(top_srcdir)/src/c/percolator \
   -I$(top_srcdir)/src/c/q-ranker \
-  -I$(top_srcdir)/src/c/posterior-error \
   -I$(top_srcdir)/src/c/xlink
 crux_LDADD = \
   $(AM_LDFLAGS) \
@@ -243,11 +240,9 @@ crux_LDADD = \
   -L$(top_builddir)/src/c/MSToolkit \
   -L$(top_builddir)/src/c/percolator \
   -L$(top_builddir)/src/c/q-ranker \
-  -L$(top_builddir)/src/c/posterior-error \
   -lm \
   -lpercolator \
   -lqranker \
-  -lpep \
   -lmstoolkit \
   -lArrayLibrary
 

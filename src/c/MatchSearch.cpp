@@ -291,7 +291,7 @@ int MatchSearch::main(int argc, char** argv){
   int num_options = sizeof(option_list) / sizeof(char*);
 
   /* Define required command line arguments */
-  const char* argument_list[] = {"ms2 file", "protein database"};
+  const char* argument_list[] = {"ms2 file", "protein database", "embedding matrix"};
   int num_arguments = sizeof(argument_list) / sizeof(char*);
 
   initialize(argument_list, num_arguments,

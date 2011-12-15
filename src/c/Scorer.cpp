@@ -11,15 +11,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-#ifndef WIN32
 #include <dirent.h>
-#include <unistd.h>
-#endif
 #include <ctype.h>
 #include <sys/stat.h>
-#ifdef WIN32
-#include "windirent.h"
-#endif
 #include "objects.h"
 #include "IonConstraint.h"
 #include "IonFilteredIterator.h"
@@ -28,8 +22,8 @@
 #include "Spectrum.h"
 #include "Scorer.h"
 #include "parameter.h"
-
-
+#include "unistd.h"
+#include "DelimitedFile.h"
 
 /**
  * Maximum range for cross correlation offset.
@@ -40,7 +34,6 @@ static const int MAX_XCORR_OFFSET = 75;
 // These values should be good for double precision floating point
 // numbers compatible with the IEEE 754 standard.
 
-#ifndef WIN32
 /**
 * Constant for EVD p_value calculation
 */
@@ -49,7 +42,6 @@ static const FLOAT_T DBL_EPSILON = 2.2204460492503131e-16;
 * Constant for EVD p_value calculation
 */
 static const int DBL_MAX_10_EXP = 308;
-#endif
 
 /**
  * Cut-off below which the simple Bonferroni calculation can be used.
@@ -91,6 +83,9 @@ static const int NUM_REGIONS = 10;
  */ 
 static const int MAX_PER_REGION = 50;
 
+static FLOAT_T** embed_matrix_ = NULL;
+static bool embed_matrix_loaded_ = false;
+
 /**
  * Macro for converting floating point to integers.
  */
@@ -119,6 +114,7 @@ void Scorer::init() {
   bin_offset_ = 0;
   observed_ = NULL;
   theoretical_ = NULL;
+  observed_matrix_prod_ = NULL;
 }
 
 /**
@@ -127,7 +123,6 @@ void Scorer::init() {
 Scorer::Scorer() {
   init();
 }
-
 
 /**
  * If not planning to use the default values, must parse the parameter file before.
@@ -174,6 +169,40 @@ Scorer::Scorer(
   if( get_boolean_parameter("use-flanking-peaks") == false ){
     FLANK_HEIGHT = 0;
   }
+  
+  if ( !embed_matrix_loaded_ ) {
+    /* Get input: embedding matrix */
+    int max_mz = ( int )get_double_parameter( "max-mz" );
+    char* embed_matrix_file = get_string_parameter( "embedding matrix" );
+    DelimitedFile embed_matrix_str = DelimitedFile( embed_matrix_file, false, ',' );
+    free( embed_matrix_file );
+    carp( CARP_INFO, "embedding matrix read from file: number of rows = %d   number of columns = %d\n", ( int )embed_matrix_str.numRows(), ( int )embed_matrix_str.numCols() );
+    if( ( int )embed_matrix_str.numRows() != max_mz || ( int )embed_matrix_str.numCols()!= max_mz ) {
+      carp( CARP_FATAL, "embedding matrix read from file does not have correct number of rows or columns (both should = max_mz)." );
+    }
+    int i, row_idx, col_idx;
+    embed_matrix_ = new FLOAT_T* [ max_mz ];
+    for( i = 0; i < max_mz; i++ ) {
+      embed_matrix_[ i ] = new FLOAT_T[ max_mz ];
+    }
+    for( row_idx = 0; row_idx < max_mz; row_idx++ ) {
+      for( col_idx = 0; col_idx < max_mz; col_idx++ ) {
+        embed_matrix_[ row_idx ][ col_idx ] = embed_matrix_str.getFloat( col_idx, row_idx );
+      }
+    }
+  
+    // //&& for test only
+    // for( int row_idx = 0; row_idx < 42; row_idx++ ) {
+      // for( int col_idx = 0; col_idx < 42; col_idx++ ) {
+        // printf( "row: %d   col: %d   W( row, col ): %12.10f\n", row_idx, col_idx, embed_matrix_[ row_idx ][ col_idx ] );
+      // }
+    // }
+    // //&& end for test only
+  
+    //&& TODO: need to deallocate embed_matrix_str and embed_matrix later on
+
+    embed_matrix_loaded_ = true;
+  }
 }
 
 /**
@@ -194,7 +223,7 @@ Scorer::~Scorer() {
 /**
  * normalize array so that maximum peak equals threshold
  */
-void nomalize_intensity_array(
+void nomalize_intensity_array(          //&& function name is misspelled (but apparently is so everywhere, since it works)
   FLOAT_T* intensity_array, ///< the array to normalize -in/out
   int array_size, ///< size of array -in
   FLOAT_T max_intensity, ///< the maximum intensity in array -in
@@ -772,9 +801,7 @@ FLOAT_T Scorer::genScoreSp(
  *****************************************************/
 
 /**
- * Normalize each peak intensity of the observed spectrum to max 50
- * based on the max intenstiy in each of 10 regions.
- * .
+ * normalize each 10 regions of the observed spectrum to max 50
  */
 void Scorer::normalizeEachRegion(
   FLOAT_T* observed,  ///< intensities to normalize
@@ -790,10 +817,7 @@ void Scorer::normalizeEachRegion(
 
   // normalize each region
   for(; bin_idx < getMaxBin(); ++bin_idx){
-    // increment the region index and update max_intensity if this
-    // peak is in the next region
-    if(bin_idx >= region_selector*(region_idx+1) 
-       && region_idx < (NUM_REGIONS-1)){
+    if(bin_idx >= region_selector*(region_idx+1) && region_idx < (NUM_REGIONS-1)){
       ++region_idx;
       max_intensity = max_intensity_per_region[region_idx];
     }
@@ -808,6 +832,10 @@ void Scorer::normalizeEachRegion(
       observed[bin_idx] = (observed[bin_idx] / max_intensity) * MAX_PER_REGION;
     }
 
+    // no more peaks beyond the 10 regions mark, exit
+    if(bin_idx > NUM_REGIONS * region_selector){
+      return;
+    }
   }
 }
 
@@ -834,21 +862,23 @@ bool Scorer::createIntensityArrayObserved(
   FLOAT_T precursor_mz = spectrum->getPrecursorMz();
   FLOAT_T experimental_mass_cut_off = precursor_mz*charge + 50;
 
-  // set max_mz and malloc space for the observed intensity array
-  FLOAT_T sp_max_mz = 512;
+  // // set max_mz and malloc space for the observed intensity array
+  // FLOAT_T sp_max_mz = 512;
 
-  if(experimental_mass_cut_off > 512){
-    int x = (int)experimental_mass_cut_off / 1024;
-    FLOAT_T y = experimental_mass_cut_off - (1024 * x);
-    sp_max_mz = x * 1024;
+  // if(experimental_mass_cut_off > 512){
+    // int x = (int)experimental_mass_cut_off / 1024;
+    // FLOAT_T y = experimental_mass_cut_off - (1024 * x);
+    // sp_max_mz = x * 1024;
 
-    if(y > 0){
-      sp_max_mz += 1024;
-    }
-  }
+    // if(y > 0){
+      // sp_max_mz += 1024;
+    // }
+  // }
 
-  sp_max_mz_ = sp_max_mz;
-
+  // sp_max_mz_ = sp_max_mz;
+  
+    sp_max_mz_ = get_double_parameter("max-mz");    //&& need fixed vector length for multiplication with embedding matrix
+    
   // DEBUG
   // carp(CARP_INFO, "experimental_mass_cut_off: %.2f sp_max_mz: %.3f", experimental_mass_cut_off, scorer->sp_max_mz);
   FLOAT_T* observed = (FLOAT_T*)mycalloc(getMaxBin(), sizeof(FLOAT_T));
@@ -977,12 +1007,31 @@ bool Scorer::createIntensityArrayObserved(
     }
   }
 
+  // multiply observed intensity array by embedding matrix
+  free( observed_matrix_prod_ );
+  observed_matrix_prod_ = ( FLOAT_T* )mycalloc( getMaxBin(), sizeof( FLOAT_T ) );
+  int maxIdx = getMaxBin();
+  for( int col_idx = 0; col_idx < maxIdx - 1; col_idx++ ) {
+    FLOAT_T sum = 0.0;
+    for( int row_idx = 0; row_idx < maxIdx - 1; row_idx++ ) {
+      sum += new_observed[ row_idx + 1 ] * embed_matrix_[ row_idx ][ col_idx ];
+    }
+    observed_matrix_prod_[ col_idx + 1 ] = sum;
+  }
+ 
   // set new values
-  observed_ = new_observed;
+  observed_ = observed_matrix_prod_;
+  
+  // //&& for test only
+  // for( int elem = 0; elem < 1200; elem++ ) {
+    // printf( "%d   %12.10f   %12.10f\n", elem, new_observed[ elem ], observed_[ elem ] );
+  // }
+  // //&& end for test only
 
   // free heap
-  free(observed);
-  free(max_intensity_per_region);
+  free( observed );
+  free( new_observed );
+  free( max_intensity_per_region );
 
   return true;
 }
@@ -1000,6 +1049,8 @@ void Scorer::getProcessedPeaks(
   FLOAT_T** intensities, ///< pointer to array of intensities
   int* max_mz_bin){
 
+  //&& for test only
+  printf( "getProcessedPeaks() called\n" );
   // create a scorer
   Scorer* scorer = new Scorer(score_type);
 
@@ -1239,6 +1290,9 @@ FLOAT_T Scorer::scoreSpectrumVIonSeries(
   Spectrum* spectrum,      ///< the spectrum to score -in
   IonSeries* ion_series ///< the ion series to score against the spectrum -in
   ) {
+
+  // //&& for test only
+  // printf( "scoreSpectrumVIonSeries() called\n" );
 
   FLOAT_T final_score = 0;
 
