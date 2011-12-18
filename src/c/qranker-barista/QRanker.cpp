@@ -98,7 +98,7 @@ void QRanker :: write_results()
   d.clear_data_psm_training();
 
   ostringstream fname;
-  fname << out_dir << "/" << fileroot << "qranker.target.psms.txt";
+  fname << out_dir << "/" << fileroot << "q-ranker.target.psms.txt";
   d.load_data_all_results();
   d.load_data_psm_results();
     ofstream f1(fname.str().c_str()); 
@@ -106,7 +106,7 @@ void QRanker :: write_results()
   f1.close();
   fname.str("");
 
-  fname << out_dir << "/" << fileroot << "qranker_output.xml";
+  fname << out_dir << "/" << fileroot << "q-ranker_output.xml";
   ofstream f2(fname.str().c_str()); 
   write_results_psm_tab(f2);
   f2.close();
@@ -118,12 +118,12 @@ void QRanker :: write_results()
 
 void QRanker :: write_results_psm_tab(ofstream &os)
 {
-  os << "q-value" << "\t" << "qranker score" <<"\t" << "scan" << "\t" << "charge" << "\t" << "peptide" << "\t" << "filename" << endl;
+  os << "scan" << "\t" << "charge" << "\t" << "q-value" << "\t" << "qranker score" <<"\t"  << "peptide" << "\t" << "filename" << endl;
   for(int i = 0; i < fullset.size(); i++)
     {
       int psmind = fullset[i].psmind;
       int pepind = d.psmind2pepind(psmind);
-      os << fullset[i].q << "\t" << fullset[i].score << "\t" << d.psmind2scan(psmind) << "\t" << d.psmind2charge(psmind) << "\t" << d.ind2pep(pepind) << "\t" << d.psmind2fname(psmind) << endl;
+      os << d.psmind2scan(psmind) << "\t" << d.psmind2charge(psmind) << "\t" << fullset[i].q << "\t" << fullset[i].score << "\t"  << d.ind2pep(pepind) << "\t" << d.psmind2fname(psmind) << endl;
     }
 }
 
@@ -803,16 +803,11 @@ int QRanker :: crux_set_command_line_options(int argc, char *argv[])
 
   string sqt_source;
   string ms2_source;
-
   string sqt_decoy_source;
   int separate_search_flag = 0;
-
   string output_directory = "crux-output";
-  string fileroot = "";
-  int fileroot_exists = 0;
 
   string enzyme = "trypsin";
-
   string decoy_prefix = "rand_";
 
   string dir_with_tables = "";
@@ -820,30 +815,83 @@ int QRanker :: crux_set_command_line_options(int argc, char *argv[])
 
   bool spec_features_flag = true;
 
-  bool skip_cleanup_flag = false;
-  
-  ms2_source = get_string_parameter_pointer("spectra");
-  sqt_source = get_string_parameter_pointer("search results");
+    fileroot = get_string_parameter_pointer("fileroot");
+  if(fileroot != "__NULL_STR")
+    fileroot.append(".");
+  else
+    fileroot = "";
+
+  decoy_prefix = get_string_parameter_pointer("decoy-prefix");
+  sqtp.set_decoy_prefix(decoy_prefix);
+
+  enzyme = get_string_parameter_pointer("qb-enzyme");
+  sqtp.set_enzyme(enzyme);
 
   spec_features_flag = get_boolean_parameter("use-spec-features");
+  //num of spec features
+  if(spec_features_flag)
+    sqtp.set_num_spec_features(3);
+  else
+    sqtp.set_num_spec_features(0);
+
   skip_cleanup_flag = get_boolean_parameter("skip-cleanup");
-  
-  sqt_decoy_source = get_string_parameter_pointer("separate-searches"); 
-  if(sqt_decoy_source != "__NULL_STR")
-    separate_search_flag = 1;
   
   dir_with_tables = get_string_parameter_pointer("re-run"); 
   if(dir_with_tables != "__NULL_STR")
     found_dir_with_tables = 1;
   
-  output_directory = get_string_parameter_pointer("output-dir");
-  fileroot = get_string_parameter_pointer("fileroot");
-  if(fileroot != "__NULL_STR")
-    fileroot_exists = 1;
- 
-  enzyme = get_string_parameter_pointer("qb-enzyme");
+  if(found_dir_with_tables)
+    {
+      //set input and output dirs
+      sqtp.set_output_dir(dir_with_tables);
+      set_input_dir(dir_with_tables);
+      set_output_dir(output_directory);
 
-  decoy_prefix = get_string_parameter_pointer("decoy-prefix");
+      carp(CARP_INFO, "directory with tables: %s", dir_with_tables.c_str());
+      carp(CARP_INFO, "output_directory: %s", output_directory.c_str());
+    }
+  else
+    {
+      ms2_source = get_string_parameter_pointer("spectra");
+      sqt_source = get_string_parameter_pointer("search results");
+      sqt_decoy_source = get_string_parameter_pointer("separate-searches"); 
+      if(sqt_decoy_source != "__NULL_STR")
+	separate_search_flag = 1;
+      
+      output_directory = get_string_parameter_pointer("output-dir");
+      //set the output directory for the parser
+      if(!sqtp.set_output_dir(output_directory))
+	return 0;
+      //set input and output for the leaning algo (in and out are the same as the out for the parser)
+      set_input_dir(output_directory);
+      set_output_dir(output_directory);
+      
+      if(separate_search_flag)
+	{
+	  if(!sqtp.set_input_sources(ms2_source, sqt_source, sqt_decoy_source))
+	    carp(CARP_FATAL, "could not extract features for training");
+	  sqtp.set_num_hits_per_spectrum(1);
+	}
+      else
+	{
+	  if(!sqtp.set_input_sources(ms2_source, sqt_source))
+	    carp(CARP_FATAL, "could not extract features for training");
+	}
+      
+      //print some info
+      carp(CARP_INFO, "sqt source: %s", sqt_source.c_str()); 
+      carp(CARP_INFO, "ms2 source: %s", ms2_source.c_str());
+      carp(CARP_INFO, "output_directory: %s", output_directory.c_str());
+      carp(CARP_INFO, "enzyme: %s", enzyme.c_str());
+      carp(CARP_INFO, "decoy prefix: %s", decoy_prefix.c_str());
+      
+      if(!sqtp.run())
+	carp(CARP_FATAL, "Could not proceed with training.");
+      sqtp.clear();
+    }
+ 
+   if(!sqtp.check_input_dir(in_dir))
+    carp(CARP_FATAL, "Please re-run with database, ms2 input and sqt input.");
 
   return 1;
 
@@ -1122,10 +1170,10 @@ int QRanker::main(int argc, char **argv) {
 
   //if(!set_command_line_options(argc, argv))
   //return 1;
-
-  //run();
-  //if(skip_cleanup_flag != 1)
-  // sqtp.clean_up(out_dir);
+  srandom(seed);
+  run();
+  if(skip_cleanup_flag != 1)
+    sqtp.clean_up(out_dir);
     
   return 0;
 }   

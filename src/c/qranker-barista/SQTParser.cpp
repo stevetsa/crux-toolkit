@@ -50,7 +50,7 @@ SQTParser :: SQTParser()
   //enzyme
   e = TRYPSIN_ENZ;
   //decoy prefix
-  decoy_prefix = "decoy_";
+  decoy_prefix = "rand_";
   //max peptide length to be considered
   max_len = 50;
   //min peptide length to be considered
@@ -104,6 +104,7 @@ void SQTParser :: clear()
 
 void SQTParser :: set_enzyme(string &enz)
 {
+  
   if(enz.find("elastase") != string::npos)
     {
       e = ELASTASE_ENZ;
@@ -117,10 +118,13 @@ void SQTParser :: set_enzyme(string &enz)
       e = TRYPSIN_ENZ;
     }
   else
-    carp(CARP_WARNING, "could not determine enzyme, will assume trypsin");
+    {
+      carp(CARP_WARNING, "could not determine enzyme, will assume trypsin");
+    }
 }
 
 
+  
 void SQTParser :: clear_matches()
 {
   m.xcorr_rank.clear();
