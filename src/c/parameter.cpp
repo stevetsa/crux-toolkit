@@ -720,31 +720,31 @@ void initialize_parameters(void){
 
   // **** q-ranker-barista arguments ****
   set_string_parameter("database", NULL,
-		       "The program requires the FASTA format protein database files against which the search was performed. The protein database input may be a concatenated database or separate target and decoy databases; the latter is supported with the --separate-searches option, described below. In either case, Barista distinguishes between target and decoy proteins based on the presence of a decoy prefix on the sequence identifiers (see the --decoy-prefix option, below). The database can be provided in three different ways: (1) as a a single FASTA file with suffix \".fa\", \".fsa\" or \".fasta\", (2) as a text file containing a list of FASTA files, one per line, or (3) as a directory containing multiple FASTA files (identified via the filename suffixes \".fa\", \".fsa\" or \".fasta\").", "argument for barista", "true");
+		       "The program requires the FASTA format protein database files against which the search was performed. The protein database input may be a concatenated database or separate target and decoy databases; the latter is supported with the --separate-searches option, described below. In either case, Barista distinguishes between target and decoy proteins based on the presence of a decoy prefix on the sequence identifiers (see the --decoy-prefix option, below). The database can be provided in three different ways: (1) as a a single FASTA file with suffix \".fa\", \".fsa\" or \".fasta\", (2) as a text file containing a list of FASTA files, one per line, or (3) as a directory containing multiple FASTA files (identified via the filename suffixes \".fa\", \".fsa\" or \".fasta\").", "argument for barista", "false");
 
   set_string_parameter("spectra", NULL,
-		       "The fragmentation spectra must be provided in MS2 format. Like the database, the spectra can be specified in three different ways: (1) as a single file with suffix \".ms2\", (2) as a text file containing a list of MS2 files or (3) as a directory in which all the MS2 files can be found.", "argument for q-ranker and barista", "true");
+		       "The fragmentation spectra must be provided in MS2 format. Like the database, the spectra can be specified in three different ways: (1) as a single file with suffix \".ms2\", (2) as a text file containing a list of MS2 files or (3) as a directory in which all the MS2 files can be found.", "argument for q-ranker and barista", "false");
   
   set_string_parameter("search results", NULL,
-		       "Q-ranker recognizes search results in SQT format. Like the spectra, the search results can be provided as a single file, a list of files or a directory of files. Note, however, that the input mode for spectra and for search results must be the same; i.e., if you provide a list of files for the spectra, then you must also provide a list of files containing your search results. When the MS2 files and SQT files are provided via a file listing, Q-ranker assumes that the order of the MS2 files matches the order of the SQT files. Alternatively, when the MS2 files and SQT files are provided via directories, Q-ranker will search for pairs of files with the same root name but different extensions (\".ms2\" and \".sqt\").", "argument for q-ranker and barista", "true");
+		       "Q-ranker recognizes search results in SQT format. Like the spectra, the search results can be provided as a single file, a list of files or a directory of files. Note, however, that the input mode for spectra and for search results must be the same; i.e., if you provide a list of files for the spectra, then you must also provide a list of files containing your search results. When the MS2 files and SQT files are provided via a file listing, Q-ranker assumes that the order of the MS2 files matches the order of the SQT files. Alternatively, when the MS2 files and SQT files are provided via directories, Q-ranker will search for pairs of files with the same root name but different extensions (\".ms2\" and \".sqt\").", "argument for q-ranker and barista", "false");
   
 
   // **** q-ranker options. ****
   set_boolean_parameter("skip-cleanup", false, 
-			"Q-ranker analysis begins with a pre-processsing step that creates a set of lookup tables which are then used during training. Normally, these lookup tables are deleted at the end of the Q-ranker analysis, but setting this option to T prevents the deletion of these tables. Subsequently, the Q-ranker analysis can be repeated more efficiently by specifying the --re-run option (see below). Default = F.", "Available for q-ranker and barista.", "true");
+			"Q-ranker analysis begins with a pre-processsing step that creates a set of lookup tables which are then used during training. Normally, these lookup tables are deleted at the end of the Q-ranker analysis, but setting this option to T prevents the deletion of these tables. Subsequently, the Q-ranker analysis can be repeated more efficiently by specifying the --re-run option (see below). Default = F.", "Available for q-ranker and barista.", "false");
 
   set_boolean_parameter("use-spec-features", true, 
 			"Q-ranker uses enriched feature set derived from the spectra in ms2 files. It can be forced to use minimal feature set by setting the --use-spec-features option to F. Default T.", 
-			"Available for q-ranker and barista.", "true");
+			"Available for q-ranker and barista.", "false");
 
   set_string_parameter("decoy-prefix", "rand_",
 		       "Specifies the prefix of the protein names that indicates a decoy. Default = rand_.",
-		       "Available for q-ranker and barista.", "true");
+		       "Available for q-ranker and barista.", "false");
 
   set_string_parameter("re-run", "__NULL_STR",
 		       "Re-run a previous Q-ranker analysis using a previously computed set of"
 		       "lookup tables.",
-		       "Available for q-ranker and barista.", "true");
+		       "Available for q-ranker and barista.", "false");
 
   set_string_parameter("separate-searches", "__NULL_STR",
 		       "If the target and decoy searches were run separately, rather than" 
@@ -760,7 +760,7 @@ void initialize_parameters(void){
 		       "and decoy SQT files with names like foo*.target.sqt and"
 		       "foo*.decoy.sqt. This naming convention allows the target and decoy SQT"
 		       "files to reside in the same directory.",
-		       "Available for q-ranker and barista.", "true");
+		       "Available for q-ranker and barista.", "false");
 
   /* analyze-matches parameter options */
   set_double_parameter("pi-zero", 1.0, 0, 1, 
