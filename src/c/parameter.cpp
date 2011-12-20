@@ -731,20 +731,20 @@ void initialize_parameters(void){
 
   // **** q-ranker options. ****
   set_boolean_parameter("skip-cleanup", false, 
-			"Q-ranker analysis begins with a pre-processsing step that creates a set of lookup tables which are then used during training. Normally, these lookup tables are deleted at the end of the Q-ranker analysis, but setting this option to T prevents the deletion of these tables. Subsequently, the Q-ranker analysis can be repeated more efficiently by specifying the --re-run option (see below). Default = F.", "Available for q-ranker and barista.", "false");
+			"Q-ranker analysis begins with a pre-processsing step that creates a set of lookup tables which are then used during training. Normally, these lookup tables are deleted at the end of the Q-ranker analysis, but setting this option to T prevents the deletion of these tables. Subsequently, the Q-ranker analysis can be repeated more efficiently by specifying the --re-run option (see below). Default = F.", "Available for q-ranker and barista.", "true");
 
   set_boolean_parameter("use-spec-features", true, 
 			"Q-ranker uses enriched feature set derived from the spectra in ms2 files. It can be forced to use minimal feature set by setting the --use-spec-features option to F. Default T.", 
-			"Available for q-ranker and barista.", "false");
+			"Available for q-ranker and barista.", "true");
 
   set_string_parameter("decoy-prefix", "rand_",
 		       "Specifies the prefix of the protein names that indicates a decoy. Default = rand_.",
-		       "Available for q-ranker and barista.", "false");
+		       "Available for q-ranker and barista.", "true");
 
   set_string_parameter("re-run", "__NULL_STR",
 		       "Re-run a previous Q-ranker analysis using a previously computed set of"
 		       "lookup tables.",
-		       "Available for q-ranker and barista.", "false");
+		       "Available for q-ranker and barista.", "true");
 
   set_string_parameter("separate-searches", "__NULL_STR",
 		       "If the target and decoy searches were run separately, rather than" 
@@ -760,7 +760,7 @@ void initialize_parameters(void){
 		       "and decoy SQT files with names like foo*.target.sqt and"
 		       "foo*.decoy.sqt. This naming convention allows the target and decoy SQT"
 		       "files to reside in the same directory.",
-		       "Available for q-ranker and barista.", "false");
+		       "Available for q-ranker and barista.", "true");
 
   /* analyze-matches parameter options */
   set_double_parameter("pi-zero", 1.0, 0, 1, 

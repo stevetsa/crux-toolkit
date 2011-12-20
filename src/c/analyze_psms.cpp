@@ -102,7 +102,7 @@ void analyze_matches_main(
                                   output);
     break;
   case PERCOLATOR_COMMAND:
-  //case QRANKER_COMMAND:
+    
     match_collection = run_percolator_or_qranker(command,
                                                  input_directory,
                                                  protein_database_name,
@@ -297,16 +297,7 @@ MatchCollection* run_percolator_or_qranker(
           feature_names, 
           pi0);
         break;
-      /*
-      case QRANKER_COMMAND:
-        qcInitiate(
-            (NSet)match_collection_iterator->getNumberCollections(),
-            NUM_FEATURES, 
-            num_spectra, 
-            feature_names, 
-            pi0);
-        break;
-      */
+      
       case INDEX_COMMAND:
       case SEARCH_COMMAND:
       case SEQUEST_COMMAND:
@@ -337,19 +328,7 @@ MatchCollection* run_percolator_or_qranker(
           pcSetVerbosity(5); // FIXME
         }
         break;
-      /*
-      case QRANKER_COMMAND:
-        if(verbosity < CARP_ERROR){
-          qcSetVerbosity(0);
-        }    
-        else if(verbosity < CARP_INFO){
-          qcSetVerbosity(1);
-        }
-        else{
-          qcSetVerbosity(5);
-        }
-        break;
-      */
+      
       default:
         carp(CARP_FATAL, "Unknown command type.");
         break;
@@ -374,13 +353,7 @@ MatchCollection* run_percolator_or_qranker(
                       NULL, // no sequence used
                       features);
         break;
-      /*
-      case QRANKER_COMMAND:
-        qcRegisterPSM((SetType)set_idx,
-                      match->getSequenceSqt(),
-                      features);
-        break;
-      */
+      
       default:
         carp(CARP_FATAL, "Unknown command type.");
         break;
@@ -421,22 +394,7 @@ MatchCollection* run_percolator_or_qranker(
       results_score, PERCOLATOR_SCORE, false);
     pcCleanUp();
     break;
-  /*
-  case QRANKER_COMMAND:
-    qcExecute(!get_boolean_parameter("no-xval")); 
-    qcGetScores(results_score, results_q); 
-    qcGetDecoyScores(decoy_scores);
-    PEPs = compute_PEP(results_score, num_target_matches,
-                       decoy_scores, num_decoy_matches);
-    target_match_collection->fillResult(
-        results_q, QRANKER_QVALUE, true);
-    target_match_collection->fillResult(
-        PEPs, QRANKER_PEP, true);
-    target_match_collection->fillResult(
-        results_score, QRANKER_SCORE, false);
-    qcCleanUp();
-    break;
-  */
+  
   default:
     carp(CARP_FATAL, "Unknown command type.");
     break;
