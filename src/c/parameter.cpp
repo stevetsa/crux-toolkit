@@ -737,11 +737,6 @@ void initialize_parameters(void){
 			"Q-ranker uses enriched feature set derived from the spectra in ms2 files. It can be forced to use minimal feature set by setting the --use-spec-features option to F. Default T.", 
 			"Available for q-ranker and barista.", "true");
 
-  set_string_parameter("qb-enzyme", "trypsin",
-		       "The enzyme used to digest the proteins in the experiment. Possible"
-		       "enzymes are trypsin, chymotrypsin, elastase. Default = trypsin.",
-		       "Available for q-ranker and barista.", "true");
-
   set_string_parameter("decoy-prefix", "rand_",
 		       "Specifies the prefix of the protein names that indicates a decoy. Default = rand_.",
 		       "Available for q-ranker and barista.", "true");

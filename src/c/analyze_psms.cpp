@@ -80,15 +80,7 @@ void analyze_matches_main(
       percolator_option_list, percolator_num_options, argc, argv);
   }
     break;
-  /*
-  case QRANKER_COMMAND:
-  {
-    application = new QRanker();
-    application->initialize(argument_list, num_arguments,
-                   qranker_option_list, qranker_num_options, argc, argv);
-  }
-    break;
-  */
+  
   default:
     carp(CARP_FATAL, "Unknown command type.");
     break;

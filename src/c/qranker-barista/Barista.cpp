@@ -2153,7 +2153,7 @@ void Barista :: print_description()
 int Barista :: crux_set_command_line_options(int argc, char *argv[])
 {
   const char* option_list[] = {
-    "qb-enzyme",
+    "enzyme",
     "decoy-prefix",
     "separate-searches",
     "fileroot",
@@ -2181,16 +2181,16 @@ int Barista :: crux_set_command_line_options(int argc, char *argv[])
   string sqt_source;
   string ms2_source;
   string sqt_decoy_source;
-  int separate_search_flag = 0;
-  string output_directory = "crux-output";
+  int separate_search_flag;
+  string output_directory;
 
-  string enzyme = "trypsin";
-  string decoy_prefix = "rand_";
+  string enzyme;
+  string decoy_prefix;
 
-  string dir_with_tables = "";
-  int found_dir_with_tables = 0;
+  string dir_with_tables;
+  int found_dir_with_tables;
 
-  bool spec_features_flag = true;
+  bool spec_features_flag;
 
   fileroot = get_string_parameter_pointer("fileroot");
   if(fileroot != "__NULL_STR")
@@ -2201,7 +2201,7 @@ int Barista :: crux_set_command_line_options(int argc, char *argv[])
   decoy_prefix = get_string_parameter_pointer("decoy-prefix");
   sqtp.set_decoy_prefix(decoy_prefix);
 
-  enzyme = get_string_parameter_pointer("qb-enzyme");
+  enzyme = get_string_parameter_pointer("enzyme");
   sqtp.set_enzyme(enzyme);
 
   spec_features_flag = get_boolean_parameter("use-spec-features");
@@ -2216,7 +2216,11 @@ int Barista :: crux_set_command_line_options(int argc, char *argv[])
   dir_with_tables = get_string_parameter_pointer("re-run"); 
   if(dir_with_tables != "__NULL_STR")
     found_dir_with_tables = 1;
+  else
+    found_dir_with_tables = 0;
   
+  output_directory = get_string_parameter_pointer("output-dir");
+
   if(found_dir_with_tables)
     {
       //set input and output dirs
@@ -2235,8 +2239,9 @@ int Barista :: crux_set_command_line_options(int argc, char *argv[])
       sqt_decoy_source = get_string_parameter_pointer("separate-searches"); 
       if(sqt_decoy_source != "__NULL_STR")
 	separate_search_flag = 1;
+      else
+	separate_search_flag = 0;
       
-      output_directory = get_string_parameter_pointer("output-dir");
       //set the output directory for the parser
       if(!sqtp.set_output_dir(output_directory))
 	return 0;
