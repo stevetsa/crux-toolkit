@@ -10,7 +10,8 @@ QRanker::QRanker() :
   out_dir(""), 
   skip_cleanup_flag(0),
   overwrite_flag(0),
-  fileroot("") 
+  fileroot(""),
+  feature_file_flag(0)
 {
 }
 
@@ -717,6 +718,12 @@ int QRanker::run( ) {
   res_prefix = res.str();
     
   d.load_data_psm_training();
+  if(feature_file_flag)
+    {
+      string str = feature_file_name.str();
+      if(!d.print_features(str))
+	carp(CARP_INFO, "could not open file %s for writing features. Feature file will not be written", feature_file_name.str().c_str());
+    }
   d.normalize_psms();
   d.load_labels_psm_training();
   PSMScores::fillFeaturesSplit(trainset, testset, d, 0.5);
@@ -784,7 +791,8 @@ int QRanker :: crux_set_command_line_options(int argc, char *argv[])
     "skip-cleanup",
     "re-run",
     "use-spec-features",
-    "parameter-file"
+    "parameter-file",
+    "feature-file"
   };
   int num_options = sizeof(option_list)/sizeof(char*);
 
@@ -841,6 +849,9 @@ int QRanker :: crux_set_command_line_options(int argc, char *argv[])
     found_dir_with_tables = 0;
 
   output_directory = get_string_parameter_pointer("output-dir");
+
+  feature_file_flag = get_boolean_parameter("feature-file");
+  feature_file_name << output_directory << "/" << fileroot << "features.txt";
 
   if(found_dir_with_tables)
     {

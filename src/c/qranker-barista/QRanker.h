@@ -104,6 +104,8 @@ protected:
     int skip_cleanup_flag;
     int overwrite_flag;
     string fileroot;
+    int feature_file_flag;
+    ostringstream feature_file_name;
     
     TabDelimParser pars;
     SQTParser sqtp;

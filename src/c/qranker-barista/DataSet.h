@@ -41,6 +41,7 @@ class Dataset
 
   inline void set_input_dir(string input_dir){in_dir = input_dir;}
   void normalize_psms();
+  int print_features(string &filename);
   
   inline double* psmind2features(int psmind){return (psmind_to_features+num_features*psmind);}
   inline int psmind2label(int psmind){return psmind_to_label[psmind];}

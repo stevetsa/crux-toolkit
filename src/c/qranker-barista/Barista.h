@@ -32,6 +32,7 @@ class Barista : public CruxApplication
     : verbose(0),
     skip_cleanup_flag(0),
     overwrite_flag(0),
+    feature_file_flag(0),
     in_dir(""), 
     out_dir(""), 
     fileroot(""), 
@@ -119,10 +120,14 @@ class Barista : public CruxApplication
   int verbose;
   int skip_cleanup_flag;
   int overwrite_flag;
+  int feature_file_flag;
+  ostringstream feature_file_name;
+
   Dataset d;
   string in_dir;
   string out_dir;
   string fileroot;
+
   int seed;
   double selectionfdr;
   int nepochs;

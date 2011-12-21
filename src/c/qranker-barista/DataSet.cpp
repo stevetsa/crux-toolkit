@@ -48,7 +48,7 @@ void Dataset :: load_data_psm_training()
   clear_data_psm_training();
 
   ostringstream fname;
-  fname << in_dir << "/summary.txt";
+  fname << in_dir << "/summary";
   ifstream f_summary(fname.str().c_str());
   f_summary >> num_features;
   f_summary >> num_psms;
@@ -58,7 +58,7 @@ void Dataset :: load_data_psm_training()
   fname.str("");
 
   //psm features
-  fname << in_dir << "/" << "psm.txt";
+  fname << in_dir << "/" << "psm";
   ifstream f_psm_feat(fname.str().c_str(),ios::binary);
   if(!f_psm_feat.is_open())
     {
@@ -81,7 +81,7 @@ void Dataset :: load_labels_psm_training()
   clear_labels_psm_training();
 
   ostringstream fname;
-  fname << in_dir << "/summary.txt";
+  fname << in_dir << "/summary";
   ifstream f_summary(fname.str().c_str());
   f_summary >> num_features;
   f_summary >> num_psms;
@@ -91,7 +91,7 @@ void Dataset :: load_labels_psm_training()
   fname.str("");
 
   //psmind_to_label
-  fname << in_dir << "/psmind_to_label.txt";
+  fname << in_dir << "/psmind_to_label";
   ifstream f_psmind_to_label(fname.str().c_str(),ios::binary);
   psmind_to_label = new int[num_psms];
   f_psmind_to_label.read((char*)psmind_to_label,sizeof(int)*num_psms);
@@ -109,7 +109,7 @@ void Dataset :: load_data_psm_results()
   clear_data_psm_results();
 
   ostringstream fname;
-  fname << in_dir << "/summary.txt";
+  fname << in_dir << "/summary";
   ifstream f_summary(fname.str().c_str());
   f_summary >> num_features;
   f_summary >> num_psms;
@@ -119,7 +119,7 @@ void Dataset :: load_data_psm_results()
   fname.str("");
 
   //psmind_to_pepind
-  fname << in_dir << "/psmind_to_pepind.txt";
+  fname << in_dir << "/psmind_to_pepind";
   ifstream f_psmind_to_pepind(fname.str().c_str(),ios::binary);
   if(!f_psmind_to_pepind.is_open())
     {
@@ -132,7 +132,7 @@ void Dataset :: load_data_psm_results()
   fname.str("");
   
   //psmind_to_scan
-  fname << in_dir << "/psmind_to_scan.txt";
+  fname << in_dir << "/psmind_to_scan";
   ifstream f_psmind_to_scan(fname.str().c_str(),ios::binary);
   if(!f_psmind_to_scan.is_open())
     {
@@ -145,7 +145,7 @@ void Dataset :: load_data_psm_results()
   fname.str("");
 
   //psmind_to_charge
-  fname << in_dir << "/psmind_to_charge.txt";
+  fname << in_dir << "/psmind_to_charge";
   ifstream f_psmind_to_charge(fname.str().c_str(),ios::binary);
   if(!f_psmind_to_charge.is_open())
     {
@@ -158,7 +158,7 @@ void Dataset :: load_data_psm_results()
   fname.str("");
   
   //psmind_to_precursor_mass
-  fname << in_dir << "/psmind_to_precursor_mass.txt";
+  fname << in_dir << "/psmind_to_precursor_mass";
   ifstream f_psmind_to_precursor_mass(fname.str().c_str(),ios::binary);
   if(!f_psmind_to_precursor_mass.is_open())
     {
@@ -171,7 +171,7 @@ void Dataset :: load_data_psm_results()
   fname.str("");
   
   //fileind_to_fname
-  fname << in_dir << "/fileind_to_fname.txt";
+  fname << in_dir << "/fileind_to_fname";
   ifstream f_fileind_to_fname(fname.str().c_str(),ios::binary);
   if(!f_fileind_to_fname.is_open())
     {
@@ -192,7 +192,7 @@ void Dataset :: load_data_psm_results()
   fname.str("");
   
   //psmind_to_filename
-  fname << in_dir << "/psmind_to_fileind.txt";
+  fname << in_dir << "/psmind_to_fileind";
   ifstream f_psmind_to_fileind(fname.str().c_str(),ios::binary);
   if(!f_psmind_to_fileind.is_open())
     {
@@ -231,7 +231,7 @@ void Dataset :: load_data_prot_training()
   clear_data_prot_training();
 
   ostringstream fname;
-  fname << in_dir << "/summary.txt";
+  fname << in_dir << "/summary";
   ifstream f_summary(fname.str().c_str());
   if(!f_summary.is_open())
     {
@@ -252,7 +252,7 @@ void Dataset :: load_data_prot_training()
   fname.str("");
   
   //pepind_to_psminds
-  fname << in_dir << "/pepind_to_psminds.txt";
+  fname << in_dir << "/pepind_to_psminds";
   ifstream f_pepind_to_psminds(fname.str().c_str(),ios::binary);
   if(!f_pepind_to_psminds.is_open())
     {
@@ -264,7 +264,7 @@ void Dataset :: load_data_prot_training()
   fname.str("");
   
   //protind_to_num_all_pep
-  fname << in_dir << "/protind_to_num_all_pep.txt";
+  fname << in_dir << "/protind_to_num_all_pep";
   ifstream f_protind_to_num_all_pep(fname.str().c_str(),ios::binary);
   if(!f_protind_to_num_all_pep.is_open())
     {
@@ -277,7 +277,7 @@ void Dataset :: load_data_prot_training()
   fname.str("");
 
   //protind_to_pepinds
-  fname << in_dir << "/protind_to_pepinds.txt";
+  fname << in_dir << "/protind_to_pepinds";
   ifstream f_protind_to_pepinds(fname.str().c_str(),ios::binary);
   if(!f_protind_to_pepinds.is_open())
     {
@@ -302,7 +302,7 @@ void Dataset :: load_labels_prot_training()
   clear_labels_prot_training();
 
   ostringstream fname;
-  fname << in_dir << "/summary.txt";
+  fname << in_dir << "/summary";
   ifstream f_summary(fname.str().c_str());
   if(!f_summary.is_open())
     {
@@ -323,7 +323,7 @@ void Dataset :: load_labels_prot_training()
   fname.str("");
 
   //psmind_to_label
-  fname << in_dir << "/psmind_to_label.txt";
+  fname << in_dir << "/psmind_to_label";
   ifstream f_psmind_to_label(fname.str().c_str(),ios::binary);
   if(!f_psmind_to_label.is_open())
     {
@@ -336,7 +336,7 @@ void Dataset :: load_labels_prot_training()
   fname.str("");
   
   //pepind_to_label
-  fname << in_dir << "/pepind_to_label.txt";
+  fname << in_dir << "/pepind_to_label";
   ifstream f_pepind_to_label(fname.str().c_str(),ios::binary);
   if(!f_pepind_to_label.is_open())
     {
@@ -349,7 +349,7 @@ void Dataset :: load_labels_prot_training()
   fname.str("");
   
   //protind_to_label
-  fname << in_dir << "/protind_to_label.txt";
+  fname << in_dir << "/protind_to_label";
   ifstream f_protind_to_label(fname.str().c_str(),ios::binary);
   if(!f_protind_to_label.is_open())
     {
@@ -377,7 +377,7 @@ void Dataset :: load_aux_data()
 
   ostringstream fname;
   //pepind_to_protinds
-  fname << in_dir << "/pepind_to_protinds.txt";
+  fname << in_dir << "/pepind_to_protinds";
   ifstream f_pepind_to_protinds(fname.str().c_str(),ios::binary);
   if(!f_pepind_to_protinds.is_open())
     {
@@ -402,7 +402,7 @@ void Dataset :: load_data_all_results()
 
   ostringstream fname;
   //ind_to_pep
-  fname << in_dir << "/ind_to_pep.txt";
+  fname << in_dir << "/ind_to_pep";
   ifstream f_ind_to_pep(fname.str().c_str(),ios::binary);
   int ind;
   string pep;
@@ -418,7 +418,7 @@ void Dataset :: load_data_all_results()
   fname.str("");
 
   //ind_to_prot
-  fname << in_dir << "/ind_to_prot.txt";
+  fname << in_dir << "/ind_to_prot";
   ifstream f_ind_to_prot(fname.str().c_str(),ios::binary);
  
   string prot;
@@ -447,7 +447,7 @@ void Dataset :: load_data_prot_results()
 
   ostringstream fname;
   //protind_to_pepinds
-  fname << in_dir << "/protind_to_pepinds.txt";
+  fname << in_dir << "/protind_to_pepinds";
   ifstream f_protind_to_pepinds(fname.str().c_str(),ios::binary);
   if(!f_protind_to_pepinds.is_open())
     {
@@ -459,7 +459,7 @@ void Dataset :: load_data_prot_results()
   fname.str("");
 
   //protind_to_label
-  fname << in_dir << "/protind_to_label.txt";
+  fname << in_dir << "/protind_to_label";
   ifstream f_protind_to_label(fname.str().c_str(),ios::binary);
   if(!f_protind_to_label.is_open())
     {
@@ -489,7 +489,7 @@ void Dataset :: load_data_pep_results()
 
   ostringstream fname;
   //pepind_to_psminds
-  fname << in_dir << "/pepind_to_psminds.txt";
+  fname << in_dir << "/pepind_to_psminds";
   ifstream f_pepind_to_psminds(fname.str().c_str(),ios::binary);
   if(!f_pepind_to_psminds.is_open())
     {
@@ -501,7 +501,7 @@ void Dataset :: load_data_pep_results()
   fname.str("");
 
   //pepind_to_protinds
-  fname << in_dir << "/pepind_to_protinds.txt";
+  fname << in_dir << "/pepind_to_protinds";
   ifstream f_pepind_to_protinds(fname.str().c_str(),ios::binary);
   if(!f_pepind_to_protinds.is_open())
     {
@@ -553,6 +553,51 @@ void Dataset :: normalize_psms()
       //cout << i << " " << sm/num_psms << endl;
     }
 }
+
+
+int Dataset :: print_features(string &filename)
+{
+  ofstream os(filename.c_str());
+  if(!os.is_open())
+    return 0;
+
+  delete [] psmind_to_label; psmind_to_label = (int*)0;
+  delete [] psmind_to_scan; psmind_to_scan = (int*)0;
+
+  ostringstream fname;
+  //psmind_to_label
+  fname << in_dir << "/psmind_to_label";
+  ifstream f_psmind_to_label(fname.str().c_str(),ios::binary);
+  psmind_to_label = new int[num_psms];
+  f_psmind_to_label.read((char*)psmind_to_label,sizeof(int)*num_psms);
+  f_psmind_to_label.close();
+  fname.str("");
+  
+  //psmind_to_scan
+  fname << in_dir << "/psmind_to_scan";
+  ifstream f_psmind_to_scan(fname.str().c_str(),ios::binary);
+  psmind_to_scan = new int[num_psms];
+  f_psmind_to_scan.read((char*)psmind_to_scan,sizeof(int)*num_psms);
+  f_psmind_to_scan.close();
+  fname.str("");
+
+  for (int j = 0; j < num_psms; j++)
+    {
+      os << psmind_to_scan[j] << "\t";
+      os << psmind_to_label[j] << "\t";
+      for (int i = 0; i < num_features-1; i++)
+	os << psmind_to_features[num_features*j+i] << "\t";
+      os << psmind_to_features[num_features*j+(num_features-1)] << endl;
+    }
+  os.close();
+
+  delete [] psmind_to_label; psmind_to_label = (int*)0;
+  delete [] psmind_to_scan; psmind_to_scan = (int*)0;
+  return 1;
+}
+
+
+
 
 /*
 int main()

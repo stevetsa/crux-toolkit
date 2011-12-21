@@ -2006,6 +2006,13 @@ void Barista :: setup_for_training(int trn_to_tst)
   d.clear_labels_prot_training();
 
   d.load_data_psm_training();
+  if(feature_file_flag)
+    {
+      string str = feature_file_name.str();
+      if(!d.print_features(str))
+	carp(CARP_INFO, "could not open file %s for writing features. Feature file will not be written", feature_file_name.str().c_str());
+    }
+
   d.normalize_psms();
 
   num_features = d.get_num_features();
@@ -2162,7 +2169,8 @@ int Barista :: crux_set_command_line_options(int argc, char *argv[])
     "skip-cleanup",
     "re-run",
     "use-spec-features",
-    "parameter-file"
+    "parameter-file",
+    "feature-file"
   };
   int num_options = sizeof(option_list)/sizeof(char*);
 
@@ -2220,6 +2228,9 @@ int Barista :: crux_set_command_line_options(int argc, char *argv[])
     found_dir_with_tables = 0;
   
   output_directory = get_string_parameter_pointer("output-dir");
+
+  feature_file_flag = get_boolean_parameter("feature-file");
+  feature_file_name << output_directory << "/" << fileroot << "features.txt";
 
   if(found_dir_with_tables)
     {
