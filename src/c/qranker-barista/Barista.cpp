@@ -2230,7 +2230,7 @@ int Barista :: crux_set_command_line_options(int argc, char *argv[])
   output_directory = get_string_parameter_pointer("output-dir");
 
   feature_file_flag = get_boolean_parameter("feature-file");
-  feature_file_name << output_directory << "/" << fileroot << "features.txt";
+  feature_file_name << output_directory << "/" << fileroot << "barista.features.txt";
 
   if(found_dir_with_tables)
     {
@@ -2591,3 +2591,6 @@ string Barista::getDescription() {
 
 
 
+COMMAND_T Barista::getCommand(){
+  return BARISTA_COMMAND;
+}

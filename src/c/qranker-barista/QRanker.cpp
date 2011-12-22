@@ -701,7 +701,7 @@ void QRanker::train_many_nets()
   net = max_net_targ[ind];
 
   ostringstream fname;
-  fname << out_dir << "/" << fileroot << "qranker.psms.at.fdr.thresholds.txt";;
+  fname << out_dir << "/" << fileroot << "q-ranker.psms.at.fdr.thresholds.txt";;
   write_max_nets(fname.str(), max_net_targ);
 
   delete [] max_net_gen;
@@ -851,7 +851,7 @@ int QRanker :: crux_set_command_line_options(int argc, char *argv[])
   output_directory = get_string_parameter_pointer("output-dir");
 
   feature_file_flag = get_boolean_parameter("feature-file");
-  feature_file_name << output_directory << "/" << fileroot << "features.txt";
+  feature_file_name << output_directory << "/" << fileroot << "q-ranker.features.txt";
 
   if(found_dir_with_tables)
     {
@@ -1207,4 +1207,8 @@ string QRanker::getDescription() {
     "Analyze a collection of PSMs to target and decoy "
     "sequences using the q-ranker algorithm (marina's new q-ranker)";
 
+}
+
+COMMAND_T QRanker::getCommand(){
+  return QRANKER_COMMAND;
 }

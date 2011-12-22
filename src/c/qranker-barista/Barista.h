@@ -111,6 +111,7 @@ class Barista : public CruxApplication
   virtual std::string getName();
   virtual std::string getDescription();
   virtual bool needsOutputDirectory();
+  virtual COMMAND_T getCommand();
 
 
   double check_gradients_hinge_one_net(int protind, int label);

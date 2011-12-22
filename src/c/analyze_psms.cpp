@@ -44,16 +44,6 @@ void analyze_matches_main(
     "overwrite"
   };
   int percolator_num_options = sizeof(percolator_option_list)/sizeof(char*);
-  const char* qranker_option_list[] = {
-    "pi-zero",
-    "verbosity",
-    "parameter-file",
-    "fileroot",
-    "feature-file",
-    "output-dir",
-    "overwrite",
-  };
-  int qranker_num_options = sizeof(qranker_option_list)/sizeof(char*);
 
   // Define required command line arguments.
   const char* argument_list[] = {
@@ -80,7 +70,7 @@ void analyze_matches_main(
       percolator_option_list, percolator_num_options, argc, argv);
   }
     break;
-  
+
   default:
     carp(CARP_FATAL, "Unknown command type.");
     break;
@@ -305,6 +295,8 @@ MatchCollection* run_percolator_or_qranker(
       case SPECTRAL_COUNTS_COMMAND:
       case PROCESS_SPEC_COMMAND:
       case XLINK_SEARCH_COMMAND:
+      case QRANKER_COMMAND:
+      case BARISTA_COMMAND:
       case MISC_COMMAND:
       case VERSION_COMMAND:
       case INVALID_COMMAND:
