@@ -158,6 +158,7 @@ void PSMScores::fillFeaturesSplit(PSMScores& train,PSMScores& test, Dataset& d, 
       all_examples[i].label = d.psmind2label(i);
     }
   
+  
   //mix up the examples
   for(int i = 0; i < n; i++)
     {
@@ -193,7 +194,7 @@ void PSMScores::fillFeaturesSplit(PSMScores& train,PSMScores& test, Dataset& d, 
       else
 	num_neg_test++;
     }
-  //cout << num_pos_train << " " << num_neg_train << " " << num_pos_test << " " << num_neg_test << "\n";
+  cout << num_pos_train << " " << num_neg_train << " " << num_pos_test << " " << num_neg_test << "\n";
   train.pos=num_pos_train;
   test.pos=num_pos_test;
   train.neg=num_neg_train;

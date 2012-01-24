@@ -583,14 +583,14 @@ void TabDelimParser :: extract_xlink_features(vector<string> & tokens, double *x
   //log rank by Sp
   x[1]=log(atof(tokens[sp_rank_idx].c_str()));
   //deltaCN
-  //x[2] = -log(atof(tokens[pvalue_idx].c_str()));
+  x[2] = -log(atof(tokens[pvalue_idx].c_str()));
   
   //difference between measured and calculated mass
   x[3] = atof(tokens[spectrum_mass_idx].c_str())-atof(tokens[peptide_mass_idx].c_str());
   // absolute value of difference between measured and calculated mass
-  x[4] = fabs(atof(tokens[spectrum_mass_idx].c_str())-atof(tokens[peptide_mass_idx].c_str()));
+  //x[4] = fabs(atof(tokens[spectrum_mass_idx].c_str())-atof(tokens[peptide_mass_idx].c_str()));
   //sp score
-  x[5] = atof(tokens[sp_score_idx].c_str());
+  //x[5] = atof(tokens[sp_score_idx].c_str());
   //matched ions/predicted ions
   x[6] = atof(tokens[by_matched_idx].c_str())/atof(tokens[by_total_idx].c_str());
   //observed mass
@@ -634,8 +634,8 @@ void TabDelimParser :: second_pass_xlink(ifstream &fin, int label)
 	  f_psm.write((char*)x, sizeof(double)*num_xlink_features);
 		  
 	  //record charge and scan
-	  psmind_to_scan[psmind] = atof(tokens[0].c_str());
-	  psmind_to_charge[psmind] = atof(tokens[1].c_str());
+	  psmind_to_scan[psmind] = atoi(tokens[0].c_str());
+	  psmind_to_charge[psmind] = atoi(tokens[1].c_str());
 
 	  psmind_to_label[psmind] = label;
 	  if(label == 1)

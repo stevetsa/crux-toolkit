@@ -1,6 +1,6 @@
 #include "QRanker.h"
 
-QRanker::QRanker() :  seed(1),selectionfdr(0.01),num_hu(5),mu(0.005),weightDecay(0.0000)
+QRanker::QRanker() :  seed(1),selectionfdr(0.01),num_hu(5),mu(0.0005),weightDecay(0.0000)
 {
 }
 
@@ -273,6 +273,29 @@ void QRanker :: write_num_psm_per_spectrum(NeuralNet* max_net)
 
 
 /*********************** training net functions*******************************************/
+void QRanker :: train_net_sigmoid(PSMScores &set, int interval)
+{
+  double *r;
+  int label;
+  double *gc = new double[1];
+  for(int i = 0; i < set.size(); i++)
+    { 
+      unsigned int ind;
+      ind = rand()%(interval);
+      //pass both through the net
+      r = net.fprop(d.psmind2features(set[ind].psmind));
+      label = d.psmind2label(set[ind].psmind);
+      double a = exp(label*r[0]);
+      net.clear_gradients();
+      gc[0] = -a/((1+a)*(1+a))*label;
+      net.bprop(gc);
+      net.update(mu,weightDecay);
+
+    }
+  delete[] gc;
+}
+
+
 void QRanker :: train_net_hinge(PSMScores &set, int interval)
 {
   double *r;
@@ -361,13 +384,51 @@ void QRanker :: train_net_ranking(PSMScores &set, int interval)
   delete[] gc;
 }
 
+
+
+void QRanker :: train_net_hybrid(PSMScores &set, int interval)
+{
+  double *r;
+  int label;
+  double *gc = new double[1];
+  for(int i = 0; i < set.size(); i++)
+    { 
+      unsigned int ind;
+      ind = rand()%(interval);
+      //pass both through the net
+      r = net.fprop(d.psmind2features(set[ind].psmind));
+      label = d.psmind2label(set[ind].psmind);
+      if(label == 1)
+	{
+	  double a = exp(label*r[0]);
+	  net.clear_gradients();
+	  gc[0] = -a/((1+a)*(1+a))*label;
+	  net.bprop(gc);
+	  net.update(mu,weightDecay);
+	}
+      else
+	{
+	  if(label*r[0]<1)
+	    {
+	      net.clear_gradients();
+	      gc[0] = -1.0*label;
+	      net.bprop(gc);
+	      net.update(mu,weightDecay);
+	    }
+	}
+    }
+  delete[] gc;
+}
+
+
+
 void QRanker :: train_many_general_nets()
 {
   interval = trainset.size();
   for(int i=0;i<switch_iter;i++) {
-    train_net_ranking(trainset, interval);
-    
-       
+    //train_net_ranking(trainset, interval);
+    train_net_hybrid(trainset, interval);
+           
     //record the best result
     getMultiFDR(thresholdset,net,qvals);
     for(int count = 0; count < num_qvals;count++)
@@ -403,14 +464,16 @@ void QRanker :: train_many_target_nets()
       net.copy(max_net_gen[thr_count]);
           
       cerr << "training thresh " << thr_count  << "\n";
-      //interval = getOverFDR(trainset, net, qvals[thr_count]);
-      interval = max_overFDR[thr_count];
+      interval = getOverFDR(trainset, net, qvals[thr_count]);
+      //interval = max_overFDR[thr_count];
+      //interval = trainset.size()/thr_count;
       for(int i=switch_iter;i<niter;i++) {
 		
 	//sorts the examples in the training set according to the current net scores
 	getMultiFDR(trainset,net,qvals);
-	train_net_ranking(trainset, interval);
-			
+	//train_net_ranking(trainset, interval);
+	train_net_hybrid(trainset, interval);
+				
 	for(int count = 0; count < num_qvals;count++)
 	  {
 	    if(overFDRmulti[count] > max_overFDR[count])
@@ -471,7 +534,7 @@ void QRanker::train_many_nets()
   if(num_hu == 1)
     lf = 1;
   //set whether there is bias in the linear units: 1 if yes, 0 otherwise
-  int bs = 0;
+  int bs = 1;
   
   net.initialize(d.get_num_features(),num_hu,lf,bs);
   for(int count = 0; count < num_qvals; count++){
@@ -501,8 +564,9 @@ void QRanker::train_many_nets()
   for(int count = 0; count < num_qvals; count++)
     max_net_targ[count] = max_net_gen[count];
 
-  train_many_target_nets();  
+  //train_many_target_nets();  
  
+    
   //choose the best net for the selectionfdr
   int max_fdr = 0;
   int fdr = 0;
@@ -518,6 +582,11 @@ void QRanker::train_many_nets()
     }
   net = max_net_targ[ind];
 
+  //print out results, just to see
+  for(unsigned int count = 0; count < qvals.size();count++)
+    cout << qvals[count] << " " <<  getOverFDR(trainset, net, qvals[count]) << " " << getOverFDR(testset, net, qvals[count]) << endl;
+  
+
   delete [] max_net_gen;
   delete [] max_net_targ;
   delete [] nets;
@@ -531,7 +600,9 @@ int QRanker::run( ) {
     
   d.load_psm_data_for_training();
   d.normalize_psms();
-  PSMScores::fillFeaturesSplit(trainset, testset, d, 0.5);
+  //PSMScores::fillFeaturesSplit(trainset, testset, d, 0.5);
+  PSMScores::fillFeaturesFull(trainset, d);
+  testset = trainset;
   thresholdset = trainset;
   train_many_nets();
   
