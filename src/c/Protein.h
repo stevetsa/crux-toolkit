@@ -83,6 +83,13 @@ class Protein {
   Protein();
 
   /**
+   * Copy constructor for protein object.
+   */
+  Protein(
+    const Protein *protein ///< Protein object to copoy -in
+  );
+
+  /**
    * \returns A new protein object(heavy).
    */
   Protein(

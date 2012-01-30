@@ -25,6 +25,7 @@
       else next peptide modification  
  */
 
+#include "omp.h"
 #include "MatchSearch.h"
 #include "FilteredSpectrumChargeIterator.h"
 #include "SearchProgress.h"
@@ -367,24 +368,41 @@ int MatchSearch::main(int argc, char** argv){
   bool have_index = (index != NULL);
   int num_decoy_collections = get_num_decoys(have_index);
 
-  // for each spectrum
+  // Create Vector of spectra
+  vector<Spectrum *> spectra_v;
+  vector<SpectrumZState> zstates;
   while(spectrum_iterator->hasNext()) {
     SpectrumZState zstate;
-    Spectrum* spectrum = spectrum_iterator->next(zstate);
-    int charge = zstate.getCharge();
+    Spectrum *spectrum = spectrum_iterator->next(zstate);
+    spectra_v.push_back(spectrum);
+    zstates.push_back(zstate);
+  }
+
+  Database local_database = *database;
     
+  // for each spectrum
+  int num_spectra = spectra_v.size();
+
+  #pragma omp parallel for firstprivate(local_database) num_threads(4)
+  for(int i = 0; i < num_spectra; ++i) {
+
+    int charge = zstates[i].getCharge();
+
     bool is_decoy = false;
 
-    progress.report(spectrum->getFirstScan(), charge);
+    #pragma omp critical 
+    {
+      progress.report(spectra_v[i]->getFirstScan(), charge);
+    }
 
     // with the target database decide how many peptide mods to use
     MatchCollection* target_psms = new MatchCollection(is_decoy); 
     int max_pep_mods = searchPepMods( target_psms, 
                                         is_decoy,   
                                         index,       
-                                        database, 
-                                        spectrum, 
-                                        zstate,
+                                        &local_database, 
+                                        spectra_v[i], 
+                                        zstates[i],
                                         peptide_mods, 
                                         num_peptide_mods,
                                         compute_pvalues); 
@@ -392,10 +410,15 @@ int MatchSearch::main(int argc, char** argv){
     // are there any matches?
     if( target_psms->getMatchTotal() == 0 ){
       // don't print and don't search decoys
-      carp(CARP_WARNING, "No matches found for spectrum %i, charge %i",
-           spectrum->getFirstScan(), charge);
+      {
+        #pragma omp critical 
+        {
+          carp(CARP_WARNING, "No matches found for spectrum %i, charge %i",
+               spectra_v[i]->getFirstScan(), charge);
+          progress.increment(false);
+        }
+      }
       delete target_psms;
-      progress.increment(false);
       continue; // next spectrum
     }
     
@@ -414,9 +437,9 @@ int MatchSearch::main(int argc, char** argv){
       searchPepMods(decoy_psms, 
                       is_decoy, 
                       index, 
-                      database, 
-                      spectrum, 
-                      zstate, 
+                      &local_database, 
+                      spectra_v[i], 
+                      zstates[i], 
                       peptide_mods, 
                       max_pep_mods,
                       compute_pvalues);
@@ -426,14 +449,17 @@ int MatchSearch::main(int argc, char** argv){
     // use targets to get Weibull parameters, use same params for decoys
     if( compute_pvalues == true ){
 
-      carp(CARP_DEBUG, "Estimating Weibull parameters.");
+      #pragma omp critical
+      {
+        carp(CARP_DEBUG, "Estimating Weibull parameters.");
+      }
       while( ! target_psms->hasEnoughWeibullPoints() ){
         // generate more scores from new decoys if there are not enough
-        addDecoyScores(target_psms, spectrum, zstate, index, 
-                         database, peptide_mods, max_pep_mods);
+        addDecoyScores(target_psms, spectra_v[i], zstates[i], index, 
+                         &local_database, peptide_mods, max_pep_mods);
         
       }
-      target_psms->estimateWeibullParametersFromXcorrs(spectrum,
+      target_psms->estimateWeibullParametersFromXcorrs(spectra_v[i],
                                               charge);
       target_psms->computePValues(NULL);
 
@@ -444,20 +470,26 @@ int MatchSearch::main(int argc, char** argv){
 
         MatchCollection::transferWeibull(target_psms, cur_collection);
 
-        carp(CARP_DEBUG, "Calculating p-values.");
+        #pragma omp critical
+        {
+          carp(CARP_DEBUG, "Calculating p-values.");
+        }
         cur_collection->computePValues(decoy_pvalue_file);
       
       }// next collection
     }
 
-    printSpectrumMatches(output_files, 
-                           target_psms, 
-                           decoy_collection_list,
-                           spectrum, 
-                           combine_target_decoy, 
-                           num_decoy_files);
+    #pragma omp critical 
+    {
+      printSpectrumMatches(output_files, 
+                             target_psms, 
+                             decoy_collection_list,
+                             spectra_v[i], 
+                             combine_target_decoy, 
+                             num_decoy_files);
 
-    progress.increment(true);
+      progress.increment(true);
+    }
 
     // clean up
     delete target_psms;
@@ -476,7 +508,7 @@ int MatchSearch::main(int argc, char** argv){
   }
   free(peptide_mods);
   Index::free(index);
-  Database::freeDatabase(database);
+  // Database::freeDatabase(database);
 
   carp(CARP_INFO, "Elapsed time: %.3g s", wall_clock() / 1e6);
   carp(CARP_INFO, "Finished crux-search-for-matches");

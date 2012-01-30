@@ -88,6 +88,46 @@ Database::Database(
 }  
 
 /**
+ * Copy constructor for database object.
+ */
+Database::Database(const Database& database ///< Database object to copoy -in
+) {
+    fasta_filename_ = database.fasta_filename_;
+    binary_filename_ = database.binary_filename_;
+    file_ = database.file_;
+    is_parsed_ = database.is_parsed_;
+    // proteins_ = database.proteins_;
+    proteins_ = new vector<Protein*>();
+    for (vector<Protein *>::iterator it = database.proteins_->begin(); 
+        it < database.proteins_->end(); it++) {
+          proteins_->push_back(new Protein(*it));
+          //proteins_->push_back(*it);
+    }
+    protein_map_ = new map<char*, Protein*, cmp_str>(*database.protein_map_);
+    //create the hashtable of protein ids
+    for (unsigned int protein_idx = 0;
+      protein_idx < proteins_->size();
+      protein_idx++) {
+
+      Protein* current_protein = proteins_->at(protein_idx);
+      char* current_id = current_protein->getIdPointer();
+      protein_map_->insert(make_pair(current_id, current_protein));
+    }
+    is_hashed_ = database.is_hashed_;
+    size_ = database.size_;
+    use_light_protein_ = database.use_light_protein_;
+    is_memmap_ = database.is_memmap_;
+#ifdef WIN32
+    unmap_info_ = database.unmap_info_;
+#endif
+    data_address_ = database.data_address_;
+    pointer_count_ = database.pointer_count_;
+    file_size_ = database.file_size_;
+    decoys_ = database.decoys_;
+    binary_is_temp_ = database.binary_is_temp_;
+}
+
+/**
  * Frees an allocated protein object.
  */
 void Database::freeDatabase(

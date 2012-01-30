@@ -116,6 +116,13 @@ class Database {
     );         
 
   /**
+   * Copy constructor for database object.
+   */
+  Database(
+    const Database& database ///< Database object to copoy -in
+  );
+
+  /**
    * Frees an allocated protein object.
    */
   static void freeDatabase(

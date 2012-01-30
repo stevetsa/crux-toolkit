@@ -56,6 +56,23 @@ Protein::Protein() {
 }
 
 /**
+ * Copy constructor for protein object.
+ */
+Protein::Protein(
+  const Protein *protein ///< Protein object to copoy -in
+) {
+  this->database_ = protein->database_;
+  this->offset_ = protein->offset_;
+  this->protein_idx_ = protein->protein_idx_;
+  this->is_light_ = protein->is_light_;
+  this->is_memmap_ = protein->is_memmap_;
+  this->id_ = strdup(protein->id_);
+  this->sequence_ = strdup(protein->sequence_);
+  this->length_ = protein->length_;
+  this->annotation_ = strdup(protein->annotation_);
+}
+
+/**
  * \returns A new protein object(heavy).
  * The protein is does not constain a database, users must provide one.
  */
