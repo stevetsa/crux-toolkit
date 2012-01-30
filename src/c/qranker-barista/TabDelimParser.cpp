@@ -422,7 +422,6 @@ void TabDelimParser :: second_pass(ifstream &fin, int label)
           if (protein_id.find(decoy_prefix) != string::npos) {
             psm_label = -1;
           }
-
 	  
 	  psmind_to_label[psmind] = psm_label;
 
@@ -430,7 +429,7 @@ void TabDelimParser :: second_pass(ifstream &fin, int label)
 	  extract_psm_features(psmind, tokens, x);
 	  f_psm.write((char*)x, sizeof(double)*num_features);
 
-	  if(label == 1)
+	  if(psm_label == 1)
 	    num_pos_psm++;
 	  else
 	    num_neg_psm++;
@@ -647,7 +646,7 @@ int TabDelimParser :: run(vector<string> &filenames)
       first_pass(fin);
       fin.close();
     }
-  cout << num_psm << " " << num_pep << " " << num_pep_in_all_psms << endl;
+  cout << "working counts " << num_psm << " " << num_pep << " " << num_pep_in_all_psms << endl;
   allocate_feature_space();
 
   ostringstream fname;
@@ -667,15 +666,17 @@ int TabDelimParser :: run(vector<string> &filenames)
 	  return 0;
 	}
       getline(fin,line);
+  
       if(i == 0)
 	label = 1;
       else
 	label = -1;
+  
       second_pass(fin,label);
       fin.close();
     }
   f_psm.close();
-  cout << psmind << " " << num_pos_psm << " " << num_neg_psm << endl;
+  cout << "counts " << psmind << " " << num_pos_psm << " " << num_neg_psm << endl;
   cerr <<"Saving data "<<out_dir<<endl;
   
   save_data_in_binary(out_dir);
