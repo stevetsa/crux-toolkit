@@ -25,7 +25,7 @@
       else next peptide modification  
  */
 
-#include "omp.h"
+#include "/net/gs/vol3/software/modules-sw/gcc/4.5.1/Linux/RHEL5/x86_64/lib/gcc/x86_64-unknown-linux-gnu/4.5.1/include/omp.h"
 #include "MatchSearch.h"
 #include "FilteredSpectrumChargeIterator.h"
 #include "SearchProgress.h"
