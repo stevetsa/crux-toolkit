@@ -29,6 +29,7 @@ public:
     double factor;
 
     int calcOverFDR(double fdr);
+    int calcOverFDRSpectrum(double fdr);
     void calcMultiOverFDR(vector<double> &fdr, vector<int> &overFDR);
     inline PSMScoreHolder& operator[](int ix){return scores[ix];}    
     void static fillFeaturesSplit(PSMScores& train,PSMScores& test,Dataset &d, double ratio);

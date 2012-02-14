@@ -6,7 +6,7 @@
 #include <vector>
 
 #include "SpectrumZState.h"
-
+//#include "ChargeIndex.h"
 
 class ZStateIndex: public std::vector<SpectrumZState>{
 
@@ -18,6 +18,8 @@ class ZStateIndex: public std::vector<SpectrumZState>{
   bool add(ZStateIndex zstates);
 
   std::string getChargeString();
+
+  //ChargeIndex getChargeIndex();
 
 
   int numZStates();

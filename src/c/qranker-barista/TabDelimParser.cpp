@@ -288,8 +288,8 @@ void TabDelimParser :: extract_psm_features(
 
   double ave_artd = 0; 
 
-  double max_artd = 0;
-  //double max_artd = fabs(psmind_to_rtime_max_diff[psmind]);//fabs(atof(tokens[col_idx].c_str()));
+  //double max_artd = 0;
+  double max_artd = fabs(psmind_to_rtime_max_diff[psmind]);//fabs(atof(tokens[col_idx].c_str()));
 
   //if (max_artd != 0) {
   //cerr<<"Max artd:"<<max_artd<<endl;
@@ -304,6 +304,7 @@ void TabDelimParser :: extract_psm_features(
   } else {
     x[1] = 0.0;
   }
+
   x[2]  = sp;
   x[3]  = log_sp_rank;
   x[4]  = by_ion_fraction_matched;
@@ -317,15 +318,16 @@ void TabDelimParser :: extract_psm_features(
   x[12] = avg_sequence_length;
   x[13] = max_sequence_length;
   x[14] = num_sequences;
-  x[15] = ave_artd;
+//  x[15] = ave_artd;
   x[16] = max_artd;
+
+
   x[17] = charge_count[0];
   x[18] = charge_count[1];
   x[19] = charge_count[2];
   x[20] = charge_count[3];
   x[21] = charge_count[4];
   x[22] = charge_count[5];
-
   /*
   cerr << psmind;
   for (int idx=0;idx < num_features;idx++) {

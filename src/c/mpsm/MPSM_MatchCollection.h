@@ -37,7 +37,7 @@ public:
   void free();
   void invalidate();
   ZStateIndex& getZStateIndex();  
-
+  //ChargeIndex& getChargeIndex();
   
   bool addMatch(MPSM_Match& match);
 

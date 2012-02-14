@@ -25,6 +25,24 @@ QRanker::~QRanker()
   delete [] trained_nets;
 }
 
+/*
+int QRanker :: getOverFDRSpectra(PSMScores& set, NeuralNet &n, double fdr) {
+
+  double *r;
+  double* featVec;
+
+  for(unsigned int i = 0; i < set.size(); i++)
+    {
+      featVec = d.psmind2features(set[i].psmind);
+      r = n.fprop(featVec);
+      set[i].score = r[0];
+
+    }
+  return set.calcOverFDRSpectra(fdr);
+
+}
+*/
+
 int QRanker :: getOverFDR(PSMScores &set, NeuralNet &n, double fdr)
 {
   double *r;
@@ -134,6 +152,25 @@ void QRanker :: calcPvalue(PSMScores &set)
     set[i].p = (double)(decoy_count+pvalue_m_estimate)/(double)(set.neg+pvalue_m_estimate);
   }
 }
+
+/*
+void QRanker :: getMultiFDRSpectrum(PSMScores &set, NeuralNet &n, vector<double> &qvalues) {
+  double *r;
+  double* featVec;
+   
+  for(unsigned int i = 0; i < set.size(); i++)
+    {
+      featVec = d.psmind2features(set[i].psmind);
+      r = n.fprop(featVec);
+      set[i].score = r[0];
+    }
+ 
+  for(unsigned int ct = 0; ct < qvalues.size(); ct++)
+    overFDRmulti[ct] = 0;
+  set.calcMultiOverFDRSpectra(qvalues, overFDRmulti);
+  
+}
+*/
 
 void QRanker :: getMultiFDR(PSMScores &set, NeuralNet &n, vector<double> &qvalues)
 {
@@ -303,6 +340,7 @@ void QRanker :: write_results(
      << "q-ranker p-value" << "\t"
      << "q-ranker q-value" << "\t" 
      << "sequence" << "\t" 
+//     << "protein id" << "\t"
      << "rtime max diff" << "\t"
      << "peptides/spectrum" << "\t"
      << "nzstates" << "\t"
@@ -360,7 +398,22 @@ void QRanker :: write_results(
 	  f1 << ",";
 	  f1 << dataset.ind2pep(pepinds[k]); 
 	}
+/*
+      f1 << "\t";
 
+      //write protein ids
+      for (int k = 0 ; k < num_pep;k++) {
+        int* protinds = dataset.pepind2protinds(pepinds[k]);
+        int num_prot = dataset.pepind2num_prot(pepinds[k]);
+        if (k != 0) {
+          f1 << ";";
+        }
+        f1 << dataset.protind2label(protinds[0]);
+        for (int l=1;l<num_prot;l++) {
+          f1 << "," << dataset.protind2label(protinds[l]);
+        }
+      }  
+*/
       //write rtime_max_diff
       double rtime_max_diff = dataset.psmind2rtime_max_diff(psmind);
       f1 << "\t" << rtime_max_diff;

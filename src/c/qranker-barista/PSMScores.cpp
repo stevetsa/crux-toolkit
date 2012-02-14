@@ -57,7 +57,48 @@ void PSMScores :: calc_factor()
  */
 double PSMScores::pi0 = 0.9;
 
+/*
+void PSMScores::getBestPerScan(map<int,int>& ans) {
 
+  ans.clear();
+  for (size_t idx=0;idx < scores.size();idx++) {
+    PSMScoreHolder& psm = scores[idx];
+    //int psmind = psm.psmind;
+    int scan = 1;//d.psmind2scan(psmind);
+    double score = psm.score;
+
+    if (ans.find(scan) == ans.end()) {
+      ans[scan] = idx;
+    } else {
+      int best_idx = ans[scan];
+      double best_score = scores[best_idx].score;
+      if (score > best_score) {
+        ans[scan] = idx;
+      }
+    }
+  }
+}
+*/
+/*
+int PSMScores::calcOverFDRSpectra(double fdr) {
+
+  map<int,int> best_per_scan;
+  getBestPerScan(best_per_scan);
+
+  PSMScores scans;
+  for (map<int,int>::iterator iter = best_per_scan.begin();
+    iter != best_per_scan.end();
+    ++iter) {
+    scans.add_psm(scores.at(iter->second));
+  }
+
+  scans.calc_factor();
+
+  return (scans.calcOverFDR(fdr));
+
+
+}
+*/
 /**
  * Calculate the number of targets that score above a specified FDR.
  */
