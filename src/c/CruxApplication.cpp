@@ -8,6 +8,7 @@
 
 #include "carp.h"
 #include "parameter.h"
+#include "WinCrux.h"
 
 #include <iostream>
 
@@ -117,5 +118,13 @@ void CruxApplication::initialize(
     print_parameter_file(&param_file_name);
     free(param_file_name);
   }
-
 }
+
+
+/**
+ * Should this application be kept from the usage statement?
+ */
+bool CruxApplication::hidden(){
+  return false;
+}
+

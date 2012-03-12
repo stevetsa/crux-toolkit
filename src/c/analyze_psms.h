@@ -9,8 +9,6 @@
 #include "carp.h"
 #include "OutputFiles.h"
 #include "q-value.h"
-#include "PercolatorCInterface.h"
-#include "QRankerCInterface.h"
 
 /**
  * \brief Takes a directory containing PSM files and a protein index
@@ -32,11 +30,22 @@ void analyze_matches_main(
  * \returns a pointer to a MatchCollection object
  * \callgraph
  */
-MatchCollection* run_percolator_or_qranker(
-  COMMAND_T command,                                          
+MatchCollection* run_percolator(
   char* input_directory, 
   char* fasta_file, 
   OutputFiles& output);
+
+/**
+ * Compute posterior error probabilities (PEP) from the given target
+ * and decoy scores.
+ * \returns A newly allocated array of PEP for the target scores
+ * sorted.
+ */
+double* compute_PEP(double* target_scores, ///< scores for target matches
+                    int num_targets,       ///< size of target_scores
+                    double* decoy_scores,  ///< scores for decoy matches
+                    int num_decoys);       ///< size of decoy_scores
+
 
 #endif //ANALYZE_PSMS_H
 

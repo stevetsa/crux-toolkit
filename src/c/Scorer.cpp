@@ -11,9 +11,15 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#ifndef WIN32
 #include <dirent.h>
+#include <unistd.h>
+#endif
 #include <ctype.h>
 #include <sys/stat.h>
+#ifdef WIN32
+#include "windirent.h"
+#endif
 #include "objects.h"
 #include "IonConstraint.h"
 #include "IonFilteredIterator.h"
@@ -22,7 +28,7 @@
 #include "Spectrum.h"
 #include "Scorer.h"
 #include "parameter.h"
-#include "unistd.h"
+
 
 
 /**
@@ -34,6 +40,7 @@ static const int MAX_XCORR_OFFSET = 75;
 // These values should be good for double precision floating point
 // numbers compatible with the IEEE 754 standard.
 
+#ifndef WIN32
 /**
 * Constant for EVD p_value calculation
 */
@@ -42,6 +49,7 @@ static const FLOAT_T DBL_EPSILON = 2.2204460492503131e-16;
 * Constant for EVD p_value calculation
 */
 static const int DBL_MAX_10_EXP = 308;
+#endif
 
 /**
  * Cut-off below which the simple Bonferroni calculation can be used.
@@ -106,7 +114,6 @@ void Scorer::init() {
   intensity_array_ = NULL;
   initialized_ = false;
   last_idx_ = 0;
-  xcorr_var_bin_ = false;
   bin_width_ = 0;
   bin_offset_ = 0;
   observed_ = NULL;
@@ -764,7 +771,9 @@ FLOAT_T Scorer::genScoreSp(
  *****************************************************/
 
 /**
- * normalize each 10 regions of the observed spectrum to max 50
+ * Normalize each peak intensity of the observed spectrum to max 50
+ * based on the max intenstiy in each of 10 regions.
+ * .
  */
 void Scorer::normalizeEachRegion(
   FLOAT_T* observed,  ///< intensities to normalize
@@ -780,7 +789,10 @@ void Scorer::normalizeEachRegion(
 
   // normalize each region
   for(; bin_idx < getMaxBin(); ++bin_idx){
-    if(bin_idx >= region_selector*(region_idx+1) && region_idx < (NUM_REGIONS-1)){
+    // increment the region index and update max_intensity if this
+    // peak is in the next region
+    if(bin_idx >= region_selector*(region_idx+1) 
+       && region_idx < (NUM_REGIONS-1)){
       ++region_idx;
       max_intensity = max_intensity_per_region[region_idx];
     }
@@ -795,10 +807,6 @@ void Scorer::normalizeEachRegion(
       observed[bin_idx] = (observed[bin_idx] / max_intensity) * MAX_PER_REGION;
     }
 
-    // no more peaks beyond the 10 regions mark, exit
-    if(bin_idx > NUM_REGIONS * region_selector){
-      return;
-    }
   }
 }
 
@@ -841,7 +849,7 @@ bool Scorer::createIntensityArrayObserved(
   sp_max_mz_ = sp_max_mz;
 
   // DEBUG
-  // carp(CARP_INFO, "experimental_mass_cut_off: %.2f sp_max_mz: %.3f", experimental_mass_cut_off, scorer->sp_max_mz);
+  // carp(CARP_INFO, "experimental_mass_cut_off: %.2f sp_max_mz: %.3f", experimental_mass_cut_off, sp_max_mz);
   FLOAT_T* observed = (FLOAT_T*)mycalloc(getMaxBin(), sizeof(FLOAT_T));
 
   // Store the max intensity in entire spectrum
@@ -865,12 +873,7 @@ bool Scorer::createIntensityArrayObserved(
       max_peak = peak_location;
     }
   }
-  if (xcorr_var_bin_) {
-    // TODO - Check to see if this is the correct thing to do.
-    region_selector = INTEGERIZE(max_peak, bin_width, bin_offset) / NUM_REGIONS;
-  } else {
-    region_selector = (int) (max_peak / NUM_REGIONS);
-  }
+  region_selector = INTEGERIZE(max_peak, bin_width, bin_offset) / NUM_REGIONS;
 
   // DEBUG
   // carp(CARP_INFO, "max_peak_mz: %.2f, region size: %d",get_spectrum_max_peak_mz(spectrum), region_selector);
@@ -1470,11 +1473,7 @@ void Scorer::setSpMaxMz(
  *\returns the max bin index of the scorer array(s).
  */
 int Scorer::getMaxBin() {
-  if (xcorr_var_bin_) {
     return INTEGERIZE(sp_max_mz_, bin_width_, bin_offset_);
-  } else {
-    return (int)(sp_max_mz_);
-  }
 }
 
 /**

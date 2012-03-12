@@ -10,8 +10,9 @@
 #define XHHC_SCORER_H
 
 #include "Scorer.h"
+#include "XHHC_Peptide.h"
 
-#include "xhhc_ion_series.h"
+#include "LinkedIonSeries.h"
 
 #include <map>
 

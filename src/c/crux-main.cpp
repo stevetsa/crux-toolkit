@@ -16,9 +16,14 @@
 #include "MatchSearch.h"
 #include "SequestSearch.h"
 #include "ComputeQValues.h"
+#include "ComputeQValuesLegacy.h"
 #include "Percolator.h"
 #include "QRanker.h"
+#include "Barista.h"
 #include "PrintProcessedSpectra.h"
+#include "GeneratePeptides.h"
+#include "GetMs2Spectrum.h"
+#include "PredictPeptideIons.h"
 #include "SearchForXLinks.h"
 #include "ExtractColumns.h"
 #include "SpectralCounts.h"
@@ -36,23 +41,36 @@
  */
 int main(int argc, char** argv){
 
+#ifdef WIN32
+  // Turn off auto-tranlation of line-feed to 
+  // carriage-return/line-feed
+  _set_fmode(_O_BINARY);
+#endif 
+
   CruxApplicationList applications("crux");
 
   applications.add(new CreateIndex());
 
+  // search
   applications.add(new MatchSearch());
   applications.add(new SequestSearch());
-
-  applications.add(new ComputeQValues());
-  applications.add(new Percolator());
-  applications.add(new QRanker());
-
-  applications.add(new PrintProcessedSpectra());
-
   applications.add(new SearchForXLinks());
 
+  // post-search
+  applications.add(new ComputeQValues());
+  applications.add(new ComputeQValuesLegacy()); // depricated name
+  applications.add(new Percolator());
+  applications.add(new QRanker());
+  applications.add(new Barista());
   applications.add(new SpectralCounts());
 
+  // fasta/ms2 utilities
+  applications.add(new PrintProcessedSpectra());
+  applications.add(new GeneratePeptides());
+  applications.add(new PredictPeptideIons());
+  applications.add(new GetMs2Spectrum());
+
+  // delimited file utilities
   applications.add(new ExtractColumns());
   applications.add(new ExtractRows());
   applications.add(new StatColumn());

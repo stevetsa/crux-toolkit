@@ -9,6 +9,7 @@
 
 #include "crux-utils.h"
 #include "parameter.h"
+#include "WinCrux.h"
 
 using namespace std;
 
@@ -28,7 +29,7 @@ static const char* parameter_type_strings[NUMBER_PARAMETER_TYPES] = {
   "ENZYME_T", 
   "bool", "SCORER_TYPE_T", "ION_TYPE_T",
   "HARDKLOR_ALGORITHM_T", "ALGORITHM_TYPE_T", "WINDOW_TYPE_T", 
-  "MEASURE_TYPE_T", "PARSIMONY_TYPE_T", "QUANT_LEVEL_TYPE_T", 
+  "PARSIMONY_TYPE_T", "QUANT_LEVEL_TYPE_T", "DECOY_TYPE_T"};
   "DECOY_TYPE_T"};
 
 //one hash for parameter values, one for usage statements, one for types
@@ -232,6 +233,13 @@ bool set_measure_type_parameter(
 bool set_decoy_type_parameter(
   const char* name, ///< the name of the parameter looking for -in
   DECOY_TYPE_T set_value, ///< the value to be set -in
+  const char* usage, ///< string to print in usage statement
+  const char* filenotes, ///<additional infor for param file
+  const char* foruser);
+
+bool set_mass_format_type_parameter(
+  const char* name, ///< the name of the parameter looking for -in
+  MASS_FORMAT_T set_value, ///< the value to be set -in
   const char* usage, ///< string to print in usage statement
   const char* filenotes, ///<additional infor for param file
   const char* foruser);
@@ -466,13 +474,13 @@ void initialize_parameters(void){
                        "true");
   
   set_int_parameter("missed-cleavages",
-		    0, 0, 500,
-		    "Include peptides with up to n missed cleavage sites. Default=0.",
-		    "Available from command line or parameter file for crux-create-index "
-		    "and crux-generate-peptides.  Parameter file only for crux-search-"
-		    "for-matches.  When used with enzyme=<trypsin|elastase|chymotrpysin> "
-		    " includes peptides containing one or more potential cleavage sites.",
-		    "true");	    
+                    0, 0, 500,
+      "Include peptides with up to n missed cleavage sites. Default=0.",
+      "Available from command line or parameter file for crux-create-index "
+      "and crux-generate-peptides.  Parameter file only for crux-search-"
+      "for-matches.  When used with enzyme=<trypsin|elastase|chymotrpysin> "
+      " includes peptides containing one or more potential cleavage sites.",
+      "true");   
 
   set_boolean_parameter("unique-peptides", true,
       "Generate peptides only once, even if they appear in more "
@@ -676,13 +684,13 @@ void initialize_parameters(void){
       "The maximum number of modified amino acids that can appear in one "
       "peptide.  Each aa can be modified multiple times.  Default=no limit.",
       "Available from parameter file for search-for-matches.", "true");
-  set_boolean_parameter("display-summed-mod-masses", true,
-      "When a residue has multiple modifications, print the sum of those "
-      "modifications rather than listing each in a comma-separated list.  "
-      "Default=T.",
-      "Available in the parameter file for any command that prints peptides "
-      "sequences.  Example: true is SE[12.40]Q and false is SE[10.00,2.40]Q",
-      "true" );
+  set_mass_format_type_parameter("mod-mass-format", MOD_MASS_ONLY,
+      "Print the masses of modified sequences in one of three ways 'mod-only', "
+      "'total' (residue mass plus modification), or 'separate' (for multiple "
+      "mods to one residue): Default 'mod-only'.",
+      "Available in the parameter file for search-for-matches, sequest-search "
+      "and generate-peptides.",
+      "true");
   set_int_parameter("mod-precision", MOD_MASS_PRECISION, 0, 20,//arbitrary
       "Set the precision for modifications as written to .txt files.",
       "Also changes mods written to parameter file. Set internally based on "
@@ -735,10 +743,86 @@ void initialize_parameters(void){
      "<fileroot>.percolator.features.txt or <fileroot>.qranker.features.txt.",
      "true");
 
+  // **** q-ranker-barista arguments ****
+  set_string_parameter("database", NULL,
+     "The program requires the FASTA format protein database files against "
+     "which the search was performed. The protein database input may be a "
+     "concatenated database or separate target and decoy databases; the "
+     "latter is supported with the --separate-searches option, described "
+     "below. In either case, Barista distinguishes between target and decoy "
+     "proteins based on the presence of a decoy prefix on the sequence "
+     "identifiers (see the --decoy-prefix option, below). The database can "
+     "be provided in three different ways: (1) as a a single FASTA file "
+     "with suffix \".fa\", \".fsa\" or \".fasta\", (2) as a text file "
+     "containing a list of FASTA files, one per line, or (3) as a directory "
+     "containing multiple FASTA files (identified via the filename suffixes "
+     "\".fa\", \".fsa\" or \".fasta\").", 
+     "argument for barista", "false"); 
+
+  set_string_parameter("spectra", NULL,
+     "The fragmentation spectra must be provided in MS2 format. Like the "
+     "database, the spectra can be specified in three different ways: (1) "
+     "as a single file with suffix \".ms2\", (2) as a text file containing a "
+     "list of MS2 files or (3) as a directory in which all the MS2 files can "
+     "be found.", 
+     "argument for q-ranker and barista", "false");
+  
+  set_string_parameter("search results", NULL,
+     "Q-ranker recognizes search results in SQT format. Like the spectra, the "
+     "search results can be provided as a single file, a list of files or a "
+     "directory of files. Note, however, that the input mode for spectra and "
+     "for search results must be the same; i.e., if you provide a list of "
+     "files for the spectra, then you must also provide a list of files "
+     "containing your search results. When the MS2 files and SQT files are "
+     "provided via a file listing, Q-ranker assumes that the order of the MS2 "
+     "files matches the order of the SQT files. Alternatively, when the MS2 "
+     "files and SQT files are provided via directories, Q-ranker will search "
+     "for pairs of files with the same root name but different extensions "
+     "(\".ms2\" and \".sqt\").", 
+     "argument for q-ranker and barista", "false");
+  
+
   // **** q-ranker options. ****
-  set_boolean_parameter("no-xval", false, 
-      "Turn off cross-validation to select hyperparameters.",
-      "Available for q-ranker.", "true");
+  set_boolean_parameter("skip-cleanup", false, 
+     "Q-ranker analysis begins with a pre-processsing step that creates a "
+     "set of lookup tables which are then used during training. Normally, "
+     "these lookup tables are deleted at the end of the Q-ranker analysis, "
+     "but setting this option to T prevents the deletion of these tables. "
+     "Subsequently, the Q-ranker analysis can be repeated more efficiently "
+     "by specifying the --re-run option. Default = F.", 
+     "Available for q-ranker and barista.", "true");
+
+  set_boolean_parameter("use-spec-features", true, 
+     "Q-ranker uses enriched feature set derived from the spectra in ms2 "
+     "files. It can be forced to use minimal feature set by setting the "
+     "--use-spec-features option to F. Default T.", 
+     "Available for q-ranker and barista.", "true");
+
+  set_string_parameter("decoy-prefix", "rand_",
+     "Specifies the prefix of the protein names that indicates a decoy. "
+     "Default = rand_.",
+     "Available for q-ranker and barista.", "true");
+
+  set_string_parameter("re-run", "__NULL_STR",
+     "Re-run a previous Q-ranker analysis using a previously computed set of"
+     "lookup tables.",
+     "Available for q-ranker and barista.", "true");
+
+  set_string_parameter("separate-searches", "__NULL_STR",
+     "If the target and decoy searches were run separately, rather than" 
+     " using a concatenated database, then Q-ranker will assume that the"
+     "database search results provided as a required argument are from the"
+     "target database search. This option then allows the user to specify"
+     "the location of the decoy search results. Like the required arguments,"
+     "these search results can be provided as a single file, a list of files"
+     "or a directory. However, the choice (file, list or directory) must be"
+     "consistent for the MS2 files and the target and decoy SQT files. Also,"
+     "if the MS2 and SQT files are provided in directories, then Q-ranker"
+     "will use the MS2 filename (foo.ms2) to identify corresponding target"
+     "and decoy SQT files with names like foo*.target.sqt and"
+     "foo*.decoy.sqt. This naming convention allows the target and decoy SQT"
+     "files to reside in the same directory.",
+     "Available for q-ranker and barista.", "true");
 
   /* analyze-matches parameter options */
   set_double_parameter("pi-zero", 1.0, 0, 1, 
@@ -827,7 +911,7 @@ void initialize_parameters(void){
        "Default=none. Can be <string>=none|simple|greedy",
        "Available for spectral-counts.",
        "true");
-		       
+
 
   // ***** static mods *****
   set_double_parameter("A", 0.0, -100, BILLION, 
@@ -977,10 +1061,10 @@ void initialize_parameters(void){
 
   
   set_string_parameter("xlink-prevents-cleavage", "K",
-		       "List of amino acids that xlinker can prevent cleavage",
-		       "Available for search-for-xlinks program (Default=K).",
-		       "false" /*TODO - turn this to true after new
-                                        xlink code is implemented */
+      "List of amino acids that xlinker can prevent cleavage",
+      "Available for search-for-xlinks program (Default=K).",
+      "false" /*TODO - turn this to true after new
+                                      xlink code is implemented */
                         );
 
   set_double_parameter("precursor-window-decoy", 20.0, 0, 1e6, 
@@ -1455,8 +1539,15 @@ static void set_mz_bin_width()
 {
   double new_value = get_double_parameter("mz-bin-width");
 
+#ifdef WIN32
+  // Peculiarities of Windows floating point handling 
+  // results in us getting 0.0 here rather than Nan
+  // FIXME: is there a more portable way of checking
+  // that a floating point value has not been set?
+  if (new_value == 0.0) {
+#else
   if (isnan(new_value)) {
-
+#endif
     // If no width specified, choose based on mass type.
     if (get_mass_type_parameter("fragment-mass") == MONO) {
       new_value = BIN_WIDTH_MONO;
@@ -1508,8 +1599,8 @@ void set_flanking_peaks(const char* exe_name){
  * \returns true is command line is successfully parsed.
  */
 bool parse_cmd_line_into_params_hash(int argc, 
-                                          char** argv, 
-                                          const char* exe_name){
+                                     char** argv, 
+                                     const char* exe_name){
   carp(CARP_DETAILED_DEBUG, "Parameter.c is parsing the command line");
   assert(parameter_initialized && usage_initialized && type_initialized);
   bool success = true;
@@ -1547,7 +1638,6 @@ bool parse_cmd_line_into_params_hash(int argc,
     char* error_message = NULL;
     char* usage = parse_arguments_get_usage(exe_name);
     int error_code = parse_arguments_get_error(&error_message);
-    free(usage);
     carp(
       CARP_FATAL, 
       "Error in command line. Error # %d\n%s\n%s", 
@@ -1925,11 +2015,11 @@ bool check_option_type_and_bounds(const char* name){
     break;
   case MEASURE_TYPE_P:
     carp(CARP_DETAILED_DEBUG, "found measure type param, value '%s'",
-	 value_str);
+         value_str);
     if (string_to_measure_type(value_str) == MEASURE_INVALID){
       success = false;
       sprintf(die_str, "Illegal measure type '%s' for option '%s'. "
-	      "Must be (NSAF, SIN, EMPAI)", value_str, name);
+              "Must be (NSAF, SIN, EMPAI)", value_str, name);
     }
     break;
   case PARSIMONY_TYPE_P:
@@ -1938,16 +2028,16 @@ bool check_option_type_and_bounds(const char* name){
     if (string_to_parsimony_type(value_str) == PARSIMONY_INVALID){
       success = false;
       sprintf(die_str, "Illegal parsimony type '%s' for option '%s'. "
-	      "Must be (none, simple, greedy)", value_str, name);
+              "Must be (none, simple, greedy)", value_str, name);
     }
     break;
   case QUANT_LEVEL_TYPE_P:
     carp(CARP_DETAILED_DEBUG, "found quant level type param, value");// '%s'",
-    //	 value_str);
+    //value_str);
     if (string_to_quant_level_type(value_str) == QUANT_LEVEL_INVALID){
       success = false;
       sprintf(die_str, "Illegal quantitation level type '%s' for option '%s'. "
-	      "Must be (peptide, protein)", value_str, name);
+              "Must be (peptide, protein)", value_str, name);
     }
     break;
   case DECOY_TYPE_P:
@@ -1955,7 +2045,16 @@ bool check_option_type_and_bounds(const char* name){
     if (string_to_decoy_type(value_str) == INVALID_DECOY_TYPE){
       success = false;
       sprintf(die_str, "Illegal decoy type '%s' for option '%s'. "
-	      "Must be one of none, reverse, protein-shuffle, peptide-shuffle",
+              "Must be one of none, reverse, protein-shuffle, peptide-shuffle",
+              value_str, name);
+    }
+    break;
+  case MASS_FORMAT_P:
+    carp(CARP_DEBUG, "found mass format param, value %s", value_str);
+    if (string_to_mass_format(value_str) == INVALID_MASS_FORMAT){
+      success = false;
+      sprintf(die_str, "Illegal mass format '%s' for option '%s'. "
+              "Must be one of mod-only, total, separate",
               value_str, name);
     }
     break;
@@ -2153,7 +2252,7 @@ void parse_parameter_file(
     carp(CARP_FATAL, "Could not open parameter file.");
   }
 
-  file = fopen(parameter_filename, "r");
+  file = fopen(parameter_filename, "rb");
   if(file == NULL){
     carp(CARP_FATAL, "Couldn't open parameter file '%s'", parameter_filename);
   }
@@ -2521,6 +2620,16 @@ DECOY_TYPE_T get_decoy_type_parameter(
   char * param_value_str = (char*)get_hash_value(parameters, name);
   DECOY_TYPE_T param_value =
     string_to_decoy_type(param_value_str);
+  
+  return param_value;
+}
+
+MASS_FORMAT_T get_mass_format_type_parameter(
+  const char* name
+  ){
+  char * param_value_str = (char*)get_hash_value(parameters, name);
+  MASS_FORMAT_T param_value =
+    string_to_mass_format(param_value_str);
   
   return param_value;
 }
@@ -2929,6 +3038,34 @@ bool set_decoy_type_parameter(
   
 }
 
+bool set_mass_format_type_parameter(
+  const char* name, ///< the name of the parameter looking for -in
+  MASS_FORMAT_T set_value, ///< the value to be set -in
+  const char* usage, ///< string to print in usage statement
+  const char* filenotes, ///<additional infor for param file
+  const char* foruser 
+  ){
+  bool result = true;
+
+  // check if parameters can be changed
+  if(!parameter_plasticity){
+    carp(CARP_ERROR, "can't change parameters once they are confirmed");
+    return false;
+  }
+  
+  /* stringify the value */
+  char* value_str = mass_format_type_to_string(set_value);
+  
+  result = add_or_update_hash(parameters, name, value_str);
+  result = add_or_update_hash(usages, name, usage);
+  result = add_or_update_hash(file_notes, name, filenotes);
+  result = add_or_update_hash(for_users, name, foruser);
+  result = add_or_update_hash(types, name, "MASS_FORMAT_T");
+  free(value_str);
+  return result;
+  
+}
+
 bool set_parsimony_type_parameter(
   const char* name, ///< the name of the parameter looking for -in
   PARSIMONY_TYPE_T set_value, ///< the value to be set -in
@@ -3056,7 +3193,7 @@ bool set_scorer_type_parameter(
     return false;
   }
   /* stringify value */
-  scorer_type_to_string(set_value, value_str);
+  strcpy(value_str, scorer_type_to_string(set_value));
   carp(CARP_DETAILED_DEBUG, "setting score type to %s", value_str);  
 
   result = add_or_update_hash(parameters, name, value_str);
@@ -3506,7 +3643,7 @@ void read_mods_from_file(char* param_filename){
   carp(CARP_DEBUG, "Reading mods from parameter file '%s'", param_filename);
 
   // open file
-  FILE* param_file = fopen(param_filename, "r");
+  FILE* param_file = fopen(param_filename, "rb");
   if( param_file == NULL ){
     carp(CARP_FATAL, "Could not open parameter file '%s'", param_filename);
   }

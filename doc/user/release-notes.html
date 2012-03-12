@@ -7,13 +7,81 @@
 <blockquote> 
 <h1>Release notes for Crux</h1>
 
-<h2>Version 1.37</h2> Month day, 2011
+<h2>Version 1.38</h2> Month 00, 2012
 
 <h3>Major enhancements</h3>
 
 <ul>
+<li>
+</ul>
+
+<h3>Minor changes</h3>
+
+<ul>
 
 <li>
+Updated crux spectral-counts to properly normalize NSAF for protein
+quantification
+
+<li>
+Updated crux search-for-xlinks to handle multiple missed cleavages
+correctly (controlled by missed-cleavages parameter).</li>
+
+<li>
+Ambiguous amino acids are handled differently.  'J' is interpreted to
+indicate 'I or L' and its mass will be the same as that of I or L.
+Peptides containing B, Z, and X are no longer be considered, and a
+warning stating is issued when these amino acid codes are
+encountered.</li>
+
+<li>
+The stand-alone <code>crux-predict-peptide-ions</code>
+and <code>crux-generate-peptides</a> applications have been integrated
+into the main <code>crux</code> application.</li>
+
+<li>
+A bug has been fixed that affected the intensity adjustment of
+observed spectra when the bin width was set much larger or smaller
+than 1.</li>
+
+<li>
+Beginning with version 1.37, q-ranker erroneously included decoy PSMs
+along with target PSMs in the q-ranker.target.psms.txt file.  All PSMs
+were sorted by q-ranker score so the targets and decoys were mixed
+together with no accompanying labels.  This bug has been fixed so that
+Q-ranker once again returns only target PSMs.</li>
+
+<li>
+Q-ranker and barista now compute and report posterior error probabilities 
+in addition to q-values.</li>
+
+<li>
+The .pep.xml output of q-ranker and barista has been updated to be 
+compatible with the TPP, particularly as an input to ProteinProphet.
+
+</ul>
+
+<h2>Version 1.37</h2> December 22, 2011
+
+<h3>Major enhancements</h3>
+
+<ul>
+<li>
+Added <code>crux barista</code>, a tool for inferring protein
+identifications.</li>
+
+<li>
+Reimplemented <code>crux q-ranker</code> with new outputs and
+command-line syntax.</li>
+
+<li>
+Percolator and compute-q-values now compute and report posterior error
+probabilities, in addition to q-values.</li>
+
+<li>
+<code>crux create-index</code> now generates and store decoy
+peptides in the index.  Decoys can still be generated on-the-fly when
+searching .fasta files.</li>
 
 </ul>
 
@@ -23,16 +91,35 @@
 
 <li>
 A pair of options, <code>cterm-fixed</code>
-and <code>nterm-fixed</code> allow fixed terminal peptide
-modifications, i.e. a mass shift applied to every peptide on either or
-both termini.
+and <code>nterm-fixed</code>, allow fixed terminal peptide
+modifications, i.e., a mass shift applied to every peptide on either or
+both termini.</li>
 
 <li>
-Spectrum processing was changed to include the highest m/z fragment peaks.
-Xcorrs have changed slightly as a result.
+A bug in the spectrum processing code was fixed, which was erroneously
+eliminating a few of the highest m/z fragment peaks.  Xcorrs have
+changed slightly as a result.</li>
+
+<li>
+Simplified the <code>--mz-bin-width</code> and 
+</code>--mz-offset</code> parameters so that <code>--xcorr-var-bin</code>
+is no longer needed.</li>
+
+<li>
+Indexes now store information about any static mods used when they
+were created.</li>
+
+<li>
+In the tab-delimited output files the 'matches/spectrum' column gives
+the number of target peptides compared to the spectrum and the decoy
+file has an additional column, 'decoy matches/spectrum' that gives the
+number of decoy peptides compared to the spectrum.  These two numbers
+may differ when decoys are not generated on-the-fly.</li>
 
 </ul>
-<hr>
+
+<hr></hr>
+
 <h2>Version 1.36</h2> August 4, 2011
 
 <h3>Tide changes</h3>
@@ -72,16 +159,7 @@ by <code>tide-index</code>. Index files created by previous versions
 of Tide should not be used with the new version.</li>
 
 </ul>
--
-<!--
-<h3>Major enhancements</h3>
 
-<ul>
-
-<li>
-
-</ul>
--->
 <h3>Minor changes</h3>
 
 <ul>
@@ -148,7 +226,7 @@ Made the <code>pep.xml</code> file header produced by Crux compatible
 with the Transproteomic Pipeline.</li>
 
 <li>
-Introduced several changes to improve performonace on MacOS X.</li>
+Introduced several changes to improve performance on MacOS X.</li>
 
 <li>
 Added an <code>nterm</code> option to the link argument of <code>crux

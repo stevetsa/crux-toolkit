@@ -1,6 +1,10 @@
+//TODO - Change cout to carps
+
 #include "xhhc.h"
-#include "xhhc_ion_series.h"
+#include "LinkedIonSeries.h"
 #include "xhhc_scorer.h"
+#include "LinkedPeptide.h"
+#include "XHHC_Peptide.h"
 
 #include "objects.h"
 #include "IonConstraint.h"
@@ -11,7 +15,9 @@
 #include <math.h>
 #include <assert.h>
 #include <ctype.h>
+#ifndef WIN32
 #include <unistd.h>
+#endif
 #include <iostream>
 #include <fstream>
 #define bin_width_mono 1.0005079
@@ -80,7 +86,7 @@ int main(int argc, char** argv){
 
   char* ms2_file = get_string_parameter("ms2 file");
 
-  LinkedPeptide::linker_mass = get_double_parameter("link mass");
+  LinkedPeptide::setLinkerMass(get_double_parameter("link mass"));
  
   // create new ion series
   
@@ -104,7 +110,7 @@ int main(int argc, char** argv){
   //created linked peptide.
   LinkedPeptide lp = LinkedPeptide(peptideA, peptideB, posA, posB, charge);
 
-  cout <<"LinkedPeptide:"<<lp<<" mass:"<<lp.mass(MONO)<<endl;
+  cout <<"LinkedPeptide:"<<lp<<" mass:"<<lp.getMass(MONO)<<endl;
   
   XHHC_Scorer xhhc_scorer;
   xhhc_scorer.setPrint(false);
@@ -119,7 +125,7 @@ int main(int argc, char** argv){
 
     //cout << lp << endl;
     
-    ion_series.add_linked_ions(lp);
+    ion_series.addLinkedIons(lp);
        
     double score = xhhc_scorer.scoreSpectrumVsSeries(spectrum, ion_series);
 
@@ -132,11 +138,11 @@ int main(int argc, char** argv){
   } else if (scoremethod=="modification") {
     
     LinkedIonSeries ion_seriesA;
-    ion_seriesA.add_linked_ions(lp, 1);
+    ion_seriesA.addLinkedIons(lp, SPLITTYPE_A);
     double scoreA = xhhc_scorer.scoreSpectrumVsSeries(spectrum, ion_seriesA);
     
     LinkedIonSeries ion_seriesB;
-    ion_seriesB.add_linked_ions(lp, 2);
+    ion_seriesB.addLinkedIons(lp, SPLITTYPE_B);
 
     
 
@@ -282,7 +288,7 @@ double get_concat_score(char* peptideA, char* peptideB, int link_site, int charg
       //if contains the link site, modify by link mass.
       if (has_link_site) {
 	FLOAT_T old_mass = (ion->getMassZ() - MASS_H_MONO) * (FLOAT_T)ion_charge;
-	FLOAT_T new_mass = old_mass + LinkedPeptide::linker_mass;
+	FLOAT_T new_mass = old_mass + LinkedPeptide::getLinkerMass();
 	FLOAT_T new_mz = (new_mass + (FLOAT_T)ion_charge) / (FLOAT_T)ion_charge;
 	ion->setMassZ(new_mz);
       }
@@ -373,9 +379,9 @@ void print_spectrum(Spectrum* spectrum, LinkedIonSeries& ion_series) {
 
 
       Scorer* scorer = new Scorer(XCORR);
-      scorer->createIntensityArrayObserved(spectrum, ion_series.charge());
+      scorer->createIntensityArrayObserved(spectrum, ion_series.getCharge());
 
-      FLOAT_T* observed_raw = get_observed_raw(spectrum, ion_series.charge());
+      FLOAT_T* observed_raw = get_observed_raw(spectrum, ion_series.getCharge());
       FLOAT_T* observed_processed = scorer->getIntensityArrayObserved();
 
 

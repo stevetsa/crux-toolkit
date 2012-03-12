@@ -179,6 +179,7 @@ enum _measure_type {
   MEASURE_INVALID,
   MEASURE_SIN,
   MEASURE_NSAF,
+  MEASURE_DNSAF,
   MEASURE_EMPAI,
   NUMBER_MEASURE_TYPES
 };
@@ -234,6 +235,18 @@ enum DECOY_TYPE_T {
   PEPTIDE_SHUFFLE_DECOYS,
   NUMBER_DECOY_TYPES
 };
+
+/**
+ * \enum MASS_FORMAT_T
+ */
+enum MASS_FORMAT_T {
+  INVALID_MASS_FORMAT,
+  MOD_MASS_ONLY,
+  AA_PLUS_MOD,
+  MOD_MASSES_SEPARATE,
+  NUMBER_MASS_FORMATS
+};
+
 
 /**
  * \typedef WINDOW_TYPE_T
@@ -420,7 +433,7 @@ typedef struct loss_limit LOSS_LIMIT_T;
 class Scorer;
 
 /**
- * The enum for scorer type
+ * The enum for scorer type.  Scores are indexed by this type in the Match.
  */
 enum _scorer_type { 
   SP,                  ///< SEQUEST preliminary score
@@ -428,19 +441,28 @@ enum _scorer_type {
 
   DECOY_XCORR_QVALUE,  ///< q-value derived from empirical null (decoys)
   DECOY_XCORR_PEPTIDE_QVALUE,
+  DECOY_XCORR_PEP,     ///< posterior error prob for xcorrs (target/decoy)
 
   LOGP_WEIBULL_XCORR,
   LOGP_BONF_WEIBULL_XCORR,
   LOGP_QVALUE_WEIBULL_XCORR,
+  LOGP_WEIBULL_PEP,    ///< posterior error prob from weibull p-values
   LOGP_PEPTIDE_QVALUE_WEIBULL,
 
   PERCOLATOR_SCORE,
   PERCOLATOR_QVALUE,
   PERCOLATOR_PEPTIDE_QVALUE,
+  PERCOLATOR_PEP,      ///< posterior error prob from percolator scores
 
   QRANKER_SCORE,
   QRANKER_QVALUE,
   QRANKER_PEPTIDE_QVALUE,
+  QRANKER_PEP,        ///< posterior error prob from q-ranker scores
+
+  BARISTA_SCORE,
+  BARISTA_QVALUE,
+  BARISTA_PEPTIDE_QVALUE,
+  BARISTA_PEP,        ///< posterior error prob from barista scores
 
   NUMBER_SCORER_TYPES,
   INVALID_SCORER_TYPE
@@ -532,8 +554,12 @@ enum _command {
   PERCOLATOR_COMMAND,   ///< percolator
   SPECTRAL_COUNTS_COMMAND, ///< spectral counts
   QRANKER_COMMAND,      ///< q-ranker
+  BARISTA_COMMAND,      ///< barista
   PROCESS_SPEC_COMMAND, ///< print-processed-spectra
   XLINK_SEARCH_COMMAND, ///< search-for-xlinks
+  GENERATE_PEPTIDES_COMMAND, ///< generate-peptides
+  GET_MS2_SPECTRUM_COMMAND, ///<get-ms2-spectrum 
+  PREDICT_PEPTIDE_IONS_COMMAND, ///< predict-peptide-ions
   VERSION_COMMAND,      ///< just print the version number
   MISC_COMMAND,         ///< miscellaneous command
   NUMBER_COMMAND_TYPES  ///< always keep this last so the value
@@ -551,7 +577,7 @@ typedef struct record RECORD_T;
  * \typedef HASH_T
  * \brief HASH_T hash table, contains the records
  */
-typedef struct hash HASH_T;
+typedef struct our_hash HASH_T;
 
 /**
  * \typedef HASH_ITERATOR_T
@@ -640,6 +666,19 @@ enum XLINK_SITE_T{
 };
 
 /**
+ * \class LinkedPeptide
+ * \brief a cross-linked peptide
+ *
+ */
+class LinkedPeptide;
+
+/**
+ * \class XHHC_Peptide
+ * \brief a XHHC Peptide
+ */
+class XHHC_Peptide;
+
+/**
  * \enum COMPARISON_T
  */
 enum COMPARISON_T{
@@ -664,6 +703,18 @@ enum COLTYPE_T{
   NUMBER_COLTYPES
 };
 
+/**
+ * \enum SPLITTYPE_T
+ * \brief indication of which peptide in a crosslinked peptide to
+ * generate ions for
+ */
+enum SPLITTYPE_T{
+  SPLITTYPE_INVALID,
+  SPLITTYPE_BOTH,
+  SPLITTYPE_A,
+  SPLITTYPE_B,
+  NUMBER_SPLITTYPES
+};
 
 /**
  * \typedef peptideToScore

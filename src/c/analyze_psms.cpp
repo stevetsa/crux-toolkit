@@ -2,13 +2,18 @@
  * \file analyze_psms.cpp
  */
 
+#include <vector>
+#include <functional>
 #include "analyze_psms.h"
 #include "ComputeQValues.h"
 #include "QRanker.h"
 #include "Percolator.h"
 #include "MatchCollectionIterator.h"
 #include "MatchIterator.h"
+#include "PercolatorCInterface.h"
+#include "posterior-error/PosteriorEstimator.h"
 
+using namespace pep;
 
 /**
  * \brief Takes a directory containing PSM files and a protein index
@@ -40,16 +45,6 @@ void analyze_matches_main(
     "overwrite"
   };
   int percolator_num_options = sizeof(percolator_option_list)/sizeof(char*);
-  const char* qranker_option_list[] = {
-    "pi-zero",
-    "verbosity",
-    "parameter-file",
-    "fileroot",
-    "feature-file",
-    "output-dir",
-    "overwrite",
-  };
-  int qranker_num_options = sizeof(qranker_option_list)/sizeof(char*);
 
   // Define required command line arguments.
   const char* argument_list[] = {
@@ -76,13 +71,7 @@ void analyze_matches_main(
       percolator_option_list, percolator_num_options, argc, argv);
   }
     break;
-  case QRANKER_COMMAND:
-  {
-    application = new QRanker();
-    application->initialize(argument_list, num_arguments,
-                   qranker_option_list, qranker_num_options, argc, argv);
-  }
-    break;
+
   default:
     carp(CARP_FATAL, "Unknown command type.");
     break;
@@ -104,11 +93,9 @@ void analyze_matches_main(
                                   output);
     break;
   case PERCOLATOR_COMMAND:
-  case QRANKER_COMMAND:
-    match_collection = run_percolator_or_qranker(command,
-                                                 input_directory,
-                                                 protein_database_name,
-                                                 output);
+    match_collection = run_percolator(input_directory,
+                                      protein_database_name,
+                                      output);
     break;
   default:
     carp(CARP_FATAL, "Unknown command type.");
@@ -133,6 +120,81 @@ void analyze_matches_main(
 }
 
 /**
+ * Compute posterior error probabilities (PEP) from the given target
+ * and decoy scores.
+ * \returns A newly allocated array of PEP for the target scores
+ * sorted.
+ */
+double* compute_PEP(double* target_scores, ///< scores for target matches
+                    int num_targets,       ///< size of target_scores
+                    double* decoy_scores,  ///< scores for decoy matches
+                    int num_decoys         ///< size of decoy_scores
+){
+  if( target_scores == NULL || decoy_scores == NULL 
+      || num_targets == 0 || num_decoys == 0 ){
+    carp(CARP_FATAL, "Cannot compute PEP without target or decoy scores.");
+  }
+
+  // put all of the scores in a single vector of pairs: score, is_target
+  vector<pair<double, bool> > score_labels;
+#ifdef WIN32
+  // There is a bug in Microsoft's implementation of
+  // make_pair<> that keeps this code from working.
+  // They promise to fix it in VC 11
+  // https://connect.microsoft.com/VisualStudio/feedback/details/606746/incorrect-overload-resolution
+  // FIXME: find workaround until then
+#else
+  transform(target_scores, target_scores + num_targets,
+            back_inserter(score_labels),
+            bind2nd(ptr_fun(make_pair<double, bool>), true));
+  transform(decoy_scores, decoy_scores + num_decoys,
+            back_inserter(score_labels),
+            bind2nd(ptr_fun(make_pair<double, bool>), false));
+#endif
+
+  // sort them in descending order
+  sort(score_labels.begin(), score_labels.end(),
+       greater<pair<double, bool> >());
+
+  // get p-values
+  vector<double> pvals;
+  PosteriorEstimator::getPValues(score_labels, pvals);
+  
+  // estimate pi0
+  double pi0 = PosteriorEstimator::estimatePi0(pvals);
+
+  // estimate PEPs
+  vector<double> PEP_vector;
+  PosteriorEstimator::estimatePEP(score_labels, pi0, PEP_vector, 
+                                  true);  // include decoy PEPs
+
+  // now score_labels and PEPs are similarly sorted
+
+  // pull out the PEPs in the order that the scores were given
+  double* PEP_array = new double[PEP_vector.size()];
+
+  for(int target_idx = 0; target_idx < num_targets; target_idx++){
+    
+    // the score to return next    
+    double curr_target_score = target_scores[target_idx];
+
+    // find its position in score_labels
+    vector< pair<double, bool> >::iterator found_score_pos 
+      = lower_bound(score_labels.begin(), score_labels.end(), 
+                    make_pair(curr_target_score, true),
+                    greater<pair<double, bool> >()); 
+
+
+    size_t found_index = distance(score_labels.begin(), found_score_pos);
+
+    // pull out the PEP at the same position in PEP_vector
+    PEP_array[target_idx] = PEP_vector[found_index];
+   }
+
+  return PEP_array;
+}
+
+/**
  * \brief Analyze matches using the percolator or qranker algorithm.
  * 
  * Runs the specified algorithm on the PSMs in the psm_result_folder
@@ -142,8 +204,7 @@ void analyze_matches_main(
  * \returns a pointer to a MatchCollection object
  * \callgraph
  */
-MatchCollection* run_percolator_or_qranker(
-  COMMAND_T command,                                          
+MatchCollection* run_percolator(
   char* input_directory, 
   char* fasta_file, // actually fasta or index
   OutputFiles& output){ 
@@ -191,6 +252,8 @@ MatchCollection* run_percolator_or_qranker(
   match_collection_iterator =
     new MatchCollectionIterator(input_directory, fasta_file, &num_decoys);
 
+  int num_target_matches = 0;
+  int num_decoy_matches = 0;  // in first decoy set
   // iterate over each, TARGET, DECOY 1..3 match_collection sets
   iterations = 0;
   while(match_collection_iterator->hasNext()){
@@ -210,70 +273,32 @@ MatchCollection* run_percolator_or_qranker(
           match_collection->getMatchTotal(), sizeof(double));
       results_score = (double*)mycalloc(
           match_collection->getMatchTotal(), sizeof(double));
+      num_target_matches = match_collection->getMatchTotal();
       
-      // Call that initiates q-ranker or percolator.
-      switch (command) {
-      case PERCOLATOR_COMMAND:
-        pcInitiate(
-          (NSet)match_collection_iterator->getNumberCollections(), 
-          NUM_FEATURES, 
-          num_spectra, 
-          feature_names, 
-          pi0);
-        break;
-      case QRANKER_COMMAND:
-        qcInitiate(
-            (NSet)match_collection_iterator->getNumberCollections(),
-            NUM_FEATURES, 
-            num_spectra, 
-            feature_names, 
-            pi0);
-        break;
-      case INDEX_COMMAND:
-      case SEARCH_COMMAND:
-      case SEQUEST_COMMAND:
-      case QVALUE_COMMAND:
-      case SPECTRAL_COUNTS_COMMAND:
-      case PROCESS_SPEC_COMMAND:
-      case XLINK_SEARCH_COMMAND:
-      case MISC_COMMAND:
-      case VERSION_COMMAND:
-      case INVALID_COMMAND:
-      case NUMBER_COMMAND_TYPES:
-        carp(CARP_FATAL, "Unknown command type.");
-        break;
-      }
+      // Call that initiates percolator.
+      pcInitiate(
+                 (NSet)match_collection_iterator->getNumberCollections(), 
+                 NUM_FEATURES, 
+                 num_spectra, 
+                 feature_names, 
+                 pi0);
+      
       free(num_spectra);
 
       // Call that sets verbosity level
       // 0 is quiet, 2 is default, 5 is more than you want
-      switch (command) {
-      case PERCOLATOR_COMMAND:
-        if(verbosity < CARP_ERROR){
-          pcSetVerbosity(0);
-        }    
-        else if(verbosity < CARP_INFO){
-          pcSetVerbosity(1); // FIXME
-        }
-        else{
-          pcSetVerbosity(5); // FIXME
-        }
-        break;
-      case QRANKER_COMMAND:
-        if(verbosity < CARP_ERROR){
-          qcSetVerbosity(0);
-        }    
-        else if(verbosity < CARP_INFO){
-          qcSetVerbosity(1);
-        }
-        else{
-          qcSetVerbosity(5);
-        }
-        break;
-      default:
-        carp(CARP_FATAL, "Unknown command type.");
-        break;
+      if(verbosity < CARP_ERROR){
+        pcSetVerbosity(0);
+      }    
+      else if(verbosity < CARP_INFO){
+        pcSetVerbosity(1); // FIXME
       }
+      else{
+        pcSetVerbosity(5); // FIXME
+      }
+      
+    } else if( set_idx == 1 ){
+      num_decoy_matches = match_collection->getMatchTotal();
     }
 
     // create iterator, to register each PSM feature.
@@ -286,21 +311,9 @@ MatchCollection* run_percolator_or_qranker(
       features = match->getPercolatorFeatures(match_collection);
 
       output.writeMatchFeatures(match, features, NUM_FEATURES);
-      switch (command) {
-      case PERCOLATOR_COMMAND:
-        pcRegisterPSM((SetType)set_idx, 
-                      NULL, // no sequence used
-                      features);
-        break;
-      case QRANKER_COMMAND:
-        qcRegisterPSM((SetType)set_idx,
-                      match->getSequenceSqt(),
-                      features);
-        break;
-      default:
-        carp(CARP_FATAL, "Unknown command type.");
-        break;
-      }
+      pcRegisterPSM((SetType)set_idx, 
+                    NULL, // no sequence used
+                    features);
       
       free(features);
     }
@@ -317,37 +330,26 @@ MatchCollection* run_percolator_or_qranker(
     ++set_idx;
   } // end iteratation over each, TARGET, DECOY 1..3 match_collection sets
 
+  double* decoy_scores = new double[num_decoy_matches]; //first decoy set
+  double* PEPs = NULL;
+
   carp(CARP_DETAILED_DEBUG, "Processing PSMs");
   // Start processing
-  switch (command) {
-  case PERCOLATOR_COMMAND:
-    pcExecute(); 
-    pcGetScores(results_score, results_q); 
-    target_match_collection->fillResult(
-      results_q, PERCOLATOR_QVALUE, true);
-    target_match_collection->fillResult(
-      results_score, PERCOLATOR_SCORE, false);
-    pcCleanUp();
-    break;
-  case QRANKER_COMMAND:
-    qcExecute(!get_boolean_parameter("no-xval")); 
-    qcGetScores(results_score, results_q); 
-    target_match_collection->fillResult(
-        results_q, QRANKER_QVALUE, true);
-    target_match_collection->fillResult(
-        results_score, QRANKER_SCORE, false);
-    qcCleanUp();
-    break;
-  default:
-    carp(CARP_FATAL, "Unknown command type.");
-    break;
-  }
-
+  pcExecute(); 
+  pcGetScores(results_score, results_q); 
+  pcGetDecoyScores(decoy_scores);
+  PEPs = compute_PEP(results_score, num_target_matches,
+                     decoy_scores, num_decoy_matches);
+  target_match_collection->fillResult(results_q, PERCOLATOR_QVALUE, true);
+  target_match_collection->fillResult(PEPs, PERCOLATOR_PEP, true);
+  target_match_collection->fillResult(results_score, PERCOLATOR_SCORE, false);
+  pcCleanUp();
+  
   carp(CARP_DETAILED_DEBUG, "Writing matches");
   output.writeMatches(target_match_collection);
-
+  
   carp(CARP_DETAILED_DEBUG, "analyze_psms: cleanup");
-
+  
   // free names
   unsigned int name_idx;
   for(name_idx=0; name_idx < NUM_FEATURES; ++name_idx){
@@ -357,6 +359,8 @@ MatchCollection* run_percolator_or_qranker(
   free(results_q);
   free(results_score);
   delete match_collection_iterator;
+  delete[] decoy_scores;
+  delete[] PEPs;
 
   // TODO put free back in. took out because glibc claimed it was corrupted
   // double linked list

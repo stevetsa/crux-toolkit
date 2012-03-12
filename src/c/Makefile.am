@@ -1,6 +1,6 @@
 distdir = $(PACKAGE)_$(VERSION)
 
-SUBDIRS = ArrayLibrary MSToolkit percolator q-ranker xlink hardklor bullseye .
+SUBDIRS = ArrayLibrary MSToolkit percolator xlink posterior-error qranker-barista hardklor bullseye .
 
 # Crux can use either single or double precision floating poinnt.
 if USEDOUBLES
@@ -68,6 +68,8 @@ LIBFILES= \
   FilteredSpectrumChargeIterator.h \
   GeneratePeptidesIterator.cpp \
   GeneratePeptidesIterator.h \
+  GetMs2Spectrum.h\
+  GetMs2Spectrum.cpp\
   hash.cpp \
   hash.h \
   Index.cpp \
@@ -134,8 +136,14 @@ LIBFILES= \
   peptide_modifications.h \
   PeptideSrc.cpp \
   PeptideSrc.h \
+  PepXMLWriter.cpp \
+  PepXMLWriter.h \
   Percolator.cpp \
   Percolator.h \
+  GeneratePeptides.cpp \
+  GeneratePeptides.h \
+  PredictPeptideIons.cpp \
+  PredictPeptideIons.h \
   PrintProcessedSpectra.cpp \
   PrintProcessedSpectra.h \
   PrintVersion.cpp \
@@ -148,8 +156,6 @@ LIBFILES= \
   ProteinIndex.h \
   ProteinIndexIterator.cpp \
   ProteinIndexIterator.h \
-  QRanker.cpp \
-  QRanker.h \
   q-value.cpp \
   q-value.h \
   SearchProgress.h \
@@ -177,20 +183,24 @@ LIBFILES= \
   utils.h \
   version.h \
   xlink_search.h \
-  xlink_compute_qvalues.h
+  xlink_compute_qvalues.h \
+  WinCrux.h
 
 noinst_LTLIBRARIES = libcrux.la
 libcrux_la_CFLAGS = \
   $(AM_CFLAGS) \
   -I$(top_srcdir)/src/c/MSToolkit/include \
   -I$(top_srcdir)/src/c/percolator/ \
-  -I$(top_srcdir)/src/c/q-ranker/
+  -I$(top_srcdir)/src/c/qranker-barista/ \
+  -I$(top_srcdir)/src/c/posterior-error/
 
 libcrux_la_CXXFLAGS = \
   $(AM_CXXFLAGS) \
-  -I$(top_srcdir)/src/c/MSToolkit/include \
+  -I$(top_srcdir)/src/c/MSToolkit \
+  -I$(top_srcdir)/src/c/MSToolkit/RAMP \
   -I$(top_srcdir)/src/c/percolator/ \
-  -I$(top_srcdir)/src/c/q-ranker/ \
+  -I$(top_srcdir)/src/c/qranker-barista/ \
+  -I$(top_srcdir)/src/c/posterior-error/ \
   -I$(top_srcdir)/src/c/hardklor/ \
   -I$(top_srcdir)/src/c/bullseye/ \
   -I$(top_srcdir)/src/external/
@@ -199,40 +209,21 @@ libcrux_la_SOURCES = $(LIBFILES)
 
 PROGRAM_FILES = \
   crux \
-  crux-get-ms2-spectrum \
-  crux-generate-peptides \
-  crux-predict-peptide-ions \
   xlink-predict-peptide-ions \
   xlink-score-spectrum \
   xlink-assign-ions
 
 bin_PROGRAMS = $(PROGRAM_FILES)
 
-crux_get_ms2_spectrum_SOURCES = get_ms2_spectrum.cpp
-crux_get_ms2_spectrum_CXXFLAGS = $(AM_CFLAGS) -DMAIN -I$(top_srcdir)/src/c//MSToolkit
-crux_get_ms2_spectrum_LDADD = \
-  $(AM_LDFLAGS) \
-  -lm -lpthread -ldl \
-  libcrux.la -L$(top_builddir)/src/c/MSToolkit -lm -lmstoolkit
-
-crux_generate_peptides_SOURCES = generate_peptides.cpp
-crux_generate_peptides_CXXFLAGS = $(AM_CFLAGS) -DMAIN
-crux_generate_peptides_LDADD = $(AM_LDFLAGS) libcrux.la -lm  
-
-crux_predict_peptide_ions_SOURCES = predict_peptide_ions.cpp
-crux_predict_peptide_ions_CXXFLAGS = $(AM_CFLAGS) -DMAIN
-crux_predict_peptide_ions_LDADD = \
-  $(AM_LDFLAGS) \
-  libcrux.la -L$(top_builddir)/src/c/MSToolkit -lm -lmstoolkit
-
 crux_SOURCES = crux-main.cpp crux-main.h
 crux_CXXFLAGS = \
   $(AM_CXXFLAGS) \
   -DMAIN \
-  -I$(top_srcdir)/src/c/MSToolkit/include \
+  -I$(top_srcdir)/src/c/MSToolkit \
   -I$(top_srcdir)/src/c/percolator \
-  -I$(top_srcdir)/src/c/q-ranker \
+  -I$(top_srcdir)/src/c/posterior-error \
   -I$(top_srcdir)/src/c/xlink \
+  -I$(top_srcdir)/src/c/qranker-barista \
   -I$(top_srcdir)/src/c/hardklor \
   -I$(top_srcdir)/src/c/bullseye
 
@@ -245,13 +236,16 @@ crux_LDADD = \
   -L$(top_builddir)/src/c/ArrayLibrary \
   -L$(top_builddir)/src/c/MSToolkit \
   -L$(top_builddir)/src/c/percolator \
-  -L$(top_builddir)/src/c/q-ranker \
+  -L$(top_builddir)/src/c/posterior-error \
+  -L$(top_builddir)/src/c/qranker-barista \
+  -L$(top_builddir)/src/c/posterior-error \
   -L$(top_builddir)/src/c/hardklor \
   -L$(top_builddir)/src/c/bullseye \
   -lpercolator \
-  -lqranker \
+  -lqranker_barista \
   -lhardklor \
   -lbullseye \
+  -lpep \
   -lmstoolkit \
   -lm -lpthread -ldl \
   -lArrayLibrary

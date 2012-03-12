@@ -1,5 +1,6 @@
 #include "xhhc_scorer.h"
 #include "xhhc.h"
+#include "LinkedPeptide.h"
 
 #include "Spectrum.h"
 
@@ -10,6 +11,7 @@
 #define MAX_MZ 1200;
 #define MIN_MZ 400;
 #define NO_FLANKS 1
+
 
 /**
  * Initializes an empty XHHC_Scorer object
@@ -66,14 +68,14 @@ int XHHC_Scorer::getMatchedBYIons(
   LinkedIonSeries& ion_series) {
 
   FLOAT_T bin_width = bin_width_mono;
-  vector<LinkedPeptide>& ions = ion_series.ions();
+  vector<LinkedPeptide>& ions = ion_series.getIons();
 
   int ans = 0;
 
   for (vector<LinkedPeptide>::iterator ion = ions.begin(); ion != ions.end(); ++ion) {
-    if (ion -> get_mz(MONO) >= 400 && ion -> get_mz(MONO) <= 1200) {
-    if (ion -> type() == B_ION || ion -> type() == Y_ION) {
-      Peak * peak = spectrum->getNearestPeak(ion->get_mz(AVERAGE), 
+    if (ion -> getMZ(MONO) >= 400 && ion -> getMZ(MONO) <= 1200) {
+    if (ion -> getIonType() == B_ION || ion -> getIonType() == Y_ION) {
+      Peak * peak = spectrum->getNearestPeak(ion->getMZ(AVERAGE), 
                                               bin_width);
       if (peak != NULL) {
 	ans++;
@@ -115,7 +117,7 @@ FLOAT_T XHHC_Scorer::hhcGenScoreXcorr(
       scorer_=NULL;
     }
     scorer_ = new Scorer(XCORR);
-    if (!scorer_->createIntensityArrayXcorr(spectrum, ion_series.charge())) {
+    if (!scorer_->createIntensityArrayXcorr(spectrum, ion_series.getCharge())) {
       carp(CARP_FATAL, "failed to produce XCORR");
     }
   }
@@ -173,12 +175,12 @@ bool XHHC_Scorer::xlinkCreateMapTheoretical(
   ION_TYPE_T ion_type;
   int intensity_array_idx = 0;
   FLOAT_T bin_width = bin_width_mono;
-  vector<LinkedPeptide>& ions = ion_series.ions();
+  vector<LinkedPeptide>& ions = ion_series.getIons();
   // while there are ion's in ion iterator, add matched observed peak intensity
   for (vector<LinkedPeptide>::iterator ion = ions.begin(); ion != ions.end(); ++ion) {
-    intensity_array_idx = (int)(ion->get_mz(MONO) / bin_width + 0.5);
-    ion_type = ion->type();
-    ion_charge = ion->charge();
+    intensity_array_idx = (int)(ion->getMZ(MONO) / bin_width + 0.5);
+    ion_type = ion->getIonType();
+    ion_charge = ion->getCharge();
 
     // is it B, Y ion?
     
@@ -200,14 +202,14 @@ bool XHHC_Scorer::xlinkCreateMapTheoretical(
     
     //TODO put this back in
     //if(ion_type == B_ION){
-      int h2o_array_idx = (int)((ion->get_mz(MONO) - (MASS_H2O_MONO/ion->charge()) ) / bin_width + 0.5);
+      int h2o_array_idx = (int)((ion->getMZ(MONO) - (MASS_H2O_MONO/ion->getCharge()) ) / bin_width + 0.5);
       addIntensityMap(theoretical, h2o_array_idx, 10);
     //}
     
-    int co_array_idx = (int)((ion -> get_mz(MONO) - (MASS_CO_MONO/ion->charge())) / bin_width + 0.5);
+    int co_array_idx = (int)((ion -> getMZ(MONO) - (MASS_CO_MONO/ion->getCharge())) / bin_width + 0.5);
     addIntensityMap(theoretical, co_array_idx, 10);
 
-    int nh3_array_idx = (int)((ion->get_mz(MONO) -  (MASS_NH3_MONO/ion->charge())) / bin_width + 0.5);
+    int nh3_array_idx = (int)((ion->getMZ(MONO) -  (MASS_NH3_MONO/ion->getCharge())) / bin_width + 0.5);
     addIntensityMap(theoretical, nh3_array_idx, 10);        
   }
   return true;
@@ -225,12 +227,12 @@ bool XHHC_Scorer::hhcCreateIntensityArrayTheoretical(
   ION_TYPE_T ion_type;
   int intensity_array_idx = 0;
   FLOAT_T bin_width = bin_width_mono;
-  vector<LinkedPeptide>& ions = ion_series.ions();
+  vector<LinkedPeptide>& ions = ion_series.getIons();
   // while there are ion's in ion iterator, add matched observed peak intensity
   for (vector<LinkedPeptide>::iterator ion = ions.begin(); ion != ions.end(); ++ion) {
-    intensity_array_idx = (int)(ion->get_mz(MONO) / bin_width + 0.5);
-    ion_type = ion->type();
-    ion_charge = ion->charge();
+    intensity_array_idx = (int)(ion->getMZ(MONO) / bin_width + 0.5);
+    ion_type = ion->getIonType();
+    ion_charge = ion->getCharge();
     // skip ions that are located beyond max mz limit
     // is it B, Y ion?
     // neutral loss peak?
@@ -256,12 +258,12 @@ bool XHHC_Scorer::hhcCreateIntensityArrayTheoretical(
 
 
     if(ion_type == B_ION){
-      int h2o_array_idx = (int)((ion->get_mz(MONO) - (MASS_H2O_MONO/ion->charge()) ) / bin_width + 0.5);
+      int h2o_array_idx = (int)((ion->getMZ(MONO) - (MASS_H2O_MONO/ion->getCharge()) ) / bin_width + 0.5);
       if (h2o_array_idx < max_mz_)
 	Scorer::addIntensity(theoretical, h2o_array_idx, 10);
       }
 
-      int nh3_array_idx = (int)((ion->get_mz(MONO) -  (MASS_NH3_MONO/ion->charge())) / bin_width + 0.5);
+      int nh3_array_idx = (int)((ion->getMZ(MONO) -  (MASS_NH3_MONO/ion->getCharge())) / bin_width + 0.5);
       if (nh3_array_idx < max_mz_) {
         Scorer::addIntensity(theoretical, nh3_array_idx, 10);
       }

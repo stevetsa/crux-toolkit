@@ -32,12 +32,16 @@ static const char* match_column_strings[NUMBER_MATCH_COLUMNS] = {
   "q-ranker peptide q-value",   // NEW
 #else
   "Weibull est. q-value",
+  "Weibull est. PEP",
   "decoy q-value (xcorr)",
+  "decoy PEP (xcorr)",
   "percolator score",
   "percolator rank",
   "percolator q-value",
+  "percolator PEP",
   "q-ranker score",
   "q-ranker q-value",
+  "q-ranker PEP",
 #endif
   "b/y ions matched",
   "b/y ions total",
@@ -53,6 +57,7 @@ static const char* match_column_strings[NUMBER_MATCH_COLUMNS] = {
   "corr",
   "SIN",
   "NSAF",
+  "dNSAF",
   "EMPAI",
   "parsimony rank",
   "decoy matches/spectrum"

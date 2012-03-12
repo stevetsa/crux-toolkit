@@ -6,9 +6,12 @@
 
 #include <errno.h>
 #include <sys/stat.h>
+#ifndef WIN32
 #include <unistd.h>
+#endif
 #include "crux-utils.h"
 #include "parameter.h"
+#include "WinCrux.h"
 
 using namespace std;
 
@@ -49,6 +52,27 @@ DECOY_TYPE_T string_to_decoy_type(const char* name){
 
 char* decoy_type_to_string(DECOY_TYPE_T type){
   return my_copy_string(decoy_type_strings[type]);
+}
+
+/**
+ * The string version of the mass format types
+ */
+static const char* mass_format_type_strings[NUMBER_MASS_FORMATS] = 
+  { "invalid", "mod-only", "total", "separate" };
+
+MASS_FORMAT_T string_to_mass_format(const char* name){
+  int mass_format_int = convert_enum_type_str(name, INVALID_ENUM_STRING, 
+                                              mass_format_type_strings, 
+                                              NUMBER_MASS_FORMATS);
+  if( mass_format_int < 0 ){
+    mass_format_int = 0;
+  }
+
+  return (MASS_FORMAT_T)mass_format_int;
+}
+
+char* mass_format_type_to_string(MASS_FORMAT_T type){
+  return my_copy_string(mass_format_type_strings[type]);
 }
 
 /**
@@ -177,8 +201,8 @@ static const char* parsimony_type_strings[NUMBER_PARSIMONY_TYPES] =
 
 PARSIMONY_TYPE_T string_to_parsimony_type(char* name){
   int parsimony_int = convert_enum_type_str(name, INVALID_ENUM_STRING,
-					    parsimony_type_strings,
-					    NUMBER_PARSIMONY_TYPES);
+                                            parsimony_type_strings,
+                                            NUMBER_PARSIMONY_TYPES);
   if ( parsimony_int < 0 ){
     parsimony_int = 0;
   }
@@ -203,12 +227,12 @@ char * parsimony_type_to_string(PARSIMONY_TYPE_T type){
  * The string version of measure types
  */
 static const char* measure_type_strings[NUMBER_MEASURE_TYPES] =
-  {"invalid", "SIN", "NSAF", "EMPAI"};
+  {"invalid", "SIN", "NSAF", "dNSAF", "EMPAI"};
 
 MEASURE_TYPE_T string_to_measure_type(char* name){
   int measure_int = convert_enum_type_str(name, INVALID_ENUM_STRING,
                                           measure_type_strings,
-                                          NUMBER_PARSIMONY_TYPES);
+                                          NUMBER_MEASURE_TYPES);
   if ( measure_int < 0 ){
     measure_int = 0;
   }
@@ -407,26 +431,33 @@ char* hardklor_hardklor_algorithm_type_to_string(
  */
 static const char* scorer_type_strings[NUMBER_SCORER_TYPES] = 
   {"sp",
-   "xcorr",
+   "xcorr_score",
 
    "decoy_xcorr_qvalue",
    "decoy_xcorr_peptide_qvalue",
+   "decoy_xcorr_PEP",
 
    "logp_weibull_xcorr",
    "logp_bonf_weibull_xcorr",
    "logp_qvalue_weibull_xcorr",
+   "logp_weibull_PEP",
    "logp_peptide_qvalue_weibull",
 
    "percolator_score", 
    "percolator_qvalue",
    "percolator_peptide_qvalue",
+   "percolator_PEP",
 
    "qranker_score", 
    "qranker_qvalue",
-   "qranker_peptide_qvalue"
+   "qranker_peptide_qvalue",
+   "qranker_PEP",
+
+   "barista_score", 
+   "barista_qvalue",
+   "barista_peptide_qvalue",
+   "barista_PEP"
   };
-//TODO: this should probably be changed, these strings are the option args
-//Instead could have an if block in string_to_type
 
 bool string_to_scorer_type(char* name, SCORER_TYPE_T* result){
   bool success = true;
@@ -442,14 +473,11 @@ bool string_to_scorer_type(char* name, SCORER_TYPE_T* result){
   return success;
 }
 
-bool scorer_type_to_string(SCORER_TYPE_T type, char* type_str){
-  bool success = true;
+const char* scorer_type_to_string(SCORER_TYPE_T type){
   if( (int)type > NUMBER_SCORER_TYPES){
-    success = false;
-    type_str = NULL;
+    return NULL;
   }
-  strcpy(type_str, scorer_type_strings[type]);
-  return success;
+  return scorer_type_strings[type];
 }
 
 
@@ -509,8 +537,8 @@ char* copy_string_part(const char* src, int length){
  * E.g. is_equal(0.10, 0.14, 1) -> true. is_equal(0.10, 0.15, 1) -> false
  */
 bool is_equal(FLOAT_T a, FLOAT_T b, int precision){
-  a = (a * pow(10, precision)) + 0.5;
-  b = (b * pow(10, precision)) + 0.5;
+  a = (a * pow(10.0, (FLOAT_T) precision)) + 0.5;
+  b = (b * pow(10.0, (FLOAT_T) precision)) + 0.5;
 
   if( (int)a == (int)b ){
     return true;
@@ -1204,7 +1232,7 @@ FILE* create_file_in_path(
 {
   char* file_full_path = get_full_filename(directory, filename);
   // FIXME CEG consider using stat instead
-  FILE* file = fopen(file_full_path, "r"); //to test if file exists
+  FILE* file = fopen(file_full_path, "rb"); //to test if file exists
   if( file != NULL ){  
     //The file exists, are we allowed to overwrite it?
     fclose(file);
@@ -1228,7 +1256,7 @@ FILE* create_file_in_path(
     }
   }
   
-  file = fopen(file_full_path, "w+"); //read and write, replace existing
+  file = fopen(file_full_path, "wb+"); //read and write, replace existing
 
   if(file == NULL){
     carp(CARP_FATAL, "Failed to create and open file: %s", file_full_path);

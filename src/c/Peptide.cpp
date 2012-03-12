@@ -769,7 +769,7 @@ char* Peptide::getModifiedSequenceWithSymbols() {
  * any modifications.
  */
 char* Peptide::getModifiedSequenceWithMasses(
- bool merge_masses
+  MASS_FORMAT_T mass_format
  ){
 
   char* seq_string = NULL;
@@ -778,14 +778,14 @@ char* Peptide::getModifiedSequenceWithMasses(
     seq_string = 
       modified_aa_string_to_string_with_masses(decoy_modified_seq_, 
                                                length_,
-                                               merge_masses); 
+                                               mass_format); 
   } else if( modified_seq_ == NULL ){
     seq_string = getSequence();
   }else{
     seq_string = 
       modified_aa_string_to_string_with_masses(modified_seq_,
                                                length_,
-                                               merge_masses);
+                                               mass_format);
   }
   
   return seq_string;
@@ -1455,13 +1455,12 @@ void Peptide::printInFormat(
 
   // obtain peptide sequence
   if(flag_out){
-    parent = next_src->getParentProtein();        
     if( modified_seq_== NULL ){
       sequence = getSequence();
     }else{
       sequence = 
         modified_aa_string_to_string_with_masses(modified_seq_, length_,
-                         get_boolean_parameter("display-summed-mod-masses"));
+                         get_mass_format_type_parameter("mod-mass-format"));
     }
   }
 
@@ -1693,7 +1692,7 @@ bool Peptide::serialize(
   if (text_file != NULL) {
     fprintf(text_file, "%s %.5f\n", 
             getModifiedSequenceWithSymbols(),
-	    getPeptideMass());
+            getPeptideMass());
   }
 
   return true;
@@ -1722,18 +1721,30 @@ Peptide* Peptide::parseTabDelimited(
 
   //populate peptide struct.
   string string_sequence = file.getString(SEQUENCE_COL);
-  // string length may include mod symbols and be longer than the peptide seq
-  peptide->length_ = convert_to_mod_aa_seq(string_sequence.c_str(),
-                                          &peptide->modified_seq_);
-  peptide->peptide_mass_ = file.getFloat(PEPTIDE_MASS_COL);
-  
-  if(!PeptideSrc::parseTabDelimited(peptide, file, database, 
-                                    use_array, decoy_database)){
-    carp(CARP_ERROR, "Failed to parse peptide src.");
-    delete peptide;
-    return NULL;
-  };
 
+  if (string_sequence.length() > 0) {
+    //In cases where the sequence is in X.seq.X format, parse out
+    //the seq part.
+    if ((string_sequence.length() > 4) && 
+        (string_sequence[1] == '.') && 
+        (string_sequence[string_sequence.length()-2]=='.')) {
+      carp_once(CARP_WARNING, "parsing sequence out of %s", string_sequence.c_str());
+      string_sequence = string_sequence.substr(2, string_sequence.length()-4);
+      carp_once(CARP_WARNING, "sequence is now:%s", string_sequence.c_str());
+    }
+
+    // string length may include mod symbols and be longer than the peptide seq
+    peptide->length_ = convert_to_mod_aa_seq(string_sequence.c_str(),
+                                          &peptide->modified_seq_);
+    peptide->peptide_mass_ = file.getFloat(PEPTIDE_MASS_COL);
+  
+    if(!PeptideSrc::parseTabDelimited(peptide, file, database, 
+                                      use_array, decoy_database)){
+      carp(CARP_ERROR, "Failed to parse peptide src.");
+      delete peptide;
+      return NULL;
+    };
+  }
   carp(CARP_DETAILED_DEBUG, "Finished parsing peptide.");
 
   return peptide;
@@ -1885,6 +1896,46 @@ bool Peptide::parseNoSrc(
 
   return true;
 }
+
+/**
+ * Fills the given vectors with the names and descriptions of all
+ * proteins containing this peptide.  Makes the descriptions
+ * xml-friendly by swapping double for single quotes and angled braces
+ * for square. Returned in the same order as getFlankingAAs().  Clears
+ * any existing values in the vectors.
+ * Adapted from Match::get_information_of_proteins()
+ * \returns The number of proteins.
+ */
+int Peptide::getProteinInfo(vector<string>& protein_ids,
+                            vector<string>& protein_descriptions){
+
+  protein_ids.clear();
+  protein_descriptions.clear();
+
+  PEPTIDE_SRC_ITERATOR_T* peptide_src_iterator = 
+    new_peptide_src_iterator(this);
+
+  while(peptide_src_iterator_has_next(peptide_src_iterator)){
+    PeptideSrc* peptide_src = peptide_src_iterator_next(peptide_src_iterator);
+    Protein* protein = peptide_src->getParentProtein();
+    protein_ids.push_back(protein->getIdPointer());
+
+    string description = protein->getAnnotationPointer();
+    // replace double quotes with single quotes
+    replace(description.begin(), description.end(), '"', '\'');
+    // remove any xml tags in the description by replacing <> with []
+    replace(description.begin(), description.end(), '<', '[');
+    replace(description.begin(), description.end(), '>', ']');
+    protein_descriptions.push_back(description);
+
+  } // next protein
+
+  free_peptide_src_iterator(peptide_src_iterator);
+
+  return protein_ids.size();
+}
+
+
 
 /* Public functions--Iterators */
 

@@ -68,7 +68,7 @@ bool ProteinPeptideIterator::isResidueLegal(char aa,
  * \returns true if this is a valid cleavage position for the given enzyme.
  */
 bool ProteinPeptideIterator::validCleavagePosition(
-   char* sequence,
+   const char* sequence,
    ENZYME_T enzyme
 ){
 
@@ -241,9 +241,9 @@ void ProteinPeptideIterator::selectPeptides(
          cterm_idx < cterm_num_cleavages; cterm_idx++){
 
       if ((*cumulative_cleavages_)[cterm_allowed_cleavages[cterm_idx]-1] - \
-	  (*cumulative_cleavages_)[nterm_allowed_cleavages[nterm_idx]] \
-	  > int_num_skip_cleavages) {
-	break;
+          (*cumulative_cleavages_)[nterm_allowed_cleavages[nterm_idx]]  \
+          > int_num_skip_cleavages) {
+        break;
       }
       if (cterm_allowed_cleavages[cterm_idx] 
           <= nterm_allowed_cleavages[nterm_idx]){
@@ -336,8 +336,14 @@ void ProteinPeptideIterator::prepareMc(
   // calculate our cleavage positions and masses
   for(start_idx = 1; start_idx < protein->getLength()+1; start_idx++){
     int sequence_idx = start_idx - 1;
+    char amino_acid = protein->getSequencePointer()[sequence_idx];
     mass_array[start_idx] = mass_array[start_idx-1] + 
-      get_mass_amino_acid(protein->getSequencePointer()[sequence_idx], mass_type);
+      get_mass_amino_acid(amino_acid, mass_type);
+
+    if( amino_acid == 'B' || amino_acid == 'X' || amino_acid == 'Z' ){
+      carp_once(CARP_WARNING, 
+                "Ignoring peptides with ambiguous amino acids (B, X, Z).");
+    } 
 
     // increment cumulative cleavages before we check if current position
     // is a cleavage site because cleavages come *after* the current amino acid

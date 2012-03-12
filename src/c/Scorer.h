@@ -12,8 +12,13 @@
 #define SCORER_H
 
 #include <stdio.h>
+#ifndef WIN32
 #include <dirent.h>
+#endif
 #include <string>
+#ifdef WIN32
+#include "windirent.h"
+#endif
 #include "objects.h"
 #include "Spectrum.h"
 #include "Peptide.h"
@@ -36,7 +41,6 @@ class Scorer {
   bool initialized_; ///< has the scorer been initialized?
   int last_idx_; ///< the last index in the array, the data size of the array
 
-  bool xcorr_var_bin_; ///<Use the variable binning code or not
   FLOAT_T bin_width_; ///< width of the bins to use for arrays
   FLOAT_T bin_offset_; ///< m/z offset for the bins.
 

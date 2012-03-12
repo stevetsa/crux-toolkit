@@ -15,8 +15,10 @@
 #include <ctype.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#ifndef WIN32
 #include <dirent.h>
 #include <unistd.h>
+#endif
 #include <time.h>
 #include <algorithm>
 #include <limits>
@@ -380,7 +382,7 @@ bool mass_type_to_string(MASS_TYPE_T, char*);
 bool string_to_algorithm_type(char*, ALGORITHM_TYPE_T*);
 bool algorithm_type_to_string(ALGORITHM_TYPE_T, char*);
 bool string_to_scorer_type(char*, SCORER_TYPE_T*);
-bool scorer_type_to_string(SCORER_TYPE_T, char*);
+const char* scorer_type_to_string(SCORER_TYPE_T);
 bool string_to_ion_type(char* , ION_TYPE_T*);
 bool ion_type_to_string(ION_TYPE_T, char*);
 
@@ -402,6 +404,8 @@ COLTYPE_T string_to_column_type(char* name);
 COMPARISON_T string_to_comparison(char* name);
 DECOY_TYPE_T string_to_decoy_type(const char* name);
 char* decoy_type_to_string(DECOY_TYPE_T type);
+MASS_FORMAT_T string_to_mass_format(const char* name);
+char* mass_format_type_to_string(MASS_FORMAT_T type);
 
 HARDKLOR_ALGORITHM_T string_to_hardklor_algorithm_type(char* name);
 char* hardklor_algorithm_type_to_string(HARDKLOR_ALGORITHM_T type);

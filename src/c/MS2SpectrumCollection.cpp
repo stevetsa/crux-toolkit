@@ -82,7 +82,7 @@ bool MS2SpectrumCollection::parse() {
   }
   
   // check if file is still avaliable
-  if ((file = fopen(filename_.c_str(),"r")) == NULL) {
+  if ((file = fopen(filename_.c_str(),"rb")) == NULL) {
     carp(CARP_ERROR, "Spectrum file %s could not be opened",
          filename_.c_str());
     return false;
@@ -126,7 +126,7 @@ bool MS2SpectrumCollection::getSpectrum(
   FILE* file;
   long target_index;
   // check if file is still avaliable
-  if ((file = fopen(filename_.c_str(), "r")) == NULL) {
+  if ((file = fopen(filename_.c_str(), "rb")) == NULL) {
     carp(CARP_ERROR, "File %s could not be opened", filename_.c_str());
     return false;
   }
@@ -164,7 +164,7 @@ Spectrum* MS2SpectrumCollection::getSpectrum(
   FILE* file;
   long target_index;
   // check if file is still avaliable
-  if ((file = fopen(filename_.c_str(), "r")) == NULL) {
+  if ((file = fopen(filename_.c_str(), "rb")) == NULL) {
     carp(CARP_ERROR, "File %s could not be opened", filename_.c_str());
     return (false);
   }
@@ -273,7 +273,7 @@ int MS2SpectrumCollection::matchFirstScanLine(
   )
 {
   
-  char spliced_line[buf_length];
+  char* spliced_line = new char[buf_length];
   int line_index = 0;
   int spliced_line_index = 0;
   int first_scan;
@@ -339,6 +339,9 @@ int MS2SpectrumCollection::matchFirstScanLine(
       line
     );
   }
+
+  delete [] spliced_line ;
+
   if(first_scan == query_first_scan){
     return 0;
   }

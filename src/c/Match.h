@@ -17,7 +17,9 @@
 #include <map>
 #include <ctype.h>
 #include <float.h>
+#ifndef WIN32
 #include <unistd.h>
+#endif
 #include "carp.h"
 #include "parse_arguments.h"
 #include "Spectrum.h"
@@ -161,22 +163,9 @@ class Match {
     FILE* file      ///< output stream -out
     );
 
-
-
   /**
-   * \brief Print the match information in xml format to the given file
-   *
-   * Prints out the match information in the format described as pep xml.
-   * Fills out as much information as available.
-   *
-   */
-  void printXml(
-    FILE* output_file,
-    const bool* scores_computed
-  );
-
-  /**
-   * \brief Print the match information in tab delimited format to the given file
+   * \brief Print the match information in tab delimited format to the
+   * given file.
    *
    */
   void printTab(
@@ -253,14 +242,15 @@ class Match {
   /**
    * \brief Returns a newly allocated string of sequence including any
    * modifications represented as mass values in brackets following the
-   * modified residue. If merge_masses is true, the sum of multiple
-   * modifications on one residue are printed.  If false, each mass is
-   * printed in a comma-separated list.
+   * modified residue. If mass_format is MOD_MASS_ONLY, the sum of multiple
+   * modifications on one residue are printed.  If MOD_MASSES_SEPARATE,
+   * each mass is printed in a comma-separated list.  If AA_PLUS_MOD, then
+   * the mass printed is that of the amino acid plus the modification.
    * \returns The peptide sequence of the match including modification
    * masses. 
    */
   char* getModSequenceStrWithMasses( 
-   bool merge_masses
+   MASS_FORMAT_T mass_format
     );
 
   /**
@@ -322,7 +312,7 @@ class Match {
   int getCharge();
 
   /**
-   * gets the match neutral mass
+   * gets the spectrum neutral mass
    */
   FLOAT_T getNeutralMass();
 
@@ -510,6 +500,15 @@ int compareQRankerQValue(
   );
 
 /**
+ * compare two matches, used for qsort
+ * \returns the difference between barista qvalue in match_a and match_b
+ */
+int compareBaristaQValue(
+  Match** match_a, ///< the first match -in  
+  Match** match_b  ///< the scond match -in
+  );
+
+/**
  * compare two matches, used for PERCOLATOR_SCORE
  * \returns the difference between PERCOLATOR_SCORE score in match_a and match_b
  */
@@ -523,6 +522,15 @@ int comparePercolatorScore(
  * \returns the difference between QRANKER_SCORE score in match_a and match_b
  */
 int compareQRankerScore(
+  Match** match_a, ///< the first match -in  
+  Match** match_b  ///< the scond match -in
+  );
+
+/**
+ * compare two matches, used for BARISTA_SCORE
+ * \returns the difference between BARISTA_SCORE score in match_a and match_b
+ */
+int compareBaristaScore(
   Match** match_a, ///< the first match -in  
   Match** match_b  ///< the scond match -in
   );
@@ -573,6 +581,18 @@ int compareSpectrumQRankerQValue(
   );
 
 /**
+ * Compare two matches by spectrum scan number and barista q-value, 
+ * used for qsort.
+ * \returns -1 if match a spectrum number is less than that of match b
+ * or if scan number is same, if score of match a is less than
+ * match b.  1 if scan number and score are equal, else 0.
+ */
+int compareSpectrumBaristaQValue(
+  Match** match_a, ///< the first match -in  
+  Match** match_b  ///< the scond match -in
+  );
+
+/**
  * Compare two matches by spectrum scan number and percolator score,
  * used for qsort. 
  * \returns -1 if match a spectrum number is less than that of match b
@@ -592,6 +612,18 @@ int compareSpectrumPercolatorScore(
  * match b.  1 if scan number and score are equal, else 0.
  */
 int compareSpectrumQRankerScore(
+  Match** match_a, ///< the first match -in  
+  Match** match_b  ///< the scond match -in
+  );
+
+/**
+ * Compare two matches by spectrum scan number and barista score,
+ * used for qsort. 
+ * \returns -1 if match a spectrum number is less than that of match b
+ * or if scan number is same, if score of match a is less than
+ * match b.  1 if scan number and score are equal, else 0.
+ */
+int compareSpectrumBaristaScore(
   Match** match_a, ///< the first match -in  
   Match** match_b  ///< the scond match -in
   );
@@ -630,7 +662,7 @@ int compareSpectrumDecoyPValueQValue(
  * why is this here?
  */
 int get_num_internal_cleavage(
-  char* peptide_sequence, 
+  const char* peptide_sequence, 
   ENZYME_T enzyme
 );
 
@@ -639,9 +671,9 @@ int get_num_internal_cleavage(
  *
  */
 int get_num_terminal_cleavage(
-  char* peptide_sequence, 
-  char flanking_aas_prev,
-  char flanking_aas_next,
+  const char* peptide_sequence, 
+  const char flanking_aas_prev,
+  const char flanking_aas_next,
   ENZYME_T enzyme
 );
 
@@ -652,8 +684,8 @@ int get_num_terminal_cleavage(
  *
  */
 void print_modifications_xml(
-  char* mod_seq,
-  char* sequence,
+  const char* mod_seq,
+  const char* sequence,
   FILE* output_file
 );
 
@@ -665,7 +697,7 @@ void print_modifications_xml(
 void find_static_modifications(
   std::map<int, double>& static_mods,
   std::map<int, double>& var_mods,
-  char* sequence
+  const char* sequence
 );
 
 /**
@@ -675,19 +707,10 @@ void find_static_modifications(
  */
 void find_variable_modifications(
  std::map<int, double>& mods,
- char* mod_seq
+ const char* mod_seq
 );
 
 
-/**
- * \brief Takes a empty set of pairs of strings and a peptide
- *  and fills the set with protein id paired with protein annotation
- *
- */
-void get_information_of_proteins(
-  std::set<std::pair<char*, char*> >& protein_info,
-  Peptide* peptide
-);
 
 #endif //MATCH_H
 

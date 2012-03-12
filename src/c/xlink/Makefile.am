@@ -4,12 +4,14 @@ AM_CXXFLAGS = -Wall -W -Werror  $(USEDOUBLES) $(USEDARWIN) $(SEARCH_ENABLED) \
 
 
 libxlink_la_SOURCES = \
+  XHHC_Peptide.cpp \
+  XHHC_Peptide.h \
+  LinkedPeptide.cpp \
+  LinkedPeptide.h \
   xhhc.cpp \
   xhhc.h \
-  xhhc_ion_series.cpp \
-  xhhc_ion_series.h \
-  xhhc_make_histogram.cpp \
-  xhhc_predict_peptide_ions.cpp \
+  LinkedIonSeries.cpp \
+  LinkedIonSeries.h \
   xhhc_score_peptide_spectrum.cpp \
   xhhc_scorer.cpp \
   xhhc_score_peptide_spectrum.cpp \
@@ -19,12 +21,14 @@ libxlink_la_SOURCES = \
   xlink_search.cpp \
   SearchForXLinks.cpp \
   SearchForXLinks.h \
-  xlink_assign_ions.cpp \
   xlink_compute_qvalues.cpp \
   XLinkSite.cpp \
   XLinkSite.h \
   XLinkBondMap.cpp \
-  XLinkBondMap.h
+  XLinkBondMap.h \
+  XLinkablePeptide.cpp \
+  XLinkablePeptide.h
+
 
 
 

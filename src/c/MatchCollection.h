@@ -17,7 +17,9 @@
 #include <string.h>
 #include <assert.h>
 #include <ctype.h>
+#ifndef WIN32
 #include <unistd.h>
+#endif
 #include <map>
 #include <time.h>
 #include "carp.h"
@@ -39,6 +41,7 @@
 #include "ModifiedPeptidesIterator.h"
 #include "MatchFileWriter.h"
 #include "MatchIterator.h"
+#include "PepXMLWriter.h"
 
 using namespace std;
 
@@ -433,7 +436,7 @@ class MatchCollection {
    * the collection rather than limiting by top-match parameter. 
    */
   void printMultiSpectraXml(
-    FILE* output
+    PepXMLWriter* output
     );
 
   /*
@@ -447,8 +450,7 @@ class MatchCollection {
   static void printSqtHeader(
     FILE* outfile, 
     const char* type, 
-    int proteins, 
-    bool is_for_match_analysis
+    int proteins 
     );
 
   /*
@@ -466,16 +468,15 @@ class MatchCollection {
     );
 
   /**
-   * Print the psm features to output file upto 'top_match' number of
+   * Print the psm features to output file up to 'top_match' number of
    * top peptides among the match_collection in xml file format
    * returns true, if sucessfully print xml format of the PSMs, else false
    */
   bool printXml(
-    FILE* output,
+    PepXMLWriter* output,
     int top_match,
     Spectrum* spectrum,
-    SCORER_TYPE_T main_score,
-    int index
+    SCORER_TYPE_T main_score
     );
 
   /**
@@ -598,6 +599,15 @@ class MatchCollection {
    * q-values to all of the matches in a given collection.
    */
   void assignQValues(
+    const map<FLOAT_T, FLOAT_T>* score_to_qvalue_hash,
+    SCORER_TYPE_T score_type
+    );
+
+  /**
+   * Given a hash table that maps from a score to its PEP, assign
+   * PEPs to all of the matches in a given collection.
+   */
+  void assignPEPs(
     const map<FLOAT_T, FLOAT_T>* score_to_qvalue_hash,
     SCORER_TYPE_T score_type
     );
