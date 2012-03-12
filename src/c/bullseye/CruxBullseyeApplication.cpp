@@ -1,7 +1,6 @@
 /**
  * \file CruxBullseyeApplication.cpp 
- * \brief Given a delimited file and a column-name, print out statistics
- * for that column (n, min, max, sum, average, stddev, median).
+ * \brief Given a ms1 and ms2 file, run hardklor followed by the bullseye algorithm.
  *****************************************************************************/
 #include "CruxBullseyeApplication.h"
 #include "CruxHardklorApplication.h"
@@ -86,14 +85,13 @@ int CruxBullseyeApplication::main(int argc, char** argv) {
 
   
   if ((overwrite) || (!file_exists(hardklor_output))) {
-    carp(CARP_INFO,"Calling hardklor");
+    carp(CARP_DEBUG,"Calling hardklor");
     bool ret = CruxHardklorApplication::main(input_ms1);
     if (ret != 0) {
       carp(CARP_WARNING, "Hardklor failed:%d", ret);
       return ret;
     }
   }
-
 
 
   /* build argument list */
@@ -162,7 +160,7 @@ int CruxBullseyeApplication::main(int argc, char** argv) {
   be_argv[0] = (char*)be_args_vec[0].c_str();
   for (int idx = 1;idx < be_argc ; idx++) {
     be_argv[idx] = (char*)be_args_vec[idx].c_str();
-    carp(CARP_INFO, "be_argv[%d]=%s", idx, be_argv[idx]);
+    carp(CARP_DEBUG, "be_argv[%d]=%s", idx, be_argv[idx]);
   }
 
   /* Call bullseyeMain */

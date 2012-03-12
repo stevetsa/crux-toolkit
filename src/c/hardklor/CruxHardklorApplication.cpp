@@ -1,7 +1,6 @@
 /**
  * \file CruxHardklorApplication.cpp 
- * \brief Given a delimited file and a column-name, print out statistics
- * for that column (n, min, max, sum, average, stddev, median).
+ * \brief Runs hardklor
  *****************************************************************************/
 #include "CruxHardklorApplication.h"
 #include "DelimitedFileWriter.h"
@@ -77,8 +76,6 @@ int CruxHardklorApplication::main(
 
   /* Write the dat files */
   string output_filename = make_file_path("hardklor.mono.txt");
-  //string hardklor_dat_filename = make_file_path("Hardklor.dat");
-  //writeHardklorDat(hardklor_dat_filename);
 
   string isotope_dat_filename = make_file_path("ISOTOPE.DAT");
   writeIsotopeDat(isotope_dat_filename);
@@ -90,8 +87,6 @@ int CruxHardklorApplication::main(
   hk_args_vec.push_back(output_filename);
 
   //Add options
-  //hk_args_vec.push_back("-hdat");
-  //hk_args_vec.push_back(hardklor_dat_filename);
 
   hk_args_vec.push_back("-mdat");
   hk_args_vec.push_back(isotope_dat_filename);
