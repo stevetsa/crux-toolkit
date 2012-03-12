@@ -34,14 +34,14 @@ libmstoolkit_la_SOURCES = \
   $(MST_PATH)/MSObject.cpp
 
 libmstoolkit_la_CXXFLAGS = $(AM_CPPFLAGS) \
-  -I$(top_srcdir)/src/c/MSToolkit/include \
+  -I$(top_srcdir)/src/external/MSToolkit/include \
   -D_LARGEFILE_SOURCE \
   -DGCC \
   -DHAVE_EXPAT_CONFIG_H \
   -D_FILE_OFFSET_BITS=64
 
 libmstoolkit_la_CFLAGS = $(AM_CFLAGS) \
-  -I$(top_srcdir)/src/c/MSToolkit/include \
+  -I$(top_srcdir)/src/external/MSToolkit/include \
   -D_LARGEFILE_SOURCE \
   -DGCC \
   -DHAVE_EXPAT_CONFIG_H \

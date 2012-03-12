@@ -19,7 +19,7 @@ libbullseye_la_SOURCES = \
 
 libbullseye_la_CXXFLAGS = $(AM_CXXFLAGS) \
   -I$(top_srcdir)/src/c/ \
-  -I$(top_srcdir)/src/c/MSToolkit/include \
+  -I$(top_srcdir)/src/external/MSToolkit/include \
   -I$(top_srcdir)/src/c/hardklor \
   -DGCC \
   -D_LARGEFILE_SOURCE \

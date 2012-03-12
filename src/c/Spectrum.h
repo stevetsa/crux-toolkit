@@ -14,7 +14,7 @@
 #include "Peak.h"
 
 #include "Spectrum.h"
-#include "MSToolkit/include/Spectrum.h"
+#include "../external/MSToolkit/include/Spectrum.h"
 #include "SpectrumZState.h"
 
 /**

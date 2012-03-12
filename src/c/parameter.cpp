@@ -28,9 +28,8 @@ static const char* parameter_type_strings[NUMBER_PARAMETER_TYPES] = {
   "INT_ARG", "DOUBLE_ARG", "STRING_ARG", "MASS_TYPE_T", "DIGEST_T", 
   "ENZYME_T", 
   "bool", "SCORER_TYPE_T", "ION_TYPE_T",
-  "HARDKLOR_ALGORITHM_T", "ALGORITHM_TYPE_T", "WINDOW_TYPE_T", 
-  "PARSIMONY_TYPE_T", "QUANT_LEVEL_TYPE_T", "DECOY_TYPE_T"};
-  "DECOY_TYPE_T"};
+  "HARDKLOR_ALGORITHM_T", "ALGORITHM_TYPE_T", "WINDOW_TYPE_T", "MEASURE_TYPE_T", 
+  "PARSIMONY_TYPE_T", "QUANT_LEVEL_TYPE_T", "DECOY_TYPE_T", "MASS_FORMAT_T"};
 
 //one hash for parameter values, one for usage statements, one for types
 // all hashes keyed on parameter/option name

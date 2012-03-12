@@ -61,7 +61,7 @@ libhardklor_la_SOURCES = \
 
 libhardklor_la_CXXFLAGS = $(AM_CXXFLAGS) \
   -I$(top_srcdir)/src/c/ \
-  -I$(top_srcdir)/src/c/MSToolkit/include \
+  -I$(top_srcdir)/src/external/MSToolkit/include \
   -DGCC \
   -D_LARGEFILE_SOURCE \
   -DHAVE_EXPAT_CONFIG_H \

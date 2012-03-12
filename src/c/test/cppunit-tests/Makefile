@@ -1,7 +1,7 @@
 CC        = g++  
 CFLAGS    = -Icppunit-1.12.1/include -I../.. -I../../qranker-barista
 CRUX_LIB  = ../../.libs/libcrux.a
-MSTOOLKIT_LIB = ../../MSToolkit/.libs/libmstoolkit.a
+MSTOOLKIT_LIB = ../../../external/MSToolkit/.libs/libmstoolkit.a
 BARISTA_LIB = ../../qranker-barista/.libs/libqranker_barista.a
 PERCOLATOR_LIB = ../../percolator/.libs/libpercolator.a
 PEP_LIB = ../../posterior-error/.libs/libpep.a

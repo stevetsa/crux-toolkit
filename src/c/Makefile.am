@@ -1,6 +1,6 @@
 distdir = $(PACKAGE)_$(VERSION)
 
-SUBDIRS = ArrayLibrary MSToolkit percolator xlink posterior-error qranker-barista hardklor bullseye .
+SUBDIRS = ArrayLibrary percolator xlink posterior-error qranker-barista hardklor bullseye .
 
 # Crux can use either single or double precision floating poinnt.
 if USEDOUBLES
@@ -189,15 +189,15 @@ LIBFILES= \
 noinst_LTLIBRARIES = libcrux.la
 libcrux_la_CFLAGS = \
   $(AM_CFLAGS) \
-  -I$(top_srcdir)/src/c/MSToolkit/include \
+  -I$(top_srcdir)/src/external/MSToolkit/include \
   -I$(top_srcdir)/src/c/percolator/ \
   -I$(top_srcdir)/src/c/qranker-barista/ \
   -I$(top_srcdir)/src/c/posterior-error/
 
 libcrux_la_CXXFLAGS = \
   $(AM_CXXFLAGS) \
-  -I$(top_srcdir)/src/c/MSToolkit \
-  -I$(top_srcdir)/src/c/MSToolkit/RAMP \
+  -I$(top_srcdir)/src/external/MSToolkit/include \
+  -I$(top_srcdir)/src/external/MSToolkit/RAMP \
   -I$(top_srcdir)/src/c/percolator/ \
   -I$(top_srcdir)/src/c/qranker-barista/ \
   -I$(top_srcdir)/src/c/posterior-error/ \
@@ -219,7 +219,7 @@ crux_SOURCES = crux-main.cpp crux-main.h
 crux_CXXFLAGS = \
   $(AM_CXXFLAGS) \
   -DMAIN \
-  -I$(top_srcdir)/src/c/MSToolkit \
+  -I$(top_srcdir)/src/external/MSToolkit \
   -I$(top_srcdir)/src/c/percolator \
   -I$(top_srcdir)/src/c/posterior-error \
   -I$(top_srcdir)/src/c/xlink \
@@ -234,7 +234,7 @@ crux_LDADD = \
   libcrux.la \
   -lstdc++ \
   -L$(top_builddir)/src/c/ArrayLibrary \
-  -L$(top_builddir)/src/c/MSToolkit \
+  -L$(top_builddir)/src/external/MSToolkit \
   -L$(top_builddir)/src/c/percolator \
   -L$(top_builddir)/src/c/posterior-error \
   -L$(top_builddir)/src/c/qranker-barista \
@@ -258,7 +258,7 @@ xlink_predict_peptide_ions_CXXFLAGS= \
 
 xlink_predict_peptide_ions_LDADD = \
   $(AM_LDFLAGS) \
-  -L$(top_builddir)/src/c/MSToolkit \
+  -L$(top_builddir)/src/external/MSToolkit \
   -L$(top_builddir)/src/c/xlink \
   -lm \
   -lxlink \
@@ -273,7 +273,7 @@ xlink_score_spectrum_CXXFLAGS= \
 
 xlink_score_spectrum_LDADD = \
   $(AM_LDFLAGS) \
-  -L$(top_builddir)/src/c/MSToolkit \
+  -L$(top_builddir)/src/external/MSToolkit \
   -L$(top_builddir)/src/c/xlink \
   -lm -lpthread -ldl \
   -lxlink \
@@ -288,7 +288,7 @@ xlink_assign_ions_CXXFLAGS= \
 
 xlink_assign_ions_LDADD = \
   $(AM_LDFLAGS) \
-  -L$(top_builddir)/src/c/MSToolkit \
+  -L$(top_builddir)/src/external/MSToolkit \
   -L$(top_builddir)/src/c/xlink \
   -lm -lpthread -ldl \
   -lxlink \

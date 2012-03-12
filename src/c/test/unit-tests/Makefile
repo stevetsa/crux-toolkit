@@ -35,7 +35,7 @@ TESTS = \
 CRUX_LIBS = \
   ../../.libs/libcrux.a \
   $(PERCOLATOR_DIR)/.libs/libpercolator.a \
-  ../../MSToolkit/.libs/libmstoolkit.a
+  ../../../external/MSToolkit/.libs/libmstoolkit.a
 
 unittests:  $(SRC) $(TESTS) $(CRUX_LIBS)
 	cd check && $(MAKE)
