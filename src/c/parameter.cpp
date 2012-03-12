@@ -1119,6 +1119,10 @@ void initialize_parameters(void){
     "than 5 m/z are divided into smaller sets prior to analysis. The default value is 4.0.",
     "Available for crux hardklor", "true");
 
+  set_string_parameter("hardklor-options", "__NULL_STR", 
+    "Directly set hardklor options",
+    "Available for crux hardklor", "false");
+
   /* bullseye parameters */
   set_string_parameter("MS1 spectra", NULL, 
     "The name of a file from which to parse high-resolution spectra of intact peptides.\n"

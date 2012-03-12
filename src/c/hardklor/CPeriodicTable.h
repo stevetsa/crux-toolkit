@@ -15,8 +15,8 @@ typedef struct {
 class CPeriodicTable {
  public:
    //Constructors & Destructors
-   //CPeriodicTable();
-   CPeriodicTable(char* c="Hardklor.dat");
+   CPeriodicTable();
+   CPeriodicTable(char* c);
    ~CPeriodicTable();
 
    //Methods:
@@ -27,6 +27,9 @@ class CPeriodicTable {
  private:
    //Methods:
    void loadTable(char*);
+
+   void init();
+   void add(const char* symbol, double mass);
 
    //Data Members:
    vector<element> table;

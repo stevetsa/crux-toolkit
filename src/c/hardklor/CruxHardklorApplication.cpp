@@ -5,7 +5,7 @@
  *****************************************************************************/
 #include "CruxHardklorApplication.h"
 #include "DelimitedFileWriter.h"
-
+#include "DelimitedFile.h"
 using namespace std;
 
 /**
@@ -77,8 +77,8 @@ int CruxHardklorApplication::main(
 
   /* Write the dat files */
   string output_filename = make_file_path("hardklor.mono.txt");
-  string hardklor_dat_filename = make_file_path("Hardklor.dat");
-  writeHardklorDat(hardklor_dat_filename);
+  //string hardklor_dat_filename = make_file_path("Hardklor.dat");
+  //writeHardklorDat(hardklor_dat_filename);
 
   string isotope_dat_filename = make_file_path("ISOTOPE.DAT");
   writeIsotopeDat(isotope_dat_filename);
@@ -90,8 +90,8 @@ int CruxHardklorApplication::main(
   hk_args_vec.push_back(output_filename);
 
   //Add options
-  hk_args_vec.push_back("-hdat");
-  hk_args_vec.push_back(hardklor_dat_filename);
+  //hk_args_vec.push_back("-hdat");
+  //hk_args_vec.push_back(hardklor_dat_filename);
 
   hk_args_vec.push_back("-mdat");
   hk_args_vec.push_back(isotope_dat_filename);
@@ -129,8 +129,22 @@ int CruxHardklorApplication::main(
   }
 
   if (string(get_string_parameter_pointer("averagine-mod")) !=  "__NULL_STR") {
-    hk_args_vec.push_back("-m");
-    hk_args_vec.push_back(get_string_parameter_pointer("averagine-mod"));
+    string par_value = get_string_parameter_pointer("averagine-mod");
+    cerr <<"averagine-mod="<<par_value<<endl;
+    vector<string> tokens1;
+    DelimitedFile::tokenize(par_value, tokens1, ';');
+
+    for (unsigned int idx1 = 0; idx1 < tokens1.size();idx1++) {
+      hk_args_vec.push_back("-m");
+      vector<string> tokens2;
+      DelimitedFile::tokenize(tokens1[idx1], tokens2, ':');
+      ostringstream oss;
+      oss << tokens2[0];
+      for (unsigned int idx2 = 1;idx2 < tokens2.size(); idx2++) {
+        oss << " " << tokens2[idx2];
+      }
+      hk_args_vec.push_back(oss.str());
+    }
   }
 
   if (string(get_string_parameter_pointer("mzxml-filter")) != "none") { 
@@ -188,7 +202,14 @@ int CruxHardklorApplication::main(
   hk_args_vec.push_back("-win");
   hk_args_vec.push_back(DelimitedFileWriter::to_string(get_double_parameter("max-width")));
   
-
+  if (string(get_string_parameter_pointer("hardklor-options")) != "__NULL_STR") {
+    string hardklor_options = get_string_parameter_pointer("hardklor-options");
+    vector<string> tokens;
+    DelimitedFile::tokenize(hardklor_options, tokens, ',');
+    for (size_t idx=0;idx < tokens.size();idx++) {
+      hk_args_vec.push_back(tokens.at(idx));
+    }
+  }
 
   /* build argv line */
   int hk_argc = hk_args_vec.size();

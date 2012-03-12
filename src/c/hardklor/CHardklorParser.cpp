@@ -310,7 +310,7 @@ void CHardklorParser::parse(char* cmd) {
 					}
 
 					if(atomNum==-1){
-						cout << "Malformed modification flag: Atom not in periodic table" << endl;
+						cout << "Malformed modification flag: Atom not in periodic table: " << atom << endl;
 						break;
 					}
 
