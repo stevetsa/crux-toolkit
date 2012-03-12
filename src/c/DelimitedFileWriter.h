@@ -21,6 +21,7 @@
 #include <algorithm>
 #include <sstream>
 #include <iomanip>
+#include <ios>
 #include "parameter.h"
 
 class DelimitedFileWriter {
@@ -149,7 +150,7 @@ class DelimitedFileWriter {
     if (fixed_float) {
       oss << std::fixed;
     } else {
-      oss.unsetf(ios_base::floatfield);
+      oss.unsetf(std::ios_base::floatfield);
     }
     oss << value;
     std::string out_string = oss.str();
