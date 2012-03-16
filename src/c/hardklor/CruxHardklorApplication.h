@@ -81,11 +81,14 @@ class CruxHardklorApplication: public CruxApplication {
    */
   virtual bool needsOutputDirectory();
 
+  /**
+   * \brief runs hardklor on the input spectra
+   * \returns whether hardklor was successful or not
+   */
   static int main(
-    const std::string& input_spectra
+    const std::string& input_spectra ///< file path of spectra to process
   );
   
-
 };
 
 

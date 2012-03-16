@@ -360,9 +360,10 @@ void initialize_parameters(void){
   set_string_parameter("spectra", NULL,
                        "The name of a file from which to parse "
                        "high-resolution spectra. The file may be "
-                       "in MS1, FIXME or FIXME format.",
-    "Argument, not option, for hardklor",
-    "false");
+                       "in MS1 (.ms1), binary MS1 (.bms1), compressed MS1 (.cms1), or "
+                       "mzXML (.mzXML) format.",
+                       "Argument, not option, for hardklor",
+                       "false");
 
 
   /* *** Initialize Options (command line and param file) *** */
@@ -1217,6 +1218,10 @@ void initialize_parameters(void){
     "The name of a file from which to parse peptide fragmentation spectra.\n The file may "
     "be in MS2 (.ms2), binary MS2 (.bms2), compressed MS2 (.cms2) or mzXML (.mzXML) format. ",
     "Argument for crux bullseye.", "false");
+
+  set_string_parameter("hardklor-file", "__NULL_STR",
+    "Input hardklor file into bullseye",
+    "Hidden option for crux bullseye.", "false");
 
   set_double_parameter("max-persist", 2.0, 0, BILLION,
     "Ignore peptides that persist for this length. The unit of time is whatever unit is "

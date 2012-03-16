@@ -127,40 +127,53 @@ double CAveragine::getMonoMass(){
 
 }
 
+
+void CAveragine::loadTableHardcoded() {
+  cerr << "CAveragine::loadTableHardcoded"<<endl;
+
+}
+
 void CAveragine::loadTable(char* c){
 
-  FILE *f;
-  int  i,j;
-  atomInfo a;
-	double d=0;
 
-  f = fopen(c,"rt");
-  if(f==NULL) {
-    cout << "Cannot read " << c << endl;
-    exit(-1);
-  }
+  if (c == NULL) {
+    loadTableHardcoded();
+  } else {
 
-  i=0;
-  while(!feof(f)){
+    FILE *f;
+    int  i,j;
+    atomInfo a;
+          double d=0;
 
-    enrich->push_back(a);
-		fscanf(f,"%2s\t%d\n",enrich->at(i).symbol,&enrich->at(i).numIsotopes);
-    enrich->at(i).mass = new vector<double>;
-    enrich->at(i).abundance = new vector<double>;
-
-    for(j=0;j<enrich->at(i).numIsotopes;j++){
-			enrich->at(i).mass->push_back(d);
-			enrich->at(i).abundance->push_back(d);
-			fscanf(f,"%lf\t%lf\n",&enrich->at(i).mass->at(j),&enrich->at(i).abundance->at(j));
+    f = fopen(c,"rt");
+    if(f==NULL) {
+      cout << "Cannot read " << c << endl;
+      loadTableHardcoded();
+      return;
     }
-
-		fscanf(f," \n");
-    i++;
-
+  
+    i=0;
+    while(!feof(f)){
+  
+      enrich->push_back(a);
+                  fscanf(f,"%2s\t%d\n",enrich->at(i).symbol,&enrich->at(i).numIsotopes);
+      enrich->at(i).mass = new vector<double>;
+      enrich->at(i).abundance = new vector<double>;
+  
+      for(j=0;j<enrich->at(i).numIsotopes;j++){
+                          enrich->at(i).mass->push_back(d);
+                          enrich->at(i).abundance->push_back(d);
+                          fscanf(f,"%lf\t%lf\n",&enrich->at(i).mass->at(j),&enrich->at(i).abundance->at(j));
+      }
+  
+                  fscanf(f," \n");
+      i++;
+  
+    }
+  
+    fclose(f);
+  
   }
-
-  fclose(f);
-
 }
 
 //This is not to be used normally - just here to make my life easier.

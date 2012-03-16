@@ -70,13 +70,18 @@ int CruxHardklorApplication::main(int argc, char** argv) {
 
 }
 
+/**
+ * \brief runs hardklor on the input spectra
+ * \returns whether hardklor was successful or not
+ */
 int CruxHardklorApplication::main(
-  const string& input_spectra
+  const string& input_spectra ///< file path of spectra to process.
   ) {
 
   /* Write the dat files */
   string output_filename = make_file_path("hardklor.mono.txt");
 
+  // TODO remove this dependency.
   string isotope_dat_filename = make_file_path("ISOTOPE.DAT");
   writeIsotopeDat(isotope_dat_filename);
 
@@ -88,6 +93,7 @@ int CruxHardklorApplication::main(
 
   //Add options
 
+  //TODO remove this dependency.
   hk_args_vec.push_back("-mdat");
   hk_args_vec.push_back(isotope_dat_filename);
 

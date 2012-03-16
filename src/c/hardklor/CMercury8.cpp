@@ -146,53 +146,275 @@ void CMercury8::Intro() {
 //folder as the application.
 void CMercury8::InitializeData(const char* fn) {
 
-  FILE *ElementFile;
-  int  i, Z;
- 
-  if ((ElementFile = fopen(fn, "rt")) == NULL) {
-    printf("\nError - Cannot open File: ISOTOPE.DAT\n");
-    exit(-1);
-  }
-   
-  for (Z=0; Z<=MAXAtomNo; Z++) {
-    Element[Z].Symbol[0]=Element[Z].Symbol[1]=Element[Z].Symbol[2]=0;
 
-    fscanf(ElementFile,"%2s %d\n", Element[Z].Symbol,&Element[Z].NumIsotopes);
+  if (fn == NULL) {
+    //use hardcoded defaults.
+    InitializeDataHardcoded();
+  } else {
+
+    FILE *ElementFile;
+    int  i, Z;
+ 
+    if ((ElementFile = fopen(fn, "rt")) == NULL) {
+      printf("\nError - Cannot open File: ISOTOPE.DAT\n");
+      InitializeDataHardcoded();
+      return;
+    }
+     
+    for (Z=0; Z<=MAXAtomNo; Z++) {
+      Element[Z].Symbol[0]=Element[Z].Symbol[1]=Element[Z].Symbol[2]=0;
+  
+      fscanf(ElementFile,"%2s %d\n", Element[Z].Symbol,&Element[Z].NumIsotopes);
+      strcpy(Orig[Z].Symbol,Element[Z].Symbol);
+      Orig[Z].NumIsotopes = Element[Z].NumIsotopes;
+  
+      Element[Z].IsoMass = new float[Element[Z].NumIsotopes+1];
+      Element[Z].IntMass = new int[Element[Z].NumIsotopes+1];
+      Element[Z].IsoProb = new float[Element[Z].NumIsotopes+1];
+      //Element[Z].WrapMass = NULL;
+  
+      Orig[Z].IsoMass = new float[Orig[Z].NumIsotopes+1];
+      Orig[Z].IntMass = new int[Orig[Z].NumIsotopes+1];
+      Orig[Z].IsoProb = new float[Orig[Z].NumIsotopes+1];
+      //Orig[Z].WrapMass = NULL;
+      
+      for (i=0; i<Element[Z].NumIsotopes; i++) {
+        fscanf(ElementFile, "%f \n", &Element[Z].IsoMass[i]);
+        fscanf(ElementFile, "%f \n", &Element[Z].IsoProb[i]);
+        Element[Z].IntMass[i] = (int)(Element[Z].IsoMass[i]+0.5);
+        Orig[Z].IsoMass[i]=Element[Z].IsoMass[i];
+        Orig[Z].IsoProb[i]=Element[Z].IsoProb[i];
+        Orig[Z].IntMass[i]=Element[Z].IntMass[i];
+      }
+        
+      Element[Z].NumAtoms = 0;
+      Element[Z].IsoMass[Element[Z].NumIsotopes] = 0;
+      Element[Z].IsoProb[Element[Z].NumIsotopes] = 0;
+      Orig[Z].NumAtoms = 0;
+      Orig[Z].IsoMass[Orig[Z].NumIsotopes] = 0;
+      Orig[Z].IsoProb[Orig[Z].NumIsotopes] = 0;
+  
+      fscanf(ElementFile, " \n");
+    }
+  
+    fclose(ElementFile);
+  
+  }
+}
+
+void CMercury8::InitializeDataHardcoded() {
+
+  cerr << "Loading hardcoded table" << endl;
+  for (int Z=0;Z<-MAXAtomNo;Z++) {
+    Element[Z].Symbol[0]=Element[Z].Symbol[1]=Element[Z].Symbol[2]=0;
+  }
+
+  Element[0].Symbol[0] = 'X';
+  Element[0].NumIsotopes = 2;
+  Element[0].IsoMass = new float[3];
+  Element[0].IsoMass[0] = 1;
+  Element[0].IsoMass[1] = 2;
+  Element[0].IsoProb = new float[3];
+  Element[0].IsoProb[0] = 0.9;
+  Element[0].IsoProb[1] = 0.1;
+
+  Element[1].Symbol[0] = 'H';
+  Element[1].NumIsotopes = 2;
+  Element[1].IsoMass = new float[3];
+  Element[1].IsoMass[0] = 1.0078246;
+  Element[1].IsoMass[1] = 2.0141021;
+  Element[1].IsoProb = new float[3];
+  Element[1].IsoProb[0] = 0.999855;
+  Element[1].IsoProb[1] = 0.000145;
+
+  Element[2].Symbol[0] = 'H';
+  Element[2].Symbol[1] = 'e';
+  Element[2].NumIsotopes = 2;
+  Element[2].IsoMass = new float[3];
+  Element[2].IsoMass[0] = 3.01603;
+  Element[2].IsoMass[1] = 4.00260;
+  Element[2].IsoProb = new float[3];
+  Element[2].IsoProb[0] = 0.00000138;
+  Element[2].IsoProb[1] = 0.99999862;
+
+  Element[3].Symbol[0] = 'L';
+  Element[3].Symbol[1] = 'i';
+  Element[3].NumIsotopes = 2;
+  Element[3].IsoMass = new float[3];
+  Element[3].IsoMass[0] = 6.015121;
+  Element[3].IsoMass[1] = 7.016003;
+  Element[3].IsoProb = new float[3];
+  Element[3].IsoProb[0] = 0.075;
+  Element[3].IsoProb[1] = 0.925;
+
+  Element[4].Symbol[0] = 'B';
+  Element[4].Symbol[1] = 'e';
+  Element[4].NumIsotopes = 1;
+  Element[4].IsoMass = new float[2];
+  Element[4].IsoMass[0] = 9.012182;
+  Element[4].IsoProb = new float[2];
+  Element[4].IsoProb[0] = 1.0;
+
+  Element[5].Symbol[0] = 'B';
+  Element[5].NumIsotopes = 2;
+  Element[5].IsoMass = new float[3];
+  Element[5].IsoMass[0] = 10.012937;
+  Element[5].IsoMass[1] = 11.009305;
+  Element[5].IsoProb = new float[3];
+  Element[5].IsoProb[0] = 0.199;
+  Element[5].IsoProb[1] = 0.801;
+
+  Element[6].Symbol[0] = 'C';
+  Element[6].NumIsotopes = 2;
+  Element[6].IsoMass = new float[3];
+  Element[6].IsoMass[0] = 12.0000000;
+  Element[6].IsoMass[1] = 13.0033554;
+  Element[6].IsoProb = new float[3];
+  Element[6].IsoProb[0] = 0.98916;
+  Element[6].IsoProb[1] = 0.01084;
+  
+  Element[7].Symbol[0] = 'N';
+  Element[7].NumIsotopes = 2;
+  Element[7].IsoMass = new float[3];
+  Element[7].IsoMass[0] = 14.0030732;
+  Element[7].IsoMass[1] = 15.0001088;
+  Element[7].IsoProb = new float[3];
+  Element[7].IsoProb[0] = 0.99633;
+  Element[7].IsoProb[1] = 0.00366;
+  
+  Element[8].Symbol[0] = 'O';
+  Element[8].NumIsotopes = 3;
+  Element[8].IsoMass = new float[4];
+  Element[8].IsoMass[0] = 15.9949141;
+  Element[8].IsoMass[1] = 16.9991322;
+  Element[8].IsoMass[2] = 17.9991616;
+  Element[8].IsoProb = new float[4];
+  Element[8].IsoProb[0] = 0.997576009706;
+  Element[8].IsoProb[1] = 0.000378998479;
+  Element[8].IsoProb[2] = 0.002044991815;
+
+  Element[9].Symbol[0] = 'F';
+  Element[9].NumIsotopes = 1;
+  Element[9].IsoMass = new float[2];
+  Element[9].IsoMass[0] = 18,9984032;
+  Element[9].IsoProb = new float[2];
+  Element[9].IsoProb[0] = 1.0;
+
+  Element[10].Symbol[0] = 'N';
+  Element[10].Symbol[1] = 'e';
+  Element[10].NumIsotopes = 3;
+  Element[10].IsoMass = new float[4];
+  Element[10].IsoMass[0] = 19.992435;
+  Element[10].IsoMass[1] = 20.993843;
+  Element[10].IsoMass[2] = 21.991383;
+  Element[10].IsoProb = new float[4];
+  Element[10].IsoProb[0] = 0.9048;
+  Element[10].IsoProb[1] = 0.0027;
+  Element[10].IsoProb[2] = 0.0925;
+
+  Element[11].Symbol[0] = 'N';
+  Element[11].Symbol[1] = 'a';
+  Element[11].NumIsotopes = 1;
+  Element[11].IsoMass = new float[2];
+  Element[11].IsoMass[0] = 22.989767;
+  Element[11].IsoProb = new float[2];
+  Element[11].IsoProb[0] = 1.0;
+
+  Element[12].Symbol[0] = 'M';
+  Element[12].Symbol[1] = 'g';
+  Element[12].NumIsotopes = 3;
+  Element[12].IsoMass = new float[4];
+  Element[12].IsoMass[0] = 23.985042;
+  Element[12].IsoMass[1] = 24.985837;
+  Element[12].IsoMass[2] = 25.982593;
+  Element[12].IsoProb = new float[4];
+  Element[12].IsoProb[0] = 0.7899;
+  Element[12].IsoProb[1] = 0.1000;
+  Element[12].IsoProb[2] = 0.1101;
+  
+  Element[13].Symbol[0] = 'A';
+  Element[13].Symbol[1] = 'l';
+  Element[13].NumIsotopes = 1;
+  Element[13].IsoMass = new float[2];
+  Element[13].IsoMass[0] = 26.981539;
+  Element[13].IsoProb = new float[2];
+  Element[13].IsoProb[0] = 1.0;
+  
+  Element[14].Symbol[0] = 'S';
+  Element[14].Symbol[1] = 'i';
+  Element[14].NumIsotopes = 3;
+  Element[14].IsoMass = new float[4];
+  Element[14].IsoMass[0] = 27.976927;
+  Element[14].IsoMass[1] = 28.976495;
+  Element[14].IsoMass[2] = 29.973770;
+  Element[14].IsoProb = new float[4];
+  Element[14].IsoProb[0] = 0.9223;
+  Element[14].IsoProb[1] = 0.0467;
+  Element[14].IsoProb[2] = 0.0310;
+
+  Element[15].Symbol[0] = 'P';
+  Element[15].NumIsotopes = 1;
+  Element[15].IsoMass = new float[2];
+  Element[15].IsoMass[0] = 30.973762;
+  Element[15].IsoProb = new float[2];
+  Element[15].IsoProb[0] = 1.0;
+
+  Element[14].Symbol[0] = 'S';
+  Element[14].NumIsotopes = 4;
+  Element[14].IsoMass = new float[5];
+  Element[14].IsoMass[0] = 31.972070;
+  Element[14].IsoMass[1] = 32.971456;
+  Element[14].IsoMass[2] = 33.967866;
+  Element[14].IsoMass[3] = 35.967080;
+  Element[14].IsoProb = new float[5];
+  Element[14].IsoProb[0] = 0.95021;
+  Element[14].IsoProb[1] = 0.00745;
+  Element[14].IsoProb[2] = 0.04221;
+  Element[14].IsoProb[3] = 0.00013;
+
+  Element[15].Symbol[0] = 'C';
+  Element[15].Symbol[1] = 'l';
+  Element[15].NumIsotopes = 2;
+  Element[15].IsoMass = new float[3];
+  Element[15].IsoMass[0] = 34.9688531;
+  Element[15].IsoMass[1] = 36.9659034;
+  Element[15].IsoProb = new float[3];
+  Element[15].IsoProb[0] = 0.755290;
+  Element[15].IsoProb[1] = 0.244710;
+  
+  Element[16].Symbol[0] = 'A';
+  Element[16].Symbol[1] = 'r';
+  Element[16].NumIsotopes = 3;
+  Element[16].IsoMass = new float[4];
+  Element[16].IsoMass[0] = 35.967545;
+  Element[16].IsoMass[1] = 37.962732;
+  Element[16].IsoMass[2] = 39.962384;
+  Element[16].IsoProb = new float[4];
+  Element[16].IsoProb[0] = 0.00337;
+  Element[16].IsoProb[1] = 0.00063;
+  Element[16].IsoProb[2] = 0.99600;
+
+  for (int Z=0;Z<-MAXAtomNo;Z++) {
     strcpy(Orig[Z].Symbol,Element[Z].Symbol);
     Orig[Z].NumIsotopes = Element[Z].NumIsotopes;
-
-    Element[Z].IsoMass = new float[Element[Z].NumIsotopes+1];
-    Element[Z].IntMass = new int[Element[Z].NumIsotopes+1];
-    Element[Z].IsoProb = new float[Element[Z].NumIsotopes+1];
-    //Element[Z].WrapMass = NULL;
-
-    Orig[Z].IsoMass = new float[Orig[Z].NumIsotopes+1];
-    Orig[Z].IntMass = new int[Orig[Z].NumIsotopes+1];
-    Orig[Z].IsoProb = new float[Orig[Z].NumIsotopes+1];
-    //Orig[Z].WrapMass = NULL;
-    
-    for (i=0; i<Element[Z].NumIsotopes; i++) {
-      fscanf(ElementFile, "%f \n", &Element[Z].IsoMass[i]);
-      fscanf(ElementFile, "%f \n", &Element[Z].IsoProb[i]);
+    for (int i=0; i<Element[Z].NumIsotopes; i++) {
       Element[Z].IntMass[i] = (int)(Element[Z].IsoMass[i]+0.5);
       Orig[Z].IsoMass[i]=Element[Z].IsoMass[i];
       Orig[Z].IsoProb[i]=Element[Z].IsoProb[i];
       Orig[Z].IntMass[i]=Element[Z].IntMass[i];
     }
-      
+        
     Element[Z].NumAtoms = 0;
     Element[Z].IsoMass[Element[Z].NumIsotopes] = 0;
     Element[Z].IsoProb[Element[Z].NumIsotopes] = 0;
     Orig[Z].NumAtoms = 0;
     Orig[Z].IsoMass[Orig[Z].NumIsotopes] = 0;
     Orig[Z].IsoProb[Orig[Z].NumIsotopes] = 0;
-
-    fscanf(ElementFile, " \n");
   }
 
-  fclose(ElementFile);
-  
 }
+
+
  
 /*************************************************/
 /* FUNCTION CalcVariances - called by main()     */
@@ -272,6 +494,7 @@ void CMercury8::AddElement(char Atom[3], int Ecount, int Acount) {
       } else {
 
 	AtomicNum[Ecount] = Z;
+        //cerr << Atom << " " << AtomicNum[Ecount] << endl;
 	Element[Z].NumAtoms = Acount;
 	//Element[Z].WrapMass = new int[Element[Z].NumIsotopes+1];
 	//Element[Z].WrapMass[Element[Z].NumIsotopes] = 0;

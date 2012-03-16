@@ -3,7 +3,7 @@
  * \brief General-use functions for crux
  */
 
-
+#include <fstream>
 #include <errno.h>
 #include <sys/stat.h>
 #ifndef WIN32
@@ -556,6 +556,26 @@ inline bool compare_float_three(FLOAT_T float_a, FLOAT_T min, FLOAT_T max){
     return false;
   }
   return true;
+}
+
+/**
+ * \returns whether the file exists
+ */
+bool file_exists(const string& filename) {
+
+  bool exists = false;
+
+  ifstream test_stream;
+
+  test_stream.open(filename.c_str(), ios::in);
+
+  if (test_stream.is_open()) {
+    exists = true;
+  }
+
+  test_stream.close();
+
+  return exists;
 }
 
 /**

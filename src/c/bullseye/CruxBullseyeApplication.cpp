@@ -6,25 +6,9 @@
 #include "CruxHardklorApplication.h"
 #include "DelimitedFileWriter.h"
 
+#include "crux-utils.h"
+
 using namespace std;
-
-
-bool file_exists(const string& filename) {
-
-  bool exists = false;
-
-  ifstream test_stream;
-
-  test_stream.open(filename.c_str(), ios::in);
-
-  if (test_stream.is_open()) {
-    exists = true;
-  }
-
-  test_stream.close();
-
-  return exists;
-}
 
 /**
  * \returns a blank CruxBullseyeApplication object
@@ -75,7 +59,7 @@ int CruxBullseyeApplication::main(int argc, char** argv) {
     option_list, num_options, argc, argv);
 
   /* Get parameters. */
-  string hardklor_output = make_file_path("hardklor.mono.txt");
+  string hardklor_output;
   string input_ms1 = get_string_parameter("MS1 spectra");
   string input_ms2 = get_string_parameter("MS2 spectra");
   
@@ -83,16 +67,19 @@ int CruxBullseyeApplication::main(int argc, char** argv) {
   string nomatch_ms2 = make_file_path("bullseye.no-pid.ms2");
   bool overwrite = get_boolean_parameter("overwrite");
 
-  
-  if ((overwrite) || (!file_exists(hardklor_output))) {
-    carp(CARP_DEBUG,"Calling hardklor");
-    bool ret = CruxHardklorApplication::main(input_ms1);
-    if (ret != 0) {
-      carp(CARP_WARNING, "Hardklor failed:%d", ret);
-      return ret;
+  hardklor_output = string(get_string_parameter_pointer("hardklor-file"));
+
+  if (hardklor_output == "__NULL_STR") {
+    hardklor_output = make_file_path("hardklor.mono.txt");
+    if ((overwrite) || (!file_exists(hardklor_output))) {
+      carp(CARP_DEBUG,"Calling hardklor");
+      bool ret = CruxHardklorApplication::main(input_ms1);
+      if (ret != 0) {
+        carp(CARP_WARNING, "Hardklor failed:%d", ret);
+        return ret;
+      }
     }
   }
-
 
   /* build argument list */
   vector<string> be_args_vec;

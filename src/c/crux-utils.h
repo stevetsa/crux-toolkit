@@ -32,8 +32,9 @@
 #include "CruxApplication.h"
 
 
-#include<sstream>
-#include<vector>
+#include <sstream>
+#include <string>
+#include <vector>
 
 /**
  * The number of features used to represent a PSM for Percolator or q-ranker.
@@ -69,6 +70,11 @@ int compare_float(FLOAT_T float_a, FLOAT_T float_b);
  * places.
  */
 bool is_equal(FLOAT_T a, FLOAT_T b, int precision);
+
+/**
+ * \returns whether the file exists
+ */
+bool file_exists(const std::string& filename);
 
 /**
  * \brief Parses the filename and path of given string.

@@ -1,5 +1,6 @@
 #include "CPeriodicTable.h"
 #include <stdio.h>
+#include <cstring>
 
 using namespace std;
 
@@ -14,7 +15,7 @@ void CPeriodicTable::add(const char* symbol, double mass) {
 }
 
 void CPeriodicTable::init() {
-  cerr << "CPeriodicTable::init()"<<endl;
+  //cerr << "CPeriodicTable::init()"<<endl;
   table.clear();
   add("X", 0);
   add("H", 1.0078246);

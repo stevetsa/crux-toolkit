@@ -37,7 +37,7 @@ class CAveragine {
  public:
   //Constructors & Destructors
   //CAveragine();
-  CAveragine(char* fn="ISOTOPE.DAT", char* fn2="Hardklor.dat");
+  CAveragine(char* fn=NULL, char* fn2=NULL);
   ~CAveragine();
 
   //Methods:
@@ -48,6 +48,7 @@ class CAveragine {
   int getElement(int);
   double getMonoMass();
   void loadTable(char*);
+  void loadTableHardcoded();
 
  protected:
 
