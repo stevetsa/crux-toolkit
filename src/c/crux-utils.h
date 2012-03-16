@@ -492,10 +492,10 @@ static bool get_range_from_string(
 /**
  * \brief  Decide if a spectrum has precursor charge of +1 or more (+2
  * or +3 or +4 etc). 
- * \returns 1 if spectrum precursor is singly charged or 0 if multiply
- * charged.
+ * \returns SINGLE_STATE_CHARGE if spectrum precursor is singly charged or
+ * MULTIPLE_CHARGE_STATE if multiply charged.
  */
-int choose_charge(FLOAT_T precursor_mz,         ///< m/z of spectrum precursor ion
+CHARGE_STATE_T choose_charge(FLOAT_T precursor_mz,         ///< m/z of spectrum precursor ion
 		  std::vector<Peak*>& peaks); ///< array of spectrum peaks
 
 /**

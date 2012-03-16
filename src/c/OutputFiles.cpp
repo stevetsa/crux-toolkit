@@ -343,7 +343,6 @@ void OutputFiles::writeHeaders(int num_proteins, bool isMixedTargetDecoy){
  */
 void OutputFiles::writeHeaders(const vector<bool>& add_this_col){
 
-  const char* tag = "target";
 
   // write headers one file at a time for tab and sqt
   for(int file_idx = 0; file_idx < num_files_; file_idx++){
@@ -358,7 +357,6 @@ void OutputFiles::writeHeaders(const vector<bool>& add_this_col){
       xml_file_array_[file_idx]->writeHeader();
     }
 
-    tag = "decoy";
   }
 }
 
@@ -583,6 +581,9 @@ void OutputFiles::writeRankedPeptides(PeptideToScore& peptideToScore){
 
   MEASURE_TYPE_T measure_type = get_measure_type_parameter("measure");
   switch (measure_type) {
+    case MEASURE_RAW:
+      score_col = RAW_SCORE_COL;
+      break;
     case MEASURE_SIN:
       score_col = SIN_SCORE_COL;
       break;
@@ -644,6 +645,9 @@ void OutputFiles::writeRankedProteins(ProteinToScore& proteinToScore,
 
   MEASURE_TYPE_T measure_type = get_measure_type_parameter("measure");
   switch (measure_type) {
+    case MEASURE_RAW:
+      score_col = RAW_SCORE_COL;
+      break;
     case MEASURE_SIN:
       score_col = SIN_SCORE_COL;
       break;

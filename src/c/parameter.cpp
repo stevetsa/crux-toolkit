@@ -531,8 +531,9 @@ void initialize_parameters(void){
       "scan number or as a range as in x-y.  Default=search all.",
       "The search range x-y is inclusive of x and y.", "true");
   /* N.B. Use NaN to indicate that no user preference was specified.
-   * In this case, the default value depends on the mass type. */
-  set_double_parameter("mz-bin-width", NaN(), 0.0, BILLION,
+   * In this case, the default value depends on the mass type.
+   * S.M. Also prevent a width of 0.                                */
+  set_double_parameter("mz-bin-width", NaN(), 1e-4, BILLION,
       "Specify the width of the bins used to "
       "discretize the m/z axis.  Also used as tolerance for assigning "
       "ions.  Default=1.0005079 for monoisotopic mass "
@@ -890,10 +891,13 @@ void initialize_parameters(void){
        "this will be ignored.",
        "true");
   set_measure_type_parameter("measure", MEASURE_NSAF,
-       "Type of analysis to make on the match results: (NSAF|SIN|EMPAI). "
+       "Type of analysis to make on the match results: "
+       "(RAW|NSAF|dNSAF|SIN|EMPAI). "
        "Default=NSAF. ", 
-       "Available for spectral-counts.  NSAF is Normalized Spectral "
-       "Abundance Factor, SIN is Spectral Index Normalized and EMPAI is "
+       "Available for spectral-counts.  RAW is raw counts, "
+       "NSAF is Normalized Spectral Abundance Factor, "
+       "dNSAF is Distributed Spectral Abundance Factor, "
+       "SIN is Spectral Index Normalized and EMPAI is "
        "Exponentially Modified Protein Abundance Index",
        "true");
   set_boolean_parameter("unique-mapping", false,

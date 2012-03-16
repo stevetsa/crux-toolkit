@@ -295,7 +295,6 @@ bool Spectrum::parseMgf
   bool title_found = false;
   bool charge_found = false;
   bool pepmass_found = false;
-  bool peaks_found = false;
   bool end_found = false;
   bool scans_found = false;
 
@@ -377,7 +376,6 @@ bool Spectrum::parseMgf
     } else if (isdigit(new_line_str.at(0))) {
 
       //no more header lines, peak information is up
-      peaks_found = true;
       break;
 
     } else if (strcmp(new_line, "END IONS") == 0) {
@@ -517,7 +515,6 @@ bool Spectrum::parseMs2
   FLOAT_T location_mz;
   FLOAT_T intensity;
   bool record_S = false; // check's if it read S line
-  bool record_Z = false; // check's if it read Z line
   bool start_addPeaks = false; // check's if it started reading peaks
   bool file_format = false; // is the file format correct so far
   
@@ -532,7 +529,7 @@ bool Spectrum::parseMs2
              new_line[0] == 'D' )){
       file_format = false;
       carp(CARP_ERROR, 
-           "Incorrect order of line (S,Z, Peaks)\n"
+           "Incorrect order of Line (S,Z, Peaks)\n"
            "At line: %s", 
            new_line);
       break; // File format incorrect
@@ -547,7 +544,6 @@ bool Spectrum::parseMs2
     }
     // Reads the 'Z' line 
     else if(new_line[0] == 'Z'){
-      record_Z = true;
       if(!this->parseZLine(new_line)){
         file_format = false;
         break; // File format incorrect
@@ -572,6 +568,7 @@ bool Spectrum::parseMs2
     
     // Stops, when encounters the start of next spectrum 'S' line
     else if(new_line[0] == 'S' && start_addPeaks){ // start of next spectrum
+      carp(CARP_DEBUG, "Done parsing spectrum");
       break;
     }
 
@@ -582,7 +579,7 @@ bool Spectrum::parseMs2
             new_line[0] != '\n')
       {
         // checks if the peaks are in correct order of lines
-        if((!record_Z || !record_S)){
+        if((!record_S)){
           file_format = false;
           carp(CARP_ERROR,
                "Incorrect order of line (S,Z, Peaks)\n"
@@ -611,16 +608,16 @@ bool Spectrum::parseMs2
           file_format = false;
           carp(CARP_ERROR,
                "Incorrect peak line\n"
-               "At line: %s", 
+               "At line: '%s", 
                new_line);
           break; // File format incorrect
         }
         // Reads the 'peak' lines, only if 'Z','S' line has been read
         #ifdef USE_DOUBLES
-        else if(record_Z && record_S &&
+        else if(record_S &&
                 (sscanf(new_line,"%lf %lf", &location_mz, &intensity) == 2))
         #else
-        else if(record_Z && record_S &&
+        else if(record_S &&
                 (sscanf(new_line,"%f %f", &location_mz, &intensity) == 2))
         #endif
         {
@@ -628,11 +625,17 @@ bool Spectrum::parseMs2
           start_addPeaks = true;
           this->addPeak(intensity, location_mz);
         }
+	  
       }
     // *************************
     file_index = ftell(file); // updates the current working line location
   }
 
+  if (record_S && file_format) {
+     if(getNumZStates()==0){
+       assignZState();
+     }
+  } 
   // set the file pointer back to the start of the next 's' line
   fseek(file, file_index, SEEK_SET);
   myfree(new_line);
@@ -652,7 +655,6 @@ bool Spectrum::parseMs2
   }
   return true;
 }
-
 /**
  * Parses the 'S' line of the a spectrum
  * \returns true if success. false is failure.
@@ -911,25 +913,7 @@ bool Spectrum::parseMstoolkitSpectrum
       zstates_.push_back(zstate);
     }
   } else { // if no charge states detected, decide based on spectrum
-    int charge = choose_charge(precursor_mz_, peaks_);
-
-    // add either +1 or +2, +3
-    
-    if( charge == 1 ){
-      SpectrumZState zstate;
-      zstate.setMZ(precursor_mz_, 1);
-      zstates_.push_back(zstate);
-
-    } else if( charge == 0 ){
-      SpectrumZState zstate;
-      zstate.setMZ(precursor_mz_, 2);
-      zstates_.push_back(zstate);
-      zstate.setMZ(precursor_mz_, 3);
-      zstates_.push_back(zstate);
-    } else {
-      carp(CARP_ERROR, "Could not determine charge state for spectrum %d.", 
-           first_scan_);
-    }
+    assignZState(); 
   }
 
   return true;
@@ -1261,7 +1245,7 @@ void Spectrum::rankPeaks()
  * came from or an empty string, if filename is unavailable.
  */
 const char* Spectrum::getFilename(){
-
+  
   if( filename_.empty() ){
     return "";
   }
@@ -1279,6 +1263,37 @@ const char* Spectrum::getFilename(){
   }
 
   return stripped_filename_.c_str();
+}
+
+/**
+ * \Determine charge state for a spectrum without Z line 
+ * /return true if it can determine cahrge state and return false if it can't create z line 
+ */
+bool Spectrum::assignZState(){
+  carp_once(CARP_WARNING,
+       "Spectrum %i has no charge state.\nCalculating charge",
+       first_scan_);
+  
+  CHARGE_STATE_T charge = choose_charge(precursor_mz_, peaks_);
+  SpectrumZState zstate;
+  switch(charge){
+  case SINGLE_CHARGE_STATE:
+    zstate.setMZ(precursor_mz_, 1);
+    zstates_.push_back(zstate);
+    return true; 
+  case MULTIPLE_CHARGE_STATE:
+    zstate.setMZ(precursor_mz_, 2);
+    zstates_.push_back(zstate);
+    zstate.setMZ(precursor_mz_, 3);
+    zstates_.push_back(zstate);
+    return true;    
+  case INVALID_CHARGE_STATE: 
+  case NUMBER_CHARGE_STATE:
+    carp(CARP_ERROR, "Could not determine charge state for spectrum %d.", 
+	 first_scan_);
+    return false; 
+ }
+  return true; 
 }
 
 /*
