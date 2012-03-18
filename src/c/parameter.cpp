@@ -19,7 +19,7 @@ using namespace std;
 /**
  * Starting location for zeroth m/z bin.
  */
-static const FLOAT_T SMART_MZ_OFFSET = 0.68;
+static const FLOAT_T SMART_MZ_OFFSET = 0.0;//68;
 
 /*
  * Global variables

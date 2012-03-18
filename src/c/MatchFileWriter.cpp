@@ -201,6 +201,12 @@ void MatchFileWriter::addColumnNames(CruxApplication* application, bool has_deco
 
   case XLINK_SEARCH_COMMAND:
     if ( !get_boolean_parameter("use-old-xlink")) {
+      if (get_boolean_parameter("compute-sp")) {
+        addColumnName(SP_SCORE_COL);
+        addColumnName(SP_RANK_COL);
+        addColumnName(BY_IONS_MATCHED_COL);
+        addColumnName(BY_IONS_TOTAL_COL);
+      }
       addColumnName(PVALUE_COL);
       addColumnName(ETA_COL);
       addColumnName(BETA_COL);

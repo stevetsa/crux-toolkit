@@ -176,14 +176,14 @@ void XLinkPeptide::addLinkablePeptides(double min_mass, double max_mass,
     
     char* seq= get_peptide_modified_sequence_with_masses(peptide, FALSE);
 
-    cerr <<"Finding sites for :"<<seq<<":";
+    //cerr <<"Finding sites for :"<<seq<<":";
 
     free(seq);
     
     XLinkablePeptide::findLinkSites(peptide, bondmap, link_sites);
 
-    cerr << link_sites.size() << " missed cleavages:";
-    cerr << get_peptide_missed_cleavage_sites(peptide)<<endl;
+    //cerr << link_sites.size() << " missed cleavages:";
+    //cerr << get_peptide_missed_cleavage_sites(peptide)<<endl;
 
     if (link_sites.size() > 0) {
       XLinkablePeptide xlinkable_peptide(peptide, link_sites);
@@ -206,7 +206,8 @@ void XLinkPeptide::addCandidates(
   Database* database,
   PEPTIDE_MOD_T** peptide_mods,
   int num_peptide_mods,
-  XLinkMatchCollection& candidates) {
+  XLinkMatchCollection& candidates
+  ) {
 
   //get all linkable peptides up to mass-linkermass.
 
@@ -272,24 +273,26 @@ void XLinkPeptide::addCandidates(
   
   while(first_idx < linkable_peptides.size()-1) {
     //cerr<<"first:"<<first_idx;
-    FLOAT_T first_mass = linkable_peptides[first_idx].getMass() + linker_mass_;
+    FLOAT_T first_mass = linkable_peptides.at(first_idx).getMass() + linker_mass_;
     //cerr<<" mass:"<<first_mass<<endl;
     last_idx = linkable_peptides.size()-1;
     //cerr<<"last:"<<last_idx<<endl;
     FLOAT_T current_mass = first_mass + 
-      linkable_peptides[last_idx].getMass();
+      linkable_peptides.at(last_idx).getMass();
     //cerr<<"current_mass:"<<current_mass<<endl;
-    while (first_idx <= last_idx && current_mass > max_mass) {
+    while ((last_idx > 0) && (first_idx <= last_idx) && (current_mass > max_mass)) {
       last_idx--;
-      current_mass = first_mass + linkable_peptides[last_idx].getMass();
+      //cerr << "new last:" << last_idx << endl;
+      current_mass = first_mass + linkable_peptides.at(last_idx).getMass();
+      //cerr << "new current:" << current_mass << endl;
     }
 
     if (first_idx >= last_idx) break;  //we are done.
 
     while (first_idx <= last_idx && current_mass >= min_mass) {
-      cerr<<"Adding links for peptides:"<<first_idx<<":"<<last_idx<<endl;
-      XLinkablePeptide& pep1 = linkable_peptides[first_idx];
-      XLinkablePeptide& pep2 = linkable_peptides[last_idx];
+      //cerr<<"Adding links for peptides:"<<first_idx<<":"<<last_idx<<endl;
+      XLinkablePeptide& pep1 = linkable_peptides.at(first_idx);
+      XLinkablePeptide& pep2 = linkable_peptides.at(last_idx);
 
       //carp(CARP_INFO,"Generating xlink candidates");
 
@@ -317,7 +320,7 @@ void XLinkPeptide::addCandidates(
       if (last_idx > 0) {
         last_idx--;
         current_mass = first_mass + linkable_peptides[last_idx].getMass();
-        carp(CARP_INFO,"Decremented last to:%d",last_idx);
+        //carp(CARP_INFO,"Decremented last to:%d",last_idx);
       } else {
         break;
       }

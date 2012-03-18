@@ -21,7 +21,7 @@
 #include "Barista.h"
 #include "PrintProcessedSpectra.h"
 #include "SearchForXLinks.h"
-#include "ExtractScanNeutralMass.h"
+//#include "ExtractScanNeutralMass.h"
 #include "ExtractColumns.h"
 #include "FilterSpectraByFragments.h"
 #include "SpectralCounts.h"
@@ -52,7 +52,7 @@ int main(int argc, char** argv){
 
   applications.add(new SearchForXLinks());
   applications.add(new FilterSpectraByFragments());
-  applications.add(new ExtractScanNeutralMass());
+  //applications.add(new ExtractScanNeutralMass());
 
   applications.add(new SpectralCounts());
 

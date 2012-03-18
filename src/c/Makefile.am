@@ -61,8 +61,6 @@ LIBFILES= \
   DelimitedFileReader.h \
   DelimitedFileWriter.cpp \
   DelimitedFileWriter.h \
-  ExtractScanNeutralMass.cpp \
-  ExtractScanNeutralMass.h \
   ExtractColumns.cpp \
   ExtractColumns.h \
   ExtractRows.cpp \

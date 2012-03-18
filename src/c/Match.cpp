@@ -946,7 +946,7 @@ void Match::printTab(
   int      num_matches            ///< num matches in spectrum -in
   ){
 
-  carp(CARP_INFO, "Match::printTab: begin.");
+  carp(CARP_DEBUG, "Match::printTab: begin.");
 
   // Usually because no decoy file to print to.
   if( output_file == NULL ){ 
@@ -959,7 +959,7 @@ void Match::printTab(
   // Print tab delimited fields
   int column_idx;
   for (column_idx = 0; column_idx < NUMBER_MATCH_COLUMNS; column_idx++) {
-    carp(CARP_INFO,"print col:%i:%i",column_idx,NUMBER_MATCH_COLUMNS);
+    carp(CARP_DEBUG, "print col:%i:%i", column_idx,NUMBER_MATCH_COLUMNS);
     printOneMatchField(column_idx, 
                           collection,
                           output_file,
@@ -971,7 +971,7 @@ void Match::printTab(
   }
   
   output_file->writeRow();
-  carp(CARP_INFO, "Match::printTab done.");
+  carp(CARP_DEBUG, "Match::printTab done.");
 }
 
 /**

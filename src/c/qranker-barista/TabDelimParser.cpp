@@ -483,34 +483,35 @@ int TabDelimParser :: run(vector<string> &filenames)
  * 1. charge  
  * 2. spectrum precursor m/z  
  * 3. spectrum neutral mass   
- * 4. peptide mass mono       
- * 5. peptide mass average    
- * 6. mass error(ppm) 
- * 7. sp score        
- * 8. sp rank 
- * 9. b/y ions matched        
- * 10. b/y ions total  
- * 11. xcorr score     
- * 12. xcorr rank      
- * 13. p-value 
- * 14. matches/spectrum        
- * 15. sequence        
- * 16. protein id(loc) 1       
- * 17. protein id(loc) 2
+ * 4. peptide mass
+ * 5. delta_cn
+ * 6. sp score
+ * 7. sp rank
+ * 8. xcorr score
+ * 9. xcorr rank
+ * 10. p-value
+ * 11. b/y ions matched
+ * 12. b/y ions total
+ * 13. matches/spectrum
+ * 14. sequence
+ * 15. cleavage type 
+ * 16. protein id
+ * 17. flanking aa
  */
+
 const static int scan_idx=0;
 const static int charge_idx=1;
 const static int spectrum_mz_idx=2;
 const static int spectrum_mass_idx=3;
 const static int peptide_mass_idx=4;
-const static int sp_score_idx=7;
-const static int sp_rank_idx=8;
-const static int by_matched_idx=9;
-const static int by_total_idx=10;
-const static int xcorr_idx=11;
-const static int pvalue_idx=13;
-const static int matches_idx=14;
-const static int sequence_idx=15;
+const static int sp_score_idx=6;
+const static int sp_rank_idx=7;
+const static int by_matched_idx=11;
+const static int by_total_idx=12;
+const static int xcorr_idx=8;
+const static int pvalue_idx=10;
+const static int matches_idx=13;
+const static int sequence_idx=14;
 
 
 

@@ -151,8 +151,8 @@ void XLinkMatch::printOneMatchField(
   int      b_y_matched             ///< Number of b/y ions matched. -in
 ) {
 
-  cerr <<"XLinkMatch::printOneMatchField:";
-  cerr <<get_column_header(column_idx)<<endl;
+  //cerr <<"XLinkMatch::printOneMatchField:";
+  //cerr <<get_column_header(column_idx)<<endl;
   switch ((MATCH_COLUMNS_T)column_idx) {
 
   case PEPTIDE_MASS_COL:

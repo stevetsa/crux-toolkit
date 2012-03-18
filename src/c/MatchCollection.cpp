@@ -2041,7 +2041,7 @@ bool MatchCollection::printTabDelimited(
     // print if we haven't reached the limit
     // or if we are at the limit but this match is a tie with the last
     if( count < top_match || last_rank == cur_rank ){
-      cerr <<"match->printTab()"<<endl;
+      //cerr <<"match->printTab()"<<endl;
       match->printTab(this, output, scan_num, 
                       spectrum_precursor_mz, 
                       num_matches);
