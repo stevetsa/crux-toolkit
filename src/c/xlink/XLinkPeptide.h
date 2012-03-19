@@ -73,6 +73,9 @@ class XLinkPeptide : public XLinkMatch {
   virtual int getNumMissedCleavages();
 
   virtual bool isModified();
+
+  virtual std::string getProteinIdString();
+
 };
 
 

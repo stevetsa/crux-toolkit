@@ -571,3 +571,27 @@ bool XLinkPeptide::isModified() {
 
   return linked_peptides_[0].isModified() || linked_peptides_[1].isModified();
 }
+
+string XLinkPeptide::getProteinIdString() {
+
+  ostringstream oss;
+
+  PEPTIDE_T* peptide = this -> getPeptide(0);
+
+  if (peptide == NULL) {
+    carp(CARP_FATAL, "XLinkPeptide : Null first peptide!");
+  } else {
+    oss << XLink::get_protein_ids_locations(peptide);
+  }
+  oss << ";";
+
+  peptide = this -> getPeptide(1);
+
+  if (peptide == NULL) {
+    carp(CARP_FATAL, "XLinkPeptide : Null second peptide!");
+  } else {
+    oss << XLink::get_protein_ids_locations(peptide);
+  }
+
+  return oss.str();
+}

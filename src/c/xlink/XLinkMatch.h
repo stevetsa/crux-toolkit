@@ -28,6 +28,7 @@ class XLinkMatch : public Match {
   FLOAT_T pvalue_;
   bool mass_calculated_[NUMBER_MASS_TYPES];
   FLOAT_T mass_[NUMBER_MASS_TYPES];
+
  public:
   XLinkMatch();
 
@@ -66,7 +67,7 @@ class XLinkMatch : public Match {
   static std::string getResultHeader();
   std::string getResultString();
   FLOAT_T getPPMError();
-  std::string getProteinIdString(int peptide_idx);
+  virtual std::string getProteinIdString();
   void setParent(XLinkMatchCollection* parent);
 
   /**

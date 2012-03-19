@@ -47,8 +47,8 @@ int XLinkMatch::getBYIonsTotal() {
   return by_ions_total_;
 }
 
-string XLinkMatch::getProteinIdString(int peptide_idx) {
-  PEPTIDE_T* peptide = this -> getPeptide(peptide_idx);
+string XLinkMatch::getProteinIdString() {
+  PEPTIDE_T* peptide = this -> getPeptide(0);
 
   if (peptide == NULL) {
     return string("");
@@ -127,8 +127,8 @@ std::string XLinkMatch::getResultString() {
      << pvalue_ << "\t"
 //     << parent_->getExperimentSize() << "\t"
      << this->getSequenceString() << "\t"
-     << this->getProteinIdString(0) << "\t"   //protein id(loc) 1
-     << this->getProteinIdString(1);  //protein id(loc) 2
+     << this->getProteinIdString() << "\t"   //protein id(loc) 1
+     << this->getProteinIdString();  //protein id(loc) 2
   string out_string = ss.str();
   return out_string;
 }
@@ -166,8 +166,9 @@ void XLinkMatch::printOneMatchField(
       getSequenceString());
     break;
   case PROTEIN_ID_COL:
-    output_file->setColumnCurrentRow((MATCH_COLUMNS_T)column_idx, 
-      getProteinIdString(0)); //TODO - fix this.
+    output_file->setColumnCurrentRow(
+      (MATCH_COLUMNS_T)column_idx, 
+      getProteinIdString()); 
     break;
   case FLANKING_AA_COL:
     break;

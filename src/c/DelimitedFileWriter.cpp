@@ -105,7 +105,7 @@ void DelimitedFileWriter::setColumnNames(const vector<string>& names){
  * least as many fields as there are column headers.
  */
 void DelimitedFileWriter::writeRow(){
-  cerr <<"DelimitedFileWrite::writeRow() start"<<endl;
+  //cerr <<"DelimitedFileWrite::writeRow() start"<<endl;
   if( current_row_.empty() ){
     cerr <<"current row is empty???"<<endl;
     return;
