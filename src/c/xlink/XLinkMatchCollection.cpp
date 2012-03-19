@@ -301,9 +301,16 @@ void XLinkMatchCollection::fitWeibull() {
   correlation_=0;
 
   FLOAT_T* xcorrs = extractScores(XCORR);
+// reverse sort the scores
+
+  //cerr << num_xcorrs_ << ":" << match_total_ << endl;
+
+  std::sort(xcorrs, xcorrs + getMatchTotal(), compareDescending());
 
   double fraction_to_fit = get_double_parameter("fraction-top-scores-to-fit");
   int num_tail_samples = (int)(getMatchTotal() * fraction_to_fit);
+
+  //cerr << num_tail_samples << endl;
 
   fit_three_parameter_weibull(xcorrs,
 			      num_tail_samples,
@@ -317,9 +324,12 @@ void XLinkMatchCollection::fitWeibull() {
 			      &shift_,
 			      &correlation_);
 
-  cerr <<eta_<<":"<<beta_<<":"<<shift_<<":"<<correlation_<<endl;
+  //cerr <<eta_<<":"<<beta_<<":"<<shift_<<":"<<correlation_<<endl;
 
   myfree(xcorrs);
+
+  //exit(-1);
+
 }
 
 void XLinkMatchCollection::computeWeibullPValue(
