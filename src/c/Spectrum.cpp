@@ -678,7 +678,10 @@ bool Spectrum::parseMs2
         {
           file_format = true;
           start_addPeaks = true;
-          this->addPeak(intensity, location_mz);
+
+          if (intensity > 0) {
+            this->addPeak(intensity, location_mz);
+          }
         }
       }
     // *************************

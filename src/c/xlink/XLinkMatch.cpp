@@ -29,6 +29,8 @@ void XLinkMatch::computeWeibullPvalue(
   FLOAT_T beta) {
 
   pvalue_ = compute_weibull_pvalue(getScore(XCORR), eta, beta, shift);
+  cerr <<"eta:"<<eta<<" beta:"<<beta<<" shift:"<<shift<<endl;
+  cerr <<"xcorr:"<<getScore(XCORR)<<" pvalue:"<<pvalue_<<endl;
 }
 
 void XLinkMatch::setBYIonsMatched(int by_ions_matched) {

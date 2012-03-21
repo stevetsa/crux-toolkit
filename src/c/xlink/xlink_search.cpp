@@ -205,6 +205,8 @@ int SearchForXLinks::xlink_search_main() {
     decoy_candidates.setRanks();
     */
     
+    target_candidates->sort(XCORR);
+
 
     int nprint = min(top_match,target_candidates->getMatchTotal());
 
@@ -219,11 +221,13 @@ int SearchForXLinks::xlink_search_main() {
 
     carp(CARP_INFO,"Calculating %d decoy p-valuess", nprint);
 
+    decoy_candidates->sort(XCORR);
+
     for (int idx=0;idx < nprint;idx++) {
       decoy_candidates->computeWeibullPValue(idx);
     }
     
-
+    
 
     //print out
     cerr <<"Printing matches" <<endl;
