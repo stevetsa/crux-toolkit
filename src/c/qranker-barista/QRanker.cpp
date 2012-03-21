@@ -1,12 +1,13 @@
 #include "QRanker.h"
 
-QRanker::QRanker() :  seed(1),selectionfdr(0.01),num_hu(5),mu(0.0005),weightDecay(0.0000)
+QRanker::QRanker() :  seed(1),selectionfdr(0.01),num_hu(3),mu(0.005),weightDecay(0.0000)
 {
 }
 
 QRanker::~QRanker()
 {
 }
+
 
 int QRanker :: getOverFDR(PSMScores &set, NeuralNet &n, double fdr)
 {
@@ -33,6 +34,22 @@ void QRanker :: getMultiFDR(PSMScores &set, NeuralNet &n, vector<double> &qvalue
       featVec = d.psmind2features(set[i].psmind);
       r = n.fprop(featVec);
       set[i].score = r[0];
+    }
+ 
+  for(unsigned int ct = 0; ct < qvalues.size(); ct++)
+    overFDRmulti[ct] = 0;
+  set.calcMultiOverFDR(qvalues, overFDRmulti);
+}
+
+
+void QRanker :: getMultiFDRXCorr(PSMScores &set, vector<double> &qvalues)
+{
+  double* featVec;
+   
+  for(int i = 0; i < set.size(); i++)
+    {
+      featVec = d.psmind2features(set[i].psmind);
+      set[i].score = featVec[0];
     }
  
   for(unsigned int ct = 0; ct < qvalues.size(); ct++)
@@ -426,8 +443,8 @@ void QRanker :: train_many_general_nets()
 {
   interval = trainset.size();
   for(int i=0;i<switch_iter;i++) {
-    //train_net_ranking(trainset, interval);
-    train_net_hybrid(trainset, interval);
+    train_net_ranking(trainset, interval);
+    //train_net_hybrid(trainset, interval);
            
     //record the best result
     getMultiFDR(thresholdset,net,qvals);
@@ -466,6 +483,8 @@ void QRanker :: train_many_target_nets()
       cerr << "training thresh " << thr_count  << "\n";
       interval = getOverFDR(trainset, net, qvals[thr_count]);
       //interval = max_overFDR[thr_count];
+      if(interval < 10)
+	interval = (int)trainset.size()/50;
       //interval = trainset.size()/thr_count;
       for(int i=switch_iter;i<niter;i++) {
 		
@@ -530,15 +549,18 @@ void QRanker::train_many_nets()
     }
   
   //set the linear flag: 1 if linear, 0 otherwise
-  int lf = 0; num_hu = 1;
+  int lf = 0; num_hu = 3;
   if(num_hu == 1)
     lf = 1;
   //set whether there is bias in the linear units: 1 if yes, 0 otherwise
-  int bs = 1;
+  int bs = 0;
   
   net.initialize(d.get_num_features(),num_hu,lf,bs);
   for(int count = 0; count < num_qvals; count++){
     max_net_gen[count] = net;
+  }
+  for(int count = 0; count < num_qvals; count++){
+    max_net_targ[count] = net;
   }
 
   nets = new NeuralNet[2];
@@ -564,7 +586,7 @@ void QRanker::train_many_nets()
   for(int count = 0; count < num_qvals; count++)
     max_net_targ[count] = max_net_gen[count];
 
-  //train_many_target_nets();  
+  train_many_target_nets();  
  
     
   //choose the best net for the selectionfdr
@@ -617,6 +639,7 @@ int QRanker::run( ) {
   cout << s2.str() << endl;
     
   write_results_max(s2.str(),net);
+  
   return 0;
 }
 
@@ -625,11 +648,12 @@ int QRanker::run( ) {
 int QRanker::set_command_line_options(int argc, char **argv)
 {
   vector<string> fnames;
+  string ms2fname;
+  int ms2exists = 0;
   int arg = 1;
 
   switch_iter = 20;
   niter = 40;
-
 
   while(arg < argc)
     {
@@ -654,6 +678,11 @@ int QRanker::set_command_line_options(int argc, char **argv)
             cout << "found wd "<<tmp<<endl;
             weightDecay = atof(tmp.c_str());
           }
+	  else if (str.find("ms2file") != string::npos) {
+            cout << "found ms2file "<<tmp<<endl;
+            ms2fname = tmp;
+	    ms2exists = 1;
+          }
 	}
       else
 	fnames.push_back(argv[arg]);
@@ -664,8 +693,16 @@ int QRanker::set_command_line_options(int argc, char **argv)
 
   string out_dir = "crux-output";
   pars.set_output_dir(out_dir);
-  if(!pars.run_on_xlink(fnames))
-    return 0;
+  if(ms2exists)
+    {
+      if(!pars.run_on_xlink(fnames, ms2fname))
+	return 0;
+    }
+  else
+    {
+      if(!pars.run_on_xlink(fnames))
+	return 0;
+    }
   pars.clear();
   return 1;
 }

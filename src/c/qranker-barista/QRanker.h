@@ -36,6 +36,7 @@ public:
     
     int getOverFDR(PSMScores &set, NeuralNet &n, double fdr);
     void getMultiFDR(PSMScores &set, NeuralNet &n, vector<double> &qval);
+    void getMultiFDRXCorr(PSMScores &set, vector<double> &qval);
     void printNetResults(vector<int> &scores);
     void write_results(string filename, NeuralNet &net);
     void write_results_max(string filename, NeuralNet &net);

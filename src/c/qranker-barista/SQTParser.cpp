@@ -438,6 +438,8 @@ void SQTParser :: extract_features(sqt_match &m, string &decoy_prefix, int hits_
       
       if (num_spec_features > 0)
 	{
+	  //clear out the spec features
+	  memset(xs,0,sizeof(double)*num_spec_features);
 	  ostringstream scan_stream;
 	  scan_stream << m.scan << "." << m.charge;
 	  string scan_str = scan_stream.str();

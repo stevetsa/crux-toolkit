@@ -59,6 +59,7 @@ class SpecFeaturesGenerator
    */
   //void get_spec_features_m3(string &spec, string &peptide, double *features);
   void get_spec_features_m3(int scan, int ch, string &peptide, double *features);
+  void get_spec_features_m3(int scan, int ch, string &peptide, double *features, int clean);
   void get_spec_features_m6(int scan, int ch, string &peptide, double *features);
   void get_spec_features_m7(int scan, int ch, string &peptide, double *features);
 

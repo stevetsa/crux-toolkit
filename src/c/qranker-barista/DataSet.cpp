@@ -268,7 +268,7 @@ void Dataset :: load_psm_data_for_training()
   f_summary >> num_neg_psms;
   f_summary.close();
   fname.str("");
-
+  
   //psm features
   long begin,end;
   fname << in_dir << "/psm.txt";
@@ -534,7 +534,7 @@ void Dataset :: normalize_psms()
 	{
 	  sm += psmind_to_features[num_features*j+i]*psmind_to_features[num_features*j+i];
 	}
-      //cout << i << " " << sm/num_psms << endl;
+      cout << i << " " << sm/num_psms << endl;
     }
 }
 

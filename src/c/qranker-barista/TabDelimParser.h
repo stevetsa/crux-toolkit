@@ -36,6 +36,7 @@ class TabDelimParser{
   void save_data_in_binary(string out_dir);
   void clean_up(string dir);
   /*******************************************************/
+  int run_on_xlink(vector<string> &filenames, string &ms2filename);
   int run_on_xlink(vector<string> &filenames);
   void first_pass_xlink(ifstream &fin);
   void second_pass_xlink(ifstream &fin, int label);
@@ -44,6 +45,10 @@ class TabDelimParser{
   void save_data_in_binary_xlink(string out_dir);
   void clean_up_xlink(string dir);
  protected:
+
+  //spec features generator
+  SpecFeaturesGenerator sfg;
+
   //auxiliary variables
   int num_mixed_labels;
   
@@ -63,6 +68,7 @@ class TabDelimParser{
   
   //summary of the dataset
   int num_features;
+  int num_spec_features;
   int num_psm;
   int num_pos_psm;
   int num_neg_psm;
@@ -74,6 +80,8 @@ class TabDelimParser{
 
   //psm feature vector
   double *x;
+  //spec feature vector
+  double *xs;
 
   //writing out data
   string out_dir;
