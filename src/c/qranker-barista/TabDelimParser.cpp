@@ -206,9 +206,9 @@ void TabDelimParser :: extract_xlink_features(vector<string> & tokens, double *x
   //  x[2] = -log(atof(tokens[pvalue_idx].c_str()));
   
   //difference between measured and calculated mass
-  x[3] = atof(tokens[spectrum_mass_idx].c_str())-atof(tokens[peptide_mass_idx].c_str());
+  //x[3] = atof(tokens[spectrum_mass_idx].c_str())-atof(tokens[peptide_mass_idx].c_str());
   // absolute value of difference between measured and calculated mass
-  //x[4] = fabs(atof(tokens[spectrum_mass_idx].c_str())-atof(tokens[peptide_mass_idx].c_str()));
+  x[4] = fabs(atof(tokens[spectrum_mass_idx].c_str())-atof(tokens[peptide_mass_idx].c_str()));
   //sp score
   x[5] = atof(tokens[sp_score_idx].c_str());
   //matched ions/predicted ions
@@ -216,7 +216,7 @@ void TabDelimParser :: extract_xlink_features(vector<string> & tokens, double *x
   if(atof(tokens[by_total_idx].c_str()) != 0)
     x[6] = atof(tokens[by_matched_idx].c_str())/atof(tokens[by_total_idx].c_str());
   //observed mass
-  //x[7] = atof(tokens[spectrum_mass_idx].c_str());
+  x[7] = atof(tokens[spectrum_mass_idx].c_str());
   //charge
   x[8] = atof(tokens[charge_idx].c_str());
   // number of sequence_comparisons
@@ -242,12 +242,11 @@ void TabDelimParser :: second_pass_xlink(ifstream &fin, int label)
     {
       getline(fin,line);
       get_tokens(line, tokens, delim1);
-  
-      //get the scan and the charge
-      int scan = atoi(tokens[0].c_str());
-      int charge = atoi(tokens[1].c_str());
       if(tokens.size() > 1)
 	{
+	  //get the scan and the charge
+	  int scan = atoi(tokens[0].c_str());
+	  int charge = atoi(tokens[1].c_str());
 	  //extract features
 	  extract_xlink_features(tokens, x);
 	  f_psm.write((char*)x, sizeof(double)*num_xlink_features);
@@ -280,7 +279,7 @@ void TabDelimParser :: second_pass_xlink(ifstream &fin, int label)
   
 	  //record charge and scan
 	  psmind_to_scan[psmind] = scan;
-	  psmind_to_charge[psmind] = 
+	  psmind_to_charge[psmind] = charge;
 
 	  psmind_to_label[psmind] = label;
 	  if(label == 1)
@@ -354,7 +353,7 @@ void TabDelimParser :: save_data_in_binary_xlink(string out_dir)
   f_psmind_to_loc.close();
   fname.str("");
 
-  //psmind_to_peptide1
+  //psmind_to_protein1
   fname << out_dir << "/psmind_to_protein1.txt";
   ofstream f_psmind_to_protein1(fname.str().c_str(),ios::binary);
   for(map<int,string>::iterator it = psmind_to_protein1.begin(); it != psmind_to_protein1.end(); it++)
@@ -362,7 +361,7 @@ void TabDelimParser :: save_data_in_binary_xlink(string out_dir)
   f_psmind_to_protein1.close();
   fname.str("");
   
-  //psmind_to_peptide2
+  //psmind_to_protein2
   fname << out_dir << "/psmind_to_protein2.txt";
   ofstream f_psmind_to_protein2(fname.str().c_str(),ios::binary);
   for(map<int,string>::iterator it = psmind_to_protein2.begin(); it != psmind_to_protein2.end(); it++)
