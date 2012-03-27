@@ -25,11 +25,24 @@ static const FLOAT_T SMART_MZ_OFFSET = 0.68;
  */
 
 static const char* parameter_type_strings[NUMBER_PARAMETER_TYPES] = { 
-  "INT_ARG", "DOUBLE_ARG", "STRING_ARG", "MASS_TYPE_T", "DIGEST_T", 
+  "INT_ARG", 
+  "DOUBLE_ARG", 
+  "STRING_ARG", 
+  "MASS_TYPE_T", 
+  "DIGEST_T", 
   "ENZYME_T", 
-  "bool", "SCORER_TYPE_T", "ION_TYPE_T",
-  "HARDKLOR_ALGORITHM_T", "ALGORITHM_TYPE_T", "WINDOW_TYPE_T", "MEASURE_TYPE_T", 
-  "PARSIMONY_TYPE_T", "QUANT_LEVEL_TYPE_T", "DECOY_TYPE_T", "MASS_FORMAT_T"};
+  "bool", 
+  "SCORER_TYPE_T", 
+  "ION_TYPE_T",
+  "HARDKLOR_ALGORITHM_T", 
+  "DEISOTOPE_PEAKS_T", 
+  "ALGORITHM_TYPE_T", 
+  "WINDOW_TYPE_T", 
+  "MEASURE_TYPE_T", 
+  "PARSIMONY_TYPE_T", 
+  "QUANT_LEVEL_TYPE_T", 
+  "DECOY_TYPE_T", 
+  "MASS_FORMAT_T"};
 
 //one hash for parameter values, one for usage statements, one for types
 // all hashes keyed on parameter/option name
@@ -193,6 +206,15 @@ bool set_hardklor_algorithm_type_parameter(
   const char* usage,
   const char* filenotes,
   const char* foruser);
+
+bool set_deisotope_peaks_parameter(
+  const char* name,
+  DEISOTOPE_PEAKS_T set_value,
+  const char* usage,
+  const char* filenotes,
+  const char* foruser);
+
+
 
 bool set_scorer_type_parameter(
  const char* name,
@@ -1279,6 +1301,13 @@ void initialize_parameters(void){
     "output in the same format as the MS/MS input.",
     "Available for crux bullseye", "true");
 
+  /* hk2ms2 parameters */
+  set_deisotope_peaks_parameter("peak-type",  MASS_PLUS_H_DEISOTOPE_PEAKS,
+    "The output peak type. Can either be mono-isotopic mass (mono), "
+    " mono-isotopic mass plus a proton (mph), or mass-to-charge (mz). "
+    "Default mph",
+    "Available for deisotope-ms2", "true");
+
   /* crux-util parameters */
 
   set_boolean_parameter("ascending", true,
@@ -2003,6 +2032,14 @@ bool check_option_type_and_bounds(const char* name){
                         value_str, name);
     }
     break;
+  case DEISOTOPE_PEAKS_TYPE_P:
+    if (string_to_deisotope_peaks(value_str) == INVALID_DEISOTOPE_PEAKS) {
+      success = false;
+      sprintf(die_str, "Illegal value '%s' for option '%s'.  "
+                       "Must be mono, mph, or mz",
+                       value_str, name);
+    }
+    break;
   case ION_TYPE_P:
     carp(CARP_DETAILED_DEBUG, "found ion_type param, value '%s'",
          value_str);
@@ -2563,6 +2600,20 @@ HARDKLOR_ALGORITHM_T get_hardklor_algorithm( const char* name ){
       "the value %s which is not of the correct type.",name,param);
   }
   return hk_algorithm;
+}
+
+DEISOTOPE_PEAKS_T get_deisotope_peaks_parameter( const char* name ){
+
+  char* param = (char*)get_hash_value(parameters, name);
+  
+  DEISOTOPE_PEAKS_T deisotope_peaks = 
+    string_to_deisotope_peaks(param);
+
+  if ( deisotope_peaks == INVALID_DEISOTOPE_PEAKS) {
+    carp(CARP_FATAL, "deisotope peaks parameter %s has "
+      "the value %s which is not of the correct type.",name,param);
+  }
+  return deisotope_peaks;
 }
 
 
@@ -3183,6 +3234,34 @@ bool set_hardklor_algorithm_type_parameter(
   return result;
   
 }
+
+bool set_deisotope_peaks_parameter(
+  const char* name,
+  DEISOTOPE_PEAKS_T set_value,
+  const char* usage,
+  const char* filenotes,
+  const char* foruser) {
+
+  bool result = true;
+  
+  // check if parameters can be changed
+  if(!parameter_plasticity){
+    carp(CARP_ERROR, "can't change parameters once they are confirmed");
+    return false;
+  }
+  /* stringify value */
+  char* value_str = deisotope_peaks_to_string(set_value);
+  carp(CARP_DETAILED_DEBUG, "setting deistope peak type to %s", value_str);  
+
+  result = add_or_update_hash(parameters, name, value_str);
+  result = add_or_update_hash(usages, name, usage);
+  result = add_or_update_hash(file_notes, name, filenotes);
+  result = add_or_update_hash(for_users, name, foruser);
+  result = add_or_update_hash(types, name, (void*)"DEISTOPE_PEAKS_T");
+  return result;
+  
+}
+
 
 
 bool set_scorer_type_parameter(

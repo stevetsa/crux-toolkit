@@ -554,6 +554,16 @@ enum _hardklor_algorithm {INVALID_HK_ALGORITHM,
 typedef enum _hardklor_algorithm HARDKLOR_ALGORITHM_T;
 
 /**
+ * the enum for the hk2ms2 peak output type
+ */
+enum DEISOTOPE_PEAKS_T {INVALID_DEISOTOPE_PEAKS,
+                        MONOISOTOPIC_DEISOTOPE_PEAKS,
+                        MASS_PLUS_H_DEISOTOPE_PEAKS,
+                        MASS_TO_CHARGE_DEISOTOPE_PEAKS,
+                        NUMBER_DEISOTOPE_PEAKS };
+
+
+/**
  * One value for each command that can be passed to crux
  * (e.g. search-for-matches, sequest-search, percolator).
  */

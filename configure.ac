@@ -129,6 +129,7 @@ AC_CONFIG_FILES([\
     src/c/xlink/Makefile \
     src/c/hardklor/Makefile \
     src/c/bullseye/Makefile \
+    src/c/hk2ms2/Makefile \
     src/python/Makefile \
     src/external/Makefile
 ])

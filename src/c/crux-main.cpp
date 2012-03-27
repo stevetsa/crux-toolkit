@@ -33,6 +33,7 @@
 #include "SortColumn.h"
 #include "CruxHardklorApplication.h"
 #include "CruxBullseyeApplication.h"
+#include "CruxHK2MS2Application.h"
 
 /**
  * The starting point for crux.  Prints a general usage statement when
@@ -69,6 +70,7 @@ int main(int argc, char** argv){
   applications.add(new GeneratePeptides());
   applications.add(new PredictPeptideIons());
   applications.add(new GetMs2Spectrum());
+  applications.add(new CruxHK2MS2Application());
 
   // delimited file utilities
   applications.add(new ExtractColumns());

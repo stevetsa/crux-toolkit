@@ -417,6 +417,9 @@ HARDKLOR_ALGORITHM_T string_to_hardklor_algorithm_type(char* name);
 char* hardklor_algorithm_type_to_string(HARDKLOR_ALGORITHM_T type);
 char* hardklor_hardklor_algorithm_type_to_string(HARDKLOR_ALGORITHM_T type);
 
+DEISOTOPE_PEAKS_T string_to_deisotope_peaks(char *name);
+char* deisotope_peaks_to_string(DEISOTOPE_PEAKS_T type);
+
 
 /**
  * \brief Open either the index or fasta file and prepare it for

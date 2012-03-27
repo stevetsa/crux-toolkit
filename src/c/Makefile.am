@@ -1,6 +1,6 @@
 distdir = $(PACKAGE)_$(VERSION)
 
-SUBDIRS = ArrayLibrary percolator xlink posterior-error qranker-barista hardklor bullseye .
+SUBDIRS = ArrayLibrary percolator xlink posterior-error qranker-barista hardklor bullseye hk2ms2 .
 
 # Crux can use either single or double precision floating poinnt.
 if USEDOUBLES
@@ -203,6 +203,7 @@ libcrux_la_CXXFLAGS = \
   -I$(top_srcdir)/src/c/posterior-error/ \
   -I$(top_srcdir)/src/c/hardklor/ \
   -I$(top_srcdir)/src/c/bullseye/ \
+  -I$(top_srcdir)/src/c/hk2ms2/ \
   -I$(top_srcdir)/src/external/
 
 libcrux_la_SOURCES = $(LIBFILES)
@@ -225,7 +226,8 @@ crux_CXXFLAGS = \
   -I$(top_srcdir)/src/c/xlink \
   -I$(top_srcdir)/src/c/qranker-barista \
   -I$(top_srcdir)/src/c/hardklor \
-  -I$(top_srcdir)/src/c/bullseye
+  -I$(top_srcdir)/src/c/bullseye \
+  -I$(top_srcdir)/src/c/hk2ms2
 
 crux_LDADD = \
   $(AM_LDFLAGS) \
@@ -241,10 +243,12 @@ crux_LDADD = \
   -L$(top_builddir)/src/c/posterior-error \
   -L$(top_builddir)/src/c/hardklor \
   -L$(top_builddir)/src/c/bullseye \
+  -L$(top_builddir)/src/c/hk2ms2 \
   -lpercolator \
   -lqranker_barista \
   -lhardklor \
   -lbullseye \
+  -lhk2ms2 \
   -lpep \
   -lmstoolkit \
   -lm -lpthread -ldl \

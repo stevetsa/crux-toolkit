@@ -77,6 +77,7 @@ enum parameter_type {
   ION_TYPE_P,        ///< parameters of type ION_TYPE_T
   ALGORITHM_TYPE_P,  ///< parameters of type ALGORITHM_TYPE_T
   HARDKLOR_ALGORITHM_TYPE_P, ///< parameters of type HARDKLOR_ALGORITHM_T
+  DEISOTOPE_PEAKS_TYPE_P, ///<parameters of type DEISOTOPE_PEAKS_T
   WINDOW_TYPE_P,     ///< parameters of type WINDOW_TYPE_T
   MEASURE_TYPE_P,    ///< parameters of type MEASURE_TYPE_T
   PARSIMONY_TYPE_P,  ///< parameters of type PARSIMONY_TYPE_T
@@ -251,6 +252,9 @@ HARDKLOR_ALGORITHM_T get_hardklor_algorithm(
   const char* name
   );
 
+DEISOTOPE_PEAKS_T get_deisotope_peaks_parameter(
+  const char* name
+  );
 
 double get_mz_bin_width();
  

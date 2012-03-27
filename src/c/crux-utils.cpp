@@ -426,6 +426,37 @@ char* hardklor_hardklor_algorithm_type_to_string(
   return type_str;
 }
 
+/**
+ * The string version of DEISOTOPE_PEAKS_T
+ */
+static const char* deisotope_peaks_strings[NUMBER_DEISOTOPE_PEAKS] =
+  {"invalid", "mono","mph","mz"};
+
+DEISOTOPE_PEAKS_T string_to_deisotope_peaks(
+  char* name
+  ) {
+
+  int deisotope_peaks = convert_enum_type_str(name, INVALID_ENUM_STRING,
+    deisotope_peaks_strings, NUMBER_DEISOTOPE_PEAKS);
+
+  if (deisotope_peaks < 0) {
+    deisotope_peaks = 0;
+  }
+
+  return (DEISOTOPE_PEAKS_T)deisotope_peaks;
+
+}
+
+char* deisotope_peaks_to_string(
+  DEISOTOPE_PEAKS_T type
+  ) {
+
+  char* type_str = my_copy_string(deisotope_peaks_strings[type]);
+  return type_str;
+
+}
+
+
 /*
  * The string version of SCORER_TYPE_T
  */
