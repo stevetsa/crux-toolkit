@@ -83,13 +83,41 @@ void QRanker :: write_results(string filename, NeuralNet &net)
   thresholdset.clear();
   PSMScores::fillFeaturesFull(fullset, d);
   getOverFDR(fullset,net, qvals[4]);
- 
-  f1 << "psm ind" << "\t" << "q-value" << "\t" << "scan" << "\t" << "charge" << "\t" << "peptide" << endl;
+  
+  int rank = 0;
+  double last_score = -5000;
+
+  d.load_psm_data_for_reporting_results();
+  f1 << "psm ind" << "\t" << "q-value" << "\t" <<"score" << "\t" << "scan" << "\t" << "charge" << "\t" << "label" << "\t" << "rank" << "\t" << "sequence" << endl;
   for(int i = 0; i < fullset.size(); i++)
     {
       int psmind = fullset[i].psmind;
-      int pepind = d.psmind2pepind(psmind);
-      f1 << psmind << "\t" << fullset[i].q << "\t" << d.psmind2scan(psmind) << "\t" << d.psmind2charge(psmind) << "\t" << d.ind2pep(pepind) << endl;
+      int scan = d.psmind2scan(psmind);
+      int charge = d.psmind2charge(psmind);  
+      double score = fullset[i].score;
+      int label = fullset[i].label;
+  
+      if (score != last_score) {
+        rank = (i+1);
+        last_score = score;
+      }
+
+      ostringstream oss;
+      if (label == 1) {
+        oss << d.psmind2peptide1(psmind);
+        if(string(d.psmind2peptide2(psmind)) != "") {
+          oss << "," << d.psmind2peptide2(psmind);
+        }
+        if(string(d.psmind2loc(psmind)) != "") {
+          oss << d.psmind2loc(psmind);    
+        }
+     } else {
+       oss << "null";
+     }
+  
+      f1 << psmind << "\t" << fullset[i].q << "\t" << score << "\t" << scan << "\t" << charge << "\t" << label << "\t" << rank << "\t" << oss.str() << endl;
+      
+
     }
   f1.close();
 }
@@ -638,7 +666,7 @@ int QRanker::run( ) {
   s2 << res_prefix;
   cout << s2.str() << endl;
     
-  write_results_max(s2.str(),net);
+  write_results(s2.str(),net);
   
   return 0;
 }
@@ -718,7 +746,7 @@ int QRanker::main(int argc, char **argv) {
   set_output_dir(dir);
   run();
     
-  return 1;
+  return 0;
 }   
 
 
