@@ -109,16 +109,16 @@ const static int charge_idx=1;
 const static int spectrum_mz_idx=2;
 const static int spectrum_mass_idx=3;
 const static int peptide_mass_idx=4;
+const static int delta_cn_idx=5;
+const static int sp_score_idx=6;
+const static int sp_rank_idx=7;
 const static int xcorr_idx=8;
 const static int xcorr_rank=9;
 const static int pvalue_idx=10;
-const static int sequence_idx=14;
-const static int sp_score_idx=7;
-const static int sp_rank_idx=8;
 const static int by_matched_idx=11;
 const static int by_total_idx=12;
 const static int matches_idx=13;
-
+const static int sequence_idx=14;
 
 
 
@@ -194,6 +194,16 @@ void TabDelimParser :: extract_xlink_features(vector<string> & tokens, double *x
 {
   memset(x,0,sizeof(double)*num_xlink_features);
   
+  cerr << "scan:" << tokens[scan_idx] << 
+          " charge:" << tokens[charge_idx] << 
+          " sequence:" << tokens[sequence_idx] << 
+          " xcorr:" << tokens[xcorr_idx] << 
+          " sp:" << tokens[sp_score_idx] <<
+          " sp rank:" << tokens[sp_rank_idx] << 
+          " spectrum mass:" << tokens[spectrum_mass_idx] <<
+          " peptide mass:" << tokens[peptide_mass_idx] << endl;
+
+
   //xcorr score
   x[0] = atof(tokens[xcorr_idx].c_str());
   //x[0] = atof(tokens[pvalue_idx].c_str());

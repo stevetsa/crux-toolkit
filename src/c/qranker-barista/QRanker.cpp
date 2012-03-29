@@ -577,7 +577,7 @@ void QRanker::train_many_nets()
     }
   
   //set the linear flag: 1 if linear, 0 otherwise
-  int lf = 0; num_hu = 3;
+  int lf = 0; 
   if(num_hu == 1)
     lf = 1;
   //set whether there is bias in the linear units: 1 if yes, 0 otherwise
@@ -705,6 +705,9 @@ int QRanker::set_command_line_options(int argc, char **argv)
           } else if (str.find("wd") != string::npos) {
             cout << "found wd "<<tmp<<endl;
             weightDecay = atof(tmp.c_str());
+          } else if (str.find("num-hu") != string::npos) {
+            cout << "found num hu" << tmp << endl;
+            num_hu = atoi(tmp.c_str());
           }
 	  else if (str.find("ms2file") != string::npos) {
             cout << "found ms2file "<<tmp<<endl;
