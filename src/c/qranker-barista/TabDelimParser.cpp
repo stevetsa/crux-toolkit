@@ -141,22 +141,34 @@ void TabDelimParser :: first_pass_xlink(ifstream &fin)
 	  string pep_and_loc = tokens[sequence_idx];
 	  get_tokens(pep_and_loc,subtokens,delim3);
 	  //cout << pep_and_loc << endl;;
-	  //for(int i = 0; i < subtokens.size(); i++)
-	  //cout<< i << " " <<subtokens[i] << endl;
+	  //for(size_t i = 0; i < subtokens.size(); i++)
+          //  cout<< i << " " <<subtokens[i] << endl;
 	  
-	  if(subtokens.size() > 0)
-	    {
-	      string peps = subtokens[0];
-	      get_tokens(peps,peptides,delim2);
-	      if(peptides.size() > 0)
-		psmind_to_peptide1[num_psm] = peptides[0];
-	      if(subtokens.size() > 1)
-		psmind_to_peptide2[num_psm] = subtokens[1];
-	    }
-	  //cout << num_psm << " " << psmind_to_peptide1[num_psm] << " " << psmind_to_peptide2[num_psm] << endl;
-	  if(subtokens.size() > 2)
-	    psmind_to_loc[num_psm] = subtokens[2];
-	  
+          if(subtokens.size() > 0) {
+            if (subtokens.size() == 2) {
+              //it it either a linear peptide or a self loop.
+              psmind_to_peptide1[num_psm] = subtokens[0];
+              psmind_to_peptide2[num_psm] = "_";
+              psmind_to_loc[num_psm] = subtokens[1];
+              //cout << num_psm << endl;
+              //cout << psmind_to_peptide1[num_psm] << endl;
+              //cout << psmind_to_peptide2[num_psm] << endl;
+              //cout << psmind_to_loc[num_psm] << endl;
+            } else if (subtokens.size() == 3) {
+              //it is a crosslinked peptide.
+              //cerr << "parsing cross linked peptide:"<<subtokens[0]<<endl;
+              string pep1 = subtokens.at(0).substr(0,subtokens[0].length()-1);
+              //cerr << "pep1:"<<pep1<<endl;
+              psmind_to_peptide1[num_psm] = pep1;
+              psmind_to_peptide2[num_psm] = subtokens.at(1);
+              psmind_to_loc[num_psm] = subtokens.at(2);
+            } else {
+              cerr << "Error!"<<endl;
+              exit(-1);
+            }
+          
+            
+          }
 	  //proteins
 	  if(tokens[16].size() > 0)
 	    psmind_to_protein1[num_psm] = tokens[16];
@@ -193,7 +205,7 @@ void TabDelimParser :: allocate_feature_space_xlink()
 void TabDelimParser :: extract_xlink_features(vector<string> & tokens, double *x)
 {
   memset(x,0,sizeof(double)*num_xlink_features);
-  
+  /*
   cerr << "scan:" << tokens[scan_idx] << 
           " charge:" << tokens[charge_idx] << 
           " sequence:" << tokens[sequence_idx] << 
@@ -202,7 +214,7 @@ void TabDelimParser :: extract_xlink_features(vector<string> & tokens, double *x
           " sp rank:" << tokens[sp_rank_idx] << 
           " spectrum mass:" << tokens[spectrum_mass_idx] <<
           " peptide mass:" << tokens[peptide_mass_idx] << endl;
-
+  */
 
   //xcorr score
   x[0] = atof(tokens[xcorr_idx].c_str());

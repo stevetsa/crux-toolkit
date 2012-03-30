@@ -300,6 +300,7 @@ void Dataset :: load_psm_data_for_training()
 void Dataset :: load_psm_data_for_reporting_results()
 {
   ostringstream fname;
+  cerr << "summary"<<endl;
   fname << in_dir << "/summary.txt";
   ifstream f_summary(fname.str().c_str());
   f_summary >> num_features;
@@ -308,7 +309,7 @@ void Dataset :: load_psm_data_for_reporting_results()
   f_summary >> num_neg_psms;
   f_summary.close();
   fname.str("");
-
+  cerr << "scan"<<endl;
   //psmind_to_scan
   fname << in_dir << "/psmind_to_scan.txt";
   ifstream f_psmind_to_scan(fname.str().c_str(),ios::binary);
@@ -316,6 +317,7 @@ void Dataset :: load_psm_data_for_reporting_results()
   f_psmind_to_scan.read((char*)psmind_to_scan,sizeof(int)*num_psms);
   f_psmind_to_scan.close();
   fname.str("");
+  cerr <<"charge"<<endl;
   //psmind_to_charge
   fname << in_dir << "/psmind_to_charge.txt";
   ifstream f_psmind_to_charge(fname.str().c_str(),ios::binary);
@@ -324,7 +326,7 @@ void Dataset :: load_psm_data_for_reporting_results()
   f_psmind_to_charge.close();
   fname.str("");
 
-  
+  cerr << "peptide1"<<endl;
   int psmind;
   //psmind_to_peptide1
   fname << in_dir << "/psmind_to_peptide1.txt";
@@ -339,7 +341,7 @@ void Dataset :: load_psm_data_for_reporting_results()
   f_psmind_to_peptide1.close();
   fname.str("");
   
-  
+  cerr << "peptide2"<<endl;
   //psmind_to_peptide2
   fname << in_dir << "/psmind_to_peptide2.txt";
   ifstream f_psmind_to_peptide2(fname.str().c_str(),ios::binary);
@@ -353,6 +355,7 @@ void Dataset :: load_psm_data_for_reporting_results()
   f_psmind_to_peptide2.close();
   fname.str("");
   
+  cerr << "loc"<<endl;
   //psmind_to_loc
   fname << in_dir << "/psmind_to_loc.txt";
   ifstream f_psmind_to_loc(fname.str().c_str(),ios::binary);
@@ -366,7 +369,7 @@ void Dataset :: load_psm_data_for_reporting_results()
   f_psmind_to_loc.close();
   fname.str("");
 
-  
+  cerr <<"psmind_to_protein1"<<endl;
   //psmind_to_protein1
   fname << in_dir << "/psmind_to_protein1.txt";
   ifstream f_psmind_to_protein1(fname.str().c_str(),ios::binary);
@@ -380,6 +383,7 @@ void Dataset :: load_psm_data_for_reporting_results()
   f_psmind_to_protein1.close();
   fname.str("");
   
+  cerr <<"psmind_to_protein2"<<endl;
   //psmind_to_protein2
   fname << in_dir << "/psmind_to_protein2.txt";
   ifstream f_psmind_to_protein2(fname.str().c_str(),ios::binary);
@@ -395,7 +399,7 @@ void Dataset :: load_psm_data_for_reporting_results()
   
     f_psmind_to_protein2.close();
   fname.str("");
-  
+  cerr << "Done!"<<endl;
 }
 
 

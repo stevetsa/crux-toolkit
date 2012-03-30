@@ -86,11 +86,13 @@ void QRanker :: write_results(string filename, NeuralNet &net)
   
   int rank = 0;
   double last_score = -5000;
-
+  //cerr << "Loading data for reporting results"<<endl;
   d.load_psm_data_for_reporting_results();
+  //cerr << "Writing results" <<endl;
   f1 << "psm ind" << "\t" << "q-value" << "\t" <<"score" << "\t" << "scan" << "\t" << "charge" << "\t" << "label" << "\t" << "rank" << "\t" << "sequence" << endl;
   for(int i = 0; i < fullset.size(); i++)
     {
+      //cerr << "Wrinting "<<i<<endl;
       int psmind = fullset[i].psmind;
       int scan = d.psmind2scan(psmind);
       int charge = d.psmind2charge(psmind);  
@@ -105,11 +107,12 @@ void QRanker :: write_results(string filename, NeuralNet &net)
       ostringstream oss;
       if (label == 1) {
         oss << d.psmind2peptide1(psmind);
-        if(string(d.psmind2peptide2(psmind)) != "") {
-          oss << "," << d.psmind2peptide2(psmind);
+        if(string(d.psmind2peptide2(psmind)) != "_") {
+          //cerr << "peptide2:"<<d.psmind2peptide2(psmind) <<" length:"<<d.psmind2peptide2(psmind).length() << endl;
+          oss << ", " << d.psmind2peptide2(psmind);
         }
         if(string(d.psmind2loc(psmind)) != "") {
-          oss << d.psmind2loc(psmind);    
+          oss << " " << d.psmind2loc(psmind);    
         }
      } else {
        oss << "null";
@@ -176,7 +179,7 @@ void QRanker :: write_results_max(string filename, NeuralNet &net)
 	  f1 << fullset_max[i].score << "\t" << fullset_max[i].q << "\t";
 	  //write peptide sequence
 	  f1 << d.psmind2peptide1(psmind);
-	  if(d.psmind2peptide2(psmind) != "")
+	  if(d.psmind2peptide2(psmind) != "") 
 	    f1 << "," << d.psmind2peptide2(psmind);
 	  if(d.psmind2loc(psmind) != "")
 	    f1 << " " << d.psmind2loc(psmind);
