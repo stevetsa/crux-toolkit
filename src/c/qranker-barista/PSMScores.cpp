@@ -41,7 +41,7 @@ void PSMScores::clear()
 /**
  * Percentage of target scores that are drawn according to the null.
  */
-double PSMScores::pi0 = 0.9;
+double PSMScores::pi0 = 1.0;
 
 void PSMScores :: calc_factor()
 {
