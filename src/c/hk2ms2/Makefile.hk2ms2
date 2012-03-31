@@ -1,0 +1,29 @@
+#Set these variables if needed
+C = gcc
+CC = g++
+FLAGS = -O3 -static -D_NOSQLITE -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -DGCC
+
+#Path to MSToolkit
+
+LIBPATH = ../../../google/mstoolkit-read-only
+LIBS = -lmstoolkitlite
+
+INCLUDE = -I$(LIBPATH)/include
+
+
+#Do not touch these variables
+SUPPORT = HKParser.o
+
+
+#Make statements
+hk2ms2 : HK2MS2.cpp $(SUPPORT)
+	$(CC) $(FLAGS) $(INCLUDE) $(SUPPORT) HK2MS2.cpp -L$(LIBPATH) $(LIBS) -o HK2MS2
+
+clean:
+	rm *.o HK2MS2
+
+
+#Hardklor objects
+HKParser.o : HKParser.cpp
+	$(CC) $(FLAGS) $(INCLUDE)  HKParser.cpp -c
+
