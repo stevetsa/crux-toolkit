@@ -156,7 +156,7 @@ void CAveragine::loadTable(char* c){
     while(!feof(f)){
   
       enrich->push_back(a);
-                  fscanf(f,"%2s\t%d\n",enrich->at(i).symbol,&enrich->at(i).numIsotopes);
+		fscanf(f,"%2s\t%d\n",&enrich->at(i).symbol,&enrich->at(i).numIsotopes);
       enrich->at(i).mass = new vector<double>;
       enrich->at(i).abundance = new vector<double>;
   

@@ -164,7 +164,7 @@ void CMercury8::InitializeData(const char* fn) {
     for (Z=0; Z<=MAXAtomNo; Z++) {
       Element[Z].Symbol[0]=Element[Z].Symbol[1]=Element[Z].Symbol[2]=0;
   
-      fscanf(ElementFile,"%2s %d\n", Element[Z].Symbol,&Element[Z].NumIsotopes);
+    fscanf(ElementFile,"%2s %d\n", &Element[Z].Symbol,&Element[Z].NumIsotopes);
       strcpy(Orig[Z].Symbol,Element[Z].Symbol);
       Orig[Z].NumIsotopes = Element[Z].NumIsotopes;
   
