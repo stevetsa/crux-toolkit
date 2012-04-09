@@ -234,8 +234,18 @@ int SearchForXLinks::xlink_search_main() {
         vector<MatchCollection*> decoy_vec;
     decoy_vec.push_back(decoy_candidates);
     cerr <<"Calculating ranks"<<endl;
+
+    if (decoy_candidates->getScoredType(SP) == TRUE) {
+      decoy_candidates->populateMatchRank(SP);
+    }
     decoy_candidates->populateMatchRank(XCORR);
+    decoy_candidates->sort(XCORR);
+
+    if (target_candidates->getScoredType(SP) == TRUE) {
+      target_candidates->populateMatchRank(SP);
+    }
     target_candidates->populateMatchRank(XCORR);
+    target_candidates->sort(XCORR);
     cerr <<"calling output_files.writeMatches"<<endl;
     output_files.writeMatches(
       (MatchCollection*)target_candidates, 

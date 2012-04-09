@@ -32,7 +32,7 @@ void XLinkMatch::computeWeibullPvalue(
   cerr <<"eta:"<<eta<<" beta:"<<beta<<" shift:"<<shift<<endl;
   cerr <<"xcorr:"<<getScore(XCORR)<<" pvalue:"<<pvalue_<<endl;
 }
-
+/*
 void XLinkMatch::setBYIonsMatched(int by_ions_matched) {
   by_ions_matched_ = by_ions_matched;
 }
@@ -48,7 +48,7 @@ void XLinkMatch::setBYIonsTotal(int by_ions_total) {
 int XLinkMatch::getBYIonsTotal() {
   return by_ions_total_;
 }
-
+*/
 string XLinkMatch::getProteinIdString() {
   PEPTIDE_T* peptide = this -> getPeptide(0);
 
@@ -75,64 +75,6 @@ FLOAT_T XLinkMatch::getPPMError() {
   
   return (mono_mass - parent_->getSpectrumNeutralMass()) / mono_mass * 1e6;
   
-}
-
-string XLinkMatch::getResultHeader() {
-
-  ostringstream oss;
-  oss << "scan" << "\t"
-      << "charge" << "\t"
-      << "spectrum precursor m/z" << "\t"
-      << "spectrum neutral mass" << "\t"
-      << "peptide mass mono" << "\t"
-      << "peptide mass average" << "\t"
-      << "mass error(ppm)" << "\t";
-  if (get_boolean_parameter("compute-sp")) {
-    oss << "sp score" << "\t"
-        << "sp rank" << "\t"
-        << "b/y ions matched" << "\t"
-        << "b/y ions total" << "\t";
-  }
-  oss << "xcorr score" << "\t"
-      << "xcorr rank" << "\t"
-      << "p-value" << "\t"
-      << "matches/spectrum" << "\t"
-      << "sequence" << "\t"
-      << "protein id(loc) 1"<< "\t"
-      << "protein id(loc) 2";
-
-  return oss.str();
-}
-
-std::string XLinkMatch::getResultString() {
-  ostringstream ss;
-  int precision = get_int_parameter("precision");
-  ss << std::setprecision(precision);
-
-  ss << parent_->getScan() << "\t" //scan
-     << parent_->getCharge() << "\t" //charge
-     << parent_->getPrecursorMZ() << "\t" //precursor mz
-     << parent_->getSpectrumNeutralMass() << "\t"
-     << this->getMass(MONO) << "\t"
-     << this->getMass(AVERAGE) << "\t"
-     << this->getPPMError() << "\t";
-
-  if (get_boolean_parameter("compute-sp")) {
-    ss << this->getScore(SP) << "\t"
-       << this->getRank(SP) << "\t"
-       << this->getBYIonsMatched() << "\t"
-       << this->getBYIonsTotal() << "\t";
-  }
-
-  ss << this->getScore(XCORR) << "\t"
-     << this->getRank(XCORR) << "\t"
-     << pvalue_ << "\t"
-//     << parent_->getExperimentSize() << "\t"
-     << this->getSequenceString() << "\t"
-     << this->getProteinIdString() << "\t"   //protein id(loc) 1
-     << this->getProteinIdString();  //protein id(loc) 2
-  string out_string = ss.str();
-  return out_string;
 }
 
 void XLinkMatch::setParent(XLinkMatchCollection* parent) {

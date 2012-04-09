@@ -44,6 +44,9 @@ class TabDelimParser{
   void extract_xlink_features(vector<string> & tokens, double *x);
   void save_data_in_binary_xlink(string out_dir);
   void clean_up_xlink(string dir);
+  int get_peptide_length_sum(string& sequence);
+  int get_peptide_type(string& sequence);
+
  protected:
 
   //spec features generator

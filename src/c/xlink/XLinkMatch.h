@@ -53,19 +53,10 @@ class XLinkMatch : public Match {
     FLOAT_T eta,
     FLOAT_T beta);
 
-  void setBYIonsMatched(int by_ions_matched);
-  int getBYIonsMatched();
-
-  void setBYIonsTotal(int by_ions_total);
-  int getBYIonsTotal();
-
   virtual int getNumMissedCleavages() = 0;
 
   virtual bool isModified() = 0;
 
-
-  static std::string getResultHeader();
-  std::string getResultString();
   FLOAT_T getPPMError();
   virtual std::string getProteinIdString();
   void setParent(XLinkMatchCollection* parent);

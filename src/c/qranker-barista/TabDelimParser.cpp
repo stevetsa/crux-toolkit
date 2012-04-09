@@ -201,7 +201,96 @@ void TabDelimParser :: allocate_feature_space_xlink()
 
 }
 
+int TabDelimParser::get_peptide_length_sum(string& sequence) {
 
+  string delim3 = " ";
+  vector<string> subtokens;
+  get_tokens(sequence,subtokens,delim3);
+/*
+  cout << sequence << endl;;
+  for(size_t i = 0; i < subtokens.size(); i++) {
+    cout<< i << " " <<subtokens[i] << endl;
+  }
+*/
+  int ans = -1;
+
+  if(subtokens.size() > 0) {
+    if (subtokens.size() == 2) {
+      //it it either a linear peptide or a self loop.
+      cout << subtokens[0] <<" " << subtokens[0].length()<<endl;
+      ans = subtokens[0].length();
+      return subtokens[0].length();
+    } else if (subtokens.size() == 3) {
+      //it is a crosslinked peptide.
+      cerr << "parsing cross linked peptide:" << subtokens[0] << endl;
+      string pep1 = subtokens.at(0).substr(0,subtokens[0].length()-1);
+      string pep2 = subtokens.at(1);
+      cerr << pep1 <<" "<<pep1.length()<<endl;
+      cerr << pep2 <<" "<<pep2.length()<<endl;
+      ans = pep1.length() + pep2.length();
+    } else {
+      cerr << "getPeptideLengthSum:error:" << sequence << endl;
+      exit(-1);
+    }
+  }
+  return ans;
+
+}
+
+
+
+int TabDelimParser::get_peptide_type(string& sequence) {
+  string delim3 = " ";
+  vector<string> subtokens;
+  get_tokens(sequence,subtokens,delim3);
+/*
+  cout << sequence << endl;;
+  for(size_t i = 0; i < subtokens.size(); i++) {
+    cout<< i << " " <<subtokens[i] << endl;
+  }
+*/
+  int ans = 0;
+
+  if(subtokens.size() > 0) {
+    if (subtokens.size() == 2) {
+      //it it either a linear peptide or a self loop.
+      cout << subtokens[0] <<" " << subtokens[0].length()<<endl;
+      ans = subtokens[0].length();
+      if (subtokens[1].find(',') == string::npos) {
+        //it is linear.
+        cerr << sequence << " is linear"<<endl;
+        ans = 0;
+      } else {
+        //it is a self-loop
+        ans = 1;
+        cerr << sequence << " is self loop"<<endl;
+      }
+    } else if (subtokens.size() == 3) {
+      //it is a crosslinked peptide.
+      ans = 2;
+      cerr << sequence << " is cross-linked"<<endl;
+    } else {
+      cerr <<"get_peptide_type:error:"<<sequence<<endl;
+      exit(-1);
+    }
+  }
+
+  return ans;
+}
+
+
+/*
+ 0. XCorr Score
+ 1. Peptide Length
+ 2. product type (0 - linear peptide, 1 - self-loop peptide, 2- cross-linked peptide)
+ 3. mass diff
+ 4. abs mass diff
+ 5. sp score (unused)
+ 6. frac matched
+ 7. obs mass
+ 8. charge
+ 9. matches/spectrum (unused) 
+*/
 void TabDelimParser :: extract_xlink_features(vector<string> & tokens, double *x)
 {
   memset(x,0,sizeof(double)*num_xlink_features);
@@ -219,26 +308,39 @@ void TabDelimParser :: extract_xlink_features(vector<string> & tokens, double *x
   //xcorr score
   x[0] = atof(tokens[xcorr_idx].c_str());
   //x[0] = atof(tokens[pvalue_idx].c_str());
-  
+
+  /* peptide length */
+  x[1] = get_peptide_length_sum(tokens[sequence_idx]);
+
+  // peptide type (linear, self-loop, cross-link)
+  x[2] = get_peptide_type(tokens[sequence_idx]);
+
+/*     
   //log rank by Sp
   x[1] = 0;
   if(atof(tokens[sp_rank_idx].c_str()) > 0)
     x[1]=log(atof(tokens[sp_rank_idx].c_str()));
   //deltaCN
   //  x[2] = -log(atof(tokens[pvalue_idx].c_str()));
+  */
   
   //difference between measured and calculated mass
-  //x[3] = atof(tokens[spectrum_mass_idx].c_str())-atof(tokens[peptide_mass_idx].c_str());
+  x[3] = atof(tokens[spectrum_mass_idx].c_str())-atof(tokens[peptide_mass_idx].c_str());
+  
   // absolute value of difference between measured and calculated mass
   x[4] = fabs(atof(tokens[spectrum_mass_idx].c_str())-atof(tokens[peptide_mass_idx].c_str()));
+
   //sp score
-  x[5] = atof(tokens[sp_score_idx].c_str());
+  //x[5] = atof(tokens[sp_score_idx].c_str());
+
   //matched ions/predicted ions
   x[6] = 0;
   if(atof(tokens[by_total_idx].c_str()) != 0)
     x[6] = atof(tokens[by_matched_idx].c_str())/atof(tokens[by_total_idx].c_str());
+
   //observed mass
   x[7] = atof(tokens[spectrum_mass_idx].c_str());
+
   //charge
   x[8] = atof(tokens[charge_idx].c_str());
   // number of sequence_comparisons
