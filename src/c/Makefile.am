@@ -180,12 +180,12 @@ libcrux_la_SOURCES = $(LIBFILES)
 PWIZ_LIB_FILES = \
   -lpwiz_data_msdata \
   -lpwiz_data_common \
-  -lpwiz_data_mzid \
+  -lpwiz_data_identdata \
   -lpwiz_data_msdata_version \
   -lpwiz_data_misc \
   -lpwiz_utility_misc \
   -lpwiz_utility_minimxml \
-  -lpwiz_data_mzid_version \
+  -lpwiz_data_identdata_version \
   -lboost_system-gcc44-mt-s \
   -lboost_iostreams-gcc44-mt-s \
   -lz-gcc44-mt-s-1_2 \
@@ -193,6 +193,7 @@ PWIZ_LIB_FILES = \
   -lboost_regex-gcc44-mt-s \
   -lboost_thread-gcc44-mt-s \
   -lpthread
+
 
 PROGRAM_FILES = \
   crux \

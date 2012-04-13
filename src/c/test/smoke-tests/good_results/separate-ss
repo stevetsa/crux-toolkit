@@ -4737,10 +4737,11 @@ INFO: Preparing protein fasta file small-yeast.fasta
 INFO: Reading in ms2 file demo.ms2
 INFO: Created 1 peptide mods, keeping 1 with 255 or fewer aa mods
 INFO: Searching spectrum number 96 (2+), search number 100
-INFO: Freeing database.
-INFO: Closing database filehandle
-INFO: Elapsed time: 3.46 s
+INFO: Elapsed time: 2.47 s
 INFO: Finished crux sequest-search
+INFO: Elapsed time: 2.47 s
+INFO: Finished crux sequest-search.
+INFO: Return Code:0
 # Which isotopes to use in calculating fragment ion mass.
 # <string>=average|mono. Default=mono.
 # Parameter file only.  Used by crux-search-for-matches and
@@ -5090,6 +5091,10 @@ num-decoys-per-target=2
 # range as in x-y.  Default=search all.
 # The search range x-y is inclusive of x and y.
 scan-number=__NULL_STR
+
+# Use proteowizard to parse spectra. Default=F.
+# Available for all commands that read spectrum files
+use-pwiz=FALSE
 
 # The maximum number of modified amino acids that can appear in one
 # peptide.  Each aa can be modified multiple times.  Default=no limit.
