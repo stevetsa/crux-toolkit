@@ -30,9 +30,10 @@ selected_ion_mz from the first selected ion.
 
 Notes on crux's use of pwiz
 
-As of svn revision XXX, the pwiz parser is only used when 'use-pwiz=T'
-is included in a parameter file.  So far, the following tests have
-been run using crux search-for-matches
+The pwiz parser is only used when 'use-pwiz=T' is included in a
+parameter file.  We may want to change it to be the default, or have
+the parser selected at runtime. So far, the following tests have been
+run using crux search-for-matches:
 
 1. demo.ms2, small-yeast.fasta, use-pwiz=F
 2. demo.ms2, small-yeast.fasta, use-pwiz=T
@@ -68,7 +69,7 @@ parameter to indicate that it has.
 As of April 12, 2012, the pwiz parser has not been tested with .mgf,
 .mzXML, or .mzML files.
 
-SVN revisions up to XXX have been code reviewed.
+SVN revisions up to 5669 have been code reviewed.
 
 
 Notes on how to manage the pwiz dependency.
