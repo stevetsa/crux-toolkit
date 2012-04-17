@@ -7,8 +7,8 @@
 using namespace std;
 
 
-static bool map_generated_ = false;
-static map<char, MolecularFormula> amino_acid_to_formula_;
+bool AccurateMonoMass::map_generated_ = false;
+map<char, MolecularFormula> AccurateMonoMass::amino_acid_to_formula_;
 
 #define H 0
 #define C 1
@@ -124,6 +124,15 @@ int main(int argc, char**argv) {
   
   AccurateMonoMass::generateMap();
 
+  string sequence = argv[1];
+  
+  cout << fixed << setprecision(11);
+
+  cout << "Mass of :" << sequence << ":" << AccurateMonoMass::calculateMass(sequence) <<endl;
+  
+
+/*
+
   map<char, MolecularFormula>::iterator iter;
 
   cout << fixed << setprecision(11);
@@ -151,7 +160,7 @@ int main(int argc, char**argv) {
   cout <<"ppm:"<<ppm<<endl;
 
   cout <<"H2O:"<<H2O.calculateMass()<<endl;
-
+*/
 }
 
 

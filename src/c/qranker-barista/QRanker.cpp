@@ -1,6 +1,6 @@
 #include "QRanker.h"
 
-QRanker::QRanker() :  seed(1),selectionfdr(0.01),num_hu(3),mu(0.005),weightDecay(0.0000)
+QRanker::QRanker() :  seed(1),selectionfdr(0.01),num_hu(3),mu(0.005),weightDecay(0.0000),xlink_mass(0.000)
 {
 }
 
@@ -711,8 +711,10 @@ int QRanker::set_command_line_options(int argc, char **argv)
           } else if (str.find("num-hu") != string::npos) {
             cout << "found num hu" << tmp << endl;
             num_hu = atoi(tmp.c_str());
-          }
-	  else if (str.find("ms2file") != string::npos) {
+          } else if (str.find("xlink-mass") != string::npos) {
+            cout << "found xlink-mass" << tmp << endl;
+            xlink_mass = atof(tmp.c_str());
+          } else if (str.find("ms2file") != string::npos) {
             cout << "found ms2file "<<tmp<<endl;
             ms2fname = tmp;
 	    ms2exists = 1;
@@ -729,7 +731,7 @@ int QRanker::set_command_line_options(int argc, char **argv)
   pars.set_output_dir(out_dir);
   if(ms2exists)
     {
-      if(!pars.run_on_xlink(fnames, ms2fname))
+      if(!pars.run_on_xlink(fnames, ms2fname, xlink_mass))
 	return 0;
     }
   else

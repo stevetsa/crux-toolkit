@@ -93,7 +93,8 @@ protected:
 
     TabDelimParser pars;
 
-
+    /************xlink-specific*************/
+    double xlink_mass;
 };
 
 

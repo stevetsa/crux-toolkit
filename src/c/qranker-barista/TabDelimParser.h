@@ -36,7 +36,7 @@ class TabDelimParser{
   void save_data_in_binary(string out_dir);
   void clean_up(string dir);
   /*******************************************************/
-  int run_on_xlink(vector<string> &filenames, string &ms2filename);
+  int run_on_xlink(vector<string> &filenames, string &ms2filename, double xlink_mass);
   int run_on_xlink(vector<string> &filenames);
   void first_pass_xlink(ifstream &fin);
   void second_pass_xlink(ifstream &fin, int label);
@@ -100,6 +100,8 @@ class TabDelimParser{
   int max_len;
   //min peptide length to be considered
   int min_len;
+
+  
   
   /************xlink-specific*************/
   int num_xlink_features;
@@ -109,6 +111,8 @@ class TabDelimParser{
   map<int,string> psmind_to_protein1;
   map<int,string> psmind_to_protein2;
   
+  void get_xlink_locations(int psmind, int& loc1, int& loc2);
+
 };
 
 #endif

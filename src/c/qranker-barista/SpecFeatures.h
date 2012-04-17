@@ -36,6 +36,9 @@ class SpecFeaturesGenerator
 			     int region_selector);
   void shift_peaks();
 
+
+  void set_xlink_mass(double xlink_mass);
+
   void read_processed_ms2_file();
   void read_processed_spectrum(string &tempstr);
   void save_spec_positions(string &out_dir);
@@ -59,6 +62,28 @@ class SpecFeaturesGenerator
    */
   //void get_spec_features_m3(string &spec, string &peptide, double *features);
   void get_spec_features_m3(int scan, int ch, string &peptide, double *features);
+
+  double calculate_peptide_mass(string &peptide);
+
+  void add_peaks_self_loop_m3(
+    int ch,
+    string& peptide,
+    int loc1,
+    int loc2);
+  
+  void add_peaks_xlink_m3(
+    int ch,
+    string& peptide,
+    int mod_location,
+    double mod_mass);
+
+  void get_spec_features_m3(
+    int scan, int ch, 
+    string& pep1, string & pep2, 
+    int loc1, int loc2, 
+    double *features);
+
+
   void get_spec_features_m3(int scan, int ch, string &peptide, double *features, int clean);
   void get_spec_features_m6(int scan, int ch, string &peptide, double *features);
   void get_spec_features_m7(int scan, int ch, string &peptide, double *features);
@@ -76,6 +101,7 @@ class SpecFeaturesGenerator
   int charge;
   vector<int> all_charges_of_spec;
   double rtime;
+  double xlink_mass;
 
   map<string,long> spec_to_pos_in_file;
   map <int, double> scan_to_rtime;

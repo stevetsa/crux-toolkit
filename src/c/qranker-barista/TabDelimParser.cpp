@@ -180,6 +180,41 @@ void TabDelimParser :: first_pass_xlink(ifstream &fin)
 }
 
 
+void TabDelimParser :: get_xlink_locations(int psmind, int &loc1, int & loc2) {
+
+  loc1 = -1;
+  loc2 = -1;
+
+  if (psmind_to_loc.find(psmind) != psmind_to_loc.end()) {
+    string location_string = psmind_to_loc[psmind];
+    //cerr << "locating string:"<<location_string<<endl;
+    if (location_string.find("()") == string::npos) {
+      //it has a xlinker on it.
+  
+      size_t comma_pos = location_string.find(',');
+      size_t rp_pos = location_string.find(')');
+      
+      
+      if (comma_pos != string::npos) {
+        //has two locations.
+        string sloc1 = location_string.substr(1, comma_pos-1);
+        //cerr << "loc1:"<<sloc1<<endl;
+        loc1 = atoi(sloc1.c_str());
+
+        string sloc2 = location_string.substr(comma_pos+1, rp_pos-1);
+        //cerr << "loc2:"<<sloc2<<endl;
+        loc2 = atoi(sloc2.c_str());
+        //cerr << "loc2:"<<loc2<<endl;
+      } else {
+        //has one location
+        string sloc1 = location_string.substr(1, rp_pos-1);
+        //cerr << "loc1:"<<sloc1<<endl;
+        loc1 = atoi(sloc1.c_str());
+      }
+    }
+  }
+}
+
 void TabDelimParser :: allocate_feature_space_xlink()
 {
   //space for feature vector
@@ -217,16 +252,16 @@ int TabDelimParser::get_peptide_length_sum(string& sequence) {
   if(subtokens.size() > 0) {
     if (subtokens.size() == 2) {
       //it it either a linear peptide or a self loop.
-      cout << subtokens[0] <<" " << subtokens[0].length()<<endl;
+      //cout << subtokens[0] <<" " << subtokens[0].length()<<endl;
       ans = subtokens[0].length();
       return subtokens[0].length();
     } else if (subtokens.size() == 3) {
       //it is a crosslinked peptide.
-      cerr << "parsing cross linked peptide:" << subtokens[0] << endl;
+      //cerr << "parsing cross linked peptide:" << subtokens[0] << endl;
       string pep1 = subtokens.at(0).substr(0,subtokens[0].length()-1);
       string pep2 = subtokens.at(1);
-      cerr << pep1 <<" "<<pep1.length()<<endl;
-      cerr << pep2 <<" "<<pep2.length()<<endl;
+      //cerr << pep1 <<" "<<pep1.length()<<endl;
+      //cerr << pep2 <<" "<<pep2.length()<<endl;
       ans = pep1.length() + pep2.length();
     } else {
       cerr << "getPeptideLengthSum:error:" << sequence << endl;
@@ -254,21 +289,21 @@ int TabDelimParser::get_peptide_type(string& sequence) {
   if(subtokens.size() > 0) {
     if (subtokens.size() == 2) {
       //it it either a linear peptide or a self loop.
-      cout << subtokens[0] <<" " << subtokens[0].length()<<endl;
+      //cout << subtokens[0] <<" " << subtokens[0].length()<<endl;
       ans = subtokens[0].length();
       if (subtokens[1].find(',') == string::npos) {
         //it is linear.
-        cerr << sequence << " is linear"<<endl;
+        //cerr << sequence << " is linear"<<endl;
         ans = 0;
       } else {
         //it is a self-loop
         ans = 1;
-        cerr << sequence << " is self loop"<<endl;
+        //cerr << sequence << " is self loop"<<endl;
       }
     } else if (subtokens.size() == 3) {
       //it is a crosslinked peptide.
       ans = 2;
-      cerr << sequence << " is cross-linked"<<endl;
+      //cerr << sequence << " is cross-linked"<<endl;
     } else {
       cerr <<"get_peptide_type:error:"<<sequence<<endl;
       exit(-1);
@@ -380,23 +415,35 @@ void TabDelimParser :: second_pass_xlink(ifstream &fin, int label)
 	      //clear out the spec features
 	      memset(xs,0,sizeof(double)*num_spec_features);
 	      
-	      string pept;
-	      
+
+              string pept1 = "_";
+              string pept2 = "_";
+
+              int loc1 = -1;
+              int loc2 = -1;
+
+	      //cerr <<" generating spec features for psmind:"<<psmind<<endl;
+
 	      if(psmind_to_peptide1.find(psmind) != psmind_to_peptide1.end())
 		{
-		  pept = psmind_to_peptide1[psmind];
-		  //cout << pept << endl;
-		  if(num_spec_features == 7)
-		    sfg.get_spec_features_m3(scan, charge,pept,xs,1);
+		  pept1 = psmind_to_peptide1[psmind];
+		  //cout << "psmind:" << psmind << "peptide1:" << pept1 << endl;
 		}
 	      
 	      if(psmind_to_peptide2.find(psmind) != psmind_to_peptide2.end())
 		{
-		  pept = psmind_to_peptide2[psmind];
-		  //cout << psmind << " " << pept << endl;
-		  if(num_spec_features == 7)
-		    sfg.get_spec_features_m3(scan, charge,pept,xs,0);
-		  }
+		  pept2 = psmind_to_peptide2[psmind];
+                  //cout << "psmind:" << psmind << "peptide2:" << pept2 << endl;
+	        }
+
+              get_xlink_locations(psmind, loc1, loc2);
+
+              
+              
+              if (num_spec_features == 7) {
+                sfg.get_spec_features_m3( scan, charge, pept1, pept2, loc1, loc2, xs);
+              }
+
 	      f_psm.write((char*)xs, sizeof(double)*num_spec_features);
 	      
 	    }
@@ -413,7 +460,7 @@ void TabDelimParser :: second_pass_xlink(ifstream &fin, int label)
 
 	  //augment counters
 	  psmind++;
-	  if(psmind % 100 == 0)
+	  if(psmind % 1000 == 0)
 	    cout << "psmind " << psmind << endl;
 	}
     }
@@ -604,7 +651,7 @@ int TabDelimParser :: run_on_xlink(vector<string> &filenames)
   return 1;
 }
 
-int TabDelimParser :: run_on_xlink(vector<string> &filenames, string &ms2filename)
+int TabDelimParser :: run_on_xlink(vector<string> &filenames, string &ms2filename, double xlink_mass)
 {
   string line;
   for(unsigned int i = 0; i < filenames.size(); i++)
@@ -629,6 +676,7 @@ int TabDelimParser :: run_on_xlink(vector<string> &filenames, string &ms2filenam
     
   //prepare to generate spectrum features
   sfg.clear();
+  sfg.set_xlink_mass(xlink_mass);
   if(!sfg.open_ms2_file_for_reading(ms2filename))
     return 0;
   sfg.read_ms2_file();
