@@ -697,7 +697,7 @@ void QRanker :: train_net_ranking(PSMScores &set, int interval)
       int ind1, ind2;
       int label_flag = 1;
       //get the first index
-      if(interval == 0)
+      if(interval == 0) 
 	ind1 = 0;
       else
 	ind1 = rand()%(interval);
@@ -710,7 +710,11 @@ void QRanker :: train_net_ranking(PSMScores &set, int interval)
       int cn = 0;
       while(1)
 	{
-	  ind2 = rand()%(interval);
+          if (interval == 0) {
+            ind2 = rand()%set.size();
+          } else {
+            ind2 = rand()%(interval);
+          }
 	  if(ind2>set.size()-1) continue;
 	  if(set[ind2].label == label_flag) break;
 	  if(cn > 1000)
