@@ -110,6 +110,20 @@ Linux and Windows.  The latter requires that you have Cygwin
 installed.</p>
 
 <li>
+<b>I thought Crux was supposed to be fast, but I am seeing very slow
+  search speeds.  What's going on?</b></li>
+
+<p>
+Crux is not particularly optimized to run quickly on a FASTA file.  To
+get Crux to go fast, you must do the "crux create-index" step first,
+and then run your searches using the resulting index.  If, after doing
+this, you are still getting slow search speeds, it may be because you
+are using the Network File System (NFS).   Crux uses a memory mapping
+mechanism that often works poorly over a system like NFS.  The
+solution is to copy your index to a local disk.  Then Crux should run
+much more quickly.</p>
+
+<li>
 <b>How does Crux select candidate peptides from the database?</b></li>
 
 <p>
@@ -165,6 +179,22 @@ at at least one of the ends.  If <code>missed-cleavages</code> is set
 to false, then no cleavage site may lie within the peptide sequence;
 alternatively, if true then any number of sites may lie within the
 peptide sequence. </p>
+
+<li>
+<b>How can I search my ITRAQ data?</b></li>
+<p>
+ITRAQ and other tagged seaches can be done by using terninal
+modifications.  For example, if your tag has a mass of 304.199040, add
+these lines to your parameter file:
+<pre>
+nmod=304.199040:-1
+cmod=304.199040:-1
+</pre>
+<p>
+Crux will then generate peptides with this modification (+304.199904)
+on the n-terminus, the c-terminus and on both termini.  The -1 in the
+option means to add the modification regardless of where the peptide
+terminus lies relative to the rest of the protein.
 
 <!--
 <li>

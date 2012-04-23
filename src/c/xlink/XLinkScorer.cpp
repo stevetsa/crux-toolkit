@@ -1,5 +1,5 @@
 #include "XLinkScorer.h"
-#include "scorer.h"
+#include "Scorer.h"
 #include "Ion.h"
 #include "IonSeries.h"
 
@@ -13,8 +13,8 @@ void XLinkScorer::init(
   bool compute_sp
   ) {
 
-  scorer_xcorr_ = new_scorer(XCORR);
-  scorer_sp_ = new_scorer(SP);
+  scorer_xcorr_ = new Scorer(XCORR);
+  scorer_sp_ = new Scorer(SP);
   spectrum_ = spectrum;
   charge_ = charge;
   compute_sp_ = compute_sp;
@@ -66,21 +66,21 @@ XLinkScorer::~XLinkScorer() {
   delete ion_series_sp_;
   delete ion_constraint_xcorr_;
   delete ion_constraint_sp_;
-  free_scorer(scorer_xcorr_);
-  free_scorer(scorer_sp_);
+  delete scorer_xcorr_;
+  delete scorer_sp_;
   
 }
 
 FLOAT_T XLinkScorer::scoreCandidate(XLinkMatch* candidate) {
 
   candidate->predictIons(ion_series_xcorr_, charge_);
-  FLOAT_T xcorr = score_spectrum_v_ion_series(scorer_xcorr_, spectrum_, ion_series_xcorr_);
+  FLOAT_T xcorr = scorer_xcorr_->scoreSpectrumVIonSeries(spectrum_, ion_series_xcorr_);
   candidate->setScore(XCORR, xcorr);
 
   if (compute_sp_) {
 
     candidate->predictIons(ion_series_sp_, charge_);
-    FLOAT_T sp = score_spectrum_v_ion_series(scorer_sp_, spectrum_, ion_series_sp_);
+    FLOAT_T sp = scorer_sp_->scoreSpectrumVIonSeries(spectrum_, ion_series_sp_);
     
     candidate->setScore(SP, sp);
     candidate->setBYIonInfo(scorer_sp_);

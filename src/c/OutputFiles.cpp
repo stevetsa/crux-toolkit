@@ -105,7 +105,7 @@ OutputFiles::~OutputFiles(){
   for(int file_idx = 0; file_idx < num_files_; file_idx ++){
     if( delim_file_array_ ){ delete delim_file_array_[file_idx]; }
     if( sqt_file_array_ ){ fclose(sqt_file_array_[file_idx]); }
-    if( xml_file_array_ ){ fclose(xml_file_array_[file_idx]); }
+    if( xml_file_array_ ){ xml_file_array_[file_idx]->closeFile(); }
   }
   if( feature_file_ ){ fclose(feature_file_); }
 
@@ -182,7 +182,7 @@ string OutputFiles::makeFileName(const char* fileroot,
  * "output-dir/fileroot.command_name.target|decoy[-n].extension".
  * Requires that the output-dir already exist and have write
  * permissions. 
- * \returns TRUE if num_files new files are created, else FALSE.
+ * \returns true if num_files new files are created, else false.
  */
 bool OutputFiles::createFiles(FILE*** file_array_ptr,
                               const char* output_dir,
@@ -191,7 +191,7 @@ bool OutputFiles::createFiles(FILE*** file_array_ptr,
                               const char* extension,
                               bool overwrite){
   if( num_files_ == 0 ){
-    return FALSE;
+    return false;
   }
   
   // allocate array
@@ -209,7 +209,45 @@ bool OutputFiles::createFiles(FILE*** file_array_ptr,
 
   }// next file
   
-  return TRUE;
+  return true;
+}
+
+/**
+ * A private function for generating target and decoy pepxml files named
+ * according to the given arguments.
+ *
+ * New files are returned via the file_array_ptr argument.  When
+ * num_files > 1, exactly one target file is created and the remaining
+ * are decoys.  Files are named 
+ * "output-dir/fileroot.command_name.target|decoy[-n].extension".
+ * Requires that the output-dir already exist and have write
+ * permissions. 
+ * \returns true if num_files new files are created, else false.
+ */
+bool OutputFiles::createFiles(PepXMLWriter*** xml_writer_array_ptr,
+                              const char* output_dir,
+                              const char* fileroot,
+                              CruxApplication* application,
+                              const char* extension,
+                              bool overwrite){
+  if( num_files_ == 0 ){
+    return false;
+  }
+  
+  // allocate array
+  *xml_writer_array_ptr = new PepXMLWriter*[num_files_];
+
+  // create each file
+  for(int file_idx = 0; file_idx < num_files_; file_idx++ ){
+    string filename = makeFileName( fileroot, application,
+                                    target_decoy_list_[file_idx].c_str(),
+                                    extension, output_dir);
+    (*xml_writer_array_ptr)[file_idx] = new PepXMLWriter();
+    (*xml_writer_array_ptr)[file_idx]->openFile(filename.c_str(), overwrite);
+
+  }// next file
+  
+  return true;
 }
 
 /**
@@ -222,7 +260,7 @@ bool OutputFiles::createFiles(FILE*** file_array_ptr,
  * "output-dir/fileroot.command_name.target|decoy[-n].extension".
  * Requires that the output-dir already exist and have write
  * permissions. 
- * \returns TRUE if num_files new MatchFileWriters are created, else FALSE.
+ * \returns true if num_files new MatchFileWriters are created, else false.
  */
 bool OutputFiles::createFiles(MatchFileWriter*** file_array_ptr,
                               const char* output_dir,
@@ -230,7 +268,7 @@ bool OutputFiles::createFiles(MatchFileWriter*** file_array_ptr,
                               CruxApplication* application,
                               const char* extension ){
   if( num_files_ == 0 ){
-    return FALSE;
+    return false;
   }
   
   // allocate array
@@ -244,7 +282,7 @@ bool OutputFiles::createFiles(MatchFileWriter*** file_array_ptr,
     (*file_array_ptr)[file_idx] = new MatchFileWriter(filename.c_str());
   }
   
-  return TRUE;
+  return true;
 }
 
 /**
@@ -254,7 +292,7 @@ bool OutputFiles::createFiles(MatchFileWriter*** file_array_ptr,
  * New file is returned via the file_ptr argument.  File is named
  * output-dir/fileroot.comand_name[target_decoy].extension.  Requires that the
  * output-dir already exist and have write permissions.
- * \returns TRUE if the file is created, else FALSE.
+ * \returns true if the file is created, else false.
  */
 bool OutputFiles::createFile(FILE** file_ptr,
                              const char* output_dir,
@@ -266,9 +304,9 @@ bool OutputFiles::createFile(FILE** file_ptr,
                                   output_dir,
                                   overwrite);
 
-  if( *file_ptr == NULL ){ return FALSE; }
+  if( *file_ptr == NULL ){ return false; }
 
-  return TRUE;
+  return true;
 }
 
 /**
@@ -276,25 +314,29 @@ bool OutputFiles::createFile(FILE** file_ptr,
  * files.  Optional num_proteins argument for .sqt files.  Use this
  * for search commands, not post-search.
  */
-void OutputFiles::writeHeaders(int num_proteins){
+void OutputFiles::writeHeaders(int num_proteins, bool isMixedTargetDecoy){
 
   const char* tag = "target";
 
   // write headers one file at a time for tab and sqt
   for(int file_idx = 0; file_idx < num_files_; file_idx++){
     if( delim_file_array_ ){
-        delim_file_array_[file_idx]->addColumnNames(application_, (bool)file_idx);
+      bool has_decoy = (bool)file_idx; // only first file (idx 0) is target
+      if( isMixedTargetDecoy ){ // unless it is both
+        has_decoy = true;
+      }
+        delim_file_array_[file_idx]->addColumnNames(application_, 
+                                                    has_decoy);
         delim_file_array_[file_idx]->writeHeader();
     }
 
     if( sqt_file_array_ ){
       MatchCollection::printSqtHeader(sqt_file_array_[file_idx],
-                       tag,
-                       num_proteins, false); // not post search
+                       tag, num_proteins); 
     }
     
     if ( xml_file_array_){
-      MatchCollection::printXmlHeader(xml_file_array_[file_idx]);
+      xml_file_array_[file_idx]->writeHeader();
     }
 
     tag = "decoy";
@@ -307,7 +349,6 @@ void OutputFiles::writeHeaders(int num_proteins){
  */
 void OutputFiles::writeHeaders(const vector<bool>& add_this_col){
 
-  const char* tag = "target";
 
   // write headers one file at a time for tab and sqt
   for(int file_idx = 0; file_idx < num_files_; file_idx++){
@@ -319,10 +360,9 @@ void OutputFiles::writeHeaders(const vector<bool>& add_this_col){
     }
 
     if ( xml_file_array_){
-      MatchCollection::printXmlHeader(xml_file_array_[file_idx]);
+      xml_file_array_[file_idx]->writeHeader();
     }
 
-    tag = "decoy";
   }
 }
 
@@ -348,7 +388,7 @@ void OutputFiles::writeFeatureHeader(char** feature_names,
 void OutputFiles::writeFooters(){
   if (xml_file_array_){
     for (int file_idx = 0; file_idx < num_files_; file_idx++){
-      MatchCollection::printXmlFooter(xml_file_array_[file_idx]);
+      xml_file_array_[file_idx]->writeFooter();
     }
   }
 
@@ -475,8 +515,7 @@ void OutputFiles::printMatchesXml(
     cur_matches->printXml(xml_file_array_[file_idx],
                                matches_per_spec_,
                                spectrum,
-                               rank_type,
-                               index);
+                               rank_type);
 
     if( decoy_matches_array.size() > (size_t)file_idx ){
       cur_matches = decoy_matches_array[file_idx];
@@ -509,7 +548,7 @@ void OutputFiles::writeMatchFeatures(
           match->getSpectrum()->getFirstScan());
 
   // decoy or target peptide
-  if (match->getNullPeptide() == FALSE){
+  if (match->getNullPeptide() == false){
     fprintf(feature_file_, "1\t");
   } else { 
     fprintf(feature_file_, "-1\t");
@@ -532,10 +571,10 @@ void OutputFiles::writeMatchFeatures(
 void OutputFiles::writeRankedPeptides(PeptideToScore& peptideToScore){
 
   // rearrange pairs to sort by score
-  vector<pair<FLOAT_T, PEPTIDE_T*> > scoreToPeptide;
+  vector<pair<FLOAT_T, Peptide*> > scoreToPeptide;
   for(PeptideToScore::iterator it = peptideToScore.begin();
        it != peptideToScore.end(); ++it){
-    PEPTIDE_T* peptide = it->first;
+    Peptide* peptide = it->first;
     FLOAT_T score = it->second;
     scoreToPeptide.push_back(make_pair(score, peptide));
   }
@@ -546,15 +585,34 @@ void OutputFiles::writeRankedPeptides(PeptideToScore& peptideToScore){
 
   MatchFileWriter* file = delim_file_array_[0];
   MATCH_COLUMNS_T score_col = SIN_SCORE_COL;
-  if( get_measure_type_parameter("measure") == MEASURE_NSAF ){
-    score_col = NSAF_SCORE_COL;
+
+  MEASURE_TYPE_T measure_type = get_measure_type_parameter("measure");
+  switch (measure_type) {
+    case MEASURE_RAW:
+      score_col = RAW_SCORE_COL;
+      break;
+    case MEASURE_SIN:
+      score_col = SIN_SCORE_COL;
+      break;
+    case MEASURE_NSAF:
+      score_col = NSAF_SCORE_COL;
+      break;
+    case MEASURE_DNSAF:
+      score_col = DNSAF_SCORE_COL;
+      break;
+    case MEASURE_EMPAI:
+      score_col = EMPAI_SCORE_COL;
+       break;
+    default:
+      carp(CARP_FATAL, "Invalid measure type!");
   }
+
   // print each pair
-  for(vector<pair<FLOAT_T, PEPTIDE_T*> >::iterator it = scoreToPeptide.begin();
+  for(vector<pair<FLOAT_T, Peptide*> >::iterator it = scoreToPeptide.begin();
       it != scoreToPeptide.end(); ++it){
-    PEPTIDE_T* peptide = it->second;
+    Peptide* peptide = it->second;
     FLOAT_T score = it->first;
-    char* seq = get_peptide_sequence(peptide);
+    char* seq = peptide->getSequence();
 
     file->setColumnCurrentRow(SEQUENCE_COL, seq);
     file->setColumnCurrentRow(score_col, score);
@@ -591,10 +649,26 @@ void OutputFiles::writeRankedProteins(ProteinToScore& proteinToScore,
 
   MatchFileWriter* file = delim_file_array_[0];
   MATCH_COLUMNS_T score_col = SIN_SCORE_COL;
-  if( get_measure_type_parameter("measure") == MEASURE_NSAF ){
-    score_col = NSAF_SCORE_COL;
-  } else if( get_measure_type_parameter("measure") == MEASURE_EMPAI ){
-    score_col = EMPAI_SCORE_COL;
+
+  MEASURE_TYPE_T measure_type = get_measure_type_parameter("measure");
+  switch (measure_type) {
+    case MEASURE_RAW:
+      score_col = RAW_SCORE_COL;
+      break;
+    case MEASURE_SIN:
+      score_col = SIN_SCORE_COL;
+      break;
+    case MEASURE_NSAF:
+      score_col = NSAF_SCORE_COL;
+      break;
+    case MEASURE_DNSAF:
+      score_col = DNSAF_SCORE_COL;
+      break;
+    case MEASURE_EMPAI:
+      score_col = EMPAI_SCORE_COL;
+       break;
+    default:
+      carp(CARP_FATAL, "Invalid measure type!");
   }
 
   // print each protein
@@ -610,7 +684,7 @@ void OutputFiles::writeRankedProteins(ProteinToScore& proteinToScore,
       MetaProtein metaProtein = proteinToMeta[protein];
       int rank = -1;
       if (metaToRank.find(metaProtein) != metaToRank.end()){
-	rank = metaToRank[metaProtein];
+        rank = metaToRank[metaProtein];
       } 
       file->setColumnCurrentRow(PARSIMONY_RANK_COL, rank);
     }

@@ -154,6 +154,13 @@ charge state.  With 1, 2, or 3 only spectra with that charge will be
 searched. Default = all. 
 </LI>
 
+<li>
+<code>--compute-sp &lt;T|F&gt;</code> &ndash;
+Have <code>search-for-matches</code> compute the Sp score for all
+candidate peptides, which is recommended if results are to be analyzed
+by <code>percolator</code> or <code>q-ranker</code>.  
+<code>sequst-search</code> always computes Sp.  Default = F.
+
 <LI><code>--parameter-file &lt;filename&gt;</code> &ndash; A file containing
 command-line or additional parameters.  See the <a
 href="parameter-file.html">parameter documentation</a> page for
@@ -177,7 +184,7 @@ precursor window depends upon <code>precursor-window-type</code>. Default = 3.0.
 </li>
 
 <li>
-<code>precursor-window-type &lt;mass|mz|ppm&gt;</code> &ndash; Specify
+<code>--precursor-window-type &lt;mass|mz|ppm&gt;</code> &ndash; Specify
 the units for the window that is used to select peptides around the
 precursor mass location (mass, mz, ppm).  The magnitude of the window
 is defined by the <code>precursor-window</code> option, and candidate peptides must
@@ -219,6 +226,22 @@ Predict ions for the theoretical spectra up to max charge state
 If the max-ion-charge is greater than the charge state of the 
 peptide, then the max is the peptide charge.  Default='peptide'.
 
+<li>
+<code>mod-mass-format &lt;mod-only|total|separate&gt;<code> &ndash;
+Specify how sequence modifications are reported in various ouptut
+files.  Each modification is reported as a number enclosed in square
+braces following the modified reside; however, the number may
+correspond to one of three different masses: (1) 'mod-only' reports
+the value of the mass shift induced by the modification; (2) 'total'
+reports the mass of the residue with the modification (residue mass
+plus modification mass); (3) 'separate' is the same as 'mod-only', but
+multiple modifications to a single amino acid are reported as a
+comma-separated list of values. For example, suppose amino
+acid <i>D</i> has an unmodified mass of 115 as well as two
+modifications of masses +14 and +2.  In this case, the amino acid
+would be reported as D[16] with 'mod-only', D[131] with 'total', and
+D[14,2] with 'separate'.</li>
+
 <!--
 <li><code>--missed-link-cleavage &lt;string&gt;</code> &ndash;
 Currently unused parameter. Default = K.
@@ -236,6 +259,17 @@ Include deadend products in the search. Default = T.
 <li><code>--xlink-include-selfloops &lt;T|F&gt;</code> &ndash;
 Include selfloops in the search. Default = T.
 </li>
+
+<li>
+<code>--xlink-prevents-cleavage &lt;string&gt;</code> &ndash;
+List of amino acids that xlinker can prevent cleavage.
+
+<li>
+<code>--use-flanking-peaks &lt;T|F&gt;</code> &ndash;
+Turn on or off the peaks flanking the b/y ions.  For <code>crux 
+search-for-matches</code>, default = F; for <code>crux
+  sequest-search</code>, default = T; for <code> crux
+search-for-xlinks</code>, default = T.</li>
 
 <li><code>--xcorr-use-flanks &lt;T|F&gt;</code> &ndash;
 Use flanking ions in the theoretical spectrum.  These are placed +/- 1
@@ -321,10 +355,10 @@ conjunction with enzyme option when enzyme is not set to to
 'no-enzyme'.  
 
 <LI>
-<code>missed-cleavages &lt;T|F&gt;</code> &ndash; 
+<code>missed-cleavages &lt;int&gt;</code> &ndash; 
 Allow missed cleavage sites within a peptide.  When used with
 enzyme is specified; includes peptides containing one or more
-potential cleavage sites. Default = F. 
+potential cleavage sites. Default = 0. 
 </LI>
 
 <li>
@@ -335,7 +369,7 @@ one of those proteins.  Default = F.
 <LI>
 <code>isotopic-mass &lt;average|mono&gt;</code> &ndash; 
 Specify the type of isotopic masses to use when calculating the
-peptide mass. Default = mono.
+peptide mass. Default = average.
    
 <li>
 <code>&lt;A-Z&gt &lt;float&gt;</code> &ndash;

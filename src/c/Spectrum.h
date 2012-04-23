@@ -13,7 +13,8 @@
 #include "objects.h"
 #include "Peak.h"
 
-#include "MSToolkit/Spectrum.h"
+#include "Spectrum.h"
+#include "../external/MSToolkit/include/Spectrum.h"
 #include "SpectrumZState.h"
 
 /**
@@ -36,6 +37,9 @@
  * peaks but is convenient to have is stored as "min_peak_mz",
  * "max_peak_mz", and "total_energy".
  */
+
+namespace Crux {
+
 class Spectrum{
  protected:
   // member variables
@@ -49,6 +53,7 @@ class Spectrum{
   FLOAT_T          max_peak_mz_;   ///< The maximum m/z of all peaks
   double           total_energy_;  ///< The sum of intensities in all peaks
   std::string           filename_;      ///< Optional filename
+  std::string           stripped_filename_; ///< filename, no path or extension
   std::vector<std::string> i_lines_v_;  ///< store i lines
   std::vector<std::string> d_lines_v_;  ///< store d lines
   bool             has_peaks_;  ///< Does the spectrum contain peak information
@@ -167,14 +172,6 @@ class Spectrum{
      FLOAT_T* intensities, ///< intensities of new peaks
      int max_mz_bin,       ///< num_bins in intensities
      FILE* file);          ///< print to this file
-
-  /**
-   * Prints a spectrum object to file in xml format.
-   */
-  void printXml
-    (FILE* file,           ///< output file to print at -out
-     SpectrumZState& zstate,            ///< zstate used for the search -in
-     int index);            ///< used to output index to file
 
   /**
    * Prints a spectrum object to file in sqt format.
@@ -300,6 +297,19 @@ class Spectrum{
      );
   
   /**
+   * \returns The PEAK_T within 'max' of 'mz' in 'spectrum'
+   * that is the maximum intensity.
+   * NULL if no peak within 'max'
+   * This should lazily create the data structures within the
+   * spectrum object that it needs.
+   */
+  Peak* getMaxIntensityPeak(
+    FLOAT_T mz, ///< the mz of the peak to find
+    FLOAT_T max ///< the maximum distance to get intensity -in
+  );
+
+
+  /**
    * \returns The sum of intensities in all peaks.
    */
   double getTotalEnergy();
@@ -337,8 +347,19 @@ class Spectrum{
    */
   void populateMzPeakArray();
 
+  /**
+   *if ms2 file dose not have any Z line then assignZState will create it  
+   */
+  bool assignZState();
+
+  /**
+   * \returns The name of the file this spectrum came from or an empty
+   * string, if unavailable.
+   */
+  const char* getFilename();
 };    
 
+}
 
 /**
  * Local Variables:

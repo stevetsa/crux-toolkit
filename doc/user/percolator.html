@@ -33,6 +33,9 @@ datasets."</a>
 </blockquote>
 
 <p>
+For more on q-values and posterior error probabilities (PEP), see the
+documentaion for <a href=calibrate-scores.html>calibrate-scores</a>.
+<p>
 <span class=prog>Crux</span> now includes code from
 <span class=prog>Percolator 1.05</span>.
 The current version of Percolator can be downloaded
@@ -123,6 +126,22 @@ The estimated proportion of target scores that are drawn according to
 the null distribution.  Default=1.0.</li>
 
 <li>
+<code>mod-mass-format &lt;mod-only|total|separate&gt;<code> &ndash;
+Specify how sequence modifications are reported in various ouptut
+files.  Each modification is reported as a number enclosed in square
+braces following the modified reside; however, the number may
+correspond to one of three different masses: (1) 'mod-only' reports
+the value of the mass shift induced by the modification; (2) 'total'
+reports the mass of the residue with the modification (residue mass
+plus modification mass); (3) 'separate' is the same as 'mod-only', but
+multiple modifications to a single amino acid are reported as a
+comma-separated list of values. For example, suppose amino
+acid <i>D</i> has an unmodified mass of 115 as well as two
+modifications of masses +14 and +2.  In this case, the amino acid
+would be reported as D[16] with 'mod-only', D[131] with 'total', and
+D[14,2] with 'separate'.</li>
+
+<li>
 <code>--fileroot &lt;string&gt;</code> &ndash; 
 The <code>fileroot</code> string will be added as a prefix to all
 output file names. Default = none.</li>
@@ -152,11 +171,6 @@ all those at lower verbosity levels: 0-fatal errors, 10-non-fatal
 errors, 20-warnings, 30-information on the progress of execution,
 40-more progress information, 50-debug info, 60-detailed debug info.
 Default = 30.
-
-<li>
-<code>--version T</code> &ndash;
-Print the version number and quit.  Please note that you must include
-the 'T' after --version.
 
 </ul>
 

@@ -21,6 +21,7 @@
 #include <algorithm>
 #include <sstream>
 #include <iomanip>
+#include <ios>
 #include "parameter.h"
 
 class DelimitedFileWriter {
@@ -90,7 +91,9 @@ class DelimitedFileWriter {
   void setColumnCurrentRow
     (unsigned int col_idx, ///< set value for this column
      const ValueType& value, ///< the value to set
-     unsigned int precision){///< written at this precision
+     unsigned int precision, ///<written at this precision
+     bool fixed_float=true){ ///<use fixed float notation?
+
     // make sure the current_row_ is long enough
     size_t max_size = std::max((size_t)col_idx + 1, column_names_.size());
     
@@ -98,7 +101,7 @@ class DelimitedFileWriter {
       current_row_.push_back("");
     }
     
-    current_row_[col_idx] = to_string(value, precision);
+    current_row_[col_idx] = to_string(value, precision, fixed_float);
   }
 
   /**
@@ -123,10 +126,10 @@ class DelimitedFileWriter {
    * use the --precision option value.
    */
   template<typename TValue>
-  static std::string to_string(TValue& value) {
+  static std::string to_string(TValue value) {
 
     std::ostringstream oss;
-    oss << std::setprecision(get_int_parameter("precision"));// << std::fixed;
+    oss << std::setprecision(get_int_parameter("precision")) << std::fixed;
     oss << value;
     std::string out_string = oss.str();
     return out_string;
@@ -139,10 +142,16 @@ class DelimitedFileWriter {
   template<typename TValue>
   static std::string to_string
     (TValue& value,
-     int precision) {
+     int precision,
+     bool fixed_float = true) {
 
     std::ostringstream oss;
-    oss << std::setprecision(precision);// << std::fixed;
+    oss << std::setprecision(precision);
+    if (fixed_float) {
+      oss << std::fixed;
+    } else {
+      oss.unsetf(std::ios_base::floatfield);
+    }
     oss << value;
     std::string out_string = oss.str();
     return out_string;

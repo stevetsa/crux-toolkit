@@ -8,15 +8,17 @@
 #include <string.h>
 #include "objects.h"
 #include "Ion.h"
-#include "alphabet.h"
-#include "peptide.h"
+#include "Alphabet.h"
+#include "Peptide.h"
 #include "Peak.h"
 #include "mass.h"
 #include "utils.h"
 #include <sys/types.h>
+#ifndef WIN32
 #include <netinet/in.h>
 #include <inttypes.h>
-
+#endif
+#include "WinCrux.h"
 
 // At one point I need to reverse the endianness for pfile_create to work
   // Apparently that is no longer true. Hence 0 below.
@@ -101,7 +103,7 @@ void Ion::initBasicIon(
   charge_ = charge;
   peptide_sequence_ = peptide;
   // TODO get mass type from param file
-  peptide_mass_ = calc_sequence_mass(peptide, MONO); 
+  peptide_mass_ = Peptide::calcSequenceMass(peptide, MONO); 
   peak_ = NULL;
 }
 
@@ -247,9 +249,15 @@ void Ion::print(
   )
 {
   // print all fields of ion
-  fprintf(file, "%.2f\t%.2f\t%d\t%d\t%d", 
+
+
+  char* type_str = ion_type_to_string(type_);
+
+  fprintf(file, "%.2f\t%.2f\t%d\t%s\t%d", 
       ion_mass_z_, (ion_mass_z_)*charge_, charge_, 
-      (int)type_, cleavage_idx_);
+      type_str, cleavage_idx_);
+
+  free(type_str);
 
   // iterate over all modification counts
   int mod_idx;
@@ -311,8 +319,8 @@ void Ion::printGmtkSingle(
       mz_int,                                                   // 5 
       cleavage_idx_,                                            // 6
       strlen(peptide_sequence_) - cleavage_idx_ + 1,            // 7
-      amino_to_int(peptide_sequence_[cleavage_idx_-1]),         // 8 
-      amino_to_int(peptide_sequence_[cleavage_idx_]),           // 9 
+      Alphabet::aminoToInt(peptide_sequence_[cleavage_idx_-1]),// 8 
+      Alphabet::aminoToInt(peptide_sequence_[cleavage_idx_]), // 9 
       is_possible,                                              // 10 
       is_detectable,                                            // 11
       is_detected                                               // 12
@@ -371,8 +379,8 @@ void Ion::printGmtkSingleBinary(
 
   int mz_int = (int)(mz_ratio * (MZ_INT_MAX - MZ_INT_MIN) + MZ_INT_MIN);
   int cterm_idx = strlen(peptide_sequence_) - cleavage_idx_; 
-  int left_amino = amino_to_int(peptide_sequence_[cleavage_idx_-1]);
-  int right_amino = amino_to_int(peptide_sequence_[cleavage_idx_]);
+  int left_amino = Alphabet::aminoToInt(peptide_sequence_[cleavage_idx_-1]);
+  int right_amino = Alphabet::aminoToInt(peptide_sequence_[cleavage_idx_]);
   int is_detectable = 0;
   if ( 
        ((ion_mass_z_ >= DETECTABLE_MZ_MIN) 
@@ -563,9 +571,9 @@ void Ion::printGmtkPairedBinary(
   int c_mz_int = (int)(c_mz_ratio * (MZ_INT_MAX - MZ_INT_MIN) + MZ_INT_MIN);
   int cterm_idx = strlen(first_ion->peptide_sequence_) 
     - first_ion->cleavage_idx_; 
-  int left_amino = amino_to_int(
+  int left_amino = Alphabet::aminoToInt(
       first_ion->peptide_sequence_[first_ion->cleavage_idx_-1]);
-  int right_amino = amino_to_int(
+  int right_amino = Alphabet::aminoToInt(
       first_ion->peptide_sequence_[first_ion->cleavage_idx_]);
   int first_is_detectable = 0;
   if ( 
@@ -714,7 +722,7 @@ FLOAT_T Ion::getMass(
     int real_cleavage_idx = strlen(peptide_sequence_) - cleavage_idx_;
     ion_sequence = &(peptide_sequence_[real_cleavage_idx]);
     ion_length = strlen(ion_sequence);
-    reverse = TRUE;
+    reverse = true;
   }
   // get sequence for a,b,c ion
   else{
@@ -768,7 +776,7 @@ FLOAT_T Ion::modifyMass(
 /**
  * is_modified, indiciates if there are any modification to the ion
  * speeds up the proccess if FALSE.
- *\returns TRUE if successfully computes the mass/z of the ion, else FALSE
+ *\returns true if successfully computes the mass/z of the ion, else FALSE
  */
 bool Ion::calcMassZWithMass(
   MASS_TYPE_T mass_type, ///< mass type (average, mono) -in
@@ -805,7 +813,7 @@ bool Ion::calcMassZWithMass(
 /**
  * is_modified, indiciates if there are any modification to the ion
  * speeds up the proccess if FLASE.
- *\returns TRUE if successfully computes the mass/z of the ion, else FALSE
+ *\returns true if successfully computes the mass/z of the ion, else FALSE
  */
 bool Ion::calcMassZ(
   MASS_TYPE_T mass_type, ///< mass type (average, mono) -in
@@ -844,7 +852,7 @@ void Ion::copy(
 
 
 /**
- * \returns TRUE if forward ion_type(A,B,C), 
+ * \returns true if forward ion_type(A,B,C), 
  * else reverse ion_type(X,Y,Z) FALSE
  */
 bool Ion::isForwardType()
@@ -862,7 +870,7 @@ bool Ion::isForwardType()
 }
 
 /**
- *\returns TRUE if the ion has modifications, else FALSE
+ *\returns true if the ion has modifications, else FALSE
  */
 bool Ion::isModified()
 {
@@ -998,6 +1006,17 @@ int Ion::getSingleModificationCount(
   )
 {
   return modification_counts_[mod_type];
+}
+
+int Ion::getTotalModificationCount() {
+  int total = 0;
+
+  for (int idx=NH3;idx < ALL_MODIFICATION;idx++) {
+    total += modification_counts_[idx];
+  }
+
+  return total;
+
 }
 
 

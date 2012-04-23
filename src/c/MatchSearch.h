@@ -25,8 +25,9 @@ class MatchSearch : public CruxApplication {
    * In the future, implement and option and test for a minimum score.
    * \returns TRUE if no more PSMs need be searched.
    */
-  bool isSearchComplete(MatchCollection* matches, 
-                             int mods_per_peptide);
+  bool isSearchComplete(
+    MatchCollection* matches, ///< matches to consider
+    int mods_per_peptide); ///< number of mods per peptide searched so far
 
   /**
    * \brief Search the database OR index with up to num_peptide_mods from
@@ -40,14 +41,14 @@ class MatchSearch : public CruxApplication {
    */
   int searchPepMods(
     MatchCollection* match_collection, ///< store PSMs here
-    BOOLEAN_T is_decoy,   ///< generate decoy peptides from index/db
+    bool is_decoy,   ///< generate decoy peptides from index/db
     Index* index,       ///< index to use for generating peptides
     Database* database, ///< db to use for generating peptides
     Spectrum* spectrum, ///< spectrum to search
     SpectrumZState& zstate, ///< seach spectrum at this z-state
     PEPTIDE_MOD_T** peptide_mods, ///< list of peptide mods to apply
     int num_peptide_mods, ///< how many p_mods to use from the list
-    BOOLEAN_T store_scores///< save all scores for p-value estimation
+    bool store_scores///< save all scores for p-value estimation
   );
 
   /**
@@ -61,12 +62,12 @@ class MatchSearch : public CruxApplication {
    * Possible side effectos: Collections may be merged and re-ranked.
    */
   static void printSpectrumMatches(
-    OutputFiles& output_files,       
-    MatchCollection* target_psms, 
-    vector<MatchCollection*>& decoy_psms,
-    Spectrum* spectrum,             
-    BOOLEAN_T combine_target_decoy,
-    int num_decoy_files
+    OutputFiles& output_files, ///< files to print to     
+    MatchCollection* target_psms, ///< target psms to print
+    vector<MatchCollection*>& decoy_psms, ///< decoy psms to print
+    Spectrum* spectrum, ///< spectrum for all psms
+    bool combine_target_decoy, ///< print target and decoys to same file
+    int num_decoy_files ///< number of decoy files to print to
    );
 
   // TODO this should be in match_collection
@@ -79,8 +80,8 @@ class MatchSearch : public CruxApplication {
    */
   void addDecoyScores(
     MatchCollection* target_psms, ///< add scores to these matches
-    Spectrum* spectrum, ///<
-    int charge, ///< 
+    Spectrum* spectrum, ///< spectrum to score
+    SpectrumZState& zstate, ///< charge and mass to use for spectrum
     Index* index, ///< search this index if not null
     Database* database, ///< search this database if not null
     PEPTIDE_MOD_T** peptide_mods, ///< list of peptide mods to search
@@ -127,7 +128,8 @@ class MatchSearch : public CruxApplication {
   virtual COMMAND_T getCommand();
 
   /**
-   * \returns whether the application needs the output directory or not. (default false).
+   * \returns whether the application needs the output directory or
+   * not. (default false). 
    */
   virtual bool needsOutputDirectory();
 

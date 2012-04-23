@@ -5,6 +5,9 @@
  * standard index iterator, it filters by digestion type
  *****************************************************************************/
 #include "IndexFilteredPeptideIterator.h"
+#include <vector>
+
+using namespace std;
 
 /**
  * Instantiates a new index_filtered_peptide_iterator from a index.
@@ -23,7 +26,7 @@ IndexFilteredPeptideIterator::IndexFilteredPeptideIterator(
 IndexFilteredPeptideIterator::~IndexFilteredPeptideIterator(){
   // if did not iterate over all peptides, free the last peptide not returned
   if(has_next_){
-    free_peptide(peptide_);
+    delete peptide_;
   }
 }
 
@@ -31,8 +34,8 @@ IndexFilteredPeptideIterator::~IndexFilteredPeptideIterator(){
  *  The basic iterator functions.
  * \returns The next peptide in the index.
  */
-PEPTIDE_T* IndexFilteredPeptideIterator::next(){
-  PEPTIDE_T* peptide_to_return = peptide_;
+Peptide* IndexFilteredPeptideIterator::next(){
+  Peptide* peptide_to_return = peptide_;
   setup();
   return peptide_to_return;
 }
@@ -52,29 +55,26 @@ bool IndexFilteredPeptideIterator::hasNext(){
  */
 bool IndexFilteredPeptideIterator::setup()
 {
-  PEPTIDE_T* peptide = NULL;
-  PEPTIDE_SRC_T* src = NULL;
+  Peptide* peptide = NULL;
   DIGEST_T required_digestion = index_->getSearchConstraint()->getDigest();
-  bool match = FALSE;
+  bool match = false;
   
   // initialize index_filered
   while(IndexPeptideIterator::hasNext()){
     peptide = IndexPeptideIterator::next();
-    src = get_peptide_peptide_src(peptide);
+    vector<PeptideSrc*>& srcs = peptide->getPeptideSrcVector();
     // mass, length has been already checked in index_peptide_iterator
     // check if peptide type matches the constraint
     // find at least one peptide_src for which cleavage is correct
-    while(src != NULL){
-      if(get_peptide_src_digest(src) >= required_digestion){
-        match = TRUE;
+    for (size_t idx = 0; idx < srcs.size(); idx++) {
+      if(srcs[idx]->getDigest() >= required_digestion){
+        match = true;
         break;
       }
-      // check the next peptide src
-      src = get_peptide_src_next_association(src);
     }
     
     // add more filters to the peptides here, if they don't meet
-    // requirements change 'match' to FALSE 
+    // requirements change 'match' to false 
     
     // this peptide meets the peptide_type
     if(match){
@@ -82,7 +82,7 @@ bool IndexFilteredPeptideIterator::setup()
       has_next_ = true;
       return true;
     }
-    free_peptide(peptide);
+    delete peptide;
   }// next peptide
   // no peptides meet the constraint
   has_next_ = false;
@@ -97,7 +97,7 @@ bool IndexFilteredPeptideIterator::setup()
  *  The basic iterator functions.
  * \returns The next peptide in the index.
  */
-PEPTIDE_T* void_index_filtered_peptide_iterator_next(
+Peptide* void_index_filtered_peptide_iterator_next(
   void* iterator ///< the index_filtered_peptide_iterator to initialize -in
   )
 {
@@ -151,7 +151,7 @@ bool void_index_peptide_iterator_has_next(
 /**
  * \returns The next peptide in the index.
  */
-PEPTIDE_T* void_index_peptide_iterator_next(
+Peptide* void_index_peptide_iterator_next(
     void* index_peptide_iterator ///< the iterator of interest -in
     )
 {

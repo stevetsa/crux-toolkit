@@ -51,7 +51,7 @@ class XLinkMatchCollection : public MatchCollection {
 		       Database* database,
 		       PEPTIDE_MOD_T** peptide_mods,
 		       int num_peptide_mods,
-		       bool is_decoy=FALSE);
+		       bool is_decoy=false);
 
   virtual ~XLinkMatchCollection();
 

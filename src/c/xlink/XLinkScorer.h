@@ -6,8 +6,8 @@
 class XLinkScorer {
  protected:
   Spectrum* spectrum_;
-  SCORER_T* scorer_xcorr_;
-  SCORER_T* scorer_sp_;
+  Scorer* scorer_xcorr_;
+  Scorer* scorer_sp_;
   IonConstraint* ion_constraint_xcorr_;
   IonConstraint* ion_constraint_sp_;
   XLinkMatch* candidate_;

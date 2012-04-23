@@ -3,7 +3,7 @@ AC_PREREQ(2.57)
 AC_INIT(crux, 1.0, aklammer@u.washington.edu)
 AC_CONFIG_SRCDIR(src/c/IonSeries.cpp)
 AC_CONFIG_AUX_DIR(config)
-AM_INIT_AUTOMAKE(crux, 1.36)
+AM_INIT_AUTOMAKE(crux, 1.37)
 AM_CONFIG_HEADER([config.h])
 
 # Check for required programs.
@@ -122,11 +122,13 @@ AC_CONFIG_FILES([\
     src/Makefile \
     src/c/Makefile \
     src/c/ArrayLibrary/Makefile \
-    src/c/MSToolkit/Makefile \
+    src/external/MSToolkit/Makefile \
     src/c/percolator/Makefile \
-    src/c/q-ranker/Makefile \
     src/c/qranker-barista/Makefile \
+    src/c/posterior-error/Makefile \
     src/c/xlink/Makefile \
+    src/c/hardklor/Makefile \
+    src/c/bullseye/Makefile \
     src/python/Makefile \
     src/external/Makefile
 ])

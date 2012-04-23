@@ -55,7 +55,7 @@ int PrintProcessedSpectra::main(int argc, char** argv) {
   char* output_ms2_name = get_string_parameter("output file");
   prefix_fileroot_to_name(&output_ms2_name);
   const char* output_dir = get_string_parameter_pointer("output-dir");
-  BOOLEAN_T overwrite = get_boolean_parameter("overwrite");
+  bool overwrite = get_boolean_parameter("overwrite");
 
   // open output file
   create_output_directory(output_dir, overwrite);
@@ -99,7 +99,7 @@ int PrintProcessedSpectra::main(int argc, char** argv) {
     // change the peak values
     FLOAT_T* intensities = NULL;
     int max_mz_bin = 0;
-    get_processed_peaks(cur_spectrum, cur_charge, XCORR,
+    Scorer::getProcessedPeaks(cur_spectrum, cur_charge, XCORR,
                         &intensities, &max_mz_bin);
 
     // print processed spectrum

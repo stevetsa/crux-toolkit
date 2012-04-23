@@ -45,11 +45,16 @@ enum _peak_sort_type {_PEAK_LOCATION, _PEAK_INTENSITY};
  */
 typedef enum _peak_sort_type PEAK_SORT_TYPE_T;
 
+
+namespace Crux {
+
 /**
  * \class Spectrum 
  * \brief A spectrum
  */
 class Spectrum;
+
+}
 
 /**
  * \typedef PeakIterator
@@ -67,7 +72,7 @@ class SpectrumCollection;
  * \typedef SpectrumIterator
  * \brief An object to iterate over the spectra in a SpectrumCollection
  */
-typedef std::vector<Spectrum*>::iterator SpectrumIterator;
+typedef std::vector<Crux::Spectrum*>::iterator SpectrumIterator;
 
 /**
  * \class FilteredSpectrumChargeIterator 
@@ -76,10 +81,10 @@ typedef std::vector<Spectrum*>::iterator SpectrumIterator;
 class FilteredSpectrumChargeIterator;
 
 /**
- * \typedef PEPTIDE_T
+ * \class Peptide
  * \brief A peptide subsequence of a protein
  */
-typedef struct peptide PEPTIDE_T;
+class Peptide;
 
 /**
  * \class PeptideConstraint
@@ -93,12 +98,6 @@ class PeptideConstraint;
  * \brief An object to iterate over the residues in a peptide
  */
 typedef struct residue_iterator RESIDUE_ITERATOR_T;
-
-/**
- * \typedef PEPTIDE_SRC_ITERATOR_T 
- * \brief An object to iterate over the protein peptide associations in a peptide
- */
-typedef struct peptide_src_iterator PEPTIDE_SRC_ITERATOR_T;
 
 // REPLACE PEPTIDE_TYPE_T with DIGEST_T and ENZYME_T
 /**
@@ -178,8 +177,10 @@ enum _window_type {
  */
 enum _measure_type {
   MEASURE_INVALID,
+  MEASURE_RAW,
   MEASURE_SIN,
   MEASURE_NSAF,
+  MEASURE_DNSAF,
   MEASURE_EMPAI,
   NUMBER_MEASURE_TYPES
 };
@@ -224,6 +225,40 @@ enum _parsimony_type {
  */
 typedef enum _parsimony_type PARSIMONY_TYPE_T;
 
+/**
+ * \enum DECOY_TYPE_T
+ */
+enum DECOY_TYPE_T {
+  INVALID_DECOY_TYPE,
+  NO_DECOYS,
+  REVERSE_DECOYS,
+  PROTEIN_SHUFFLE_DECOYS,
+  PEPTIDE_SHUFFLE_DECOYS,
+  NUMBER_DECOY_TYPES
+};
+
+/**
+ * \enum MASS_FORMAT_T
+ */
+enum MASS_FORMAT_T {
+  INVALID_MASS_FORMAT,
+  MOD_MASS_ONLY,
+  AA_PLUS_MOD,
+  MOD_MASSES_SEPARATE,
+  NUMBER_MASS_FORMATS
+};
+
+/**
+*\enum CHARGE_STATE_T
+*/
+
+enum CHARGE_STATE_T{
+  INVALID_CHARGE_STATE,
+  SINGLE_CHARGE_STATE,
+  MULTIPLE_CHARGE_STATE,
+  NUMBER_CHARGE_STATE
+};
+
 
 /**
  * \typedef WINDOW_TYPE_T
@@ -232,10 +267,10 @@ typedef enum _parsimony_type PARSIMONY_TYPE_T;
 typedef enum _window_type WINDOW_TYPE_T;
 
 /**
- * \typedef PEPTIDE_SRC_T
+ * \class PeptideSrc
  * \brief object for mapping a peptide to it's parent protein.
  */
-typedef struct peptide_src PEPTIDE_SRC_T;
+class PeptideSrc;
 
 
 /**
@@ -243,7 +278,6 @@ typedef struct peptide_src PEPTIDE_SRC_T;
  * \brief A protein sequence
  */
 class Protein;
-
 
 /**
  * \class ProteinPeptideIterator
@@ -272,23 +306,11 @@ class DatabasePeptideIterator;
 /**
  * The enum for sort type (mass, length, lexical, none)
  */
-enum _sort_type {SORT_NONE, 
-                 SORT_MASS, 
-                 SORT_LENGTH, 
-                 SORT_LEXICAL, 
-                 NUMBER_SORT_TYPES };
-
-/**
- * \typedef SORT_TYPE_T
- * \brief The typedef for sort type (mass, length)
- */
-typedef enum _sort_type SORT_TYPE_T;
-
-/**
- * \class DatabaseSortedPeptideIterator
- * \brief An object to iterate over the peptides in a database in sorted order 
- */
-class DatabaseSortedPeptideIterator;
+enum SORT_TYPE_T {SORT_NONE, 
+                  SORT_MASS, 
+                  SORT_LENGTH, 
+                  SORT_LEXICAL, 
+                  NUMBER_SORT_TYPES };
 
 /**
  * \typedef PEPTIDE_WRAPPER_T
@@ -387,7 +409,7 @@ typedef struct bin_peptide_iterator BIN_PEPTIDE_ITERATOR_T;
 typedef struct bin_sorted_peptide_iterator BIN_SORTED_PEPTIDE_ITERATOR_T;
 
 /**
- * \class ProtienIndex
+ * \class ProteinIndex
  * \brief Object to store the protein relation to the fasta file
  */
 class ProteinIndex;
@@ -418,13 +440,13 @@ class IonFilteredIterator;
 typedef struct loss_limit LOSS_LIMIT_T;
 
 /**
- * \typedef SCORER_T
+ * \class Scorer
  * \brief An object to score a spectrum v. ion_series or spectrum v. spectrum
  */
-typedef struct scorer SCORER_T;
+class Scorer;
 
 /**
- * The enum for scorer type
+ * The enum for scorer type.  Scores are indexed by this type in the Match.
  */
 enum _scorer_type { 
   SP,                  ///< SEQUEST preliminary score
@@ -432,19 +454,28 @@ enum _scorer_type {
 
   DECOY_XCORR_QVALUE,  ///< q-value derived from empirical null (decoys)
   DECOY_XCORR_PEPTIDE_QVALUE,
+  DECOY_XCORR_PEP,     ///< posterior error prob for xcorrs (target/decoy)
 
   LOGP_WEIBULL_XCORR,
   LOGP_BONF_WEIBULL_XCORR,
   LOGP_QVALUE_WEIBULL_XCORR,
+  LOGP_WEIBULL_PEP,    ///< posterior error prob from weibull p-values
   LOGP_PEPTIDE_QVALUE_WEIBULL,
 
   PERCOLATOR_SCORE,
   PERCOLATOR_QVALUE,
   PERCOLATOR_PEPTIDE_QVALUE,
+  PERCOLATOR_PEP,      ///< posterior error prob from percolator scores
 
   QRANKER_SCORE,
   QRANKER_QVALUE,
   QRANKER_PEPTIDE_QVALUE,
+  QRANKER_PEP,        ///< posterior error prob from q-ranker scores
+
+  BARISTA_SCORE,
+  BARISTA_QVALUE,
+  BARISTA_PEPTIDE_QVALUE,
+  BARISTA_PEP,        ///< posterior error prob from barista scores
 
   NUMBER_SCORER_TYPES,
   INVALID_SCORER_TYPE
@@ -455,30 +486,6 @@ enum _scorer_type {
  * \brief The typedef for scorer type.
  */
 typedef enum _scorer_type SCORER_TYPE_T;
-
-/**
- *\typedef GENERATE_PEPTIDES_ITERATOR_T
- *\brief An object that navigates the options and selects the correct peptide iterator to use
- */
-typedef struct generate_peptides_iterator_t GENERATE_PEPTIDES_ITERATOR_T;
-
-/**
- *\typedef HIT_T
- *\brief An object that contains the a protein and its score. 
- */
-typedef struct hit HIT_T;
-
-/**
- *\typedef HIT_COLLECTION_T
- *\brief An object that contains multiple hit objects
- */
-typedef struct hit_collection HIT_COLLECTION_T;
-
-/**
- *\typedef HIT_ITERATOR_T
- *\brief An object that navigates the hits in a hit collection
- */
-typedef struct hit_iterator HIT_ITERATOR_T;
 
 /**
  * The enum for protein scorer type
@@ -518,6 +525,12 @@ class MatchIterator;
 class MatchCollectionIterator;
 
 /**
+ *\typedef  PeptideSrcIterator 
+ *\brief An object to iterate over the PeptideSrc in a peptide  
+ */
+typedef std::vector<PeptideSrc*>::iterator  PeptideSrcIterator; 
+
+/**
  * The enum for algorithm type (PERCOLATOR, CZAR, ALL)
  */
 enum _algorithm {PERCOLATOR_ALGORITHM, 
@@ -535,6 +548,19 @@ enum _algorithm {PERCOLATOR_ALGORITHM,
 typedef enum _algorithm ALGORITHM_TYPE_T;
 
 /**
+ * the enum for hardklor algorithm type
+ */
+enum _hardklor_algorithm {INVALID_HK_ALGORITHM,
+                          BASIC_HK_ALGORITHM,
+                          FEWEST_PEPTIDES_HK_ALGORITHM,
+                          FAST_FEWEST_PEPTIDES_HK_ALGORITHM,
+                          FEWEST_PEPTIDES_CHOICE_HK_ALGORITHM,
+                          FAST_FEWEST_PEPTIDES_CHOICE_HK_ALGORITHM,
+                          NUMBER_HK_ALGORITHM_TYPES };
+
+typedef enum _hardklor_algorithm HARDKLOR_ALGORITHM_T;
+
+/**
  * One value for each command that can be passed to crux
  * (e.g. search-for-matches, sequest-search, percolator).
  */
@@ -547,8 +573,12 @@ enum _command {
   PERCOLATOR_COMMAND,   ///< percolator
   SPECTRAL_COUNTS_COMMAND, ///< spectral counts
   QRANKER_COMMAND,      ///< q-ranker
+  BARISTA_COMMAND,      ///< barista
   PROCESS_SPEC_COMMAND, ///< print-processed-spectra
   XLINK_SEARCH_COMMAND, ///< search-for-xlinks
+  GENERATE_PEPTIDES_COMMAND, ///< generate-peptides
+  GET_MS2_SPECTRUM_COMMAND, ///<get-ms2-spectrum 
+  PREDICT_PEPTIDE_IONS_COMMAND, ///< predict-peptide-ions
   VERSION_COMMAND,      ///< just print the version number
   MISC_COMMAND,         ///< miscellaneous command
   NUMBER_COMMAND_TYPES  ///< always keep this last so the value
@@ -566,15 +596,13 @@ typedef struct record RECORD_T;
  * \typedef HASH_T
  * \brief HASH_T hash table, contains the records
  */
-typedef struct hash HASH_T;
+typedef struct our_hash HASH_T;
 
 /**
  * \typedef HASH_ITERATOR_T
  * \brief HASH_ITERATOR_T iterator for keys in a hash
  */
 typedef struct hash_iterator HASH_ITERATOR_T;
-
-
 
 /**
  * Identifying which set the PSM belongs to
@@ -641,12 +669,6 @@ typedef struct _linked_list_head LINKED_LIST_T;
 typedef struct _linked_list_node LIST_POINTER_T;
 
 /**
- * \typedef modified_peptides_iterator_t is typedefed as
- * MODIFIED_PEPTIDES_ITERATOR_T 
- */
-typedef struct modified_peptides_iterator_t MODIFIED_PEPTIDES_ITERATOR_T;
-
-/**
  * \enum _xlink_site_t (typedefed as XLINK_SITE_T)
  * \brief An indication of the type of the crosslinking site that
  * may occur in a peptide.
@@ -659,6 +681,19 @@ enum XLINK_SITE_T{
   XLINKSITE_AA,
   NUMBER_XLINKSITES
 };
+
+/**
+ * \class LinkedPeptide
+ * \brief a cross-linked peptide
+ *
+ */
+class LinkedPeptide;
+
+/**
+ * \class XHHC_Peptide
+ * \brief a XHHC Peptide
+ */
+class XHHC_Peptide;
 
 /**
  * \enum COMPARISON_T
@@ -685,12 +720,24 @@ enum COLTYPE_T{
   NUMBER_COLTYPES
 };
 
+/**
+ * \enum SPLITTYPE_T
+ * \brief indication of which peptide in a crosslinked peptide to
+ * generate ions for
+ */
+enum SPLITTYPE_T{
+  SPLITTYPE_INVALID,
+  SPLITTYPE_BOTH,
+  SPLITTYPE_A,
+  SPLITTYPE_B,
+  NUMBER_SPLITTYPES
+};
 
 /**
  * \typedef peptideToScore
  * \brief Mapping of peptide object to scores
  */
-typedef std::map<PEPTIDE_T*, FLOAT_T, bool(*)(PEPTIDE_T*, PEPTIDE_T*) > PeptideToScore;
+typedef std::map<Peptide*, FLOAT_T, bool(*)(Peptide*, Peptide*) > PeptideToScore;
 
 /**
  * \typedef ProteinToScore
@@ -716,6 +763,8 @@ typedef std::map<Protein*, MetaProtein, bool(*)(Protein*, Protein*) > ProteinToM
  * \brief Mapping of MetaProtein to ranks to the rank asigned to it
  */
 typedef std::map<MetaProtein, int, bool(*)(MetaProtein, MetaProtein) > MetaToRank;
+
+								    
 
 #endif
 

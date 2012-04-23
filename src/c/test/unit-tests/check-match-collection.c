@@ -10,7 +10,7 @@
 
 // also "included" from match_collection.
 void force_scored_by(MatchCollection* match_collection, SCORER_TYPE_T type);
-BOOLEAN_T calculate_delta_cn( MatchCollection* mc, COMMAND_T search_type );
+bool calculate_delta_cn( MatchCollection* mc, COMMAND_T search_type );
 
 using namespace std;
 
@@ -28,21 +28,21 @@ vector<Match*> match_list;
 int num_matches;
 // some unordered scores to use
 float scores[10] = { 78.2, 50, 23.3, 109, 34.5, 50, 45.6, 50, 38, 64};
-PEPTIDE_T* pep;
+Peptide* pep;
 Protein* prot;
 char protseq[] = "FAKESEQ";
+SpectrumZState zstate;
 
 void match_collection_setup(){
-  mc = new MatchCollection(FALSE); // not decoy
+  mc = new MatchCollection(false); // not decoy
 
   // set up some matches with xcorrs and a peptide to add
   prot = new Protein("prot", protseq, strlen(protseq), NULL, 0, 0, NULL);
-  pep = new_peptide((unsigned char)strlen(protseq), 7.77, prot, 1);
+  pep = new Peptide((unsigned char)strlen(protseq), 7.77, prot, 1);
   num_matches = 8;
   for(int i=0; i<num_matches; i++){
-    Match* m = new Match();
+    Match* m = new Match(pep, NULL, zstate, false);
     m->setScore(XCORR, scores[i]);
-    m->setPeptide(pep);
     match_list.push_back(m);    
   }
   set_verbosity_level(CARP_ERROR);
@@ -59,7 +59,7 @@ void match_collection_teardown(){
     delete mc; // frees the matches
   }
   if( prot ) { delete prot; }
-  if( pep ) { free_peptide(pep); }
+  if( pep ) { delete pep; }
 
   for(size_t i=0; i<match_list.size(); i++){
     match_list[i] = NULL;
@@ -75,7 +75,7 @@ START_TEST(test_list_files){
   initialize_parameters();
 
   // CASE: search files, one decoy file
-  create_output_directory("list-files-1", TRUE);
+  create_output_directory("list-files-1", true);
   system("touch list-files-1/search.target.txt");
   system("touch list-files-1/somefileroot.search.target.txt");
   system("touch list-files-1/search.target.pep.xml");
@@ -103,7 +103,7 @@ START_TEST(test_list_files){
   closedir( dir );
 
   // CASE: sequest files, one decoy file
-  create_output_directory("list-files-2", TRUE);
+  create_output_directory("list-files-2", true);
   system("touch list-files-2/sequest.decoy.pep.xml");
   system("touch list-files-2/sequest.decoy.sqt");
   system("touch list-files-2/sequest.decoy.txt");
@@ -132,7 +132,7 @@ START_TEST(test_list_files){
   closedir( dir );
 
   // CASE: search files, two decoys
-  create_output_directory("list-files-3", TRUE);
+  create_output_directory("list-files-3", true);
   system("touch list-files-3/search.decoy-1.pep.xml");
   system("touch list-files-3/search.decoy-1.txt");
   system("touch list-files-3/search.decoy-2.pep.xml");
@@ -176,7 +176,7 @@ START_TEST(test_set){
                num_matches, mc->getMatchTotal());
 
   // check scores of all matches
-  MatchIterator* mi = new MatchIterator(mc, XCORR, FALSE); // don't sort
+  MatchIterator* mi = new MatchIterator(mc, XCORR, false); // don't sort
   int idx = 0;
   while( mi->hasNext() ){
     Match* cur_match = mi->next();
@@ -189,7 +189,7 @@ START_TEST(test_set){
 
   // also check that they sort correctly
   delete mi;
-  mi = new MatchIterator(mc, XCORR, TRUE); // do sort
+  mi = new MatchIterator(mc, XCORR, true); // do sort
   idx = 0;
   double last_score = 10000;
   while( mi->hasNext() ){
@@ -299,7 +299,7 @@ START_TEST(test_delta_cn){
   mc->calculateDeltaCn(SEQUEST_COMMAND);
 
   // check delta_cn scores
-  MatchIterator* mi = new MatchIterator(mc, XCORR, FALSE); // don't sort
+  MatchIterator* mi = new MatchIterator(mc, XCORR, false); // don't sort
   Match* cur_match = mi->next();
   double first_xcorr = cur_match->getScore(XCORR);
 
@@ -326,7 +326,7 @@ START_TEST(test_delta_cn){
 
   // check delta_cn scores
   delete mi;
-  mi = new MatchIterator(mc, XCORR, FALSE); // don't sort
+  mi = new MatchIterator(mc, XCORR, false); // don't sort
   cur_match = mi->next();
 
   // for non sequest, delta cn of first should not be 0

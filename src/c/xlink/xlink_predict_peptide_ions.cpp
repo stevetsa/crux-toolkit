@@ -36,7 +36,7 @@ int main(int argc, char** argv) {
   int posB = 0;
   FLOAT_T linker_mass = 0;
   int charge = 1; 
-  BOOLEAN_T print_spectrum = FALSE;
+  bool print_spectrum = false;
 
 
   /* Verbosity level for set-up/command line reading */
@@ -113,7 +113,7 @@ int main(int argc, char** argv) {
   //convert back.
   
   char* temp = 
-    modified_aa_string_to_string_with_masses(mod_seqA, modified_aa_string_length(mod_seqA), FALSE);
+    modified_aa_string_to_string_with_masses(mod_seqA, modified_aa_string_length(mod_seqA), MOD_MASS_ONLY);
 
   cerr <<"orig:"<<peptideA<<":"<<len<<" convert:"<<temp<<":"<<strlen(temp)<<endl;
 

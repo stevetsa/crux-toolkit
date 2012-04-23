@@ -14,8 +14,8 @@
 #include <ctype.h>
 #include <unistd.h>
 #include "carp.h"
-#include "peptide.h"
-#include "peptide_src.h"
+#include "Peptide.h"
+#include "PeptideSrc.h"
 #include "Protein.h"
 #include "Database.h"
 #include "parse_arguments.h"
@@ -24,7 +24,7 @@
 
 #include "XLinkPeptide.h"
 
-#include "generate_peptides_iterator.h"
+#include "GeneratePeptidesIterator.h"
 
 #include <string>
 
@@ -39,9 +39,9 @@ int main(int argc, char** argv){
 
   /* Declarations */
   //int verbosity;
-  BOOLEAN_T output_sequence;
-  //  BOOLEAN_T print_trypticity = FALSE;
-  BOOLEAN_T use_index;
+  bool output_sequence;
+  //  bool print_trypticity = false;
+  bool use_index;
   char* filename;
   
   //GENERATE_PEPTIDES_ITERATOR_T* peptide_iterator = NULL; 
@@ -106,10 +106,10 @@ int main(int argc, char** argv){
   filename = get_string_parameter("protein database");
   //use_index = get_boolean_parameter("use-index");
   use_index = is_directory(filename);
-  if( use_index == TRUE ){
+  if( use_index == true ){
     index = new Index(filename);//, 
   }else{
-    database = new Database(filename, FALSE); // not memmapped
+    database = new Database(filename, false); // not memmapped
   }
   free(filename);
 
@@ -234,7 +234,7 @@ int main(int argc, char** argv){
 }
 
 void print_header(){
-  BOOLEAN_T bool_val;
+  bool bool_val;
 
   char* database_name = get_string_parameter("protein database");
   printf("# PROTEIN DATABASE: %s\n", database_name);

@@ -147,7 +147,7 @@ void Linear :: fprop(State &down, State &up)
 {
   for(int k = 0; k < num_neurons; k++)
     {
-      double d = 0;
+      double d = 0.0;
       for(int j = 0; j < num_features; j++)
 	d += w[k*num_features+j]*down.x[j];
       //if there is a bias
@@ -264,6 +264,7 @@ NeuralNet& NeuralNet :: operator=(NeuralNet &N)
       lin2 = N.lin2;
     }
   resize_states();
+  return *this;
 }
 
 void NeuralNet :: copy(NeuralNet &N)

@@ -6,8 +6,8 @@
 #include "objects.h"
 #include "Spectrum.h"
 #include "Peak.h"
-#include "peptide.h"
-#include "peptide_src.h"
+#include "Peptide.h"
+#include "PeptideSrc.h"
 #include "Protein.h"
 #include "ProteinPeptideIterator.h"
 #include "Database.h"
@@ -18,12 +18,12 @@
 void parse_custom_enzyme(const char* rule_str);
 
 // declare things to setup
-static PEPTIDE_T *peptide1, *peptide2;
+static Peptide *peptide1, *peptide2;
 static Protein *protein1;
 static ProteinPeptideIterator* pp_iterator;
 static PeptideConstraint *constraint, *enzyme_constraint;
 
-static PEPTIDE_SRC_T* src;
+static PeptideSrc* src;
 
 static Database* db;
 //                      0123456789
@@ -33,7 +33,7 @@ void protein_setup(){
 
   initialize_parameters();
   // a protein must have a database as its source of sequences
-  db = new Database("input-data/protein1.fasta", FALSE); //not mem mapped
+  db = new Database("input-data/protein1.fasta", false); //not mem mapped
   db->parse();  // assuming we have already tested database
 
   protein1 = new Protein("protein1", prot1_sequence, strlen(prot1_sequence),
@@ -70,37 +70,37 @@ START_TEST (test_peptide_iterator){
   fail_unless(peptide1 != NULL, "Iterator failed to return first peptide.");
 
   // check sequence of all seven peptides
-  char* seq = get_peptide_sequence(peptide1); 
+  char* seq = peptide1->getSequence(); 
   fail_unless( strcmp(seq, "FGGTSVANAER") == 0,
                "First peptide should be FGGTSVANAER but is %s.", seq);
   peptide1 = pp_iterator->next();
-  seq = get_peptide_sequence(peptide1); 
+  seq = peptide1->getSequence(); 
   fail_unless( strcmp(seq, "VADILESNAR") == 0,
                "Second peptide should be VADILESNAR but is %s.", seq);
   peptide1 = pp_iterator->next();
-  seq = get_peptide_sequence(peptide1); 
+  seq = peptide1->getSequence(); 
   fail_unless( strcmp(seq, "QGQVAOOTVLSAPAK") == 0,
                "Third peptide should be QGQVAOOTVLSAPAK but is %s.", seq);
   peptide1 = pp_iterator->next();
-  seq = get_peptide_sequence(peptide1); 
+  seq = peptide1->getSequence(); 
   fail_unless( strcmp(seq, "ITNHLVAMIEK") == 0,
                "Fourth peptide should be ITNHLVAMIEK but is %s.", seq);
   peptide1 = pp_iterator->next();
-  seq = get_peptide_sequence(peptide1); 
+  seq = peptide1->getSequence(); 
   fail_unless( strcmp(seq, "TISGQDALPNISDAER") == 0,
                "Fifth peptide should be TISGQDALPNISDAER but is %s.", seq);
   peptide1 = pp_iterator->next();
-  seq = get_peptide_sequence(peptide1); 
+  seq = peptide1->getSequence(); 
   fail_unless( strcmp(seq, "IFAELLTGLAAAQPGFPLAQLK") == 0,
                "Sixth peptide should be IFAELLTGLAAAQPGFPLAQLK but is %s.",
                seq);
   peptide1 = pp_iterator->next();
-  seq = get_peptide_sequence(peptide1); 
+  seq = peptide1->getSequence(); 
   fail_unless( strcmp(seq, "TFWVDQEFAQIK") == 0,
                "Seventh peptide should be TFWVDQEFAQIK but is %s.", seq);
 
   peptide1 = pp_iterator->next();
-  seq = get_peptide_sequence(peptide1); 
+  seq = peptide1->getSequence(); 
   fail_unless( strcmp(seq, "HVLHGISLWLGQC") == 0,
                "Eighth peptide should be HVLHGISLWLGQC but is %s.", seq);
 
@@ -148,16 +148,16 @@ START_TEST (test_elastase){
     // get peptide
     peptide2 = pp_iterator->next();
     fail_unless(peptide2 != NULL, "Failed to get peptide from iterator.");
-    char* seq = get_peptide_sequence(peptide2);
+    char* seq = peptide2->getSequence();
 
     // get its source
-    src = get_peptide_peptide_src(peptide2);
+    src = peptide2->getPeptideSrc();
     fail_unless(src != NULL, "Failed to get peptide src from peptide.");
 
     // get peptide indecies in sequence
-    int start_idx = get_peptide_src_start_idx(src);// this is 1-based
+    int start_idx = src->getStartIdx();// this is 1-based
     start_idx--;
-    int len = get_peptide_length(peptide2);
+    int len = peptide2->getLength();
     while( starts[idx] == -1 ){ idx++;}
     fail_unless( start_idx == starts[idx],
                  "Peptide %s should start at %i but starts at %i",
@@ -189,7 +189,7 @@ START_TEST (test_elastase){
                    seq); 
     }
 
-    free_peptide(peptide2);
+    delete peptide2;
     free(seq);
   }
 }
@@ -235,16 +235,16 @@ START_TEST (test_chymo){
     // get peptide
     peptide2 = pp_iterator->next();
     fail_unless(peptide2 != NULL, "Failed to get peptide from iterator.");
-    char* seq = get_peptide_sequence(peptide2);
+    char* seq = peptide2->getSequence();
 
     // get its source
-    src = get_peptide_peptide_src(peptide2);
+    src = peptide2->getPeptideSrc();
     fail_unless(src != NULL, "Failed to get peptide src from peptide.");
 
     // get peptide indecies in sequence
-    int start_idx = get_peptide_src_start_idx(src);// this is 1-based
+    int start_idx = src->getStartIdx();// this is 1-based
     start_idx--;
-    int len = get_peptide_length(peptide2);
+    int len = peptide2->getLength();
     while( starts[idx] == -1 ){ idx++;}
     fail_unless( start_idx == starts[idx],
                  "Peptide %s should start at %i but starts at %i",
@@ -274,7 +274,7 @@ START_TEST (test_chymo){
                    seq); 
     }
 
-    free_peptide(peptide2);
+    delete peptide2;
     free(seq);
   }
 }
@@ -321,16 +321,16 @@ START_TEST (test_mod_chymo){
     // get peptide
     peptide2 = pp_iterator->next();
     fail_unless(peptide2 != NULL, "Failed to get peptide from iterator.");
-    char* seq = get_peptide_sequence(peptide2);
+    char* seq = peptide2->getSequence();
 
     // get its source
-    src = get_peptide_peptide_src(peptide2);
+    src = peptide2->getPeptideSrc();
     fail_unless(src != NULL, "Failed to get peptide src from peptide.");
 
     // get peptide indecies in sequence
-    int start_idx = get_peptide_src_start_idx(src);// this is 1-based
+    int start_idx = src->getStartIdx();// this is 1-based
     start_idx--;
-    int len = get_peptide_length(peptide2);
+    int len = peptide2->getLength();
     while( starts[idx] == -1 ){ idx++;}
     fail_unless( start_idx == starts[idx],
                  "Peptide %s should start at %i but starts at %i",
@@ -362,7 +362,7 @@ START_TEST (test_mod_chymo){
                    seq); 
     }
 
-    free_peptide(peptide2);
+    delete peptide2;
     free(seq);
   }
 }
@@ -414,16 +414,16 @@ START_TEST (test_el_tryp_chymo){
     // get peptide
     peptide2 = pp_iterator->next();
     fail_unless(peptide2 != NULL, "Failed to get peptide from iterator.");
-    char* seq = get_peptide_sequence(peptide2);
+    char* seq = peptide2->getSequence();
 
     // get its source
-    src = get_peptide_peptide_src(peptide2);
+    src = peptide2->getPeptideSrc();
     fail_unless(src != NULL, "Failed to get peptide src from peptide.");
 
     // get peptide indecies in sequence
-    int start_idx = get_peptide_src_start_idx(src);// this is 1-based
+    int start_idx = src->getStartIdx();// this is 1-based
     start_idx--;
-    int len = get_peptide_length(peptide2);
+    int len = peptide2->getLength();
     while( starts[idx] == -1 ){ idx++;}
     fail_unless( start_idx == starts[idx],
                  "Peptide %s should start at %i but starts at %i",
@@ -465,7 +465,7 @@ START_TEST (test_el_tryp_chymo){
                    seq); 
     }
 
-    free_peptide(peptide2);
+    delete peptide2;
     free(seq);
   }
 }
@@ -508,16 +508,16 @@ START_TEST(test_aspn){
     // get peptide
     peptide2 = pp_iterator->next();
     fail_unless(peptide2 != NULL, "Failed to get peptide from iterator.");
-    char* seq = get_peptide_sequence(peptide2);
+    char* seq = peptide2->getSequence();
 
     // get its source
-    src = get_peptide_peptide_src(peptide2);
+    src = peptide2->getPeptideSrc();
     fail_unless(src != NULL, "Failed to get peptide src from peptide.");
 
     // get peptide indecies in sequence
-    int start_idx = get_peptide_src_start_idx(src);// this is 1-based
+    int start_idx = src->getStartIdx();// this is 1-based
     start_idx--;
-    int len = get_peptide_length(peptide2);
+    int len = peptide2->getLength();
     while( starts[idx] == -1 ){ idx++;}
     fail_unless( start_idx == starts[idx],
                  "Peptide %s should start at %i but starts at %i",
@@ -537,7 +537,7 @@ START_TEST(test_aspn){
                    seq); 
     }
 
-    free_peptide(peptide2);
+    delete peptide2;
     free(seq);
   }
 }
@@ -594,16 +594,16 @@ START_TEST(test_other_enzymes){
      // get peptide
      peptide2 = pp_iterator->next();
      fail_unless(peptide2 != NULL, "Failed to get peptide from iterator.");
-     char* seq = get_peptide_sequence(peptide2);
+     char* seq = peptide2->getSequence();
      
      // get its source
-     src = get_peptide_peptide_src(peptide2);
+     src = peptide2->getPeptideSrc();
      fail_unless(src != NULL, "Failed to get peptide src from peptide.");
      
      // get peptide indecies in sequence
-     int start_idx = get_peptide_src_start_idx(src);// this is 1-based
+     int start_idx = src->getStartIdx();// this is 1-based
      start_idx--;
-     int len = get_peptide_length(peptide2);
+     int len = peptide2->getLength();
      while( starts[idx] == -1 ){ idx++;}
      fail_unless( start_idx == starts[idx],
                   "%s peptide %s should start at %i but starts at %i",
@@ -623,7 +623,7 @@ START_TEST(test_other_enzymes){
                     enzyme_name, seq, residue); 
      }
      
-     free_peptide(peptide2);
+     delete peptide2;
      free(seq);
    }
    free(enzyme_name);
@@ -676,16 +676,16 @@ START_TEST(test_custom_enzyme){
     // get peptide
     peptide2 = pp_iterator->next();
     fail_unless(peptide2 != NULL, "Failed to get peptide from iterator.");
-    char* seq = get_peptide_sequence(peptide2);
+    char* seq = peptide2->getSequence();
 
     // get its source
-    src = get_peptide_peptide_src(peptide2);
+    src = peptide2->getPeptideSrc();
     fail_unless(src != NULL, "Failed to get peptide src from peptide.");
 
     // get peptide indecies in sequence
-    int start_idx = get_peptide_src_start_idx(src);// this is 1-based
+    int start_idx = src->getStartIdx();// this is 1-based
     start_idx--;
-    int len = get_peptide_length(peptide2);
+    int len = peptide2->getLength();
     while( starts[idx] == -1 ){ idx++;}
     fail_unless( start_idx == starts[idx],
                  "Peptide %s should start at %i but starts at %i",
@@ -715,7 +715,7 @@ START_TEST(test_custom_enzyme){
                    seq); 
     }
 
-    free_peptide(peptide2);
+    delete peptide2;
     free(seq);
   }
 
@@ -763,16 +763,16 @@ START_TEST(test_custom_enzyme){
     // get peptide
     peptide2 = pp_iterator->next();
     fail_unless(peptide2 != NULL, "Failed to get peptide from iterator.");
-    char* seq = get_peptide_sequence(peptide2);
+    char* seq = peptide2->getSequence();
 
     // get its source
-    src = get_peptide_peptide_src(peptide2);
+    src = peptide2->getPeptideSrc();
     fail_unless(src != NULL, "Failed to get peptide src from peptide.");
 
     // get peptide indecies in sequence
-    int start_idx = get_peptide_src_start_idx(src);// this is 1-based
+    int start_idx = src->getStartIdx();// this is 1-based
     start_idx--;
-    int len = get_peptide_length(peptide2);
+    int len = peptide2->getLength();
     while( starts[idx] == -1 ){ idx++;}
     fail_unless( start_idx == starts[idx],
                  "Peptide %s should start at %i but starts at %i",
@@ -793,7 +793,7 @@ START_TEST(test_custom_enzyme){
                    seq); 
     }
 
-    free_peptide(peptide2);
+    delete peptide2;
     free(seq);
   }
 
@@ -825,7 +825,7 @@ START_TEST (test_create){
   char* name2 = NULL;
   
   //try create a new database
-  db = new_database("fasta_file_binary_fasta", FALSE);
+  db = new_database("fasta_file_binary_fasta", false);
   fail_unless(parse_database(db), "failed to parse database");
   fail_unless(strncmp((name = get_database_filename(db)), "fasta_file", 10) == 0, "database filename not set correctly");
   free(name);
@@ -876,7 +876,7 @@ START_TEST (test_create){
     free_peptide(peptide1);
   }  
 
-  //  print_peptide_in_format(peptide5, TRUE,  stdout);
+  //  print_peptide_in_format(peptide5, true,  stdout);
 
   //free stuff
   free_protein(protein1);

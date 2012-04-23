@@ -1,7 +1,7 @@
 #include "XLinkMatch.h"
 
 #include "parameter.h"
-#include "scorer.h"
+#include "Scorer.h"
 #include <sstream>
 #include <ios>
 #include <iomanip>
@@ -14,7 +14,7 @@ XLinkMatch::XLinkMatch() {
   parent_ = NULL;
   pvalue_= 1;
   for (int idx = 0;idx < NUMBER_MASS_TYPES;idx++) {
-    mass_calculated_[idx] = FALSE;
+    mass_calculated_[idx] = false;
     mass_[idx] = 0;
   }
 }
@@ -55,7 +55,7 @@ int XLinkMatch::getBYIonsTotal() {
 }
 */
 string XLinkMatch::getProteinIdString() {
-  PEPTIDE_T* peptide = this -> getPeptide(0);
+  Peptide* peptide = this -> getPeptide(0);
 
   if (peptide == NULL) {
     return string("");
@@ -69,7 +69,7 @@ FLOAT_T XLinkMatch::getMass(MASS_TYPE_T mass_type) {
 
   if (!mass_calculated_[mass_type]) {
     mass_[mass_type] = calcMass(mass_type);
-    mass_calculated_[mass_type] = TRUE;
+    mass_calculated_[mass_type] = true;
   }
   return mass_[mass_type];
 }
@@ -95,7 +95,8 @@ void XLinkMatch::printOneMatchField(
   MatchFileWriter*    output_file,            ///< output stream -out
   int      scan_num,               ///< starting scan number -in
   FLOAT_T  spectrum_precursor_mz,  ///< m/z of spectrum precursor -in
-  int      num_matches,            ///< num matches in spectrum -in
+  int      num_target_matches,            ///< target matches for this spectrum -in
+  int      num_decoy_matches, ///< decoy matches for this spectrum -in
   int      b_y_total,              ///< total b/y ions -in
   int      b_y_matched             ///< Number of b/y ions matched. -in
 ) {
@@ -127,7 +128,8 @@ void XLinkMatch::printOneMatchField(
       output_file,
       scan_num,
       spectrum_precursor_mz,
-      num_matches,
+      num_target_matches,
+      num_decoy_matches,
       b_y_total,
       b_y_matched
     );

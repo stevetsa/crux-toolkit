@@ -5,6 +5,8 @@
 
 #include "DatabasePeptideIterator.h"
 
+using namespace std;
+
 /***********************************************
  * database_peptide_Iterators - can use the light protein functionality 
  * to save space
@@ -20,13 +22,10 @@ DatabasePeptideIterator::DatabasePeptideIterator(
     ///< the database of interest -in
   PeptideConstraint* peptide_constraint,
     ///< the peptide_constraint with which to filter peptides -in
-  bool store_all_peptides ///< for removing duplicates
+  bool store_all_peptides, ///< for removing duplicates
+  bool is_decoy ///< return decoy instead of target peptides
   )
 {
-  // set peptide implementation to linklist peptide_src
-  // this determines which peptide free method to use
-  set_peptide_src_implementation(true);
-
   Protein* next_protein = NULL;
 
   // Initialize
@@ -35,13 +34,13 @@ DatabasePeptideIterator::DatabasePeptideIterator(
   peptide_constraint_ = NULL;
   prior_protein_ = NULL;
   first_passed_ = false;
-  cur_peptide_ = NULL;
   store_all_peptides_ = false;
+  is_decoy_ = is_decoy;
   
   
   // set up peptide storage
   store_all_peptides_ = store_all_peptides;
-  peptide_map_ = map<char*, PEPTIDE_T*, cmp_str>();
+  peptide_map_ = map<char*, Peptide*, cmp_str>();
   cur_map_position_ = peptide_map_.begin();
 
   // set a new protein iterator
@@ -119,8 +118,13 @@ DatabasePeptideIterator::DatabasePeptideIterator(
     queueFirstPeptideFromMap();
 
   } else {  
-    cur_peptide_ = nextFromFile();
+    next_peptide_ = nextFromFile();
   }
+  // parent class requires a call to queueNextPeptide via initialize(),
+  // but the first peptide is already queued.  This is a lazy way to
+  // get around it.
+  already_initialized_ = false;
+  initialize();
 }
 
 /**
@@ -130,22 +134,22 @@ DatabasePeptideIterator::DatabasePeptideIterator(
  */
 void DatabasePeptideIterator::generateAllPeptides(){
 
-  PEPTIDE_T* cur_peptide = NULL;
-  map<char*, PEPTIDE_T*, cmp_str>& peptide_map = peptide_map_;
-  map<char*, PEPTIDE_T*>::iterator peptide_map_ptr;
+  Peptide* cur_peptide = NULL;
+  map<char*, Peptide*, cmp_str>& peptide_map = peptide_map_;
+  map<char*, Peptide*, cmp_str>::iterator peptide_map_ptr;
 
   // populate map with all peptides, combining when duplicates found
   while(hasNextFromFile()){
     cur_peptide = nextFromFile();
-    char* sequence = get_peptide_sequence(cur_peptide);
+    char* sequence = cur_peptide->getSequence();
 
     // does it already exist in the map?
     peptide_map_ptr = peptide_map.find(sequence);
     if( peptide_map_ptr == peptide_map.end() ){ // not found, add it
       peptide_map[sequence] = cur_peptide;
     } else {  // already exists, combine new peptide with existing
-      merge_peptides_copy_src(peptide_map_ptr->second, cur_peptide);
-      free_peptide(cur_peptide); 
+      Peptide::mergePeptidesCopySrc(peptide_map_ptr->second, cur_peptide);
+      delete cur_peptide; 
       free(sequence); 
     }
   } // next peptide
@@ -159,13 +163,13 @@ void DatabasePeptideIterator::generateAllPeptides(){
 void DatabasePeptideIterator::queueFirstPeptideFromMap(){
 
   if( peptide_map_.empty() ){  // no peptides to return
-    cur_peptide_ = NULL;
+    next_peptide_ = NULL;
     cur_map_position_ = peptide_map_.end();
     return;
   }
 
   // set cur_peptide to first peptide in map
-  cur_peptide_ = peptide_map_.begin()->second;
+  next_peptide_ = peptide_map_.begin()->second;
   // set map pointer to one past first (i.e. next to return)
   cur_map_position_ = peptide_map_.begin();  
   ++(cur_map_position_);
@@ -181,7 +185,7 @@ DatabasePeptideIterator::~DatabasePeptideIterator() {
   PeptideConstraint::free(peptide_constraint_);
 
   // free seqs in map
-  map<char*, PEPTIDE_T*>::iterator peptide_iter = 
+  map<char*, Peptide*, cmp_str>::iterator peptide_iter = 
     peptide_map_.begin();
   for(; peptide_iter != peptide_map_.end(); 
       ++peptide_iter){
@@ -203,42 +207,55 @@ bool DatabasePeptideIterator::hasNextFromFile() {
 }
 
 /**
- * The basic iterator functions.
- * \returns true if there are additional peptides to iterate over,
- * false if not. 
+ * Implementation of PeptideIterator's method to prepare the iterator
+ * to return the next peptide.
+ * \returns True if there is another peptide to return, else false.
  */
-bool DatabasePeptideIterator::hasNext() {
+bool DatabasePeptideIterator::queueNextPeptide() {
 
-  return (cur_peptide_ != NULL);
-}
-
-PEPTIDE_T* DatabasePeptideIterator::next() {
-
-  PEPTIDE_T* return_peptide = cur_peptide_;
+  // parent class will make the first call without returning any peptides
+  // but we already queued up the first one in the constructor
+  if( already_initialized_ == false ){
+    already_initialized_ = true;
+    if(is_decoy_ && next_peptide_){
+      next_peptide_->transformToDecoy();
+    }
+    return (next_peptide_ != NULL); // are we starting out with a peptide
+  }
+  bool has_next = false;
 
   // fetch next peptide either from file or from map
   if( store_all_peptides_ ){
     if( cur_map_position_ == peptide_map_.end() ){
-      cur_peptide_ = NULL;
+      next_peptide_ = NULL;
+      has_next = false;
     } else {
-      cur_peptide_ = cur_map_position_->second;
+      next_peptide_ = cur_map_position_->second;
       ++(cur_map_position_);
+      has_next = true;
     }
   } else {
     if( hasNextFromFile() ){
-      cur_peptide_ = nextFromFile();
+      next_peptide_ = nextFromFile();
+      has_next = (next_peptide_ != NULL);
     } else {
-      cur_peptide_ = NULL;
+      next_peptide_ = NULL;
+      has_next = false;
     }
   }
 
-  return return_peptide;
+  // take care of decoys
+  if(is_decoy_ && next_peptide_){
+    next_peptide_->transformToDecoy();
+  }
+
+  return has_next;
 }
 
 /**
  * \returns The next peptide in the database.
  */
-PEPTIDE_T* DatabasePeptideIterator::nextFromFile()
+Peptide* DatabasePeptideIterator::nextFromFile()
 {
   /*BF: Could this be simplified?  if next peptide, return it
     if not, look for next protein, if not return NULL
@@ -248,7 +265,7 @@ PEPTIDE_T* DatabasePeptideIterator::nextFromFile()
   bool reset = false;
   
   // the peptide to return
-  PEPTIDE_T* next_peptide =
+  Peptide* next_peptide =
     cur_protein_peptide_iterator_->next();
   
   Database* database = 

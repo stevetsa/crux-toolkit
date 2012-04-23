@@ -1,52 +1,194 @@
+/**
+ * \file XLinkablePeptide.h
+ * $Revision: 1.00 $
+ * \brief Object for finding and defining the link sites on a peptide.
+ *************************************************************************/
 #ifndef XLINKABLEPEPTIDE_H_
 #define XLINKABLEPEPTIDE_H_
 
 #include "objects.h"
-#include "peptide.h"
+#include "Peptide.h"
 
 #include <vector>
 #include <string>
 
 #include "XLinkBondMap.h"
 
-
+/**
+ * \class XLinkablePeptide
+ * \brief object for finding and defining the link sites on a peptide
+ */
 class XLinkablePeptide {
+
  protected:
-  PEPTIDE_T* peptide_;
-  char* sequence_;
-  std::vector<int> link_sites_;
+  Peptide* peptide_; ///< the peptide object of this XLinkablePeptide (can be null)
+  char* sequence_; ///< the sequence 
+  std::vector<int> link_sites_; ///< the sequence indices where linking is possible
 
  public:
-  XLinkablePeptide();
-  XLinkablePeptide(char* xlinkable);
-  XLinkablePeptide(PEPTIDE_T* peptide, std::vector<int>& link_sites);
-  XLinkablePeptide(PEPTIDE_T* peptide, XLinkBondMap& bondmap);
-  
-  virtual ~XLinkablePeptide();
 
+  /**
+   * Default constructor
+   */
+  XLinkablePeptide();
+
+  /**
+   *  Constructor that defines the peptide as a sequence string
+   */
+  XLinkablePeptide(
+    char* sequence ///< the peptide sequence
+    );
+
+  /**
+   * Constructor that defines the peptide and the linking sites
+   */
+  XLinkablePeptide(
+    Peptide* peptide, ///< the peptide object 
+    std::vector<int>& link_sites ///< the linking sites
+    );
+
+  /**
+   * Constructor that generates the possible linking sites
+   * on the peptide using the bondmap object
+   */
+  XLinkablePeptide(
+    Peptide* peptide, ///< the peptide object 
+    XLinkBondMap& bondmap ///< the bond map
+  );
+  
+  /**
+   * Default destructor
+   */
+  ~XLinkablePeptide();
+
+  /**
+   * given a peptide and a XLinkBondMap object,
+   * generate the possible link sites
+   */
   static void findLinkSites(
-    PEPTIDE_T* peptide, 
-    XLinkBondMap& bondmap, 
-    std::vector<int>& link_sites
+    Peptide* peptide,  ///< the peptide object -in
+    XLinkBondMap& bondmap,  ///< the bond map -in 
+    std::vector<int>& link_sites ///< the found link sites -out
   );
 
+  /**
+   * \returns whether a link at this index in the sequence
+   * would prevent cleavage
+   */
+  bool linkSeqPreventsCleavage(
+    int seq_idx ///< the sequence index
+  );
+
+  static bool linkSeqPreventsCleavage(
+    Peptide* peptide, ///< the peptide
+    int seq_idx ///< the sequence index
+  );
+
+  /**
+   * \returns whether the link site prevents enzymatic
+   * cleavage
+   */
+  bool linkSitePreventsCleavage(
+    size_t link_site_idx ///< link site
+  );
+
+  /**
+   * \returns whether the peptide is cleavable at this index
+   */
+  static bool isCleavageSite(
+    Peptide* peptide, ///< the peptide
+    int seq_idx ///< the sequence index
+  );
+
+  /**
+   * \returns whether the aa at this index is a missed cleavage
+   */
+  static bool isMissedCleavageSite(
+    Peptide* peptide, ///< the peptide
+    int seq_idx ///< the sequence index
+  );
+
+  /**
+   * shuffle the linkable peptide, preserving the link sites
+   * \returns the shuffled XlinkablePeptide
+   */
   XLinkablePeptide shuffle();
 
+  /**
+   * \returns the number of link sites on this peptide
+   */
   size_t numLinkSites();
-  BOOLEAN_T isLinkable();
-  int addLinkSite(int link_site);
-  int getLinkSite(int link_site_idx);
 
-  PEPTIDE_T* getPeptide();
-  FLOAT_T getMass() const;
-  FLOAT_T getMass(MASS_TYPE_T mass_type);
+  /**
+   * \returns whether this peptide is linkable or not
+   */
+  bool isLinkable();
+  
+  /**
+   * \returns whether the peptide is linkable using the bond map
+   */
+  static bool isLinkable(
+    Peptide* peptide, ///< the peptide object
+    XLinkBondMap& bondmap ///< the bond map
+  );
+
+  /**
+   * Adds a link site by sequence index
+   * \returns the index of the added link site
+   */
+  int addLinkSite(
+    int seq_idx ///< the sequence index of the link site
+  );
+
+  /**
+   * \retuns the sequence index of a link site
+   */
+  int getLinkSite(
+    int link_site_idx ///< the index of the link site
+    );
+
+  /**
+   * \returns the number of missed cleavages in the linkable peptide
+   */
+  int getMissedCleavageSites();
+  static int getMissedCleavageSites(
+    Peptide* peptide ///< the peptide
+  );
+
+  /**
+   * \returns the peptide object associated with this XLinkablePeptide
+   */
+  Peptide* getPeptide();
+
+  /**
+   * \returns the mass of the xlinkable peptide
+   */
+  FLOAT_T getMass(
+    MASS_TYPE_T mass_type=MONO ///< MONO or AVERAGE
+  ) const;
+
+  /**
+   * \returns an allocated sequence c-string.  Must be freed
+   */
   char* getSequence();
+
+  /**
+   * \returns the allocated modified sequence. Must be freed.
+   */
   MODIFIED_AA_T* getModifiedSequence();
-  //std::string getAASequence();
+
+  /**
+   * \returns the modified sequence string of the xlinkable peptide
+   */
   std::string getModifiedSequenceString();
 
   bool isModified();
-
+  /**
+   * \returns whether the peptide is less than (by lexical modified sequence)
+   */
+  bool operator < (
+    XLinkablePeptide other ///< the other XLinkablePeptide to compare to.
+  ) const;
   
 };
 
@@ -55,3 +197,10 @@ bool compareXLinkablePeptideMass(const XLinkablePeptide& xpep1, const XLinkableP
 
 
 #endif
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 2
+ * End:
+ */

@@ -10,7 +10,7 @@
 #include <stdio.h>
 #include <vector>
 #include "objects.h"
-#include "peptide.h"
+#include "Peptide.h"
 #include "Ion.h"
 #include "IonConstraint.h"
 
@@ -32,7 +32,7 @@ class IonSeries {
   int charge_; ///< /<The charge state of the peptide for this ion series
   IonConstraint* constraint_; ///< The constraints which these ions obey
   std::vector<Ion*> ions_; ///< The ions in this series
-  BOOLEAN_T is_predicted_; ///< has this ion_series been predicted already?
+  bool is_predicted_; ///< has this ion_series been predicted already?
   std::vector<Ion*> specific_ions_[MAX_NUM_ION_TYPE]; 
     ///< specific ions in the series, reference to master array of ions
   LOSS_LIMIT_T* loss_limit_; 
@@ -72,7 +72,7 @@ class IonSeries {
    * The loss_limit array in the ion_series must be populated prior to this method call
    *\returns TRUE if the ion can lose the mod_type modification, else FALSE
    */
-  bool canIonLoseModification(
+  bool canIonGenerateModification(
     Ion* ion, ///< the ion to check if can lose nh3 -in
     ION_MODIFICATION_T mod_type, ///< generate ions of this modification_type -in/out
     int increment  ///< the add/loss of the modification

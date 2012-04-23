@@ -9,12 +9,16 @@
 #include <stdio.h>
 #include "utils.h"
 #include "objects.h"
-#include "peptide.h"
+#include "Peptide.h"
 #include "Protein.h"
 #include "carp.h"
 #include "PeptideConstraint.h"
-#include "sorter.h"
+#include <string>
+#include <map>
 
+#ifdef WIN32
+#include "WinCrux.h"
+#endif
 
 //Comparator function for c type strings.
 struct cmp_str {
@@ -27,19 +31,25 @@ struct cmp_str {
 
 class Database {
  protected:
-  char*        filename_; ///< Original database filename.
+  std::string fasta_filename_; ///< Name of the text file.
+  std::string binary_filename_;///< Full path to the binary protein sequence file.
   FILE*        file_;     ///< Open filehandle for this database.
                          ///  A database has only one associated file.
   bool is_parsed_;  ///< Has this database been parsed yet.
   std::vector<Protein*>* proteins_; ///< Proteins in this database.
-  map<char*, Protein*, cmp_str>* protein_map_; //map for proteins 
+  std::map<char*, Protein*, cmp_str>* protein_map_; //map for proteins 
   bool is_hashed_; //Indicator of whether the database has been hashed/mapped.
   unsigned long int size_; ///< The size of the database in bytes (convenience)
   bool use_light_protein_; ///< should I use the light/heavy protein option
   bool is_memmap_; ///< Are we using a memory mapped fasta file? 
+#ifdef WIN32
+  SIMPLE_UNMMAP unmap_info_;
+#endif
   void* data_address_; ///< pointer to the beginning of the memory mapped data, 
   unsigned int pointer_count_; ///< number of pointers referencing this database. 
   long file_size_; ///< the size of the binary fasta file, when memory mapping
+  DECOY_TYPE_T decoys_; ///< the type of decoys, none if target db
+  bool binary_is_temp_; ///< should we delete the binary fasta in destructor
 
   /**
    * Parses a database from the text based fasta file in the filename
@@ -83,6 +93,12 @@ class Database {
   void init();
 
  public:
+  /**
+   * The suffix on binary and text fasta files.
+   */
+  static const std::string binary_suffix;
+  static const std::string decoy_binary_suffix;
+  static const std::string decoy_fasta_suffix;
 
   /**
    * \returns An (empty) database object.
@@ -94,8 +110,9 @@ class Database {
    * \returns A new database object.
    */
   Database(
-    const char*         filename, ///< The file from which to parse the database. either text fasta file or binary fasta file -in
-    bool is_memmap ///< are we using a memory mapped binary fasta file, thus proteins are all memory mapped -in
+    const char* filename, ///< The file from which to parse the database. either text fasta file or binary fasta file -in
+    bool is_memmap, ///< are we using a memory mapped binary fasta file, thus proteins are all memory mapped -in
+    DECOY_TYPE_T decoys = NO_DECOYS ///< is this to be a decoy database
     );         
 
   /**
@@ -137,7 +154,8 @@ class Database {
    * \returns TRUE if all processes succeed, else FALSE.
    */
   bool transformTextToMemmap(
-    char* binary_protein_filename
+    const char* binary_protein_filename,
+    bool binary_is_temp
     );
 
   /**
@@ -150,6 +168,14 @@ class Database {
       Protein** protein   ///< A pointer to a pointer to a PROTEIN object -out
       );
   **/
+
+  /**
+   * Using the fasta file the Database was instantiated with, write a
+   * binary protein file in the given directory to use for memory
+   * mapping.  If is_temp, delete the file on destruction.  Warns if
+   * Database was not opened with a text file.
+   */
+  void createBinaryFasta(const char* directory, bool is_temp = false);
 
   /** 
    * Access routines of the form get_<object>_<field> and set_<object>_<field>. 
@@ -170,7 +196,7 @@ class Database {
    *\returns the pointer to the filename of the database
    * user must not free or change the filename
    */
-  char* getFilenamePointer();
+  const char* getFilenamePointer();
 
   /**
    * sets the filename of the database
@@ -184,6 +210,11 @@ class Database {
    *\returns TRUE|FALSE whether the database has been parsed?
    */
   bool getIsParsed();
+
+  /**
+   * \returns The type of shuffling used on the proteins in this database
+   */
+  DECOY_TYPE_T getDecoyType();
 
   /**
    *\returns the total number of proteins of the database
@@ -263,7 +294,7 @@ bool void_database_peptide_iterator_has_next(
 /**
  * \returns The next peptide in the database.
  */
-PEPTIDE_T* void_database_peptide_iterator_next(
+Peptide* void_database_peptide_iterator_next(
   void* database_peptide_iterator ///< the iterator of interest -in
   );
 
@@ -294,7 +325,7 @@ bool void_database_sorted_peptide_iterator_has_next(
  * returns each peptide in sorted order
  * \returns The next peptide in the database.
  */
-PEPTIDE_T* void_database_sorted_peptide_iterator_next(
+Peptide* void_database_sorted_peptide_iterator_next(
   void* database_peptide_iterator ///< the iterator of interest -in
   );
 

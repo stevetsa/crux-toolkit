@@ -1,5 +1,7 @@
-#include "xhhc_ion_series.h"
+#include "LinkedIonSeries.h"
 #include "xhhc_scorer.h"
+#include "LinkedPeptide.h"
+#include "XHHC_Peptide.h"
 
 #include <iostream>
 #include <fstream>
@@ -16,7 +18,7 @@ int main(int argc, char** argv) {
   int posB = 0;
   FLOAT_T linker_mass = 0;
   int charge = 1; 
-  BOOLEAN_T print_spectrum = FALSE;
+  bool print_spectrum = false;
 
 
   /* Verbosity level for set-up/command line reading */
@@ -27,7 +29,7 @@ int main(int argc, char** argv) {
   const char* option_list[NUM_OPTIONS] = {
     "verbosity",
     "version",
-    "xcorr-use-flanks",
+    "use-flanking-peaks",
     "print-theoretical-spectrum"
   };
 
@@ -72,36 +74,37 @@ int main(int argc, char** argv) {
 
   print_spectrum = get_boolean_parameter("print-theoretical-spectrum");
 
-  LinkedPeptide::linker_mass = linker_mass; 
+  LinkedPeptide::setLinkerMass(linker_mass); 
   LinkedPeptide linked_peptide;
 
-  if (string(peptideB) == "NULL")
-    linked_peptide = LinkedPeptide(peptideA, NULL, posA, posB, charge);
-  else  
-    linked_peptide = LinkedPeptide( peptideA, peptideB, posA, posB, charge);  
+  if (string(peptideB) == "NULL") {
+    linked_peptide = LinkedPeptide(peptideA, NULL, posA-1, posB-1, charge);
+  }
+  else {
+    linked_peptide = LinkedPeptide( peptideA, peptideB, posA-1, posB-1, charge);  
+  }
+ 
+  ostringstream oss;
+  oss << linked_peptide;
+  string precursor_sequence = oss.str();
+  carp(CARP_INFO, "XLink Product:%s", precursor_sequence.c_str());
+  carp(CARP_INFO, "Charge:%i", charge);
+  carp(CARP_INFO, "Linker Mass:%g", linker_mass);
+  carp(CARP_INFO, "Product Mass: %g (MONO) %g (AVERAGE)", linked_peptide.getMass(MONO), linked_peptide.getMass(AVERAGE));
+  carp(CARP_INFO, "====================");
 
-  cout << "precursor: " << linked_peptide << endl;
-  cout << "charge:" << charge << endl;
-  cout << "link mass:"<< linker_mass << endl;
-  cout << "print_spectrum:"<< print_spectrum << endl;
-
-
-  LinkedIonSeries ion_series;
-  cout <<"Adding linked ions"<<endl;
-  ion_series.add_linked_ions(linked_peptide);
-  cout <<"Printing ions"<<endl;
+  LinkedIonSeries ion_series(charge);
+  ion_series.addLinkedIons(linked_peptide);
   ion_series.print(); 
 
   if (print_spectrum) {
-    carp(CARP_INFO,"writing theoretical spectrum");
+    carp(CARP_INFO, "Writing XCORR theoretical spectrum to theoretical.out");
     map<int, FLOAT_T> theoretical;
-
-    Scorer::xlink_create_map_theoretical(ion_series,
+    XHHC_Scorer::xlinkCreateMapTheoretical(ion_series,
 					 theoretical);
 
-
     ofstream fout("theoretical.out");
-    fout <<"> "<< linked_peptide<<"\t"<<linked_peptide.get_mz(MONO)<<endl;
+    fout <<"> "<< linked_peptide<<"\t"<<linked_peptide.getMZ(MONO)<<endl;
     
     map<int, FLOAT_T>::iterator iter;
 
@@ -109,15 +112,10 @@ int main(int argc, char** argv) {
 	 iter != theoretical.end();
 	 ++iter) {
       fout << iter -> first << "\t";
-      fout << iter -> second << "\t";
-      fout << "nolabel" <<endl;// << "\t";
-      //fout << "red" << endl;
+      fout << iter -> second << "\t" << endl;
     }
 
     fout.close();
   }
-
-
-
   return 0;
 }

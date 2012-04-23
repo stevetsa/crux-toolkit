@@ -42,7 +42,7 @@ int SearchForXLinks::main(int argc, char** argv) {
     "precursor-window-type-decoy",
     "max-ion-charge",
     "min-weibull-points",
-    "xlink-prevents-cleavage",
+    "xlink-prevents-cleavage", //TODO will be implemented later (SJM)
     "spectrum-min-mass",
     "spectrum-max-mass",
     "spectrum-charge",
@@ -51,6 +51,7 @@ int SearchForXLinks::main(int argc, char** argv) {
     "xlink-include-deadends",
     "xlink-include-selfloops",
     "use-old-xlink",
+	"use-flanking-peaks",
     "use-mgf"
   };
   int num_options = sizeof(option_list) / sizeof(char*);
@@ -70,13 +71,14 @@ int SearchForXLinks::main(int argc, char** argv) {
 		 option_list, num_options, argc, argv);
   
 
-
+  //So the end result is that crux will call the new
+  //refactored code by default when that gets placed
+  //in.  The use-old-xlink parameter will determine
+  //which codebase gets called.
   if (get_boolean_parameter("use-old-xlink")) {
-    return xhhc_search_main(argc, argv);
+    return xhhcSearchMain();
   } else {
-    carp(CARP_DEBUG, "Calling new xlink code");
-    return xlink_search_main();
-    
+    return xlinkSearchMain();
   }
 }
 
@@ -86,8 +88,6 @@ int SearchForXLinks::main(int argc, char** argv) {
 string SearchForXLinks::getName() {
   return "search-for-xlinks";
 }
-
-
 
 /**
  * \returns the description for SearchForXLinks

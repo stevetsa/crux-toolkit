@@ -69,7 +69,7 @@ void SelfLoopPeptide::addCandidates(
       index,
       database,
       peptide_mod,
-      FALSE,
+      false,
       bondmap,
       linkable_peptides);
   }
@@ -240,7 +240,7 @@ string SelfLoopPeptide::getIonSequence(Ion* ion) {
   }
 }
 
-PEPTIDE_T* SelfLoopPeptide::getPeptide(int peptide_idx) {
+Peptide* SelfLoopPeptide::getPeptide(int peptide_idx) {
   if (peptide_idx == 0) {
     return linked_peptide_.getPeptide();
   } else {
@@ -256,9 +256,9 @@ int SelfLoopPeptide::getNumMissedCleavages() {
 
   set<int> skip;
 
-  PEPTIDE_T* pep = linked_peptide_.getPeptide();
+  Peptide* pep = linked_peptide_.getPeptide();
 
-  char* seq = get_peptide_sequence_pointer(pep);
+  char* seq = pep->getSequencePointer();
 
   if (seq[link1_site] == missed_cleavage_link_site) {
     skip.insert(link1_site);
@@ -268,7 +268,7 @@ int SelfLoopPeptide::getNumMissedCleavages() {
     skip.insert(link2_site);
   }
 
-  return get_peptide_missed_cleavage_sites(pep, skip);
+  return pep->getMissedCleavageSites(skip);
 
 }
 

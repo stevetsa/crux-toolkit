@@ -1,7 +1,7 @@
 
 #include "LinearPeptide.h"
 #include "XLink.h"
-#include "modified_peptides_iterator.h"
+#include "ModifiedPeptidesIterator.h"
 #include "IonSeries.h"
 
 #include <iostream>
@@ -18,7 +18,7 @@ LinearPeptide::LinearPeptide(char* sequence) {
   sequence_ = sequence;
 }
 
-LinearPeptide::LinearPeptide(PEPTIDE_T* peptide) {
+LinearPeptide::LinearPeptide(Peptide* peptide) {
   peptide_ = peptide;
   sequence_ = NULL;
 }
@@ -42,17 +42,13 @@ void LinearPeptide::addCandidates(
     PEPTIDE_MOD_T* peptide_mod = peptide_mods[mod_idx];
 
     //
-    MODIFIED_PEPTIDES_ITERATOR_T* peptide_iterator =
-      new_modified_peptides_iterator_from_mass_range(
-						   min_mass,
-						   max_mass,
-						   peptide_mod,
-						   FALSE,
-						   index, database);
+    ModifiedPeptidesIterator* peptide_iterator =
+      new ModifiedPeptidesIterator(min_mass, max_mass, peptide_mod, 
+        false, index, database);
 
 
-    while (modified_peptides_iterator_has_next(peptide_iterator)) {
-      PEPTIDE_T* peptide = modified_peptides_iterator_next(peptide_iterator);
+    while (peptide_iterator->hasNext()) {
+      Peptide* peptide = peptide_iterator->next();
       XLinkMatch* new_candidate = new LinearPeptide(peptide);
       if (new_candidate->getNumMissedCleavages() <= max_missed_cleavages) {
         //cerr <<"Adding Linear Peptide:"<<new_candidate -> getSequenceString()<<" "<<new_candidate->getMass()<<endl;
@@ -60,10 +56,10 @@ void LinearPeptide::addCandidates(
         XLink::addAllocatedPeptide(peptide);
       } else {
         delete new_candidate;
-        free_peptide(peptide);
+        delete peptide;
       }
     }
-    free_modified_peptides_iterator(peptide_iterator);
+    delete peptide_iterator;
   }
 }
 
@@ -77,7 +73,7 @@ string LinearPeptide::getSequenceString() {
     oss << sequence_;
 
   } else {
-    char* seq = get_peptide_modified_sequence_with_masses(peptide_, FALSE);
+    char* seq = peptide_->getModifiedSequenceWithMasses(MOD_MASSES_SEPARATE);
     oss << seq;
     free(seq);
   }
@@ -89,7 +85,7 @@ string LinearPeptide::getSequenceString() {
 
 FLOAT_T LinearPeptide::calcMass(MASS_TYPE_T mass_type) {
   if (peptide_ == NULL) {
-    return calc_sequence_mass(sequence_,mass_type);
+    return Peptide::calcSequenceMass(sequence_, mass_type);
   } else {
   //  carp(CARP_INFO,"Calculating modified peptide mass");
 
@@ -105,15 +101,15 @@ FLOAT_T LinearPeptide::calcMass(MASS_TYPE_T mass_type) {
 
  //   carp(CARP_INFO,"%s %f %f %f",sequence_,ans1,ans2,ans3);
     
-    return calc_modified_peptide_mass(peptide_, mass_type);
+    return peptide_->calcModifiedMass(mass_type);
   }
 }
 
 XLinkMatch* LinearPeptide::shuffle() {
 
-  PEPTIDE_T* decoy_peptide = copy_peptide(peptide_);
+  Peptide* decoy_peptide = new Peptide(peptide_);
 
-  transform_peptide_to_decoy(decoy_peptide);
+  decoy_peptide->transformToDecoy();
 
   XLink::addAllocatedPeptide(decoy_peptide);
 
@@ -130,8 +126,8 @@ void LinearPeptide::predictIons(IonSeries* ion_series, int charge) {
     seq = my_copy_string(sequence_);
     convert_to_mod_aa_seq(seq, &mod_seq); 
   } else {
-    seq = get_peptide_sequence(peptide_);
-    mod_seq = get_peptide_modified_aa_sequence(peptide_);
+    seq = peptide_->getSequence();
+    mod_seq = peptide_->getModifiedAASequence();
   }
   ion_series->setCharge(charge);
   ion_series->update(seq, mod_seq);
@@ -153,7 +149,7 @@ string LinearPeptide::getIonSequence(Ion* ion) {
   }
 }
 
-PEPTIDE_T* LinearPeptide::getPeptide(int peptide_idx) {
+Peptide* LinearPeptide::getPeptide(int peptide_idx) {
   if (peptide_idx == 0) {
     return peptide_;
   } else {
@@ -163,10 +159,10 @@ PEPTIDE_T* LinearPeptide::getPeptide(int peptide_idx) {
 
 int LinearPeptide::getNumMissedCleavages() {
   set<int> skip;
-  return get_peptide_missed_cleavage_sites(peptide_, skip);
+  return peptide_->getMissedCleavageSites(skip);
 }
 
 bool LinearPeptide::isModified() {
 
-  return get_peptide_is_modified(peptide_);
+  return peptide_->isModified();
 }

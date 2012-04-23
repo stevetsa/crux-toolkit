@@ -14,14 +14,14 @@
 class XLinkPeptide : public XLinkMatch {
  protected:
   static FLOAT_T linker_mass_;
-  static std::set<PEPTIDE_T*> allocated_peptides_;
+  static std::set<Peptide*> allocated_peptides_;
   std::vector<XLinkablePeptide> linked_peptides_;
   std::vector<int> link_pos_idx_;
   
   bool mass_calculated_[NUMBER_MASS_TYPES];
   FLOAT_T mass_[NUMBER_MASS_TYPES];
   
-  BOOLEAN_T is_decoy_;
+  bool is_decoy_;
   
   int getLinkPos(int peptide_idx);
 
@@ -56,7 +56,7 @@ class XLinkPeptide : public XLinkMatch {
   static void addLinkablePeptides(
     double min_mass, double max_mass,
     Index* index, Database* database,
-    PEPTIDE_MOD_T* peptide_mod, BOOLEAN_T is_decoy, 
+    PEPTIDE_MOD_T* peptide_mod, bool is_decoy, 
     XLinkBondMap& bondmap, 
     std::vector<XLinkablePeptide>& linkable_peptides);
 
@@ -68,7 +68,7 @@ class XLinkPeptide : public XLinkMatch {
 
   virtual void predictIons(IonSeries* ion_series, int charge);
   std::string getIonSequence(Ion* ion);
-  virtual PEPTIDE_T* getPeptide(int peptide_idx);
+  virtual Peptide* getPeptide(int peptide_idx);
 
   virtual int getNumMissedCleavages();
 

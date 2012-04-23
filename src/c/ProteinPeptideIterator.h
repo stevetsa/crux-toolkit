@@ -9,7 +9,7 @@
 #define PROTEINPEPTIDEITERATOR_H
 
 #include "Protein.h"
-#include "peptide.h"
+#include "Peptide.h"
 
 #include <vector>
 
@@ -127,7 +127,7 @@ class ProteinPeptideIterator {
   /**
    * \returns The next peptide in the protein, in an unspecified order
    */
-  PEPTIDE_T* next();
+  Peptide* next();
 
   /**
    *\returns the protein that the iterator was created on
@@ -162,9 +162,8 @@ class ProteinPeptideIterator {
    * \returns TRUE if this is a valid cleavage position for the given enzyme.
    */
   static bool validCleavagePosition(
-    char* sequence,
-    //   PEPTIDE_TYPE_T cleavage
-     ENZYME_T enzyme
+    const char* sequence,
+    ENZYME_T enzyme
   );
 
 };

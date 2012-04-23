@@ -13,14 +13,14 @@
 class LinearPeptide : public XLinkMatch {
  protected:
 
-  PEPTIDE_T* peptide_;
+  Peptide* peptide_;
   char* sequence_;
-  BOOLEAN_T is_decoy_;
+  bool is_decoy_;
  public:
   
   LinearPeptide();
   LinearPeptide(char* sequence_);
-  LinearPeptide(PEPTIDE_T* peptide);
+  LinearPeptide(Peptide* peptide);
 
   virtual ~LinearPeptide();
 
@@ -39,7 +39,7 @@ class LinearPeptide : public XLinkMatch {
   virtual XLinkMatch* shuffle();
   virtual void predictIons(IonSeries* ion_series, int charge);
   std::string getIonSequence(Ion* ion);
-  virtual PEPTIDE_T* getPeptide(int peptide_idx);
+  virtual Peptide* getPeptide(int peptide_idx);
   virtual int getNumMissedCleavages();
   virtual bool isModified();
 

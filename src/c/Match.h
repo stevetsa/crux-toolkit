@@ -17,7 +17,9 @@
 #include <map>
 #include <ctype.h>
 #include <float.h>
+#ifndef WIN32
 #include <unistd.h>
+#endif
 #include "carp.h"
 #include "parse_arguments.h"
 #include "Spectrum.h"
@@ -27,7 +29,7 @@
 #include "crux-utils.h"
 #include "objects.h"
 #include "parameter.h"
-#include "scorer.h"
+#include "Scorer.h"
 
 
 /* Global variables */
@@ -62,7 +64,7 @@ class Match {
    *
    */
   Spectrum* spectrum_; ///< the spectrum we are scoring with
-  PEPTIDE_T* peptide_;  ///< the peptide we are scoring
+  Peptide* peptide_;  ///< the peptide we are scoring
   FLOAT_T match_scores_[NUMBER_SCORER_TYPES]; 
     ///< array of scores, one for each type (index with SCORER_TYPE_T) 
   int match_rank_[NUMBER_SCORER_TYPES];  
@@ -77,9 +79,6 @@ class Match {
   char* peptide_sequence_; ///< peptide sequence is that of peptide or shuffled
   MODIFIED_AA_T* mod_sequence_; ///< seq of peptide or shuffled if null peptide
   DIGEST_T digest_;
-  //  PEPTIDE_TYPE_T overall_type; 
-    ///< overall peptide trypticity, set in set_match_peptide, see README above
-  //int charge; ///< the charge state of the match 
   SpectrumZState zstate_;
   // post_process match object features
   // only valid when post_process_match is true
@@ -88,6 +87,8 @@ class Match {
   FLOAT_T ln_delta_cn_; ///< the natural log of delta_cn
   FLOAT_T ln_experiment_size_; 
      ///< natural log of total number of candidate peptides evaluated
+  int num_target_matches_; ///< total target candidates for this spectrum
+  int num_decoy_matches_;///< decoy candidates for this spectrum if decoy match
   bool best_per_peptide_; ///< Is this the best scoring PSM for this peptide?
 
   /**
@@ -97,11 +98,12 @@ class Match {
     int      column_idx,             ///< Index of the column to print. -in
     MatchCollection* collection,  ///< collection holding this match -in 
     MatchFileWriter*    output_file,            ///< output stream -out
-    int      scan_num,               ///< starting scan number -in
-    FLOAT_T  spectrum_precursor_mz,  ///< m/z of spectrum precursor -in
-    int      num_matches,            ///< num matches in spectrum -in
-    int      b_y_total,              ///< total b/y ions -in
-    int      b_y_matched             ///< Number of b/y ions matched. -in
+    int     scan_num,               ///< starting scan number -in
+    FLOAT_T spectrum_precursor_mz,  ///< m/z of spectrum precursor -in
+    int     num_target_matches,     ///< target matches for this spectrum -in
+    int     num_decoy_matches, ///< decoy matches (if any) for this spectrum -in
+    int     b_y_total,              ///< total b/y ions -in
+    int     b_y_matched             ///< Number of b/y ions matched. -in
     );
 
   void init();
@@ -112,6 +114,14 @@ class Match {
    * \returns a new memory allocated match
    */
   Match();
+
+  /**
+   *
+   */
+  Match(Peptide* peptide, ///< the peptide for this match
+        Spectrum* spectrum, ///< the spectrum for this match
+        SpectrumZState& zstate, ///< the charge/mass of the spectrum
+        bool is_decoy);///< is the peptide a decoy or not
 
   /**
    * free the memory allocated match
@@ -153,22 +163,9 @@ class Match {
     FILE* file      ///< output stream -out
     );
 
-
-
   /**
-   * \brief Print the match information in xml format to the given file
-   *
-   * Prints out the match information in the format described as pep xml.
-   * Fills out as much information as available.
-   *
-   */
-  void printXml(
-    FILE* output_file,
-    const bool* scores_computed
-  );
-
-  /**
-   * \brief Print the match information in tab delimited format to the given file
+   * \brief Print the match information in tab delimited format to the
+   * given file.
    *
    */
   void printTab(
@@ -176,7 +173,8 @@ class Match {
     MatchFileWriter*    file,                   ///< output stream -out
     int      scan_num,               ///< starting scan number -in
     FLOAT_T  spectrum_precursor_mz,  ///< m/z of spectrum precursor -in
-    int      num_matches            ///< num matches in spectrum -in
+    int      num_targetmatches,      ///< target matches for this spectrum -in
+    int      num_decoy_matches ///< decoy matches (if any) for this spectrum -in
     );
 
   /*******************************************
@@ -196,7 +194,8 @@ class Match {
    */
   static Match* parseTabDelimited(
     MatchFileReader& result_file,  ///< the result file to parse PSMs -in
-    Database* database ///< the database to which the peptides are created -in
+    Database* database, ///< the database to which the peptides are created -in
+    Database* decoy_database = NULL ///< optional database with decoy peptides
     );
 
   /****************************
@@ -243,14 +242,15 @@ class Match {
   /**
    * \brief Returns a newly allocated string of sequence including any
    * modifications represented as mass values in brackets following the
-   * modified residue. If merge_masses is true, the sum of multiple
-   * modifications on one residue are printed.  If false, each mass is
-   * printed in a comma-separated list.
+   * modified residue. If mass_format is MOD_MASS_ONLY, the sum of multiple
+   * modifications on one residue are printed.  If MOD_MASSES_SEPARATE,
+   * each mass is printed in a comma-separated list.  If AA_PLUS_MOD, then
+   * the mass printed is that of the amino acid plus the modification.
    * \returns The peptide sequence of the match including modification
    * masses. 
    */
   char* getModSequenceStrWithMasses( 
-   bool merge_masses
+   MASS_FORMAT_T mass_format
     );
 
   /**
@@ -291,26 +291,12 @@ class Match {
   Spectrum* getSpectrum();
 
   /**
-   * sets the match spectrum
-   */
-  void setSpectrum(
-    Spectrum* spectrum  ///< the working spectrum -in
-    );
-
-  /**
    *\returns the peptide in the match object
    */
-  PEPTIDE_T* getPeptide();
+  Peptide* getPeptide();
 
   /**
-   * sets the match peptide
-   */
-  void setPeptide(
-    PEPTIDE_T* peptide  ///< the working peptide -in
-    );
-
-  /**
-   * sets the match charge
+   * sets the match charge and mass
    */
 
   void setZState(
@@ -319,12 +305,6 @@ class Match {
 
   SpectrumZState& getZState();
 
-  /*
-  void set_match_charge(
-    Match* match, ///< the match to work -out
-    int charge  ///< the charge of spectrum -in
-    );
-  */
   /**
    * gets the match charge
    */
@@ -332,7 +312,7 @@ class Match {
   int getCharge();
 
   /**
-   * gets the match neutral mass
+   * gets the spectrum neutral mass
    */
   FLOAT_T getNeutralMass();
 
@@ -373,16 +353,20 @@ class Match {
   FLOAT_T getLnExperimentSize();
 
   /**
+   * \returns The total number of target matches searched for this spectrum.
+   */
+  int getTargetExperimentSize();
+
+  /**
+   * \returns The total number of decoy matches searched for this
+   * spectrum if this is a match to a decoy spectrum.
+   */
+  int getDecoyExperimentSize();
+
+  /**
    *Increments the pointer count to the match object
    */
   void incrementPointerCount();
-
-  /**
-   * sets the match if it is a null_peptide match
-   */
-  void setNullPeptide(
-    bool is_null_peptid  ///< is the match a null peptide? -in
-    );
 
   /**
    * gets the match if it is a null_peptide match
@@ -394,7 +378,7 @@ class Match {
    * sets the match b_y_ion info
    */
   void setBYIonInfo(
-    SCORER_T* scorer ///< the scorer from which to extract information -in
+    Scorer* scorer ///< the scorer from which to extract information -in
     );
 
   /**
@@ -516,6 +500,15 @@ int compareQRankerQValue(
   );
 
 /**
+ * compare two matches, used for qsort
+ * \returns the difference between barista qvalue in match_a and match_b
+ */
+int compareBaristaQValue(
+  Match** match_a, ///< the first match -in  
+  Match** match_b  ///< the scond match -in
+  );
+
+/**
  * compare two matches, used for PERCOLATOR_SCORE
  * \returns the difference between PERCOLATOR_SCORE score in match_a and match_b
  */
@@ -529,6 +522,15 @@ int comparePercolatorScore(
  * \returns the difference between QRANKER_SCORE score in match_a and match_b
  */
 int compareQRankerScore(
+  Match** match_a, ///< the first match -in  
+  Match** match_b  ///< the scond match -in
+  );
+
+/**
+ * compare two matches, used for BARISTA_SCORE
+ * \returns the difference between BARISTA_SCORE score in match_a and match_b
+ */
+int compareBaristaScore(
   Match** match_a, ///< the first match -in  
   Match** match_b  ///< the scond match -in
   );
@@ -579,6 +581,18 @@ int compareSpectrumQRankerQValue(
   );
 
 /**
+ * Compare two matches by spectrum scan number and barista q-value, 
+ * used for qsort.
+ * \returns -1 if match a spectrum number is less than that of match b
+ * or if scan number is same, if score of match a is less than
+ * match b.  1 if scan number and score are equal, else 0.
+ */
+int compareSpectrumBaristaQValue(
+  Match** match_a, ///< the first match -in  
+  Match** match_b  ///< the scond match -in
+  );
+
+/**
  * Compare two matches by spectrum scan number and percolator score,
  * used for qsort. 
  * \returns -1 if match a spectrum number is less than that of match b
@@ -598,6 +612,18 @@ int compareSpectrumPercolatorScore(
  * match b.  1 if scan number and score are equal, else 0.
  */
 int compareSpectrumQRankerScore(
+  Match** match_a, ///< the first match -in  
+  Match** match_b  ///< the scond match -in
+  );
+
+/**
+ * Compare two matches by spectrum scan number and barista score,
+ * used for qsort. 
+ * \returns -1 if match a spectrum number is less than that of match b
+ * or if scan number is same, if score of match a is less than
+ * match b.  1 if scan number and score are equal, else 0.
+ */
+int compareSpectrumBaristaScore(
   Match** match_a, ///< the first match -in  
   Match** match_b  ///< the scond match -in
   );
@@ -636,7 +662,7 @@ int compareSpectrumDecoyPValueQValue(
  * why is this here?
  */
 int get_num_internal_cleavage(
-  char* peptide_sequence, 
+  const char* peptide_sequence, 
   ENZYME_T enzyme
 );
 
@@ -645,9 +671,9 @@ int get_num_internal_cleavage(
  *
  */
 int get_num_terminal_cleavage(
-  char* peptide_sequence, 
-  char flanking_aas_prev,
-  char flanking_aas_next,
+  const char* peptide_sequence, 
+  const char flanking_aas_prev,
+  const char flanking_aas_next,
   ENZYME_T enzyme
 );
 
@@ -658,8 +684,8 @@ int get_num_terminal_cleavage(
  *
  */
 void print_modifications_xml(
-  char* mod_seq,
-  char* sequence,
+  const char* mod_seq,
+  const char* sequence,
   FILE* output_file
 );
 
@@ -671,7 +697,7 @@ void print_modifications_xml(
 void find_static_modifications(
   std::map<int, double>& static_mods,
   std::map<int, double>& var_mods,
-  char* sequence
+  const char* sequence
 );
 
 /**
@@ -681,19 +707,10 @@ void find_static_modifications(
  */
 void find_variable_modifications(
  std::map<int, double>& mods,
- char* mod_seq
+ const char* mod_seq
 );
 
 
-/**
- * \brief Takes a empty set of pairs of strings and a peptide
- *  and fills the set with protein id paired with protein annotation
- *
- */
-void get_information_of_proteins(
-  std::set<std::pair<char*, char*> >& protein_info,
-  PEPTIDE_T* peptide
-);
 
 #endif //MATCH_H
 

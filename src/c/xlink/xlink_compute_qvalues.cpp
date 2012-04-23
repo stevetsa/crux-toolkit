@@ -1,10 +1,13 @@
+//TODO - change cout/cerrs to carp.
+
 #include "xhhc.h"
-#include "xhhc_ion_series.h"
+#include "LinkedIonSeries.h"
 #include "xhhc_scorer.h"
+#include "LinkedPeptide.h"
 
 #include "crux-utils.h"
 #include "objects.h"
-#include "scorer.h"
+#include "Scorer.h"
 #include "DelimitedFile.h"
 
 #include "xlink_compute_qvalues.h"
@@ -12,7 +15,9 @@
 #include <math.h>
 #include <assert.h>
 #include <ctype.h>
+#ifndef WIN32
 #include <unistd.h>
+#endif
 #include <iostream>
 #include <fstream>
 

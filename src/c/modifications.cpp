@@ -43,7 +43,7 @@
    list and so on.  Note that each AA_MOD_T can be applied only once
    to an amino acid.  A MODIFED_AA_T can have between 0 and 11
    modifications applied to it.  There is a function that will take a
-   MODIFIED_AA_T* and the index of an AA_MOD_T and return TRUE if the
+   MODIFIED_AA_T* and the index of an AA_MOD_T and return true if the
    MODIFIED_AA_T has had the AA_MOD_T applied to it.
 
    For a textual representation of a modiciation, there are 11
@@ -85,14 +85,14 @@ unsigned short mod_id_masks[MAX_AA_MODS] =
  */
 struct _aa_mod{ 
   double mass_change;  ///< the amount by which the mass of the residue changes
-  BOOLEAN_T aa_list[AA_LIST_LENGTH];
+  bool aa_list[AA_LIST_LENGTH];
                        ///< an array indexed by AA, true if can be modified
   int max_per_peptide; ///< the maximum number of mods per peptide
   MOD_POSITION_T position; ///< where the mod can occur in the pep/prot
   int max_distance;        ///< the max distance from the protein terminus
   char symbol;         ///< the character to represent the mod in sqt files
-  BOOLEAN_T prevents_cleavage; ///< can modification prevent cleavage?
-  BOOLEAN_T prevents_xlink; ///< can modification prevent xlink?
+  bool prevents_cleavage; ///< can modification prevent cleavage?
+  bool prevents_xlink; ///< can modification prevent xlink?
   MODIFIED_AA_T identifier; ///< the bitmask assigned for unique ID
 };
 
@@ -116,17 +116,17 @@ AA_MOD_T* new_aa_mod(int mod_idx){
   mod->max_distance = MAX_PROTEIN_SEQ_LENGTH;
   mod->symbol = mod_sqt_symbols[mod_idx];
   mod->identifier = mod_id_masks[mod_idx];
-  mod->prevents_cleavage = FALSE;
-  mod->prevents_xlink = FALSE;
+  mod->prevents_cleavage = false;
+  mod->prevents_xlink = false;
   // allocate the aa lists for mods 
   /*
   mod->aa_list =                        // all 0's?
-    (BOOLEAN_T*)mycalloc(AA_LIST_LENGTH, sizeof(BOOLEAN_T)); 
+    (bool*)mycalloc(AA_LIST_LENGTH, sizeof(bool)); 
   */
-  // initialize to FALSE
+  // initialize to false
   int aa_idx = 0;
   for(aa_idx=0; aa_idx < AA_LIST_LENGTH; aa_idx++){
-    mod->aa_list[aa_idx] = FALSE;
+    mod->aa_list[aa_idx] = false;
   }
   return mod;
 }
@@ -203,15 +203,17 @@ char* modified_aa_to_string_with_symbols(MODIFIED_AA_T aa){
 /**
  * \brief Converts a MODIFIED_AA_T to it's textual representation,
  * i.e. a letter either alone or followed by square brackets containing
- * the mass(es) of any modifications.  If merge_masses is false, all
- * masses are listed in a comma-separated list.  If true, they are
- * summed and returned in one number.  
+ * the mass(es) of any modifications. If mass_format is
+ * MOD_MASSES_SEPARATE, all masses are listed in a comma-separated
+ * list.  If MOD_MASS_ONLY, they are summed and returned in one
+ * number.  If AA_PLUS_MOD, the mass of the residue plus the mass of
+ * the modifciation(s) is printed. 
  * 
  * \returns A newly allocated char* with amino acid and modifciation
  * masses in square brackets.
  */
 char* modified_aa_to_string_with_masses(MODIFIED_AA_T aa, 
-                                        BOOLEAN_T merge_masses,
+                                        MASS_FORMAT_T mass_format,
                                         int precision){
   int modified_by = 0;
   AA_MOD_T** mod_list = NULL;
@@ -235,23 +237,28 @@ char* modified_aa_to_string_with_masses(MODIFIED_AA_T aa,
   char* mass_string = (char*)mymalloc(128 * sizeof(char));
   char* mass_string_ptr = mass_string;
   FLOAT_T summed_masses = 0;
+  if( mass_format == AA_PLUS_MOD ){
+    summed_masses = 
+      get_mass_mod_amino_acid(aa, get_mass_type_parameter("isotopic-mass"));
+  } else {
 
-  for(int mod_idx = 0; mod_idx < total_mods; mod_idx++){
-    if( is_aa_modified(aa, mod_list[mod_idx])){
-      // either add to the sum or to the string
-      if( merge_masses ){
-        summed_masses += aa_mod_get_mass_change(mod_list[mod_idx]);
-      } else {
-        sprintf(mass_string_ptr, "%.*f,", precision,
-                aa_mod_get_mass_change(mod_list[mod_idx]));
-        mass_string_ptr += strlen(mass_string_ptr);
+    for(int mod_idx = 0; mod_idx < total_mods; mod_idx++){
+      if( is_aa_modified(aa, mod_list[mod_idx])){
+        // either add to the sum or to the string
+        if( mass_format == MOD_MASS_ONLY ){
+          summed_masses += aa_mod_get_mass_change(mod_list[mod_idx]);
+        } else {
+          sprintf(mass_string_ptr, "%.*f,", precision,
+                  aa_mod_get_mass_change(mod_list[mod_idx]));
+          mass_string_ptr += strlen(mass_string_ptr);
+        }
       }
     }
   }
 
   // combine aa and masses
   char* return_string = NULL;
-  if( merge_masses ){ // X[000.00]'/0'
+  if( mass_format != MOD_MASSES_SEPARATE ){ // X[000.00]'/0'
     return_string = (char*)mymalloc(10 * sizeof(char));
     sprintf(return_string, "%c[%1.*f]", modified_aa_to_char(aa), 
             precision, summed_masses );
@@ -270,10 +277,11 @@ char* modified_aa_to_string_with_masses(MODIFIED_AA_T aa,
 /**
  * \brief Take an array of MODIFIED_AA_T's and return an array of
  * char's that includes the letter of each aa and the mass change of
- * any modifications in brackets following the modified residue.  If
- * merge_masses is true, all AA_MOD_T's are added and one value is
- * printed.  If false, each the mass of each AA_MOD_T is printed in a
- * comma-separated list.
+ * any modifications in brackets following the modified residue.  
+ * If mass_format is MOD_MASSES_SEPARATE, all masses are listed in a
+ * comma-separated list.  If MOD_MASS_ONLY, they are summed and
+ * returned in one number.  If AA_PLUS_MOD, the mass of the residue
+ * plus the mass of the modifciation(s) is printed.  
  *
  * \returns A newly allocated array of characters, a text
  * representation of the modified sequence.
@@ -281,7 +289,7 @@ char* modified_aa_to_string_with_masses(MODIFIED_AA_T aa,
 char* modified_aa_string_to_string_with_masses(
  MODIFIED_AA_T* aa_string, // the modified aa's to translate
  int length, // length of aa_string
- BOOLEAN_T merge_masses) // false==print each mod mass per aa, true== sum them
+ MASS_FORMAT_T mass_format) // which mass value to print
 {
   if( aa_string == NULL || length == 0 ){
     carp(CARP_ERROR, "Cannot print a NULL modified sequence");
@@ -311,7 +319,8 @@ char* modified_aa_string_to_string_with_masses(
   for(int mod_str_idx = 0; mod_str_idx<length; mod_str_idx++){
 
     char* cur_mod = 
-      modified_aa_to_string_with_masses( aa_string[mod_str_idx], merge_masses, precision );
+      modified_aa_to_string_with_masses(aa_string[mod_str_idx], 
+                                        mass_format, precision );
     strcpy( return_str_ptr, cur_mod );
     return_str_ptr += strlen(cur_mod);
     free(cur_mod);
@@ -408,12 +417,16 @@ char* modified_aa_to_unmodified_string(MODIFIED_AA_T* aa_string, int length){
  *
  * \returns The length of the mod_sequence array.
  */
-int convert_to_mod_aa_seq(const char* sequence, MODIFIED_AA_T** mod_sequence){
+int convert_to_mod_aa_seq(const char* sequence, 
+                          MODIFIED_AA_T** mod_sequence,
+                          MASS_FORMAT_T mass_format){
 
   if( sequence == NULL ){
     carp(CARP_ERROR, "Cannot convert NULL sequence to modifiable characters"); 
     return 0;
   }
+
+  MASS_TYPE_T mass_type = get_mass_type_parameter("isotopic-mass");
 
   int seq_len = strlen(sequence);
   MODIFIED_AA_T* new_sequence = 
@@ -436,6 +449,11 @@ int convert_to_mod_aa_seq(const char* sequence, MODIFIED_AA_T** mod_sequence){
     if( sequence[seq_idx] == '[' || sequence[seq_idx] == ','){//mod mass
       seq_idx++;
       FLOAT_T delta_mass = atof(sequence + seq_idx);
+      if( mass_format == AA_PLUS_MOD ){
+        assert(mod_idx > 0);
+        delta_mass -= get_mass_mod_amino_acid(new_sequence[mod_idx - 1], 
+                                              mass_type);
+        }
       // translate mass into aa_mod
       aa_mod = get_aa_mod_from_mass(delta_mass);
 
@@ -489,16 +507,52 @@ MODIFIED_AA_T* copy_mod_aa_seq(MODIFIED_AA_T* source, int length){
 }
 
 /**
+ * \brief Remove any characters not A-Z from a peptide sequence.
+ * \returns A newly allocated string with the given sequence less any
+ * modififcation symbols or masses.
+ */
+char* unmodify_sequence(const char* modified_sequence){
+  if( modified_sequence == NULL ){
+    return NULL;
+  }
+
+  char* new_seq = my_copy_string(modified_sequence);
+  unmodify_sequence_in_place(new_seq);
+  return new_seq;
+
+}
+
+/**
+ * \brief Remove any characters that are not A-Z from a given peptide
+ * seqeunce.
+ */
+void unmodify_sequence_in_place(char* sequence){
+
+  int seq_len = strlen(sequence);
+  int next_aa_idx = 0;
+  int move_to_here = 0;
+  while( next_aa_idx < seq_len ){
+    if( sequence[next_aa_idx] >= 'A' && sequence[next_aa_idx] <= 'Z' ){
+      sequence[move_to_here] = sequence[next_aa_idx];
+      move_to_here++;
+    }
+    next_aa_idx++;
+  }
+  sequence[move_to_here] = '\0';
+}
+
+
+/**
  * \brief Determine if an array of MODIFIED_AA_T is a palindrome.  
  * Used by reverse_sequence to avoid returning a reversed sequence
  * that is the same as the target.  Ignores the first and last
  * residues. 
- * \returns TRUE if the reversed sequence would be the same as the
- * forward, otherwise FALSE.
+ * \returns true if the reversed sequence would be the same as the
+ * forward, otherwise false.
  */
-BOOLEAN_T modified_aa_seq_is_palindrome(MODIFIED_AA_T* seq, int length){
+bool modified_aa_seq_is_palindrome(MODIFIED_AA_T* seq, int length){
   if( seq == NULL ){
-    return FALSE;
+    return false;
   }
 
   int left_idx = 1;    // skip first and last residues
@@ -506,14 +560,14 @@ BOOLEAN_T modified_aa_seq_is_palindrome(MODIFIED_AA_T* seq, int length){
 
   while( left_idx < right_idx ){
     if( seq[left_idx] != seq[right_idx] ){
-      return FALSE;
+      return false;
     }// else, keep checking
     left_idx++;
     right_idx--;
   }
 
   // if we got to here, they all matched
-  return TRUE;
+  return true;
 }
 
 
@@ -532,76 +586,76 @@ void free_mod_aa_seq( MODIFIED_AA_T* seq ){
  * serialized PSMs matches those in the paramter file.
  *
  * If there was no parameter file or if it did not contain any mods,
- * return FALSE.  If the given mod list does not exactly match the
+ * return false.  If the given mod list does not exactly match the
  * mods read from the parameter file (including the order in which
- * they are listed) return FALSE.  If returning false, print a warning
+ * they are listed) return false.  If returning false, print a warning
  * with the lines that should be included in the parameter file.
  *
- * \returns TRUE if the given mods are the same as those from the
+ * \returns true if the given mods are the same as those from the
  * parameter file.
  */
-BOOLEAN_T compare_mods(AA_MOD_T** psm_file_mod_list, int file_num_mods){
+bool compare_mods(AA_MOD_T** psm_file_mod_list, int file_num_mods){
   AA_MOD_T** mod_list = NULL;
   int num_mods = get_all_aa_mod_list(&mod_list);
 
   if( num_mods != file_num_mods ){
-    return FALSE;
+    return false;
   }
   int mod_idx = 0;
   for(mod_idx=0; mod_idx<num_mods; mod_idx++){
     if( ! compare_two_mods(mod_list[mod_idx], psm_file_mod_list[mod_idx]) ){
       print_a_mod(mod_list[mod_idx]);
       print_a_mod(psm_file_mod_list[mod_idx]);
-      return FALSE;
+      return false;
     }
   }
-  return TRUE;
+  return true;
 }
 
 /**
  * \brief Compare two mods to see if they are the same, i.e. same mass
  * change, unique identifier, position
  */
-BOOLEAN_T compare_two_mods(AA_MOD_T* mod1, AA_MOD_T* mod2){
+bool compare_two_mods(AA_MOD_T* mod1, AA_MOD_T* mod2){
   if(mod1->mass_change != mod2->mass_change ){
-    return FALSE;
+    return false;
   }
   if(mod1->max_per_peptide != mod2->max_per_peptide ){
-    return FALSE;
+    return false;
   }
   if(mod1->position != mod2->position ){
-    return FALSE;
+    return false;
   }
   if(mod1->max_distance != mod2->max_distance ){
-    return FALSE;
+    return false;
   }
   if(mod1->symbol != mod2->symbol ){
-    return FALSE;
+    return false;
   }
   if(mod1->identifier != mod2->identifier ){
-    return FALSE;
+    return false;
   }
   // aa list
   int i = 0;
   for(i=0; i<AA_LIST_LENGTH; i++){
     if(mod1->aa_list[i] != mod2->aa_list[i]){
-      return FALSE;
+      return false;
     }
   }
   // everything matched
-  return TRUE;
+  return true;
 }
 
 
 // FIXME: implement this
-BOOLEAN_T is_aa_modified(MODIFIED_AA_T aa, AA_MOD_T* mod){
+bool is_aa_modified(MODIFIED_AA_T aa, AA_MOD_T* mod){
 
   MODIFIED_AA_T id = mod->identifier;
   if( (aa & id) != 0 ){  // should == id
-    return TRUE;
+    return true;
   } 
 
-  return FALSE;
+  return false;
 }
 
 /**
@@ -611,22 +665,22 @@ BOOLEAN_T is_aa_modified(MODIFIED_AA_T aa, AA_MOD_T* mod){
  * Checks the mod list of modifiable residues to see if aa is in the
  * list.  Also checks to see if aa has already been modified by this
  * mod.  
- * \returns TRUE if it can be modified, else FALSE
+ * \returns true if it can be modified, else false
  */
-BOOLEAN_T is_aa_modifiable
+bool is_aa_modifiable
  (MODIFIED_AA_T aa, ///< The sequence amino acid to be modified
   AA_MOD_T* mod){   ///< The aa_mod to modify it with
 
-  if( is_aa_modified(aa, mod) == TRUE ){
-    return FALSE;
+  if( is_aa_modified(aa, mod) == true ){
+    return false;
   }
-  if( mod->aa_list[ (int)modified_aa_to_char(aa) - 'A' ] == TRUE ){
-  //if( mod->aa_list[ (int)modified_aa_to_char(aa) ] == TRUE 
+  if( mod->aa_list[ (int)modified_aa_to_char(aa) - 'A' ] == true ){
+  //if( mod->aa_list[ (int)modified_aa_to_char(aa) ] == true 
     //      && ! is_aa_modified(aa, mod)){
-    return TRUE;
+    return true;
   }
   // else not in list or already modified by this mod
-  return FALSE;
+  return false;
 }
 
 /**
@@ -662,6 +716,21 @@ const AA_MOD_T* get_aa_mod_from_symbol(const char symbol){
   // none of the mods matched the symbol
   carp(CARP_ERROR, "The modification symbol '%c' is not valid.", symbol);
   return NULL;
+}
+
+/**
+ * \brief Return the delta mass associated with the given modification
+ * symbol.  If the symbol does not represent a modification, returns
+ * 0. Requires that parameters have been initialized.
+ */
+FLOAT_T get_mod_mass_from_symbol(const char symbol){
+
+  const AA_MOD_T* mod = get_aa_mod_from_symbol(symbol);
+  if( mod == NULL ){
+    return 0;
+  }
+
+  return aa_mod_get_mass_change(mod);
 }
 
 // a temporary AA_MOD_T with identifier and mass for (potentially)
@@ -703,7 +772,7 @@ void print_a_mod(AA_MOD_T* mod){
 
   int i = 0;
   for(i=0; i<AA_LIST_LENGTH; i++){
-    if( mod->aa_list[i] == TRUE ){
+    if( mod->aa_list[i] == true ){
       printf("%c", (i + 'A'));
     }
   }
@@ -722,7 +791,7 @@ char* aa_mod_to_string(AA_MOD_T* mod){
 
   // get position info
   const char* pos_format = "%c-term most %d from end";
-  char* pos_buffer = (char*)mycalloc(strlen(pos_format), sizeof(char));
+  char* pos_buffer = (char*)mycalloc(strlen(pos_format) + 9, sizeof(char));
   switch(mod->position){
   case ANY_POSITION:
     strcpy(pos_buffer, "any");
@@ -740,7 +809,7 @@ char* aa_mod_to_string(AA_MOD_T* mod){
   char* str_ptr = return_str + length;
   int i = 0;
   for(i=0; i<AA_LIST_LENGTH; i++){
-    if( mod->aa_list[i] == TRUE ){
+    if( mod->aa_list[i] == true ){
       sprintf(str_ptr, "%c", (i + 'A'));
       str_ptr++;
     }
@@ -763,7 +832,7 @@ void aa_mod_set_mass_change(AA_MOD_T* mod, double mass_change){
  * \brief Get the mass change caused by this modification.
  * \returns The mass change caused by this modification.
  */
-double aa_mod_get_mass_change(AA_MOD_T* mod){
+double aa_mod_get_mass_change(const AA_MOD_T* mod){
   return mod->mass_change;
 }
 
@@ -774,7 +843,7 @@ double aa_mod_get_mass_change(AA_MOD_T* mod){
  * \returns A pointer to the list of amino acids on which this mod can
  * be placed.
  */
-BOOLEAN_T* aa_mod_get_aa_list(AA_MOD_T* mod){
+bool* aa_mod_get_aa_list(AA_MOD_T* mod){
   return mod->aa_list;
 }
 
@@ -840,15 +909,15 @@ MOD_POSITION_T aa_mod_get_position(AA_MOD_T* mod){
  * \brief Sets whether the modification can prevent cleavage.
  * \returns void
  */
-void aa_mod_set_prevents_cleavage(AA_MOD_T* mod, BOOLEAN_T prevents_cleavage) {
+void aa_mod_set_prevents_cleavage(AA_MOD_T* mod, bool prevents_cleavage) {
   mod->prevents_cleavage=prevents_cleavage;
 }
 
 /**
  * \brief gets whether the modification can prevent cleavage
- * \returns TRUE or FALSE
+ * \returns true or false
  */
-BOOLEAN_T aa_mod_get_prevents_cleavage(AA_MOD_T* mod) {
+bool aa_mod_get_prevents_cleavage(AA_MOD_T* mod) {
   return mod->prevents_cleavage;
 }
 
@@ -856,15 +925,15 @@ BOOLEAN_T aa_mod_get_prevents_cleavage(AA_MOD_T* mod) {
  * \brief Sets whether the modifications can prevent cross-linking.
  * \returns void
  */
-void aa_mod_set_prevents_xlink(AA_MOD_T* mod, BOOLEAN_T prevents_xlink) {
+void aa_mod_set_prevents_xlink(AA_MOD_T* mod, bool prevents_xlink) {
   mod->prevents_xlink = prevents_xlink;
 }
 
 /**
  * \brief gets whether the modification can prevent cross-linking.
- * \returns TRUE or FALSE
+ * \returns true or false
  */
-BOOLEAN_T aa_mod_get_prevents_xlink(AA_MOD_T* mod) {
+bool aa_mod_get_prevents_xlink(AA_MOD_T* mod) {
   return mod->prevents_xlink;
 }
 
@@ -895,7 +964,7 @@ char* aa_mod_get_aa_list_string(AA_MOD_T* mod){
   char* list_string = (char*)mycalloc(AA_LIST_LENGTH+1, sizeof(char));
   int mod_idx, string_idx=0;
   for(mod_idx = 0; mod_idx < AA_LIST_LENGTH; mod_idx++){
-    if(mod->aa_list[mod_idx] == TRUE){
+    if(mod->aa_list[mod_idx] == true){
       list_string[string_idx] = (char)('A' + mod_idx);
       string_idx++;
     }

@@ -1,5 +1,5 @@
 #include "XLinkPeptide.h"
-#include "modified_peptides_iterator.h"
+#include "ModifiedPeptidesIterator.h"
 #include "IonSeries.h"
 #include "Ion.h"
 
@@ -12,7 +12,7 @@
 using namespace std;
 
 FLOAT_T XLinkPeptide::linker_mass_;
-set<PEPTIDE_T*> XLinkPeptide::allocated_peptides_;
+set<Peptide*> XLinkPeptide::allocated_peptides_;
 
 XLinkPeptide::XLinkPeptide() : XLinkMatch() {
 
@@ -63,28 +63,27 @@ int XLinkPeptide::getLinkPos(int peptide_idx) {
 
 bool XLinkPeptide::isInter() {
 
-  PEPTIDE_T* peptide_a = linked_peptides_[0].getPeptide();
-  PEPTIDE_T* peptide_b = linked_peptides_[1].getPeptide();
-
-  PEPTIDE_SRC_T* proteins_src_a = get_peptide_peptide_src(peptide_a);
-  PEPTIDE_SRC_T* proteins_src_b = get_peptide_peptide_src(peptide_b);
+  Peptide* peptide_a = linked_peptides_[0].getPeptide();
+  Peptide* peptide_b = linked_peptides_[1].getPeptide();
 
   vector<Protein*> proteins_a;
   vector<Protein*> proteins_b;
+
+
+  for (PeptideSrcIterator src_iterator = peptide_a->getPeptideSrcBegin();
+    src_iterator != peptide_a->getPeptideSrcEnd();
+    ++src_iterator) {
+    PeptideSrc* src = *src_iterator;
+    proteins_a.push_back(src->getParentProtein());
+  }
+
+  for (PeptideSrcIterator src_iterator = peptide_b->getPeptideSrcBegin();
+    src_iterator != peptide_b->getPeptideSrcEnd();
+    ++src_iterator) {
+    PeptideSrc* src = *src_iterator;
+    proteins_b.push_back(src->getParentProtein());
+  }
   
-
-  while (proteins_src_a != NULL) {
-
-    proteins_a.push_back(get_peptide_src_parent_protein(proteins_src_a));
-    proteins_src_a = get_peptide_src_next_association(proteins_src_a);
-  }
-
-  while (proteins_src_b != NULL) {
-
-    proteins_b.push_back(get_peptide_src_parent_protein(proteins_src_b));
-    proteins_src_b = get_peptide_src_next_association(proteins_src_b);
-  }
-
   sort(proteins_a.begin(), proteins_a.end());
   sort(proteins_b.begin(), proteins_b.end());
 
@@ -108,26 +107,25 @@ bool XLinkPeptide::isInter() {
 
 bool XLinkPeptide::isIntra() {
 
-  PEPTIDE_T* peptide_a = linked_peptides_[0].getPeptide();
-  PEPTIDE_T* peptide_b = linked_peptides_[1].getPeptide();
-
-  PEPTIDE_SRC_T* proteins_src_a = get_peptide_peptide_src(peptide_a);
-  PEPTIDE_SRC_T* proteins_src_b = get_peptide_peptide_src(peptide_b);
+  Peptide* peptide_a = linked_peptides_[0].getPeptide();
+  Peptide* peptide_b = linked_peptides_[1].getPeptide();
 
   vector<Protein*> proteins_a;
   vector<Protein*> proteins_b;
   
 
-  while (proteins_src_a != NULL) {
-
-    proteins_a.push_back(get_peptide_src_parent_protein(proteins_src_a));
-    proteins_src_a = get_peptide_src_next_association(proteins_src_a);
+  for (PeptideSrcIterator src_iterator = peptide_a->getPeptideSrcBegin();
+    src_iterator != peptide_a->getPeptideSrcEnd();
+    ++src_iterator) {
+    PeptideSrc* src = *src_iterator;
+    proteins_a.push_back(src->getParentProtein());
   }
 
-  while (proteins_src_b != NULL) {
-
-    proteins_b.push_back(get_peptide_src_parent_protein(proteins_src_b));
-    proteins_src_b = get_peptide_src_next_association(proteins_src_b);
+  for (PeptideSrcIterator src_iterator = peptide_b->getPeptideSrcBegin();
+    src_iterator != peptide_b->getPeptideSrcEnd();
+    ++src_iterator) {
+    PeptideSrc* src = *src_iterator;
+    proteins_b.push_back(src->getParentProtein());
   }
 
   sort(proteins_a.begin(), proteins_a.end());
@@ -156,13 +154,13 @@ bool XLinkPeptide::isIntra() {
 
 void XLinkPeptide::addLinkablePeptides(double min_mass, double max_mass,
 			 Index* index, Database* database,
-			 PEPTIDE_MOD_T* peptide_mod, BOOLEAN_T is_decoy, 
+			 PEPTIDE_MOD_T* peptide_mod, bool is_decoy, 
 			 XLinkBondMap& bondmap, 
 			 vector<XLinkablePeptide>& linkable_peptides) {
 
   //cerr <<"addLinkablePeptides(): start"<<endl;
-  MODIFIED_PEPTIDES_ITERATOR_T* peptide_iterator =
-    new_modified_peptides_iterator_from_mass_range(
+  ModifiedPeptidesIterator* peptide_iterator =
+    new ModifiedPeptidesIterator(
       min_mass, 
       max_mass,
       peptide_mod, 
@@ -170,11 +168,11 @@ void XLinkPeptide::addLinkablePeptides(double min_mass, double max_mass,
       index, 
       database);
 
-  while (modified_peptides_iterator_has_next(peptide_iterator)) {
-    PEPTIDE_T* peptide = modified_peptides_iterator_next(peptide_iterator);
+  while (peptide_iterator->hasNext()) {
+    Peptide* peptide = peptide_iterator->next();
     vector<int> link_sites;
     
-    char* seq= get_peptide_modified_sequence_with_masses(peptide, FALSE);
+    char* seq= peptide->getModifiedSequenceWithMasses(MOD_MASSES_SEPARATE);
 
     //cerr <<"Finding sites for :"<<seq<<":";
 
@@ -190,11 +188,11 @@ void XLinkPeptide::addLinkablePeptides(double min_mass, double max_mass,
       linkable_peptides.push_back(xlinkable_peptide);
       XLink::addAllocatedPeptide(peptide);
     } else {
-      free_peptide(peptide);
+      delete peptide;
     }
   }
   
-  free_modified_peptides_iterator(peptide_iterator);
+  delete peptide_iterator;
   //cerr <<"addLinkablePeptides(): done."<<endl;
 }
 
@@ -246,7 +244,7 @@ void XLinkPeptide::addCandidates(
     //carp(CARP_INFO,"max mass-linker_mass:%f", (max_mass-linker_mass_));
 
     addLinkablePeptides(0, max_mass-linker_mass_, index, database,
-			peptide_mod, FALSE, bondmap, linkable_peptides);
+			peptide_mod, false, bondmap, linkable_peptides);
     //carp(CARP_INFO,"Done calling addLinkablePeptides:%d",mod_idx);
     
   }//next peptide mod
@@ -526,7 +524,7 @@ string XLinkPeptide::getIonSequence(Ion* ion) {
   }
 }
 
-PEPTIDE_T* XLinkPeptide::getPeptide(int peptide_idx) {
+Peptide* XLinkPeptide::getPeptide(int peptide_idx) {
   return linked_peptides_[peptide_idx].getPeptide();
 }
 
@@ -538,17 +536,17 @@ int XLinkPeptide::getNumMissedCleavages() {
   int link1_site = getLinkPos(0);
   int link2_site = getLinkPos(1);
   
-  PEPTIDE_T* pep1 = linked_peptides_[0].getPeptide();
-  PEPTIDE_T* pep2 = linked_peptides_[1].getPeptide();
+  Peptide* pep1 = linked_peptides_[0].getPeptide();
+  Peptide* pep2 = linked_peptides_[1].getPeptide();
   
-  char *seq1 = get_peptide_sequence_pointer(pep1);
-  char *seq2 = get_peptide_sequence_pointer(pep2);
+  char *seq1 = pep1->getSequencePointer();
+  char *seq2 = pep2->getSequencePointer();
 
   if (seq1[link1_site] == missed_cleavage_link_site) {
     skip.insert(link1_site);
   }
 
-  int missed1 = get_peptide_missed_cleavage_sites(pep1, skip);
+  int missed1 = pep1->getMissedCleavageSites(skip);
   
   skip.clear();
 
@@ -556,7 +554,7 @@ int XLinkPeptide::getNumMissedCleavages() {
     skip.insert(link2_site);
   }
   
-  int missed2 = get_peptide_missed_cleavage_sites(pep2, skip);
+  int missed2 = pep2->getMissedCleavageSites(skip);
 
   //cerr<<getSequenceString()<<" "<<missed1<<" "<<missed2<<endl;
 
@@ -576,7 +574,7 @@ string XLinkPeptide::getProteinIdString() {
 
   ostringstream oss;
 
-  PEPTIDE_T* peptide = this -> getPeptide(0);
+  Peptide* peptide = this -> getPeptide(0);
 
   if (peptide == NULL) {
     carp(CARP_FATAL, "XLinkPeptide : Null first peptide!");

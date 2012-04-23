@@ -1,3 +1,9 @@
+/*************************************************************************//**
+ * \file XLinkablePeptide.cpp
+ * AUTHOR: Sean McIlwain
+ * CREATE DATE:  Febuary 22, 2011
+ * \brief  Object for finding and defining the link sites on a peptide.
+ ****************************************************************************/
 #include "XLinkablePeptide.h"
 
 #include "objects.h"
@@ -9,20 +15,33 @@
 
 using namespace std;
 
+
+/**
+ * Default constructor
+ */
 XLinkablePeptide::XLinkablePeptide() {
   peptide_ = NULL;
   sequence_ = NULL;
 }
 
-XLinkablePeptide::XLinkablePeptide(char* sequence) {
-  cout<<"Assign sequence"<<endl;
+/**
+ *  Constructor that defines the peptide as a sequence string
+ */
+XLinkablePeptide::XLinkablePeptide(
+  char* sequence ///< the peptide sequence
+  ) {
+
   sequence_ = sequence;
-  cout<<"Assign peptide"<<endl;
   peptide_ = NULL;
 }
 
-XLinkablePeptide::XLinkablePeptide(PEPTIDE_T* peptide,
-				   vector<int>& link_sites) {
+/**
+ * Constructor that defines the peptide and the linking sites
+ */
+XLinkablePeptide::XLinkablePeptide(
+  Peptide* peptide, ///< the peptide object 
+  vector<int>& link_sites ///< the linking sites
+  ) {
 
   peptide_ = peptide;
   link_sites_.clear();
@@ -31,16 +50,126 @@ XLinkablePeptide::XLinkablePeptide(PEPTIDE_T* peptide,
   }
 }
 
-XLinkablePeptide::XLinkablePeptide(PEPTIDE_T* peptide, 
-				   XLinkBondMap& bondmap) {
+/**
+ * Constructor that generates the possible linking sites
+ * on the peptide using the bondmap object
+ */
+XLinkablePeptide::XLinkablePeptide(
+  Peptide* peptide, ///< the peptide object 
+  XLinkBondMap& bondmap ///< the bond map
+  ) {
+
   peptide_=peptide;
   findLinkSites(peptide_, bondmap, link_sites_);
 }
 
+/**
+ * Default destructor
+ */
+XLinkablePeptide::~XLinkablePeptide() {
+
+}
+
+/**
+ * \returns whether a link at this index in the sequence
+ * would prevent cleavage
+ */
+
+bool XLinkablePeptide::linkSeqPreventsCleavage(
+  int seq_idx) {
+
+  return linkSeqPreventsCleavage(peptide_, seq_idx);
+}
+
+bool XLinkablePeptide::linkSeqPreventsCleavage(
+  Peptide* peptide,
+  int seq_idx
+  ) {
+
+  if (seq_idx >= 0 && seq_idx < peptide->getLength()) {
+ 
+    if (isCleavageSite(peptide, seq_idx)) {
+
+      char aa = peptide->getSequencePointer()[seq_idx];
+
+      char* xlink_prevents_cleavage=get_string_parameter("xlink-prevents-cleavage");
+      int idx = 0;
+      while (xlink_prevents_cleavage[idx] != '\0') {
+        if (xlink_prevents_cleavage[idx] == aa) {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+
+/**
+ * \returns whether the link site prevents enzymatic
+ * cleavage
+ */
+bool XLinkablePeptide::linkSitePreventsCleavage(
+  size_t link_site_idx
+  ) {
+
+  if (link_site_idx >= numLinkSites()) {
+    return false;
+  }
+
+  return linkSeqPreventsCleavage(getLinkSite(link_site_idx));
+}
+
+
+bool XLinkablePeptide::isMissedCleavageSite(
+  Peptide* peptide,
+  int seq_idx) {
+
+  if (seq_idx == peptide->getLength()-1) {
+    return false;
+  }
+  return isCleavageSite(peptide, seq_idx);
+}
+  
+/**
+ * \returns whether the peptide is cleavable at this index
+ */
+bool XLinkablePeptide::isCleavageSite(
+  Peptide* peptide, ///< the peptide
+  int seq_idx ///< the sequence index
+  ) {
+
+  //TODO - make this work for every enzyme
+  if (seq_idx > peptide->getLength()-1) {
+    return false;
+  }
+
+  char* sequence = peptide->getSequencePointer();
+
+  if (sequence[seq_idx] == 'K' || sequence[seq_idx] == 'R') {
+    if (seq_idx == peptide->getLength()-1) {
+      return true;
+    } else {
+      return sequence[seq_idx+1] != 'P';
+    }
+  } else {
+    return false;
+  }
+  
+}
+
+/**
+ * given a peptide and a XLinkBondMap object,
+ * generate the possible link sites
+ */
 void XLinkablePeptide::findLinkSites(
-  PEPTIDE_T* peptide,
-  XLinkBondMap& bondmap,
-  vector<int>& link_sites) {
+  Peptide* peptide,  ///< the peptide object -in
+  XLinkBondMap& bondmap,  ///< the bond map -in 
+  vector<int>& link_sites ///< the found link sites -out
+  ) {
+
+  int missed_cleavages = getMissedCleavageSites(peptide);
+  int max_missed_cleavages = get_int_parameter("missed-cleavages")+
+    2; // +2 because a self loop can prevent two cleavages from happening
 
   link_sites.clear();
 
@@ -56,116 +185,170 @@ void XLinkablePeptide::findLinkSites(
   }
 
   //scan through the sequence and find linkable sites.
-  MODIFIED_AA_T* mod_seq = get_peptide_modified_aa_sequence(peptide);
-  int length = get_peptide_length(peptide);
+  MODIFIED_AA_T* mod_seq = peptide->getModifiedAASequence();
+  int length = peptide->getLength();
 
-  char* xlink_prevents_cleavage = 
-    get_string_parameter("xlink-prevents-cleavage");
-  
-
-
-
+  //scan the sequence for linkage sites.
   for (int seq_idx=0;seq_idx < length;seq_idx++) {
+    
     if (bondmap.canLink(peptide, seq_idx)) {
-      char aa = modified_aa_to_char(mod_seq[seq_idx]);
-      BOOLEAN_T link_prevented = FALSE;
-      if (seq_idx == length-1) {  
-	int idx = 0;
-	while (xlink_prevents_cleavage[idx] != '\0') {
-	  if (xlink_prevents_cleavage[idx] == aa) {
-	    link_prevented = TRUE;
-	    break;
-	  }
-	  idx++;
-	}
-      }    
 
+      bool link_prevented = false;
+      // 1st test, make sure that we don't link at the c-terminus
+      // if the xlink prevents cleavage and the c-terminus is
+      // a cleavage point.  
+      if ((seq_idx == length-1) &&
+           linkSeqPreventsCleavage(peptide, seq_idx)) {
+        link_prevented = true;
+      }
+
+      //2nd test, make sure that there isn't a modification that
+      //prevents the cross-link
       if (!link_prevented) {
 	//check if the modification prevents xlink.
 	for (unsigned int mod_idx=0;mod_idx<prevents_xlink.size();mod_idx++) {
 	  //if aa is modified by any modification that can prevent
 	  //cross-linking, then don't add the site as a link_site.
 	  if (is_aa_modified(mod_seq[seq_idx], prevents_xlink[mod_idx])) {
-	    link_prevented = TRUE;
+	    link_prevented = true;
 	    break;
 	  }
 	}
       }
-      //passes both tests, this is a linkable site.
+
+      //3rd test make sure that we are within the allowed 
+      //number of missed cleavages
+      if (!link_prevented) {
+        //if a link occurs here and prevents a cleavage, then don't
+        //count the number of missed cleavages against the total number 
+        //of missed cleavages
+        int total_missed_cleavages = missed_cleavages;
+        if (linkSeqPreventsCleavage(peptide, seq_idx)) {
+          total_missed_cleavages--;
+        }
+
+        if (total_missed_cleavages > max_missed_cleavages) {
+          link_prevented = true;
+        }
+      }
+
+      //passes all three tests, this is a linkable site.
       if (!link_prevented) {
 	//if it is a linkable site, then add it to the list.
         link_sites.push_back(seq_idx);
       }
     }
   }
-  free(xlink_prevents_cleavage);
   free(mod_seq);
 }
 
-XLinkablePeptide::~XLinkablePeptide() {
-  //cerr <<"XLinkablePeptide::~XLinkablePeptide()"<<endl;
-  //cerr<<"XLinkablePeptide::~XLinkablePeptide():start."<<endl;
-  if (peptide_ != NULL) {
-    //free_peptide(peptide_);
-  }
-  //cerr<<"XLinkablePeptide::~XLinkablePeptide():done."<<endl;
-}
-
+/**
+ * \returns the number of link sites on this peptide
+ */
 size_t XLinkablePeptide::numLinkSites() {
   return link_sites_.size();
 }
 
-BOOLEAN_T XLinkablePeptide::isLinkable() {
+/**
+ * \returns whether this peptide is linkable or not
+ */
+bool XLinkablePeptide::isLinkable() {
   return numLinkSites() > 0;
 }
 
-int XLinkablePeptide::getLinkSite(int link_site_idx) {
+/**
+ * \returns whether the peptide is linkable using the bond map
+ */
+bool XLinkablePeptide::isLinkable(
+    Peptide* peptide, ///< the peptide object
+    XLinkBondMap& bondmap ///< the bond map
+  ) {
+
+  vector<int> link_sites;
+  findLinkSites(peptide, bondmap, link_sites);
+  return link_sites.size() > 0;
+
+
+}
+
+/**
+ * \returns the number of missed cleavages in the linkable peptide
+ */
+int XLinkablePeptide::getMissedCleavageSites() {
+  return getMissedCleavageSites(peptide_);
+}
+
+int XLinkablePeptide::getMissedCleavageSites(
+  Peptide* peptide ///< the peptide
+) {
+  //TODO - change this to reflect modifications that 
+  //prevent cleavage (i.e. deadlinks).
+  return peptide -> getMissedCleavageSites();
+}
+
+/**
+ * \returns the sequence index of a link site
+ */
+int XLinkablePeptide::getLinkSite(
+  int link_site_idx ///< the index of the link site
+  ) {
+
   return link_sites_.at(link_site_idx);
 }
 
-int XLinkablePeptide::addLinkSite(int link_site) {
-  link_sites_.push_back(link_site);
+/**
+ * Adds a link site by sequence index
+ * \returns the index of the added link site
+ */
+int XLinkablePeptide::addLinkSite(
+  int seq_idx ///< the sequence index of the link site
+  ) {
+  link_sites_.push_back(seq_idx);
   return link_sites_.size()-1;
 }
 
-PEPTIDE_T* XLinkablePeptide::getPeptide() {
+/**
+ * \returns the peptide object associated with this XLinkablePeptide
+ */
+Peptide* XLinkablePeptide::getPeptide() {
   return peptide_;
 }
 
-FLOAT_T XLinkablePeptide::getMass() const {
+/**
+ * \returns the mass of the xlinkable peptide
+ */
+FLOAT_T XLinkablePeptide::getMass(
+  MASS_TYPE_T mass_type
+  ) const {
   if (peptide_ == NULL) {
-    carp(CARP_INFO,"returning mass for %s", sequence_);
-    return calc_sequence_mass(sequence_, AVERAGE);
+    return Peptide::calcSequenceMass(sequence_, mass_type);
   } else {
-    return get_peptide_peptide_mass(peptide_);
+    return peptide_->calcModifiedMass(mass_type);
   }
 }
 
-FLOAT_T XLinkablePeptide::getMass(MASS_TYPE_T mass_type) {
-  if (peptide_ == NULL) {
-    return calc_sequence_mass(sequence_, mass_type);
-  } else {
-    return calc_modified_peptide_mass(peptide_, mass_type);
-  }
-}
-
-
+/**
+ * \returns an allocated sequence c-string.  Must be freed
+ */
 char* XLinkablePeptide::getSequence() {
   if (peptide_ == NULL) {
     return my_copy_string(sequence_);
   } else {
-    char* seq = get_peptide_sequence(peptide_);
+    char* seq = peptide_->getSequence();
     return seq;
   }
 }
 
+/**
+ * \returns the allocated modified sequence. Must be freed.
+ */
 MODIFIED_AA_T* XLinkablePeptide::getModifiedSequence() {
   MODIFIED_AA_T* mod_seq = NULL;
 
   if (peptide_ == NULL) {
     convert_to_mod_aa_seq(sequence_, &mod_seq);
   } else {
-    mod_seq = get_peptide_modified_aa_sequence(peptide_);
+    mod_seq = peptide_->getModifiedAASequence();
   }
 
   return mod_seq;
@@ -199,13 +382,13 @@ void doSwitch(vector<int>& link_sites, int siteA, int siteB) {
 static const int MAX_SHUFFLES = 5;
 
 char* generateShuffledSequence(
-  PEPTIDE_T* peptide,
+  Peptide* peptide,
   vector<int>& link_sites
   ) {
 
-  char* sequence = get_peptide_sequence(peptide);
+  char* sequence = peptide->getSequence();
 
-  int length = get_peptide_length(peptide);
+  int length = peptide->getLength();
 
   int num_shuffles = 0;
   do {
@@ -226,7 +409,7 @@ char* generateShuffledSequence(
     }
 
 
-  } while (FALSE /*equal_peptides(sequence, peptide)*/ && (num_shuffles < MAX_SHUFFLES));
+  } while (false /*equal_peptides(sequence, peptide)*/ && (num_shuffles < MAX_SHUFFLES));
 
   return sequence;
 
@@ -234,12 +417,12 @@ char* generateShuffledSequence(
 }
 
 MODIFIED_AA_T* generateShuffledModSequence(
-  PEPTIDE_T* peptide,
+  Peptide* peptide,
   vector<int>& link_sites
   ) {
 
-  MODIFIED_AA_T* sequence = get_peptide_modified_aa_sequence(peptide);
-  int length = get_peptide_length(peptide);
+  MODIFIED_AA_T* sequence = peptide->getModifiedAASequence();
+  int length = peptide->getLength();
   int start_idx = 0;
   int end_idx = length-1;
   int switch_idx = 0;
@@ -266,7 +449,7 @@ MODIFIED_AA_T* generateShuffledModSequence(
 
 XLinkablePeptide XLinkablePeptide::shuffle() {
   //cerr <<"XLinkablePeptide::shuffle():start"<<endl;
-  PEPTIDE_T* peptide = copy_peptide(peptide_);
+  Peptide* peptide = new Peptide(peptide_);
   XLink::addAllocatedPeptide(peptide);
   //cerr <<"Linksites"<<endl;
   vector<int> link_sites;
@@ -276,16 +459,16 @@ XLinkablePeptide XLinkablePeptide::shuffle() {
 
   MODIFIED_AA_T* new_mod_seq = NULL;
 
-  if(get_peptide_is_modified(peptide)) {
+  if(peptide->isModified()) {
     //cerr<<"Calling generateShuffledModSequence"<<endl;
     new_mod_seq = generateShuffledModSequence(peptide, link_sites);
-    set_peptide_decoy_modified_seq(peptide, new_mod_seq);
+    peptide->setDecoyModifiedSeq(new_mod_seq);
   } else {
     //cerr<<"Calling generateShuffledSequence"<<endl;
     char* new_seq =
       generateShuffledSequence(peptide, link_sites);
     convert_to_mod_aa_seq(new_seq, &new_mod_seq);
-    set_peptide_decoy_modified_seq(peptide, new_mod_seq);
+    peptide->setDecoyModifiedSeq(new_mod_seq);
     free(new_seq);
   }
   //cerr<<"Creating new linkable peptide"<<endl;
@@ -303,11 +486,14 @@ string getAASequence() {
 }
 */
 
+/**
+ * \returns the modified sequence string of the xlinkable peptide
+ */
 string XLinkablePeptide::getModifiedSequenceString() {
   if (peptide_ == NULL) {
     return string(sequence_);
   } else {
-    char* seq = get_peptide_modified_sequence_with_masses(peptide_, FALSE);
+    char* seq = peptide_->getModifiedSequenceWithMasses(MOD_MASS_ONLY);
     string string_seq(seq);
     free(seq);
     return string_seq;
@@ -316,7 +502,7 @@ string XLinkablePeptide::getModifiedSequenceString() {
 }
 
 bool XLinkablePeptide::isModified() {
-  return get_peptide_is_modified(peptide_);
+  return peptide_->isModified();
 }
 
 
@@ -327,4 +513,21 @@ bool compareXLinkablePeptideMass(
 
   return xpep1.getMass() < xpep2.getMass();
 }
+/**
+ * \returns whether the peptide is less than (by lexical modified sequence)
+ */
+bool XLinkablePeptide::operator < (
+    XLinkablePeptide other ///< the other XLinkablePeptide to compare to.
+  ) const {
+  
+  XLinkablePeptide xlinkable = *this;
+  return xlinkable.getModifiedSequenceString() < other.getModifiedSequenceString();
 
+}
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 2
+ * End:
+ */

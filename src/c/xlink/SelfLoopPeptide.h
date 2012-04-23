@@ -16,7 +16,7 @@ class SelfLoopPeptide : public XLinkMatch {
   XLinkablePeptide linked_peptide_;
   std::vector<int> link_pos_idx_;
   
-  BOOLEAN_T is_decoy_;
+  bool is_decoy_;
  public:
   
   int getLinkPos(int link_idx);
@@ -49,7 +49,7 @@ class SelfLoopPeptide : public XLinkMatch {
   virtual XLinkMatch* shuffle();
   virtual void predictIons(IonSeries* ion_series, int charge);
   std::string getIonSequence(Ion* ion);
-  virtual PEPTIDE_T* getPeptide(int peptide_idx);
+  virtual Peptide* getPeptide(int peptide_idx);
 
   virtual int getNumMissedCleavages();
 

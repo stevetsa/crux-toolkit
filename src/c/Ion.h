@@ -402,6 +402,11 @@ class Ion {
     );
 
   /**
+   * return the total number of modifications this ion has.
+   */
+  int getTotalModificationCount();
+
+  /**
    * set the parent peptide_sequence of the ion object
    */
   void setPeptideSequence(

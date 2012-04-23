@@ -47,7 +47,7 @@ class XLinkMatch : public Match {
 
   virtual void predictIons(IonSeries* ion_series, int charge)=0;
   virtual std::string getIonSequence(Ion* ion)=0;
-  virtual PEPTIDE_T* getPeptide(int peptide_idx)=0;
+  virtual Peptide* getPeptide(int peptide_idx)=0;
 
   void decrementPointerCount();
   void computeWeibullPvalue(
@@ -73,7 +73,8 @@ class XLinkMatch : public Match {
     MatchFileWriter*    output_file,            ///< output stream -out
     int      scan_num,               ///< starting scan number -in
     FLOAT_T  spectrum_precursor_mz,  ///< m/z of spectrum precursor -in
-    int      num_matches,            ///< num matches in spectrum -in
+    int      num_target_matches,            ///< target matches in spectrum -in
+    int      num_decoy_matches,      ///< decoy matches (if any) for this spectrum -in
     int      b_y_total,              ///< total b/y ions -in
     int      b_y_matched             ///< Number of b/y ions matched. -in
   );    

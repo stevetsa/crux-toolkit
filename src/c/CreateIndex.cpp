@@ -11,6 +11,7 @@
 #include "CreateIndex.h"
 
 #include <signal.h>
+#include "WinCrux.h"
 
 using namespace std;
 
@@ -62,7 +63,8 @@ int CreateIndex::main(int argc, char** argv) {
     "custom-enzyme", 
     "digestion", 
     "missed-cleavages",
-    "peptide-list"
+    "peptide-list",
+    "decoys"
   };
   int num_options = sizeof(option_list) / sizeof(char*);
 
@@ -77,10 +79,14 @@ int CreateIndex::main(int argc, char** argv) {
   carp(CARP_DETAILED_DEBUG, "Starting create_index");
 
   /* connect various signals to our clean-up function */
+#ifndef WIN32
   signal( SIGTERM, clean_up );
   signal( SIGINT, clean_up );
   signal( SIGQUIT, clean_up );
-  signal( SIGHUP, clean_up ); 
+  signal( SIGHUP, clean_up );
+#else
+  // FIXME:CEGRANT Add windows equivalent
+#endif
 
 
   /* initialize the application */
@@ -99,6 +105,7 @@ int CreateIndex::main(int argc, char** argv) {
   enzyme = get_enzyme_type_parameter("enzyme");
   digest = get_digest_type_parameter("digestion");
   mass_type = get_mass_type_parameter("isotopic-mass");
+  DECOY_TYPE_T decoys = get_decoy_type_parameter("decoys");
 
   /* create peptide constraint */
   constraint = new PeptideConstraint(enzyme, digest, min_mass, max_mass, 
@@ -117,7 +124,7 @@ int CreateIndex::main(int argc, char** argv) {
      fail if --overwrite is false */
   char* out_dir = get_string_parameter("index name");
   carp(CARP_DEBUG, "New index name is '%s'", out_dir);
-  BOOLEAN_T overwrite = get_boolean_parameter("overwrite");
+  bool overwrite = get_boolean_parameter("overwrite");
   if( (!overwrite) && (chdir(out_dir) == 0)){
       carp(CARP_FATAL, "Index '%s' already exists. Use " \
            "--overwrite T to replace.", out_dir);
@@ -127,7 +134,8 @@ int CreateIndex::main(int argc, char** argv) {
   crux_index = new Index(in_file,
                          out_dir,
                          constraint,
-                         mass_range
+                         mass_range,
+                         decoys
                          );
   
   /* create crux_index files */

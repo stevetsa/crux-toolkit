@@ -35,7 +35,7 @@ int ComputeQValues::main(int argc, char** argv) {
  * \returns the command name for ComputeQValues
  */
 string ComputeQValues::getName() {
-  return "compute-q-values";
+  return "calibrate-scores";
 }
 
 /**
@@ -45,7 +45,7 @@ string ComputeQValues::getDescription() {
   return 
   "Assign a q-value, which is a statistical confidence "
   "measure that accounts for multiple testing, to each "
-  "PSM in a given set";
+  "PSM in a given set.";
 
 }
 

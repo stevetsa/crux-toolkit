@@ -8,6 +8,9 @@
 
 #include "carp.h"
 #include "parameter.h"
+#include "WinCrux.h"
+
+#include <iostream>
 
 using namespace std;
 
@@ -52,7 +55,7 @@ void CruxApplication::initialize(
   // Initialize parameter.c and set default values
   initialize_parameters();
 
-  // Define optional and required arguments 
+  // Define optional and required arguments
   select_cmd_line_options(option_list, num_options);
   select_cmd_line_arguments(argument_list, num_arguments);
 
@@ -60,6 +63,7 @@ void CruxApplication::initialize(
   // Includes syntax, type, and bounds checking, dies on error 
   string cmd_name = this->getName();
   char* full_cmd = cat_string("crux ", cmd_name.c_str());
+
   parse_cmd_line_into_params_hash(argc, argv, cmd_name.c_str());
 
   free(full_cmd);
@@ -67,6 +71,7 @@ void CruxApplication::initialize(
   carp(CARP_INFO, "Beginning %s.", 
        this->getName().c_str());
 
+  
   // Set seed for random number generation 
   if(strcmp(get_string_parameter_pointer("seed"), "time")== 0){
     time_t seconds; // use current time to seed
@@ -76,7 +81,7 @@ void CruxApplication::initialize(
   else{
     srandom((unsigned int)atoi(get_string_parameter_pointer("seed")));
   }
-
+  
   // Start the timer.
   wall_clock();
 
@@ -114,5 +119,13 @@ void CruxApplication::initialize(
     print_parameter_file(&param_file_name);
     free(param_file_name);
   }
-
 }
+
+
+/**
+ * Should this application be kept from the usage statement?
+ */
+bool CruxApplication::hidden(){
+  return false;
+}
+

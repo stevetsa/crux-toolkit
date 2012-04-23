@@ -17,7 +17,9 @@
 #include <string.h>
 #include <assert.h>
 #include <ctype.h>
+#ifndef WIN32
 #include <unistd.h>
+#endif
 #include <map>
 #include <time.h>
 #include "carp.h"
@@ -29,17 +31,17 @@
 #include "crux-utils.h"
 #include "objects.h"
 #include "parameter.h"
-#include "scorer.h" 
+#include "Scorer.h" 
 #include "Index.h"
-#include "generate_peptides_iterator.h" 
 #include "Match.h"
 #include "hash.h"
-#include "peptide_src.h"
+#include "PeptideSrc.h"
 #include "ProteinIndex.h"
 #include "modifications.h"
-#include "modified_peptides_iterator.h"
+#include "ModifiedPeptidesIterator.h"
 #include "MatchFileWriter.h"
 #include "MatchIterator.h"
+#include "PepXMLWriter.h"
 
 using namespace std;
 
@@ -54,6 +56,7 @@ class MatchCollection {
   Match* match_[_MAX_NUMBER_PEPTIDES]; ///< array of match object
   int match_total_;      ///< size of match array, may vary w/truncation
   int experiment_size_;  ///< total matches before any truncation
+  int target_experiment_size_; ///< total target matches for same spectrum
   SpectrumZState zstate_; ///< zstate of the associated spectrum
   bool null_peptide_collection_; ///< are the peptides shuffled
   bool scored_type_[NUMBER_SCORER_TYPES]; 
@@ -108,7 +111,7 @@ class MatchCollection {
   int addUnscoredPeptides(
     Spectrum* spectrum, 
     SpectrumZState& charge, 
-    MODIFIED_PEPTIDES_ITERATOR_T* peptide_iterator,
+    ModifiedPeptidesIterator* peptide_iterator,
     bool is_decoy
     );
 
@@ -134,7 +137,8 @@ class MatchCollection {
 
   bool extendTabDelimited(
     Database* database, ///< the database holding the peptides -in
-    MatchFileReader& result_file   ///< the result file to parse PSMs -in
+    MatchFileReader& result_file,   ///< the result file to parse PSMs -in
+    Database* decoy_database = NULL ///< optional database with decoy peptides
     );
 
   bool addMatchToPostMatchCollection(
@@ -142,7 +146,7 @@ class MatchCollection {
     );
 
   void updateProteinCounters(
-    PEPTIDE_T* peptide  
+    Peptide* peptide  
     );
 
 
@@ -155,8 +159,6 @@ class MatchCollection {
 
  public:
 
-  MatchCollection();
-
   /**
    * \brief Creates a new match collection with no matches in it.  Sets
    * member variables from parameter.c.  The charge and null_collection
@@ -165,7 +167,7 @@ class MatchCollection {
    *
    * \returns A newly allocated match collection with member variables set.
    */
-  MatchCollection(bool is_decoy);
+  MatchCollection(bool is_decoy = false);
 
   /**
    * create a new match collection from the serialized PSM output files
@@ -203,11 +205,10 @@ class MatchCollection {
    *
    * \returns The number of matches added.
    */
-  
   int addMatches(
     Spectrum* spectrum,  ///< compare peptides to this spectrum
     SpectrumZState& zstate,            ///< use this charge state for spectrum
-    MODIFIED_PEPTIDES_ITERATOR_T* peptide_iterator, ///< use these peptides
+    ModifiedPeptidesIterator* peptide_iterator, ///< use these peptides
     bool is_decoy,     ///< do we shuffle the peptides
     bool store_scores, ///< true means save scores in xcorrs[]
     bool do_sp_score,  ///< true means do Sp before xcorr
@@ -313,8 +314,20 @@ class MatchCollection {
   /**
    *\returns the total peptides searched in the experiment in match_collection
    */
-  int getExperimentalSize();
+  int getExperimentSize();
 
+  /**
+   * Sets the total number of target peptides searched for this
+   * spectrum.  Only to be used by decoy match collections.
+   */
+  void setTargetExperimentSize(int numMatches);
+
+  /**
+   * \returns the number of target matches that this spectrum had.
+   * Different than getExperimentSize() for decoy match collections.
+   */
+  int getTargetExperimentSize();
+    
   /**
    * \returns true if the match_collection only contains decoy matches,
    * else (all target or mixed) returns false.
@@ -423,7 +436,7 @@ class MatchCollection {
    * the collection rather than limiting by top-match parameter. 
    */
   void printMultiSpectraXml(
-    FILE* output
+    PepXMLWriter* output
     );
 
   /*
@@ -437,8 +450,7 @@ class MatchCollection {
   static void printSqtHeader(
     FILE* outfile, 
     const char* type, 
-    int proteins, 
-    bool is_for_match_analysis
+    int proteins 
     );
 
   /*
@@ -456,16 +468,15 @@ class MatchCollection {
     );
 
   /**
-   * Print the psm features to output file upto 'top_match' number of
+   * Print the psm features to output file up to 'top_match' number of
    * top peptides among the match_collection in xml file format
    * returns true, if sucessfully print xml format of the PSMs, else false
    */
   bool printXml(
-    FILE* output,
+    PepXMLWriter* output,
     int top_match,
     Spectrum* spectrum,
-    SCORER_TYPE_T main_score,
-    int index
+    SCORER_TYPE_T main_score
     );
 
   /**
@@ -571,8 +582,8 @@ class MatchCollection {
    */
   void addDecoyScores(
     Spectrum* spectrum, ///< search this spectrum
-    int charge, ///< search spectrum at this charge state
-    MODIFIED_PEPTIDES_ITERATOR_T* peptides ///< use these peptides to search
+    SpectrumZState& zstate, ///< search spectrum at this charge state
+    ModifiedPeptidesIterator* peptides ///< use these peptides to search
   );
 
   /**
@@ -588,6 +599,15 @@ class MatchCollection {
    * q-values to all of the matches in a given collection.
    */
   void assignQValues(
+    const map<FLOAT_T, FLOAT_T>* score_to_qvalue_hash,
+    SCORER_TYPE_T score_type
+    );
+
+  /**
+   * Given a hash table that maps from a score to its PEP, assign
+   * PEPs to all of the matches in a given collection.
+   */
+  void assignPEPs(
     const map<FLOAT_T, FLOAT_T>* score_to_qvalue_hash,
     SCORER_TYPE_T score_type
     );
@@ -633,7 +653,7 @@ class MatchCollection {
    * is the best scoring peptide
    */
   int getHash(
-    PEPTIDE_T* peptide  ///< the peptide to check hash value
+    Peptide* peptide  ///< the peptide to check hash value
     );
 
 // cheater functions for testing

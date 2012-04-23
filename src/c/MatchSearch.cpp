@@ -29,6 +29,7 @@
 #include "FilteredSpectrumChargeIterator.h"
 #include "SearchProgress.h"
 #include "SpectrumCollectionFactory.h"
+#include "ModifiedPeptidesIterator.h"
 
 using namespace std;
 
@@ -46,13 +47,14 @@ MatchSearch::~MatchSearch() {
 
 /**
  * \brief Look at matches and search parameters to determine if a
- * sufficient number PSMs have been found.  Returns TRUE if the
+ * sufficient number PSMs have been found.  Returns true if the
  * maximum number of modifications per peptide have been considered.
  * In the future, implement and option and test for a minimum score.
- * \returns TRUE if no more PSMs need be searched.
+ * \returns true if no more PSMs need be searched.
  */
-bool MatchSearch::isSearchComplete(MatchCollection* matches, 
-                             int mods_per_peptide){
+bool MatchSearch::isSearchComplete(
+  MatchCollection* matches, ///< matches to consider
+  int mods_per_peptide){ ///< modifications per peptide searched
 
 
   if( matches == NULL ){
@@ -87,14 +89,14 @@ bool MatchSearch::isSearchComplete(MatchCollection* matches,
  */
 int MatchSearch::searchPepMods(
   MatchCollection* match_collection, ///< store PSMs here
-  BOOLEAN_T is_decoy,   ///< generate decoy peptides from index/db
+  bool is_decoy,   ///< generate decoy peptides from index/db
   Index* index,       ///< index to use for generating peptides
   Database* database, ///< db to use for generating peptides
   Spectrum* spectrum, ///< spectrum to search
   SpectrumZState& zstate, ///< seach spectrum at this z-state
   PEPTIDE_MOD_T** peptide_mods, ///< list of peptide mods to apply
   int num_peptide_mods, ///< how many p_mods to use from the list
-  BOOLEAN_T store_scores///< save all scores for p-value estimation
+  bool store_scores///< save all scores for p-value estimation
   ){
 
   // set match_collection charge
@@ -118,7 +120,7 @@ int MatchSearch::searchPepMods(
     
     if( this_aa_mods > cur_aa_mods ){
       carp(CARP_DEBUG, "Finished searching %i mods", cur_aa_mods);
-      BOOLEAN_T passes = isSearchComplete(match_collection, cur_aa_mods);
+      bool passes = isSearchComplete(match_collection, cur_aa_mods);
       if( passes ){
         carp(CARP_DETAILED_DEBUG, 
              "Ending search with %i modifications per peptide", cur_aa_mods);
@@ -136,14 +138,9 @@ int MatchSearch::searchPepMods(
     
     
     // get peptide iterator
-    MODIFIED_PEPTIDES_ITERATOR_T* peptide_iterator =
-      new_modified_peptides_iterator_from_zstate(mz,
-                                             zstate,
-                                             peptide_mod, 
-                                             is_decoy,
-                                             index,
-                                             database);
-    
+    ModifiedPeptidesIterator* peptide_iterator = new
+      ModifiedPeptidesIterator(mz, zstate, peptide_mod, is_decoy,
+                               index, database); 
     
     // score peptides
     int added = match_collection->addMatches(spectrum, 
@@ -152,12 +149,12 @@ int MatchSearch::searchPepMods(
                             is_decoy,
                             store_scores,
                             get_boolean_parameter("compute-sp"),
-                            FALSE // don't filtery by Sp
+                            false // don't filtery by Sp
                             );
     
     carp(CARP_DEBUG, "Added %i matches", added);
 
-    free_modified_peptides_iterator(peptide_iterator);
+    delete peptide_iterator;
     
   }//next peptide mod
 
@@ -175,16 +172,16 @@ int MatchSearch::searchPepMods(
  * Possible side effectos: Collections may be merged and re-ranked.
  */
 void MatchSearch::printSpectrumMatches(
-  OutputFiles& output_files,       
-  MatchCollection* target_psms, 
-  vector<MatchCollection*>& decoy_psms,
-  Spectrum* spectrum,             
-  BOOLEAN_T combine_target_decoy,
-  int num_decoy_files
-                   ){
+  OutputFiles& output_files, ///< files to print to
+  MatchCollection* target_psms, ///< target psms to print
+  vector<MatchCollection*>& decoy_psms, ///< decoy psms to print
+  Spectrum* spectrum, ///< spectrum for all psms
+  bool combine_target_decoy, ///< print targets and decoys to one file
+  int num_decoy_files ///< number of decoy files to print
+  ){
 
   // now print matches to one, two or several files
-  if( combine_target_decoy == TRUE ){
+  if( combine_target_decoy == true ){
     // merge all collections
     MatchCollection* all_psms = target_psms;
     for(size_t decoy_idx = 0; decoy_idx < decoy_psms.size(); decoy_idx++){
@@ -192,7 +189,7 @@ void MatchSearch::printSpectrumMatches(
     }
     
     // sort and rank
-    if( all_psms->getScoredType(SP) == TRUE ){
+    if( all_psms->getScoredType(SP) == true ){
       all_psms->populateMatchRank(SP);
     }
     all_psms->populateMatchRank(XCORR);
@@ -203,7 +200,7 @@ void MatchSearch::printSpectrumMatches(
                               XCORR, spectrum); 
     
   }else{ // targets and decoys in separate files
-    cerr <<"printSpectrumMatches():1"<<endl;
+    
     // if decoys in one file
     if( num_decoy_files == 1 ){
       // merge decoys
@@ -217,7 +214,6 @@ void MatchSearch::printSpectrumMatches(
       // NOTE (BF 09-14-10): since the multiple decoy collections have already
       // been truncated, the merged ranks aren't accurate for the total space
       // of decoys searched
-      cerr <<"printSpectrumMatches():Rank"<<endl;
       merged_decoy_psms->populateMatchRank(XCORR);
       
       vector<MatchCollection*> decoy_list(1, merged_decoy_psms);
@@ -243,8 +239,8 @@ void MatchSearch::printSpectrumMatches(
  */
 void MatchSearch::addDecoyScores(
   MatchCollection* target_psms, ///< add scores to these matches
-  Spectrum* spectrum, ///<
-  int charge, ///< 
+  Spectrum* spectrum, ///< spectrum to score
+  SpectrumZState& zstate, ///< charge/mass to use for spectrum
   Index* index, ///< search this index if not null
   Database* database, ///< search this database if not null
   PEPTIDE_MOD_T** peptide_mods, ///< list of peptide mods to search
@@ -254,19 +250,17 @@ void MatchSearch::addDecoyScores(
   int mod_idx = 0;
   // for each peptide mod in the list
   for(mod_idx = 0; mod_idx < num_peptide_mods; mod_idx++){
-    MODIFIED_PEPTIDES_ITERATOR_T* peptide_iterator = 
-      new_modified_peptides_iterator_from_mz(
-                                          spectrum->getPrecursorMz(),
-                                          charge,
-                                          peptide_mods[mod_idx],
-                                          TRUE, // is decoy
-                                          index,
-                                          database);
+    ModifiedPeptidesIterator* peptide_iterator = 
+      new ModifiedPeptidesIterator(spectrum->getPrecursorMz(),
+                                   zstate,
+                                   peptide_mods[mod_idx],
+                                   true, // is decoy
+                                   index,
+                                   database);
     target_psms->addDecoyScores(spectrum, 
-                                      charge, 
-                                      peptide_iterator);  
-
-    free_modified_peptides_iterator(peptide_iterator);
+                                zstate,
+                                peptide_iterator);  
+    delete peptide_iterator;
   }
 
 
@@ -281,6 +275,7 @@ int MatchSearch::main(int argc, char** argv){
     "output-dir",
     "overwrite",
     "num-decoys-per-target",
+    "decoys",
     "decoy-location",
     "compute-sp",
     "compute-p-values",
@@ -288,7 +283,6 @@ int MatchSearch::main(int argc, char** argv){
     "spectrum-max-mass",
     "spectrum-charge",
     "scan-number",
-    "xcorr-var-bin",
     "mz-bin-width",
     "mz-bin-offset",
     "parameter-file",
@@ -334,8 +328,9 @@ int MatchSearch::main(int argc, char** argv){
   
   /* Prepare output files */
 
+  bool combine_target_decoy = get_boolean_parameter("tdc");
   OutputFiles output_files(this); 
-  output_files.writeHeaders(num_proteins);
+  output_files.writeHeaders(num_proteins, combine_target_decoy);
   // TODO (BF oct-21-09): consider adding pvalue file to OutputFiles
   FILE* decoy_pvalue_file = NULL;
   if( get_boolean_parameter("decoy-p-values") ){
@@ -358,8 +353,7 @@ int MatchSearch::main(int argc, char** argv){
     new FilteredSpectrumChargeIterator(spectra);
 
   // get search parameters for match_collection
-  BOOLEAN_T compute_pvalues = get_boolean_parameter("compute-p-values");
-  BOOLEAN_T combine_target_decoy = get_boolean_parameter("tdc");
+  bool compute_pvalues = get_boolean_parameter("compute-p-values");
   int num_decoy_files = get_int_parameter("num-decoy-files");
 
   // For remembering and reporting number of searches
@@ -369,13 +363,17 @@ int MatchSearch::main(int argc, char** argv){
   PEPTIDE_MOD_T** peptide_mods = NULL;
   int num_peptide_mods = generate_peptide_mod_list( &peptide_mods );
 
+  // do we need decoys
+  bool have_index = (index != NULL);
+  int num_decoy_collections = get_num_decoys(have_index);
+
   // for each spectrum
   while(spectrum_iterator->hasNext()) {
     SpectrumZState zstate;
     Spectrum* spectrum = spectrum_iterator->next(zstate);
     int charge = zstate.getCharge();
     
-    BOOLEAN_T is_decoy = FALSE;
+    bool is_decoy = false;
 
     progress.report(spectrum->getFirstScan(), charge);
 
@@ -397,20 +395,20 @@ int MatchSearch::main(int argc, char** argv){
       carp(CARP_WARNING, "No matches found for spectrum %i, charge %i",
            spectrum->getFirstScan(), charge);
       delete target_psms;
-      progress.increment(FALSE);
+      progress.increment(false);
       continue; // next spectrum
     }
     
     // now search decoys with the same number of mods
-    is_decoy = TRUE;
+    is_decoy = true;
     // create separate decoy match_collections 
-    int num_decoy_collections = get_int_parameter("num-decoys-per-target"); 
     vector<MatchCollection*> decoy_collection_list;
 
     int decoy_idx = 0;
     for(decoy_idx = 0; decoy_idx < num_decoy_collections; decoy_idx++){
 
       MatchCollection* decoy_psms = new MatchCollection(is_decoy);
+      decoy_psms->setTargetExperimentSize(target_psms->getExperimentSize());
       decoy_collection_list.push_back(decoy_psms);
 
       searchPepMods(decoy_psms, 
@@ -426,12 +424,12 @@ int MatchSearch::main(int argc, char** argv){
 
     // calculate p-values for each collection of PSMs separately
     // use targets to get Weibull parameters, use same params for decoys
-    if( compute_pvalues == TRUE ){
+    if( compute_pvalues == true ){
 
       carp(CARP_DEBUG, "Estimating Weibull parameters.");
       while( ! target_psms->hasEnoughWeibullPoints() ){
         // generate more scores from new decoys if there are not enough
-        addDecoyScores(target_psms, spectrum, charge, index, 
+        addDecoyScores(target_psms, spectrum, zstate, index, 
                          database, peptide_mods, max_pep_mods);
         
       }
@@ -459,7 +457,7 @@ int MatchSearch::main(int argc, char** argv){
                            combine_target_decoy, 
                            num_decoy_files);
 
-    progress.increment(TRUE);
+    progress.increment(true);
 
     // clean up
     delete target_psms;
@@ -540,3 +538,10 @@ COMMAND_T MatchSearch::getCommand() {
 bool MatchSearch::needsOutputDirectory() {
   return true;
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 2
+ * End:
+ */

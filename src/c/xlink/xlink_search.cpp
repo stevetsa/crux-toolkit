@@ -1,8 +1,12 @@
-#include "xhhc_scorer.h"
-#include "xhhc_ion_series.h"
+//#include "xhhc_scorer.h"
+//#include "xhhc_ion_series.h"
 //#include "xhhc_search.h"
 #include "xlink_compute_qvalues.h"
 
+/**
+ * \file xlink_search.cpp
+ * \brief Object for running search-for-xlinks (new code)
+ *****************************************************************************/
 #include "SearchForXLinks.h"
 #include "XLinkMatch.h"
 #include "XLinkMatchCollection.h"
@@ -32,7 +36,10 @@
 
 using namespace std;
 
-int SearchForXLinks::xlink_search_main() {
+/**
+ * main method for SearchForXLinks that implements to refactored code
+ */
+int SearchForXLinks::xlinkSearchMain() {
   
   carp(CARP_INFO, "Beginning crux xlink-search-mods");
   
@@ -179,7 +186,7 @@ int SearchForXLinks::xlink_search_main() {
                                                    database,
                                                    peptide_mods,
                                                    num_peptide_mods,
-                                                   TRUE);
+                                                   true);
    
       XLinkMatchCollection* train_candidates = new XLinkMatchCollection(*train_target_candidates);
       //get enough weibull training candidates by shuffling.
@@ -237,13 +244,13 @@ int SearchForXLinks::xlink_search_main() {
     decoy_vec.push_back(decoy_candidates);
     cerr <<"Calculating ranks"<<endl;
 
-    if (decoy_candidates->getScoredType(SP) == TRUE) {
+    if (decoy_candidates->getScoredType(SP) == true) {
       decoy_candidates->populateMatchRank(SP);
     }
     decoy_candidates->populateMatchRank(XCORR);
     decoy_candidates->sort(XCORR);
 
-    if (target_candidates->getScoredType(SP) == TRUE) {
+    if (target_candidates->getScoredType(SP) == true) {
       target_candidates->populateMatchRank(SP);
     }
     target_candidates->populateMatchRank(XCORR);
