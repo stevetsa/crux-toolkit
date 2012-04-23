@@ -29,6 +29,8 @@ class XLinkMatch : public Match {
   bool mass_calculated_[NUMBER_MASS_TYPES];
   FLOAT_T mass_[NUMBER_MASS_TYPES];
 
+
+
  public:
   XLinkMatch();
 
@@ -47,7 +49,7 @@ class XLinkMatch : public Match {
   virtual std::string getIonSequence(Ion* ion)=0;
   virtual PEPTIDE_T* getPeptide(int peptide_idx)=0;
 
-
+  void decrementPointerCount();
   void computeWeibullPvalue(
     FLOAT_T shift,
     FLOAT_T eta,

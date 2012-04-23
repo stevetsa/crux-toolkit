@@ -23,6 +23,11 @@ XLinkMatch::~XLinkMatch() {
 
 }
 
+void XLinkMatch::decrementPointerCount() {
+
+  pointer_count_--;
+}
+
 void XLinkMatch::computeWeibullPvalue(
   FLOAT_T shift,
   FLOAT_T eta,

@@ -71,7 +71,9 @@ void MatchCollection::init() {
  */
 MatchCollection::~MatchCollection() {
 
+  carp(CARP_INFO, "MatchCollection::~MatchCollection() - start");
   // decrement the pointer count in each match object
+  carp(CARP_INFO, "Deallocating %i matches", match_total_);
   while(match_total_ > 0){
     --match_total_;
     Match::freeMatch(match_[match_total_]);

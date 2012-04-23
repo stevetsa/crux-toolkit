@@ -229,7 +229,7 @@ XLinkMatchCollection::XLinkMatchCollection(
 }
 
 
-XLinkMatchCollection::~XLinkMatchCollection()  {
+XLinkMatchCollection::~XLinkMatchCollection() {
 //TODO - make sure we dont have to do any special handling here.
 }
 
@@ -238,6 +238,7 @@ void XLinkMatchCollection::add(XLinkMatch* candidate) {
   candidate->setZState(zstate_);
   candidate->setParent(this);
   addMatch(candidate);
+  candidate->decrementPointerCount();
   experiment_size_++;
 
 }

@@ -57,8 +57,9 @@ int SearchForXLinks::xlink_search_main() {
   free(input_file);
   PEPTIDE_MOD_T** peptide_mods = NULL;
   int num_peptide_mods = generate_peptide_mod_list( &peptide_mods );
-
+  if (false)
   {
+    carp(CARP_INFO, "generating and printing xlink database");
     char* output_directory = get_string_parameter("output-dir");
     ostringstream oss;
     oss << output_directory << "/" << "xlink_peptides.txt";
@@ -162,6 +163,7 @@ int SearchForXLinks::xlink_search_main() {
     if (target_candidates->getMatchTotal() >= min_weibull_points) {
       carp(CARP_INFO, "Fitting weibull to targets");
       target_candidates->fitWeibull();
+      MatchCollection::transferWeibull(target_candidates, decoy_candidates);
     //TODO
     //} else if (target_candidates.size() + decoy_candidates.size() >= min_wiebull_points) {
     //  fit_weibull(target_candidates, decoy_candidates, shift, eta, beta, corr);

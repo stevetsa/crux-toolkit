@@ -77,10 +77,16 @@ void Match::freeMatch(
   Match* match ///< the match to free -in
   )
 {
+
+  //carp(CARP_INFO, "Match::freeMatch() - %i",match->pointer_count_);
+
   --match->pointer_count_;
   
+  //carp(CARP_INFO, "Match::freeMatch() - %i",match->pointer_count_);
+
   // only free match when pointer count reaches
   if(match->pointer_count_ == 0){
+    //carp(CARP_INFO, "deleting match");
     delete match;
   }
 }
