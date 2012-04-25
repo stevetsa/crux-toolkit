@@ -64,7 +64,7 @@ int SearchForXLinks::xlinkSearchMain() {
   free(input_file);
   PEPTIDE_MOD_T** peptide_mods = NULL;
   int num_peptide_mods = generate_peptide_mod_list( &peptide_mods );
-  if (false)
+  if (get_boolean_parameter("xlink-print-db"))
   {
     carp(CARP_INFO, "generating and printing xlink database");
     char* output_directory = get_string_parameter("output-dir");

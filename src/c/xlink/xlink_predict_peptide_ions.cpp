@@ -7,8 +7,6 @@
 #include <iostream>
 #include <fstream>
 
-#define NUM_ARGUMENTS 6
-#define NUM_OPTIONS 4
 using namespace std;
 
 int modified_aa_string_length(
@@ -43,26 +41,24 @@ int main(int argc, char** argv) {
   set_verbosity_level(CARP_ERROR);
   
   /* Define optional command line arguments */
-  
   const char* option_list[] = {
     "verbosity",
     "version",
-    "xcorr-use-flanks",
+    "use-flanking-peaks",
     "print-theoretical-spectrum",
     "parameter-file"
   };
   int num_options = sizeof(option_list) / sizeof(char*);
 
   /* Define required command line arguments */
-  int num_arguments = NUM_ARGUMENTS;
-  const char* argument_list[NUM_ARGUMENTS] = {"peptide A",
-                                              "peptide B",
-					      "pos A",
-					      "pos B",
-					      "charge state",
-					      "link mass"};
+  const char* argument_list[] = {"peptide A",
+                                 "peptide B",
+				 "pos A",
+				 "pos B",
+				 "charge state",
+				 "link mass"};
 
-
+  int num_arguments = sizeof(argument_list) / sizeof(char*);
 
   /* for debugging of parameter processing */
   //set_verbosity_level( CARP_DETAILED_DEBUG );

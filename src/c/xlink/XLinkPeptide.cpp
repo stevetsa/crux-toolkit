@@ -267,30 +267,37 @@ void XLinkPeptide::addCandidates(
   cerr << "======================================="<<endl;
   */
   unsigned int first_idx = 0;
-  unsigned int last_idx = linkable_peptides.size()-1;
+  unsigned int next_idx = 0;
   
-  while(first_idx < linkable_peptides.size()-1) {
-    //cerr<<"first:"<<first_idx;
+  while(first_idx < linkable_peptides.size()) {
+
     FLOAT_T first_mass = linkable_peptides.at(first_idx).getMass() + linker_mass_;
+
+    if ((first_mass + linkable_peptides.at(first_idx).getMass()) > max_mass) {
+      break; //we are done.
+    }
+
     //cerr<<" mass:"<<first_mass<<endl;
-    last_idx = linkable_peptides.size()-1;
+    next_idx = first_idx;
     //cerr<<"last:"<<last_idx<<endl;
     FLOAT_T current_mass = first_mass + 
-      linkable_peptides.at(last_idx).getMass();
+      linkable_peptides.at(next_idx).getMass();
     //cerr<<"current_mass:"<<current_mass<<endl;
-    while ((last_idx > 0) && (first_idx <= last_idx) && (current_mass > max_mass)) {
-      last_idx--;
+    while (next_idx < linkable_peptides.size() && (current_mass < min_mass)) {
+      next_idx++;
       //cerr << "new last:" << last_idx << endl;
-      current_mass = first_mass + linkable_peptides.at(last_idx).getMass();
+      current_mass = first_mass + linkable_peptides.at(next_idx).getMass();
       //cerr << "new current:" << current_mass << endl;
     }
 
-    if (first_idx >= last_idx) break;  //we are done.
+    if (next_idx >= linkable_peptides.size()) {
+      continue;
+    }
 
-    while (first_idx <= last_idx && current_mass >= min_mass) {
+    while (next_idx < linkable_peptides.size() && current_mass <= max_mass) {
       //cerr<<"Adding links for peptides:"<<first_idx<<":"<<last_idx<<endl;
       XLinkablePeptide& pep1 = linkable_peptides.at(first_idx);
-      XLinkablePeptide& pep2 = linkable_peptides.at(last_idx);
+      XLinkablePeptide& pep2 = linkable_peptides.at(next_idx);
 
       //carp(CARP_INFO,"Generating xlink candidates");
 
@@ -315,14 +322,12 @@ void XLinkPeptide::addCandidates(
 	  }
 	}
       } /* for link1_idx */
-      if (last_idx > 0) {
-        last_idx--;
-        current_mass = first_mass + linkable_peptides[last_idx].getMass();
-        //carp(CARP_INFO,"Decremented last to:%d",last_idx);
-      } else {
-        break;
+
+      next_idx++;
+    
+      if (next_idx < linkable_peptides.size()) {
+        current_mass = first_mass + linkable_peptides[next_idx].getMass();
       }
-        
     }
 
     //start with the next candidate.
