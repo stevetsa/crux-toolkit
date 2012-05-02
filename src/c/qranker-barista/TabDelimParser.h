@@ -74,6 +74,8 @@ class TabDelimParser{
   //summary of the dataset
   int num_features;
   int num_spec_features;
+  int num_total_features;
+  int use_quadratic_features;
   int num_psm;
   int num_pos_psm;
   int num_neg_psm;

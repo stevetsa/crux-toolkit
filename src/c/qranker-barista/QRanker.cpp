@@ -1,6 +1,6 @@
 #include "QRanker.h"
 
-QRanker::QRanker() :  seed(1),selectionfdr(0.01),num_hu(3),mu(0.005),weightDecay(0.0000),xlink_mass(0.000)
+QRanker::QRanker() :  seed(1),selectionfdr(0.01),num_hu(4),mu(0.01),weightDecay(0.0000),xlink_mass(0.000)
 {
 }
 

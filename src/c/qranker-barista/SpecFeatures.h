@@ -9,6 +9,7 @@
 #include <assert.h>
 #include <cstring>
 #include <math.h>
+#include <cstdlib>
 using namespace std;
 
 #define NUM_IONS 2

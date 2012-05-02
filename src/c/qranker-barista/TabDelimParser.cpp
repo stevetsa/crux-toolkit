@@ -13,6 +13,8 @@ TabDelimParser :: TabDelimParser()
 	psmind_to_neutral_mass(0),
 	psmind_to_peptide_mass(0),
 	num_features(0),
+	num_total_features(0),
+	use_quadratic_features(0),
 	num_psm(0),
 	num_pos_psm(0),
 	num_neg_psm(0),
@@ -447,7 +449,38 @@ void TabDelimParser :: second_pass_xlink(ifstream &fin, int label)
 	      f_psm.write((char*)xs, sizeof(double)*num_spec_features);
 	      
 	    }
-  
+	  
+	  num_total_features = num_xlink_features+num_spec_features;
+
+	  if(use_quadratic_features)
+	    {
+	      double *b = new double[1];
+	      for(int i = 0; i < num_xlink_features; i++)
+		{
+		  for(int j = i; j < num_xlink_features; j++)
+		    {
+		      b[0] = x[i]*x[j];
+		      f_psm.write((char*)b, sizeof(double));
+		      num_total_features++;
+		    }
+		}
+	      
+	      if(num_spec_features > 0)
+		{
+		  for(int i = 0; i < num_spec_features; i++)
+		    {
+		      for(int j = i; j < num_spec_features; j++)
+			{
+			  b[0] = xs[i]*xs[j];
+			  f_psm.write((char*)b, sizeof(double));
+			  num_total_features++;
+			}
+		    }
+		}
+	      
+	    }
+
+
 	  //record charge and scan
 	  psmind_to_scan[psmind] = scan;
 	  psmind_to_charge[psmind] = charge;
@@ -474,8 +507,10 @@ void TabDelimParser :: save_data_in_binary_xlink(string out_dir)
   fname << out_dir << "/summary.txt";
   ofstream f_summary(fname.str().c_str());
   //psm info
-  f_summary << num_xlink_features+num_spec_features << " " << num_psm << " " << num_pos_psm << " " << num_neg_psm << endl;
-  cout << num_xlink_features+num_spec_features << " " << num_psm << " " << num_pos_psm << " " << num_neg_psm << endl;
+  //f_summary << num_xlink_features+num_spec_features << " " << num_psm << " " << num_pos_psm << " " << num_neg_psm << endl;
+  f_summary << num_total_features << " " << num_psm << " " << num_pos_psm << " " << num_neg_psm << endl;
+  //cout << num_xlink_features+num_spec_features << " " << num_psm << " " << num_pos_psm << " " << num_neg_psm << endl;
+  cout << num_total_features << " " << num_psm << " " << num_pos_psm << " " << num_neg_psm << endl;
   f_summary.close();
   fname.str("");
 
