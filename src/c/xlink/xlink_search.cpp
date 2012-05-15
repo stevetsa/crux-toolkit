@@ -20,7 +20,7 @@
 #include "MatchSearch.h"
 #include "OutputFiles.h"
 #include "SpectrumCollectionFactory.h"
-
+#include "QRanker.h"
 
 //C++ Includes
 #include <algorithm>
@@ -36,6 +36,24 @@
 
 using namespace std;
 
+void buildArguments(
+  vector<string>& args_vec, 
+  int &argc, 
+  char** &argv) {
+
+  argc = args_vec.size();
+  argv = new char*[argc];
+
+  argv[0] = (char*)args_vec[0].c_str();
+  carp(CARP_INFO, "argv[0]=%s", argv[0]);
+  for (int idx = 1; idx < argc; idx++) {
+    argv[idx] = (char*)args_vec[idx].c_str();
+    carp(CARP_INFO, "argv[%i]=%s", idx, argv[idx]);
+  }
+
+}
+
+
 /**
  * main method for SearchForXLinks that implements to refactored code
  */
@@ -50,9 +68,12 @@ int SearchForXLinks::xlinkSearchMain() {
   carp(CARP_INFO, "Getting parameters");
   char* ms2_file = get_string_parameter("ms2 file");
   char* input_file = get_string_parameter("protein database");
+  const char* output_directory = get_string_parameter_pointer("output-dir");
   int top_match = get_int_parameter("top-match");
   XLinkPeptide::setLinkerMass(get_double_parameter("link mass"));
   int min_weibull_points = get_int_parameter("min-weibull-points");
+  bool compute_pvalues = get_boolean_parameter("compute-p-values");
+
   XLinkBondMap bondmap;
 
   /* Prepare input, fasta or index */
@@ -64,6 +85,8 @@ int SearchForXLinks::xlinkSearchMain() {
   free(input_file);
   PEPTIDE_MOD_T** peptide_mods = NULL;
   int num_peptide_mods = generate_peptide_mod_list( &peptide_mods );
+
+  /* Usually for debugging purposes, print out the database of canddiates */
   if (get_boolean_parameter("xlink-print-db"))
   {
     carp(CARP_INFO, "generating and printing xlink database");
@@ -134,7 +157,6 @@ int SearchForXLinks::xlinkSearchMain() {
     FLOAT_T precursor_mz = spectrum->getPrecursorMz();
 
     carp(CARP_DEBUG,"Getting targets");  
-    cerr << "Creating targets"<<endl;
 
     XLinkMatchCollection* target_candidates = new XLinkMatchCollection(precursor_mz,
                                            zstate,
@@ -150,36 +172,38 @@ int SearchForXLinks::xlinkSearchMain() {
     //target_candidates->setScan(spectrum->getFirstScan());
 
     if (target_candidates->getMatchTotal() < 1) {
-      carp(CARP_INFO, "not enough precursors found in range, skipping scan %d charge %d", scan_num, zstate.getCharge());
+      carp(CARP_INFO, "not enough precursors found, skipping scan %d charge %d", scan_num, zstate.getCharge());
       continue;
     }
 
     //score targets
-    carp(CARP_INFO, "scoring targets:%d", target_candidates->getMatchTotal());
+    carp(CARP_DEBUG, "scoring targets:%d", target_candidates->getMatchTotal());
     target_candidates->scoreSpectrum(spectrum);
 
     
-    carp(CARP_INFO, "Getting decoy candidates");
+    carp(CARP_DEBUG, "Getting decoy candidates");
 
     XLinkMatchCollection* decoy_candidates = new XLinkMatchCollection();
     target_candidates->shuffle(*decoy_candidates);
 
-    carp(CARP_INFO,"scoring decoys");
+    carp(CARP_DEBUG,"scoring decoys");
     decoy_candidates->scoreSpectrum(spectrum);
 
-    if (target_candidates->getMatchTotal() >= min_weibull_points) {
-      carp(CARP_INFO, "Fitting weibull to targets");
-      target_candidates->fitWeibull();
-      MatchCollection::transferWeibull(target_candidates, decoy_candidates);
-    //TODO
-    //} else if (target_candidates.size() + decoy_candidates.size() >= min_wiebull_points) {
-    //  fit_weibull(target_candidates, decoy_candidates, shift, eta, beta, corr);
-    } else {
+    if (compute_pvalues) {
+
+      if (target_candidates->getMatchTotal() >= min_weibull_points) {
+        carp(CARP_DEBUG, "Fitting weibull to targets");
+        target_candidates->fitWeibull();
+        MatchCollection::transferWeibull(target_candidates, decoy_candidates);
+      //TODO
+      //} else if (target_candidates.size() + decoy_candidates.size() >= min_wiebull_points) {
+      //  fit_weibull(target_candidates, decoy_candidates, shift, eta, beta, corr);
+      } else {
     
 
-      carp(CARP_INFO,"Getting weibull training candidates");
-      XLinkMatchCollection* train_target_candidates =
-        new XLinkMatchCollection(precursor_mz,
+        carp(CARP_DEBUG, "Getting weibull training candidates");
+        XLinkMatchCollection* train_target_candidates =
+          new XLinkMatchCollection(precursor_mz,
                                                    zstate,
                                                    bondmap,
                                                    index,
@@ -188,61 +212,51 @@ int SearchForXLinks::xlinkSearchMain() {
                                                    num_peptide_mods,
                                                    true);
    
-      XLinkMatchCollection* train_candidates = new XLinkMatchCollection(*train_target_candidates);
-      //get enough weibull training candidates by shuffling.
-      carp(CARP_INFO,"Shuffling %d:%d", 
-        train_candidates->getMatchTotal(), 
-        min_weibull_points);
+        XLinkMatchCollection* train_candidates = new XLinkMatchCollection(*train_target_candidates);
+        //get enough weibull training candidates by shuffling.
+        carp(CARP_DEBUG,"Shuffling %d:%d", 
+          train_candidates->getMatchTotal(), 
+          min_weibull_points);
     
-      while(train_candidates->getMatchTotal() < min_weibull_points) {
-        train_target_candidates->shuffle(*train_candidates);
+        while(train_candidates->getMatchTotal() < min_weibull_points) {
+          train_target_candidates->shuffle(*train_candidates);
+        }
+        carp(CARP_DEBUG, "Have %d training candidates", train_candidates->getMatchTotal());
+        carp(CARP_DEBUG, "scoring training points");
+        train_candidates->scoreSpectrum(spectrum);
+        train_candidates->fitWeibull();
+        MatchCollection::transferWeibull(train_candidates, target_candidates);
+        MatchCollection::transferWeibull(train_candidates, decoy_candidates);
+        delete train_candidates;
+        delete train_target_candidates;
       }
-      carp(CARP_INFO, "Have %d training candidates", train_candidates->getMatchTotal());
-      carp(CARP_INFO, "scoring training points");
-      train_candidates->scoreSpectrum(spectrum);
-      train_candidates->fitWeibull();
-      MatchCollection::transferWeibull(train_candidates, target_candidates);
-      MatchCollection::transferWeibull(train_candidates, decoy_candidates);
-      delete train_candidates;
-      delete train_target_candidates;
-    }
-
-    /*
-    carp(CARP_DEBUG,"setting ranks");
-
-    target_candidates.setRanks();
-    decoy_candidates.setRanks();
-    */
-    
-    target_candidates->sort(XCORR);
-
-
-    int nprint = min(top_match,target_candidates->getMatchTotal());
-
-    carp(CARP_INFO, "Calculating %d target p-values", nprint);
  
-    //calculate pvalues.
-    for (int idx=0;idx < nprint;idx++) {
-      target_candidates->computeWeibullPValue(idx);
-    }
+      target_candidates->sort(XCORR);
 
-    nprint = min(top_match,(int)decoy_candidates->getMatchTotal());
 
-    carp(CARP_INFO,"Calculating %d decoy p-valuess", nprint);
+      int nprint = min(top_match,target_candidates->getMatchTotal());
 
-    decoy_candidates->sort(XCORR);
+      carp(CARP_DEBUG, "Calculating %d target p-values", nprint);
+ 
+      //calculate pvalues.
+      for (int idx=0;idx < nprint;idx++) {
+        target_candidates->computeWeibullPValue(idx);
+      }
 
-    for (int idx=0;idx < nprint;idx++) {
-      decoy_candidates->computeWeibullPValue(idx);
-    }
-    
-    
+      nprint = min(top_match,(int)decoy_candidates->getMatchTotal());
+
+      carp(CARP_INFO,"Calculating %d decoy p-valuess", nprint);
+
+      decoy_candidates->sort(XCORR);
+
+      for (int idx=0;idx < nprint;idx++) {
+        decoy_candidates->computeWeibullPValue(idx);
+      }
+    } /* if (compute_p_values) */
 
     //print out
-    cerr <<"Printing matches" <<endl;
-        vector<MatchCollection*> decoy_vec;
+    vector<MatchCollection*> decoy_vec;
     decoy_vec.push_back(decoy_candidates);
-    cerr <<"Calculating ranks"<<endl;
 
     if (decoy_candidates->getScoredType(SP) == true) {
       decoy_candidates->populateMatchRank(SP);
@@ -255,20 +269,19 @@ int SearchForXLinks::xlinkSearchMain() {
     }
     target_candidates->populateMatchRank(XCORR);
     target_candidates->sort(XCORR);
-    cerr <<"calling output_files.writeMatches"<<endl;
+
     output_files.writeMatches(
       (MatchCollection*)target_candidates, 
       decoy_vec,
       XCORR,
       spectrum);
 
-    carp(CARP_DEBUG,"Cleanup");
+    /* Clean up */
     delete decoy_candidates;
     delete target_candidates;
     XLink::deleteAllocatedPeptides();
     
 
-    //carp(CARP_DEBUG, "num targets:%d",target_candidates.size());
     //free_spectrum(spectrum);
 
     carp(CARP_DEBUG,"Done with spectrum %d", scan_num);
@@ -288,9 +301,67 @@ int SearchForXLinks::xlinkSearchMain() {
   Index::free(index);
   Database::freeDatabase(database);
 
-  //Calculate q-values.
-  carp(CARP_DEBUG, "Computing Q-Values");
-  xlink_compute_qvalues();
+  //Calculate q-values via p-values from weibull fit.
+  if (compute_pvalues) {
+    carp(CARP_DEBUG, "Computing Q-Values using P-values");
+    xlink_compute_qvalues();
+  }
+
+  //Calculate q-values via x-ranker.
+  carp(CARP_INFO, "Computing Q-Values using X-Ranker");
+
+  vector<string> xr_args_vec;
+  xr_args_vec.push_back("q-ranker");
+
+  xr_args_vec.push_back("--num-hu=7");
+
+  xr_args_vec.push_back("--mu=0.01");
+
+  xr_args_vec.push_back("--wd=1e-7");
+
+  {
+    ostringstream oss;
+    oss << "--ms2file=";
+    oss << ms2_file;
+    xr_args_vec.push_back(oss.str());
+  }
+
+  {
+    ostringstream oss;
+    oss << "--xlink-mass=";
+    oss << get_double_parameter("link mass");
+    xr_args_vec.push_back(oss.str());
+  }
+
+  xr_args_vec.push_back("--bootstrap=30");
+
+  {
+    ostringstream oss;
+    oss << output_directory << "/search.target.txt";
+    string target_file = oss.str();
+    xr_args_vec.push_back(target_file);
+  }
+  {
+    ostringstream oss;
+    oss << output_directory << "/search.decoy.txt";
+    string decoy_file = oss.str();
+    xr_args_vec.push_back(decoy_file);
+  }
+
+  int xranker_argc;
+  char** xranker_argv;
+  buildArguments(xr_args_vec, xranker_argc, xranker_argv);
+
+  carp(CARP_INFO, "argc:%i",xranker_argc);
+
+  for (int idx = 0;idx < xranker_argc;idx++) {
+    carp(CARP_INFO, "argv[%i]:%s",idx, xranker_argv[idx]);
+  }
+
+
+  QRanker* xranker = new QRanker();
+  xranker->main(xranker_argc, xranker_argv);
+  delete xranker;
 
   carp(CARP_INFO, "Elapsed time: %.3g s", wall_clock() / 1e6);
   carp(CARP_INFO, "Finished crux search-for-xlink-mods.");

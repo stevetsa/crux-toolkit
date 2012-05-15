@@ -51,6 +51,7 @@ int SearchForXLinks::main(int argc, char** argv) {
     "xlink-include-deadends",
     "xlink-include-selfloops",
     "use-old-xlink",
+    "compute-p-values",
     "use-flanking-peaks",
     "use-mgf"
   };

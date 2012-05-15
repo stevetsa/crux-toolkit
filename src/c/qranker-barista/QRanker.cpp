@@ -539,7 +539,7 @@ void QRanker :: train_many_general_nets()
 	    max_net_gen[count] = net;
 	  }
       }
-    if((i % 5) == 0)
+    if((i % 10) == 0)
       {
 	cerr << "Iteration " << i << " : \n";
 	cerr << "trainset: ";
@@ -585,7 +585,7 @@ void QRanker :: train_many_target_nets()
 	      }
 	  }
 
-	if((i % 5) == 0)
+	if((i % 10) == 0)
 	  {
 	    cerr << "Iteration " << i << " : \n";
             cerr << "trainset: ";

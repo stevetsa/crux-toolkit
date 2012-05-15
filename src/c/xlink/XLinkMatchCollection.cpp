@@ -89,7 +89,7 @@ bool compareSP(XLinkMatch* mc1, XLinkMatch* mc2) {
 */
 
 XLinkMatchCollection::XLinkMatchCollection() : MatchCollection() {
-  cerr << "XLinkMatchCollection()"<<endl;
+  carp(CARP_DEBUG,"XLinkMatchCollection():start");
   scan_ = 0;
 }
 
@@ -97,7 +97,7 @@ XLinkMatchCollection::XLinkMatchCollection(
   XLinkMatchCollection& vector
   ) : MatchCollection() {
   
-  cerr << "XLinkMatchCollection(XLinkMatchCollection)"<<endl;
+  carp(CARP_DEBUG, "XLinkMatchCollection(XLinkMatchCollection):start");
   precursor_mz_ = vector.precursor_mz_;
   zstate_ = vector.zstate_;
   scan_ = vector.scan_;
@@ -133,7 +133,7 @@ XLinkMatchCollection::XLinkMatchCollection(
   Database* database) {
 
 
-  cerr << "XLinkMatchCollection(...)"<<endl;
+  carp(CARP_DEBUG, "XLinkMatchCollection(...)");
 
   FLOAT_T min_mass = get_double_parameter("min-mass");
   FLOAT_T max_mass = get_double_parameter("max-mass");
@@ -159,12 +159,12 @@ void XLinkMatchCollection::addCandidates(
   PEPTIDE_MOD_T** peptide_mods,
   int num_peptide_mods) {
 
-  cerr << "XLinkMatchCollection.addCandidates() start"<<endl;
+  carp(CARP_DEBUG, "XLinkMatchCollection.addCandidates() start");
 
   include_linear_peptides = get_boolean_parameter("xlink-include-linears");
   include_self_loops = get_boolean_parameter("xlink-include-selfloops");
 
-  carp(CARP_INFO, "Adding xlink candidates");
+  carp(CARP_DEBUG, "Adding xlink candidates");
 
   XLinkPeptide::addCandidates(
     min_mass, 
@@ -214,7 +214,7 @@ XLinkMatchCollection::XLinkMatchCollection(
   int num_peptide_mods, 
   bool use_decoy_window) {
 
-  carp(CARP_INFO, "Inside XLinkMatchCollection....");
+  carp(CARP_DEBUG, "Inside XLinkMatchCollection....");
 
   precursor_mz_ = precursor_mz;
   setZState(zstate);  
