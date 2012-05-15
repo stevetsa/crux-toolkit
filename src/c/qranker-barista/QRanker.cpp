@@ -1,6 +1,6 @@
 #include "QRanker.h"
 
-QRanker::QRanker() :  seed(1),selectionfdr(0.01),num_hu(4),mu(0.01),weightDecay(0.0000),xlink_mass(0.000)
+QRanker::QRanker() :  seed(1),selectionfdr(0.01),num_hu(4),mu(0.01),weightDecay(0.0000),xlink_mass(0.000),bootstrap_iters(30)
 {
 }
 
@@ -124,6 +124,58 @@ void QRanker :: write_results(string filename, NeuralNet &net)
     }
   f1.close();
 }
+
+void QRanker :: write_results_bootstrap(string filename, PSMScores& set)
+{
+  //write out the results of the general net
+  ostringstream s1;
+  s1 << filename << ".txt";
+  ofstream f1(s1.str().c_str());
+  
+  cerr << "Loading data for reporting results"<<endl;
+  d.load_psm_data_for_reporting_results();
+
+  PSMScores min_rank;
+  cerr <<"Getting best rank per scan"<<endl;
+  set.calcMinRank(min_rank, d);
+
+  //use the best rank/scan to calculate q-values
+  cerr <<"calculating FDR"<<endl;
+  min_rank.calculateOverFDRRank(0.01);
+
+  //cerr << "Writing results" <<endl;
+  f1 << "q-value" << "\t" <<"score" << "\t" << "scan" << "\t" << "charge" << "\t" << "label" << "\t" << "sequence" << endl;
+  for(int i = 0; i < min_rank.size(); i++)
+    {
+      //cerr << "Wrinting "<<i<<endl;
+      int psmind = min_rank[i].psmind;
+      int scan = d.psmind2scan(psmind);
+      int charge = d.psmind2charge(psmind);  
+      double score = min_rank[i].rank;
+      int label = min_rank[i].label;
+      double qvalue = min_rank[i].q;
+
+      ostringstream oss;
+      if (label == 1) {
+        oss << d.psmind2peptide1(psmind);
+        if(string(d.psmind2peptide2(psmind)) != "_") {
+          //cerr << "peptide2:"<<d.psmind2peptide2(psmind) <<" length:"<<d.psmind2peptide2(psmind).length() << endl;
+          oss << ", " << d.psmind2peptide2(psmind);
+        }
+        if(string(d.psmind2loc(psmind)) != "") {
+          oss << " " << d.psmind2loc(psmind);    
+        }
+  
+        f1 << qvalue << "\t" << score << "\t" << scan << "\t" << charge << "\t" << label << "\t" << oss.str() << endl;
+      }
+
+    }
+  f1.close();
+}
+
+
+
+
 
 
 void QRanker :: write_results_max(string filename, NeuralNet &net)
@@ -487,7 +539,7 @@ void QRanker :: train_many_general_nets()
 	    max_net_gen[count] = net;
 	  }
       }
-    if((i % 1) == 0)
+    if((i % 5) == 0)
       {
 	cerr << "Iteration " << i << " : \n";
 	cerr << "trainset: ";
@@ -533,9 +585,13 @@ void QRanker :: train_many_target_nets()
 	      }
 	  }
 
-	if((i % 1) == 0)
+	if((i % 5) == 0)
 	  {
 	    cerr << "Iteration " << i << " : \n";
+            cerr << "trainset: ";
+            getMultiFDR(trainset,net,qvals);
+            printNetResults(overFDRmulti);
+            cerr << "\n";
 	    getMultiFDR(testset,net,qvals);
 	    cerr << "testset: ";
 	    printNetResults(overFDRmulti);
@@ -559,7 +615,9 @@ void QRanker::train_many_nets()
 
   overFDRmulti.resize(num_qvals,0);
   ave_overFDR.resize(num_qvals,0);
-  max_overFDR.resize(num_qvals,0); 
+  max_overFDR.clear();
+  max_overFDR.resize(num_qvals,0);
+
   max_net_gen = new NeuralNet[num_qvals];
   max_net_targ = new NeuralNet[num_qvals];
   
@@ -593,6 +651,11 @@ void QRanker::train_many_nets()
   for(int count = 0; count < num_qvals; count++){
     max_net_targ[count] = net;
   }
+/*
+  for(int count = 0; count < num_qvals; count++) {
+    cerr <<"max_overFDR["<<count<<"]="<<max_overFDR[count]<<endl;
+  }
+*/
 
   nets = new NeuralNet[2];
   nets[0].clone(net);
@@ -627,12 +690,16 @@ void QRanker::train_many_nets()
   for(unsigned int count = 0; count < qvals.size();count++)
     {
       fdr = getOverFDR(thresholdset, max_net_targ[count], selectionfdr);
+      cerr << "t:"<< count<<" "<<fdr<<" "<<max_fdr<<endl;
       if(fdr > max_fdr)
 	{
 	  max_fdr = fdr;
 	  ind = count;
 	}
     }
+
+  cerr <<"max count:"<<max_fdr<<endl;
+
   net = max_net_targ[ind];
 
   //print out results, just to see
@@ -647,6 +714,48 @@ void QRanker::train_many_nets()
 
 }
 
+void QRanker::calcRanks(PSMScores& set, NeuralNet& net) {
+  getOverFDR(set, net, 0);
+
+  vector<PSMScoreHolder>::iterator iter;
+
+  int current_rank = 1;
+  int count = 1;
+  double current_score = set.begin()->score;
+
+  for (iter = set.begin(); iter != set.end(); ++iter) {
+    if (iter->score != current_score) {
+      current_score = iter->score;
+      current_rank = count;
+    }
+
+    //cerr << "psmind:"<<iter->psmind<<" label:"<<iter->label<<" rank:"<<current_rank<<endl;
+
+    //sum them
+    iter->rank += current_rank;
+    //cerr << "psmind:"<<iter->psmind<<" label:"<<iter->label<<" rank:"<<current_rank<<" sum:"<<iter->rank<<endl;
+    count++;
+  }
+}
+
+void QRanker::avgRanks(PSMScores& set, int n) {
+  
+  vector<PSMScoreHolder>::iterator iter;
+
+  for (iter = set.begin(); iter != set.end(); ++iter) {
+    iter->rank = iter->rank / (double)n;
+  }
+
+
+
+}
+/*
+void QRanker::getMinRank(PSMScores&in, PSMScores& out) {
+
+
+}
+*/
+
 int QRanker::run( ) {
   srand(seed);
   cout << "reading data\n";
@@ -654,25 +763,39 @@ int QRanker::run( ) {
   d.load_psm_data_for_training();
   d.normalize_psms();
   //PSMScores::fillFeaturesSplit(trainset, testset, d, 0.5);
-  PSMScores::fillFeaturesFull(trainset, d);
-  testset = trainset;
-  thresholdset = trainset;
-  train_many_nets();
+  PSMScores::fillFeaturesFull(testset, d);
+
   
-  //write out the results of the target net
+
+  for (int idx = 0;idx < bootstrap_iters;idx++) {
+    cerr << "Bootstrap Iter="<<(idx+1)<<" of "<<bootstrap_iters << endl;
+    cerr << "==============="<<endl;
+    PSMScores::fillFeaturesBootstrap(testset, trainset);
+    //PSMScores::fillFeaturesFull(trainset, d); //For testing without bootstrap.
+    thresholdset = trainset;
+    train_many_nets();
+    calcRanks(testset, net);
+
+  }
+  cerr <<"Averaging ranks"<<endl;
+  avgRanks(testset, bootstrap_iters);
+
+
+  //write out the bootstrap results
   ostringstream res;
-  res << out_dir << "/qranker_output";
+  res << out_dir << "/qranker.target";
   res_prefix = res.str();
   
   cerr << "target net results: ";
   ostringstream s2;
   s2 << res_prefix;
   cout << s2.str() << endl;
-    
-  write_results(s2.str(),net);
+  write_results_bootstrap(s2.str(), testset);
   
   return 0;
 }
+
+
 
 
 
@@ -718,7 +841,15 @@ int QRanker::set_command_line_options(int argc, char **argv)
             cout << "found ms2file "<<tmp<<endl;
             ms2fname = tmp;
 	    ms2exists = 1;
+          } else if (str.find("quad") != string::npos) {
+            cout << "found quad" << tmp << endl;
+            int quad = atoi(tmp.c_str());
+            pars.set_use_quadratic_features(quad);
+          } else if (str.find("bootstrap") != string::npos) {
+            cout << "found bootstrap "<<tmp<<endl;
+            bootstrap_iters = atoi(tmp.c_str());
           }
+
 	}
       else
 	fnames.push_back(argv[arg]);

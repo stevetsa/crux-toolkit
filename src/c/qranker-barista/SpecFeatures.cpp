@@ -241,6 +241,7 @@ void SpecFeaturesGenerator :: shift_peaks()
 }
 
 void SpecFeaturesGenerator::set_xlink_mass(double xlink_mass) {
+  cerr << "SFG: setting xlink mass to:"<<xlink_mass<<endl;
   this->xlink_mass = xlink_mass;
 }
 

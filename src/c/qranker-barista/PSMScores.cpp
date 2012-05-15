@@ -230,6 +230,141 @@ void PSMScores::fillFeaturesFull(PSMScores& full, Dataset& d) {
 }
 
 
+void PSMScores::fillFeaturesBootstrap(PSMScores& bootstrap, Dataset& d) {
+
+  int n = d.get_num_psms();
+
+  PSMScoreHolder s;
+  bootstrap.scores.resize(n,s);
+  int num_pos = 0;
+  int num_neg = 0;
+
+
+  for (int idx = 0;idx < n; idx++) {
+    //sample with replacement.
+    int psm_idx = (int)((double)rand()/RAND_MAX*(n-1)); 
+    bootstrap.scores[idx].psmind = psm_idx;
+    bootstrap.scores[idx].label = d.psmind2label(psm_idx);
+    if (bootstrap.scores[idx].label == 1) {
+      num_pos++;
+    } else {
+      num_neg++;
+    }
+
+  }
+
+  bootstrap.pos = num_pos;
+  bootstrap.neg = num_neg;
+
+  bootstrap.factor = (double)num_pos / (double)num_neg; 
+  cerr <<" bootstrap: num_pos:"<<num_pos<<" num_neg:"<<num_neg<<" factor:"<<bootstrap.factor<<endl;
+}
+
+void PSMScores::fillFeaturesBootstrap(PSMScores& in, PSMScores& bootstrap) {
+  bootstrap.clear();
+
+  int num_pos = 0;
+  int num_neg = 0;
+
+  int n = in.scores.size();
+
+  for (int idx = 0;idx < n;idx++) {
+    //sample with replacement.
+    int idx2 = (int)((double)rand()/RAND_MAX*(n-1));
+    bootstrap.add_psm(in[idx2]);
+    if (bootstrap.scores[idx].label == 1) {
+      num_pos++;
+    } else {
+      num_neg++;
+    }
+
+  }
+
+  bootstrap.pos = num_pos;
+  bootstrap.neg = num_neg;
+
+  bootstrap.factor = (double)num_pos / (double)num_neg; 
+  cerr <<" bootstrap: num_pos:"<<num_pos<<" num_neg:"<<num_neg<<" factor:"<<bootstrap.factor<<endl;
+
+}
+
+bool compareRank(const PSMScoreHolder& s1, const PSMScoreHolder &s2) {
+  return s1.rank < s2.rank;
+}
+
+
+void PSMScores::sortByRank() {
+  sort(scores.begin(), scores.end(), compareRank);
+}
+
+void PSMScores::calcMinRank(PSMScores& out, Dataset& d) {
+
+  out.clear();
+
+  sortByRank();
+
+  int neg=0;
+  int pos=0;
+
+  set<int> target_scans;
+  set<int> decoy_scans;
+
+  vector<PSMScoreHolder>::iterator iter;
+
+  for (iter = begin();iter != end();++iter) {
+    int label = iter->label;
+    int psmind = iter->psmind;
+    int scan = d.psmind2scan(psmind);
+    if (label == 1 && target_scans.find(scan) == target_scans.end()) {
+      out.add_psm(*iter);
+      target_scans.insert(scan);
+      pos++;
+    } else if (label == -1 && decoy_scans.find(scan) == decoy_scans.end()) {
+      out.add_psm(*iter);
+      decoy_scans.insert(scan);
+      neg++;
+   
+    }
+  }
+  
+  out.pos = pos;
+  out.neg = neg;
+  out.factor = (double)pos / (double)neg;
+
+}
+
+int PSMScores::calculateOverFDRRank(double fdr) {
+
+  sortByRank();
+  int positives=0,nulls=0;
+  double efp=0.0,q;
+  posNow = 0;
+  register unsigned int ix=0;
+  for(vector<PSMScoreHolder>::iterator it=scores.begin();it!=scores.end();it++) {
+    //cerr << "psmind:"<<it->psmind<<" rank:"<<it->rank<<" label:"<<it->label<<endl;
+    if (it->label!=-1)
+      positives++;
+    if (it->label==-1) {
+      nulls++;
+      efp=pi0*nulls*factor;
+    }
+    if (positives)
+      q=efp/(double)positives;
+    else
+      q=pi0;
+    if (q>pi0)
+      q=pi0;
+    it->q=q;
+    if (fdr>=q)
+      posNow = positives;
+  }
+  for (ix=scores.size();--ix;) {
+    if (scores[ix-1].q > scores[ix].q)
+      scores[ix-1].q = scores[ix].q;  
+  }
+  return posNow;
+}
+
 
 
 

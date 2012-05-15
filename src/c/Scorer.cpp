@@ -672,7 +672,17 @@ int Scorer::calculateIonTypeSp(
     intensity_array_idx 
       = INTEGERIZE(ion->getMassZ(), bin_width, bin_offset);
     // get the intensity matching to ion's m/z
-    if(intensity_array_idx < getMaxBin()){
+
+    if (intensity_array_idx < 0) {
+      carp(CARP_ERROR, "negative index:%i", intensity_array_idx);
+      carp(CARP_ERROR, "ion mass:%f",ion->getMassZ());
+      carp(CARP_ERROR, "isnan:%i",isnan(ion->getMassZ()));
+      char* type_str = ion_type_to_string(ion->getType());
+      carp(CARP_ERROR, "ion type:%s", type_str);
+      free(type_str);
+    }
+    assert(intensity_array_ != NULL);
+    if(intensity_array_idx >=0 && intensity_array_idx < getMaxBin()){
       one_intensity = intensity_array_[intensity_array_idx];
     }
     else{

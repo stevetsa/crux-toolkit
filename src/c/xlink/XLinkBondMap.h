@@ -96,6 +96,12 @@ class XLinkBondMap: public std::map<XLinkSite, std::set<XLinkSite> > {
     int link2_site
   );
 
+  bool canLink(
+    std::string& protein_sequence,
+    int idx);
+
+
+
 };
 
 #endif

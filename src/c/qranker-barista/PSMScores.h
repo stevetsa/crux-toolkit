@@ -12,7 +12,9 @@ public:
   int psmind;
   double q;
   int label;
- PSMScoreHolder():score(0.0),psmind(0),q(0.0),label(0){;}
+  double rank;
+
+ PSMScoreHolder():score(0.0),psmind(0),q(0.0),label(0),rank(0){;}
   virtual ~PSMScoreHolder() {;}
 };
 
@@ -30,9 +32,19 @@ public:
     void calc_factor();
     int calcOverFDR(double fdr);
     void calcMultiOverFDR(vector<double> &fdr, vector<int> &overFDR);
-    inline PSMScoreHolder& operator[](int ix){return scores[ix];}    
+    inline PSMScoreHolder& operator[](int ix){return scores[ix];}
+
+    int calculateOverFDRRank(double fdr);
+    
+    void sortByRank();
+
+
+    void calcMinRank(PSMScores& out, Dataset& d);
+
     void static fillFeaturesSplit(PSMScores& train,PSMScores& test,Dataset &d, double ratio);
     void static fillFeaturesFull(PSMScores& full,Dataset &d);
+    void static fillFeaturesBootstrap(PSMScores& bootstrap, Dataset& d);
+    void static fillFeaturesBootstrap(PSMScores& in, PSMScores& bootstrap);
     inline int size(){return scores.size();}
     inline void add_psm(PSMScoreHolder &psm){scores.push_back(psm);}
 protected:

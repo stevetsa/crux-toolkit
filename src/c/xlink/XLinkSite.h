@@ -46,6 +46,12 @@ class XLinkSite {
     Peptide* peptide, ///<peptide object pointer 
     int idx             ///<sequence index
     ) const;
+
+
+  bool hasSite(
+    std::string& protein_sequence,
+    int idx
+  ) const;
     
   /**
    * \returns whether this xlinksite is equal to the passed in xlinksite

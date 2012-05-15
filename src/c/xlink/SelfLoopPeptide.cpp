@@ -194,6 +194,10 @@ void SelfLoopPeptide::predictIons(IonSeries* ion_series, int charge) {
 	mass += XLinkPeptide::getLinkerMass();
 	mass_z = (mass + MASS_PROTON * (double)charge) / (double)charge;
 	ion->setMassZ(mass_z);
+        if (isnan(ion->getMassZ())) {
+          carp(CARP_FATAL, "NAN5");
+        }
+        
       }
     } else {
       to_remove.push_back(ion);

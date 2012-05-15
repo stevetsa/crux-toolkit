@@ -66,6 +66,9 @@ TabDelimParser :: ~TabDelimParser()
   clear();
 }
 
+void TabDelimParser :: set_use_quadratic_features(int use) {
+  use_quadratic_features = use;
+}
 
 void TabDelimParser :: get_tokens(string &line, vector<string>&tokens, string &delim)
 {
@@ -165,6 +168,7 @@ void TabDelimParser :: first_pass_xlink(ifstream &fin)
               psmind_to_peptide2[num_psm] = subtokens.at(1);
               psmind_to_loc[num_psm] = subtokens.at(2);
             } else {
+              cerr << "Error parsing sequence field:"<<pep_and_loc<<endl;
               cerr << "Error!"<<endl;
               exit(-1);
             }

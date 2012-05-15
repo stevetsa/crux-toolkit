@@ -82,6 +82,27 @@ bool XLinkSite::hasSite(
   return false;
 }
 
+bool XLinkSite::hasSite(
+  string& protein_sequence,
+  int idx) const {
+
+  switch(type_) {
+    case XLINKSITE_NTERM:
+      return idx == 0;
+      break;
+    case XLINKSITE_ALL:
+      return true;
+      break;
+    case XLINKSITE_AA:
+      return protein_sequence.at(idx) == aa_;
+      break;
+    case XLINKSITE_UNKNOWN:
+    default:
+      carp(CARP_FATAL, "XLink site not set!");
+  }
+  return false;
+}
+
 /**
  * \returns whether this xlinksite is equal to the passed in xlinksite
  */

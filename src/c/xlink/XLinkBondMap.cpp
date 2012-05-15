@@ -153,3 +153,20 @@ bool XLinkBondMap::canLink(
     pep2.getLinkSite(link2_site));
 
 }
+
+
+bool XLinkBondMap::canLink(
+  string& protein,
+  int idx) {
+
+  
+  for (XLinkBondMap::iterator iter = begin();
+    iter != end(); ++iter) {
+
+    if (iter->first.hasSite(protein, idx)) {
+      return true;
+    }
+  }
+  return false;
+
+}

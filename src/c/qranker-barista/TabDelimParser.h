@@ -48,6 +48,8 @@ class TabDelimParser{
   void clean_up_xlink(string dir);
   int get_peptide_length_sum(string& sequence);
   int get_peptide_type(string& sequence);
+  void set_use_quadratic_features(int use);
+  
 
  protected:
 

@@ -132,6 +132,18 @@ void LinearPeptide::predictIons(IonSeries* ion_series, int charge) {
   ion_series->setCharge(charge);
   ion_series->update(seq, mod_seq);
   ion_series->predictIons();
+/*
+  IonFilteredIterator* ion_iterator = new IonFilteredIterator(ion_series, ion_constraint);
+  while(ion_iterator->hasNext()) {
+  
+    Ion* ion = ion_iterator->next();
+    if (isnan(ion->getMassZ())) {
+      carp(CARP_FATAL, "NAN6");
+    }
+  }
+
+*/
+
   free(seq);
   free(mod_seq);
 

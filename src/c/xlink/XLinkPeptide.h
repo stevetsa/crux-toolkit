@@ -37,6 +37,12 @@ class XLinkPeptide : public XLinkMatch {
 
   virtual ~XLinkPeptide();
 
+  /**
+   * makes sure that sequence1 is smaller in alphanumeric value than
+   * sequence 2
+   */
+  void doSort();
+
   bool isInter();
   bool isIntra();
 

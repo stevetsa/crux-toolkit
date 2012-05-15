@@ -40,9 +40,14 @@ public:
     void printNetResults(vector<int> &scores);
     void write_results(string filename, NeuralNet &net);
     void write_results_max(string filename, NeuralNet &net);
+    void write_results_bootstrap(string filename, PSMScores& set);
     void write_max_nets(string filename, NeuralNet *max_net);
     void write_unique_peptides(string filename, NeuralNet* max_net);
     void write_num_psm_per_spectrum(NeuralNet* max_net);
+
+    void calcRanks(PSMScores& set, NeuralNet& net);
+    void avgRanks(PSMScores& set, int n);
+    //void getMinRank(PSMScores& in, PSMScores& out);
 
     inline void set_input_dir(string input_dir) {in_dir = input_dir; d.set_input_dir(input_dir);}
     inline void set_output_dir(string output_dir){out_dir = output_dir;}
@@ -70,6 +75,8 @@ protected:
     double mu;
     double weightDecay;
 
+    
+
     int ind_low;
     int interval;
     int niter;
@@ -95,6 +102,8 @@ protected:
 
     /************xlink-specific*************/
     double xlink_mass;
+    int bootstrap_iters;
+
 };
 
 

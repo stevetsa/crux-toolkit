@@ -26,6 +26,9 @@ XLinkPeptide::XLinkPeptide(XLinkablePeptide& peptideA,
   linked_peptides_.push_back(peptideB);
   link_pos_idx_.push_back(posA);
   link_pos_idx_.push_back(posB);
+
+  doSort();
+
 }
 
 XLinkPeptide::XLinkPeptide(char* peptideA,
@@ -43,6 +46,38 @@ XLinkPeptide::XLinkPeptide(char* peptideA,
   link_pos_idx_.push_back(0);
   B.addLinkSite(posB);
   link_pos_idx_.push_back(0);
+
+  doSort();
+}
+
+
+/**
+ * makes sure that sequence1 is smaller in alphanumeric value than
+ * sequence 2
+ */
+void XLinkPeptide::doSort() {
+
+  string seq1 = linked_peptides_[0].getModifiedSequenceString();
+  
+  string seq2 = linked_peptides_[1].getModifiedSequenceString();
+
+
+  if (seq1 > seq2) {
+
+    //swap peptides
+    swap(linked_peptides_[0], linked_peptides_[1]);
+    //swap links
+    swap(link_pos_idx_[0], link_pos_idx_[1]);
+  }
+
+  seq1 = linked_peptides_[0].getModifiedSequenceString();
+  
+  seq2 = linked_peptides_[1].getModifiedSequenceString();
+
+  assert(seq1 <= seq2);
+
+
+
 }
 
 XLinkPeptide::~XLinkPeptide() {
@@ -283,19 +318,15 @@ void XLinkPeptide::addCandidates(
     FLOAT_T current_mass = first_mass + 
       linkable_peptides.at(next_idx).getMass();
     //cerr<<"current_mass:"<<current_mass<<endl;
-    while (next_idx < linkable_peptides.size() && (current_mass < min_mass)) {
+    while ((next_idx < (linkable_peptides.size()-1)) && (current_mass < min_mass)) {
       next_idx++;
       //cerr << "new last:" << last_idx << endl;
       current_mass = first_mass + linkable_peptides.at(next_idx).getMass();
       //cerr << "new current:" << current_mass << endl;
     }
 
-    if (next_idx >= linkable_peptides.size()) {
-      continue;
-    }
-
     while (next_idx < linkable_peptides.size() && current_mass <= max_mass) {
-      //cerr<<"Adding links for peptides:"<<first_idx<<":"<<last_idx<<endl;
+      //cerr<<"Adding links for peptides:"<<first_idx<<":"<<next_idx<<endl;
       XLinkablePeptide& pep1 = linkable_peptides.at(first_idx);
       XLinkablePeptide& pep2 = linkable_peptides.at(next_idx);
 
@@ -344,26 +375,23 @@ XLINKMATCH_TYPE_T XLinkPeptide::getCandidateType() {
 
 string XLinkPeptide::getSequenceString() {
 
-  
+  doSort();
 
   string seq1 = linked_peptides_[0].getModifiedSequenceString();
   
   string seq2 = linked_peptides_[1].getModifiedSequenceString();
 
-  ostringstream oss;
-  
-  if (seq1 < seq2) {
 
-    oss << seq1 << ", " << 
-      seq2 << " (" <<
-      (getLinkPos(0)+1) << "," <<
-      (getLinkPos(1)+1) << ")";
-  } else {
-       oss << seq2 << ", " << 
-      seq1 << " (" <<
-      (getLinkPos(1)+1) << "," <<
-      (getLinkPos(0)+1) << ")";
-  }
+
+
+  //assert(seq1 <= seq2);
+
+  ostringstream oss;
+  oss << seq1 << ", " << 
+    seq2 << " (" <<
+    (getLinkPos(0)+1) << "," <<
+    (getLinkPos(1)+1) << ")";
+
   string svalue = oss.str();
 
   return svalue;
@@ -419,12 +447,18 @@ void XLinkPeptide::predictIons(IonSeries* ion_series, int charge) {
 	FLOAT_T mass = ion->getMassFromMassZ();
 	mass += linked_peptides_[1].getMass(fragment_mass_type) + linker_mass_;
 	ion->setMassZFromMass(mass);
+        if (isnan(ion->getMassZ())) {
+          carp(CARP_FATAL, "NAN1");
+        }
       }
     } else {
       if (cleavage_idx >= (strlen(seq1) - (unsigned int)getLinkPos(0))) {
 	FLOAT_T mass = ion->getMassFromMassZ();
 	mass += linked_peptides_[1].getMass(fragment_mass_type) + linker_mass_;
 	ion->setMassZFromMass(mass);
+        if (isnan(ion->getMassZ())) {
+          carp(CARP_FATAL, "NAN2");
+        }
       }
     }
   }
@@ -458,12 +492,18 @@ void XLinkPeptide::predictIons(IonSeries* ion_series, int charge) {
 	FLOAT_T mass = ion->getMassFromMassZ();
 	mass += linked_peptides_[0].getMass(fragment_mass_type) + linker_mass_;
 	ion->setMassZFromMass(mass);
+        if (isnan(ion->getMassZ())) {
+          carp(CARP_FATAL, "NAN3");
+        }
       }
     } else {
       if (cleavage_idx >= (strlen(seq2)-(unsigned int)getLinkPos(1))) {
 	FLOAT_T mass = ion->getMassFromMassZ();
 	mass += linked_peptides_[0].getMass(fragment_mass_type) + linker_mass_;
 	ion->setMassZFromMass(mass);
+        if (isnan(ion->getMassZ())) {
+          carp(CARP_FATAL, "NAN4");
+        }
       }
     }
     ion_series->addIon(ion);
@@ -576,6 +616,8 @@ bool XLinkPeptide::isModified() {
 }
 
 string XLinkPeptide::getProteinIdString() {
+
+  doSort();
 
   ostringstream oss;
 
