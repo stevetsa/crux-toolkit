@@ -333,7 +333,7 @@ int SearchForXLinks::xlinkSearchMain() {
     xr_args_vec.push_back(oss.str());
   }
 
-  xr_args_vec.push_back("--bootstrap=30");
+  xr_args_vec.push_back("--bootstrap=3");
 
   {
     ostringstream oss;

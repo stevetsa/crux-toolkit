@@ -294,6 +294,14 @@ void Dataset :: load_psm_data_for_training()
   f_psmind_to_label.close();
   fname.str("");
 
+  //psmind_to_scan
+  fname << in_dir << "/psmind_to_scan.txt";
+  ifstream f_psmind_to_scan(fname.str().c_str(),ios::binary);
+  psmind_to_scan = new int[num_psms];
+  f_psmind_to_scan.read((char*)psmind_to_scan,sizeof(int)*num_psms);
+  f_psmind_to_scan.close();
+  fname.str("");
+
 }
 
 

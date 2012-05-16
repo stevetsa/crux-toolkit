@@ -292,6 +292,12 @@ bool compareRank(const PSMScoreHolder& s1, const PSMScoreHolder &s2) {
   return s1.rank < s2.rank;
 }
 
+bool compareScore(const PSMScoreHolder& s1, const PSMScoreHolder& s2) {
+
+  return s1.score > s2.score;
+
+}
+
 
 void PSMScores::sortByRank() {
   sort(scores.begin(), scores.end(), compareRank);

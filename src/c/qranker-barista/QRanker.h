@@ -48,6 +48,8 @@ public:
     void calcRanks(PSMScores& set, NeuralNet& net);
     void avgRanks(PSMScores& set, int n);
     //void getMinRank(PSMScores& in, PSMScores& out);
+    void selectHyperParameters();
+
 
     inline void set_input_dir(string input_dir) {in_dir = input_dir; d.set_input_dir(input_dir);}
     inline void set_output_dir(string output_dir){out_dir = output_dir;}
