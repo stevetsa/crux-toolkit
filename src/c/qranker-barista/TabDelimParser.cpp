@@ -30,9 +30,18 @@ TabDelimParser :: TabDelimParser()
   //num_psm_features
   num_features = 17;
   //num_xlink_features
-  num_xlink_features = 10;
+  num_base_features = 10;
+  num_charge_features = 0;
+
+
+  num_xlink_features = 0;
   //num_spec_features 
   num_spec_features = 0;
+
+  //number of charge features
+  charges.clear();
+
+  num_charge_features = 0;
   
   //final_hits_per_spectrum
   fhps = 1;
@@ -182,7 +191,13 @@ void TabDelimParser :: first_pass_xlink(ifstream &fin)
 	  //psmind_to_protein2[num_psm] = tokens[17];
 	  num_psm++;
 	}
+      int charge = atoi(tokens[charge_idx].c_str());
+      charges.insert(charge);
+
     }
+
+
+
 }
 
 
@@ -224,6 +239,18 @@ void TabDelimParser :: get_xlink_locations(int psmind, int &loc1, int & loc2) {
 void TabDelimParser :: allocate_feature_space_xlink()
 {
   //space for feature vector
+
+  for (set<int>::iterator iter = charges.begin();iter != charges.end();iter++) {
+    cerr << "charge:"<<*iter<<endl;
+    charge_vec.push_back(*iter);
+  }
+  num_charge_features = charge_vec.size();
+
+
+  cerr << "num_base_features:"<<num_base_features<<endl;
+  cerr << "num_charge_features:"<<num_charge_features<<endl;
+  num_xlink_features = num_base_features + num_charge_features;
+  cerr << "num_xlink_features:"<<num_xlink_features<<endl;
   x = new double[num_xlink_features];
   memset(x,0,sizeof(double)*num_xlink_features);
   //space for spec feature vector
@@ -354,7 +381,11 @@ void TabDelimParser :: extract_xlink_features(vector<string> & tokens, double *x
   x[1] = get_peptide_length_sum(tokens[sequence_idx]);
 
   // peptide type (linear, self-loop, cross-link)
-  x[2] = get_peptide_type(tokens[sequence_idx]);
+  int peptide_type = get_peptide_type(tokens[sequence_idx]);
+  x[2] = peptide_type == 0; //linear
+  x[3] = peptide_type == 1; //self-loop
+  x[4] = peptide_type == 2; //cross-link
+  x[5] = peptide_type == 3; //dead-end (TODO - implement)
 
 /*     
   //log rank by Sp
@@ -366,29 +397,46 @@ void TabDelimParser :: extract_xlink_features(vector<string> & tokens, double *x
   */
   
   //difference between measured and calculated mass
-  x[3] = atof(tokens[spectrum_mass_idx].c_str())-atof(tokens[peptide_mass_idx].c_str());
+  x[6] = atof(tokens[spectrum_mass_idx].c_str())-atof(tokens[peptide_mass_idx].c_str());
   
   // absolute value of difference between measured and calculated mass
-  x[4] = fabs(atof(tokens[spectrum_mass_idx].c_str())-atof(tokens[peptide_mass_idx].c_str()));
+  x[7] = fabs(atof(tokens[spectrum_mass_idx].c_str())-atof(tokens[peptide_mass_idx].c_str()));
 
   //sp score
   //x[5] = atof(tokens[sp_score_idx].c_str());
 
   //matched ions/predicted ions
-  x[6] = 0;
+  x[8] = 0;
   if(atof(tokens[by_total_idx].c_str()) != 0)
-    x[6] = atof(tokens[by_matched_idx].c_str())/atof(tokens[by_total_idx].c_str());
+    x[8] = atof(tokens[by_matched_idx].c_str())/atof(tokens[by_total_idx].c_str());
 
   //observed mass
-  x[7] = atof(tokens[spectrum_mass_idx].c_str());
+  x[9] = atof(tokens[spectrum_mass_idx].c_str());
 
-  //charge
-  x[8] = atof(tokens[charge_idx].c_str());
   // number of sequence_comparisons
   //x[9] = log(atof(tokens[matches_idx].c_str()));
   //whether n-terminus and c-terminus have proper cleavage sites
   // missed cleavages
 
+  //charge
+
+  int charge = atoi(tokens[charge_idx].c_str());
+
+  //cerr << "charge:"<<charge<<endl;
+
+  for (size_t idx = 0; idx < charge_vec.size();idx++) {
+    if (charge == charge_vec[idx]) {
+      x[num_base_features + idx] = 1.0;
+    } else {
+      x[num_base_features + idx] = 0.0;
+    }
+  }
+/*
+  for (int idx = 0; idx < num_xlink_features;idx++) {
+    cerr << idx << ":" << x[idx] << " " ;
+  }
+  cerr << endl;
+*/
 }
 
 

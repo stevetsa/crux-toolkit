@@ -1,6 +1,6 @@
 #include "QRanker.h"
 
-QRanker::QRanker() :  seed(1),selectionfdr(0.01),num_hu(4),mu(0.01),weightDecay(0.0000),xlink_mass(0.000),bootstrap_iters(30)
+QRanker::QRanker() :  seed(1),selectionfdr(0.01),num_hu(4),mu(0.01),weightDecay(0.0000),xlink_mass(0.000),bootstrap_iters(5)
 {
 }
 
@@ -144,7 +144,13 @@ void QRanker :: write_results_bootstrap(string filename, PSMScores& set)
   min_rank.calculateOverFDRRank(0.01);
 
   //cerr << "Writing results" <<endl;
-  f1 << "q-value" << "\t" <<"score" << "\t" << "scan" << "\t" << "charge" << "\t" << "sequence" << "\t" << "protein id" << endl;
+  f1 << "q-value" << "\t" <<
+        "score" << "\t" << 
+        "scan" << "\t" << 
+        "charge" << "\t" << 
+        "sequence" << "\t" << 
+        "protein id" << "\t" <<
+        "product type" << endl;
   for(int i = 0; i < min_rank.size(); i++)
     {
       //cerr << "Wrinting "<<i<<endl;
@@ -167,10 +173,31 @@ void QRanker :: write_results_bootstrap(string filename, PSMScores& set)
         }
   
         string sequence = oss.str();
+        string product_type = "";
+      
+        switch (TabDelimParser::get_peptide_type(sequence)) {
+          case 0:
+            product_type = "linear";
+            break;
+          case 1:
+            product_type = "self-loop";
+            break;
+          case 2:
+            product_type = "cross-linked";
+            break;
+          default:
+            product_type = "unknown";
+        }
 
-  
 
-        f1 << qvalue << "\t" << score << "\t" << scan << "\t" << charge << "\t" << sequence << "\t" << proteins << endl;
+
+        f1 << qvalue   << "\t" << 
+              score    << "\t" << 
+              scan     << "\t" << 
+              charge   << "\t" << 
+              sequence << "\t" << 
+              proteins << "\t" << 
+              product_type << endl;
       }
 
     }

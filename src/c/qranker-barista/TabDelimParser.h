@@ -30,7 +30,7 @@ class TabDelimParser{
   inline string& get_output_dir(){return out_dir;}
   int run(vector<string> &filenames);
 
-  void get_tokens(string &line, vector<string>&tokens, string &delim);
+  static void get_tokens(string &line, vector<string>&tokens, string &delim);
   void first_pass(ifstream &fin);
   void second_pass(ifstream &fin, int label);
   void allocate_feature_space();
@@ -47,7 +47,7 @@ class TabDelimParser{
   void save_data_in_binary_xlink(string out_dir);
   void clean_up_xlink(string dir);
   int get_peptide_length_sum(string& sequence);
-  int get_peptide_type(string& sequence);
+  static int get_peptide_type(string& sequence);
   void set_use_quadratic_features(int use);
   
 
@@ -108,7 +108,12 @@ class TabDelimParser{
   int min_len;
 
   
-  
+  int num_base_features;
+  int num_charge_features;
+
+  std::set<int> charges;
+  std::vector<int> charge_vec;
+
   /************xlink-specific*************/
   int num_xlink_features;
   map<int,string> psmind_to_peptide1;
