@@ -1,5 +1,5 @@
 #include "TabDelimParser.h"
-
+#include "carp.h"
 /******************************/
 
 TabDelimParser :: TabDelimParser() 
@@ -30,7 +30,7 @@ TabDelimParser :: TabDelimParser()
   //num_psm_features
   num_features = 17;
   //num_xlink_features
-  num_base_features = 10;
+  num_base_features = 11;
   num_charge_features = 0;
 
 
@@ -133,7 +133,9 @@ const static int by_matched_idx=11;
 const static int by_total_idx=12;
 const static int matches_idx=13;
 const static int sequence_idx=14;
-
+const static int cleavage_type_idx=15;
+const static int protein_id_idx=16;
+const static int flanking_aa_idx=17;
 
 
 void TabDelimParser :: first_pass_xlink(ifstream &fin)
@@ -184,9 +186,13 @@ void TabDelimParser :: first_pass_xlink(ifstream &fin)
           
             
           }
+          int loc1,loc2;
+          calc_xlink_locations(num_psm, loc1, loc2);
+          psmind_to_loc1[num_psm] = loc1;
+          psmind_to_loc2[num_psm] = loc2;
 	  //proteins
 	  if(tokens[16].size() > 0)
-	    psmind_to_protein1[num_psm] = tokens[16];
+	    psmind_to_protein1[num_psm] = tokens[protein_id_idx];
 	  //if(tokens[17].size()>0)
 	  //psmind_to_protein2[num_psm] = tokens[17];
 	  num_psm++;
@@ -200,8 +206,118 @@ void TabDelimParser :: first_pass_xlink(ifstream &fin)
 
 }
 
+bool TabDelimParser :: isMissedTryptic(string& sequence, int idx) {
 
-void TabDelimParser :: get_xlink_locations(int psmind, int &loc1, int & loc2) {
+  if (idx == (int)(sequence.length()-1)) {
+    return false;
+  }
+
+  if ((sequence.at(idx) == 'K' || sequence.at(idx) == 'R') && 
+      (sequence.at(idx+1) != 'P')) {
+    return true;
+  }
+
+  return false;
+
+}
+
+int TabDelimParser :: cntMissedCleavagesLinear(int psmind) {
+
+  string sequence = psmind_to_peptide1[psmind];
+
+  int cnt = 0;
+
+  for (size_t idx = 0;idx < sequence.length();idx++) {
+    if (isMissedTryptic(sequence,idx)) {
+      cnt++;
+    }
+  }
+
+  return cnt;
+}
+
+int TabDelimParser :: cntMissedCleavagesSelfLoop(int psmind) {
+  int loc1,loc2;
+  int cnt = 0;
+  get_xlink_locations(psmind, loc1, loc2);
+  string sequence = psmind_to_peptide1[psmind];
+  
+  if (loc1 == -1 || loc2 == -1) {
+    carp(CARP_FATAL, "location %d %d is -1 for sequence %s!",loc1, loc2, sequence.c_str());
+  }
+
+  for (size_t idx=0;idx<sequence.length();idx++) {
+    int lidx = idx+1;
+    if (lidx != loc1 && lidx != loc2 && isMissedTryptic(sequence, idx)) {
+      cnt++;
+    }
+  }
+
+  return cnt;
+
+}
+
+int TabDelimParser :: cntMissedCleavagesCrossLink(int psmind) {
+  int loc1, loc2;
+  int cnt = 0;
+  get_xlink_locations(psmind, loc1, loc2);
+  string seq1 = psmind_to_peptide1[psmind];
+  string seq2 = psmind_to_peptide2[psmind];
+  if (loc1 == -1 || loc2 == -1) {
+    carp(CARP_FATAL, "location %d %d is -1 for sequence %s %s!",loc1, loc2, seq1.c_str(), seq2.c_str());
+  }
+
+  for (size_t idx = 0; idx < seq1.length(); idx++) {
+    int lidx = idx+1;
+    if (lidx != loc1 && isMissedTryptic(seq1, idx)) {
+      cnt++;
+    }
+  }
+
+  for (size_t idx = 0; idx < seq2.length();idx++) {
+    int lidx = idx+1;
+    if (lidx != loc2 && isMissedTryptic(seq2, idx)) {
+      cnt++;
+    }
+  }
+
+  return cnt;
+}
+
+
+int TabDelimParser :: cntMissedCleavages(int psmind) {
+
+  
+
+  int type = get_peptide_type(psmind);
+  int ans = 0;
+  switch (type) {
+    case 0:
+      //linear peptide
+      ans = cntMissedCleavagesLinear(psmind);
+      break;
+    case 1:
+      ans = cntMissedCleavagesSelfLoop(psmind);
+      break;
+    case 2:
+      ans = cntMissedCleavagesCrossLink(psmind);
+      break;
+    default:
+      carp(CARP_FATAL, "Unknown peptide type:%d", type);
+  }
+
+  return ans;
+
+
+}
+
+void TabDelimParser :: get_xlink_locations(int psmind, int &loc1, int &loc2) {
+
+  loc1 = psmind_to_loc1[psmind];
+  loc2 = psmind_to_loc2[psmind];
+}
+
+void TabDelimParser :: calc_xlink_locations(int psmind, int &loc1, int & loc2) {
 
   loc1 = -1;
   loc2 = -1;
@@ -306,6 +422,28 @@ int TabDelimParser::get_peptide_length_sum(string& sequence) {
 }
 
 
+int TabDelimParser::get_peptide_type(int psmind) {
+  if (psmind_to_peptide2[psmind] == "_") {
+
+    if (psmind_to_loc1[psmind] == -1 ) {
+      //its a linear
+      return 0;
+    } else if (psmind_to_loc2[psmind] == -1) {
+      //its a dead link
+      return 3;
+    } else {
+      //its a self loop
+      return 1;
+    }
+
+  } else {
+    //its a cross-link
+    return 2;
+
+  }
+
+
+}
 
 int TabDelimParser::get_peptide_type(string& sequence) {
   string delim3 = " ";
@@ -359,7 +497,7 @@ int TabDelimParser::get_peptide_type(string& sequence) {
  8. charge
  9. matches/spectrum (unused) 
 */
-void TabDelimParser :: extract_xlink_features(vector<string> & tokens, double *x)
+void TabDelimParser :: extract_xlink_features(int psmind, vector<string> & tokens, double *x)
 {
   memset(x,0,sizeof(double)*num_xlink_features);
   /*
@@ -418,8 +556,11 @@ void TabDelimParser :: extract_xlink_features(vector<string> & tokens, double *x
   //whether n-terminus and c-terminus have proper cleavage sites
   // missed cleavages
 
-  //charge
+  //missed-cleavages
+  x[10] = cntMissedCleavages(psmind);
+  //cerr << "sequence:"<<tokens[sequence_idx]<<" mc:"<<x[10]<<endl;
 
+  //charge
   int charge = atoi(tokens[charge_idx].c_str());
 
   //cerr << "charge:"<<charge<<endl;
@@ -461,7 +602,7 @@ void TabDelimParser :: second_pass_xlink(ifstream &fin, int label)
 	  int scan = atoi(tokens[0].c_str());
 	  int charge = atoi(tokens[1].c_str());
 	  //extract features
-	  extract_xlink_features(tokens, x);
+	  extract_xlink_features(psmind, tokens, x);
 	  f_psm.write((char*)x, sizeof(double)*num_xlink_features);
 	  if(num_spec_features > 0)
 	    {

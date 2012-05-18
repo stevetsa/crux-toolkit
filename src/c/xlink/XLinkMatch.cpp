@@ -64,6 +64,23 @@ string XLinkMatch::getProteinIdString() {
   }
 }
 
+string XLinkMatch::getFlankingAAString() {
+  Peptide* peptide = this -> getPeptide(0);
+
+  string ans("");
+
+  if (peptide != NULL) {
+    char* flanking_aas = peptide->getFlankingAAs();
+    ans = flanking_aas;
+    free(flanking_aas);
+  }
+
+  return ans;
+
+
+}
+
+
 
 FLOAT_T XLinkMatch::getMass(MASS_TYPE_T mass_type) {
 
@@ -121,6 +138,9 @@ void XLinkMatch::printOneMatchField(
       getProteinIdString()); 
     break;
   case FLANKING_AA_COL:
+    output_file->setColumnCurrentRow(
+      (MATCH_COLUMNS_T)column_idx,
+      getFlankingAAString());
     break;
   default:
     Match::printOneMatchField(column_idx,

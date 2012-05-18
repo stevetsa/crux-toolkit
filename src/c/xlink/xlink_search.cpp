@@ -318,14 +318,14 @@ int SearchForXLinks::xlinkSearchMain() {
   xr_args_vec.push_back("--mu=0.01");
 
   xr_args_vec.push_back("--wd=1e-7");
-
+/*
   {
     ostringstream oss;
     oss << "--ms2file=";
     oss << ms2_file;
     xr_args_vec.push_back(oss.str());
   }
-
+*/
   {
     ostringstream oss;
     oss << "--xlink-mass=";
@@ -333,7 +333,7 @@ int SearchForXLinks::xlinkSearchMain() {
     xr_args_vec.push_back(oss.str());
   }
 
-  xr_args_vec.push_back("--bootstrap=3");
+  xr_args_vec.push_back("--bootstrap=5");
 
   {
     ostringstream oss;

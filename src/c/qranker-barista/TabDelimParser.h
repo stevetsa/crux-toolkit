@@ -43,13 +43,18 @@ class TabDelimParser{
   void first_pass_xlink(ifstream &fin);
   void second_pass_xlink(ifstream &fin, int label);
   void allocate_feature_space_xlink();
-  void extract_xlink_features(vector<string> & tokens, double *x);
+  void extract_xlink_features(int psmind, vector<string> & tokens, double *x);
   void save_data_in_binary_xlink(string out_dir);
   void clean_up_xlink(string dir);
   int get_peptide_length_sum(string& sequence);
   static int get_peptide_type(string& sequence);
   void set_use_quadratic_features(int use);
   
+  bool isMissedTryptic(std::string& sequence, int idx);
+  int cntMissedCleavagesLinear(int psmind);
+  int cntMissedCleavagesSelfLoop(int psmind);
+  int cntMissedCleavagesCrossLink(int psmind);
+  int cntMissedCleavages(int psmind);
 
  protected:
 
@@ -119,10 +124,14 @@ class TabDelimParser{
   map<int,string> psmind_to_peptide1;
   map<int,string> psmind_to_peptide2;
   map<int,string> psmind_to_loc;
+  map<int,int> psmind_to_loc1;
+  map<int,int> psmind_to_loc2;
   map<int,string> psmind_to_protein1;
   map<int,string> psmind_to_protein2;
   
+  void calc_xlink_locations(int psmind, int& loc1, int& loc2);
   void get_xlink_locations(int psmind, int& loc1, int& loc2);
+  int get_peptide_type(int psmind);
 
 };
 

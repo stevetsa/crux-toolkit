@@ -640,3 +640,35 @@ string XLinkPeptide::getProteinIdString() {
 
   return oss.str();
 }
+
+string XLinkPeptide::getFlankingAAString() {
+
+  doSort();
+
+  ostringstream oss;
+
+  Peptide* peptide = this -> getPeptide(0);
+  
+  if (peptide == NULL) {
+    carp(CARP_FATAL, "XLinkPeptide::getFlankingAAString() : Null first peptide!");
+  } else {
+
+    char* flanking_aas = peptide->getFlankingAAs();
+    oss << flanking_aas;
+
+  }
+
+  oss << ";";
+
+  peptide = this->getPeptide(1);
+
+  if (peptide == NULL) {
+    carp(CARP_FATAL, "XLinkPeptide::getFlankingAAString() : Null second peptide!");
+  } else {
+
+    char* flanking_aas = peptide->getFlankingAAs();
+    oss << flanking_aas;
+  }
+  
+  return oss.str();
+}
