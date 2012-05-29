@@ -11,15 +11,28 @@
 #include "MSToolkitSpectrumCollection.h"
 #include "MGFSpectrumCollection.h"
 #include "PWIZSpectrumCollection.h"
+#include <sys/types.h>
+#include <sys/stat.h>
+
 /**
  * Instantiates a SpectrumCollection based on the extension of the
  * given file and the use-mstoolkit and msgf options.
  */
 SpectrumCollection* SpectrumCollectionFactory::create(const char* filename){
   SpectrumCollection* collection = NULL;
-
+  struct stat stat_buff ; 
+  stat(filename, &stat_buff);
+  if(stat(filename, &stat_buff)!=0){
+    carp(CARP_FATAL, "The file %s does not exist. \n", filename);
+  }
+  if (S_ISDIR(stat_buff.st_mode)){
+    carp(CARP_FATAL, "Path %s is a directory. \n Please enter a spectrum filename\
+(.ms2,.mgf, or .mzXML)",filename);
+  }
   if( get_boolean_parameter("use-pwiz") ) {
     collection = new PWIZSpectrumCollection(filename);
+  }else if( has_extension(filename, ".mgf") || get_boolean_parameter("use-mgf") ){
+    collection = new MGFSpectrumCollection(filename);
   } else if( has_extension(filename, ".mzXML") 
              || get_boolean_parameter("use-mstoolkit") ) {
     collection = new MSToolkitSpectrumCollection(filename);

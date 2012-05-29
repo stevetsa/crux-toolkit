@@ -10,15 +10,18 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
+#ifndef _MSC_VER
 #include <sys/time.h>
 #include <unistd.h> 
+#endif
 #include <math.h>
 #include <assert.h>
 #include <errno.h>
 #include "utils.h"
 #include "carp.h"
+#include "WinCrux.h"
 
-#ifdef DARWIN
+#ifdef INCLUDE_GETLINE
 
 /*********************************************************
  This function replaces the GNU extension of the same name.
@@ -122,17 +125,17 @@ double wall_clock(){
 /************************************************************************
  * See .h file for description.
  ************************************************************************/
-BOOLEAN_T open_file
+bool open_file
   (const char *    filename,      /* Name of the file to be opened. */
    const char *    file_mode,     /* Mode to be passed to fopen. */
-   BOOLEAN_T allow_stdin,         /* If true, filename "-" is stdin. */
+   bool allow_stdin,         /* If true, filename "-" is stdin. */
    const char *    file_description,   
    const char *    content_description,
    FILE **         afile)         /* Pointer to the open file. */
 {
   if (filename == NULL) {
     carp(CARP_ERROR, "No %s filename specified.\n", file_description);
-    return(FALSE);
+    return(false);
   } else if ((allow_stdin) && (strcmp(filename, "-") == 0)) {
     if (strchr(file_mode, 'r') != NULL) {
         carp(CARP_INFO, "Reading %s from stdin.\n", content_description);
@@ -143,13 +146,13 @@ BOOLEAN_T open_file
     } else {
       carp(CARP_INFO, "Sorry, I can't figure out whether to use stdin ");
       carp(CARP_INFO, "or stdout for %s.\n", content_description);
-      return(FALSE);
+      return(false);
     }
   } else if ((*afile = fopen(filename, file_mode)) == NULL) {
     carp(CARP_INFO, "Error opening file %s.\n", filename);
-    return(FALSE);
+    return(false);
   }
-  return(TRUE);
+  return(true);
 }
 
 /********************************************************************
@@ -226,7 +229,7 @@ void * myrealloc
 /********************************************************************
  * fwrite with a check to make sure it was successful (useful for NFS problems)
  ********************************************************************/
-BOOLEAN_T myfwrite
+bool myfwrite
   (const void *ptr, 
    size_t size, 
    size_t nitems, 
@@ -235,67 +238,9 @@ BOOLEAN_T myfwrite
   size_t ret = fwrite(ptr, size, nitems, stream);
   if (nitems != ret){
     carp(CARP_ERROR, "Problem writing %i items", nitems);
-    return FALSE;
+    return false;
   }
-  return TRUE;
-}
-
-#ifdef MYRAND
-static const int MY_RAND_MAX = 4096;
-
-
-/********************************************************************
- * Primary function for the built-in random number generator. 
- ********************************************************************/
-static double my_rand
-  (long seed)
-{
-  static long stored_seed = 0;
-
-  /* If this is the first call, just set the seed. */
-  if (stored_seed == 0) {
-    stored_seed = seed;
-  }
-
-  /* Otherwise, create a new pseudorandom number. */
-  else {
-    stored_seed = abs((stored_seed / 3) * stored_seed + 7718);
-  }
-
-  /* Make sure the pseudorandom number is in the right range. */
-  return((double)(stored_seed % MY_RAND_MAX) / (double)MY_RAND_MAX);
-}
-#else
-/* The stupid include file doesn't have these prototypes. */
-void srand48();
-double drand48();
-
-#endif
-
-/********************************************************************
- * See .h file for description.
- ********************************************************************/
-void my_srand
-  (long seed)
-{
-#ifdef MYRAND
-  my_rand(seed);
-#else
-  srand48(seed);
-#endif
-}
-
-/********************************************************************
- * See .h file for description.
- ********************************************************************/
-double my_drand
-  (void)
-{
-#ifdef MYRAND
-  return(my_rand(0));
-#else
-  return(drand48());
-#endif
+  return true;
 }
 
 /**********************************************************************
@@ -356,31 +301,31 @@ PROB_T log_prob
 /**************************************************************************
  * See .h file for description.
  **************************************************************************/
-BOOLEAN_T is_zero
+bool is_zero
   (double    value,
-   BOOLEAN_T log_form)
+   bool log_form)
 {
   if ((log_form) && (value < LOG_SMALL)) {
-    return(TRUE);
+    return(true);
   } else if ((!log_form) && (value == 0.0)) {
-    return(TRUE);
+    return(true);
   } else {
-    return(FALSE);
+    return(false);
   }
 }
 
 /**************************************************************************
  * See .h file for description.
  **************************************************************************/
-BOOLEAN_T almost_equal
+bool almost_equal
   (double value1,
    double value2,
    double slop)
 {
   if ((value1 - slop > value2) || (value1 + slop < value2)) {
-    return(FALSE);
+    return(false);
   } else {
-    return(TRUE);
+    return(true);
   }
 }
 
@@ -388,42 +333,42 @@ BOOLEAN_T almost_equal
  * Convert a boolean to and from a "true" or "false" string.
  *************************************************************************/
 char* boolean_to_string
- (BOOLEAN_T the_boolean)
+ (bool the_boolean)
 {
   static char * true_or_false;
-  static BOOLEAN_T first_time = TRUE;
+  static bool first_time = true;
 
   if (first_time) {
     true_or_false = (char *)mymalloc(sizeof(char) * 6);
-    first_time = FALSE;
+    first_time = false;
   }
 
   if (the_boolean) {
-    strcpy(true_or_false, "TRUE");
+    strcpy(true_or_false, "true");
   } else {
-    strcpy(true_or_false, "FALSE");
+    strcpy(true_or_false, "false");
   }
   return(true_or_false);
 }
 
-BOOLEAN_T boolean_from_string
+bool boolean_from_string
   (char* true_or_false)
 {
   if (strcmp(true_or_false, "true") == 0) {
-    return(TRUE);
+    return(true);
   } else if (strcmp(true_or_false, "false") == 0) {
-    return(FALSE);
+    return(false);
   } else {
     carp(CARP_FATAL, "Invalid input to boolean_from_string (%s)\n", true_or_false);
   }
-  return(FALSE); /* Unreachable. */
+  return(false); /* Unreachable. */
 }
 
 
 /**************************************************************************
  * Does a given character appear in a given string?
  **************************************************************************/
-BOOLEAN_T char_in_string
+bool char_in_string
   (const char* a_string,
    char        a_char)
 {
@@ -434,12 +379,12 @@ BOOLEAN_T char_in_string
   string_char = a_string[i_string];
   while (string_char != '\0') {
     if (string_char == a_char) {
-      return(TRUE);
+      return(true);
     }
     i_string++;
     string_char = a_string[i_string];
   }
-  return(FALSE);
+  return(false);
 }
 
 /**************************************************************************
@@ -511,10 +456,17 @@ const char* date_and_time
 {
   FILE *           date_stream;
   static char      the_date[MAX_HOST_NAME];
-  static BOOLEAN_T first_time = TRUE;
+  static bool first_time = true;
 
   if (first_time) {
+    // FIXME: we should be able to get the date
+    // from a function call rather than having
+    // to call a shell command.
+#ifdef _MSC_VER
+    date_stream = (FILE *)popen("date /T", "r");
+#else
     date_stream = (FILE *)popen("date", "r");
+#endif
     if( fgets(the_date, MAX_HOST_NAME, date_stream) == NULL ){ return NULL; }
     pclose(date_stream);
   }
@@ -523,7 +475,7 @@ const char* date_and_time
   assert(the_date[strlen(the_date)-1] == '\n');
   the_date[strlen(the_date)-1] = '\0';
 
-  first_time = FALSE;
+  first_time = false;
   return(the_date);
 }
 
@@ -610,25 +562,15 @@ int main (int argc, char *argv[])
   // double double_array[8] = {1.0,2.0,3.0,4.0,5.0,6.0,7.0,8.0};
   // fwrite(double_array, sizeof(double), 8, outfile);
   int int_array[8] = {1,2,3,4,5,6,7,8};
-  BOOLEAN_T a = myfwrite(int_array, sizeof(int), 0, outfile);
-  if (a == TRUE){ 
+  bool a = myfwrite(int_array, sizeof(int), 0, outfile);
+  if (a == true){ 
     printf("myfwrite succeeded\n");
   } else {
     printf("myfwrite failed\n");
   }
   fclose(outfile);
 
-  /* Test the random number generator. 
-  seed = time(0);
-  my_srand(seed);
-  printf("\nSome random numbers (seed=%ld): \n", seed);
-  for (i = 0; i < 10; i++) {
-    for (j = 0; j < 10; j++) {
-      printf("%6.4f ", my_drand());
-    }
-    printf("\n");
-  }*/
-  return(0);
+   return(0);
 }
 
 #endif

@@ -11,18 +11,12 @@
 #include <string>
 #include "utils.h"
 #include "objects.h"
-#include "peak.h"
+#include "Peak.h"
 
-#include "MSToolkit/Spectrum.h"
+#include "Spectrum.h"
+#include "../external/MSToolkit/include/Spectrum.h"
 #include "pwiz/data/msdata/SpectrumInfo.hpp"
 #include "SpectrumZState.h"
-
-/**
- * \class PeakIterator
- * \brief Object to iterate over the peaks in a spectrum.
- */
-
-typedef std::vector<PEAK_T*>::const_iterator PeakIterator;
 
 /**
  * \class Spectrum 
@@ -44,6 +38,9 @@ typedef std::vector<PEAK_T*>::const_iterator PeakIterator;
  * peaks but is convenient to have is stored as "min_peak_mz",
  * "max_peak_mz", and "total_energy".
  */
+
+namespace Crux {
+
 class Spectrum{
  protected:
   // member variables
@@ -52,18 +49,19 @@ class Spectrum{
   FLOAT_T          precursor_mz_;  ///< The m/z of precursor (MS-MS spectra)
   std::vector<SpectrumZState> zstates_;
   std::vector<SpectrumZState> ezstates_;
-  std::vector<PEAK_T*>  peaks_;         ///< The spectrum peaks
+  std::vector<Peak*>  peaks_;         ///< The spectrum peaks
   FLOAT_T          min_peak_mz_;   ///< The minimum m/z of all peaks
   FLOAT_T          max_peak_mz_;   ///< The maximum m/z of all peaks
   double           total_energy_;  ///< The sum of intensities in all peaks
   std::string           filename_;      ///< Optional filename
+  std::string           stripped_filename_; ///< filename, no path or extension
   std::vector<std::string> i_lines_v_;  ///< store i lines
   std::vector<std::string> d_lines_v_;  ///< store d lines
   bool             has_peaks_;  ///< Does the spectrum contain peak information
   bool             sorted_by_mz_; ///< Are the spectrum peaks sorted by m/z...
   bool             sorted_by_intensity_; ///< ... or by intensity?
   bool             has_mz_peak_array_; ///< Is the mz_peak_array populated.
-  PEAK_T**         mz_peak_array_;  ///< Allows rapid peak retrieval by mz.
+  Peak         **mz_peak_array_;  ///< Allows rapid peak retrieval by mz.
 
   // constants
   /**
@@ -121,12 +119,6 @@ class Spectrum{
      FLOAT_T location  ///< the location of the peak that has been added -in
      );
 
-  /**
-   * Add the appropriate ZStates based on the precursor_mz_ and peaks
-   * fields.  Uses choose_charge to select +1 or +2 and +3.
-   */
-  void setZStates();
-
  public:
   /**
    * Default constructor.
@@ -181,14 +173,6 @@ class Spectrum{
      FLOAT_T* intensities, ///< intensities of new peaks
      int max_mz_bin,       ///< num_bins in intensities
      FILE* file);          ///< print to this file
-
-  /**
-   * Prints a spectrum object to file in xml format.
-   */
-  void printXml
-    (FILE* file,           ///< output file to print at -out
-     SpectrumZState& zstate,            ///< zstate used for the search -in
-     int index);            ///< used to output index to file
 
   /**
    * Prints a spectrum object to file in sqt format.
@@ -314,11 +298,24 @@ class Spectrum{
    * This should lazily create the data structures within the
    * spectrum object that it needs.
    */
-  PEAK_T* getNearestPeak
+  Peak * getNearestPeak
     (FLOAT_T mz, ///< the mz of the peak around which to sum intensities -in
      FLOAT_T max ///< the maximum distance to get intensity -in
      );
   
+  /**
+   * \returns The PEAK_T within 'max' of 'mz' in 'spectrum'
+   * that is the maximum intensity.
+   * NULL if no peak within 'max'
+   * This should lazily create the data structures within the
+   * spectrum object that it needs.
+   */
+  Peak* getMaxIntensityPeak(
+    FLOAT_T mz, ///< the mz of the peak to find
+    FLOAT_T max ///< the maximum distance to get intensity -in
+  );
+
+
   /**
    * \returns The sum of intensities in all peaks.
    */
@@ -357,8 +354,19 @@ class Spectrum{
    */
   void populateMzPeakArray();
 
+  /**
+   *if ms2 file dose not have any Z line then assignZState will create it  
+   */
+  bool assignZState();
+
+  /**
+   * \returns The name of the file this spectrum came from or an empty
+   * string, if unavailable.
+   */
+  const char* getFilename();
 };    
 
+}
 
 /**
  * Local Variables:

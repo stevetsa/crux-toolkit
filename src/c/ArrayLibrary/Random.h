@@ -36,6 +36,10 @@
 
 using namespace std;
 
+#ifdef _MSC_VER
+#define random rand
+#endif
+
 class Random
 {
 public:

@@ -16,7 +16,7 @@
 MS2SpectrumCollection::MS2SpectrumCollection(
   const char* filename   ///< The spectrum collection filename.
  ) : SpectrumCollection(filename){
-
+   memset(comment_, 0, MAX_COMMENT);
 }
 
 /**
@@ -72,15 +72,17 @@ bool MS2SpectrumCollection::parse() {
 
   // get a list of scans to include if requested
   const char* range_string = get_string_parameter("scan-number");
-  int first_scan = get_first_in_range_string(range_string);
-  int last_scan = get_last_in_range_string(range_string);
-  if( first_scan == -1 || last_scan == -1 ){
+  int first_scan;
+  int last_scan;
+  bool success = get_range_from_string(range_string, first_scan, last_scan);
+
+  if( !success ){
     carp(CARP_FATAL, "The scan number range '%s' is invalid. "
          "Must be of the form <first>-<last>.", range_string);
   }
   
   // check if file is still avaliable
-  if ((file = fopen(filename_.c_str(),"r")) == NULL) {
+  if ((file = fopen(filename_.c_str(),"rb")) == NULL) {
     carp(CARP_ERROR, "Spectrum file %s could not be opened",
          filename_.c_str());
     return false;
@@ -124,7 +126,7 @@ bool MS2SpectrumCollection::getSpectrum(
   FILE* file;
   long target_index;
   // check if file is still avaliable
-  if ((file = fopen(filename_.c_str(), "r")) == NULL) {
+  if ((file = fopen(filename_.c_str(), "rb")) == NULL) {
     carp(CARP_ERROR, "File %s could not be opened", filename_.c_str());
     return false;
   }
@@ -162,7 +164,7 @@ Spectrum* MS2SpectrumCollection::getSpectrum(
   FILE* file;
   long target_index;
   // check if file is still avaliable
-  if ((file = fopen(filename_.c_str(), "r")) == NULL) {
+  if ((file = fopen(filename_.c_str(), "rb")) == NULL) {
     carp(CARP_ERROR, "File %s could not be opened", filename_.c_str());
     return (false);
   }
@@ -271,7 +273,7 @@ int MS2SpectrumCollection::matchFirstScanLine(
   )
 {
   
-  char spliced_line[buf_length];
+  char* spliced_line = new char[buf_length];
   int line_index = 0;
   int spliced_line_index = 0;
   int first_scan;
@@ -337,6 +339,9 @@ int MS2SpectrumCollection::matchFirstScanLine(
       line
     );
   }
+
+  delete [] spliced_line ;
+
   if(first_scan == query_first_scan){
     return 0;
   }

@@ -68,6 +68,7 @@ int ExtractRows::main(int argc, char** argv) {
 
    /* Define optional command line arguments */
   const char* option_list[] = {
+    "delimiter",
     "header",
     "comparison",
     "column-type",
@@ -98,10 +99,10 @@ int ExtractRows::main(int argc, char** argv) {
 
   COLTYPE_T column_type = get_column_type_parameter("column-type");
   COMPARISON_T comparison = get_comparison_parameter("comparison");
+  char delimiter = get_delimiter_parameter("delimiter");
 
 
-
-  DelimitedFileReader delimited_file(delimited_filename, true);
+  DelimitedFileReader delimited_file(delimited_filename, true, delimiter);
   int column_idx = delimited_file.findColumn(column_name);
 
   if (column_idx == -1) {
@@ -114,16 +115,14 @@ int ExtractRows::main(int argc, char** argv) {
     cout << delimited_file.getHeaderString() << endl;
   }
 
- 
-
   string column_value_str =
     string(get_string_parameter_pointer("column value"));
 
   int column_value_int = 0;
-  DelimitedFile::from_string(column_value_int, column_value_str);
+  from_string(column_value_int, column_value_str);
 
   FLOAT_T column_value_real = 0;
-  DelimitedFile::from_string(column_value_real, column_value_str);
+  from_string(column_value_real, column_value_str);
 
 
   while (delimited_file.hasNext()) {
@@ -175,7 +174,7 @@ string ExtractRows::getName() {
  */
 string ExtractRows::getDescription() {
 
-  return "Prints out rows that match a particular column value";
+  return "Prints out rows that match a particular column value.";
 
 }
 

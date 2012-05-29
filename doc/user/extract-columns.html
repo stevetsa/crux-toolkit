@@ -16,7 +16,7 @@
 
 <B>Description:</B>
 <p>
-Given a tab-delimited filename and a comma-delimited list of column
+Given a tab-delimited file and a comma-delimited list of column
 names, extract the requested columns.
 </p>
 
@@ -24,12 +24,13 @@ names, extract the requested columns.
 <UL>
 
 <li>
-&lt;tsv&nbsp;filename&gt; &ndash; A tab-delimited file with column headers.
+&lt;tsv&nbsp;filename&gt; &ndash; A tab-delimited file, with column
+headers in the first row.  Use "-" to read from standard input. 
 </li>
 	
 <li>
-&lt;column&nbsp;name&nbsp;list&gt; &ndash; A comma delimited list of
-columns name to extract.
+&lt;column&nbsp;name&nbsp;list&gt; &ndash; A comma-delimited list of
+column names to extract.
 </li>
 
 </UL>
@@ -37,14 +38,19 @@ columns name to extract.
 <B>Output:</B>
 
 <ul>
-The program prints to standard output format the requested columns in
-tab-delimited format.  The order of the columns printed matches that
-of the input column list.
+The program prints to standard output the requested columns in
+tab-delimited format.  The columns are printed in the same order that
+they appear in the input column list.
 </ul>
 
 <B>Options:</B>
 
 <UL>
+
+<li>
+<code>--delimiter &lt;char&gt|tab</code> &ndash; Specify the input and
+output delimiter to use when processing the delimited
+file. Default=tab.</li>
 
 <li>
 <code>--header T|F</code> &ndash; Print the header line of the file,

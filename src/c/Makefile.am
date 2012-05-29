@@ -1,50 +1,54 @@
 distdir = $(PACKAGE)_$(VERSION)
 
-SUBDIRS = ArrayLibrary MSToolkit percolator q-ranker xlink .
+SUBDIRS = ArrayLibrary percolator xlink posterior-error qranker-barista hardklor bullseye .
+
+AM_CPPFLAGS = -D_LARGEFILE_SOURCE=1 -D_FILE_OFFSET_BITS=64 \
+ -D_GNU_SOURCE -DGCC -DHAVE_EXPAT_CONFIG_H
+AM_CFLAGS = -Wall -W -Werror
+AM_CXXFLAGS = -Wall -W 
 
 # Crux can use either single or double precision floating poinnt.
 if USEDOUBLES
-  USEDOUBLES = -DUSE_DOUBLES
-else
-  USEDOUBLES=
+  AM_CPPFLAGS += -DUSE_DOUBLES
 endif
 
 # Compiling under OS X requires a preprocessor flag.
 if DARWIN
-  USEDARWIN = -DDARWIN
-else
-  USEDARWIN = 
+  AM_CPPFLAGS += -DDARWIN
+endif
+
+# Compiling under OS X pre-Lion requires another preprocessor flag.
+if PRE_LION
+  AM_CPPFLAGS += -DPRE_LION
 endif
 
 # We disable search and exclude search related code
 # in open-source distribution of Crux.
 if SEARCH
-  SEARCH_ENABLED = -DSEARCH_ENABLED
-else
-  SEARCH_ENABLED = 
+  AM_CPPFLAGS += -DSEARCH_ENABLED
 endif
 
-AM_CFLAGS = -Wall -W -Werror $(USEDOUBLES) $(USEDARWIN) $(SEARCH_ENABLED) \
-            -D_LARGEFILE_SOURCE=1 -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE
-AM_CXXFLAGS = -Wall -W -Werror  $(USEDOUBLES) $(USEDARWIN) $(SEARCH_ENABLED) \
-            -D_LARGEFILE_SOURCE=1 -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE
-
 LIBFILES= \
-  alphabet.cpp \
-  alphabet.h \
+  Alphabet.cpp \
+  Alphabet.h \
   analyze_psms.cpp \
   analyze_psms.h \
   carp.cpp \
   carp.h \
   ComputeQValues.cpp \
   ComputeQValues.h \
+  ComputeQValuesLegacy.h \
   CreateIndex.cpp \
   CreateIndex.h \
   crux-file-utils.h \
   crux-utils.cpp \
   crux-utils.h \
-  database.cpp \
-  database.h \
+  Database.cpp \
+  Database.h \
+  DatabaseProteinIterator.cpp \
+  DatabaseProteinIterator.h \
+  DatabasePeptideIterator.cpp \
+  DatabasePeptideIterator.h \
   CruxApplication.cpp \
   CruxApplication.h \
   CruxApplicationList.cpp \
@@ -61,12 +65,20 @@ LIBFILES= \
   ExtractRows.h \
   FilteredSpectrumChargeIterator.cpp \
   FilteredSpectrumChargeIterator.h \
-  generate_peptides_iterator.cpp \
-  generate_peptides_iterator.h \
+  GeneratePeptidesIterator.cpp \
+  GeneratePeptidesIterator.h \
+  GetMs2Spectrum.h\
+  GetMs2Spectrum.cpp\
   hash.cpp \
   hash.h \
-  index.cpp \
-  index.h \
+  Index.cpp \
+  Index.h \
+  IndexFile.cpp \
+  IndexFile.h \
+  IndexPeptideIterator.cpp \
+  IndexPeptideIterator.h \
+  IndexFilteredPeptideIterator.cpp \
+  IndexFilteredPeptideIterator.h \
   Ion.cpp \
   Ion.h \
   IonConstraint.cpp \
@@ -79,8 +91,8 @@ LIBFILES= \
   linked_list.h \
   mass.cpp \
   mass.h \
-  match.cpp \
-  match.h \
+  Match.cpp \
+  Match.h \
   MatchColumns.cpp \
   MatchColumns.h \
   MatchFileReader.cpp \
@@ -89,14 +101,18 @@ LIBFILES= \
   MatchFileWriter.h \
   MatchSearch.cpp \
   MatchSearch.h \
-  match_collection.cpp \
-  match_collection.h \
+  MatchCollection.cpp \
+  MatchCollection.h \
+  MatchCollectionIterator.cpp \
+  MatchCollectionIterator.h \
+  MatchIterator.cpp \
+  MatchIterator.h \
   MGFSpectrumCollection.cpp \
   MGFSpectrumCollection.h \
   modifications.cpp \
   modifications.h \
-  modified_peptides_iterator.cpp \
-  modified_peptides_iterator.h \
+  ModifiedPeptidesIterator.cpp \
+  ModifiedPeptidesIterator.h \
   MS2SpectrumCollection.cpp \
   MS2SpectrumCollection.h \
   MSToolkitSpectrumCollection.cpp \
@@ -108,18 +124,25 @@ LIBFILES= \
   parameter.h \
   parse_arguments.cpp \
   parse_arguments.h \
-  peak.cpp \
-  peak.h \
-  peptide.cpp \
-  peptide_constraint.cpp \
-  peptide_constraint.h \
-  peptide.h \
+  Peak.cpp \
+  Peak.h \
+  Peptide.cpp \
+  Peptide.h \
+  PeptideConstraint.cpp \
+  PeptideConstraint.h \
+  PeptideIterator.h \
   peptide_modifications.cpp \
   peptide_modifications.h \
-  peptide_src.cpp \
-  peptide_src.h \
+  PeptideSrc.cpp \
+  PeptideSrc.h \
+  PepXMLWriter.cpp \
+  PepXMLWriter.h \
   Percolator.cpp \
   Percolator.h \
+  GeneratePeptides.cpp \
+  GeneratePeptides.h \
+  PredictPeptideIons.cpp \
+  PredictPeptideIons.h \
   PrintProcessedSpectra.cpp \
   PrintProcessedSpectra.h \
   PrintVersion.cpp \
@@ -128,19 +151,21 @@ LIBFILES= \
   Protein.h \
   ProteinPeptideIterator.cpp \
   ProteinPeptideIterator.h \
-  protein_index.cpp \
-  protein_index.h \
+  ProteinIndex.cpp \
+  ProteinIndex.h \
   PWIZSpectrumCollection.cpp \
   PWIZSpectrumCollection.h \
-  QRanker.cpp \
-  QRanker.h \
+  ProteinIndexIterator.cpp \
+  ProteinIndexIterator.h \
   q-value.cpp \
   q-value.h \
   SearchProgress.h \
   SequestSearch.cpp \
   SequestSearch.h \
-  scorer.cpp \
-  scorer.h \
+  Scorer.cpp \
+  Scorer.h \
+  SortColumn.cpp \
+  SortColumn.h \
   sorter.cpp \
   sorter.h \
   SpectralCounts.cpp \
@@ -153,27 +178,35 @@ LIBFILES= \
   Spectrum.h \
   SpectrumZState.cpp \
   SpectrumZState.h \
+  StatColumn.cpp \
+  StatColumn.h \
   utils.cpp \
   utils.h \
   version.h \
   xlink_search.h \
-  xlink_compute_qvalues.h
+  xlink_compute_qvalues.h \
+  WinCrux.h
 
 noinst_LTLIBRARIES = libcrux.la
 libcrux_la_CFLAGS = \
   $(AM_CFLAGS) \
-  -I$(top_srcdir)/src/c/MSToolkit \
+  -I$(top_srcdir)/src/external/MSToolkit/include \
   -I$(top_srcdir)/src/external/proteowizard/install/include/ \
   -I$(top_srcdir)/src/c/percolator/ \
-  -I$(top_srcdir)/src/c/q-ranker/
+  -I$(top_srcdir)/src/c/qranker-barista/ \
+  -I$(top_srcdir)/src/c/posterior-error/
 
 libcrux_la_CXXFLAGS = \
   $(AM_CXXFLAGS) \
-  -I$(top_srcdir)/src/c/MSToolkit \
-  -I$(top_srcdir)/src/c/MSToolkit/RAMP \
+  -I$(top_srcdir)/src/external/MSToolkit/include \
+  -I$(top_srcdir)/src/external/MSToolkit/RAMP \
   -I$(top_srcdir)/src/external/proteowizard/install/include/ \
   -I$(top_srcdir)/src/c/percolator/ \
-  -I$(top_srcdir)/src/c/q-ranker/
+  -I$(top_srcdir)/src/c/qranker-barista/ \
+  -I$(top_srcdir)/src/c/posterior-error/ \
+  -I$(top_srcdir)/src/c/hardklor/ \
+  -I$(top_srcdir)/src/c/bullseye/ \
+  -I$(top_srcdir)/src/external/
 
 libcrux_la_SOURCES = $(LIBFILES)
 
@@ -186,55 +219,36 @@ PWIZ_LIB_FILES = \
   -lpwiz_utility_misc \
   -lpwiz_utility_minimxml \
   -lpwiz_data_identdata_version \
-  -lboost_system-gcc44-mt-s \
-  -lboost_iostreams-gcc44-mt-s \
-  -lz-gcc44-mt-s-1_2 \
-  -lboost_filesystem-gcc44-mt-s \
-  -lboost_regex-gcc44-mt-s \
-  -lboost_thread-gcc44-mt-s \
+  -lboost_system-gcc41-mt-s \
+  -lboost_iostreams-gcc41-mt-s \
+  -lz-gcc41-mt-s-1_2 \
+  -lboost_filesystem-gcc41-mt-s \
+  -lboost_regex-gcc41-mt-s \
+  -lboost_thread-gcc41-mt-s \
   -lpthread
 
 
 PROGRAM_FILES = \
   crux \
-  crux-get-ms2-spectrum \
-  crux-generate-peptides \
-  crux-predict-peptide-ions \
   xlink-predict-peptide-ions \
   xlink-score-spectrum \
   xlink-assign-ions
 
 bin_PROGRAMS = $(PROGRAM_FILES)
 
-crux_get_ms2_spectrum_SOURCES = get_ms2_spectrum.cpp
-crux_get_ms2_spectrum_CXXFLAGS = $(AM_CFLAGS) -DMAIN \
-  -I$(top_srcdir)/src/c//MSToolkit \
-  -I$(top_srcdir)/src/external/proteowizard/install/include/
-crux_get_ms2_spectrum_LDADD = \
-  $(AM_LDFLAGS) \
-  libcrux.la  -L$(top_builddir)/src/c/MSToolkit -lm -lmstoolkit \
-  -L$(top_builddir)/src/external/proteowizard/install/lib $(PWIZ_LIB_FILES)
-
-crux_generate_peptides_SOURCES = generate_peptides.cpp
-crux_generate_peptides_CXXFLAGS = $(AM_CFLAGS) -DMAIN
-crux_generate_peptides_LDADD = $(AM_LDFLAGS) libcrux.la -lm  
-
-crux_predict_peptide_ions_SOURCES = predict_peptide_ions.cpp
-crux_predict_peptide_ions_CXXFLAGS = $(AM_CFLAGS) -DMAIN
-crux_predict_peptide_ions_LDADD = \
-  $(AM_LDFLAGS) \
-  libcrux.la -L$(top_builddir)/src/c/MSToolkit -lm -lmstoolkit \
-  -L$(top_builddir)/src/external/proteowizard/install/lib $(PWIZ_LIB_FILES)
-
 crux_SOURCES = crux-main.cpp crux-main.h
 crux_CXXFLAGS = \
   $(AM_CXXFLAGS) \
   -DMAIN \
-  -I$(top_srcdir)/src/c/MSToolkit \
+  -I$(top_srcdir)/src/external/MSToolkit \
   -I$(top_srcdir)/src/external/proteowizard/install/include/ \
   -I$(top_srcdir)/src/c/percolator \
-  -I$(top_srcdir)/src/c/q-ranker \
-  -I$(top_srcdir)/src/c/xlink
+  -I$(top_srcdir)/src/c/posterior-error \
+  -I$(top_srcdir)/src/c/xlink \
+  -I$(top_srcdir)/src/c/qranker-barista \
+  -I$(top_srcdir)/src/c/hardklor \
+  -I$(top_srcdir)/src/c/bullseye
+
 crux_LDADD = \
   $(AM_LDFLAGS) \
   -L$(top_builddir)/src/c/xlink \
@@ -242,13 +256,20 @@ crux_LDADD = \
   libcrux.la \
   -lstdc++ \
   -L$(top_builddir)/src/c/ArrayLibrary \
-  -L$(top_builddir)/src/c/MSToolkit \
+  -L$(top_builddir)/src/external/MSToolkit \
   -L$(top_builddir)/src/c/percolator \
-  -L$(top_builddir)/src/c/q-ranker \
-  -lm \
+  -L$(top_builddir)/src/c/posterior-error \
+  -L$(top_builddir)/src/c/qranker-barista \
+  -L$(top_builddir)/src/c/posterior-error \
+  -L$(top_builddir)/src/c/hardklor \
+  -L$(top_builddir)/src/c/bullseye \
   -lpercolator \
-  -lqranker \
+  -lqranker_barista \
+  -lhardklor \
+  -lbullseye \
+  -lpep \
   -lmstoolkit \
+  -lm -lpthread -ldl \
   -lArrayLibrary \
   -L$(top_builddir)/src/external/proteowizard/install/lib \
   $(PWIZ_LIB_FILES)
@@ -262,7 +283,7 @@ xlink_predict_peptide_ions_CXXFLAGS= \
 
 xlink_predict_peptide_ions_LDADD = \
   $(AM_LDFLAGS) \
-  -L$(top_builddir)/src/c/MSToolkit \
+  -L$(top_builddir)/src/external/MSToolkit \
   -L$(top_builddir)/src/c/xlink \
   -lm \
   -lxlink \
@@ -279,9 +300,9 @@ xlink_score_spectrum_CXXFLAGS= \
 
 xlink_score_spectrum_LDADD = \
   $(AM_LDFLAGS) \
-  -L$(top_builddir)/src/c/MSToolkit \
+  -L$(top_builddir)/src/external/MSToolkit \
   -L$(top_builddir)/src/c/xlink \
-  -lm \
+  -lm -lpthread -ldl \
   -lxlink \
   libcrux.la \
   -L$(top_builddir)/src/external/proteowizard/install/lib $(PWIZ_LIB_FILES) \
@@ -296,9 +317,9 @@ xlink_assign_ions_CXXFLAGS= \
 
 xlink_assign_ions_LDADD = \
   $(AM_LDFLAGS) \
-  -L$(top_builddir)/src/c/MSToolkit \
+  -L$(top_builddir)/src/external/MSToolkit \
   -L$(top_builddir)/src/c/xlink \
-  -lm \
+  -lm -lpthread -ldl \
   -lxlink \
   libcrux.la \
   -L$(top_builddir)/src/external/proteowizard/install/lib $(PWIZ_LIB_FILES) \
@@ -326,7 +347,7 @@ dist-hook:
 	if test -z "$(SEARCH_ENABLED)"; then \
     sed -e '/#ifdef SEARCH_ENABLED/,/#else/d' \
         -e '/#endif \/\/ SEARCH_ENABLED/d' \
-        < match_search.cpp > $(distdir)/match_search.cpp; \
+        < MatchSearch.cpp > $(distdir)/MatchSearch.cpp; \
     sed -e '/#ifdef SEARCH_ENABLED/,/#else/d' \
         -e '/#endif \/\/ SEARCH_ENABLED/d' \
-        < sequest-search.cpp > $(distdir)/sequest-search.cpp; fi
+        < SequestSearch.cpp > $(distdir)/SequestSearch.cpp; fi

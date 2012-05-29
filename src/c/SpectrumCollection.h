@@ -13,8 +13,7 @@
 
 #include <vector>
 
-
-typedef std::vector<Spectrum*>::iterator SpectrumIterator; 
+using namespace Crux;
 
 /**
  * \class SpectrumCollection

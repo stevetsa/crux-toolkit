@@ -8,7 +8,7 @@
  *******************************************************************************/
 #include <vector>
 #include <iostream>
-#ifdef WIN32
+#ifdef _MSC_VER
 #include <float.h>
 #define isfinite _finite
 #endif
@@ -22,6 +22,7 @@ using namespace std;
 #include "StdvNormalizer.h"
 #include "SetHandler.h"
 #include "Globals.h"
+#include "WinCrux.h"
 
 StdvNormalizer::StdvNormalizer()
 {

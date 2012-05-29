@@ -24,10 +24,6 @@ typedef double FLOAT_T;
 typedef float FLOAT_T;
 #endif
 
-#define FALSE 0
-#define TRUE 1
-typedef short BOOLEAN_T;
-
 typedef int VERBOSE_T;
 static const int INVALID_VERBOSE = 0;
 static const int QUIET_VERBOSE = 1;
@@ -45,6 +41,15 @@ static const int LINELENGTH = 4096;
 extern int verbosity;
 
 #ifdef DARWIN
+#ifdef PRE_LION
+#define INCLUDE_GETLINE
+#endif
+#endif
+#ifdef _MSC_VER
+#define INCLUDE_GETLINE
+#endif
+
+#ifdef INCLUDE_GETLINE
 /*********************************************************
  This function replaces the GNU extension of the same name.
  Reads a line from the given stream.
@@ -70,10 +75,10 @@ double wall_clock(void);
  *
  * RETURN: Was the open successful?
  ************************************************************************/
-BOOLEAN_T open_file
+bool open_file
 (const char*     filename,            // Name of the file to be opened.
  const char*     file_mode,           // Mode to be passed to fopen.
- BOOLEAN_T allow_stdin,         // If true, filename "-" is stdin.
+ bool allow_stdin,         // If true, filename "-" is stdin.
  const char*     file_description,   
  const char*     content_description,
  FILE**    afile);              // Pointer to the open file.
@@ -106,7 +111,7 @@ void * myrealloc
 /********************************************************************
  * fwrite with a check to make sure it was successful (useful for NFS problems)
  ********************************************************************/
-BOOLEAN_T myfwrite
+bool myfwrite
   (const void *ptr, 
    size_t size, 
    size_t nitems, 
@@ -130,19 +135,7 @@ typedef void *malloc_t;
 /********************************************************************
  * Only free memory if the given pointer is non-null.
  ********************************************************************/
-#define myfree(x) if (x) free((char* ) (x))
-
-/********************************************************************
- * Set the seed for the random number generator.
- ********************************************************************/
-void my_srand
-  (long seed);
-
-/********************************************************************
- * Get a random number X such that 0 <= X < 1.
- ********************************************************************/
-double my_drand
-  (void);
+#define myfree(x) if (x) std::free((char* ) (x))
 
 /********************************************************************
  * Math macros.
@@ -225,14 +218,14 @@ PROB_T my_log
 /**************************************************************************
  * Test for zero on a value that may be either a log or a raw float.
  **************************************************************************/
-BOOLEAN_T is_zero
+bool is_zero
   (double    value,
-   BOOLEAN_T log_form);
+   bool log_form);
 
 /**************************************************************************
  * Test to see if two values are approximately equal.
  **************************************************************************/
-BOOLEAN_T almost_equal
+bool almost_equal
   (double value1,
    double value2,
    double slop);
@@ -241,15 +234,15 @@ BOOLEAN_T almost_equal
  * Convert a boolean to and from a "true" or "false" string.
  *************************************************************************/
 char*  boolean_to_string
- (BOOLEAN_T the_boolean);
+ (bool the_boolean);
 
-BOOLEAN_T boolean_from_string
+bool boolean_from_string
   (char* true_or_false);
 
 /**************************************************************************
  * Does a given character appear in a given string?
  **************************************************************************/
-BOOLEAN_T char_in_string
+bool char_in_string
   (const char* a_string,
    char        a_char);
 
@@ -306,6 +299,7 @@ char** parse_file(
   int max_lines, 
   int* num_lines
   );
+
 
 #endif
 

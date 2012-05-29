@@ -9,7 +9,7 @@
 #define PROTEINPEPTIDEITERATOR_H
 
 #include "Protein.h"
-#include "peptide.h"
+#include "Peptide.h"
 
 #include <vector>
 
@@ -20,7 +20,7 @@ class ProteinPeptideIterator {
   unsigned short int cur_start_; ///< Start in protein of the current peptide.
   unsigned short int cur_length_; ///< The length of the current peptide.
   unsigned int peptide_idx_; ///< The index of the current peptide.
-  PEPTIDE_CONSTRAINT_T* peptide_constraint_; ///< peptide type to iterate over.
+  PeptideConstraint* peptide_constraint_; ///< peptide type to iterate over.
   double* mass_array_; ///< stores all the peptides' masses
   std::vector<int>* nterm_cleavage_positions_; ///< nterm cleavages that satisfy 
                                         ///< constraint. 1st aa is 1.
@@ -71,12 +71,12 @@ class ProteinPeptideIterator {
    * A small inconsistency: 
    *  Allowed cleavages start at 0, while the output cleavages start at 1.
    */
-  void addCleavages(
+  void selectPeptides(
     int* nterm_allowed_cleavages, 
     int  nterm_num_cleavages, 
     int* cterm_allowed_cleavages, 
     int  cterm_num_cleavages, 
-    bool skip_cleavage_locations);
+    int  num_skip_cleavages);
 
   /**
    * Creates the data structures in the protein_peptide_iterator object necessary
@@ -110,7 +110,7 @@ class ProteinPeptideIterator {
    */
   ProteinPeptideIterator(
     Protein* protein,
-    PEPTIDE_CONSTRAINT_T* peptide_constraint
+    PeptideConstraint* peptide_constraint
   );
 
   /**
@@ -127,7 +127,7 @@ class ProteinPeptideIterator {
   /**
    * \returns The next peptide in the protein, in an unspecified order
    */
-  PEPTIDE_T* next();
+  Peptide* next();
 
   /**
    *\returns the protein that the iterator was created on
@@ -151,7 +151,7 @@ class ProteinPeptideIterator {
    *    used to determine if a cleavage location has been skipped
    */
   void prepareMc(
-    bool missed_cleavages
+    int missed_cleavages
   );
 
   /**
@@ -162,9 +162,8 @@ class ProteinPeptideIterator {
    * \returns TRUE if this is a valid cleavage position for the given enzyme.
    */
   static bool validCleavagePosition(
-    char* sequence,
-    //   PEPTIDE_TYPE_T cleavage
-     ENZYME_T enzyme
+    const char* sequence,
+    ENZYME_T enzyme
   );
 
 };

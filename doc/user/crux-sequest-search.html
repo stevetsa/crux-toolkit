@@ -42,6 +42,10 @@ precursor window) are first ranked with the SEQUEST Sp score.  The top
 The program will not compute p-values using the Weibull empirical
 curve fitting procedure.</li>
 <li>
+By default, the theoretical spectrum used to compute XCorr includes
+two flanking peaks on either side of each b- and y-ion.  These can be
+turned off using the <code>use-flanking-peaks</code> parameter.</li>
+<li>
 The program produces <a href="sqt-format.html">SQT</a> format output
 files.</li>
 </ul>
@@ -133,6 +137,15 @@ Default = crux-out.</li>
 Replace existing files if true (T) or fail when trying to overwrite a
 file if false (F). Default =  F.</li>
 
+<li>
+<code>--decoys &lt;string&gt;</code> &ndash; Include a decoy version
+of every peptide by shuffling or reversing the target sequence.
+Possible values are <code>none, reverse, protein-shuffle,
+peptide-shuffle</code>. Use 'reverse' to reverse each protein sequence,
+'protein-shuffle' to shuffle each protein sequence, or 'peptide-shuffle'
+to shuffle the sequence between enzyme cleavage sites, leaving the
+termini in place. Use 'none' for no decoys.  Default=protein-shuffle. 
+
 <LI>
 <code>--num-decoys-per-target &lt;n&gt;</code> &ndash; 
 Specify the number of decoy peptides to search for every target
@@ -170,11 +183,6 @@ at each charge state.  With 1, 2, or 3 only spectra with that charge
 will be searched. Default = all. 
 
 <LI>
-<code>--min-peaks &lt;int&gt;</code> &ndash;
-The minimum number of peaks a spectrum must have in order to be
-searched.  Default = 20.
-
-<LI>
 <code>--scan-number &lt;number range&gt;</code> &ndash;
 A single scan number or a range of numbers to be searched. Range
 should be specified as 'first-last' which will include scans 'first'
@@ -198,38 +206,53 @@ info, 60-detailed debug info. Default = 30.
 <B>Parameter file options:</B>
 
 <ul>
+
+<LI>
+<code>--min-peaks &lt;int&gt;</code> &ndash;
+The minimum number of peaks a spectrum must have in order to be
+searched.  Default = 20.
+
 <li>
 <code>fragment-mass &lt;average|mono&gt;</code> &ndash; 
 Which isotopes to use in calculating fragment ion mass (average,
-mono). Default = mono.
+mono). Default = mono.</li>
 
 <li>
-<code>precursor-window &lt;float&gt;</code> &ndash;
-Tolerance used for matching peptides to spectra.  Peptides must be
-within +/- '<code>precursor-window</code>' of the spectrum value.  Definition of
-precursor window units depends upon <code>precursor-window-type</code>. Default =
-3.0.
+<code>use-flanking-peaks &lt;T|F&gt;</code> &ndash;
+Turn on or off the peaks flanking the b/y ions.  For <code>crux 
+search-for-matches</code>, default = F; for <code>crux
+  sequest-search</code>, default = T; for <code> crux
+search-for-xlinks</code>, default = T.</li>
+ 
+<li>
+<code>precursor-window &lt;float&gt;</code> &ndash; Tolerance used for
+matching peptides to spectra.  Peptides must be within +/-
+'<code>precursor-window</code>' of the spectrum value.  Definition of
+precursor window units depends
+upon <code>precursor-window-type</code>. Default = 3.0.</li>
 
 <li>
 <code>precursor-window-type &lt;mass|mz|ppm&gt;</code> &ndash; Specify
 the units for the window that is used to select peptides around the
 precursor mass location (mass, mz, ppm).  The magnitude of the window
-is defined by the <code>precursor-window</code> option, and candidate peptides must
-fall within this window.  For the <code>mass</code> window-type, the
-spectrum precursor singly charged mass (m+h) is converted to mass, and the window is defined
-as that mass &plusmn; <code>precursor-window</code>. If the m+h value is not available, then
-the mass is calculated from the precursor mass-to-charge (m/z) and provided charge. 
-The peptide mass is computed as the sum of the average amino acid masses plus 
-18 Da for the terminal OH group.  The <code>mz</code> window-type calculates
-the window as spectrum precursor m/z &plusmn; <code>precursor-window</code> and then 
-converts the resulting m/z range to the peptide mass range using the precursor 
-charge. 
-For the parts-per-million (<code>ppm</code>) window-type, the spectrum mass is 
-calculated as in the <code>mass</code> type.  The lower bound of the mass 
-window is then defined as the 
-spectrum mass / (1.0 + (<code>precursor-window</code> / 1000000)) and the upper bound 
-is defined as spectrum mass / (1.0 - (<code>precursor-window</code> / 1000000)).  
-Default = mass.</li>
+is defined by the <code>precursor-window</code> option, and candidate
+peptides must fall within this window.  For the <code>mass</code>
+window-type, the spectrum precursor singly charged mass (m+h) is
+converted to mass, and the window is defined as that mass
+&plusmn; <code>precursor-window</code>. If the m+h value is not
+available, then the mass is calculated from the precursor
+mass-to-charge (m/z) and provided charge.  The peptide mass is
+computed as the sum of the average amino acid masses plus 18 Da for
+the terminal OH group.  The <code>mz</code> window-type calculates the
+window as spectrum precursor m/z
+&plusmn; <code>precursor-window</code> and then converts the resulting
+m/z range to the peptide mass range using the precursor charge.  For
+the parts-per-million (<code>ppm</code>) window-type, the spectrum
+mass is calculated as in the <code>mass</code> type.  The lower bound
+of the mass window is then defined as the spectrum mass / (1.0 +
+(<code>precursor-window</code> / 1000000)) and the upper bound is
+defined as spectrum mass / (1.0 - (<code>precursor-window</code> /
+1000000)).  Default = mass.</li>
 
 <li>
 <code>use-mstoolkit &lt;T|F&gt;</code> &ndash;
@@ -291,6 +314,16 @@ q-ranker</code>, <code>crux percolator</code>). Default = no
 n-terminal modifications.
 
 <li>
+<code>cmod-fixed &lt;mass change&gt&ndash;</code>
+Add a modification of the given mass change to the C-terminus of every
+peptide.
+
+<li>
+<code>nmod-fixed &lt;mass change&gt&ndash;</code>
+Add a modification of the given mass change to the N-terminus of every
+peptide.
+
+<li>
 <code>max-mods &lt;int&gt;</code> &ndash;
 The maximum number of modifications that can be applied to a single
 peptide. Default = no limit.
@@ -299,6 +332,22 @@ peptide. Default = no limit.
 <code>max-aas-modified &lt;int&gt;</code> &ndash;
 The maximum number of modified amino acids that can appear in one
 peptide.  Each aa can be modified multiple times. Default = no limit.
+
+<li>
+<code>mod-mass-format &lt;mod-only|total|separate&gt;<code> &ndash;
+Specify how sequence modifications are reported in various ouptut
+files.  Each modification is reported as a number enclosed in square
+braces following the modified reside; however, the number may
+correspond to one of three different masses: (1) 'mod-only' reports
+the value of the mass shift induced by the modification; (2) 'total'
+reports the mass of the residue with the modification (residue mass
+plus modification mass); (3) 'separate' is the same as 'mod-only', but
+multiple modifications to a single amino acid are reported as a
+comma-separated list of values. For example, suppose amino
+acid <i>D</i> has an unmodified mass of 115 as well as two
+modifications of masses +14 and +2.  In this case, the amino acid
+would be reported as D[16] with 'mod-only', D[131] with 'total', and
+D[14,2] with 'separate'.</li>
 
 <li>
 <code>precision &lt;int&gt;</code> &ndash;

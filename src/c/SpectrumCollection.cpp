@@ -5,9 +5,17 @@
  * \brief Abstract class for accessing spectra from a file.
  */
 #include "SpectrumCollection.h" 
+#include "ProteinIndex.h" 
+#include "Peak.h"
+#include "utils.h"
+#ifndef _MSC_VER
+#include "unistd.h"
+#endif
+#include "parameter.h"
 #include <cerrno>
 #include <cstring>
 #include "carp.h"
+#include "WinCrux.h"
 
 /**
  * Instantiates a new spectrum_collection object from a filename. 
@@ -30,7 +38,6 @@ SpectrumCollection::SpectrumCollection (
   }
   
   if(access(absolute_path_file, F_OK)){
-    free(absolute_path_file);
     carp(CARP_FATAL, "File %s could not be opened\n", absolute_path_file);
   }
   filename_ = absolute_path_file;

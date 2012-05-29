@@ -1,2 +1,3 @@
-SUBDIRS = . c python
+SUBDIRS = . external c python
+
 

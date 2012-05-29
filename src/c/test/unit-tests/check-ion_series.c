@@ -53,9 +53,9 @@ void ion_series_setup(){
   charge = 2;
   is1 = new IonSeries();
 
-  constraint = new IonConstraint(MONO, charge-1, BY_ION, FALSE);// no prec ion
-  bcnst = new IonConstraint(MONO, 1, B_ION, FALSE); 
-  ycnst = new IonConstraint(MONO, 1, Y_ION, FALSE); 
+  constraint = new IonConstraint(MONO, charge-1, BY_ION, false);// no prec ion
+  bcnst = new IonConstraint(MONO, 1, B_ION, false); 
+  ycnst = new IonConstraint(MONO, 1, Y_ION, false); 
   seq = my_copy_string("ASEQ");
   seq2 = my_copy_string("ANOTHERSEQ");
   convert_to_mod_aa_seq( seq, &mod_seq );
@@ -282,8 +282,8 @@ START_TEST (test_predict_mod2){
 
   // look at all ions and confirm that the masses are correct
   // create a b- and a y-ion constraint
-  IonConstraint* bcnst = new IonConstraint(MONO, 1, B_ION, FALSE); 
-  IonConstraint* ycnst = new IonConstraint(MONO, 1, Y_ION, FALSE); 
+  IonConstraint* bcnst = new IonConstraint(MONO, 1, B_ION, false); 
+  IonConstraint* ycnst = new IonConstraint(MONO, 1, Y_ION, false); 
   // reuse these
   Ion* ion = NULL;
   int i=0;
@@ -432,7 +432,7 @@ Suite *ion_series_suite_2(void){
 
 //chris's test
 START_TEST (test_create){
-  
+  initialize_parameters();  
   /****************************
    * test ion_constraint
    ***************************/
@@ -440,8 +440,8 @@ START_TEST (test_create){
   //creat new ion_constraint
   IonConstraint* ion_constraint = IonConstraint::newIonConstraintSequest(MONO, 3, ALL_ION, true);
   IonConstraint* ion_constraint2 = new IonConstraint();
-  IonConstraint* ion_constraint3 = new IonConstraint(MONO, 3, ALL_ION, TRUE);  
-  IonConstraint* ion_constraint4 = new IonConstraint(MONO, 3, B_ION, FALSE);  
+  IonConstraint* ion_constraint3 = new IonConstraint(MONO, 3, ALL_ION, true);  
+  IonConstraint* ion_constraint4 = new IonConstraint(MONO, 3, B_ION, false);  
 
   //set ion_constraint3 modification counts
   ion_constraint3->setModification(NH3, -2);
@@ -503,13 +503,13 @@ START_TEST (test_create){
   ion_series->predictIons();
 
   //check the number of ions predicted
-  fail_unless(ion_series->getNumIons() == 1830, "the total number of ions not predicted correctly_1");
-  fail_unless(ion_series->getNumIonsOneType(B_ION) == 330, "the B ion number of ions not predicted correctly");
-  fail_unless(ion_series->getNumIonsOneType(Y_ION) == 330, "the Y ion number of ions not predicted correctly");
-  fail_unless(ion_series->getNumIonsOneType(A_ION) == 288, "the A ion number of ions not predicted correctly");
-  fail_unless(ion_series->getNumIonsOneType(C_ION) == 288, "the C ion number of ions not predicted correctly");
-  fail_unless(ion_series->getNumIonsOneType(X_ION) == 288, "the X ion number of ions not predicted correctly");
-  fail_unless(ion_series->getNumIonsOneType(Z_ION) == 288, "the Z ion number of ions not predicted correctly");
+  fail_unless(ion_series->getNumIons() == 1578, "the total number of ions not predicted correctly_1");
+  fail_unless(ion_series->getNumIonsOneType(B_ION) == 288, "the B ion number of ions not predicted correctly");
+  fail_unless(ion_series->getNumIonsOneType(Y_ION) == 288, "the Y ion number of ions not predicted correctly");
+  fail_unless(ion_series->getNumIonsOneType(A_ION) == 246, "the A ion number of ions not predicted correctly");
+  fail_unless(ion_series->getNumIonsOneType(C_ION) == 246, "the C ion number of ions not predicted correctly");
+  fail_unless(ion_series->getNumIonsOneType(X_ION) == 246, "the X ion number of ions not predicted correctly");
+  fail_unless(ion_series->getNumIonsOneType(Z_ION) == 246, "the Z ion number of ions not predicted correctly");
   fail_unless(ion_series->getNumIonsOneType(P_ION) == 18, "the P ion number of ions not predicted correctly");
 
   //try copy ion series

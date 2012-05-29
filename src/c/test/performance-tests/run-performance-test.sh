@@ -21,6 +21,7 @@ echo set terminal png >> $gnuplot
 echo set xlabel \"q-value threshold\" >> $gnuplot
 echo set ylabel \"Number of accepted PSMs\" >> $gnuplot
 echo set xrange \[0:0.1\] >> $gnuplot
+echo set yrange \[0:3000\] >> $gnuplot
 echo set key center right >> $gnuplot
 # Insert dummy plot so we can use "replot" consistently below.
 echo plot 0 notitle with dots >> $gnuplot 
@@ -30,7 +31,7 @@ db=worm+contaminants
 if [[ -e $db ]]; then
   echo Skipping create-index.
 else
-  $CRUX create-index $db.fa $db
+  $CRUX create-index --parameter-file crux.param $db.fa $db
 fi
 
 ms2=051708-worm-ASMS-10.ms2
@@ -40,10 +41,10 @@ for searchtool in sequest-search search-for-matches; do
 
   if [[ $searchtool == "sequest-search" ]]; then
      shortname=sequest
-     search_parameter=""
+     search_parameter="--parameter-file crux.param"
   else
      shortname=search
-     search_parameter="--compute-p-values T --compute-sp T"
+     search_parameter="--parameter-file crux.param --compute-p-values T --compute-sp T"
   fi
 
   # Run the search.
@@ -66,9 +67,11 @@ for searchtool in sequest-search search-for-matches; do
       $db $shortname
   fi
   if [[ $searchtool == "sequest-search" ]]; then
-    echo replot \"$shortname/qvalues.target.txt\" using 9:0 title \"$shortname XCorr \(decoy\)\" with lines >> $gnuplot
+    $CRUX extract-columns $shortname/qvalues.target.txt "decoy q-value (xcorr)" > $shortname/qvalues.xcorr.decoy.txt
+    echo replot \"$shortname/qvalues.xcorr.decoy.txt\" using 1:0 title \"$shortname XCorr \(decoy\)\" with lines >> $gnuplot
   else  
-    echo replot \"$shortname/qvalues.target.txt\" using 10:0 title \"$shortname XCorr \(Weibull\)\" with lines >> $gnuplot
+    $CRUX extract-columns $shortname/qvalues.target.txt "Weibull est. q-value" > $shortname/qvalues.weibull.txt
+    echo replot \"$shortname/qvalues.weibull.txt\" using 1:0 title \"$shortname XCorr \(Weibull\)\" with lines >> $gnuplot
   fi
   
   # Run Crux percolator
@@ -80,25 +83,40 @@ for searchtool in sequest-search search-for-matches; do
       --feature-file T \
       $db $shortname 
   fi
-  if [[ $searchtool == "sequest-search" ]]; then
-    echo replot \"$shortname/percolator.target.txt\" using 13:0 title \"$shortname crux percolator\" with lines >> $gnuplot
-  else
-    echo replot \"$shortname/percolator.target.txt\" using 14:0 title \"$shortname crux percolator\" with lines >> $gnuplot
-  fi
+
+  $CRUX extract-columns $shortname/percolator.target.txt "percolator q-value" > $shortname/qvalues.percolator.txt
+  echo replot \"$shortname/qvalues.percolator.txt\" using 1:0 title \"$shortname crux percolator\" with lines >> $gnuplot
 
   # Run q-ranker.
-  if [[ -e $shortname/qranker.target.txt ]]; then
-    echo Skipping q-ranker.
+  if [[ $searchtool == "search-for-matches" ]]; then
+    echo barista and q-ranker do not work with crux search-for-matches.
   else
-    $CRUX q-ranker \
-      --output-dir $shortname \
-      --feature-file T \
-      $db $shortname
-  fi
-  if [[ $searchtool == "sequest-search" ]]; then
-    echo replot \"$shortname/qranker.target.txt\" using 12:0 title \"$shortname q-ranker\" with lines >> $gnuplot
-  else
-    echo replot \"$shortname/qranker.target.txt\" using 13:0 title \"$shortname q-ranker\" with lines >> $gnuplot
+    if [[ -e $shortname/q-ranker.target.psms.txt ]]; then
+      echo Skipping q-ranker.
+    else
+      $CRUX q-ranker \
+        --output-dir $shortname \
+        --feature-file T \
+        --separate-searches $shortname/$shortname.decoy.sqt \
+        $ms2 $shortname/$shortname.target.sqt
+    fi
+    $CRUX extract-columns $shortname/q-ranker.target.psms.txt "q-ranker q-value" > $shortname/qvalues.qranker.txt
+  
+    echo replot \"$shortname/qvalues.qranker.txt\" using 1:0 title \"$shortname q-ranker\" with lines >> $gnuplot
+
+    if [[ -e $shortname/barista.target.psms.txt ]]; then
+      echo Skipping barista.
+    else
+      $CRUX barista \
+        --output-dir $shortname \
+        --feature-file T \
+        --separate-searches $shortname/$shortname.decoy.sqt \
+        $db $ms2 $shortname/$shortname.target.sqt
+    fi
+    $CRUX extract-columns $shortname/barista.target.psms.txt "q-value" > $shortname/qvalues.barista.txt
+  
+    echo replot \"$shortname/qvalues.barista.txt\" using 1:0 title \"$shortname barista\" with lines >> $gnuplot
+
   fi
   
   # Run Lukas's percolator

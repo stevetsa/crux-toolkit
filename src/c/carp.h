@@ -122,6 +122,12 @@ void carp(
   ...
 );
 
+void warn_once(
+               const char * msg1, 
+               const char * msg2_format, 
+               ...
+);
+
 /**
  * \def carp_once( verbosity, msg, ...)
  *
@@ -131,7 +137,7 @@ void carp(
  */
 #define carp_once( verbosity, msg, ... ) \
 { \
-  static BOOLEAN_T _carp_; \
+  static bool _carp_; \
   if (!_carp_) carp(verbosity, msg, ## __VA_ARGS__); \
   _carp_ = 1;\
 }
