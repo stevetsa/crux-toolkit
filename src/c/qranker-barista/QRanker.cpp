@@ -1,5 +1,8 @@
 #include "QRanker.h"
 
+#include "analyze_psms.h"
+#include "carp.h"
+
 QRanker::QRanker() :  seed(1),selectionfdr(0.01),num_hu(4),mu(0.01),weightDecay(0.0000),xlink_mass(0.000),bootstrap_iters(5)
 {
 }
@@ -143,11 +146,17 @@ void QRanker :: write_results_bootstrap(string filename, PSMScores& set)
   cerr <<"calculating FDR"<<endl;
   min_rank.calculateOverFDRRank(0.01);
 
+  cerr <<"calculating PEP"<<endl;
+  computePEP(min_rank);
+
+
   //cerr << "Writing results" <<endl;
-  f1 << "q-value" << "\t" <<
-        "score" << "\t" << 
+  f1 << "q-ranker q-value" << "\t" <<
+        "q-ranker score" << "\t" <<
+        "PEP" << "\t" <<
         "scan" << "\t" << 
         "charge" << "\t" << 
+        "spectrum neutral mass" << "\t"
         "sequence" << "\t" << 
         "protein id" << "\t" <<
         "product type" << endl;
@@ -156,10 +165,14 @@ void QRanker :: write_results_bootstrap(string filename, PSMScores& set)
       //cerr << "Wrinting "<<i<<endl;
       int psmind = min_rank[i].psmind;
       int scan = d.psmind2scan(psmind);
-      int charge = d.psmind2charge(psmind);  
+      int charge = d.psmind2charge(psmind);
+      double spectrum_neutral_mass = 0;//d.psmind2
+
+  
       double score = min_rank[i].rank;
       int label = min_rank[i].label;
       double qvalue = min_rank[i].q;
+      double pep = min_rank[i].PEP;
       string proteins = d.psmind2protein1(psmind);
       ostringstream oss;
       if (label == 1) {
@@ -193,8 +206,10 @@ void QRanker :: write_results_bootstrap(string filename, PSMScores& set)
 
         f1 << qvalue   << "\t" << 
               score    << "\t" << 
+              pep      << "\t" <<
               scan     << "\t" << 
               charge   << "\t" << 
+              spectrum_neutral_mass << "\t" << 
               sequence << "\t" << 
               proteins << "\t" << 
               product_type << endl;
@@ -1014,6 +1029,51 @@ int QRanker::set_command_line_options(int argc, char **argv)
     }
   pars.clear();
   return 1;
+}
+
+/**
+ * Uses the target and decoy scores to compute posterior error
+ * probabilities. 
+ */
+void QRanker::computePEP(PSMScores& scores){
+  carp(CARP_DEBUG, "Computing PEPs");
+  vector<double> target_scores_vect;
+  vector<double> decoy_scores_vect;
+
+  // pull out the target and decoy scores
+  for(int i = 0; i < scores.size(); i++){
+    if( scores[i].label == 1 ){
+      target_scores_vect.push_back(-scores[i].rank);
+    } else { // == -1
+      decoy_scores_vect.push_back(-scores[i].rank);
+    }
+  }
+
+  int num_targets = target_scores_vect.size();
+  int num_decoys = decoy_scores_vect.size();
+  carp(CARP_DEBUG, "Found %d targets and %d decoys", num_targets, num_decoys); 
+
+  // copy them to an array as required by the compute_PEP method
+  double* target_scores = new double[num_targets];
+  copy(target_scores_vect.begin(), target_scores_vect.end(), target_scores);
+  double* decoy_scores = new double[num_decoys];
+  copy(decoy_scores_vect.begin(), decoy_scores_vect.end(), decoy_scores);
+
+  double* PEPs = compute_PEP(target_scores, num_targets, 
+                             decoy_scores, num_decoys);
+
+  // fill in the data set with the new scores for the targets
+  int target_idx = 0;
+  for(int full_idx = 0; full_idx < scores.size(); full_idx++){
+    if( scores[full_idx].label == 1 ){
+      scores[full_idx].PEP = PEPs[target_idx];
+      target_idx++; 
+    } // else, skip decoys
+  }
+
+  delete target_scores;
+  delete decoy_scores;
+  delete PEPs;
 }
 
 

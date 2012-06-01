@@ -381,6 +381,7 @@ void TabDelimParser :: allocate_feature_space_xlink()
   memset(psmind_to_scan,0,sizeof(int)*num_psm);
   psmind_to_charge = new int[num_psm];
   memset(psmind_to_charge,0,sizeof(int)*num_psm);
+  psmind_to_neutral_mass = new double[num_psm];
 
 
 }
@@ -601,6 +602,7 @@ void TabDelimParser :: second_pass_xlink(ifstream &fin, int label)
 	  //get the scan and the charge
 	  int scan = atoi(tokens[0].c_str());
 	  int charge = atoi(tokens[1].c_str());
+          double neutral_mass = atof(tokens[spectrum_mass_idx].c_str());
 	  //extract features
 	  extract_xlink_features(psmind, tokens, x);
 	  f_psm.write((char*)x, sizeof(double)*num_xlink_features);
@@ -677,7 +679,7 @@ void TabDelimParser :: second_pass_xlink(ifstream &fin, int label)
 	  //record charge and scan
 	  psmind_to_scan[psmind] = scan;
 	  psmind_to_charge[psmind] = charge;
-
+          psmind_to_neutral_mass[psmind] = neutral_mass;
 	  psmind_to_label[psmind] = label;
 	  if(label == 1)
 	    num_pos_psm++;
@@ -767,6 +769,13 @@ void TabDelimParser :: save_data_in_binary_xlink(string out_dir)
     f_psmind_to_protein2 << it->first << " " << it->second << "\n";
   f_psmind_to_protein2.close();
   fname.str("");
+
+  //psmind_to_neutralmass
+  /*
+  fname << out_dir << "/psmind_to_precursor_mass";
+  ofstream f_psmind_to_precursor_mass(fname.str().c_str(),ios::binary);
+  */
+
 
 }
 

@@ -59,6 +59,8 @@ public:
     virtual std::string getName();
     virtual std::string getDescription();
 
+    void computePEP(PSMScores& scores);
+
 protected:
 
     Dataset d;

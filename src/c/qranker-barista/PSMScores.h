@@ -13,7 +13,7 @@ public:
   double q;
   int label;
   double rank;
-
+  double PEP;
  PSMScoreHolder():score(0.0),psmind(0),q(0.0),label(0),rank(0){;}
   virtual ~PSMScoreHolder() {;}
 };
