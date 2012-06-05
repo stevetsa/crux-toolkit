@@ -30,7 +30,7 @@ TabDelimParser :: TabDelimParser()
   //num_psm_features
   num_features = 17;
   //num_xlink_features
-  num_base_features = 11;
+  num_base_features = 15;
   num_charge_features = 0;
 
 
@@ -195,7 +195,8 @@ void TabDelimParser :: first_pass_xlink(ifstream &fin)
 	    psmind_to_protein1[num_psm] = tokens[protein_id_idx];
 	  //if(tokens[17].size()>0)
 	  //psmind_to_protein2[num_psm] = tokens[17];
-	  num_psm++;
+	  psmind_to_flankingaas[num_psm] = tokens[flanking_aa_idx];
+          num_psm++;
 	}
       int charge = atoi(tokens[charge_idx].c_str());
       charges.insert(charge);
@@ -257,6 +258,24 @@ int TabDelimParser :: cntMissedCleavagesSelfLoop(int psmind) {
 
 }
 
+int TabDelimParser :: cntMissedCleavagesDeadLink(int psmind) {
+  int cnt = 0;
+  int loc1 = psmind_to_loc1[psmind];
+  string seq1 = psmind_to_peptide1[psmind];
+
+  for (size_t idx = 0; idx < seq1.length();idx++) {
+    int lidx = idx + 1;
+    if (lidx != loc1 && isMissedTryptic(seq1, idx)) {
+      cnt++;
+    }
+  }
+
+  //cerr << "dead-link:"<<seq1<<" "<<cnt<<endl;
+
+  return cnt;
+
+}
+
 int TabDelimParser :: cntMissedCleavagesCrossLink(int psmind) {
   int loc1, loc2;
   int cnt = 0;
@@ -292,15 +311,18 @@ int TabDelimParser :: cntMissedCleavages(int psmind) {
   int type = get_peptide_type(psmind);
   int ans = 0;
   switch (type) {
-    case 0:
+    case XLINKPRODUCT_LINEAR:
       //linear peptide
       ans = cntMissedCleavagesLinear(psmind);
       break;
-    case 1:
+    case XLINKPRODUCT_SELFLOOP:
       ans = cntMissedCleavagesSelfLoop(psmind);
       break;
-    case 2:
+    case XLINKPRODUCT_XLINK:
       ans = cntMissedCleavagesCrossLink(psmind);
+      break;
+    case XLINKPRODUCT_DEADLINK:
+      ans = cntMissedCleavagesDeadLink(psmind); 
       break;
     default:
       carp(CARP_FATAL, "Unknown peptide type:%d", type);
@@ -348,6 +370,15 @@ void TabDelimParser :: calc_xlink_locations(int psmind, int &loc1, int & loc2) {
         //cerr << "loc1:"<<sloc1<<endl;
         loc1 = atoi(sloc1.c_str());
       }
+    } else {
+      //check to see if there is a modification indicating a deadlink
+      string sequence = psmind_to_peptide1[psmind];
+      size_t lb_pos = sequence.find("[");
+      if (lb_pos != string::npos) {
+        //cerr << "sequence:"<<sequence<<" "<<lb_pos<<endl;
+        loc1 = lb_pos;
+      }
+
     }
   }
 }
@@ -422,31 +453,128 @@ int TabDelimParser::get_peptide_length_sum(string& sequence) {
 
 }
 
+void TabDelimParser::enzTerm(
+  int psmind,
+  bool& nterm1,
+  bool& cterm1,
+  bool& nterm2,
+  bool& cterm2
+  ) {
 
-int TabDelimParser::get_peptide_type(int psmind) {
+  nterm1 = false;
+  cterm1 = false;
+  nterm2 = false;
+  cterm2 = false;
+
+  string flankingaas_str = psmind_to_flankingaas[psmind];
+  vector<string> flankingaas_vec1;
+  string token1 = ";";
+  get_tokens(flankingaas_str, flankingaas_vec1, token1);
+  
+  string sequence = psmind_to_peptide1[psmind];
+
+  //cerr << "sequence:" << sequence;
+
+  vector<string> flankingaas_vec2;
+
+  
+  string token2 = ",";
+  get_tokens(flankingaas_vec1[0], flankingaas_vec2, token2);
+  nterm1 = enzNTerm(sequence, flankingaas_vec2);
+  cterm1 = enzCTerm(sequence, flankingaas_vec2);
+  if (flankingaas_vec1.size() == 2) {
+    sequence = psmind_to_peptide2[psmind];
+    //cerr << "," << sequence;
+
+    flankingaas_vec2.clear();
+    get_tokens(flankingaas_vec1[1], flankingaas_vec2, token2);
+    nterm2 = enzNTerm(sequence, flankingaas_vec2);
+    cterm2 = enzCTerm(sequence, flankingaas_vec2);
+      
+  }
+
+  //cerr << " flankingaas:"<<flankingaas_str;
+
+  //cerr << " nterm1:" << nterm1 <<
+  //        " cterm1:" << cterm1 << 
+  //        " nterm2:" << nterm2 << 
+  //        " cterm2:" << cterm2 <<endl;
+
+
+}
+
+bool TabDelimParser::enzNTerm(
+  string& sequence, 
+  vector<string>& flankingaas
+  ) {
+
+  if (sequence == "_") {
+    return false;
+  }
+
+  for (size_t idx = 0 ; idx < flankingaas.size();idx++) {
+    char flankingaa = flankingaas[idx][0];
+    if (flankingaa == '-' || flankingaa == 'R' || flankingaa == 'K') {
+      return true;
+    }
+  }
+  return false;
+
+}
+
+bool TabDelimParser::enzCTerm(
+  string& sequence, 
+  vector<string>& flankingaas
+  ) {
+
+  if (sequence == "_") {
+    return false;
+  }
+
+  char last = sequence[sequence.length()-1];
+  if (last == 'R' || last == 'K') {
+    return true;
+  }
+
+  for (size_t idx = 0; idx < flankingaas.size();idx++) {
+    char flankingaa = flankingaas[idx][1];
+
+    if (flankingaa == '-') {
+      return true;
+    }
+  }
+  return false;
+
+}
+
+
+XLINK_PRODUCT_T TabDelimParser::get_peptide_type(int psmind) {
   if (psmind_to_peptide2[psmind] == "_") {
-
+    //cerr << psmind_to_peptide1[psmind] << " : ";
     if (psmind_to_loc1[psmind] == -1 ) {
       //its a linear
-      return 0;
+      //cerr << "linear"<<endl;
+      return XLINKPRODUCT_LINEAR;
     } else if (psmind_to_loc2[psmind] == -1) {
       //its a dead link
-      return 3;
+      //cerr <<"dead-link"<<endl;
+      return XLINKPRODUCT_DEADLINK;
     } else {
       //its a self loop
-      return 1;
+      //cerr << "self-loop"<<endl;
+      return XLINKPRODUCT_SELFLOOP;
     }
 
   } else {
     //its a cross-link
-    return 2;
+    return XLINKPRODUCT_XLINK;
 
   }
 
 
 }
 
-int TabDelimParser::get_peptide_type(string& sequence) {
+XLINK_PRODUCT_T TabDelimParser::get_peptide_type(string& sequence) {
   string delim3 = " ";
   vector<string> subtokens;
   get_tokens(sequence,subtokens,delim3);
@@ -456,25 +584,31 @@ int TabDelimParser::get_peptide_type(string& sequence) {
     cout<< i << " " <<subtokens[i] << endl;
   }
 */
-  int ans = 0;
+  XLINK_PRODUCT_T ans = XLINKPRODUCT_UNKNOWN;
 
   if(subtokens.size() > 0) {
     if (subtokens.size() == 2) {
       //it it either a linear peptide or a self loop.
       //cout << subtokens[0] <<" " << subtokens[0].length()<<endl;
-      ans = subtokens[0].length();
+      //ans = subtokens[0].length();
       if (subtokens[1].find(',') == string::npos) {
-        //it is linear.
-        //cerr << sequence << " is linear"<<endl;
-        ans = 0;
+        if (subtokens[0].find('[') == string::npos) {
+          //it is linear.
+          //cerr << sequence << " is linear"<<endl;
+          ans = XLINKPRODUCT_LINEAR;
+        } else {
+          //it is a dead-link
+          //cerr << sequence << " is dead-link"<<endl;
+          ans = XLINKPRODUCT_DEADLINK;
+        }
       } else {
         //it is a self-loop
-        ans = 1;
+        ans = XLINKPRODUCT_SELFLOOP;
         //cerr << sequence << " is self loop"<<endl;
       }
     } else if (subtokens.size() == 3) {
       //it is a crosslinked peptide.
-      ans = 2;
+      ans = XLINKPRODUCT_XLINK;
       //cerr << sequence << " is cross-linked"<<endl;
     } else {
       cerr <<"get_peptide_type:error:"<<sequence<<endl;
@@ -524,7 +658,7 @@ void TabDelimParser :: extract_xlink_features(int psmind, vector<string> & token
   x[2] = peptide_type == 0; //linear
   x[3] = peptide_type == 1; //self-loop
   x[4] = peptide_type == 2; //cross-link
-  x[5] = peptide_type == 3; //dead-end (TODO - implement)
+  x[5] = peptide_type == 3; //dead-link
 
 /*     
   //log rank by Sp
@@ -560,6 +694,23 @@ void TabDelimParser :: extract_xlink_features(int psmind, vector<string> & token
   //missed-cleavages
   x[10] = cntMissedCleavages(psmind);
   //cerr << "sequence:"<<tokens[sequence_idx]<<" mc:"<<x[10]<<endl;
+
+  bool nterm1,cterm1,nterm2,cterm2;
+
+  enzTerm(psmind, nterm1, cterm1, nterm2, cterm2);
+
+  //peptide1 N-terminus tryptic
+  x[11] = nterm1 != nterm2;
+  //peptide1 C-terminus tryptic
+  x[12] = cterm1 != cterm2;
+
+  //peptide2 N-terminus tryptic
+  x[13] = nterm1 && nterm2;
+  
+  //peptide2 C-terminus tryptic
+  x[14] = cterm1 && cterm2;
+
+  //cerr << "x[11]:"<<x[11]<<" x[12]:"<<x[12]<<" x[13]:"<<x[13]<<" x[14]:"<<x[14]<<endl;
 
   //charge
   int charge = atoi(tokens[charge_idx].c_str());

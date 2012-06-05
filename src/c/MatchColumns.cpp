@@ -61,7 +61,8 @@ static const char* match_column_strings[NUMBER_MATCH_COLUMNS] = {
   "dNSAF",
   "EMPAI",
   "parsimony rank",
-  "decoy matches/spectrum"
+  "decoy matches/spectrum",
+  "product type"
 };
 
 /**

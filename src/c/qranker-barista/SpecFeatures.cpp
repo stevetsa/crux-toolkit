@@ -540,6 +540,20 @@ void SpecFeaturesGenerator :: get_spec_features_m3(int scan, int ch , string &pe
 	  //do the B-ION
 	  fragment_mass += aa_masses_mono[aa-'A'];
 	  //add the fragment
+
+          if (peptide.at(i+1) == '[') {
+            i+=2;
+            ostringstream oss;
+            while (peptide.at(i) != ']') {
+              oss << peptide.at(i);
+              i++;
+            }
+            string mod_mass = oss.str();
+            //cerr << "found mod mass:"<<mod_mass<<" "<<peptide<<endl;
+            fragment_mass += atof(mod_mass.c_str());
+          }
+
+
 	  for (int charg = 1; charg < ch; charg++)
 	    {
 	      //add the ion itself
@@ -574,27 +588,41 @@ void SpecFeaturesGenerator :: get_spec_features_m3(int scan, int ch , string &pe
 	char aa = peptide.at(i-1);
 	if(aa != '.')
 	  {
-	    fragment_mass += aa_masses_mono[aa-'A'];
-	    //add the fragment
-	    for (int charg = 1; charg < ch; charg++)
-	      {
-		//add the ion itself
-		mz = (fragment_mass+charg*proton_mass)/charg;
-		idx = (int)(mz/bin_width_mono+0.5);
-		add_intensity(ts_m3[0], idx, 1.0);
-		
-		//add its flanking peaks
-		add_intensity(ts_m3[1], idx-1, 1.0);
-		add_intensity(ts_m3[1], idx+1, 1.0);
-		
-		//add its neutral losses
-		double mz_nh3 = mz-(mass_nh3_mono/charg);
-		idx = (int)(mz_nh3/bin_width_mono+0.5);
-		add_intensity(ts_m3[2], idx, 1.0);
-		//double mz_h2o = mz-(mass_h2o_mono/charg);
-		//idx = (int)(mz_h2o/bin_width_mono+0.5);
-		//add_intensity(ts_m3[2], idx, 1.0);
-	      }
+
+            if (aa == ']') {
+              i--;
+              ostringstream oss;
+              while (peptide.at(i-1) != '[') {
+                oss << peptide.at(i-1);
+                i--;
+              }
+              string mod_mass = oss.str();
+              mod_mass = string(mod_mass.rbegin(), mod_mass.rend());
+              //cerr << "found mod mass:"<<mod_mass<<" "<<peptide<<endl;
+              fragment_mass += atof(mod_mass.c_str());
+            } else {
+              fragment_mass += aa_masses_mono[aa-'A'];
+              //add the fragment
+              for (int charg = 1; charg < ch; charg++)
+                {
+                  //add the ion itself
+                  mz = (fragment_mass+charg*proton_mass)/charg;
+                  idx = (int)(mz/bin_width_mono+0.5);
+                  add_intensity(ts_m3[0], idx, 1.0);
+                  
+                  //add its flanking peaks
+                  add_intensity(ts_m3[1], idx-1, 1.0);
+                  add_intensity(ts_m3[1], idx+1, 1.0);
+                  
+                  //add its neutral losses
+                  double mz_nh3 = mz-(mass_nh3_mono/charg);
+                  idx = (int)(mz_nh3/bin_width_mono+0.5);
+                  add_intensity(ts_m3[2], idx, 1.0);
+                  //double mz_h2o = mz-(mass_h2o_mono/charg);
+                  //idx = (int)(mz_h2o/bin_width_mono+0.5);
+                  //add_intensity(ts_m3[2], idx, 1.0);
+                }
+            }
 	  }
       }
 
@@ -901,8 +929,8 @@ void SpecFeaturesGenerator::get_spec_features_m3(
   //cerr << "getting spec features for "<<pep1 << " "<<pep2 <<" " << loc1 << " " << loc2 << " " << ch << " " << scan<<endl;
 
 
-  if (pep2 == string("_") && loc1 == -1) {
-    //cerr << "Linear peptide"<<endl;
+  if (pep2 == string("_") && loc2 == -1) {
+    //cerr << "Linear or deadlink peptide"<<endl;
     get_spec_features_m3(scan, ch, pep1, features);
     return;
   }

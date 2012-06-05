@@ -1092,6 +1092,11 @@ void initialize_parameters(void){
       "Weibull parameters.  Default=4000.",
       "Available for crux search-for-xlinks", "true");
 
+  set_int_parameter("max-xlink-mods", 0, 0, BILLION,
+    "Maximum number of modifications allowed on a crosslinked peptide "
+    " Default=0.",
+    "Available for crux search-for-xlinks", "true");
+
   /* hardklor parameters */
   set_hardklor_algorithm_type_parameter(
     "hardklor-algorithm", FAST_FEWEST_PEPTIDES_HK_ALGORITHM, 

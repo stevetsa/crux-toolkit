@@ -74,6 +74,7 @@ void MatchFileWriter::setPrecision(){
     case UNSHUFFLED_SEQUENCE_COL:
     case PARSIMONY_RANK_COL:
     case RAW_SCORE_COL:  //Raw counts should be integral
+    case XLINK_PRODUCT_TYPE_COL:
       match_precision_[col_idx] = 0;
       match_fixed_float_[col_idx] = true;
       break;
@@ -233,11 +234,14 @@ void MatchFileWriter::addColumnNames(CruxApplication* application,
         addColumnName(BY_IONS_MATCHED_COL);
         addColumnName(BY_IONS_TOTAL_COL);
       }
-      addColumnName(PVALUE_COL);
-      addColumnName(ETA_COL);
-      addColumnName(BETA_COL);
-      addColumnName(SHIFT_COL);
-      addColumnName(CORR_COL);
+      if (get_boolean_parameter("compute-p-values")) {
+        addColumnName(PVALUE_COL);
+        addColumnName(ETA_COL);
+        addColumnName(BETA_COL);
+        addColumnName(SHIFT_COL);
+        addColumnName(CORR_COL);
+      }
+      addColumnName(XLINK_PRODUCT_TYPE_COL);
     }
     break;
 

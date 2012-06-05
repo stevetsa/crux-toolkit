@@ -96,6 +96,8 @@ int SearchForXLinks::xlinkSearchMain() {
     string temp = oss.str();
     ofstream peptides_file(temp.c_str());
 
+    peptides_file << setprecision(8);
+
     XLinkMatchCollection* all_candidates = 
       new XLinkMatchCollection(bondmap, peptide_mods, num_peptide_mods, index, database);
 

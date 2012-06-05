@@ -46,7 +46,7 @@
 using namespace std;
 
 static const int _PSM_SAMPLE_SIZE = 500;
-static const int _MAX_NUMBER_PEPTIDES = 10000000;
+static const int _MAX_NUMBER_PEPTIDES = 100000000;
 ///< max number of peptides a single match collection can hold
 
 

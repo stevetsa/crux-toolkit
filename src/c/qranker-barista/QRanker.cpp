@@ -2,6 +2,7 @@
 
 #include "analyze_psms.h"
 #include "carp.h"
+#include "objects.h"
 
 QRanker::QRanker() :  seed(1),selectionfdr(0.01),num_hu(4),mu(0.01),weightDecay(0.0000),xlink_mass(0.000),bootstrap_iters(5)
 {
@@ -189,13 +190,15 @@ void QRanker :: write_results_bootstrap(string filename, PSMScores& set)
         string product_type = "";
       
         switch (TabDelimParser::get_peptide_type(sequence)) {
-          case 0:
+          case XLINKPRODUCT_LINEAR:
             product_type = "linear";
             break;
-          case 1:
+          case XLINKPRODUCT_SELFLOOP:
             product_type = "self-loop";
             break;
-          case 2:
+          case XLINKPRODUCT_DEADLINK:
+            product_type = "dead-link";
+          case XLINKPRODUCT_XLINK:
             product_type = "cross-linked";
             break;
           default:
