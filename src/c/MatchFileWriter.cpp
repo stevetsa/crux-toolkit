@@ -234,13 +234,13 @@ void MatchFileWriter::addColumnNames(CruxApplication* application,
         addColumnName(BY_IONS_MATCHED_COL);
         addColumnName(BY_IONS_TOTAL_COL);
       }
-      if (get_boolean_parameter("compute-p-values")) {
+      //if (get_boolean_parameter("compute-p-values")) {
         addColumnName(PVALUE_COL);
         addColumnName(ETA_COL);
         addColumnName(BETA_COL);
         addColumnName(SHIFT_COL);
         addColumnName(CORR_COL);
-      }
+      //}
       addColumnName(XLINK_PRODUCT_TYPE_COL);
     }
     break;

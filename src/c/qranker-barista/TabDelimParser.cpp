@@ -30,7 +30,7 @@ TabDelimParser :: TabDelimParser()
   //num_psm_features
   num_features = 17;
   //num_xlink_features
-  num_base_features = 15;
+  num_base_features = 18;
   num_charge_features = 0;
 
 
@@ -514,7 +514,10 @@ bool TabDelimParser::enzNTerm(
 
   for (size_t idx = 0 ; idx < flankingaas.size();idx++) {
     char flankingaa = flankingaas[idx][0];
-    if (flankingaa == '-' || flankingaa == 'R' || flankingaa == 'K') {
+    if (flankingaa == '-') {
+      return true;
+    }
+    if ((flankingaa == 'R' || flankingaa == 'K') && sequence[0] != 'P') {
       return true;
     }
   }
@@ -532,14 +535,15 @@ bool TabDelimParser::enzCTerm(
   }
 
   char last = sequence[sequence.length()-1];
-  if (last == 'R' || last == 'K') {
-    return true;
-  }
 
   for (size_t idx = 0; idx < flankingaas.size();idx++) {
     char flankingaa = flankingaas[idx][1];
 
     if (flankingaa == '-') {
+      return true;
+    }
+
+    if ((last == 'R' || last == 'K') && flankingaa != 'P') {
       return true;
     }
   }
@@ -654,21 +658,12 @@ void TabDelimParser :: extract_xlink_features(int psmind, vector<string> & token
   x[1] = get_peptide_length_sum(tokens[sequence_idx]);
 
   // peptide type (linear, self-loop, cross-link)
-  int peptide_type = get_peptide_type(tokens[sequence_idx]);
-  x[2] = peptide_type == 0; //linear
-  x[3] = peptide_type == 1; //self-loop
-  x[4] = peptide_type == 2; //cross-link
-  x[5] = peptide_type == 3; //dead-link
-
-/*     
-  //log rank by Sp
-  x[1] = 0;
-  if(atof(tokens[sp_rank_idx].c_str()) > 0)
-    x[1]=log(atof(tokens[sp_rank_idx].c_str()));
-  //deltaCN
-  //  x[2] = -log(atof(tokens[pvalue_idx].c_str()));
-  */
-  
+  XLINK_PRODUCT_T peptide_type = get_peptide_type(tokens[sequence_idx]);
+  x[2] = peptide_type == XLINKPRODUCT_LINEAR; //linear
+  x[3] = peptide_type == XLINKPRODUCT_SELFLOOP; //self-loop
+  x[4] = peptide_type == XLINKPRODUCT_XLINK; //cross-link
+  x[5] = peptide_type == XLINKPRODUCT_DEADLINK; //dead-link
+   
   //difference between measured and calculated mass
   x[6] = atof(tokens[spectrum_mass_idx].c_str())-atof(tokens[peptide_mass_idx].c_str());
   
@@ -676,23 +671,29 @@ void TabDelimParser :: extract_xlink_features(int psmind, vector<string> & token
   x[7] = fabs(atof(tokens[spectrum_mass_idx].c_str())-atof(tokens[peptide_mass_idx].c_str()));
 
   //sp score
-  //x[5] = atof(tokens[sp_score_idx].c_str());
+  x[8] = atof(tokens[sp_score_idx].c_str());
+
+ //log rank by Sp
+  x[9] = 0;
+  if(atof(tokens[sp_rank_idx].c_str()) > 0)
+    x[9]=log(atof(tokens[sp_rank_idx].c_str()));
+
 
   //matched ions/predicted ions
-  x[8] = 0;
+  x[10] = 0;
   if(atof(tokens[by_total_idx].c_str()) != 0)
-    x[8] = atof(tokens[by_matched_idx].c_str())/atof(tokens[by_total_idx].c_str());
+    x[10] = atof(tokens[by_matched_idx].c_str())/atof(tokens[by_total_idx].c_str());
 
   //observed mass
-  x[9] = atof(tokens[spectrum_mass_idx].c_str());
+  x[11] = atof(tokens[spectrum_mass_idx].c_str());
 
   // number of sequence_comparisons
-  //x[9] = log(atof(tokens[matches_idx].c_str()));
+  x[12] = log(atof(tokens[matches_idx].c_str()));
   //whether n-terminus and c-terminus have proper cleavage sites
   // missed cleavages
 
   //missed-cleavages
-  x[10] = cntMissedCleavages(psmind);
+  x[13] = cntMissedCleavages(psmind);
   //cerr << "sequence:"<<tokens[sequence_idx]<<" mc:"<<x[10]<<endl;
 
   bool nterm1,cterm1,nterm2,cterm2;
@@ -700,15 +701,15 @@ void TabDelimParser :: extract_xlink_features(int psmind, vector<string> & token
   enzTerm(psmind, nterm1, cterm1, nterm2, cterm2);
 
   //peptide1 N-terminus tryptic
-  x[11] = nterm1 != nterm2;
+  x[14] = nterm1 != nterm2;
   //peptide1 C-terminus tryptic
-  x[12] = cterm1 != cterm2;
+  x[15] = cterm1 != cterm2;
 
   //peptide2 N-terminus tryptic
-  x[13] = nterm1 && nterm2;
+  x[16] = nterm1 && nterm2;
   
   //peptide2 C-terminus tryptic
-  x[14] = cterm1 && cterm2;
+  x[17] = cterm1 && cterm2;
 
   //cerr << "x[11]:"<<x[11]<<" x[12]:"<<x[12]<<" x[13]:"<<x[13]<<" x[14]:"<<x[14]<<endl;
 

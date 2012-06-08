@@ -198,6 +198,7 @@ void QRanker :: write_results_bootstrap(string filename, PSMScores& set)
             break;
           case XLINKPRODUCT_DEADLINK:
             product_type = "dead-link";
+            break;
           case XLINKPRODUCT_XLINK:
             product_type = "cross-linked";
             break;
@@ -823,6 +824,12 @@ void QRanker::selectHyperParameters() {
     PSMScores::fillFeaturesBootstrap(trainset, bootstrap_sets[idx]);
   }
 
+
+  vector<pair<int, int> > iters;
+  iters.push_back(pair<int,int>(5,10));
+  iters.push_back(pair<int,int>(10,20));
+  iters.push_back(pair<int,int>(20,40));
+
   vector<double> mus;
   mus.push_back(0.001);
   mus.push_back(0.005);
@@ -838,60 +845,78 @@ void QRanker::selectHyperParameters() {
   num_hus.push_back(5);
   num_hus.push_back(7);
  
-
+  int best_iter_idx = -1;
   int best_mu_idx=-1;
   int best_wd_idx=-1;
   int best_num_hu_idx=-1;
 
-  int best_score = 0;
+  int best_score = -1;
 
-  for (size_t mu_idx = 0; mu_idx < mus.size(); mu_idx++) {
+  for (size_t iter_idx = 0; iter_idx < iters.size(); iter_idx++) {
 
-    for (size_t wd_idx = 0; wd_idx < wds.size(); wd_idx++) {
+    for (size_t mu_idx = 0; mu_idx < mus.size(); mu_idx++) {
 
-      for (size_t num_hu_idx = 0; num_hu_idx < num_hus.size(); num_hu_idx++) {
+      for (size_t wd_idx = 0; wd_idx < wds.size(); wd_idx++) {
 
-        this->mu = mus[mu_idx];
-        this->weightDecay = wds[wd_idx];
-        this->num_hu = num_hus[num_hu_idx];
-        testset = previous_trainset;
-        /*
-        for (int idx = 0;idx < 5;idx++) {
-          cerr << "testset["<<idx<<"].rank="<<testset[idx].rank<<endl;
-        }
-        */
-        for (int idx = 0;idx < bootstrap_iters;idx++) {
-          trainset = bootstrap_sets[idx];
-          thresholdset = trainset;
-          train_many_nets();
-          calcRanks(testset, net);
-        }
+        for (size_t num_hu_idx = 0; num_hu_idx < num_hus.size(); num_hu_idx++) {
+          this->switch_iter = iters[iter_idx].first;
+          this->niter = iters[iter_idx].second;
+          this->mu = mus[mu_idx];
+          this->weightDecay = wds[wd_idx];
+          this->num_hu = num_hus[num_hu_idx];
+          testset = previous_trainset;
+          /*
+          for (int idx = 0;idx < 5;idx++) {
+            cerr << "testset["<<idx<<"].rank="<<testset[idx].rank<<endl;
+          }
+          */
+          for (int idx = 0;idx < bootstrap_iters;idx++) {
+            trainset = bootstrap_sets[idx];
+            thresholdset = trainset;
+            train_many_nets();
+            calcRanks(testset, net);
+          }
 
-        avgRanks(testset, bootstrap_iters);
-        /*
-        for (int idx=0;idx<5;idx++) {
-          cerr << "testset["<<idx<<"].rank="<<testset[idx].rank<<endl;
-        }
-        */
-        PSMScores min_rank;
-        testset.calcMinRank(min_rank, d);    
-        int score = min_rank.calculateOverFDRRank(0.01);
-        cerr <<"hu:"<< num_hu << " mu:"<<mu<<" wd:"<<weightDecay<<" score:"<<score<<endl;
-        if (score > best_score) {
-          best_score = score;
-          best_num_hu_idx = num_hu_idx;
-          best_wd_idx = wd_idx;
-          best_mu_idx = mu_idx;
+          avgRanks(testset, bootstrap_iters);
+          /*
+          for (int idx=0;idx<5;idx++) {
+            cerr << "testset["<<idx<<"].rank="<<testset[idx].rank<<endl;
+          }
+          */
+          PSMScores min_rank;
+          testset.calcMinRank(min_rank, d);    
+          int score = min_rank.calculateOverFDRRank(0.01);
+          //cerr <<"switch:"<<switch_iter<<" niter:"<<niter<<" hu:"<< num_hu << " mu:"<<mu<<" wd:"<<weightDecay<<" score:"<<score<<endl;
+          if (score > best_score) {
+            best_score = score;
+            best_iter_idx = iter_idx;
+            best_num_hu_idx = num_hu_idx;
+            best_wd_idx = wd_idx;
+            best_mu_idx = mu_idx;
+          }
         }
       }
-
     }
   }
 
-  this->mu = mus[best_mu_idx];
-  this->weightDecay = wds[best_wd_idx];
-  this->num_hu = num_hus[best_num_hu_idx];
-  
+  if (best_iter_idx != -1) {
+    this->switch_iter = iters[best_iter_idx].first;
+    this->niter = iters[best_iter_idx].second;
+  }
+
+  if (best_mu_idx != -1) {
+    this->mu = mus[best_mu_idx];
+  }
+  if (best_wd_idx != -1) {
+    this->weightDecay = wds[best_wd_idx];
+  }
+
+  if (best_num_hu_idx != -1) {
+    this->num_hu = num_hus[best_num_hu_idx];
+  }
+
+  cerr << "best switch:"<<switch_iter<<endl;
+  cerr << "best niter:"<<niter<<endl;
   cerr << "best num_hu:"<<num_hu<<endl;;
   cerr << "best mu:"<<mu<<endl;
   cerr << "best wd:"<<weightDecay<<endl;
