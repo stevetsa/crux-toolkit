@@ -1,5 +1,5 @@
 # Automake template for external code
-SUBDIRS=MSToolkit
+SUBDIRS=MSToolkit proteowizard
 EXTRA_DIST=fdstream.hpp
 
 
