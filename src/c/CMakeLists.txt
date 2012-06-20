@@ -1,0 +1,144 @@
+project(crux)
+
+cmake_minimum_required(VERSION 2.6)
+
+add_subdirectory(ArrayLibrary)
+add_subdirectory(bullseye)
+add_subdirectory(hardklor)
+add_subdirectory(percolator)
+add_subdirectory(posterior-error)
+add_subdirectory(qranker-barista)
+add_subdirectory(xlink)
+
+set_property(
+  DIRECTORY
+  PROPERTY
+  COMPILE_DEFINITIONS
+  SEARCH_ENABLED
+  DARWIN
+  _LARGEFILE_SOURCE
+  _FILE_OFFSET_BITS=64
+  _GNU_SOURCE
+  GCC
+  HAVE_EXPAT_CONFIG_H
+)
+include_directories(.)
+include_directories(bullseye)
+include_directories(hardklor)
+include_directories(percolator)
+include_directories(qranker-barista)
+include_directories(posterior-error)
+include_directories(xlink)
+include_directories(../external)
+include_directories(../external/MSToolkit/include)
+link_directories(../external/MSToolkit)
+link_directories(.)
+link_directories(./ArrayLibrary)
+link_directories(./bullseye)
+link_directories(./hardklor)
+link_directories(./percolator)
+link_directories(./posterior-error)
+link_directories(./qranker-barista)
+link_directories(./xlink)
+
+add_library(
+  crux-support
+  STATIC
+  Alphabet.cpp
+  analyze_psms.cpp
+  carp.cpp
+  ComputeQValues.cpp
+  CreateIndex.cpp
+  crux-utils.cpp
+  Database.cpp
+  DatabaseProteinIterator.cpp
+  DatabasePeptideIterator.cpp
+  CruxApplication.cpp
+  CruxApplicationList.cpp
+  DelimitedFile.cpp
+  DelimitedFileReader.cpp
+  DelimitedFileWriter.cpp
+  ExtractColumns.cpp
+  ExtractRows.cpp
+  FilteredSpectrumChargeIterator.cpp
+  GeneratePeptidesIterator.cpp
+  GetMs2Spectrum.cpp
+  hash.cpp
+  Index.cpp
+  IndexFile.cpp
+  IndexPeptideIterator.cpp
+  IndexFilteredPeptideIterator.cpp
+  Ion.cpp
+  IonConstraint.cpp
+  IonFilteredIterator.cpp
+  IonSeries.cpp
+  linked_list.cpp
+  mass.cpp
+  Match.cpp
+  MatchColumns.cpp
+  MatchFileReader.cpp
+  MatchFileWriter.cpp
+  MatchSearch.cpp
+  MatchCollection.cpp
+  MatchCollectionIterator.cpp
+  MatchIterator.cpp
+  MGFSpectrumCollection.cpp
+  modifications.cpp
+  ModifiedPeptidesIterator.cpp
+  MS2SpectrumCollection.cpp
+  MSToolkitSpectrumCollection.cpp
+  OutputFiles.cpp
+  parameter.cpp
+  parse_arguments.cpp
+  Peak.cpp
+  Peptide.cpp
+  PeptideConstraint.cpp
+  peptide_modifications.cpp
+  PeptideSrc.cpp
+  PepXMLWriter.cpp
+  Percolator.cpp
+  GeneratePeptides.cpp
+  PredictPeptideIons.cpp
+  PrintProcessedSpectra.cpp
+  PrintVersion.cpp
+  Protein.cpp
+  ProteinPeptideIterator.cpp
+  ProteinIndex.cpp
+  ProteinIndexIterator.cpp
+  q-value.cpp
+  SequestSearch.cpp
+  SortColumn.cpp
+  Scorer.cpp
+  sorter.cpp
+  SpectralCounts.cpp
+  SpectrumCollection.cpp
+  SpectrumCollectionFactory.cpp
+  Spectrum.cpp
+  SpectrumZState.cpp
+  StatColumn.cpp
+  utils.cpp
+)
+
+set_property(
+  SOURCE
+  crux-main.cpp
+  PROPERTY
+  COMPILE_DEFINITIONS
+  MAIN
+)
+add_executable(
+  crux
+  crux-main.cpp
+)
+target_link_libraries(
+  crux
+  array
+  barista
+  bullseye
+  crux-support
+  hardklor
+  MSToolkit
+  percolator
+  posterior_error
+  xlink
+)

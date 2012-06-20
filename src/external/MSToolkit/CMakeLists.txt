@@ -1,0 +1,46 @@
+project(crux)
+
+cmake_minimum_required(VERSION 2.6)
+
+set_property(
+  DIRECTORY
+  PROPERTY
+  COMPILE_DEFINITIONS
+  _LARGEFILE_SOURCE
+  GCC
+  HAVE_EXPAT_CONFIG_H
+  _FILE_OFFSET_BITS=64
+)
+include_directories(include)
+add_library(
+  MSToolkit
+  STATIC
+  src/zLib-1.2.5/adler32.c
+  src/zlib-1.2.5/compress.c
+  src/zlib-1.2.5/crc32.c
+  src/zlib-1.2.5/deflate.c
+  src/zlib-1.2.5/inffast.c
+  src/zlib-1.2.5/inflate.c
+  src/zlib-1.2.5/infback.c
+  src/zlib-1.2.5/inftrees.c
+  src/zlib-1.2.5/trees.c
+  src/zlib-1.2.5/uncompr.c
+  src/zlib-1.2.5/zutil.c
+  src/mzParser/mzp_base64.cpp
+  src/mzParser/BasicSpectrum.cpp
+  src/mzParser/mzParser.cpp
+  src/mzParser/RAMPface.cpp
+  src/mzParser/saxhandler.cpp
+  src/mzParser/saxmzmlhandler.cpp
+  src/mzParser/saxmzxmlhandler.cpp
+  src/mzParser/Czran.cpp
+  src/expat-2.0.1/xmlparse.c
+  src/expat-2.0.1/xmlrole.c
+  src/expat-2.0.1/xmltok.c
+  src/expat-2.0.1/xmltok_impl.c
+  src/expat-2.0.1/xmltok_ns.c
+  src/sqlite-3.7.7.1/sqlite3.c
+  src/MSToolkit/Spectrum.cpp
+  src/MSToolkit/MSReader.cpp
+  src/MSToolkit/MSObject.cpp
+)
