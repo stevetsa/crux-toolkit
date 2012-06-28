@@ -1,6 +1,5 @@
-project(crux)
-
-cmake_minimum_required(VERSION 2.6)
+cmake_minimum_required(VERSION 2.8.1)
+cmake_policy(VERSION 2.8.1)
 
 add_subdirectory(ArrayLibrary)
 add_subdirectory(bullseye)
@@ -15,7 +14,6 @@ set_property(
   PROPERTY
   COMPILE_DEFINITIONS
   SEARCH_ENABLED
-  DARWIN
   _LARGEFILE_SOURCE
   _FILE_OFFSET_BITS=64
   _GNU_SOURCE
@@ -126,6 +124,24 @@ set_property(
   COMPILE_DEFINITIONS
   MAIN
 )
+if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+  set_property(
+    DIRECTORY
+    APPEND
+    PROPERTY
+    COMPILE_DEFINITIONS
+    DARWIN
+  )
+  if (${CMAKE_SYSTEM_VERSION} VERSION_LESS "11")
+    set_property(
+      DIRECTORY
+      PROPERTY
+      COMPILE_DEFINITIONS
+      PRE_LION
+    )
+  endif(${CMAKE_SYSTEM_VERSION} VERSION_LESS "11")
+endif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+
 add_executable(
   crux
   crux-main.cpp

@@ -1,6 +1,7 @@
-project(crux)
+project(posterior-error)
 
-cmake_minimum_required(VERSION 2.6)
+cmake_minimum_required(VERSION 2.8.1)
+cmake_policy(VERSION 2.8.1)
 
 set_property(
   DIRECTORY
