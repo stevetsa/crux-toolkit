@@ -17,16 +17,16 @@ add_library(
   MSToolkit
   STATIC
   src/zLib-1.2.5/adler32.c
-  src/zlib-1.2.5/compress.c
-  src/zlib-1.2.5/crc32.c
-  src/zlib-1.2.5/deflate.c
-  src/zlib-1.2.5/inffast.c
-  src/zlib-1.2.5/inflate.c
-  src/zlib-1.2.5/infback.c
-  src/zlib-1.2.5/inftrees.c
-  src/zlib-1.2.5/trees.c
-  src/zlib-1.2.5/uncompr.c
-  src/zlib-1.2.5/zutil.c
+  src/zLib-1.2.5/compress.c
+  src/zLib-1.2.5/crc32.c
+  src/zLib-1.2.5/deflate.c
+  src/zLib-1.2.5/inffast.c
+  src/zLib-1.2.5/inflate.c
+  src/zLib-1.2.5/infback.c
+  src/zLib-1.2.5/inftrees.c
+  src/zLib-1.2.5/trees.c
+  src/zLib-1.2.5/uncompr.c
+  src/zLib-1.2.5/zutil.c
   src/mzParser/mzp_base64.cpp
   src/mzParser/BasicSpectrum.cpp
   src/mzParser/mzParser.cpp
