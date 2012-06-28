@@ -69,9 +69,9 @@ int SearchForXLinks::xlinkSearchMain() {
   char* ms2_file = get_string_parameter("ms2 file");
   char* input_file = get_string_parameter("protein database");
   const char* output_directory = get_string_parameter_pointer("output-dir");
-  int top_match = get_int_parameter("top-match");
+  //int top_match = get_int_parameter("top-match");
   XLinkPeptide::setLinkerMass(get_double_parameter("link mass"));
-  int min_weibull_points = get_int_parameter("min-weibull-points");
+  //int min_weibull_points = get_int_parameter("min-weibull-points");
   bool compute_pvalues = get_boolean_parameter("compute-p-values");
 
   XLinkBondMap bondmap;
@@ -182,6 +182,8 @@ int SearchForXLinks::xlinkSearchMain() {
     carp(CARP_DEBUG, "scoring targets:%d", target_candidates->getMatchTotal());
     target_candidates->scoreSpectrum(spectrum);
 
+
+    /*
     
     carp(CARP_DEBUG, "Getting decoy candidates");
 
@@ -190,7 +192,8 @@ int SearchForXLinks::xlinkSearchMain() {
 
     carp(CARP_DEBUG,"scoring decoys");
     decoy_candidates->scoreSpectrum(spectrum);
-
+    */
+    /*
     if (compute_pvalues) {
 
       if (target_candidates->getMatchTotal() >= min_weibull_points) {
@@ -232,7 +235,7 @@ int SearchForXLinks::xlinkSearchMain() {
         delete train_candidates;
         delete train_target_candidates;
       }
- 
+
       target_candidates->sort(XCORR);
 
 
@@ -254,23 +257,28 @@ int SearchForXLinks::xlinkSearchMain() {
       for (int idx=0;idx < nprint;idx++) {
         decoy_candidates->computeWeibullPValue(idx);
       }
-    } /* if (compute_p_values) */
+
+    } // if (compute_p_values)
+
+*/
 
     //print out
-    vector<MatchCollection*> decoy_vec;
-    decoy_vec.push_back(decoy_candidates);
 
+    vector<MatchCollection*> decoy_vec;
+    //decoy_vec.push_back(decoy_candidates);
+/*
     if (decoy_candidates->getScoredType(SP) == true) {
       decoy_candidates->populateMatchRank(SP);
     }
     decoy_candidates->populateMatchRank(XCORR);
     decoy_candidates->sort(XCORR);
-
+*/
     if (target_candidates->getScoredType(SP) == true) {
       target_candidates->populateMatchRank(SP);
     }
     target_candidates->populateMatchRank(XCORR);
     target_candidates->sort(XCORR);
+
 
     output_files.writeMatches(
       (MatchCollection*)target_candidates, 
@@ -279,7 +287,7 @@ int SearchForXLinks::xlinkSearchMain() {
       spectrum);
 
     /* Clean up */
-    delete decoy_candidates;
+    //delete decoy_candidates;
     delete target_candidates;
     XLink::deleteAllocatedPeptides();
     
@@ -343,13 +351,14 @@ int SearchForXLinks::xlinkSearchMain() {
     string target_file = oss.str();
     xr_args_vec.push_back(target_file);
   }
+  /*
   {
     ostringstream oss;
     oss << output_directory << "/search.decoy.txt";
     string decoy_file = oss.str();
     xr_args_vec.push_back(decoy_file);
   }
-
+  */
   int xranker_argc;
   char** xranker_argv;
   buildArguments(xr_args_vec, xranker_argc, xranker_argv);

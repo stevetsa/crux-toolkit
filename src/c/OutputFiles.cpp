@@ -45,12 +45,12 @@ OutputFiles::OutputFiles(CruxApplication* program_name)
   if( command != SEARCH_COMMAND && command != SEQUEST_COMMAND ){
     num_files_ = 1;
   }
-
+/*
   if (command == XLINK_SEARCH_COMMAND) {
     num_decoy_files = 1;
     num_files_ = 2;
   }
-
+*/
 
   makeTargetDecoyList();
 

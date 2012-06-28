@@ -748,6 +748,14 @@ void TabDelimParser :: second_pass_xlink(ifstream &fin, int label)
   while(!fin.eof())
     {
       getline(fin,line);
+
+      if (line.find(decoy_prefix) != string::npos) {
+        label = -1;
+      } else {
+        label = 1;
+      }
+
+
       get_tokens(line, tokens, delim1);
       if(tokens.size() > 1)
 	{
@@ -1027,10 +1035,19 @@ int TabDelimParser :: run_on_xlink(vector<string> &filenames)
 	  return 0;
 	}
       getline(fin,line);
+      cerr << line << endl;
+      if (line.find(decoy_prefix) != string::npos) {
+        label = -1;
+      } else {
+        label = 1;
+      }
+      /*
+        Assumes second file is all decoys
       if(i == 0)
 	label = 1;
       else
 	label = -1;
+      */
       second_pass_xlink(fin,label);
       fin.close();
     }
@@ -1089,10 +1106,18 @@ int TabDelimParser :: run_on_xlink(vector<string> &filenames, string &ms2filenam
 	  return 0;
 	}
       getline(fin,line);
+      cerr << line << endl;
+      if (line.find(decoy_prefix) != string::npos) {
+        label = -1;
+      } else {
+        label = 1;
+      }
+/*
       if(i == 0)
 	label = 1;
       else
 	label = -1;
+*/
       second_pass_xlink(fin,label);
       fin.close();
     }
