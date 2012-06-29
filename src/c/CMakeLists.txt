@@ -21,6 +21,7 @@ set_property(
   HAVE_EXPAT_CONFIG_H
 )
 include_directories(.)
+include_directories(ArrayLibrary)
 include_directories(bullseye)
 include_directories(hardklor)
 include_directories(percolator)
@@ -148,13 +149,16 @@ add_executable(
 )
 target_link_libraries(
   crux
-  array
   barista
   bullseye
   crux-support
+  dl
   hardklor
+  m
   MSToolkit
   percolator
   posterior_error
+  pthread
   xlink
+  ArrayLibrary
 )

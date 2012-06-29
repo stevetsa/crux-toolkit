@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 2.8.1)
 cmake_policy(VERSION 2.8.1)
 
 add_library(
-  array
+  ArrayLibrary
   STATIC
   MatrixFunctions.cpp
   Numerical.cpp
