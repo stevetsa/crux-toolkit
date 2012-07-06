@@ -9,17 +9,6 @@ add_subdirectory(posterior-error)
 add_subdirectory(qranker-barista)
 add_subdirectory(xlink)
 
-set_property(
-  DIRECTORY
-  PROPERTY
-  COMPILE_DEFINITIONS
-  SEARCH_ENABLED
-  _LARGEFILE_SOURCE
-  _FILE_OFFSET_BITS=64
-  _GNU_SOURCE
-  GCC
-  HAVE_EXPAT_CONFIG_H
-)
 include_directories(.)
 include_directories(ArrayLibrary)
 include_directories(bullseye)
@@ -125,28 +114,68 @@ set_property(
   COMPILE_DEFINITIONS
   MAIN
 )
-if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-  set_property(
+set_property(
     DIRECTORY
-    APPEND
     PROPERTY
     COMPILE_DEFINITIONS
-    DARWIN
-  )
-  if (${CMAKE_SYSTEM_VERSION} VERSION_LESS "11")
+    SEARCH_ENABLED
+)
+if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     set_property(
       DIRECTORY
       PROPERTY
       COMPILE_DEFINITIONS
-      PRE_LION
+      _CRT_SECURE_NO_WARNINGS
     )
-  endif(${CMAKE_SYSTEM_VERSION} VERSION_LESS "11")
-endif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+else (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+	set_property(
+	  DIRECTORY
+	  PROPERTY
+	  COMPILE_DEFINITIONS
+	  _LARGEFILE_SOURCE
+	  _FILE_OFFSET_BITS=64
+	  _GNU_SOURCE
+	  GCC
+	  HAVE_EXPAT_CONFIG_H
+	)
+	if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+	  set_property(
+		DIRECTORY
+		APPEND
+		PROPERTY
+		COMPILE_DEFINITIONS
+		DARWIN
+	  )
+	  if (${CMAKE_SYSTEM_VERSION} VERSION_LESS "11")
+		set_property(
+		  DIRECTORY
+		  PROPERTY
+		  COMPILE_DEFINITIONS
+		  PRE_LION
+		)
+       endif(${CMAKE_SYSTEM_VERSION} VERSION_LESS "11")
+    endif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+endif (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 
 add_executable(
   crux
   crux-main.cpp
 )
+
+if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+target_link_libraries(
+  crux
+  barista
+  bullseye
+  crux-support
+  hardklor
+  MSToolkit
+  percolator
+  posterior_error
+  xlink
+  ArrayLibrary
+)
+else(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 target_link_libraries(
   crux
   barista
@@ -162,3 +191,4 @@ target_link_libraries(
   xlink
   ArrayLibrary
 )
+endif(${CMAKE_SYSTEM_NAME} MATCHES "Windows")

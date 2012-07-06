@@ -3,19 +3,35 @@ project(hardklor)
 cmake_minimum_required(VERSION 2.8.1)
 cmake_policy(VERSION 2.8.1)
 
+include_directories(..)
+include_directories(../../external/MSToolkit/include)
+
 set_property(
   DIRECTORY
   PROPERTY
   COMPILE_DEFINITIONS
-  GCC
-  _LARGEFILE_SOURCE
-  HAVE_EXPAT_CONFIG_H
-  _FILE_OFFSET_BITS=64
-  _GNU_SOURCE
   CRUX
 )
-include_directories(..)
-include_directories(../../external/MSToolkit/include)
+if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+    set_property(
+      DIRECTORY
+      PROPERTY
+      COMPILE_DEFINITIONS
+      _CRT_SECURE_NO_WARNINGS
+    )
+else (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+	set_property(
+	  DIRECTORY
+	  PROPERTY
+	  COMPILE_DEFINITIONS
+	  _FILE_OFFSET_BITS=64
+	  _GNU_SOURCE
+	  _LARGEFILE_SOURCE
+	  GCC
+	  HAVE_EXPAT_CONFIG_H
+	)
+endif (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+
 add_library(
   hardklor
   STATIC
