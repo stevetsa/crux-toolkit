@@ -104,6 +104,7 @@ set (
   SpectrumZState.cpp
   StatColumn.cpp
   utils.cpp
+  WinCrux.cpp
 )
 
 add_library(
@@ -127,11 +128,6 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
       COMPILE_DEFINITIONS
       _CRT_SECURE_NO_WARNINGS
       SEARCH_ENABLED
-    )
-    list(
-      APPEND 
-      ${crux_lib_files} 
-      WinCrux.cpp
     )
 else (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 	set_property(
@@ -180,6 +176,7 @@ target_link_libraries(
   percolator
   posterior_error
   xlink
+  ws2_32
   ArrayLibrary
 )
 else(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
