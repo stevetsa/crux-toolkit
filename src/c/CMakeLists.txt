@@ -29,9 +29,8 @@ link_directories(./posterior-error)
 link_directories(./qranker-barista)
 link_directories(./xlink)
 
-add_library(
-  crux-support
-  STATIC
+set (
+  crux_lib_files
   Alphabet.cpp
   analyze_psms.cpp
   carp.cpp
@@ -107,6 +106,12 @@ add_library(
   utils.cpp
 )
 
+add_library(
+  crux-support
+  STATIC
+  ${crux_lib_files}
+)
+
 set_property(
   SOURCE
   crux-main.cpp
@@ -114,18 +119,19 @@ set_property(
   COMPILE_DEFINITIONS
   MAIN
 )
-set_property(
-    DIRECTORY
-    PROPERTY
-    COMPILE_DEFINITIONS
-    SEARCH_ENABLED
-)
+
 if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     set_property(
       DIRECTORY
       PROPERTY
       COMPILE_DEFINITIONS
       _CRT_SECURE_NO_WARNINGS
+      SEARCH_ENABLED
+    )
+    list(
+      APPEND 
+      ${crux_lib_files} 
+      WinCrux.cpp
     )
 else (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 	set_property(
@@ -137,6 +143,7 @@ else (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 	  _GNU_SOURCE
 	  GCC
 	  HAVE_EXPAT_CONFIG_H
+    SEARCH_ENABLED
 	)
 	if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 	  set_property(
