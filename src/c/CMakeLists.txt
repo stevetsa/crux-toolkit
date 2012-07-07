@@ -120,14 +120,6 @@ add_library(
   ${crux_lib_files}
 )
 
-set_property(
-  SOURCE
-  crux-main.cpp
-  PROPERTY
-  COMPILE_DEFINITIONS
-  MAIN
-)
-
 if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     set_property(
       DIRECTORY
@@ -167,39 +159,119 @@ else (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     endif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 endif (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 
-add_executable(
+add_executable(crux crux-main.cpp)
+set_property(
+  TARGET
   crux
-  crux-main.cpp
+  PROPERTY
+  COMPILE_DEFINITIONS
+  MAIN
+)
+
+add_executable(xlink-predict-peptide-ions xlink/xhhc_predict_peptide_ions.cpp)
+set_property(
+  TARGET
+  xlink-predict-peptide-ions
+  PROPERTY
+  COMPILE_DEFINITIONS
+  MAIN
+)
+
+add_executable(xlink-score-spectrum xlink/xhhc_score_peptide_spectrum.cpp)
+set_property(
+  TARGET
+  xlink-score-spectrum
+  PROPERTY
+  COMPILE_DEFINITIONS
+  MAIN
+)
+
+add_executable(xlink-assign-ions xlink/xlink_assign_ions.cpp)
+set_property(
+  TARGET
+  xlink-assign-ions
+  PROPERTY
+  COMPILE_DEFINITIONS
+  MAIN
 )
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-target_link_libraries(
-  crux
-  barista
-  bullseye
-  crux-support
-  hardklor
-  MSToolkit
-  percolator
-  posterior_error
-  xlink
-  ws2_32
-  ArrayLibrary
-)
+  target_link_libraries(
+    crux
+    barista
+    bullseye
+    crux-support
+    hardklor
+    MSToolkit
+    percolator
+    posterior_error
+    xlink
+    ws2_32
+    ArrayLibrary
+  )
+  target_link_libraries(
+    xlink-predict-peptide-ions
+    crux-support
+    MSToolkit
+    xlink
+  )
+  target_link_libraries(
+    xlink-score_spectrum
+    crux-support
+    MSToolkit
+    xlink
+  )
+  target_link_libraries(
+    xlink-assign-ions
+    crux-support
+    MSToolkit
+    xlink
+  )
 else(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-target_link_libraries(
-  crux
-  barista
-  bullseye
-  crux-support
-  dl
-  hardklor
-  m
-  MSToolkit
-  percolator
-  posterior_error
-  pthread
-  xlink
-  ArrayLibrary
-)
+  target_link_libraries(
+    crux
+    barista
+    bullseye
+    crux-support
+    dl
+    hardklor
+    m
+    MSToolkit
+    percolator
+    posterior_error
+    pthread
+    xlink
+    ArrayLibrary
+  )
+  target_link_libraries(
+    xlink-predict-peptide-ions
+    crux-support
+    m
+    MSToolkit
+    xlink
+  )
+  target_link_libraries(
+    xlink-score-spectrum
+    crux-support
+    m
+    MSToolkit
+    xlink
+  )
+  target_link_libraries(
+    xlink-assign-ions
+    crux-support
+    m
+    MSToolkit
+    xlink
+  )
 endif(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+
+install (
+  TARGETS
+  crux
+  xlink-predict-peptide-ions
+  xlink-score-spectrum
+  xlink-assign-ions
+  DESTINATION
+  bin
+)
