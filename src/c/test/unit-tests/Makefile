@@ -33,9 +33,9 @@ TESTS = \
 	#check-qvalue.c \
 
 CRUX_LIBS = \
-  ../../.libs/libcrux.a \
-  $(PERCOLATOR_DIR)/.libs/libpercolator.a \
-  ../../../external/MSToolkit/.libs/libmstoolkit.a
+  ../../libcrux-support.a \
+  $(PERCOLATOR_DIR)/libpercolator.a \
+  ../../../external/MSToolkit/libMSToolkit.a
 
 unittests:  $(SRC) $(TESTS) $(CRUX_LIBS)
 	cd check && $(MAKE)
