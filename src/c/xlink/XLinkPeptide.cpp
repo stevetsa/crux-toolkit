@@ -289,6 +289,10 @@ void XLinkPeptide::addCandidates(
 
     addLinkablePeptides(0, max_mass-linker_mass_, index, database,
 			peptide_mod, false, bondmap, linkable_peptides);
+/*
+    addLinkablePeptides(0, max_mass-linker_mass_, index, database,
+                        peptide_mod, true, bondmap, linkable_peptides);
+*/
     //carp(CARP_INFO,"Done calling addLinkablePeptides:%d",mod_idx);
     
   }//next peptide mod

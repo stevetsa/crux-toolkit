@@ -37,6 +37,15 @@ void PSMScores::clear()
   pos=neg=posNow = 0;
 }
 
+void PSMScores::add_psms(PSMScores& psms) {
+  for (vector<PSMScoreHolder>::iterator iter = psms.begin();
+    iter != psms.end();
+    ++iter) {
+    add_psm(*iter);
+  }
+
+}
+
 
 /**
  * Percentage of target scores that are drawn according to the null.
@@ -45,7 +54,7 @@ double PSMScores::pi0 = 1.0;
 
 void PSMScores :: calc_factor()
 {
-  cout << scores.size() << endl;
+  //cout << scores.size() << endl;
   for(unsigned int i = 0; i < scores.size(); i++)
     {
       if(scores[i].label == 1)
@@ -54,7 +63,47 @@ void PSMScores :: calc_factor()
 	neg++;
     }
   factor = (double)pos/(double)neg;
-  cout << pos << " " << neg << " " << factor << endl;
+  //cout << pos << " " << neg << " " << factor << endl;
+}
+
+bool comparePValue(const PSMScoreHolder& s1, const PSMScoreHolder& s2) {
+  return s1.p < s2.p;
+}
+
+
+int PSMScores::calcOverFDRBH(double fdr) {
+
+  sort(scores.begin(), scores.end(), comparePValue);
+
+  int ans = 0;
+  int posNow = 0;
+  for (int idx = 0 ;idx < scores.size();idx++) {
+    if (scores[idx].label == 1) {
+      posNow++;
+      scores[idx].q = (double)pos / (double)(posNow) * pi0 * scores[idx].p;
+      //cout << "pos:" << pos<<" posNow:"<<posNow<<" p:"<<scores[idx].p<<" q:"<<scores[idx].q<<endl;
+      if (scores[idx].q <= fdr) {
+        ans = posNow;
+      }
+    }
+  }
+
+  double lastFDR = pi0;
+  
+
+
+  for (int ix=scores.size();ix>=0;--ix) {
+    if (scores[ix].label == 1) {
+      if (scores[ix].q < lastFDR) {
+        lastFDR = scores[ix].q;
+      } else {
+        scores[ix].q = lastFDR;
+      }
+    }
+  }
+
+  return ans;
+
 }
 
 
@@ -96,6 +145,58 @@ int PSMScores::calcOverFDR(double fdr) {
   return posNow;
 }
 
+void PSMScores::calcPValues() {
+
+  vector<PSMScoreHolder>::iterator it = scores.begin();
+
+  sort(scores.begin(),scores.end());
+  reverse(scores.begin(),scores.end());
+
+  int nulls = 0;
+  
+
+
+  for ( vector<PSMScoreHolder>::iterator it = scores.begin();
+    it != scores.end(); it++) {
+
+      it->p = nulls;
+      if (it->label == -1) {
+        nulls++;
+      }
+   }
+
+  for ( vector<PSMScoreHolder>::iterator it = scores.begin();
+    it != scores.end();it++) {
+    it-> p = it->p / (double)nulls;
+  }
+
+
+
+}
+
+
+void PSMScores::getMaxPerScan(Dataset& d, PSMScores& max) {
+  vector<PSMScoreHolder>::iterator it = scores.begin();
+
+  sort(scores.begin(),scores.end());
+  reverse(scores.begin(),scores.end());
+
+  max.clear();
+  set<int>scans;
+
+  for ( vector<PSMScoreHolder>::iterator it = scores.begin();
+    it != scores.end(); it++) {
+      int scan = d.psmind2scan(it->psmind);
+      if (scans.find(scan) == scans.end()) {
+        max.add_psm(*it);
+        scans.insert(scan);
+      }
+  }
+
+  max.calc_factor();
+
+}
+
 
 void PSMScores::calcMultiOverFDR(vector<double> &fdr, vector<int> &overFDR) {
   
@@ -134,6 +235,91 @@ void PSMScores::calcMultiOverFDR(vector<double> &fdr, vector<int> &overFDR) {
 }
 
 
+
+
+void PSMScores::fillFeaturesSplitScan(PSMScores& train, PSMScores& test, Dataset& d) {
+
+  set<int> scans;
+
+  for (int i = 0; i < d.get_num_psms(); i++) {
+    scans.insert(d.psmind2scan(i));
+  }
+
+  vector<int> scans_vec(scans.begin(), scans.end());
+  random_shuffle(scans_vec.begin(), scans_vec.end());
+
+
+  int nscans = scans_vec.size();
+
+  set<int> train_scans;
+
+  int nscans_train = nscans/2;
+
+  for (int idx = 0; idx < nscans_train;idx++) {
+    train_scans.insert(scans_vec[idx]);
+  }
+
+  for (int idx = 0 ; idx < d.get_num_psms();idx++) {
+    int scan = d.psmind2scan(idx);
+    PSMScoreHolder psm;
+    psm.psmind = idx;
+    psm.label = d.psmind2label(idx);
+    if (train_scans.find(scan) != train_scans.end()) {
+      train.add_psm(psm);
+    } else {
+      test.add_psm(psm);
+    }
+
+  }
+
+  train.calc_factor();
+  test.calc_factor();
+
+}
+
+void PSMScores::fillFeaturesSplitScan(
+  PSMScores& in, 
+  Dataset& d, 
+  PSMScores& train, 
+  PSMScores& test) {
+
+  set<int> scans;
+
+  for (int i = 0; i < in.size(); i++) {
+    scans.insert(d.psmind2scan(in[i].psmind));
+  }
+
+  vector<int> scans_vec(scans.begin(), scans.end());
+  random_shuffle(scans_vec.begin(), scans_vec.end());
+
+
+  int nscans = scans_vec.size();
+
+  set<int> train_scans;
+
+  int nscans_train = nscans/2;
+
+  for (int idx = 0; idx < nscans_train;idx++) {
+    train_scans.insert(scans_vec[idx]);
+  }
+
+  for (int idx = 0 ; idx < in.size();idx++) {
+    int scan = d.psmind2scan(in[idx].psmind);
+    PSMScoreHolder psm;
+    psm.psmind = idx;
+    psm.label = d.psmind2label(in[idx].psmind);
+    if (train_scans.find(scan) != train_scans.end()) {
+      train.add_psm(psm);
+    } else {
+      test.add_psm(psm);
+    }
+
+  }
+
+  train.calc_factor();
+  test.calc_factor();
+
+}
 
 
 void PSMScores::fillFeaturesSplit(PSMScores& train,PSMScores& test, Dataset& d, double ratio) {
@@ -287,6 +473,7 @@ void PSMScores::fillFeaturesBootstrap(PSMScores& in, PSMScores& bootstrap) {
   cerr <<" bootstrap: num_pos:"<<num_pos<<" num_neg:"<<num_neg<<" factor:"<<bootstrap.factor<<endl;
 
 }
+
 
 bool compareRank(const PSMScoreHolder& s1, const PSMScoreHolder &s2) {
   return s1.rank < s2.rank;

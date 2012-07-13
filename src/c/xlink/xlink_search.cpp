@@ -158,7 +158,7 @@ int SearchForXLinks::xlinkSearchMain() {
 
     FLOAT_T precursor_mz = spectrum->getPrecursorMz();
 
-    carp(CARP_DEBUG,"Getting targets");  
+    carp(CARP_INFO, "Getting candidates");  
 
     XLinkMatchCollection* target_candidates = new XLinkMatchCollection(precursor_mz,
                                            zstate,
@@ -170,7 +170,7 @@ int SearchForXLinks::xlinkSearchMain() {
 					   false);
    
 
-    carp(CARP_DEBUG, "Done getting targets:%d", target_candidates->getMatchTotal());
+    carp(CARP_INFO, "Done getting candidates:%d", target_candidates->getMatchTotal());
     //target_candidates->setScan(spectrum->getFirstScan());
 
     if (target_candidates->getMatchTotal() < 1) {
@@ -179,7 +179,7 @@ int SearchForXLinks::xlinkSearchMain() {
     }
 
     //score targets
-    carp(CARP_DEBUG, "scoring targets:%d", target_candidates->getMatchTotal());
+    carp(CARP_INFO, "scoring candidates:%d", target_candidates->getMatchTotal());
     target_candidates->scoreSpectrum(spectrum);
 
 
@@ -273,13 +273,17 @@ int SearchForXLinks::xlinkSearchMain() {
     decoy_candidates->populateMatchRank(XCORR);
     decoy_candidates->sort(XCORR);
 */
+
+    carp(CARP_INFO, "Ranking");
+
     if (target_candidates->getScoredType(SP) == true) {
       target_candidates->populateMatchRank(SP);
     }
     target_candidates->populateMatchRank(XCORR);
     target_candidates->sort(XCORR);
 
-
+    
+    carp(CARP_INFO, "Writing results");
     output_files.writeMatches(
       (MatchCollection*)target_candidates, 
       decoy_vec,
@@ -294,7 +298,8 @@ int SearchForXLinks::xlinkSearchMain() {
 
     //free_spectrum(spectrum);
 
-    carp(CARP_DEBUG,"Done with spectrum %d", scan_num);
+    carp(CARP_INFO,"Done with spectrum %d", scan_num);
+    carp(CARP_INFO, "=====================================");
   } // get next spectrum
 
   output_files.writeFooters();

@@ -129,7 +129,7 @@ void QRanker :: write_results(string filename, NeuralNet &net)
   f1.close();
 }
 
-void QRanker :: write_results_bootstrap(string filename, PSMScores& set)
+void QRanker :: write_results(string filename, PSMScores& set, bool decoy)
 {
   //write out the results of the general net
   ostringstream s1;
@@ -139,44 +139,46 @@ void QRanker :: write_results_bootstrap(string filename, PSMScores& set)
   cerr << "Loading data for reporting results"<<endl;
   d.load_psm_data_for_reporting_results();
 
-  PSMScores min_rank;
-  cerr <<"Getting best rank per scan"<<endl;
-  set.calcMinRank(min_rank, d);
-
   //use the best rank/scan to calculate q-values
   cerr <<"calculating FDR"<<endl;
-  min_rank.calculateOverFDRRank(0.01);
+  set.calcOverFDRBH(0.01);
 
   cerr <<"calculating PEP"<<endl;
-  computePEP(min_rank);
+  computePEP(set);
 
 
   //cerr << "Writing results" <<endl;
   f1 << "q-ranker q-value" << "\t" <<
         "q-ranker score" << "\t" <<
+        "q-ranker p-value" << "\t" <<
         "PEP" << "\t" <<
         "scan" << "\t" << 
         "charge" << "\t" << 
         "spectrum neutral mass" << "\t"
         "sequence" << "\t" << 
         "protein id" << "\t" <<
-        "product type" << endl;
-  for(int i = 0; i < min_rank.size(); i++)
+        "product type";
+  //if (decoy) {
+  f1 << "\tlabel";
+  //}
+  f1 << endl;
+  for(int i = 0; i < set.size(); i++)
     {
       //cerr << "Wrinting "<<i<<endl;
-      int psmind = min_rank[i].psmind;
+      int psmind = set[i].psmind;
       int scan = d.psmind2scan(psmind);
       int charge = d.psmind2charge(psmind);
       double spectrum_neutral_mass = 0;//d.psmind2
 
   
-      double score = min_rank[i].rank;
-      int label = min_rank[i].label;
-      double qvalue = min_rank[i].q;
-      double pep = min_rank[i].PEP;
+      double score = set[i].score;
+      int label = set[i].label;
+      double qvalue = set[i].q;
+      double pvalue = set[i].p;
+      double pep = set[i].PEP;
       string proteins = d.psmind2protein1(psmind);
       ostringstream oss;
-      if (label == 1) {
+      if (label == 1 || decoy) {
         oss << d.psmind2peptide1(psmind);
         if(string(d.psmind2peptide2(psmind)) != "_") {
           //cerr << "peptide2:"<<d.psmind2peptide2(psmind) <<" length:"<<d.psmind2peptide2(psmind).length() << endl;
@@ -210,13 +212,18 @@ void QRanker :: write_results_bootstrap(string filename, PSMScores& set)
 
         f1 << qvalue   << "\t" << 
               score    << "\t" << 
+              pvalue   << "\t" <<
               pep      << "\t" <<
               scan     << "\t" << 
               charge   << "\t" << 
               spectrum_neutral_mass << "\t" << 
               sequence << "\t" << 
               proteins << "\t" << 
-              product_type << endl;
+              product_type;
+        //if (decoy) {
+          f1 << "\t" << label;
+        //}
+        f1 << endl;
       }
 
     }
@@ -769,6 +776,21 @@ void QRanker::train_many_nets()
 
 }
 
+
+void QRanker::calcScores(PSMScores& set, NeuralNet& net) {
+
+  double *r;
+  double* featVec;
+
+  for(int i = 0; i < set.size(); i++)
+    {
+      featVec = d.psmind2features(set[i].psmind);
+      r = net.fprop(featVec);
+      set[i].score = r[0];
+
+    }
+}
+
 void QRanker::calcRanks(PSMScores& set, NeuralNet& net) {
   getOverFDR(set, net, 0);
 
@@ -816,14 +838,14 @@ void QRanker::selectHyperParameters() {
   PSMScores previous_testset = testset;
   PSMScores previous_thresholdset = thresholdset;
 
-  vector<PSMScores> bootstrap_sets;
+  PSMScores cv_trainset;
+  PSMScores cv_testset;
+  PSMScores cv_fullset;
+  PSMScores max;
 
-  for (int idx =0 ;idx < bootstrap_iters;idx++) {
-    PSMScores bootstrap_set;
-    bootstrap_sets.push_back(bootstrap_set);
-    PSMScores::fillFeaturesBootstrap(trainset, bootstrap_sets[idx]);
-  }
+  PSMScores::fillFeaturesSplitScan(trainset, d, cv_trainset, cv_testset);
 
+  
 
   vector<pair<int, int> > iters;
   iters.push_back(pair<int,int>(5,10));
@@ -864,29 +886,34 @@ void QRanker::selectHyperParameters() {
           this->mu = mus[mu_idx];
           this->weightDecay = wds[wd_idx];
           this->num_hu = num_hus[num_hu_idx];
-          testset = previous_trainset;
-          /*
-          for (int idx = 0;idx < 5;idx++) {
-            cerr << "testset["<<idx<<"].rank="<<testset[idx].rank<<endl;
-          }
-          */
-          for (int idx = 0;idx < bootstrap_iters;idx++) {
-            trainset = bootstrap_sets[idx];
-            thresholdset = trainset;
-            train_many_nets();
-            calcRanks(testset, net);
-          }
+          cv_fullset.clear();
+          trainset = cv_trainset;
+          thresholdset = cv_trainset;
+          testset = cv_testset;
 
-          avgRanks(testset, bootstrap_iters);
-          /*
-          for (int idx=0;idx<5;idx++) {
-            cerr << "testset["<<idx<<"].rank="<<testset[idx].rank<<endl;
-          }
-          */
-          PSMScores min_rank;
-          testset.calcMinRank(min_rank, d);    
-          int score = min_rank.calculateOverFDRRank(0.01);
-          //cerr <<"switch:"<<switch_iter<<" niter:"<<niter<<" hu:"<< num_hu << " mu:"<<mu<<" wd:"<<weightDecay<<" score:"<<score<<endl;
+          train_many_nets();
+          calcScores(testset, net);
+          testset.getMaxPerScan(d, max);
+          max.calcPValues();
+          
+          cv_fullset.add_psms(max);
+
+          //swap trainset and testset.
+          trainset = cv_testset;
+          thresholdset = cv_testset;
+          testset = cv_trainset;
+
+          train_many_nets();
+          
+          calcScores(testset, net);
+          testset.getMaxPerScan(d, max);
+          max.calcPValues();
+          cv_fullset.add_psms(max);
+          cv_fullset.calc_factor();
+          
+          
+          int score = cv_fullset.calcOverFDRBH(0.01);
+          cout <<"switch:"<<switch_iter<<" niter:"<<niter<<" hu:"<< num_hu << " mu:"<<mu<<" wd:"<<weightDecay<<" score:"<<score<<endl;
           if (score > best_score) {
             best_score = score;
             best_iter_idx = iter_idx;
@@ -936,46 +963,64 @@ void QRanker::selectHyperParameters() {
 int QRanker::run( ) {
   srand(seed);
   cout << "reading data\n";
-    
+  
+  PSMScores max;
+  
   d.load_psm_data_for_training();
   d.normalize_psms();
   //PSMScores::fillFeaturesSplit(trainset, testset, d, 0.5);
-  PSMScores::fillFeaturesFull(testset, d);
 
-  
+  fullset.clear();
 
-  for (int idx = 0;idx < bootstrap_iters;idx++) {
-    cerr << "Bootstrap Iter="<<(idx+1)<<" of "<<bootstrap_iters << endl;
-    cerr << "==============="<<endl;
-    PSMScores::fillFeaturesBootstrap(testset, trainset);
-    //PSMScores::fillFeaturesFull(trainset, d); //For testing without bootstrap.
+  PSMScores::fillFeaturesSplitScan(trainset, testset, d);
+  thresholdset = trainset;
+  fullset.clear();
 
-    thresholdset = trainset;
-    selectHyperParameters();
-    
-    cerr << "num_hu:"<<num_hu<<endl;
-    cerr << "mu:"<<mu<<endl;
-    cerr << "wd:"<<weightDecay<<endl;
+  selectHyperParameters();
 
 
-    train_many_nets();
-    calcRanks(testset, net);
+  train_many_nets();
 
-  }
-  cerr <<"Averaging ranks"<<endl;
-  avgRanks(testset, bootstrap_iters);
+  calcScores(testset, net);
+  testset.getMaxPerScan(d, max);
+  max.calcPValues();
 
-
-  //write out the bootstrap results
+  // write out the testset results
   ostringstream res;
-  res << out_dir << "/qranker.target";
-  res_prefix = res.str();
+  res << out_dir << "/qranker.test";
+  write_results(res.str(), max, true);
   
-  cerr << "target net results: ";
-  ostringstream s2;
-  s2 << res_prefix;
-  cout << s2.str() << endl;
-  write_results_bootstrap(s2.str(), testset);
+  fullset.add_psms(max);
+  
+  //swap trainset and test set.
+  thresholdset = testset;
+  testset = trainset;
+  trainset = thresholdset;
+
+  selectHyperParameters();
+  train_many_nets();
+
+  calcScores(testset, net);
+  testset.getMaxPerScan(d, max);
+  max.calcPValues();
+  
+
+  //write out the trainset results
+  res.str("");
+  res << out_dir << "/qranker.train";
+  write_results(res.str(), max, true);
+
+  fullset.add_psms(max);
+  fullset.calc_factor();
+
+  //write out the fullset results
+  res.str("");
+  res << out_dir << "/qranker.all";
+  write_results(res.str(), fullset, true);
+
+  res.str("");
+  res << out_dir << "/qranker.target";
+  write_results(res.str(), fullset, false);
   
   return 0;
 }
@@ -1071,9 +1116,9 @@ void QRanker::computePEP(PSMScores& scores){
   // pull out the target and decoy scores
   for(int i = 0; i < scores.size(); i++){
     if( scores[i].label == 1 ){
-      target_scores_vect.push_back(-scores[i].rank);
+      target_scores_vect.push_back(scores[i].score);
     } else { // == -1
-      decoy_scores_vect.push_back(-scores[i].rank);
+      decoy_scores_vect.push_back(scores[i].score);
     }
   }
 

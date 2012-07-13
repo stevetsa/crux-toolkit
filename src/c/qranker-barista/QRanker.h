@@ -39,12 +39,14 @@ public:
     void getMultiFDRXCorr(PSMScores &set, vector<double> &qval);
     void printNetResults(vector<int> &scores);
     void write_results(string filename, NeuralNet &net);
+    void write_results(string filename, PSMScores& set, bool decoy);
     void write_results_max(string filename, NeuralNet &net);
     void write_results_bootstrap(string filename, PSMScores& set);
     void write_max_nets(string filename, NeuralNet *max_net);
     void write_unique_peptides(string filename, NeuralNet* max_net);
     void write_num_psm_per_spectrum(NeuralNet* max_net);
 
+    void calcScores(PSMScores& set, NeuralNet& net);
     void calcRanks(PSMScores& set, NeuralNet& net);
     void avgRanks(PSMScores& set, int n);
     //void getMinRank(PSMScores& in, PSMScores& out);

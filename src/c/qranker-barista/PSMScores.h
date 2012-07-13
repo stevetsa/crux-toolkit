@@ -11,6 +11,7 @@ public:
   double score; 
   int psmind;
   double q;
+  double p;
   int label;
   double rank;
   double PEP;
@@ -31,6 +32,9 @@ public:
     
     void calc_factor();
     int calcOverFDR(double fdr);
+    int calcOverFDRBH(double fdr);
+    void calcPValues();
+
     void calcMultiOverFDR(vector<double> &fdr, vector<int> &overFDR);
     inline PSMScoreHolder& operator[](int ix){return scores[ix];}
 
@@ -40,13 +44,25 @@ public:
 
 
     void calcMinRank(PSMScores& out, Dataset& d);
-
+    void getMaxPerScan(Dataset& d, PSMScores& max);
     void static fillFeaturesSplit(PSMScores& train,PSMScores& test,Dataset &d, double ratio);
+
+    void static fillFeaturesSplitScan(PSMScores& train, PSMScores& test, Dataset& d);
+
+    void static fillFeaturesSplitScan(
+      PSMScores& in, 
+      Dataset& d, 
+      PSMScores& train, 
+      PSMScores& test);
+
     void static fillFeaturesFull(PSMScores& full,Dataset &d);
     void static fillFeaturesBootstrap(PSMScores& bootstrap, Dataset& d);
     void static fillFeaturesBootstrap(PSMScores& in, PSMScores& bootstrap);
     inline int size(){return scores.size();}
     inline void add_psm(PSMScoreHolder &psm){scores.push_back(psm);}
+
+    void add_psms(PSMScores& psms);
+
 protected:
     int neg,pos,posNow;
     vector<PSMScoreHolder> scores;

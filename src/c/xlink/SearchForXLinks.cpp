@@ -36,6 +36,7 @@ int SearchForXLinks::main(int argc, char** argv) {
     "compute-sp",
     "overwrite",
     "output-dir",
+    "decoys",
     "precursor-window",
     "precursor-window-type",
     "precursor-window-decoy",
