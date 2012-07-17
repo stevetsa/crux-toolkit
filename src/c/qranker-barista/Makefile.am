@@ -1,5 +1,5 @@
 # Automake template for xlink-search library
-AM_CXXFLAGS = -Wall -W $(USEDOUBLES) $(USEDARWIN) $(SEARCH_ENABLED) \
+AM_CXXFLAGS = -Wall -Werror -W $(USEDOUBLES) $(USEDARWIN) $(SEARCH_ENABLED) \
             -D_LARGEFILE_SOURCE=1 -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE
 
 
@@ -25,7 +25,9 @@ libqranker_barista_la_SOURCES = \
 	DataSet.cpp\
 	PepScores.h\
 	QRanker.cpp\
-	SQTParser.h
+	SQTParser.h\
+	CruxParser.cpp\
+	CruxParser.h
 
 libqranker_barista_la_CXXFLAGS = $(AM_CXXFLAGS) \
   -I$(top_srcdir)/src/c/

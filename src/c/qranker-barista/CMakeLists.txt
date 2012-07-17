@@ -31,6 +31,7 @@ add_library(
   barista
   STATIC
   Barista.cpp
+  CruxParser.cpp
   ProtScores.cpp
   NeuralNet.cpp
   SpecFeatures.cpp
