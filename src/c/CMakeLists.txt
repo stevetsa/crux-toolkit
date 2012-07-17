@@ -216,7 +216,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     xlink
   )
   target_link_libraries(
-    xlink-score_spectrum
+    xlink-score-spectrum
     crux-support
     MSToolkit
     xlink
