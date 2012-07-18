@@ -1190,6 +1190,8 @@ bool Index::create(
   writeHeader(info_out);
   index_database(decoy_database_, Index::decoy_index_file_prefix, 
                  info_out, text_file);//NULL);
+  fclose(info_out);
+  info_out = NULL;
   if( text_file){
     fclose(text_file);
     text_file = NULL;
@@ -1208,6 +1210,7 @@ bool Index::create(
          directory_);
     delete_dir(directory_);
   }
+
   if(rename(temp_dir_name, directory_) != 0){
     carp(CARP_WARNING, "Cannot rename directory");
     return false;
@@ -1239,6 +1242,12 @@ void Index::index_database(
   // get number of bins/files needed
   int* mass_limits = (int*)mycalloc(2, sizeof(int));
   long num_bins = getNumBinsNeeded(mass_limits);
+
+#ifdef _MSC_VER
+  if (num_bins > WIN_MAX_OPEN_FILES) {
+	  carp(CARP_FATAL, "Needed to open %ld index files. Windows allows a maximum of %ld open files\n", num_bins, WIN_MAX_OPEN_FILES); 
+  }
+#endif
   
   // create file handle array
   FILE** file_array = (FILE**)mycalloc(num_bins, sizeof(FILE*));
