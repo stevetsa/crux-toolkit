@@ -17,6 +17,8 @@
 #include "MatchFileReader.h"
 #include "WinCrux.h"
 
+#include "SpectrumScoreDistribution.h"
+
 using namespace std;
 
 
@@ -1183,6 +1185,28 @@ bool MatchCollection::scoreMatchesOneSpectrum(
   IonConstraint::free(ion_constraint);
   delete ion_series;
   delete scorer;
+  return true;
+}
+
+bool MatchCollection::computeExactPValues(
+  const SpectrumScoreDistribution& ssd
+  )
+{
+  SCORER_TYPE_T main_score = get_scorer_type_parameter("score-type");
+  if (!scored_type_[main_score]) {
+    const char* type_str = scorer_type_to_string(main_score);
+    carp(CARP_FATAL, "Match collection not scored by %s prior to computing p-values.",
+         type_str);
+  }
+
+  for (int i = 0; i < match_total_; ++i) {
+    Match* cur = match_[i];
+    FLOAT_T log_pvalue = ssd.logpvalue(cur->getScore(main_score));
+    cur->setScore(LOGP_BONF_WEIBULL_XCORR, -log_pvalue);
+  }
+
+  populateMatchRank(XCORR);
+  scored_type_[LOGP_BONF_WEIBULL_XCORR] = true;
   return true;
 }
 

@@ -43,6 +43,8 @@
 #include "MatchIterator.h"
 #include "PepXMLWriter.h"
 
+#include "SpectrumScoreDistribution.h"
+
 using namespace std;
 
 static const int _PSM_SAMPLE_SIZE = 500;
@@ -558,6 +560,11 @@ class MatchCollection {
     Spectrum* spectrum,
     int charge
     );
+
+  /**
+   * Compute exact p-values by dynamic programming.
+   */ 
+  bool computeExactPValues(const SpectrumScoreDistribution& ssd);
 
   bool computePValues(
     FILE* output_pvalue_file

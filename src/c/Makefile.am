@@ -172,6 +172,8 @@ LIBFILES= \
   SpectrumCollection.h \
   SpectrumCollectionFactory.cpp \
   SpectrumCollectionFactory.h \
+  SpectrumScoreDistribution.cpp \
+  SpectrumScoreDistribution.h \
   Spectrum.cpp \
   Spectrum.h \
   SpectrumZState.cpp \

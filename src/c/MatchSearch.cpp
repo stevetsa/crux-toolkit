@@ -31,6 +31,8 @@
 #include "SpectrumCollectionFactory.h"
 #include "ModifiedPeptidesIterator.h"
 
+#include "SpectrumScoreDistribution.h"
+
 using namespace std;
 
 /**
@@ -372,7 +374,7 @@ int MatchSearch::main(int argc, char** argv){
     SpectrumZState zstate;
     Spectrum* spectrum = spectrum_iterator->next(zstate);
     int charge = zstate.getCharge();
-    
+
     bool is_decoy = false;
 
     progress.report(spectrum->getFirstScan(), charge);
@@ -425,7 +427,26 @@ int MatchSearch::main(int argc, char** argv){
     // calculate p-values for each collection of PSMs separately
     // use targets to get Weibull parameters, use same params for decoys
     if( compute_pvalues == true ){
+      carp(CARP_DEBUG, "Computing p-values by dynamic programming.");
 
+      // Compute the per-spectrum distribution over scores
+      SpectrumScoreDistribution ssd(spectrum, zstate);
+      if (!ssd.initialized() || !ssd.failed())
+        carp(CARP_FATAL, "SpectrumScoreDistribution borked.");
+
+      // Convert target xcorr's to 1-pvalues.
+      target_psms->computeExactPValues(ssd);
+
+      // Convert all decoys xcorr's to 1-pvalues.
+      for (int d = 0; d < num_decoy_collections; ++d) {
+        MatchCollection* decoy_psms = decoy_collection_list[d];
+        decoy_psms->computeExactPValues(ssd);
+      }
+
+      // No-op to shut up compiler about decoy_pvalue_file not being used.
+      if (decoy_pvalue_file) {}
+
+#if 0
       carp(CARP_DEBUG, "Estimating Weibull parameters.");
       while( ! target_psms->hasEnoughWeibullPoints() ){
         // generate more scores from new decoys if there are not enough
@@ -446,8 +467,8 @@ int MatchSearch::main(int argc, char** argv){
 
         carp(CARP_DEBUG, "Calculating p-values.");
         cur_collection->computePValues(decoy_pvalue_file);
-      
       }// next collection
+#endif      
     }
 
     printSpectrumMatches(output_files, 
