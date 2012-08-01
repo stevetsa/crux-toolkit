@@ -211,21 +211,21 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   )
   target_link_libraries(
     xlink-predict-peptide-ions
+    xlink
     crux-support
     MSToolkit
-    xlink
   )
   target_link_libraries(
     xlink-score-spectrum
+    xlink
     crux-support
     MSToolkit
-    xlink
   )
   target_link_libraries(
     xlink-assign-ions
+    xlink
     crux-support
     MSToolkit
-    xlink
   )
 else(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   target_link_libraries(
@@ -245,24 +245,30 @@ else(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   )
   target_link_libraries(
     xlink-predict-peptide-ions
-    crux-support
+    dl
     m
-    MSToolkit
+    pthread
     xlink
+    crux-support
+    MSToolkit
   )
   target_link_libraries(
     xlink-score-spectrum
-    crux-support
+    dl
     m
-    MSToolkit
+    pthread
     xlink
+    crux-support
+    MSToolkit
   )
   target_link_libraries(
     xlink-assign-ions
-    crux-support
+    dl
     m
-    MSToolkit
+    pthread
     xlink
+    crux-support
+    MSToolkit
   )
 endif(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 
