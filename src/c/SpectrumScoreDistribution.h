@@ -46,6 +46,7 @@ protected:
 	int maxbin_; ///< length of observed_
 
 	bool failed_;
+	FLOAT_T neutralmass_;
 
 	/**
 	 * Deallocate all memory safely.
@@ -60,6 +61,21 @@ protected:
 	 * or is initialized() is false.
 	 */
 	void computeScores();
+
+	void countHigherScoring(FLOAT_T xcorr, FLOAT_T& nBetter, FLOAT_T& nPeptides) const;
+
+	/**
+	 * To fix the scaling problem:
+	 * i. Scale the intensities to 0-50, as a hack.
+	 * ii. Do everything else as before, a max Xcorr of 10.0 should be fine
+	 * iii. This shouldn't affect relative randking, but it will affect the
+	 *   absrank of Crux. Just do a separate run to get those results.
+	 * iv. the do-weibullp.sh run contains xcorr and Weibull.
+	 *
+	 *
+	 *
+	 * 
+	 */
 
 public:
 
@@ -98,6 +114,7 @@ public:
 	 */
 	FLOAT_T pvalue(FLOAT_T xcorr) const;
 
+	// log base-e.
 	FLOAT_T logpvalue(FLOAT_T xcorr) const;
 };
 

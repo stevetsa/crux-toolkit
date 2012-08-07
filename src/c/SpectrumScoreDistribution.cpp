@@ -30,6 +30,7 @@
 #include "parameter.h"
 
 #include "SpectrumScoreDistribution.h"
+#include <limits.h>
 
 void SpectrumScoreDistribution::quantize(
 	FLOAT_T lower,
@@ -54,19 +55,20 @@ SpectrumScoreDistribution::SpectrumScoreDistribution(
 	Spectrum* spectrum,
 	const SpectrumZState& zstate
 	) : table_(NULL), nrows_(-1), ncols_(-1), mass_(NULL), score_(NULL), 
-			observed_(NULL), maxbin_(-1), failed_(false)
+			observed_(NULL), maxbin_(-1), failed_(false), neutralmass_(0.0)
 {
 	if ( spectrum == NULL )
 		carp(CARP_FATAL, "Cannot compute score distribution, spectrum is NULL.");
 
 	int charge = zstate.getCharge();
 	double tol = get_double_parameter("precursor-window");
-	FLOAT_T maxMass = ceil(charge * zstate.getNeutralMass() + tol);
+	FLOAT_T maxMass = ceil(zstate.getNeutralMass() + tol);
+	neutralmass_ = zstate.getNeutralMass();
 	FLOAT_T massDelta = 1.0;
 	quantize(0.0, maxMass, massDelta, mass_, ncols_);
 
 	FLOAT_T maxScore = 10.0; // TODO(ajit): Do something smarter than fixing upper bound.
-	FLOAT_T scoreDelta = 0.1;
+	FLOAT_T scoreDelta = 0.01;
 	quantize(0.0, maxScore, scoreDelta, score_, nrows_);
 
 	// Allocate memoization table.
@@ -132,6 +134,7 @@ void SpectrumScoreDistribution::computeScores()
 {
 	static const int mass[20] = { 71, 160, 129, 115, 57, 147, 113, 137, 128, 131, 113, 
 																114, 128, 97, 87, 156, 101, 186, 99, 163 };
+	static double epsilon = numeric_limits<double>::epsilon();
 
 	// The only non-zero value in table_[0][*] is the first one.
 	table_[0][0] = 1;
@@ -144,7 +147,9 @@ void SpectrumScoreDistribution::computeScores()
 			int v = 0;
 			for (int a = 0; a < 20; ++a) {
 				int new_m = m - mass[a];
-				int new_s = static_cast<int>(s - (50.0 * observed_[new_m])/10000.0);
+				double contrib = (50.0 * observed_[new_m])/10000.0;
+				assert(contrib > epsilon); // Contribution has to be non-negative.
+				int new_s = static_cast<int>(s - contrib);
 				//int new_s = static_cast<int>(s - (observed_[new_m]/10000.0));
 				if (new_s < 0 || (new_s == 0 && new_m > 0)) {
 					// table_[new_s][new_m] will be zero, so add nothing to v.
@@ -157,6 +162,48 @@ void SpectrumScoreDistribution::computeScores()
 			table_[s][m] = v;		
 		}
 	}
+}
+
+void SpectrumScoreDistribution::countHigherScoring(
+	FLOAT_T xcorr,
+	FLOAT_T& nBetter,
+	FLOAT_T& nPeptides
+	) const
+{
+	if (xcorr >= maxScore())
+		carp(CARP_WARNING, "Cannot accurately score xcorr %g (max %g)", xcorr, maxScore());
+
+	double tol = get_double_parameter("precursor-window");
+	int lower = (int) ceil(neutralmass_ - tol);
+	int upper = (int) floor(neutralmass_ + tol);
+	lower = max(0, lower);
+	upper = min(upper, ncols_-1);
+	nPeptides = 0;
+	nBetter = 0;
+	for (int m = lower; m <= upper; ++m) {
+		for (int s = 0; s < nrows_; ++s) {
+			nPeptides += (FLOAT_T) table_[s][m];
+			if (score_[s] >= xcorr)
+				nBetter += (FLOAT_T) table_[s][m];
+		}
+	}
+
+#if 0
+	nPeptides = 0;
+	nBetter = 0;
+	//int m = ncols_ - 1;
+	int m = (int) floor(neutralmass_);
+	if (m >= ncols_)
+		m -= 1;
+	if (m >= ncols_)
+		carp(CARP_FATAL, "Bad neutral mass");
+
+	for (int s = 0; s < nrows_; ++s) {
+		nPeptides += (FLOAT_T) table_[s][m];
+		if (score_[s] >= xcorr)
+			nBetter += (FLOAT_T) table_[s][m];
+	}
+#endif
 }
 
 SpectrumScoreDistribution::~SpectrumScoreDistribution()
@@ -186,26 +233,14 @@ FLOAT_T SpectrumScoreDistribution::maxMass() const
 
 FLOAT_T SpectrumScoreDistribution::pvalue(FLOAT_T xcorr) const
 {
-	int m = ncols_ - 1;
-	FLOAT_T nPeptides = 0;
-	FLOAT_T nBetter = 0;
-	for (int s = 0; s < nrows_; ++s) {
-		nPeptides += (FLOAT_T) table_[s][m];
-		if (score_[s] >= xcorr)
-			nBetter += (FLOAT_T) table_[s][m];
-	}
+	FLOAT_T nBetter, nPeptides;
+	countHigherScoring(xcorr, nBetter, nPeptides);
 	return nBetter/nPeptides;
 }
 
 FLOAT_T SpectrumScoreDistribution::logpvalue(FLOAT_T xcorr) const
 {
-	int m = ncols_ - 1;
-	FLOAT_T nPeptides = 0;
-	FLOAT_T nBetter = 0;
-	for (int s = 0; s < nrows_; ++s) {
-		nPeptides += (FLOAT_T) table_[s][m];
-		if (score_[s] >= xcorr)
-			nBetter += (FLOAT_T) table_[s][m];
-	}
+	FLOAT_T nBetter, nPeptides;
+	countHigherScoring(xcorr, nBetter, nPeptides);
 	return log(nBetter) - log(nPeptides);
 }

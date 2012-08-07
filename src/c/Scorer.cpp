@@ -29,7 +29,7 @@
 #include "Scorer.h"
 #include "parameter.h"
 
-
+#include <algorithm>
 
 /**
  * Maximum range for cross correlation offset.
@@ -971,6 +971,20 @@ bool Scorer::createIntensityArrayObserved(
       new_observed[idx] -= (observed[sub_idx] / (MAX_XCORR_OFFSET * 2.0 + 1));
     }
   }
+
+#if 1 //Turn off to test what just higher resolution looks like.
+  // HACK(ajit): Rescale the spectrum upwards, which changes the range of XCorr,
+  // but allows us to easily compute per-spectrum p-values (See Bill email Jul 24, 2012)
+  FLOAT_T minelt = *min_element(new_observed, new_observed + getMaxBin());
+  for (int i = 0; i < getMaxBin(); ++i) {
+    new_observed[i] += minelt;
+  }
+  // rescale so that the intensities are in [0.0 .. 50.0]
+  FLOAT_T maxelt = *max_element(new_observed, new_observed + getMaxBin());
+  for (int i = 0; i < getMaxBin(); ++i) {
+    new_observed[i] *= 50.0 / maxelt;
+  }
+#endif
 
   // set new values
   observed_ = new_observed;
