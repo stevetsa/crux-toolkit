@@ -85,6 +85,15 @@ class SpecFeaturesGenerator
     double *features);
 
 
+  void get_xlink_features(
+    int scan, int ch, 
+    string& peptide1,
+    string& peptide2,
+    int loc1,
+    int loc2,
+    double& xcorr1,
+    double& xcorr2);
+
   void get_spec_features_m3(int scan, int ch, string &peptide, double *features, int clean);
   void get_spec_features_m6(int scan, int ch, string &peptide, double *features);
   void get_spec_features_m7(int scan, int ch, string &peptide, double *features);

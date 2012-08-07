@@ -303,6 +303,8 @@ class Peptide {
 
   bool isModified();
 
+  bool isDecoy();
+
   /**
    * \brief Get the modified aa sequence
    *

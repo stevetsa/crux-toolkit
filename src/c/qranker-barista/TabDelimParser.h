@@ -58,6 +58,19 @@ class TabDelimParser{
   int cntMissedCleavagesDeadLink(int psmind);
   int cntMissedCleavages(int psmind);
 
+  void get_xcorr_short_long(int psmind, double& short_xcorr, double& long_xcorr);
+
+  int get_peptide_length_short(int psmind);
+  int get_peptide_length_long(int psmind);
+  int get_peptide_length_sum(int psmind);
+
+//  int get_num_enzymatic_ends(int psmind);
+  bool get_nterm1(int psmind);
+  bool get_cterm1(int psmind);
+
+  bool get_nterm2(int psmind);
+  bool get_cterm2(int psmind);
+
  protected:
 
   //spec features generator
@@ -121,6 +134,8 @@ class TabDelimParser{
   std::set<int> charges;
   std::vector<int> charge_vec;
 
+  bool have_spectra_;
+
   /************xlink-specific*************/
   int num_xlink_features;
   map<int,string> psmind_to_peptide1;
@@ -155,6 +170,16 @@ class TabDelimParser{
     std::vector<string>& flankingaas
     );
 
+  int get_num_enzymatic_ends(
+    int psmind
+  );
+
+
+  void get_flanking_aas(
+    int psmind,
+    bool second,
+    std::vector<std::string>& flanking_aas
+  );
 
 };
 

@@ -7,6 +7,8 @@
 #include <errno.h>
 #include "WinCrux.h"
 
+#include <iostream>
+using namespace std;
 static const int MAX_FILE_NAME_LENGTH = 300;
 static const int MAX_PARSE_COUNT = 3;
 static const int SLEEP_DURATION = 5;

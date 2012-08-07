@@ -22,6 +22,7 @@ using namespace std;
 XLinkablePeptide::XLinkablePeptide() {
   peptide_ = NULL;
   sequence_ = NULL;
+  is_decoy_ = false;
 }
 
 /**
@@ -33,6 +34,7 @@ XLinkablePeptide::XLinkablePeptide(
 
   sequence_ = sequence;
   peptide_ = NULL;
+  is_decoy_ = false;
 }
 
 /**
@@ -48,6 +50,7 @@ XLinkablePeptide::XLinkablePeptide(
   for (unsigned int idx=0;idx<link_sites.size();idx++) {
     addLinkSite(link_sites[idx]);
   }
+  is_decoy_ = false;
 }
 
 /**
@@ -98,6 +101,7 @@ bool XLinkablePeptide::linkSeqPreventsCleavage(
         if (xlink_prevents_cleavage[idx] == aa) {
           return true;
         }
+        idx++;
       }
     }
   }
@@ -190,9 +194,8 @@ void XLinkablePeptide::findLinkSites(
 
   //scan the sequence for linkage sites.
   for (int seq_idx=0;seq_idx < length;seq_idx++) {
-    
     if (bondmap.canLink(peptide, seq_idx)) {
-
+      
       bool link_prevented = false;
       // 1st test, make sure that we don't link at the c-terminus
       // if the xlink prevents cleavage and the c-terminus is
@@ -231,7 +234,6 @@ void XLinkablePeptide::findLinkSites(
           link_prevented = true;
         }
       }
-
       //passes all three tests, this is a linkable site.
       if (!link_prevented) {
 	//if it is a linkable site, then add it to the list.
@@ -254,6 +256,19 @@ size_t XLinkablePeptide::numLinkSites() {
  */
 bool XLinkablePeptide::isLinkable() {
   return numLinkSites() > 0;
+}
+
+bool XLinkablePeptide::setDecoy(bool is_decoy) {
+
+  is_decoy_ = is_decoy;
+}
+
+/**
+ * \returns whether the peptide is a decoy or not
+ */
+bool XLinkablePeptide::isDecoy() {
+  //return peptide_ -> isDecoy();
+  return is_decoy_;
 }
 
 /**

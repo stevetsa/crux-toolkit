@@ -6,7 +6,7 @@
  ****************************************************************************/
 
 #include "XLinkSite.h"
-
+#include <iostream>
 using namespace std;
 
 /**
@@ -24,7 +24,11 @@ XLinkSite::XLinkSite(
   string& site_string ///<string describing the cross-linkable site
   ) {
 
-  if (site_string == "nterm") {
+  if (site_string == "cterm") {
+
+    type_ = XLINKSITE_CTERM;
+
+  } else if (site_string == "nterm") {
 
     type_ = XLINKSITE_NTERM;
 
@@ -58,6 +62,23 @@ bool XLinkSite::hasSite(
   ) const {
   
   switch (type_) {
+    case XLINKSITE_CTERM:
+      
+      if (idx == peptide->getLength() - 1) {
+        //cerr <<"Cterm peptide:"<<peptide->getSequence()<<" "<<idx<<":"<<(int)peptide->getLength()<<endl;
+        vector<PeptideSrc*>& srcs = peptide->getPeptideSrcVector();
+        for (size_t idx2 = 0 ; idx2 < srcs.size() ; idx2++ ) {
+          int start_idx = srcs[idx2]->getStartIdx();
+          //cerr << "start:"<<start_idx<<" "<<(start_idx+idx)<<" "<<srcs[idx2]->getParentProtein()->getLength()<<endl;
+
+
+          if ((idx + start_idx) >= srcs[idx2]->getParentProtein()->getLength()) {
+            return true;
+          }
+        }
+      }
+      return false;
+      break;
     case XLINKSITE_NTERM:
       if (idx == 0) {
 	vector<PeptideSrc*>& srcs = peptide->getPeptideSrcVector();
@@ -87,6 +108,8 @@ bool XLinkSite::hasSite(
   int idx) const {
 
   switch(type_) {
+    case XLINKSITE_CTERM:
+      return idx == protein_sequence.length() - 1;
     case XLINKSITE_NTERM:
       return idx == 0;
       break;

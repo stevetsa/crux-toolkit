@@ -647,6 +647,9 @@ bool Peptide::isModified() {
   return modified_seq_ != NULL;
 }
 
+bool Peptide::isDecoy() {
+  return decoy_modified_seq_ != NULL;
+}
 
 /**
  * \brief Get the modified peptide sequence
@@ -752,7 +755,7 @@ char* Peptide::getUnshuffledModifiedSequence() {
 
   char* seq_string = NULL;
   if( modified_seq_ == NULL ){
-    seq_string = getSequence();
+    seq_string = getUnshuffledSequence();
   }else{
     seq_string = 
       modified_aa_string_to_string_with_symbols(modified_seq_,
@@ -1112,6 +1115,11 @@ char* Peptide::generateShuffledSequence() {
 
   // Allocate a copy of the peptide.
   char* sequence = getSequence();
+  bool track = false;
+  if (strcmp(sequence, "LYMAED") == 0) {
+    track = true;
+  }
+
   int length = length_;
 
   // Shuffle from left to right, using the Knuth algorithm for shuffling.
@@ -1130,6 +1138,7 @@ char* Peptide::generateShuffledSequence() {
       ++start_idx;
     }
     num_shuffles++;
+    carp(CARP_INFO, "%i sequence is now:%s",num_shuffles, sequence);
   } while (equal_peptides(sequence, this) && (num_shuffles < MAX_SHUFFLES));
 
   return sequence;
@@ -1200,6 +1209,9 @@ MODIFIED_AA_T* Peptide::generateShuffledModSequence() {
     sequence[switch_idx] = temp_aa;
     ++start_idx;
   }
+
+  carp(CARP_INFO, "sequence is now:%s", modified_aa_string_to_string_with_masses(sequence, length_,
+                         get_mass_format_type_parameter("mod-mass-format")));
 
   return sequence;
 }
@@ -2025,6 +2037,9 @@ string Peptide::getProteinIdsLocations() {
       char* protein_id = protein->getId();
       int peptide_loc = peptide_src->getStartIdx();
       std::ostringstream protein_loc_stream;
+      if (decoy_modified_seq_ != NULL) {
+        protein_loc_stream << "rand_";
+      }
       protein_loc_stream << protein_id << "(" << peptide_loc << ")";
       free(protein_id);
       protein_ids_locations.insert(protein_loc_stream.str());

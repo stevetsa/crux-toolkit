@@ -1031,6 +1031,12 @@ void initialize_parameters(void){
       "Available for search-for-xlinks program (Default=F).",
       "false");
 
+  set_boolean_parameter("mixed-target-decoys", false,
+      "Allow for mixed target,decoy candidates for crosslinked peptides",
+      "Available for search-for-xlinks program (Default=F).",
+      "false");
+
+
   // **** xlink-score-spectrum options ****
   set_string_parameter("xlink-score-method", "composite", 
       "Score method for xlink {composite, modification, concatenated}. Default=composite.",

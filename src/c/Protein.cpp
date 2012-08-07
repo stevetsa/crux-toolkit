@@ -8,6 +8,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <vector>
+#include <iostream>
 #include "utils.h"
 #include "crux-utils.h"
 #include "parameter.h"
@@ -876,8 +877,12 @@ void Protein::peptideShuffleSequence(){
     start = end + 1; // hold in place both sides of the cleavage site
   }
 
+  
+
   // shuffle end of sequence
   end = length_ - 1;
+  carp(CARP_INFO,"start:%d end:%d length:%d", start, end, length_);
+
   if( start < end ){
     shuffleRegion(start, end);
   }
@@ -892,6 +897,8 @@ void Protein::shuffleRegion(
   int start, ///< index of peptide start
   int end){///< index of last residue in peptide
 
+  carp(CARP_INFO, "shuffleRegion %d %d", start, end);
+
   int sub_seq_length = end - start - 1;
   char* buf = new char[sub_seq_length + 1];
   if( sub_seq_length > 1 ){
@@ -900,14 +907,20 @@ void Protein::shuffleRegion(
     // store the sequence before shuffling not including the unmoved residues
     strncpy(buf, sequence_ + start + 1, sub_seq_length);
     buf[sub_seq_length] = '\0';
-
+    carp(CARP_INFO, "shuffling: %s", buf);
     shuffle_array(sequence_ + start + 1, sub_seq_length);
+    
+    for (int idx = 0; idx < sub_seq_length+2;idx++) {
+      cerr << sequence_[idx+start];
+    }
+    cerr << endl;
 
     // check to see if it changed
-    bool has_changed = strncmp(buf, sequence_ + start, sub_seq_length + 2);
+    bool has_changed = strncmp(buf, sequence_ + start+1, sub_seq_length) != 0;
     // try reshuffling up to three more times
     int count = 0;
     while( (count < 3) && (has_changed == false)){
+      carp(CARP_INFO, "reshuffling...");
       shuffle_array(sequence_ + start + 1, sub_seq_length);
       has_changed = strncmp(buf, sequence_ + start, sub_seq_length + 2);
       count++;

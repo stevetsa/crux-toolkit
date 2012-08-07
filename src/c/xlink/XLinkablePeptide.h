@@ -24,6 +24,7 @@ class XLinkablePeptide {
   Peptide* peptide_; ///< the peptide object of this XLinkablePeptide (can be null)
   char* sequence_; ///< the sequence 
   std::vector<int> link_sites_; ///< the sequence indices where linking is possible
+  bool is_decoy_; //Is this from the decoy database?
 
  public:
 
@@ -124,6 +125,15 @@ class XLinkablePeptide {
    */
   bool isLinkable();
   
+
+  bool setDecoy(bool is_decoy);
+
+  /**
+   * \returns whether the peptide is a decoy or not
+   */
+  bool isDecoy();
+
+
   /**
    * \returns whether the peptide is linkable using the bond map
    */

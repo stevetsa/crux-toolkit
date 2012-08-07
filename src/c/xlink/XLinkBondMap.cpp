@@ -75,7 +75,6 @@ bool XLinkBondMap::canLink(
   Peptide* peptide, ///<peptide object pointer
   int idx             ///<sequence index
    ) {
-
   for (XLinkBondMap::iterator iter = begin();
     iter != end(); ++iter) {
 

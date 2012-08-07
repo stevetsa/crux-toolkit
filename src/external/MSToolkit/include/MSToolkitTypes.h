@@ -1,6 +1,8 @@
 #ifndef _MSTOOLKITTYPES_H
 #define _MSTOOLKITTYPES_H
 
+#include <string>
+
 namespace MSToolkit {
 
 enum MSSpectrumType {
@@ -103,6 +105,7 @@ struct EZState {
   double mh;      //M+H
   float pRTime;   //precursor area
   float pArea;    //precursor retention time
+  std::string note; //precursor note
 };
 
 }

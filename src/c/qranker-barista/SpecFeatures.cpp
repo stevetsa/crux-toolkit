@@ -919,6 +919,79 @@ double SpecFeaturesGenerator::calculate_peptide_mass(string& peptide) {
   return ans;
 }  
 
+void SpecFeaturesGenerator::get_xlink_features(
+  int scan, int ch, 
+  string& pep1, string & pep2, 
+  int loc1, int loc2, 
+  double& xcorr1,
+  double& xcorr2) {
+
+  //cerr << "getting xlink features for "<<pep1 << " "<<pep2 <<" " << loc1 << " " << loc2 << " " << ch << " " << scan<<endl;
+
+
+  if (pep2 == string("_") && loc2 == -1) {
+    cerr << "Linear or deadlink peptide"<<endl;
+    exit(-1);
+    return;
+  }
+
+  
+  ostringstream scan_stream;
+  scan_stream << scan << "." << ch;
+  string spec = scan_stream.str();
+
+  //cerr << "getting spectrum:"<<spec<<endl;
+
+  get_observed_spectrum(spec);
+  
+  //allocate the theoretical spectrum if necessary
+  
+  //cerr << "allocating theoretical:"<<max_mz<<endl;
+
+  if(!ts_m3)
+    allocate_tspec(&ts_m3,3,max_mz);
+  zero_out_tspec(ts_m3,3,max_mz);
+
+  double pep1_mod_mass = calculate_peptide_mass(pep1) + xlink_mass;
+  double pep2_mod_mass = calculate_peptide_mass(pep2) + xlink_mass;
+
+  //cerr << "adding 1"<<endl;
+
+  add_peaks_xlink_m3(ch, pep1, loc1-1, pep2_mod_mass);
+
+  
+  //cerr << "adding1 2"<<endl;
+
+  for (size_t idx = 0; idx < peaks.size();idx++) {
+    ts_m3[0][idx] = max(ts_m3[0][idx]*50.0, ts_m3[1][idx]*25.0);
+    ts_m3[0][idx] = max(ts_m3[0][idx], ts_m3[2][idx]*10.0);
+  }
+
+  //cerr <<"xcorr1"<<endl;
+  xcorr1 = sproduct(ts_m3[0], peaks) / 10000.0;;
+
+
+  zero_out_tspec(ts_m3,3, max_mz);
+
+  //cerr << "adding 2"<<endl;
+
+  add_peaks_xlink_m3(ch, pep2, loc2-1, pep1_mod_mass);
+
+  //cerr << "adding 2 2"<<endl;
+
+  for (size_t idx = 0; idx < peaks.size(); idx++) {
+    ts_m3[0][idx] = max(ts_m3[0][idx]*50.0, ts_m3[1][idx]*25.0);
+    ts_m3[0][idx] = max(ts_m3[0][idx], ts_m3[2][idx]*10.0);
+  }
+
+  //cerr <<"xcorr2"<<endl;
+  xcorr2 = sproduct(ts_m3[0], peaks) / 10000.0;
+
+  //cerr << pep1 <<"("<<loc1<<"):"<<xcorr1<<" "<<pep2<<"("<<loc2<<"):"<<xcorr2<<endl;
+
+
+}
+
 
 void SpecFeaturesGenerator::get_spec_features_m3(
   int scan, int ch, 

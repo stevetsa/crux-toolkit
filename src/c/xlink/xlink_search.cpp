@@ -102,16 +102,18 @@ int SearchForXLinks::xlinkSearchMain() {
       new XLinkMatchCollection(bondmap, peptide_mods, num_peptide_mods, index, database);
 
     
-    peptides_file << "mass\tsequence"<<endl;
+    peptides_file << "mass\tsequence\tprotein id"<<endl;
 
     for (int idx=0;idx < all_candidates->getMatchTotal();idx++) {
       XLinkMatch* candidate = all_candidates->at(idx);
       peptides_file << candidate->getMass(MONO) << "\t";
-      peptides_file << candidate->getSequenceString() << endl;
+      peptides_file << candidate->getSequenceString() << "\t";
+      peptides_file << candidate->getProteinIdString() << endl;
     }
     peptides_file.flush();
     delete all_candidates;
     XLink::deleteAllocatedPeptides();
+    return 0;
   }
 
 
@@ -142,7 +144,7 @@ int SearchForXLinks::xlinkSearchMain() {
 
   int search_count = 0;
   // for every observed spectrum 
-  carp(CARP_INFO, "Searching Spectra");
+  carp(CARP_DEBUG, "Searching Spectra");
 
 
   while (spectrum_iterator->hasNext()) {
@@ -158,7 +160,7 @@ int SearchForXLinks::xlinkSearchMain() {
 
     FLOAT_T precursor_mz = spectrum->getPrecursorMz();
 
-    carp(CARP_INFO, "Getting candidates");  
+    carp(CARP_DEBUG, "Getting candidates");  
 
     XLinkMatchCollection* target_candidates = new XLinkMatchCollection(precursor_mz,
                                            zstate,
@@ -170,7 +172,7 @@ int SearchForXLinks::xlinkSearchMain() {
 					   false);
    
 
-    carp(CARP_INFO, "Done getting candidates:%d", target_candidates->getMatchTotal());
+    carp(CARP_DEBUG, "Done getting candidates:%d", target_candidates->getMatchTotal());
     //target_candidates->setScan(spectrum->getFirstScan());
 
     if (target_candidates->getMatchTotal() < 1) {
@@ -179,7 +181,7 @@ int SearchForXLinks::xlinkSearchMain() {
     }
 
     //score targets
-    carp(CARP_INFO, "scoring candidates:%d", target_candidates->getMatchTotal());
+    carp(CARP_DEBUG, "scoring candidates:%d", target_candidates->getMatchTotal());
     target_candidates->scoreSpectrum(spectrum);
 
 
@@ -274,7 +276,7 @@ int SearchForXLinks::xlinkSearchMain() {
     decoy_candidates->sort(XCORR);
 */
 
-    carp(CARP_INFO, "Ranking");
+    carp(CARP_DEBUG, "Ranking");
 
     if (target_candidates->getScoredType(SP) == true) {
       target_candidates->populateMatchRank(SP);
@@ -283,7 +285,7 @@ int SearchForXLinks::xlinkSearchMain() {
     target_candidates->sort(XCORR);
 
     
-    carp(CARP_INFO, "Writing results");
+    carp(CARP_DEBUG, "Writing results");
     output_files.writeMatches(
       (MatchCollection*)target_candidates, 
       decoy_vec,
@@ -298,8 +300,8 @@ int SearchForXLinks::xlinkSearchMain() {
 
     //free_spectrum(spectrum);
 
-    carp(CARP_INFO,"Done with spectrum %d", scan_num);
-    carp(CARP_INFO, "=====================================");
+    carp(CARP_DEBUG, "Done with spectrum %d", scan_num);
+    carp(CARP_DEBUG, "=====================================");
   } // get next spectrum
 
   output_files.writeFooters();
@@ -333,21 +335,21 @@ int SearchForXLinks::xlinkSearchMain() {
   xr_args_vec.push_back("--mu=0.01");
 
   xr_args_vec.push_back("--wd=1e-7");
-/*
+
   {
     ostringstream oss;
     oss << "--ms2file=";
     oss << ms2_file;
     xr_args_vec.push_back(oss.str());
   }
-*/
+
   {
     ostringstream oss;
     oss << "--xlink-mass=";
     oss << get_double_parameter("link mass");
     xr_args_vec.push_back(oss.str());
   }
-
+  
   xr_args_vec.push_back("--bootstrap=5");
 
   {

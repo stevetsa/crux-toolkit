@@ -62,7 +62,6 @@ libmstoolkit_la_SOURCES = \
   $(EXPAT_PATH)/xmltok.c \
   $(EXPAT_PATH)/xmltok_impl.c \
   $(EXPAT_PATH)/xmltok_ns.c \
-  $(SQLITE_PATH)/sqlite3.c \
   $(MST_PATH)/Spectrum.cpp \
   $(MST_PATH)/MSReader.cpp \
   $(MST_PATH)/MSObject.cpp
@@ -72,14 +71,15 @@ libmstoolkit_la_CXXFLAGS = $(AM_CPPFLAGS) \
   -D_LARGEFILE_SOURCE \
   -DGCC \
   -DHAVE_EXPAT_CONFIG_H \
-  -D_FILE_OFFSET_BITS=64
-
+  -D_FILE_OFFSET_BITS=64 \
+  -D_NOSQLITE
 libmstoolkit_la_CFLAGS = $(AM_CFLAGS) \
   -I$(top_srcdir)/src/external/MSToolkit/include \
   -D_LARGEFILE_SOURCE \
   -DGCC \
   -DHAVE_EXPAT_CONFIG_H \
-  -D_FILE_OFFSET_BITS=64
+  -D_FILE_OFFSET_BITS=64 \
+  -D_NOSQLITE
 
 
 noinst_LTLIBRARIES = libmstoolkit.la

@@ -958,12 +958,105 @@ void QRanker::selectHyperParameters() {
 }
 
 
+void QRanker::writeFeatures() {
+
+
+  
+
+  ofstream fout("features.txt");
+
+  fout << "psmind" << "\t";
+  fout << "label" << "\t";
+  fout << "scan" << "\t";
+  fout << "sequence" << "\t";
+  fout << "xcorr score" << "\t";
+  fout << "xcorr short" << "\t";
+  fout << "xcorr long" << "\t";
+  fout << "sp score" << "\t";
+  fout << "log(sp rank)"<< "\t";
+  fout << "frac"<<"\t";
+  fout << "absMass"<<"\t";
+  fout << "linear?"<<"\t";
+  fout << "selfloop?"<<"\t";
+  fout << "xlink?"<<"\t";
+  fout << "dead-link?"<<"\t";
+  fout << "length short"<<"\t";
+  fout << "length long" << "\t";
+  fout << "length sum" << "\t";
+  fout << "Nenz" << "\t";
+  fout << "nterm1" << "\t";
+  fout << "cterm1" << "\t";
+  fout << "cterm2" << "\t";
+  fout << "cterm2" << "\t";
+  fout << "nmissed" << "\t";
+  fout << "obsmass" << "\t";
+  fout << "ncmp"<<endl;
+
+  d.load_psm_data_for_training();
+  PSMScores scores;
+  PSMScores::fillFeaturesFull(scores, d);
+  
+  for (int idx = 0; idx < scores.size();idx++) {
+    int psmind = scores[idx].psmind;
+    int scan = d.psmind2scan(psmind);
+    //int charge = d.psmind2charge(psmind);
+    int label = scores[idx].label;
+
+    ostringstream oss;
+    if (label == 1) {
+      oss << d.psmind2peptide1(psmind);
+      if(string(d.psmind2peptide2(psmind)) != "_") {
+      //cerr << "peptide2:"<<d.psmind2peptide2(psmind) <<" length:"<<d.psmind2peptide2(psmind).length() << endl;
+        oss << ", " << d.psmind2peptide2(psmind);
+      }
+      if(string(d.psmind2loc(psmind)) != "") {
+        oss << " " << d.psmind2loc(psmind);    
+      }
+    } else {
+      oss << "null";
+    }
+  
+    double* x = d.psmind2features(psmind);
+
+    fout << psmind << "\t";
+    fout << label << "\t";
+    fout << scan << "\t";
+    fout << oss.str() << "\t";
+    fout << x[0] << "\t"; // xcorr score
+    fout << x[1] << "\t"; // xcorr short
+    fout << x[2] << "\t"; // xcorr long
+    fout << x[7] << "\t"; // sp score
+    fout << x[8] << "\t"; // log(sp_rank)
+    fout << x[9] << "\t"; // frac
+    fout << x[10] << "\t"; // absMass
+    fout << x[11] << "\t"; // linear?
+    fout << x[12] << "\t"; // selfloop?
+    fout << x[13] << "\t"; // xlink?
+    fout << x[14] << "\t"; // dead-link?
+    fout << x[15] << "\t"; // length short
+    fout << x[16] << "\t"; // length long
+    fout << x[17] << "\t"; // length sum
+    fout << x[18] << "\t"; // nenz
+    fout << x[19] << "\t"; // nterm1
+    fout << x[20] << "\t"; // cterm1
+    fout << x[21] << "\t"; // nterm2
+    fout << x[22] << "\t"; // cterm2
+    fout << x[23] << "\t"; // nmissed
+    fout << x[24] << "\t"; // obsmass
+    fout << x[25] << endl; // ncmp
+
+  }
+}
+
+
 
 
 int QRanker::run( ) {
   srand(seed);
   cout << "reading data\n";
   
+  writeFeatures();
+
   PSMScores max;
   
   d.load_psm_data_for_training();
@@ -1100,6 +1193,7 @@ int QRanker::set_command_line_options(int argc, char **argv)
       if(!pars.run_on_xlink(fnames))
 	return 0;
     }
+  writeFeatures();
   pars.clear();
   return 1;
 }

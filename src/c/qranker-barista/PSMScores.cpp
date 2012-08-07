@@ -67,6 +67,11 @@ void PSMScores :: calc_factor()
 }
 
 bool comparePValue(const PSMScoreHolder& s1, const PSMScoreHolder& s2) {
+
+  if (s1.p == s2.p) {
+    return s1.score > s2.score;
+  }
+
   return s1.p < s2.p;
 }
 

@@ -24,13 +24,14 @@ TabDelimParser :: TabDelimParser()
 	psmind(0),
 	x(0),
 	xs(0),
-	num_xlink_features(0)
+	num_xlink_features(0),
+        have_spectra_(false)
 {
   
   //num_psm_features
   num_features = 17;
   //num_xlink_features
-  num_base_features = 18;
+  num_base_features = 26;
   num_charge_features = 0;
 
 
@@ -46,7 +47,7 @@ TabDelimParser :: TabDelimParser()
   //final_hits_per_spectrum
   fhps = 1;
   //decoy prefix
-  decoy_prefix = "random_";
+  decoy_prefix = "rand_";
   //max peptide length to be considered
   max_len = 50;
   //min peptide length to be considered
@@ -56,6 +57,8 @@ TabDelimParser :: TabDelimParser()
 
 void TabDelimParser :: clear()
 {
+
+  cerr << "TabDelimParser::clear() - start"<<endl;
   delete[] x; x = (double*)0;
   delete[] xs; xs = (double*)0;
   delete[] psmind_to_scan; psmind_to_scan = (int*)0;
@@ -66,6 +69,8 @@ void TabDelimParser :: clear()
   delete[] psmind_to_pepind; psmind_to_pepind = (int*)0;
   delete[] psmind_to_neutral_mass; psmind_to_neutral_mass = (double*)0;
   delete[] psmind_to_peptide_mass; psmind_to_peptide_mass = (double*)0;
+
+  cerr << "TabDelimParser::clear() - done"<<endl;
 }
 
 
@@ -551,6 +556,222 @@ bool TabDelimParser::enzCTerm(
 
 }
 
+int TabDelimParser::get_peptide_length_short(int psmind) {
+
+  string seq1 = psmind_to_peptide1[psmind];
+  string seq2 = psmind_to_peptide2[psmind];
+
+  if (seq2 == "_") {
+    return seq1.length();
+  } else {
+    return min(seq1.length(), seq2.length());
+  }
+
+}
+
+int TabDelimParser::get_peptide_length_long(int psmind) {
+
+  string seq1 = psmind_to_peptide1[psmind];
+  string seq2 = psmind_to_peptide2[psmind];
+
+  if (seq2 == "_") {
+    return seq1.length();
+  } else {
+    return max(seq1.length(), seq2.length());
+  }
+
+}
+
+int TabDelimParser::get_peptide_length_sum(int psmind) {
+
+  string seq1 = psmind_to_peptide1[psmind];
+  string seq2 = psmind_to_peptide2[psmind];
+
+  if (seq2 == "_") {
+    return seq1.length();
+  } else {
+    return seq1.length() + seq2.length();
+  }
+}
+
+void TabDelimParser::get_xcorr_short_long(
+  int psmind, 
+  double& short_xcorr, 
+  double& long_xcorr
+  ) {
+
+  assert(get_peptide_type(psmind) == XLINKPRODUCT_XLINK);
+
+  short_xcorr = 0;
+  long_xcorr = 0;
+
+  if (have_spectra_) {
+    string seq1 = psmind_to_peptide1[psmind];
+    string seq2 = psmind_to_peptide2[psmind];
+
+    int loc1 = psmind_to_loc1[psmind];
+    int loc2 = psmind_to_loc2[psmind];
+    int scan = psmind_to_scan[psmind];
+    int charge = psmind_to_charge[psmind];
+    double xcorr1=0;
+    double xcorr2=0;
+
+    sfg.get_xlink_features(scan, charge, seq1, seq2, loc1, loc2, xcorr1, xcorr2);
+
+    if (seq1.length() <= seq2.length()) {
+      short_xcorr = xcorr1;
+      long_xcorr = xcorr2;
+    } else {
+      short_xcorr = xcorr2;
+      long_xcorr = xcorr1;
+    }
+  } else {
+    carp(CARP_DEBUG, "Don't have spectra");
+  }
+
+}
+
+void TabDelimParser::get_flanking_aas(int psmind, bool second, vector<string>& flanking_aas) {
+
+  flanking_aas.clear();
+  string flanking_aas_str = psmind_to_flankingaas[psmind];
+
+  vector<string> temp;
+  string delim = ";";
+  get_tokens(flanking_aas_str, temp, delim);
+
+  string current;
+
+  if (second) {
+    if (temp.size() > 1) {
+      current = temp[1];
+    } else {
+      return;
+    }         
+  } else {
+    current = temp[0];
+  }
+
+  delim = ",";
+  get_tokens(current, flanking_aas, delim);
+
+}
+
+
+int TabDelimParser::get_num_enzymatic_ends(int psmind) {
+
+  int ans = 0;
+
+  string seq1 = psmind_to_peptide1[psmind];
+  vector<string> flanking_aas;
+  get_flanking_aas(psmind, false, flanking_aas);
+
+  if (enzNTerm(seq1, flanking_aas)) {
+    ans++;
+  }
+  if (enzCTerm(seq1, flanking_aas)) {
+    ans++;
+  }
+
+  string seq2 = psmind_to_peptide2[psmind];
+
+  if (seq2 != "_") {
+    get_flanking_aas(psmind, true, flanking_aas);
+    if (enzNTerm(seq2, flanking_aas)) {
+      ans++;
+    }
+    if (enzCTerm(seq2, flanking_aas)) {
+      ans++;
+    }
+  }
+
+  return ans;
+}
+
+bool TabDelimParser::get_nterm1(int psmind) {
+
+  string seq1 = psmind_to_peptide1[psmind];
+  vector<string> flanking_aas;
+  get_flanking_aas(psmind, false, flanking_aas);
+
+  if (enzNTerm(seq1, flanking_aas)) {
+    return true;
+  }
+  string seq2 = psmind_to_peptide2[psmind];
+
+  if (seq2 != "_") {
+    get_flanking_aas(psmind, true, flanking_aas);
+    if (enzNTerm(seq2, flanking_aas)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool TabDelimParser::get_cterm1(int psmind) {
+
+  string seq1 = psmind_to_peptide1[psmind];
+  vector<string> flanking_aas;
+  get_flanking_aas(psmind, false, flanking_aas);
+
+  if (enzCTerm(seq1, flanking_aas)) {
+    return true;
+  }
+  string seq2 = psmind_to_peptide2[psmind];
+
+  if (seq2 != "_") {
+    get_flanking_aas(psmind, true, flanking_aas);
+    if (enzCTerm(seq2, flanking_aas)) {
+      return true;
+    }
+  }
+  return false;
+
+}
+
+
+bool TabDelimParser::get_nterm2(int psmind) {
+  string seq1 = psmind_to_peptide1[psmind];
+  vector<string> flanking_aas;
+  get_flanking_aas(psmind, false, flanking_aas);
+
+  if (enzNTerm(seq1, flanking_aas)) {
+    string seq2 = psmind_to_peptide2[psmind];
+
+    if (seq2 != "_") {
+      get_flanking_aas(psmind, true, flanking_aas);
+      if (enzNTerm(seq2, flanking_aas)) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+
+
+}
+
+bool TabDelimParser::get_cterm2(int psmind) {
+  string seq1 = psmind_to_peptide1[psmind];
+  vector<string> flanking_aas;
+  get_flanking_aas(psmind, false, flanking_aas);
+
+  if (enzCTerm(seq1, flanking_aas)) {
+    string seq2 = psmind_to_peptide2[psmind];
+
+    if (seq2 != "_") {
+      get_flanking_aas(psmind, true, flanking_aas);
+      if (enzCTerm(seq2, flanking_aas)) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+
+
+}
+
 
 XLINK_PRODUCT_T TabDelimParser::get_peptide_type(int psmind) {
   if (psmind_to_peptide2[psmind] == "_") {
@@ -574,9 +795,9 @@ XLINK_PRODUCT_T TabDelimParser::get_peptide_type(int psmind) {
     return XLINKPRODUCT_XLINK;
 
   }
-
-
 }
+
+
 
 XLINK_PRODUCT_T TabDelimParser::get_peptide_type(string& sequence) {
   string delim3 = " ";
@@ -623,7 +844,6 @@ XLINK_PRODUCT_T TabDelimParser::get_peptide_type(string& sequence) {
   return ans;
 }
 
-
 /*
  0. XCorr Score
  1. Peptide Length
@@ -649,69 +869,73 @@ void TabDelimParser :: extract_xlink_features(int psmind, vector<string> & token
           " spectrum mass:" << tokens[spectrum_mass_idx] <<
           " peptide mass:" << tokens[peptide_mass_idx] << endl;
   */
+  
+  XLINK_PRODUCT_T peptide_type = get_peptide_type(tokens[sequence_idx]);
 
   //xcorr score
   x[0] = atof(tokens[xcorr_idx].c_str());
   //x[0] = atof(tokens[pvalue_idx].c_str());
 
-  /* peptide length */
-  x[1] = get_peptide_length_sum(tokens[sequence_idx]);
+  x[1] = x[0];
+  x[2] = x[0];
 
-  // peptide type (linear, self-loop, cross-link)
-  XLINK_PRODUCT_T peptide_type = get_peptide_type(tokens[sequence_idx]);
-  x[2] = peptide_type == XLINKPRODUCT_LINEAR; //linear
-  x[3] = peptide_type == XLINKPRODUCT_SELFLOOP; //self-loop
-  x[4] = peptide_type == XLINKPRODUCT_XLINK; //cross-link
-  x[5] = peptide_type == XLINKPRODUCT_DEADLINK; //dead-link
-   
-  //difference between measured and calculated mass
-  x[6] = atof(tokens[spectrum_mass_idx].c_str())-atof(tokens[peptide_mass_idx].c_str());
-  
-  // absolute value of difference between measured and calculated mass
-  x[7] = fabs(atof(tokens[spectrum_mass_idx].c_str())-atof(tokens[peptide_mass_idx].c_str()));
+  if (peptide_type == XLINKPRODUCT_XLINK) {
+    get_xcorr_short_long(psmind, x[1], x[2]);
+  }
 
   //sp score
-  x[8] = atof(tokens[sp_score_idx].c_str());
+  x[7] = atof(tokens[sp_score_idx].c_str());
 
  //log rank by Sp
-  x[9] = 0;
+  x[8] = 0;
   if(atof(tokens[sp_rank_idx].c_str()) > 0)
-    x[9]=log(atof(tokens[sp_rank_idx].c_str()));
-
+    x[8]=log(atof(tokens[sp_rank_idx].c_str()));
 
   //matched ions/predicted ions
-  x[10] = 0;
+  x[9] = 0;
   if(atof(tokens[by_total_idx].c_str()) != 0)
-    x[10] = atof(tokens[by_matched_idx].c_str())/atof(tokens[by_total_idx].c_str());
+    x[9] = atof(tokens[by_matched_idx].c_str())/atof(tokens[by_total_idx].c_str());
+
+  // absolute value of difference between measured and calculated mass
+  x[10] = fabs(atof(tokens[spectrum_mass_idx].c_str())-atof(tokens[peptide_mass_idx].c_str()));
+
+  x[11] = peptide_type == XLINKPRODUCT_LINEAR; // linear peptide
+  x[12] = peptide_type == XLINKPRODUCT_SELFLOOP; // self-loop
+  x[13] = peptide_type == XLINKPRODUCT_XLINK; // cross-link
+  x[14] = peptide_type == XLINKPRODUCT_DEADLINK; // dead-link
+
+  /* short peptide length */
+  x[15] = get_peptide_length_short(psmind);
+
+  /* long peptide length */
+  x[16] = get_peptide_length_long(psmind);
+
+  /* peptide length */
+  x[17] = get_peptide_length_sum(psmind);
+
+  /* number of enzymatic ends */
+  x[18] = get_num_enzymatic_ends(psmind);
+
+  /* Does at least one of the peptides have an enzymatic cleavage in the N-terminus? */
+  x[19] = get_nterm1(psmind);
+
+  /* Does at least one of the peptides have an enzymatic cleavage in the C-terminus? */
+  x[20] = get_cterm1(psmind);
+
+  /* Do both peptides have an enzymatic cleavage in the N-terminus? */
+  x[21] = get_nterm2(psmind);
+
+  /* Do both peptides have an enzymatic cleavage in the C-terminus? */
+  x[22] = get_cterm2(psmind);
+
+  //number of missed-cleavages
+  x[23] = cntMissedCleavages(psmind);
 
   //observed mass
-  x[11] = atof(tokens[spectrum_mass_idx].c_str());
+  x[24] = atof(tokens[spectrum_mass_idx].c_str());
 
   // number of sequence_comparisons
-  x[12] = log(atof(tokens[matches_idx].c_str()));
-  //whether n-terminus and c-terminus have proper cleavage sites
-  // missed cleavages
-
-  //missed-cleavages
-  x[13] = cntMissedCleavages(psmind);
-  //cerr << "sequence:"<<tokens[sequence_idx]<<" mc:"<<x[10]<<endl;
-
-  bool nterm1,cterm1,nterm2,cterm2;
-
-  enzTerm(psmind, nterm1, cterm1, nterm2, cterm2);
-
-  //peptide1 N-terminus tryptic
-  x[14] = nterm1 != nterm2;
-  //peptide1 C-terminus tryptic
-  x[15] = cterm1 != cterm2;
-
-  //peptide2 N-terminus tryptic
-  x[16] = nterm1 && nterm2;
-  
-  //peptide2 C-terminus tryptic
-  x[17] = cterm1 && cterm2;
-
-  //cerr << "x[11]:"<<x[11]<<" x[12]:"<<x[12]<<" x[13]:"<<x[13]<<" x[14]:"<<x[14]<<endl;
+  x[25] = log(atof(tokens[matches_idx].c_str()));
 
   //charge
   int charge = atoi(tokens[charge_idx].c_str());
@@ -762,6 +986,11 @@ void TabDelimParser :: second_pass_xlink(ifstream &fin, int label)
 	  //get the scan and the charge
 	  int scan = atoi(tokens[0].c_str());
 	  int charge = atoi(tokens[1].c_str());
+
+          //record charge and scan
+	  psmind_to_scan[psmind] = scan;
+	  psmind_to_charge[psmind] = charge;
+
           double neutral_mass = atof(tokens[spectrum_mass_idx].c_str());
 	  //extract features
 	  extract_xlink_features(psmind, tokens, x);
@@ -797,7 +1026,7 @@ void TabDelimParser :: second_pass_xlink(ifstream &fin, int label)
 
               
               
-              if (num_spec_features == 7) {
+              if (have_spectra_ && num_spec_features == 3) {
                 sfg.get_spec_features_m3( scan, charge, pept1, pept2, loc1, loc2, xs);
               }
 
@@ -1077,17 +1306,22 @@ int TabDelimParser :: run_on_xlink(vector<string> &filenames, string &ms2filenam
     }
 
   cout << num_psm  << endl;
-  num_spec_features = 7;
-  allocate_feature_space_xlink();
     
   //prepare to generate spectrum features
   sfg.clear();
   sfg.set_xlink_mass(xlink_mass);
-  if(!sfg.open_ms2_file_for_reading(ms2filename))
-    return 0;
-  sfg.read_ms2_file();
-  sfg.initialize_aa_tables();
+
+  have_spectra_ = sfg.open_ms2_file_for_reading(ms2filename);
+
+  if (have_spectra_) {
+    sfg.read_ms2_file();
+    sfg.initialize_aa_tables();
+    num_spec_features = 3;
+  }
   
+  allocate_feature_space_xlink();
+
+
   
   ostringstream fname;
   fname << out_dir << "/psm.txt";
