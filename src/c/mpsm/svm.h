@@ -97,7 +97,7 @@ void svm_set_print_string_function(void (*print_func)(const char *));
 // deprecated
 // this function will be removed in future release
 void svm_destroy_model(struct svm_model *model_ptr); 
-
+double* svm_get_weights(struct svm_model *model);
 #ifdef __cplusplus
 }
 #endif

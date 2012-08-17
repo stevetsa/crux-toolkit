@@ -2577,6 +2577,42 @@ static const char *kernel_type_table[]=
 	"linear","polynomial","rbf","sigmoid","precomputed",NULL
 };
 
+
+double* svm_get_weights(struct svm_model *model) {
+
+  int nr_class = model->nr_class;
+  int nr_features = 0;
+  int nr_SV= model->l;
+
+  const double* const* sv_coef = model->sv_coef;
+  const svm_node* const* SV = model->SV;
+
+  const svm_node *p = SV[0];
+
+  while(p->index != -1)
+  {
+    nr_features++;
+    p++;
+  }
+
+  double *weights = Malloc(double, nr_features);
+  for (int idx=0;idx<nr_features;idx++) {
+    weights[idx] = 0;
+  }
+
+  for (int sv_idx = 0; sv_idx < nr_SV; sv_idx++) {
+    p = SV[sv_idx];
+    double output = sv_coef[0][sv_idx];
+    for (int feature_idx = 0;feature_idx < nr_features;feature_idx++) {
+      weights[feature_idx] = weights[feature_idx] + p->value * output;
+      p++;
+    }
+  }
+
+  return weights;
+
+}
+
 int svm_save_model(const char *model_file_name, const svm_model *model)
 {
 	FILE *fp = fopen(model_file_name,"w");
