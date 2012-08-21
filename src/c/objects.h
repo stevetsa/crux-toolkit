@@ -27,6 +27,7 @@ class MatchCandidate;
 class XLinkablePeptide;
 class XLinkBondMap;
 class XLinkPeptide;
+class XLinkablePeptideIterator;
 
 /**
  * \class Peak 

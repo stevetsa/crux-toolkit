@@ -24,6 +24,7 @@ static const int SLEEP_DURATION = 5;
  */
 IndexPeptideIterator::IndexPeptideIterator(
   Index* index, ///< The index object which we are iterating over -in
+  PeptideConstraint* constraint, ///< the peptide constraint
   bool is_decoy ///< return target or decoy peptides
   )
   : is_decoy_(is_decoy)
@@ -40,7 +41,9 @@ IndexPeptideIterator::IndexPeptideIterator(
   
   // set index
   index_ = index->copyPtr();
-  
+  if (constraint != NULL) {
+    constraint_ = PeptideConstraint::copyPtr(constraint);
+  }
   // parse index_files that are within peptide_constraint from crux_index_map
   // sets index_files and total_index_files
   int parse_count = 0;
@@ -83,6 +86,11 @@ IndexPeptideIterator::~IndexPeptideIterator()
   
   // free the index
   Index::free(index_);
+
+  if (constraint_) {
+    PeptideConstraint::free(constraint_);
+  }
+
 }
 
 /**
@@ -147,8 +155,11 @@ bool IndexPeptideIterator::findPeptideInCurrentIndexFile()
   // peptide to return, reuse this memory while we look
   Peptide* peptide = new Peptide();
   // constraint to meet
-  PeptideConstraint* index_constraint = index_->getSearchConstraint();
-
+  PeptideConstraint* index_constraint = constraint_;
+  if (index_constraint == NULL) {
+    carp(CARP_WARNING, "NULL constriant, getting from INDEX");
+    index_constraint = index_->getSearchConstraint();
+  }
   // loop until we get to a peptide that fits the constraint, 
   // a peptide bigger (mass) than the constraint, or reach eof
   bool peptide_fits = false;

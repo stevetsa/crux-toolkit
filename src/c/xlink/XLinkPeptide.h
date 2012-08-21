@@ -8,6 +8,7 @@
 #include "XLinkBondMap.h"
 #include "XLinkablePeptide.h"
 
+
 #include <set>
 #include <vector>
 
@@ -22,7 +23,8 @@ class XLinkPeptide : public XLinkMatch {
   FLOAT_T mass_[NUMBER_MASS_TYPES];
   
   bool is_decoy_;
-  
+  static FLOAT_T pmin_;  
+
   int getLinkPos(int peptide_idx);
 
  public:
@@ -49,7 +51,29 @@ class XLinkPeptide : public XLinkMatch {
 
   static void setLinkerMass(FLOAT_T linker_mass);
   static FLOAT_T getLinkerMass();
+
   static void addCandidates(
+    FLOAT_T min_mass,
+    FLOAT_T max_mass,
+    XLinkBondMap& bondmap,
+    Index* index,
+    Database* database,
+    PEPTIDE_MOD_T* peptide_mod2,
+    bool decoy2,
+    XLinkablePeptideIterator& iter1,
+    XLinkMatchCollection& candidates);
+
+  static void addCandidates(
+    FLOAT_T min_mass, 
+    FLOAT_T max_mass,
+    XLinkBondMap& bondmap, 
+    Index* index, 
+    Database* database,
+    PEPTIDE_MOD_T** peptide_mods,
+    int num_peptide_mods,
+    XLinkMatchCollection& candidates);
+
+  static void addCandidatesOld(
     FLOAT_T min_mass, 
     FLOAT_T max_mass,
     XLinkBondMap& bondmap, 

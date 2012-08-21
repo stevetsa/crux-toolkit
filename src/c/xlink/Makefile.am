@@ -34,6 +34,8 @@ libxlink_la_SOURCES = \
   XLinkMatchCollection.cpp \
   XLinkablePeptide.cpp \
   XLinkablePeptide.h \
+  XLinkablePeptideIterator.cpp \
+  XLinkablePeptideIterator.h \
   SearchForXLinks.cpp \
   SearchForXLinks.h \
   XLinkScorer.cpp \

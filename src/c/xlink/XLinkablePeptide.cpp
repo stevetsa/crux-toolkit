@@ -37,6 +37,27 @@ XLinkablePeptide::XLinkablePeptide(
   is_decoy_ = false;
 }
 
+XLinkablePeptide::XLinkablePeptide(
+  const XLinkablePeptide& xlinkablepeptide
+  ) {
+  
+  peptide_ = xlinkablepeptide.peptide_->copyPtr();
+  is_decoy_ = xlinkablepeptide.is_decoy_;
+  link_sites_ = xlinkablepeptide.link_sites_;
+
+}
+
+XLinkablePeptide::XLinkablePeptide(
+  XLinkablePeptide& xlinkablepeptide
+) {
+
+  peptide_ = xlinkablepeptide.peptide_->copyPtr();
+  is_decoy_ = xlinkablepeptide.is_decoy_;
+  link_sites_ = xlinkablepeptide.link_sites_;
+
+
+}
+
 /**
  * Constructor that defines the peptide and the linking sites
  */
@@ -45,7 +66,7 @@ XLinkablePeptide::XLinkablePeptide(
   vector<int>& link_sites ///< the linking sites
   ) {
 
-  peptide_ = peptide;
+  peptide_ = peptide->copyPtr();
   link_sites_.clear();
   for (unsigned int idx=0;idx<link_sites.size();idx++) {
     addLinkSite(link_sites[idx]);
@@ -62,7 +83,7 @@ XLinkablePeptide::XLinkablePeptide(
   XLinkBondMap& bondmap ///< the bond map
   ) {
 
-  peptide_=peptide;
+  peptide_=peptide->copyPtr();
   findLinkSites(peptide_, bondmap, link_sites_);
 }
 
@@ -71,6 +92,9 @@ XLinkablePeptide::XLinkablePeptide(
  */
 XLinkablePeptide::~XLinkablePeptide() {
 
+  if (peptide_ != NULL) {
+    //Peptide::free(peptide_);
+  }
 }
 
 /**
@@ -258,7 +282,7 @@ bool XLinkablePeptide::isLinkable() {
   return numLinkSites() > 0;
 }
 
-bool XLinkablePeptide::setDecoy(bool is_decoy) {
+void XLinkablePeptide::setDecoy(bool is_decoy) {
 
   is_decoy_ = is_decoy;
 }

@@ -78,6 +78,7 @@ void Peptide::init() {
   peptide_srcs_.clear();
   modified_seq_ = NULL;
   decoy_modified_seq_ = NULL;
+  pointer_count_ = 1;
 }
 
 /* Public functions--Allocators/Deallocators */
@@ -90,6 +91,21 @@ void Peptide::init() {
 Peptide::Peptide() {
   init();
 }
+
+Peptide* Peptide::copyPtr() {
+
+  pointer_count_++;
+  return this;
+}
+
+void Peptide::free(Peptide* peptide) {
+
+  peptide->pointer_count_--;
+  if (peptide->pointer_count_ <= 0) {
+    delete peptide;
+  }
+}
+
 
 /**
  *\returns the protein struct size, value of sizeof function
@@ -228,10 +244,10 @@ Peptide::~Peptide() {
    PeptideSrc::free(peptide_srcs_);
    
   if(modified_seq_){
-    free(modified_seq_);
+    std::free(modified_seq_);
   }
   if(decoy_modified_seq_){
-    free(decoy_modified_seq_);
+    std::free(decoy_modified_seq_);
   }
 }
 
@@ -563,7 +579,7 @@ char* Peptide::getSequenceFromPeptideSrcSqt(
     copy_sequence[length_+3] = parent_sequence[start_idx+length_-1];
   }
   
-  free(mod_pep_seq);
+  std::free(mod_pep_seq);
   // yeah return!!
   return copy_sequence; 
 }
@@ -671,7 +687,7 @@ MODIFIED_AA_T* Peptide::getModifiedAASequence(){
     carp(CARP_DETAILED_DEBUG, "mod seq NOT cached");
     char* seq = getSequence();
     convert_to_mod_aa_seq(seq, &seq_copy);
-    free(seq);
+    std::free(seq);
   }
   
   return seq_copy;
@@ -1079,7 +1095,7 @@ void Peptide::transformToDecoy(){
 
   // delete any existing decoy sequence
   if(decoy_modified_seq_){ 
-    free(decoy_modified_seq_); 
+    std::free(decoy_modified_seq_); 
   }
   // if the peptide is already modified, shuffle the modified sequence
   if(modified_seq_){
@@ -1099,7 +1115,7 @@ void Peptide::transformToDecoy(){
       new_seq = generateShuffledSequence();
     }
     convert_to_mod_aa_seq(new_seq, &(decoy_modified_seq_));
-    free(new_seq);
+    std::free(new_seq);
   }
 }
 
@@ -1173,7 +1189,7 @@ char* Peptide::generateReversedSequence() {
     carp(CARP_DETAILED_INFO, 
          "Peptide %s is a palindrome and will be shuffled instead of reversed.",
          sequence);
-    free(sequence);
+    std::free(sequence);
     sequence = generateShuffledSequence();
   }
 
@@ -1537,7 +1553,7 @@ void Peptide::printInFormat(
 
   // free sequence if allocated
   if(flag_out){
-    free(sequence);
+    std::free(sequence);
   }
 }
 
@@ -1624,7 +1640,7 @@ void Peptide::printFilteredInFormat(
 
   // free sequence if allocated
   if(flag_out){
-    free(sequence);
+    std::free(sequence);
   }
 }
 
@@ -1707,7 +1723,7 @@ bool Peptide::serialize(
   fwrite(modified_seq_, sizeof(MODIFIED_AA_T), mod_seq_length, file);
 
 
-  free(seq);
+  std::free(seq);
   
   // If a text file was given, print the peptide in ASCII.
   if (text_file != NULL) {
@@ -1987,8 +2003,8 @@ void free_residue_iterator(
   RESIDUE_ITERATOR_T* residue_iterator ///< free this object -in
   )
 {
-  free(residue_iterator->sequence);
-  free(residue_iterator);
+  std::free(residue_iterator->sequence);
+  std::free(residue_iterator);
 }
 
 /**
@@ -2041,7 +2057,7 @@ string Peptide::getProteinIdsLocations() {
         protein_loc_stream << "rand_";
       }
       protein_loc_stream << protein_id << "(" << peptide_loc << ")";
-      free(protein_id);
+      std::free(protein_id);
       protein_ids_locations.insert(protein_loc_stream.str());
     }
   }

@@ -40,6 +40,14 @@ class XLinkablePeptide {
     char* sequence ///< the peptide sequence
     );
 
+  XLinkablePeptide(
+    const XLinkablePeptide& xlinkablepeptide
+  );
+
+  XLinkablePeptide(
+    XLinkablePeptide& xlinkablepeptide
+  );
+
   /**
    * Constructor that defines the peptide and the linking sites
    */
@@ -126,7 +134,7 @@ class XLinkablePeptide {
   bool isLinkable();
   
 
-  bool setDecoy(bool is_decoy);
+  void setDecoy(bool is_decoy);
 
   /**
    * \returns whether the peptide is a decoy or not

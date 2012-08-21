@@ -46,7 +46,7 @@ void LinearPeptide::addCandidates(
       new ModifiedPeptidesIterator(min_mass, max_mass, peptide_mod, 
         false, index, database);
 
-
+    //add the targets
     while (peptide_iterator->hasNext()) {
       Peptide* peptide = peptide_iterator->next();
       XLinkMatch* new_candidate = new LinearPeptide(peptide);
@@ -60,6 +60,28 @@ void LinearPeptide::addCandidates(
       }
     }
     delete peptide_iterator;
+
+
+    //add the decoys
+    peptide_iterator = new
+      ModifiedPeptidesIterator(min_mass, max_mass, peptide_mod,
+        true, index, database);
+
+    while (peptide_iterator->hasNext()) {
+      Peptide* peptide = peptide_iterator->next();
+      XLinkMatch* new_candidate = new LinearPeptide(peptide);
+      if (new_candidate->getNumMissedCleavages() <= max_missed_cleavages) {
+        candidates.add(new_candidate);
+        XLink::addAllocatedPeptide(peptide);
+      } else {
+        delete new_candidate;
+        delete peptide;
+      }
+    }
+
+    delete peptide_iterator;
+
+
   }
 }
 

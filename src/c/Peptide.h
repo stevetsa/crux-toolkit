@@ -43,6 +43,8 @@ class Peptide {
    */
 
   /* Private data types */
+
+  int pointer_count_;
   unsigned char length_; ///< The length of the peptide
   FLOAT_T peptide_mass_;   ///< The peptide's mass.
   std:: vector<PeptideSrc*> peptide_srcs_; ///< a vector of peptide_srcs_
@@ -118,6 +120,9 @@ class Peptide {
    * This decision is made by global variable PEPTIDE_SRC_USE_LINK_LIST
    */
   ~Peptide();
+
+  static void free(Peptide* peptide);
+  Peptide* copyPtr();
 
   /*  Getters and Setters  */
   
