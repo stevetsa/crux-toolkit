@@ -472,32 +472,29 @@ void XLinkPeptide::addCandidatesOld(
       //cerr << pep2.getModifiedSequenceString() <<" "<<pep2.isDecoy()<<endl;
       //cerr << "======================="<<endl;
       if (mixed_target_decoys || (pep1.isDecoy() == pep2.isDecoy())) {
+        FLOAT_T candidate_mass = pep1.getMass() + pep2.getMass() + linker_mass_;
+        if (candidate_mass >= min_mass && candidate_mass <= max_mass) {
+          int mods = pep1.getPeptide()->countModifiedAAs() + pep2.getPeptide()->countModifiedAAs();
+          if (mods <= max_mod_xlink) {
+            //carp(CARP_INFO,"Generating xlink candidates");
 
-        int mods = pep1.getPeptide()->countModifiedAAs() + pep2.getPeptide()->countModifiedAAs();
-        if (mods <= max_mod_xlink) {
-          //carp(CARP_INFO,"Generating xlink candidates");
-
-          //for every linkable site, generate the candidate if it is legal.
-          for (unsigned int link1_idx=0;link1_idx < pep1.numLinkSites(); link1_idx++) {
-            for (unsigned int link2_idx=0;link2_idx < pep2.numLinkSites();link2_idx++) {
-            //cerr<<"link1_idx:"<<link1_idx<<endl;
-            //cerr<<"link2_idx:"<<link2_idx<<endl;
-            //cerr<<"Testing link:"<<endl;
-
-    
-
-
-              if (bondmap.canLink(pep1, pep2, link1_idx, link2_idx)) {
-                //create the candidate
-                XLinkMatch* newCandidate = 
-                  new XLinkPeptide(pep1, pep2, link1_idx, link2_idx);
-                candidates.add(newCandidate);
+            //for every linkable site, generate the candidate if it is legal.
+            for (unsigned int link1_idx=0;link1_idx < pep1.numLinkSites(); link1_idx++) {
+              for (unsigned int link2_idx=0;link2_idx < pep2.numLinkSites();link2_idx++) {
+              //cerr<<"link1_idx:"<<link1_idx<<endl;
+              //cerr<<"link2_idx:"<<link2_idx<<endl;
+              //cerr<<"Testing link:"<<endl;
+                if (bondmap.canLink(pep1, pep2, link1_idx, link2_idx)) {
+                  //create the candidate
+                  XLinkMatch* newCandidate = 
+                    new XLinkPeptide(pep1, pep2, link1_idx, link2_idx);
+                  candidates.add(newCandidate);
+                }
               }
-            }
-          } /* for link1_idx */
-        } /* if (mods <= max_mod_xlink .. */
+            } /* for link1_idx */
+          } /* if (mods <= max_mod_xlink .. */
+        } /* if (candidate_mass >= min_mass && candidate_mass <= max_mass) */
       } /* if (!mixed_target_decoys_ ... */
-
       next_idx++;
     
       if (next_idx < linkable_peptides.size()) {
