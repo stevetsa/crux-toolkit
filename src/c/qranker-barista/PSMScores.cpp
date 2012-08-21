@@ -82,7 +82,7 @@ int PSMScores::calcOverFDRBH(double fdr) {
 
   int ans = 0;
   int posNow = 0;
-  for (int idx = 0 ;idx < scores.size();idx++) {
+  for (size_t idx = 0 ;idx < scores.size();idx++) {
     if (scores[idx].label == 1) {
       posNow++;
       scores[idx].q = (double)pos / (double)(posNow) * pi0 * scores[idx].p;
@@ -239,8 +239,116 @@ void PSMScores::calcMultiOverFDR(vector<double> &fdr, vector<int> &overFDR) {
   }
 }
 
+void PSMScores::fillFeaturesSplitScan(
+  PSMScores& in, 
+  Dataset& d, 
+  PSMScores& train, 
+  PSMScores& test) {
+
+  map<int, pair<int,int> > scan_to_pos_neg;
+
+  for (int idx = 0; idx < in.size(); idx++) {
+    int scan = d.psmind2scan(in[idx].psmind);
+    int label = d.psmind2label(in[idx].psmind);
+    if (scan_to_pos_neg.find(scan) == scan_to_pos_neg.end()) {
+      pair<int,int> pos_neg;
+      scan_to_pos_neg[scan] = pos_neg;
+    }
+
+    if (label == 1) {
+      scan_to_pos_neg[scan].first++;
+    } else {
+      scan_to_pos_neg[scan].second++;
+    }
+  }
+
+  split(train, test, d, scan_to_pos_neg);
+
+}
+
+void PSMScores::fillFeaturesSplitScan(PSMScores& train, PSMScores& test, Dataset& d) {
+
+  map<int, pair<int,int> > scan_to_pos_neg;
+
+  for (int idx = 0; idx < d.get_num_psms();idx++) {
+    int scan = d.psmind2scan(idx);
+    int label = d.psmind2label(idx);
+    if (scan_to_pos_neg.find(scan) == scan_to_pos_neg.end()) {
+      pair<int,int> pos_neg;
+      scan_to_pos_neg[scan] = pos_neg;
+    }
+
+    if (label == 1) {
+      scan_to_pos_neg[scan].first++;
+    } else {
+      scan_to_pos_neg[scan].second++;
+    }
+  }
+
+  split(train, test, d, scan_to_pos_neg);
+}
 
 
+void PSMScores::split(PSMScores& train, PSMScores& test, Dataset& d, map<int, pair<int,int> >& scan_to_pos_neg) {
+
+  cerr << "number of scans:"<<scan_to_pos_neg.size()<<endl;
+
+  map<pair<int,int>, vector<int> > pos_neg_to_scans;
+
+  for (map<int, pair<int,int> >::iterator iter = scan_to_pos_neg.begin();
+    iter != scan_to_pos_neg.end();
+    ++iter) {
+
+    pair<int,int> pos_neg = iter->second;
+    int scan = iter->first;
+
+    if (pos_neg_to_scans.find(pos_neg) == pos_neg_to_scans.end()) {
+      vector<int> scans;
+      pos_neg_to_scans[pos_neg] = scans;
+    }
+    pos_neg_to_scans[pos_neg].push_back(scan);
+  }
+
+  set<int> train_scans;
+
+  for (map<pair<int,int>, vector<int> >::iterator iter = pos_neg_to_scans.begin();
+    iter != pos_neg_to_scans.end();
+    ++iter) {
+
+    pair<int,int> pos_neg = iter->first;
+
+    vector<int> scans = iter->second;
+
+    cerr << "pos: "<<pos_neg.first<<" neg:"<<pos_neg.second<<" scans:"<<scans.size()<<endl;
+    random_shuffle(scans.begin(), scans.end());
+    int nscans_train = scans.size() / 2;
+    for (int idx = 0; idx < nscans_train;idx++) {
+      train_scans.insert(scans[idx]);
+    }
+
+  } 
+
+  for (int idx = 0 ; idx < d.get_num_psms();idx++) {
+    int scan = d.psmind2scan(idx);
+    PSMScoreHolder psm;
+    psm.psmind = idx;
+    psm.label = d.psmind2label(idx);
+    if (train_scans.find(scan) != train_scans.end()) {
+      train.add_psm(psm);
+    } else {
+      test.add_psm(psm);
+    }
+  }
+
+  train.calc_factor();
+  test.calc_factor();
+
+  cerr <<" train pos:"<<train.pos<<" train neg:"<<train.neg<<" test pos:"<<test.pos<<" test neg"<<test.neg<<endl;
+
+  //exit(-1);
+
+}
+/*
 
 void PSMScores::fillFeaturesSplitScan(PSMScores& train, PSMScores& test, Dataset& d) {
 
@@ -251,7 +359,7 @@ void PSMScores::fillFeaturesSplitScan(PSMScores& train, PSMScores& test, Dataset
   }
 
   vector<int> scans_vec(scans.begin(), scans.end());
-  random_shuffle(scans_vec.begin(), scans_vec.end());
+  //random_shuffle(scans_vec.begin(), scans_vec.end());
 
 
   int nscans = scans_vec.size();
@@ -281,7 +389,9 @@ void PSMScores::fillFeaturesSplitScan(PSMScores& train, PSMScores& test, Dataset
   test.calc_factor();
 
 }
+*/
 
+/*
 void PSMScores::fillFeaturesSplitScan(
   PSMScores& in, 
   Dataset& d, 
@@ -295,7 +405,7 @@ void PSMScores::fillFeaturesSplitScan(
   }
 
   vector<int> scans_vec(scans.begin(), scans.end());
-  random_shuffle(scans_vec.begin(), scans_vec.end());
+  //random_shuffle(scans_vec.begin(), scans_vec.end());
 
 
   int nscans = scans_vec.size();
@@ -325,7 +435,7 @@ void PSMScores::fillFeaturesSplitScan(
   test.calc_factor();
 
 }
-
+*/
 
 void PSMScores::fillFeaturesSplit(PSMScores& train,PSMScores& test, Dataset& d, double ratio) {
  

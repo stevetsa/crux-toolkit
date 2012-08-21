@@ -883,13 +883,14 @@ void TabDelimParser :: extract_xlink_features(int psmind, vector<string> & token
     get_xcorr_short_long(psmind, x[1], x[2]);
   }
 
+  x[7] = 0;
   //sp score
-  x[7] = atof(tokens[sp_score_idx].c_str());
+  //x[7] = atof(tokens[sp_score_idx].c_str());
 
  //log rank by Sp
   x[8] = 0;
-  if(atof(tokens[sp_rank_idx].c_str()) > 0)
-    x[8]=log(atof(tokens[sp_rank_idx].c_str()));
+  //if(atof(tokens[sp_rank_idx].c_str()) > 0)
+  //  x[8]=log(atof(tokens[sp_rank_idx].c_str()));
 
   //matched ions/predicted ions
   x[9] = 0;

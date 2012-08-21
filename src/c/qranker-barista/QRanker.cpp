@@ -147,7 +147,8 @@ void QRanker :: write_results(string filename, PSMScores& set, bool decoy)
   computePEP(set);
 
 
-  //cerr << "Writing results" <<endl;
+  cerr << "Writing results for " << set.size() <<" matches" << endl;
+  f1 << "psmind" << "\t"; 
   f1 << "q-ranker q-value" << "\t" <<
         "q-ranker score" << "\t" <<
         "q-ranker p-value" << "\t" <<
@@ -210,7 +211,8 @@ void QRanker :: write_results(string filename, PSMScores& set, bool decoy)
 
 
 
-        f1 << qvalue   << "\t" << 
+        f1 << psmind   << "\t" <<
+              qvalue   << "\t" << 
               score    << "\t" << 
               pvalue   << "\t" <<
               pep      << "\t" <<
@@ -668,111 +670,121 @@ void QRanker :: train_many_target_nets()
 
 void QRanker::train_many_nets()
 {
-   
-  num_qvals = 14;
-  qvals.resize(num_qvals,0.0);
-  qvals1.resize(num_qvals,0.0);
-  qvals2.resize(num_qvals,0.0);
 
-  overFDRmulti.resize(num_qvals,0);
-  ave_overFDR.resize(num_qvals,0);
-  max_overFDR.clear();
-  max_overFDR.resize(num_qvals,0);
-
-  max_net_gen = new NeuralNet[num_qvals];
-  max_net_targ = new NeuralNet[num_qvals];
-  
-  double q = 0.0;
-  for(int count = 0; count < num_qvals; count++)
-    {
-      qvals[count] = q;
-      if (count < 2)
-	qvals1[count] = q;
-      else
-	qvals1[count] = q-0.005;
-      qvals2[count] = q+0.005;
-
-      if(q < 0.01)
-	q+=0.0025;
-      else
-	q+=0.01;
-    }
-  
-  //set the linear flag: 1 if linear, 0 otherwise
-  int lf = 0; 
-  if(num_hu == 1)
-    lf = 1;
-  //set whether there is bias in the linear units: 1 if yes, 0 otherwise
-  int bs = 0;
-  
-  net.initialize(d.get_num_features(),num_hu,lf,bs);
-  for(int count = 0; count < num_qvals; count++){
-    max_net_gen[count] = net;
-  }
-  for(int count = 0; count < num_qvals; count++){
-    max_net_targ[count] = net;
-  }
-/*
-  for(int count = 0; count < num_qvals; count++) {
-    cerr <<"max_overFDR["<<count<<"]="<<max_overFDR[count]<<endl;
-  }
-*/
-
-  nets = new NeuralNet[2];
-  nets[0].clone(net);
-  nets[1].clone(net);
-/*
-  cerr << "Before iterating\n";
-  cerr << "trainset: ";
-  getMultiFDR(trainset,net,qvals);
-  printNetResults(overFDRmulti);
-  cerr << "\n";
-  for(int count = 0; count < num_qvals;count++)
-    if(overFDRmulti[count] > max_overFDR[count])
-      max_overFDR[count] = overFDRmulti[count];
-  cerr << "testset: ";
-  getMultiFDR(testset,net,qvals);
-  printNetResults(overFDRmulti);
-  cerr << "\n";
-*/
-  train_many_general_nets();
-  
-  //copy the general net into target nets;
-  for(int count = 0; count < num_qvals; count++)
-    max_net_targ[count] = max_net_gen[count];
-
-  train_many_target_nets();  
- 
-    
-  //choose the best net for the selectionfdr
   int max_fdr = 0;
-  int fdr = 0;
-  int ind = 0;
-  for(unsigned int count = 0; count < qvals.size();count++)
-    {
-      fdr = getOverFDR(thresholdset, max_net_targ[count], selectionfdr);
-      //cerr << "t:"<< count<<" "<<fdr<<" "<<max_fdr<<endl;
-      if(fdr > max_fdr)
-	{
-	  max_fdr = fdr;
-	  ind = count;
-	}
+  NeuralNet best_net;
+
+  for (int idx = 0; idx < 10; idx++) {
+
+   
+    num_qvals = 14;
+    qvals.resize(num_qvals,0.0);
+    qvals1.resize(num_qvals,0.0);
+    qvals2.resize(num_qvals,0.0);
+  
+    overFDRmulti.resize(num_qvals,0);
+    ave_overFDR.resize(num_qvals,0);
+    max_overFDR.clear();
+    max_overFDR.resize(num_qvals,0);
+  
+    max_net_gen = new NeuralNet[num_qvals];
+    max_net_targ = new NeuralNet[num_qvals];
+    
+    double q = 0.0;
+    for(int count = 0; count < num_qvals; count++)
+      {
+        qvals[count] = q;
+        if (count < 2)
+          qvals1[count] = q;
+        else
+          qvals1[count] = q-0.005;
+        qvals2[count] = q+0.005;
+  
+        if(q < 0.01)
+          q+=0.0025;
+        else
+          q+=0.01;
+        }
+    
+    //set the linear flag: 1 if linear, 0 otherwise
+    int lf = 0; 
+    if(num_hu == 1)
+      lf = 1;
+    //set whether there is bias in the linear units: 1 if yes, 0 otherwise
+    int bs = 0;
+    
+    net.initialize(d.get_num_features(),num_hu,lf,bs);
+    for(int count = 0; count < num_qvals; count++){
+      max_net_gen[count] = net;
     }
+    for(int count = 0; count < num_qvals; count++){
+      max_net_targ[count] = net;
+    }
+  /*
+    for(int count = 0; count < num_qvals; count++) {
+      cerr <<"max_overFDR["<<count<<"]="<<max_overFDR[count]<<endl;
+    }
+  */
+  
+    nets = new NeuralNet[2];
+      nets[0].clone(net);
+    nets[1].clone(net);
+  /*
+    cerr << "Before iterating\n";
+    cerr << "trainset: ";
+    getMultiFDR(trainset,net,qvals);
+    printNetResults(overFDRmulti);
+    cerr << "\n";
+    for(int count = 0; count < num_qvals;count++)
+      if(overFDRmulti[count] > max_overFDR[count])
+        max_overFDR[count] = overFDRmulti[count];
+    cerr << "testset: ";
+    getMultiFDR(testset,net,qvals);
+    printNetResults(overFDRmulti);
+    cerr << "\n";
+    */
+    train_many_general_nets();
+    
+    //copy the general net into target nets;
+    for(int count = 0; count < num_qvals; count++)
+      max_net_targ[count] = max_net_gen[count];
+  
+    train_many_target_nets();  
+   
+        
+    //choose the best net for the selectionfdr
+    //int max_fdr = 0;
+    int fdr = 0;
+    int ind = -1;
+    for(unsigned int count = 0; count < qvals.size();count++)
+        {
+        fdr = getOverFDR(thresholdset, max_net_targ[count], selectionfdr);
+        //cerr << "t:"<< count<<" "<<fdr<<" "<<max_fdr<<endl;
+        if(fdr > max_fdr)
+          {
+            max_fdr = fdr;
+            ind = count;
+          }
+      }
 
-  //cerr <<"max count:"<<max_fdr<<endl;
-
-  net = max_net_targ[ind];
-
+    //cerr <<"max count:"<<max_fdr<<endl;
+  cerr << idx <<" "<<max_fdr<<endl;
+  if (ind != -1) {
+    
+    best_net = max_net_targ[ind];
+  }
   //print out results, just to see
   /*
   for(unsigned int count = 0; count < qvals.size();count++)
     cout << qvals[count] << " " <<  getOverFDR(trainset, net, qvals[count]) << " " << getOverFDR(testset, net, qvals[count]) << endl;
   */
 
-  delete [] max_net_gen;
-  delete [] max_net_targ;
-  delete [] nets;
+    delete [] max_net_gen;
+    delete [] max_net_targ;
+    delete [] nets;
+  }
 
+  net = best_net;
 
 }
 
@@ -1075,16 +1087,18 @@ int QRanker::run( ) {
   train_many_nets();
 
   calcScores(testset, net);
-  testset.getMaxPerScan(d, max);
-  max.calcPValues();
+//  testset.getMaxPerScan(d, max);
+//  max.calcPValues();
+  testset.calcPValues();
 
   // write out the testset results
   ostringstream res;
   res << out_dir << "/qranker.test";
-  write_results(res.str(), max, true);
+  write_results(res.str(), testset, true);
   
-  fullset.add_psms(max);
-  
+  //fullset.add_psms(max);
+  fullset.add_psms(testset);
+
   //swap trainset and test set.
   thresholdset = testset;
   testset = trainset;
@@ -1094,20 +1108,21 @@ int QRanker::run( ) {
   train_many_nets();
 
   calcScores(testset, net);
-  testset.getMaxPerScan(d, max);
-  max.calcPValues();
-  
+  //testset.getMaxPerScan(d, max);
+  //max.calcPValues();
+  testset.calcPValues();
 
   //write out the trainset results
   res.str("");
   res << out_dir << "/qranker.train";
-  write_results(res.str(), max, true);
+  write_results(res.str(), testset, true);
 
-  fullset.add_psms(max);
+  fullset.add_psms(testset);
   fullset.calc_factor();
 
   //write out the fullset results
   res.str("");
+  cerr << "writing all matches"<<endl;
   res << out_dir << "/qranker.all";
   write_results(res.str(), fullset, true);
 

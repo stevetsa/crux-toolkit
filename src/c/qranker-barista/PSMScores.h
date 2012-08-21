@@ -46,7 +46,7 @@ public:
     void calcMinRank(PSMScores& out, Dataset& d);
     void getMaxPerScan(Dataset& d, PSMScores& max);
     void static fillFeaturesSplit(PSMScores& train,PSMScores& test,Dataset &d, double ratio);
-
+    void static split(PSMScores& train, PSMScores& test, Dataset& d, map<int, pair<int,int> >& scan_to_pos_neg);
     void static fillFeaturesSplitScan(PSMScores& train, PSMScores& test, Dataset& d);
 
     void static fillFeaturesSplitScan(
