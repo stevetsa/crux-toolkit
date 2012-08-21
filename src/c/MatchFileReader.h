@@ -49,6 +49,14 @@ class MatchFileReader: public DelimitedFileReader {
     );
 
     /**
+     * \returns a MatchFileReader object and load the tab-delimited
+     * data specified by an input stream
+     */
+    MatchFileReader(
+      std::istream* iptr
+    );
+
+    /**
      * Destructor
      */
     virtual ~MatchFileReader();
@@ -76,6 +84,13 @@ class MatchFileReader: public DelimitedFileReader {
       MATCH_COLUMNS_T col_type ///<the column type
     );
    
+    /**
+     * \returns the double value of a cell, checks for infinity
+     */
+    double getDouble(
+      MATCH_COLUMNS_T col_type ///< the column type
+    );
+
     /**
      * \returns the integer value of a cell, checks for infinity.
      */
@@ -120,6 +135,13 @@ class MatchFileReader: public DelimitedFileReader {
      * valid file is open and header has been parsed, else vector is empty.
      */
     void getMatchColumnsPresent (std::vector<bool>& col_is_present);
+
+
+    static MatchCollection* parse(
+      const char* file_path,
+      Database* database,
+      Database* decoy_database
+    );
 
 };
 

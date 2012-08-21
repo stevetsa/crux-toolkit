@@ -2,33 +2,34 @@ distdir = $(PACKAGE)_$(VERSION)
 
 SUBDIRS = ArrayLibrary percolator xlink posterior-error qranker-barista hardklor bullseye .
 
+AM_CPPFLAGS = -D_LARGEFILE_SOURCE=1 -D_FILE_OFFSET_BITS=64 \
+ -D_GNU_SOURCE -DGCC -DHAVE_EXPAT_CONFIG_H
+AM_CFLAGS = -Wall -W -Werror
+AM_CXXFLAGS = -Wall -W -Werror
+
 # Crux can use either single or double precision floating poinnt.
 if USEDOUBLES
-  USEDOUBLES = -DUSE_DOUBLES
-else
-  USEDOUBLES=
+  AM_CPPFLAGS += -DUSE_DOUBLES
 endif
 
 # Compiling under OS X requires a preprocessor flag.
 if DARWIN
-  USEDARWIN = -DDARWIN
-else
-  USEDARWIN = 
+  AM_CPPFLAGS += -DDARWIN
+endif
+
+# Compiling under OS X pre-Lion requires another preprocessor flag.
+if PRE_LION
+  AM_CPPFLAGS += -DPRE_LION
 endif
 
 # We disable search and exclude search related code
 # in open-source distribution of Crux.
 if SEARCH
-  SEARCH_ENABLED = -DSEARCH_ENABLED
-else
-  SEARCH_ENABLED = 
+  AM_CPPFLAGS += -DSEARCH_ENABLED
+  SEARCH_ENABLED = 1
 endif
-
-AM_CFLAGS = -Wall -W $(USEDOUBLES) $(USEDARWIN) $(SEARCH_ENABLED) \
-            -D_LARGEFILE_SOURCE=1 -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE
-AM_CXXFLAGS = -Wall -W  $(USEDOUBLES) $(USEDARWIN) $(SEARCH_ENABLED) \
-            -D_LARGEFILE_SOURCE=1 -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -DGCC \
-            -DHAVE_EXPAT_CONFIG_H
+AM_CFLAGS = -Wall -W -Werror $(USEDOUBLES) $(USEDARWIN) $(SEARCH_ENABLED) \
+AM_CXXFLAGS = -Wall -W -Werror  $(USEDOUBLES) $(USEDARWIN) $(SEARCH_ENABLED) \
 
 LIBFILES= \
   Alphabet.cpp \
@@ -107,6 +108,8 @@ LIBFILES= \
   MatchSearch.h \
   MatchCollection.cpp \
   MatchCollection.h \
+  MatchCollectionParser.cpp \
+  MatchCollectionParser.h \
   MatchCollectionIterator.cpp \
   MatchCollectionIterator.h \
   MatchIterator.cpp \
@@ -139,6 +142,8 @@ LIBFILES= \
   peptide_modifications.h \
   PeptideSrc.cpp \
   PeptideSrc.h \
+  PepXMLReader.cpp \
+  PepXMLReader.h \
   PepXMLWriter.cpp \
   PepXMLWriter.h \
   Percolator.cpp \

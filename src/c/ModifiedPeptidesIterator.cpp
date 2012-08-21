@@ -140,9 +140,6 @@ pair<FLOAT_T,FLOAT_T> ModifiedPeptidesIterator::getMinMaxMass(
   return min_max;
 }
 
-
-
-
 /**
  * \brief Queue next_peptide to be returned.
  *

@@ -11,7 +11,7 @@
 #include <string.h>
 #include <assert.h>
 #include <ctype.h>
-#ifndef WIN32
+#ifndef _MSC_VER
 #include <unistd.h>
 #endif
 #include <set>
@@ -1372,6 +1372,39 @@ void Match::setScore(
 {
   match_scores_[match_mode] = match_score;
 }
+
+
+/**
+ * set the custom match score
+ */
+void Match::setCustomScore(
+  const std::string& match_score_name, ///< the name of the score -in
+  FLOAT_T match_score ///< the score of the match -in
+  ) {
+
+  match_custom_scores_[match_score_name] = match_score;
+
+}
+
+/**
+ * get the custom score
+ */
+FLOAT_T Match::getCustomScore(
+  const std::string& match_score_name ///< the name of the score -in
+  ) {
+
+  if (match_custom_scores_.find(match_score_name) == match_custom_scores_.end()) {
+    carp(CARP_FATAL, "custom match score:%s doesn't exist!", match_score_name.c_str());
+  }
+  return match_custom_scores_[match_score_name];
+}
+
+bool Match::isDecoy() {
+
+  return null_peptide_;
+
+}
+
 
 /**
  * Must ask for score that has been computed

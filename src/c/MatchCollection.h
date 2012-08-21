@@ -17,7 +17,7 @@
 #include <string.h>
 #include <assert.h>
 #include <ctype.h>
-#ifndef WIN32
+#ifndef _MSC_VER
 #include <unistd.h>
 #endif
 #include <map>
@@ -133,16 +133,6 @@ class MatchCollection {
     Match** matches, 
     int start_idx, 
     int end_idx
-    );
-
-  bool extendTabDelimited(
-    Database* database, ///< the database holding the peptides -in
-    MatchFileReader& result_file,   ///< the result file to parse PSMs -in
-    Database* decoy_database = NULL ///< optional database with decoy peptides
-    );
-
-  bool addMatchToPostMatchCollection(
-    Match* match 
     );
 
   void updateProteinCounters(
@@ -267,6 +257,16 @@ class MatchCollection {
     SCORER_TYPE_T score_type, ///< the score_type (MATCH_SP, MATCH_XCORR) -in
     bool value
   );
+
+  void preparePostProcess(
+    int num_proteins
+  );
+
+  bool extendTabDelimited(
+    Database* database, ///< the database holding the peptides -in
+    MatchFileReader& result_file,   ///< the result file to parse PSMs -in
+    Database* decoy_database = NULL ///< optional database with decoy peptides
+    );
 
   /**
    * Samples count_max matches randomly from the match_collection
@@ -658,6 +658,12 @@ class MatchCollection {
 
 // cheater functions for testing
   void forceScoredBy(SCORER_TYPE_T type);
+
+  bool addMatchToPostMatchCollection(
+    Match* match 
+    );
+
+
 
 };
 

@@ -15,7 +15,7 @@
 #include <ctype.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#ifndef WIN32
+#ifndef _MSC_VER
 #include <dirent.h>
 #include <unistd.h>
 #endif
@@ -387,7 +387,7 @@ bool string_to_mass_type(char*, MASS_TYPE_T*);
 bool mass_type_to_string(MASS_TYPE_T, char*);
 bool string_to_algorithm_type(char*, ALGORITHM_TYPE_T*);
 bool algorithm_type_to_string(ALGORITHM_TYPE_T, char*);
-bool string_to_scorer_type(char*, SCORER_TYPE_T*);
+bool string_to_scorer_type(const char*, SCORER_TYPE_T*);
 const char* scorer_type_to_string(SCORER_TYPE_T);
 bool string_to_ion_type(char* , ION_TYPE_T*);
 bool ion_type_to_string(ION_TYPE_T, char*);

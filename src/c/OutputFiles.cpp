@@ -54,7 +54,7 @@ OutputFiles::OutputFiles(CruxApplication* program_name)
 
   makeTargetDecoyList();
 
-  carp(CARP_INFO, 
+  carp(CARP_DEBUG, 
        "OutputFiles is opening %d files (%d decoys) in '%s' with root '%s'."
        " Overwrite: %d.", 
        num_files_, num_decoy_files, output_directory, fileroot, overwrite);
@@ -420,7 +420,9 @@ void OutputFiles::writeMatches(
 
   // print to each file type
   printMatchesTab(target_matches, decoy_matches_array, rank_type, spectrum);
+
   printMatchesSqt(target_matches, decoy_matches_array, spectrum);
+
   printMatchesXml(target_matches, decoy_matches_array, spectrum, rank_type);
 
 }
@@ -444,7 +446,7 @@ void OutputFiles::printMatchesTab(
     MatchCollection* cur_matches = target_matches;
 
     for(int file_idx = 0; file_idx < num_files_; file_idx++){
-
+      cur_matches->calculateDeltaCn(application_->getCommand());
       cur_matches->printTabDelimited(delim_file_array_[file_idx],
                                            matches_per_spec_,
                                            spectrum,

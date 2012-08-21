@@ -3,7 +3,7 @@ AC_PREREQ(2.57)
 AC_INIT(crux, 1.0, aklammer@u.washington.edu)
 AC_CONFIG_SRCDIR(src/c/IonSeries.cpp)
 AC_CONFIG_AUX_DIR(config)
-AM_INIT_AUTOMAKE(crux, 1.37)
+AM_INIT_AUTOMAKE(crux, 1.38)
 AM_CONFIG_HEADER([config.h])
 
 # Check for required programs.
@@ -81,6 +81,8 @@ case $host in
    *darwin*)
       AC_DEFINE(MACOSX, [], [Using MacOS X])
       MACHID="darwin"
+      DARWIN_RELEASE=`uname -r`
+      DARWIN_RELEASE=$(echo $DARWIN_RELEASE|perl -n -a -F\\. -e 'print $F[[0]]')
       ;;
    *linux*)
       AC_DEFINE(Linux, [], [Using Linux])
@@ -137,6 +139,11 @@ AM_CONDITIONAL(DARWIN, \
   test [ "x$MACHID" = "xdarwin" ] \
 )
 
+DARWIN_LION=11
+AM_CONDITIONAL(PRE_LION, \
+  test [ $DARWIN_RELEASE -lt $DARWIN_LION ] \
+)
+
 AC_OUTPUT
 
 echo \
@@ -147,8 +154,8 @@ echo \
 
   Install path:               ${prefix}
   Version:                    ${VERSION}
-  C compiler:                 ${CC}
-  C compiler flags:           ${CFLAGS}
+  C compiler:                 ${CC} ${CFLAGS} ${CPPFLAGS}
+  C++ compiler:               ${CXX} ${CXXFLAGS} ${CPPFLAGS}
   System:                     ${MACHID}
   Use doubles:                ${doubles}
 

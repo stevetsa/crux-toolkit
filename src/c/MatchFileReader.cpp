@@ -7,6 +7,8 @@
 #include "MatchFileReader.h"
 #include "DelimitedFile.h"
 
+#include "MatchCollection.h"
+
 using namespace std;
 
 /**
@@ -29,6 +31,10 @@ MatchFileReader::MatchFileReader(const char* file_name) : DelimitedFileReader(fi
  * data specified by file_name.
  */
 MatchFileReader::MatchFileReader(const string& file_name) : DelimitedFileReader(file_name, true) {
+  parseHeader();
+}
+
+MatchFileReader::MatchFileReader(istream* iptr) : DelimitedFileReader(iptr, true, '\t') {
   parseHeader();
 }
 
@@ -93,6 +99,26 @@ FLOAT_T MatchFileReader::getFloat(
     return DelimitedFileReader::getFloat(idx);
   }
 }
+
+/**
+ * \returns the double value of a cell, checks for infinity
+ */
+double MatchFileReader::getDouble(
+  MATCH_COLUMNS_T col_type ///<the column type
+) {
+
+  int idx = match_indices_[col_type];
+  if (idx == -1) {
+
+    carp(CARP_DEBUG,
+         "column \"%s\" not found for getDouble",
+         get_column_header(col_type));
+    return -1;
+  } else {
+    return DelimitedFileReader::getDouble(idx);
+  }
+}
+
 
 /**
  * \returns the integer value of a cell, checks for infinity.
@@ -193,5 +219,22 @@ void MatchFileReader::getMatchColumnsPresent(
   for(int col_idx = 0; col_idx < NUMBER_MATCH_COLUMNS; col_idx++){
     col_is_present[col_idx] = (match_indices_[col_idx] > -1);
   }
+}
+
+MatchCollection* MatchFileReader::parse(
+  const char* file_path,
+  Database* database,
+  Database* decoy_database
+  ) {
+
+  MatchFileReader delimited_result_file(file_path);
+  MatchCollection* match_collection = new MatchCollection();
+  match_collection->preparePostProcess(database->getNumProteins());
+
+  match_collection->extendTabDelimited(database, delimited_result_file, decoy_database);
+
+  return match_collection;
+
+
 }
 

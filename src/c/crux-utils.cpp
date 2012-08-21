@@ -6,7 +6,7 @@
 #include <fstream>
 #include <errno.h>
 #include <sys/stat.h>
-#ifndef WIN32
+#ifndef _MSC_VER
 #include <unistd.h>
 #endif
 #include "crux-utils.h"
@@ -468,7 +468,7 @@ static const char* scorer_type_strings[NUMBER_SCORER_TYPES] =
    "barista_PEP"
   };
 
-bool string_to_scorer_type(char* name, SCORER_TYPE_T* result){
+bool string_to_scorer_type(const char* name, SCORER_TYPE_T* result){
   bool success = true;
 
   int scorer_type = convert_enum_type_str(name, INVALID_ENUM_STRING, 
