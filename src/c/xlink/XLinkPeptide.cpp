@@ -270,6 +270,20 @@ void XLinkPeptide::addCandidates(
       addCandidates(min_mass, max_mass, bondmap, index, database, peptide_mod2, true, iter1_decoy, candidates);
     }
   } 
+
+  if (get_boolean_parameter("mixed-target-decoys")) {
+
+    for (int mod_idx1 = 0; mod_idx1 < num_peptide_mods; mod_idx1++) {
+      PEPTIDE_MOD_T* peptide_mod1 = peptide_mods[mod_idx1];
+      XLinkablePeptideIterator iter1_target(peptide1_min_mass, peptide1_max_mass, index, database, peptide_mod1, false, bondmap);
+      for (int mod_idx2 = 0; mod_idx2 < num_peptide_mods; mod_idx2++) {
+        PEPTIDE_MOD_T* peptide_mod2 = peptide_mods[mod_idx2];
+        addCandidates(min_mass, max_mass, bondmap, index, database, peptide_mod2, true, iter1_target, candidates);
+      }
+    } 
+  }
+
+
 }
 
 

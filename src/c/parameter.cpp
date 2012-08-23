@@ -3266,6 +3266,9 @@ bool set_hardklor_algorithm_type_parameter(
   result = add_or_update_hash(file_notes, name, filenotes);
   result = add_or_update_hash(for_users, name, foruser);
   result = add_or_update_hash(types, name, (void*)"HARDKLOR_ALGORITHM_TYPE_T");
+
+  free(value_str);
+
   return result;
   
 }

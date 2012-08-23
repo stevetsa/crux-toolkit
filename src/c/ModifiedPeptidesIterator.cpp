@@ -82,6 +82,14 @@ ModifiedPeptidesIterator::ModifiedPeptidesIterator(
  * Destructor that frees any peptides not yet returned via next().
  */
 ModifiedPeptidesIterator::~ModifiedPeptidesIterator(){
+
+  Peptide* peptide = (Peptide*)pop_front_linked_list(temp_peptide_list_);
+  while (peptide != NULL) {
+    delete peptide;
+    peptide = (Peptide*)pop_front_linked_list(temp_peptide_list_);
+
+  }
+
   delete_linked_list(temp_peptide_list_);
   delete next_peptide_;
   delete peptide_source_;

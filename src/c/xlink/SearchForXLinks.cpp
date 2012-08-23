@@ -77,11 +77,16 @@ int SearchForXLinks::main(int argc, char** argv) {
   //refactored code by default when that gets placed
   //in.  The use-old-xlink parameter will determine
   //which codebase gets called.
+  int ret = -1;
   if (get_boolean_parameter("use-old-xlink")) {
-    return xhhcSearchMain();
+    ret = xhhcSearchMain();
   } else {
-    return xlinkSearchMain();
+    ret = xlinkSearchMain();
   }
+
+  free_parameters();
+  return ret;
+
 }
 
 /**

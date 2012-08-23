@@ -320,7 +320,7 @@ void PSMScores::split(PSMScores& train, PSMScores& test, Dataset& d, map<int, pa
     vector<int> scans = iter->second;
 
     cerr << "pos: "<<pos_neg.first<<" neg:"<<pos_neg.second<<" scans:"<<scans.size()<<endl;
-    random_shuffle(scans.begin(), scans.end());
+    //random_shuffle(scans.begin(), scans.end());
     int nscans_train = scans.size() / 2;
     for (int idx = 0; idx < nscans_train;idx++) {
       train_scans.insert(scans[idx]);

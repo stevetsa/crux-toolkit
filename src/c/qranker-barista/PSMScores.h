@@ -63,6 +63,8 @@ public:
 
     void add_psms(PSMScores& psms);
 
+   
+
 protected:
     int neg,pos,posNow;
     vector<PSMScoreHolder> scores;

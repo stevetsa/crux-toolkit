@@ -118,8 +118,8 @@ bool XLinkablePeptide::linkSeqPreventsCleavage(
     if (isCleavageSite(peptide, seq_idx)) {
 
       char aa = peptide->getSequencePointer()[seq_idx];
-
-      char* xlink_prevents_cleavage=get_string_parameter("xlink-prevents-cleavage");
+ 
+      const char* xlink_prevents_cleavage=get_string_parameter_pointer("xlink-prevents-cleavage");
       int idx = 0;
       while (xlink_prevents_cleavage[idx] != '\0') {
         if (xlink_prevents_cleavage[idx] == aa) {

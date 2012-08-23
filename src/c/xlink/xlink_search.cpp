@@ -66,7 +66,7 @@ int SearchForXLinks::xlinkSearchMain() {
 
   /* Get parameters */
   carp(CARP_INFO, "Getting parameters");
-  char* ms2_file = get_string_parameter("ms2 file");
+  const char* ms2_file = get_string_parameter_pointer("ms2 file");
   char* input_file = get_string_parameter("protein database");
   const char* output_directory = get_string_parameter_pointer("output-dir");
   //int top_match = get_int_parameter("top-match");
@@ -127,7 +127,7 @@ int SearchForXLinks::xlinkSearchMain() {
 
 
   carp(CARP_INFO,"Loading Spectra");
-  Spectrum* spectrum = new Spectrum();
+  Spectrum* spectrum = NULL;
   SpectrumCollection* spectra = SpectrumCollectionFactory::create(ms2_file);
   spectra->parse();
 
@@ -177,6 +177,8 @@ int SearchForXLinks::xlinkSearchMain() {
 
     if (target_candidates->getMatchTotal() < 1) {
       carp(CARP_INFO, "not enough precursors found, skipping scan %d charge %d", scan_num, zstate.getCharge());
+      delete target_candidates;
+      XLink::deleteAllocatedPeptides();
       continue;
     }
 

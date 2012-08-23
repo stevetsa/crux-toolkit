@@ -4,7 +4,12 @@
 #include "carp.h"
 #include "objects.h"
 
-QRanker::QRanker() :  seed(1),selectionfdr(0.01),num_hu(4),mu(0.0001),weightDecay(0.0000),xlink_mass(0.000),bootstrap_iters(5)
+QRanker::QRanker() :  seed(1),
+                      selectionfdr(0.01),
+                      num_hu(4),
+                      mu(0.01),
+                      weightDecay(0.0000),
+                      xlink_mass(0.000),bootstrap_iters(5)
 {
 }
 
@@ -12,6 +17,38 @@ QRanker::~QRanker()
 {
 }
 
+
+double QRanker:: getObjectiveError(
+  PSMScores& set, 
+  NeuralNet&n, 
+  int interval) {
+
+  int n_examples = set.size();
+
+  calcScores(set, n);
+  if (interval != -1) {
+    set.calcOverFDR(0.1);
+    n_examples = interval;
+  }
+
+  double sum = 0;
+
+  for (int idx1 = 0;idx1 < n_examples;idx1++) {
+    if (set[idx1].label == 1) {
+      for (int idx2 = 0; idx2 < n_examples; idx2++) {
+        if (set[idx2].label == -1) {
+          double score1 = set[idx1].score;
+          double score2 = set[idx2].score;
+          double temp = max(0.0, 1.0 - (score1 - score2));
+          sum += temp;
+        }
+      }
+    }
+  }
+
+  return sum / (double)n_examples;
+
+}
 
 int QRanker :: getOverFDR(PSMScores &set, NeuralNet &n, double fdr)
 {
@@ -785,7 +822,6 @@ void QRanker::train_many_nets()
   }
 
   net = best_net;
-
 }
 
 
@@ -1081,10 +1117,16 @@ int QRanker::run( ) {
   thresholdset = trainset;
   fullset.clear();
 
-  selectHyperParameters();
+//  selectHyperParameters();
 
-
+ 
   train_many_nets();
+
+  double train1 = getObjectiveError(trainset, net);
+  double test1 = getObjectiveError(testset, net);
+
+  cerr << "train objective error:"<<getObjectiveError(trainset, net) << endl;
+  cerr << "test objective error:"<<getObjectiveError(testset, net) << endl;
 
   calcScores(testset, net);
 //  testset.getMaxPerScan(d, max);
@@ -1104,8 +1146,14 @@ int QRanker::run( ) {
   testset = trainset;
   trainset = thresholdset;
 
-  selectHyperParameters();
+//  selectHyperParameters();
   train_many_nets();
+
+  cerr << "train objective error:"<<getObjectiveError(trainset, net) << endl;
+  cerr << "test objective error:"<<getObjectiveError(testset, net) << endl;
+
+  double train2 = getObjectiveError(trainset, net);
+  double test2 = getObjectiveError(testset, net);
 
   calcScores(testset, net);
   //testset.getMaxPerScan(d, max);
@@ -1129,7 +1177,15 @@ int QRanker::run( ) {
   res.str("");
   res << out_dir << "/qranker.target";
   write_results(res.str(), fullset, false);
+
+  int q = fullset.calcOverFDRBH(0.01);
   
+  ofstream fout("objective.txt");
+  fout << "train1\ttest1\ttrain2\ttest2\tq"<<endl;
+  fout << train1 << "\t" << test1 << "\t" << train2 << "\t" << test2 << "\t" << q << endl;
+  fout.close();
+
+
   return 0;
 }
 

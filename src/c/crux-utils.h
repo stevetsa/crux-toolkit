@@ -455,7 +455,8 @@ static bool get_range_from_string(
   TValue& last ///< the last value
   ) {
 
-  if (const_range_string == NULL) {
+  if (const_range_string == NULL ||
+      (strcmp(const_range_string, "__NULL_STR") == 0)) {
     first = (TValue)0;
     last = std::numeric_limits<TValue>::max();
     return true;

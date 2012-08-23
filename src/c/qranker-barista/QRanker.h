@@ -12,6 +12,7 @@
 #include <math.h>
 using namespace std;
 #include "NeuralNet.h"
+
 #include "DataSet.h"
 #include "PSMScores.h"
 #include "SQTParser.h"
@@ -33,6 +34,9 @@ public:
     void train_many_general_nets();
     void train_many_target_nets();
     void train_many_nets();
+
+    double getObjectiveError(PSMScores& set, NeuralNet& n, int interval=-1);
+
     
     int getOverFDR(PSMScores &set, NeuralNet &n, double fdr);
     void getMultiFDR(PSMScores &set, NeuralNet &n, vector<double> &qval);

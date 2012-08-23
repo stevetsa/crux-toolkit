@@ -98,6 +98,8 @@ int get_verbosity_level(void);
  */
 void open_log_file(char **log_file_name);
 
+void close_log_file();
+
 /**
  * Print command line to log file.
  *

@@ -67,7 +67,7 @@ void PeptideSrc::free(vector<PeptideSrc*>& peptide_srcs) {
   for(vector<PeptideSrc*>::iterator iter = peptide_srcs.begin();
      iter != peptide_srcs.end();
      ++iter) {
-  delete *iter; 
+  delete (*iter); 
 
   }
   peptide_srcs.clear();

@@ -87,6 +87,8 @@ int main(int argc, char** argv){
 
 
   int ret = applications.main(argc, argv);
+  close_log_file();
+  free_parameters();
   return ret;
 
 }// end main

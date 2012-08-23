@@ -40,6 +40,13 @@ void open_log_file(char **log_file_name) {
   free(output_dir);
 }
 
+void close_log_file() {
+  if (log_file != NULL) {
+    fclose(log_file);
+  }
+}
+
+
 /**
  * Print command line to log file.
  *

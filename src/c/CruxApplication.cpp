@@ -19,6 +19,8 @@ using namespace std;
  * Frees an allocated CruxApplication
  */
 CruxApplication::~CruxApplication() {
+
+
 }
 
 /**
