@@ -14,6 +14,8 @@
 #include "Peptide.h"
 #include "Ion.h"
 
+#include <limits.h>
+
 using namespace Crux;
 
 class SpectrumScoreDistribution {
@@ -35,9 +37,11 @@ private:
 		);
 
 protected:
-	FLOAT_T** table_; ///< table_[s][m] = num of peptides of mass m with score m.
+	FLOAT_T** table_; ///< table_[s][m] = num of peptides of mass m with score m
 	int nrows_; ///< number of rows (quantized scores) in table_ 
 	int ncols_; ///< number of columns (masses) in table_
+	int lower_; ///< index of column whose mass is neutral mass - tolerance
+	int upper_; ///< index of column whose mass is neutral mass + tolerance
 
 	FLOAT_T* mass_; ///< mass_[m] is mass represented by table_[...][m]
 	FLOAT_T* score_; ///< scores_[s] is the score represented by table_[s][...]
@@ -47,6 +51,9 @@ protected:
 
 	bool failed_;
 	FLOAT_T neutralmass_;
+
+	static const double epsilon_;
+	int* aamass_;
 
 	/**
 	 * Deallocate all memory safely.
@@ -62,20 +69,11 @@ protected:
 	 */
 	void computeScores();
 
+	/**
+	 * Count the fraction of peptides which have a score higher than xcorr.
+	 */
 	void countHigherScoring(FLOAT_T xcorr, FLOAT_T& nBetter, FLOAT_T& nPeptides) const;
 
-	/**
-	 * To fix the scaling problem:
-	 * i. Scale the intensities to 0-50, as a hack.
-	 * ii. Do everything else as before, a max Xcorr of 10.0 should be fine
-	 * iii. This shouldn't affect relative randking, but it will affect the
-	 *   absrank of Crux. Just do a separate run to get those results.
-	 * iv. the do-weibullp.sh run contains xcorr and Weibull.
-	 *
-	 *
-	 *
-	 * 
-	 */
 
 public:
 

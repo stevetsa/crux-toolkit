@@ -28,9 +28,15 @@
 #include "Spectrum.h"
 #include "Scorer.h"
 #include "parameter.h"
+#include "Alphabet.h"
 
 #include "SpectrumScoreDistribution.h"
 #include <limits.h>
+#include "mass.h"
+
+#define ROUND(x) (floor(0.5+x))
+
+const double SpectrumScoreDistribution::epsilon_ = numeric_limits<double>::epsilon();
 
 void SpectrumScoreDistribution::quantize(
 	FLOAT_T lower,
@@ -54,21 +60,47 @@ void SpectrumScoreDistribution::quantize(
 SpectrumScoreDistribution::SpectrumScoreDistribution(
 	Spectrum* spectrum,
 	const SpectrumZState& zstate
-	) : table_(NULL), nrows_(-1), ncols_(-1), mass_(NULL), score_(NULL), 
-			observed_(NULL), maxbin_(-1), failed_(false), neutralmass_(0.0)
+	) : table_(NULL), nrows_(-1), ncols_(-1), lower_(-1), upper_(-1), 
+			mass_(NULL), score_(NULL), observed_(NULL), maxbin_(-1), failed_(false), 
+			neutralmass_(0.0)
 {
 	if ( spectrum == NULL )
 		carp(CARP_FATAL, "Cannot compute score distribution, spectrum is NULL.");
 
+	// Initialize the table of amino acids masses
+	MASS_TYPE_T mass_type = get_mass_type_parameter("isotopic-mass");
+	aamass_ = (int*)mycalloc(Alphabet::numAminoAcids, sizeof(int));
+	for (int a = 0; a < Alphabet::numAminoAcids; ++a) {
+		char residue = *(Alphabet::aminoAcids[a]);
+		aamass_[a] = ROUND(get_mass_amino_acid(residue, mass_type));
+	}
+
+	// Quantize the mass range.
 	int charge = zstate.getCharge();
 	double tol = get_double_parameter("precursor-window");
 	FLOAT_T maxMass = ceil(zstate.getNeutralMass() + tol);
 	neutralmass_ = zstate.getNeutralMass();
-	FLOAT_T massDelta = 1.0;
-	quantize(0.0, maxMass, massDelta, mass_, ncols_);
+	FLOAT_T massDelta = get_double_parameter("mass-delta");  // 1.0
+ 	quantize(0.0, maxMass, massDelta, mass_, ncols_);
 
-	FLOAT_T maxScore = 10.0; // TODO(ajit): Do something smarter than fixing upper bound.
-	FLOAT_T scoreDelta = 0.01;
+	// Determine the columns to sum up to form the null distribution, since we do
+	// not assume that each column corresponds to 1.0Da.
+	int l = max(0, (int) ceil(neutralmass_ - tol));
+	int h = min((int) floor(neutralmass_ + tol), ncols_-1);
+	for (int m = 0; m < ncols_; ++m) {
+		if (mass_[m] <= l) {
+			lower_ = m;
+		} else if (mass_[m] > h) {
+			upper_ = m-1;
+			break;
+		}
+	}
+	assert(lower_ >= 0);
+	assert(upper_ < ncols_);
+	assert(lower_ <= upper_);
+
+	FLOAT_T maxScore = get_double_parameter("max-xcorr"); // 10.0
+	FLOAT_T scoreDelta = get_double_parameter("score-delta"); // 0.01
 	quantize(0.0, maxScore, scoreDelta, score_, nrows_);
 
 	// Allocate memoization table.
@@ -132,11 +164,12 @@ void SpectrumScoreDistribution::deallocate()
  */
 void SpectrumScoreDistribution::computeScores()
 {
-	static const int mass[20] = { 71, 160, 129, 115, 57, 147, 113, 137, 128, 131, 113, 
-																114, 128, 97, 87, 156, 101, 186, 99, 163 };
-	static double epsilon = numeric_limits<double>::epsilon();
+	//static const int mass[20] = { 71, 160, 129, 115, 57, 147, 113, 137, 128, 131, 113, 
+	//															114, 128, 97, 87, 156, 101, 186, 99, 163 };
+	//static double epsilon = numeric_limits<double>::epsilon();
 
 	// The only non-zero value in table_[0][*] is the first one.
+	int num_amino_acids = sizeof(aamass_)/sizeof(aamass_[0]);
 	table_[0][0] = 1;
 	for (int m = 0; m < ncols_; ++m) {
 		for (int s = 0; s < nrows_; ++s) {
@@ -145,10 +178,10 @@ void SpectrumScoreDistribution::computeScores()
 			}
 			// Recurrence
 			int v = 0;
-			for (int a = 0; a < 20; ++a) {
-				int new_m = m - mass[a];
+			for (int a = 0; a < num_amino_acids; ++a) {
+				int new_m = m - aamass_[a];
 				double contrib = (50.0 * observed_[new_m])/10000.0;
-				assert(contrib > epsilon); // Contribution has to be non-negative.
+				assert(contrib > epsilon_); // Contribution has to be non-negative.
 				int new_s = static_cast<int>(s - contrib);
 				//int new_s = static_cast<int>(s - (observed_[new_m]/10000.0));
 				if (new_s < 0 || (new_s == 0 && new_m > 0)) {
@@ -164,6 +197,11 @@ void SpectrumScoreDistribution::computeScores()
 	}
 }
 
+/**
+ * To compute the distribution over peptide scores, sum up the columns which
+ * represent masses in the candidate peptide mass interval: [nm - tol, nm + tol],
+ * where nm is the neutral mass of the precursor ion, observed during MS1.
+ */
 void SpectrumScoreDistribution::countHigherScoring(
 	FLOAT_T xcorr,
 	FLOAT_T& nBetter,
@@ -173,14 +211,9 @@ void SpectrumScoreDistribution::countHigherScoring(
 	if (xcorr >= maxScore())
 		carp(CARP_WARNING, "Cannot accurately score xcorr %g (max %g)", xcorr, maxScore());
 
-	double tol = get_double_parameter("precursor-window");
-	int lower = (int) ceil(neutralmass_ - tol);
-	int upper = (int) floor(neutralmass_ + tol);
-	lower = max(0, lower);
-	upper = min(upper, ncols_-1);
 	nPeptides = 0;
 	nBetter = 0;
-	for (int m = lower; m <= upper; ++m) {
+	for (int m = lower_; m <= upper_; ++m) {
 		for (int s = 0; s < nrows_; ++s) {
 			nPeptides += (FLOAT_T) table_[s][m];
 			if (score_[s] >= xcorr)

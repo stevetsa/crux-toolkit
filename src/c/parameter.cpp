@@ -317,6 +317,24 @@ void initialize_parameters(void){
   // set with name, default value, [max, min], usage, notes, for param file
   // all arguments are left out of param file
 
+  /* Parameters for exact p-value computation */
+  //set_boolean_parameter("ajit", false, "Test", "testMore", "true");
+
+  set_double_parameter("max-xcorr", 10.0, 0.0, 20.0,
+    "Set the maximum value of xcorr in the exact p-value dynamic program.",
+    "Available for crux search-for-matches", "true");
+
+  set_double_parameter("score-delta", 0.01, 0.00000001, 1.0,
+    "Set the smallest difference between xcorr's considered in exact p-value computation.",
+    "Available for crux search-for-matches", "true");
+
+  set_double_parameter("mass-delta", 1.0, 0.0, 5.0,
+    "Set the mass quantization in the exact p-value dynamic program, in [0,5.0] Da. "
+    "Default = 1.0",
+    "Available for crux search-for-matches", "true");
+
+/////////////////////
+
   /* generate_peptide arguments */
   set_string_parameter("protein database", NULL, 
       "Fasta file of proteins or directory containing an index.",
@@ -1327,7 +1345,8 @@ void initialize_parameters(void){
     "Available for crux extract-rows",
     "true");
 
-  
+
+
   // now we have initialized the parameters
   parameter_initialized = true;
   usage_initialized = true;
