@@ -972,9 +972,7 @@ bool Scorer::createIntensityArrayObserved(
     }
   }
 
-#if 1 //Turn off to test what just higher resolution looks like.
   // HACK(ajit): Rescale the spectrum upwards, which changes the range of XCorr,
-  // but allows us to easily compute per-spectrum p-values (See Bill email Jul 24, 2012)
   FLOAT_T minelt = *min_element(new_observed, new_observed + getMaxBin());
   for (int i = 0; i < getMaxBin(); ++i) {
     new_observed[i] += minelt;
@@ -984,7 +982,6 @@ bool Scorer::createIntensityArrayObserved(
   for (int i = 0; i < getMaxBin(); ++i) {
     new_observed[i] *= 50.0 / maxelt;
   }
-#endif
 
   // set new values
   observed_ = new_observed;
