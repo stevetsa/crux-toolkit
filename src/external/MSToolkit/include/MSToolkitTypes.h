@@ -26,7 +26,7 @@ enum MSFileFormat {
   msmat_ff,
   mzXML,
   mzData,
-	mzML,
+  mzML,
   raw,
   sqlite,
   psm,
@@ -46,46 +46,48 @@ enum MSTag {
 
 enum MSActivation {
   mstCID,
-  mstECD,
-  mstETD,
-  mstPQD,
   mstHCD,
+  mstETD,
+  mstETDSA,
+  mstECD,
+  mstPQD,
+  mstIRMPD,
   mstNA
 };
 
 struct MSHeader {
-	char header[16][128];
+  char header[16][128];
 };
 
 struct MSScanInfo {
-	int scanNumber[2];
-	int numDataPoints;
+  int scanNumber[2];
+  int numDataPoints;
   int numEZStates;
-	int numZStates;
+  int numZStates;
   float rTime;
   float IIT;
   float BPI;
   double mz;
   double convA;
   double convB;
-	double convC;
-	double convD;
-	double convE;
-	double convI;
+  double convC;
+  double convD;
+  double convE;
+  double convI;
   double TIC;
   double BPM;
-	MSScanInfo(){
-		scanNumber[0]=scanNumber[1]=0;
-		numDataPoints=numEZStates=numZStates=0;
-		rTime=IIT=BPI=0.0f;
-		mz=TIC=BPM=0.0;
-		convA=convB=convC=convD=convE=convI=0.0;
-	}
+  MSScanInfo(){
+    scanNumber[0]=scanNumber[1]=0;
+    numDataPoints=numEZStates=numZStates=0;
+    rTime=IIT=BPI=0.0f;
+    mz=TIC=BPM=0.0;
+    convA=convB=convC=convD=convE=convI=0.0;
+  }
 };
 
 struct DataPeak {
-	double dMass;
-	double dIntensity;
+  double dMass;
+  double dIntensity;
 }; //For RAW files
 
 struct Peak_T {
@@ -108,5 +110,3 @@ struct EZState {
 }
 
 #endif
-
-

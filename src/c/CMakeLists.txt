@@ -19,7 +19,10 @@ include_directories(posterior-error)
 include_directories(xlink)
 include_directories(../external)
 include_directories(../external/MSToolkit/include)
+include_directories(../external/comet)
+
 link_directories(../external/MSToolkit)
+link_directories(../external/comet)
 link_directories(.)
 link_directories(./ArrayLibrary)
 link_directories(./bullseye)
@@ -34,6 +37,7 @@ set (
   Alphabet.cpp
   analyze_psms.cpp
   carp.cpp
+  CometApplication.cpp
   ComputeQValues.cpp
   CreateIndex.cpp
   crux-utils.cpp
@@ -204,6 +208,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     bullseye
     crux-support
     hardklor
+    Comet
     MSToolkit
     percolator
     posterior_error
@@ -215,6 +220,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     xlink-predict-peptide-ions
     xlink
     crux-support
+    Comet
     MSToolkit
     ws2_32
   )
@@ -238,6 +244,7 @@ else(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     barista
     bullseye
     crux-support
+    Comet
     dl
     hardklor
     m

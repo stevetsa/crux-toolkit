@@ -8,7 +8,6 @@
 
 using namespace std;
 
-
 namespace MSToolkit {
 class MSObject {
  public:

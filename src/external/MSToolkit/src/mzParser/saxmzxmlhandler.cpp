@@ -88,9 +88,8 @@ void SAXMzxmlHandler::startElement(const XML_Char *el, const XML_Char **attr){
 		m_strData.clear();
 		m_bInPeaks=true;
 
-		//It appears "network" means little-endian to mzXML...
-		if(!strcmp("network",getAttrValue("byteOrder", attr))) m_bNetworkData=false;
-		else m_bNetworkData=true;
+		if(!strcmp("network",getAttrValue("byteOrder", attr))) m_bNetworkData=true;
+		else m_bNetworkData=true; //make it true anyway.
 		if(!strcmp("64",getAttrValue("precision", attr))) m_bLowPrecision=false;
 		else m_bLowPrecision=true;
 
@@ -121,6 +120,19 @@ void SAXMzxmlHandler::startElement(const XML_Char *el, const XML_Char **attr){
 		else spec->setPrecursorScanNum(0);
 		m_bInPrecursorMz = true;
 
+		s=getAttrValue("activationMethod", attr);
+		if(s.length()>0){
+			if(!strcmp("CID",&s[0])) spec->setActivation(CID);
+			else if(!strcmp("HCD",&s[0])) spec->setActivation(HCD);
+			else if(!strcmp("ETD",&s[0])) spec->setActivation(ETD);
+			else if(!strcmp("ETD+SA",&s[0])) spec->setActivation(ETDSA);
+			else if(!strcmp("ECD",&s[0])) spec->setActivation(ECD);
+			else if(!strcmp("PQD",&s[0])) spec->setActivation(PQD);
+			else if(!strcmp("IRMPD",&s[0])) spec->setActivation(IRMPD);
+		} else {
+			spec->setActivation(none);
+		}
+
 	}	else if (isElement("scan", el)) {
 		if(m_bInScan){
 			pushSpectrum();
@@ -149,16 +161,6 @@ void SAXMzxmlHandler::startElement(const XML_Char *el, const XML_Char **attr){
 			}
 		}
 
-		s=getAttrValue("activationMethod", attr);
-		if(s.length()>0){
-			if(!strcmp("CID",&s[0])) spec->setActivation(CID);
-			else if(!strcmp("ETD",&s[0])) spec->setActivation(ETD);
-			else if(!strcmp("HCD",&s[0])) spec->setActivation(HCD);
-			else if(!strcmp("ECD",&s[0])) spec->setActivation(ECD);
-			else if(!strcmp("ETD+SA",&s[0])) spec->setActivation(ETDSA);
-		} else {
-			spec->setActivation(none);
-		}
 
 	}
 }
@@ -487,24 +489,22 @@ void SAXMzxmlHandler::decode64(){
 	delete[] pDecoded;
 }
 
+#ifdef _WIN32
+#include <winsock.h>
+#else
+#include <arpa/inet.h>
+#endif
 unsigned long SAXMzxmlHandler::dtohl(uint32_t l, bool bNet) {
 
-	// mzData allows little-endian data format, so...
-	// If it is not network (i.e. big-endian) data, reverse the byte
-	// order to make it network format, and then use ntohl (network to host)
-	// to get it into the host format.
-	//if compiled on OSX the reverse is true
 #ifdef OSX
-	if (bNet)
-	{
-		l = (l << 24) | ((l << 8) & 0xFF0000) |
-			(l >> 24) | ((l >> 8) & 0x00FF00);
-	}
-#else
 	if (!bNet)
 	{
-		l = (l << 24) | ((l << 8) & 0xFF0000) |
-			(l >> 24) | ((l >> 8) & 0x00FF00);
+		l = (l << 24) | ((l << 8) & 0xFF0000) | (l >> 24) | ((l >> 8) & 0x00FF00);
+	}
+#else
+	if (bNet)
+	{
+		l = (l << 24) | ((l << 8) & 0xFF0000) | (l >> 24) | ((l >> 8) & 0x00FF00);
 	}
 #endif
 	return l;
@@ -512,19 +512,14 @@ unsigned long SAXMzxmlHandler::dtohl(uint32_t l, bool bNet) {
 
 uint64_t SAXMzxmlHandler::dtohl(uint64_t l, bool bNet) {
 
-	// mzData allows little-endian data format, so...
-	// If it is not network (i.e. big-endian) data, reverse the byte
-	// order to make it network format, and then use ntohl (network to host)
-	// to get it into the host format.
-	//if compiled on OSX the reverse is true
 #ifdef OSX
-	if (bNet)
+	if (!bNet)
 	{
 		l = (l << 56) | ((l << 40) & 0xFF000000000000LL) | ((l << 24) & 0x0000FF0000000000LL) | ((l << 8) & 0x000000FF00000000LL) |
 			(l >> 56) | ((l >> 40) & 0x0000000000FF00LL) | ((l >> 24) & 0x0000000000FF0000LL) | ((l >> 8) & 0x00000000FF000000LL) ;
 	}
 #else
-	if (!bNet)
+	if (bNet)
 	{
 		l = (l << 56) | ((l << 40) & 0x00FF000000000000LL) | ((l << 24) & 0x0000FF0000000000LL) | ((l << 8) & 0x000000FF00000000LL) |
 			(l >> 56) | ((l >> 40) & 0x000000000000FF00LL) | ((l >> 24) & 0x0000000000FF0000LL) | ((l >> 8) & 0x00000000FF000000LL) ;

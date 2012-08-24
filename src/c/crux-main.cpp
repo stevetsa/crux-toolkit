@@ -33,6 +33,7 @@
 #include "SortColumn.h"
 #include "CruxHardklorApplication.h"
 #include "CruxBullseyeApplication.h"
+#include "CometApplication.h"
 
 /**
  * The starting point for crux.  Prints a general usage statement when
@@ -54,6 +55,7 @@ int main(int argc, char** argv){
   // search
   applications.add(new MatchSearch());
   applications.add(new SequestSearch());
+  applications.add(new CometApplication());
   applications.add(new SearchForXLinks());
 
   // post-search

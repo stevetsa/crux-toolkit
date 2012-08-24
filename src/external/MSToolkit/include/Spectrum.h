@@ -9,7 +9,6 @@
 
 using namespace std;
 
-
 namespace MSToolkit {
 class Spectrum {
  public:
@@ -22,34 +21,34 @@ class Spectrum {
 
   //Operator Functions
   Spectrum& operator=(const Spectrum&);
-	Peak_T& operator[](const int&);
+  Peak_T& operator[](const int&);
 
   //Functions
-  void	    			add(Peak_T&);
-  void			    	add(double,float);
+  void            add(Peak_T&);
+  void            add(double,float);
   void            addEZState(int,double,float,float);
   void            addEZState(EZState&);
-  void    				addZState(int,double);
-  void		    		addZState(ZState&);
-  Peak_T&			    at(const int&);
-  Peak_T&	    		at(const unsigned int&);
+  void            addZState(int,double);
+  void            addZState(ZState&);
+  Peak_T&         at(const int&);
+  Peak_T&         at(const unsigned int&);
   EZState&        atEZ(const int&);
   EZState&        atEZ(const unsigned int&);
-  ZState&			    atZ(const int&);
-  ZState&	    		atZ(const unsigned int&);
-  void			    	clear();
-	void						clearPeaks();
-  void				    erase(unsigned int);
-  void				    erase(unsigned int, unsigned int);
+  ZState&         atZ(const int&);
+  ZState&         atZ(const unsigned int&);
+  void            clear();
+  void            clearPeaks();
+  void            erase(unsigned int);
+  void            erase(unsigned int, unsigned int);
   void            eraseEZ(unsigned int);
   void            eraseEZ(unsigned int, unsigned int);
-  void				    eraseZ(unsigned int);
-  void				    eraseZ(unsigned int, unsigned int);
+  void            eraseZ(unsigned int);
+  void            eraseZ(unsigned int, unsigned int);
   MSActivation    getActivationMethod();
   float           getArea();
   float           getBPI();
   double          getBPM();
-  int				      getCharge();
+  int             getCharge();
   double          getConversionA();
   double          getConversionB();
   double          getConversionC();
@@ -58,41 +57,41 @@ class Spectrum {
   double          getConversionI();
   MSSpectrumType  getFileType();
   float           getIonInjectionTime();
-  double    			getMZ();
-  bool            getRawFilter(char*,int);
-  float		    		getRTime();
+  double          getMZ();
+  bool            getRawFilter(char*,int,bool bLock=false);
+  float           getRTime();
   float           getRTimeApex();
-  int	      			getScanNumber(bool second=false);
+  int             getScanNumber(bool second=false);
   double          getTIC();
   int             getMsLevel();
   void            setActivationMethod(MSActivation);
   void            setArea(float);
   void            setBPI(float);
   void            setBPM(double);
-  void			    	setCharge(int);
+  void            setCharge(int);
   void            setConversionA(double);
   void            setConversionB(double);
   void            setConversionC(double);
   void            setConversionD(double);
   void            setConversionE(double);
   void            setConversionI(double);
-  void    				setFileType(MSSpectrumType);
+  void            setFileType(MSSpectrumType);
   void            setIonInjectionTime(float);
-  void		    		setMZ(double);
+  void            setMZ(double);
   void            setRawFilter(char*);
-  void				    setRTime(float);
+  void            setRTime(float);
   void            setRTimeApex(float);
-  void    				setScanNumber(int, bool second=false);
+  void            setScanNumber(int, bool second=false);
   void            setTIC(double);
   void            setMsLevel(int level);
-  int			      	size();
+  int             size();
   int             sizeEZ();
-  int     				sizeZ();
-  void		    		sortIntensity();
-  void				    sortIntensityRev();
-  void    				sortMZ();
+  int             sizeZ();
+  void            sortIntensity();
+  void            sortIntensityRev();
+  void            sortMZ();
   void            setPeaks( std::vector<Peak_T> peaks);
-  void		    		sortMZRev();
+  void            sortMZRev();
 
   //for sqlite format
   void setScanID(int scanID);
@@ -112,12 +111,12 @@ class Spectrum {
   vector<Peak_T>   *vPeaks;
   vector<EZState>  *vEZ;
   vector<ZState>   *vZ;
-  int		           charge;
-  float		         rTime;
-  int		           scanNumber;
+  int              charge;
+  float            rTime;
+  int              scanNumber;
   int              scanNumber2;
   int              msLevel;
-  double	         mz;
+  double           mz;
   MSSpectrumType   fileType;
   MSActivation     actMethod;
   int              scanID;       //index for sqlite
@@ -125,10 +124,10 @@ class Spectrum {
   float            BPI;          //Base Peak Intensity
   double           convA;
   double           convB;
-	double           convC;
-	double           convD;
-	double           convE;
-	double           convI;
+  double           convC;
+  double           convD;
+  double           convE;
+  double           convI;
   double           TIC;
   double           BPM;          //Base Peak Mass
   float            rTimeApex;    //retention time of precursor apex (MS2)

@@ -44,7 +44,7 @@ using namespace std;
 //#define OSX_TIGER // use with OSX if OSX Tiger is being used
 //#define OSX_INTEL // compile with cc on Macintosh OSX on Intel-style processors
 //#define GCC				// to compile with gcc (or g++) on LINUX
-//#define __LINUX__				// to compile with gcc (or g++) on LINUX
+#define __LINUX__				// to compile with gcc (or g++) on LINUX
 //#define _MSC_VER	// to compile with Microsoft Studio
 
 #define XMLCLASS		
@@ -54,6 +54,8 @@ using namespace std;
 
 //For Windows
 #ifdef _MSC_VER
+#undef GCC
+#undef __LINUX__
 #define __inline__ _inline
 typedef _int64  __int64_t;
 typedef unsigned _int32 uint32_t;
@@ -74,6 +76,7 @@ typedef __int64 f_off;
 #endif
 
 #if defined(GCC) || defined(__LINUX__)
+#include <inttypes.h>
 #ifndef _LARGEFILE_SOURCE
 #error "need to define _LARGEFILE_SOURCE!!"
 #endif    /* end _LARGEFILE_SOURCE */
@@ -112,6 +115,7 @@ typedef struct specDP{
 	double intensity;
 } specDP;
 
+
 enum enumActivation {
 	none=0,
 	CID=1,
@@ -119,7 +123,10 @@ enum enumActivation {
 	ETD=3,
 	ETDSA=4,
 	ECD=5,
+	PQD=6,
+	IRMPD=7,
 };
+
 
 
 

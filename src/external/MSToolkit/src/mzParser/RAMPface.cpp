@@ -348,6 +348,8 @@ void readHeader(RAMPFILE *pFI, ramp_fileoffset_t lScanIndex, struct ScanHeaderSt
 		case 3: strcpy(scanHeader->activationMethod,"ETD"); break;
 		case 4: strcpy(scanHeader->activationMethod,"ETD+SA"); break;
 		case 5: strcpy(scanHeader->activationMethod,"ECD"); break;
+		case 6: strcpy(scanHeader->activationMethod,"PQD"); break;
+		case 7: strcpy(scanHeader->activationMethod,"IRMPD"); break;
 		default: strcpy(scanHeader->activationMethod,""); break;
 	}
 

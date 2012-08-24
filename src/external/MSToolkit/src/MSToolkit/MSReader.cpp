@@ -1508,6 +1508,10 @@ bool MSReader::readFile(const char* c, MSFileFormat f, Spectrum& s, int scNum){
 
   } else /* if scnum == 0 */ {
 
+		if(rampIndex>rampLastScan) {
+			return false;
+		}
+
 		//read next index
 	  while(true){
 	    rampIndex++;
@@ -2465,6 +2469,9 @@ MSSpectrumType MSReader::EvaluateFilter(long scan, double *precursormz, char* ch
     }
 
     i=cFilter.find("Full ms");
+    if( i > -1)	return MS1;
+
+		i=cFilter.find("Full lock ms");
     if( i > -1)	return MS1;
    
     if(cFilter.find("SRM ms2")>-1) {
