@@ -32,12 +32,12 @@ private:
 		FLOAT_T lower, ///< lower value of range -in
 		FLOAT_T upper, ///< upper value of range -in
 		FLOAT_T delta, ///< increment of values in range -in
-		FLOAT_T* ovalues, ///<
+		FLOAT_T** ovalues, ///<
 		int& olen
 		);
 
 protected:
-	FLOAT_T** table_; ///< table_[s][m] = num of peptides of mass m with score m
+	double** table_; ///< table_[s][m] = num of peptides of mass m with score m
 	int nrows_; ///< number of rows (quantized scores) in table_ 
 	int ncols_; ///< number of columns (masses) in table_
 	int lower_; ///< index of column whose mass is neutral mass - tolerance
@@ -52,8 +52,9 @@ protected:
 	bool failed_;
 	FLOAT_T neutralmass_;
 
-	static const double epsilon_;
 	int* aamass_;
+	int naa_;
+	static const double epsilon_;
 
 	/**
 	 * Deallocate all memory safely.
@@ -69,10 +70,14 @@ protected:
 	 */
 	void computeScores();
 
+	int mass_to_index(FLOAT_T mass) const;
+
+	int score_to_index(FLOAT_T score) const;
+
 	/**
 	 * Count the fraction of peptides which have a score higher than xcorr.
 	 */
-	void countHigherScoring(FLOAT_T xcorr, FLOAT_T& nBetter, FLOAT_T& nPeptides) const;
+	void countHigherScoring(FLOAT_T xcorr, double& nBetter, double& nPeptides) const;
 
 
 public:

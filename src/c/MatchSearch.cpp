@@ -431,8 +431,10 @@ int MatchSearch::main(int argc, char** argv){
 
       // Compute the per-spectrum distribution over scores
       SpectrumScoreDistribution ssd(spectrum, zstate);
-      if (!ssd.initialized() || !ssd.failed())
-        carp(CARP_FATAL, "SpectrumScoreDistribution borked.");
+      if (!ssd.initialized())
+        carp(CARP_FATAL, "SpectrumScoreDistribution did not initialize DP.");
+      if (ssd.failed())
+        carp(CARP_FATAL, "SpectrumScoreDistribution failed.");
 
       // Convert target xcorr's to 1-pvalues.
       target_psms->computeExactPValues(ssd);
