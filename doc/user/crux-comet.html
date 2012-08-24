@@ -29,37 +29,8 @@ open source warning -->
 
 <blockquote>
 <p>
-This command searches a protein database with a set of spectra, using
-an algorithm similar to that employed by the SEQUEST database search
-software.  This command differs from the <code>crux
-search-for-matches</code> command in the following respects:</p>
-<ul>
-<li>
-Candidate peptides (i.e., peptides that lie within the user-specified
-precursor window) are first ranked with the SEQUEST Sp score.  The top
-500 matches are then re-scored using XCorr.</li>
-<li>
-The program will not compute p-values using the Weibull empirical
-curve fitting procedure.</li>
-<li>
-By default, the theoretical spectrum used to compute XCorr includes
-two flanking peaks on either side of each b- and y-ion.  These can be
-turned off using the <code>use-flanking-peaks</code> parameter.</li>
-<li>
-The program produces <a href="sqt-format.html">SQT</a> format output
-files.</li>
-</ul>
-
-<p>
-Similar to <code>crux search-for-matches</code>, the input protein
-database may either be in FASTA format or it may be a binary index
-created by <code>crux create-index</code>.  Using an index will
-typically yield much faster search speeds.</p>
-
-<p>
-This command handles modifications in the same way
-as <a href="crux-search-for-matches.html"><code>crux
-search-for-matches</code></a>.</p>
+This command searches a protein database with a set of spectra,
+assigning peptide sequences to the observed spectra.  This command is similar to <code>search-for-matches</code> but is based on an entirely different code base, developed by Jimmy Eng at the University of Washington Proteomics Resource.</p>
 
 </blockquote>
 
@@ -203,9 +174,9 @@ info, 60-detailed debug info. Default = 30.
 <ul>
 
 <LI>
-<code>--min-peaks &lt;int&gt;</code> &ndash;
+<code>min-peaks &lt;int&gt;</code> &ndash;
 The minimum number of peaks a spectrum must have in order to be
-searched.  Default = 20.
+searched.  Default = 20.</li>
 
 <li>
 <code>fragment-mass &lt;average|mono&gt;</code> &ndash; 
