@@ -464,6 +464,7 @@ it for harklor/bullseye.)
         <td>Crux Parameter</td>
         <td>Exists in Crux</td>
         <td>Exists in Comet</td>
+        <td>Priority</td>
       </tr>
       <tr>
         <td>-p</td>
@@ -471,6 +472,7 @@ it for harklor/bullseye.)
 
         <td>print out comet.params.new</td>
         <td></td>
+        <td>Do not implement</td>
       </tr>
       <tr>
         <td>-P params</td>
@@ -479,6 +481,7 @@ it for harklor/bullseye.)
         <td>Override this with our generated parameter file</td>
         <td>N/A</td>
         <td>Yes</td>
+        <td>1</td>
       </tr>
       <tr>
         <td>-N name</td>
@@ -487,6 +490,7 @@ it for harklor/bullseye.)
         <td>Override this with crux-output</td>
         <td>Yes</td>
         <td>Yes</td>
+        <td>1</td>
       </tr>
       <tr>
         <td>-D dbase</td>
@@ -495,6 +499,7 @@ it for harklor/bullseye.)
         <td><code>protein database</code></td>
         <td>Yes</td>
         <td>Yes</td>
+        <td>Do not implement</td>
       </tr>
 
       <tr>
@@ -504,6 +509,7 @@ it for harklor/bullseye.)
         <td><code>--scan-number</code</td>
         <td>Yes</td>
         <td>Yes</td>
+        <td>7</td>
       </tr>
       <tr>
 
@@ -513,9 +519,10 @@ it for harklor/bullseye.)
         <td><code>protein database</code></td>
         <td>Yes</td>
         <td>Yes</td>
+        <td>1</td>
       </tr>
       <tr>
-        <td>decoy_search</td>
+        <td><code>decoy_search</code></td>
         <td>Parameter File</td>
         <td>0= no, 1=concatenated, 2=separate search</td>
         <td><code>--decoy-location</code>,<code>--num-decoys-per-target</code></td>
@@ -523,60 +530,72 @@ it for harklor/bullseye.)
         <td>Yes</td>
       </tr>
       <tr>
-        <td>num_threads</td>
+        <td><code>num_threads</code></td>
         <td>Parameter File</td>
         <td>0=poll CPU to set threads; </td>
         <td><code>--num-threads</code></td>
         <td>No</td>
         <td>Yes</td>
+        <td>2</td>
       </tr>
       <tr>
-        <td>peptide_mass_tolerance</td>
+        <td colspan="6"><b>masses</b></td>
+      </tr>
+      <tr>
+        <td><code>peptide_mass_tolerance</code></td>
         <td>Parameter File</td>
         <td>Mass tolerance to use when selecting candidate peptides</td>
         <td><code>--precursor-window</td>
         <td>Yes</td>
         <td>Yes</td>
+        <td>2</td>    
       </tr>
       <tr>
-        <td>peptide_mass_units</td>
+        <td><code>peptide_mass_units</code></td>
         <td>Parameter File</td>
         <td>Units to use when selecting peptides, 0=amu, 1=mmu, 2=ppm</td>
         <td><code>--precursor-window-type</code></td>
         <td>Yes</td>
         <td>Yes</td>
+        <td>2</td>
       </tr>
       <tr>
-        <td>mass_type_parent</td>
+        <td><code>mass_type_parent</code></td>
         <td>Parameter File</td>
         <td>average or monoisotopic mass for calculating peptide mass 0=average mass, 1=monoisotopic mass</td>
         <td><code>--isotopic-mass</code>
         <td>Yes</td>
         <td>Yes</td>
+        <td>2</td>
       </tr>
 
       <tr>
-        <td>mass_type_fragment</td>
+        <td><code>mass_type_fragment</code></td>
         <td>Parameter File</td>
         <td>average or monoisotopic mass for calculating fragment masses</td>
         <td><code>--fragment-mass</code>
         <td>Yes</td>
         <td>Yes</td>
+        <td>2</td>
       </tr>
       <tr>
 
-        <td>precursor_tolerance_type</td>
+        <td><code>precursor_tolerance_type</code></td>
         <td>Parameter File</td>
         <td>0=MH+, 1=precursor m/z</td>
         <td>???</td>
       </tr>
       <tr>
-        <td>isotope_error</td>
+        <td><code>isotope_error</code></td>
         <td>Parameter File</td>
         <td>Search in small windows that are +/- 1 Neutron Mass away from precursor mass?</td>
         <td><code>--isotope-windows</td>
         <td>No</td>
         <td>Yes</td>
+        <td>7</td>
+      </tr>
+      <tr>
+        <td colspan="6"><b>search enzyme</b></td>
       </tr>
       <tr>
         <td>search_enzyme_number</td>
@@ -585,12 +604,17 @@ it for harklor/bullseye.)
         <td><code>--enzyme</code></td>
         <td>Yes</td>
         <td>Yes</td>
+        <td>4</td>
       </tr>
       <tr>
         <td>num_enzyme_termini</td>
         <td>Parameter File</td>
         <td>selecting semi-digestion, full digestion, and others valid values are 1 (semi-digested), 2 (fully digested, default), 8 N-term, 9 C-term</td>
-        <td><code></code></td>
+        <td><code>digestion</code></td>
+        <td>Yes</td>
+        <td>Yes*</td>
+        <td><code>digestion</code> only supports partial and full</td>
+        <td>7</td>
       </tr>
       <tr>
         <td>allowed_missed_cleavage</td>
@@ -644,39 +668,39 @@ it for harklor/bullseye.)
         <td>use_A_ions</td>
         <td>Parameter File</td>
         <td>Whether or not to use a-ions</td>
-        <td></td>
+        <td><code>use-a-ions</code></td>
         <td>No</td>
         <td>Yes</td>
       </tr>
       <tr>
         <td>use_B_ions</td>
         <td>Parameter File</td>
-        <td>Whether or not to use a-ions</td>
-        <td></td>
+        <td>Whether or not to use b-ions</td>
+        <td><code>use-b-ions</code></td>
         <td>No</td>
         <td>Yes</td>
       </tr>
       <tr>
         <td>use_C_ions</td>
         <td>Parameter File</td>
-        <td>Whether or not to use a-ions</td>
-        <td></td>
+        <td>Whether or not to use c-ions</td>
+        <td><code>use-c-ions</code></td>
         <td>No</td>
         <td>Yes</td>
       </tr>        
       <tr>
         <td>use_X_ions</td>
         <td>Parameter File</td>
-        <td>Whether or not to use a-ions</td>
-        <td></td>
+        <td>Whether or not to use x-ions</td>
+        <td><code>use-x-ions</code></td>
         <td>No</td>
         <td>Yes</td>
       </tr>
       <tr>
         <td>use_Y_ions</td>
         <td>Parameter File</td>
-        <td>Whether or not to use a-ions</td>
-        <td></td>
+        <td>Whether or not to use y-ions</td>
+        <td><code>use-y-ions</code></td>
         <td>No</td>
         <td>Yes</td>
       </tr>
@@ -684,8 +708,8 @@ it for harklor/bullseye.)
       <tr>
         <td>use_Z_ions</td>
         <td>Parameter File</td>
-        <td>Whether or not to use a-ions</td>
-        <td></td>
+        <td>Whether or not to use z-ions</td>
+        <td><code>use-z-ions</code></td>
         <td>No</td>
         <td>Yes</td>
       </tr>
@@ -693,42 +717,73 @@ it for harklor/bullseye.)
         <td>use_NL_ions</td>
         <td>Parameter File</td>
         <td>Whether or not to use NH3/H2O neutral loss peaks</td>
-        <td></td>
+        <td><code>use-nl-ions</code></td>
         <td>No</td>
         <td>Yes</td>
       </tr>     
       <tr>
-        <td>output_sqtstream</td><td>Parameter File</td>
+        <td>output_sqtstream</td>
+        <td>Parameter File</td>
         <td>0=no, 1=yes  write sqt to standard output</td>
+        <td>Not supported</td>
+        <td>No</td>
+        <td>Yes</td>
       </tr>
       <tr>
-        <td>output_sqtfile</td><td>Parameter File</td>
+        <td>output_sqtfile</td>
+        <td>Parameter File</td>
         <td>0=no, 1=yes  write sqt file</td>
+        <td>Always true</td>
+        <td>No</td>
+        <td>Yes</td>
       </tr>
       <tr>
-        <td>output_pepxmlfile</td><td>Parameter File</td>
+        <td>output_pepxmlfile</td>
+        <td>Parameter File</td>
         <td>0=no, 1=yes  write pep.xml file</td>
+        <td>Always true</td>
+        <td>No</td>
+        <td>Yes</td>
       </tr>
       <tr>
-        <td>output_outfiles</td><td>Parameter File</td>
+        <td>output_outfiles</td>
+        <td>Parameter File</td>
         <td>0=no, 1=yes  write .out files</td>
+        <td>Always false</td>
+        <td>No</td>
+        <td>Yes</td>
       </tr>
       <tr>
-        <td>print_expect_score</td><td>Parameter File</td>
+        <td>print_expect_score</td>
+        <td>Parameter File</td>
         <td>to replace Sp with expect in out & sqt</td>
+        <td><code>print-expect-score</code></td>
+        <td>No</td>
+        <td>Yes</td>
       </tr>
       <tr>
         <td>num_output_lines</td><td>Parameter File</td>
         <td>num peptide results to show</td>
+        <td><code>top-match</code></td>
+        <td>No</td>
+        <td>Yes</td>
       </tr>
       <tr>
-        <td>show_fragment_ions</td><td>Parameter File</td>
+        <td>show_fragment_ions</td>
+        <td>Parameter File</td>
         <td> 0=no, 1=yes for out files only</td>
+        <td>Always false</td>
+        <td>No</td>
+        <td>Yes</td>
       </tr>
       <tr>
-        <td>sample_enzyme_number</td><td>Parameter File</td>
+        <td>sample_enzyme_number</td>
+        <td>Parameter File</td>
         <td>Sample enzyme which is possibly different than the one applied to the search.<br>
           Used to calculate NTT & NMC in pepXML output (default=1 for trypsin).</td>
+        <td><code>sample-enzymze</code></td>
+        <td>No</td>
+        <td>Yes</td>
       </tr>
       <tr>
          <td colspan="6"><B>mzXML parameters</B></td>
@@ -736,70 +791,136 @@ it for harklor/bullseye.)
       <tr>
         <td>scan_range</td><td>Parameter File</td>
         <td>start and scan scan range to search; 0 as 1st entry ignores parameter</td>
+        <td><code>scan-number</code></td>
+        <td>No</td>
+        <td>Yes</td>
       </tr>
       <tr>
         <td>precursor_charge</td><td>Parameter File</td>
         <td>precursor charge range to analyze; does not override mzXML charge; 0 as 1st entry ignores parameter</td>
+        <td><code>spectrum-charge</code></td>
+        <td>Yes, we need to modify it to accept a range of charges</td>
+        <td>Yes</td>    
       </tr>
       <tr>
          <td>ms_level</td><td>Parameter File</td>
          <td>MS level to analyze, valid are levels 2 (default) or 3</td>
+         <td><code>ms-level</code></td>
+         <td>No</td>
+         <td>Yes</td>
       </tr>
       <tr>
-        <td>activation_method</td><td>Parameter File</td>
+        <td>activation_method</td>
+        <td>Parameter File</td>
         <td>activation method; used if activation method set; allowed ALL, CID, ECD, ETD, PQD, HCD, IRMPD</td>
+        <td><code>activation-method</code></td>
+        <td>No</td>
+        <td>Yes</td>
       </tr>
       <tr>
-        <td colspan="6"><B>misc parameters</td>
+        <td colspan="6"><B>misc parameters</B></td>
       </tr>
       <tr>
-        <td>digest_mass_range</td><td>Parameter File</td>
+        <td>digest_mass_range</td>
+        <td>Parameter File</td>
         <td>MH+ peptide mass range to analyze</td>
+        <td><code>min-mass,max-mass</code></td>
+        <td>No</td> 
+        <td>Yes</td>
       </tr>
       <tr>
-        <td>num_results</td><td>Parameter File</td>
+        <td>num_results</td>
+        <td>Parameter File</td>
         <td>number of search hits to store internally</td>
+        <td>Default it to 50</td>
+        <td>No</td>
+        <td>Yes</td>
       </tr>
       <tr>
-        <td>skip_researching</td><td>Parameter File</td>
+        <td>skip_researching</td>
+        <td>Parameter File</td>
         <td>for '.out' file output only, 0=search everything again (default), 1=don't search if .out exists</td>
+        <td>Default to 0</td>
+        <td>No</td>
+        <td>Yes</td>
       </tr>
       <tr>
-        <td>max_fragment_charge</td><td>Parameter File</td>
+        <td>max_fragment_charge</td>
+        <td>Parameter File</td>
         <td>set maximum fragment charge state to analyze (allowed max 5)</td>
+        <td><code>max-ion-charge</code>, double check the 5</td>
+        <td>No</td>
+        <td>Yes</td>
       </tr>
       <tr>
         <td>max_precursor_charge</td><td>Parameter File</td>
         <td>set maximum precursor charge state to analyze (allowed max 9)</td>
+        <td><code>max-precursor-charge</code>, why this and not use <code>precursor_charge</code>?</td>
+        <td>No</td>
+        <td>Yes</td>
       </tr>
       <tr>
         <td>nucleotide_reading_frame</td><td>Parameter File</td>
         <td>0=proteinDB, 1-6, 7=forward three, 8=reverse three, 9=all six</td>
+        <td><code>nucleotide-reading-frame</code>, what does 1-6, 7 mean?</td>
+        <td>No</td>
+        <td>Yes</td>
       </tr>
       <tr>
-        <td>clip_nterm_methionine</td><td>Parameter File</td>
+        <td>clip_nterm_methionine</td>
+        <td>Parameter File</td>
         <td>0=leave sequences as-is; 1=also consider sequence w/o N-term methionine</td>
       </tr>
       <tr>
         <td>minimum_peaks</td><td>Parameter File</td>
         <td>minimum num. of peaks in spectrum to search (default 5)</td>
+        <td><code>min-peaks</code></td>
+        <td>Yes</td>
+        <td>Yes</td>
       </tr>
       <tr>
-        <td>minimum_intensity</td><td>Parameter File</td>
+        <td>minimum_intensity</td>
+        <td>Parameter File</td>
         <td>minimum intensity value to read in</td>
+        <td><code>minimum-intensity</code></td>
+        <td>No</td>
+        <td>Yes</td>
       </tr>
       <tr>
-        <td>remove_precursor_peak</td><td>Parameter File</td>
+        <td>remove_precursor_peak</td>
+        <td>Parameter File</td>
         <td>0=no, 1=yes, 2=all charge reduced precursor peaks (for ETD)</td>
+        <td><code>remove-precursor-peak</code></td>
+        <td>No</td>
+        <td>Yes</td>
       </tr>
       <tr>
-        <td>remove_precursor_tolerance</td><td>Parameter File</td>
+        <td>remove_precursor_tolerance</td>
+        <td>Parameter File</td>
         <td> +- Da tolerance for precursor removal</td>
+        <td><code>remove-precursor-tolerance</code></td>
+        <td>No</td>
+        <td>Yes</td>
       </tr>
-      <tr><td>variable_C_terminus = 0.0</td><td>Parameter File</td></tr>
-      <tr><td>variable_N_terminus = 0.0</td><td>Parameter File</td></tr>
-      <tr><td>variable_C_terminus_distance</td><td>Parameter File</td>
+      <tr>
+          <td colspan="6">additional modifications</td>
+      </tr>
+      <tr>
+          <td>variable_C_terminus</td>
+          <td>Parameter File</td>
+          <td></td>
+          <td>No</td>
+          <td>Yes</td>
+      </tr>
+      <tr>
+          <td>variable_N_terminus</td>
+          <td>Parameter File</td>
+      </tr>
+      <tr>
+          <td>variable_C_terminus_distance</td>
+          <td>Parameter File</td>
           <td>-1=all peptides, 0=protein terminus, 1-N = maximum offset from C-terminus</td>
+          <td></td>
       </tr>
       <tr><td>variable_N_terminus_distance</td><td>Parameter File</td>
           <td>-1=all peptides, 0=protein terminus, 1-N = maximum offset from N-terminus</td>
