@@ -97,28 +97,20 @@ output file names. Default = none.</li>
 The name of the directory where output files will be created.
 Default = crux-out.</li>
 
-
 <li>
 <code>--overwrite &lt;T|F&gt;</code> &ndash;
 Replace existing files if true (T) or fail when trying to overwrite a
 file if false (F). Default =  F.</li>
 
-<li>
-<code>--decoys &lt;string&gt;</code> &ndash; Include a decoy version
-of every peptide by shuffling or reversing the target sequence.
-Possible values are <code>none, reverse, protein-shuffle,
-peptide-shuffle</code>. Use 'reverse' to reverse each protein sequence,
-'protein-shuffle' to shuffle each protein sequence, or 'peptide-shuffle'
-to shuffle the sequence between enzyme cleavage sites, leaving the
-termini in place. Use 'none' for no decoys.  Default=protein-shuffle. 
+
 
 <LI>
-<code>--num-decoys-per-target &lt;n&gt;</code> &ndash; 
+<code>--num-decoys-per-target &lt;0 or 1&gt;</code> &ndash; 
 Specify the number of decoy peptides to search for every target
 peptide searched. Control where the decoys are returned (to what
 files) with <code>--decoy-location</code>. At least one decoy set (in
 its own file) is required to run the algorithm 'percolator' in a
-subsequent crux run.  Default = 2. </li>
+subsequent crux run.  Default = 1. </li>
 
 <li>
 <code>--decoy-location &lt;target-file | one-decoy-file |
@@ -130,22 +122,14 @@ when <code>num-decoys-per-target</code> is not zero.  Use
 separate file.  Use 'separate-decoy-files' to print one .txt file for
 each decoy set.  (<code>crux percolator</code> accepts up to two
 search.decoy.txt files. <code>crux q-ranker</code> accepts only one
-search.decoy.txt file.) Default = separate-decoy-files.
+search.decoy.txt file.) Default = separate-decoy-files.</li>
 
-
-<LI>
-<code>--spectrum-min-mass &lt;float&gt;</code> &ndash; 
-The lowest spectrum m/z to search in the ms2 file. Default = 0.0
-
-<LI>
-<code>--spectrum-max-mass &lt;float&gt;</code> &ndash; 
-The highest spectrum m/z to search in the ms2 file. Default = no maximum.
 
 <LI> 
-<code>--spectrum-charge &lt;1|2|3|all&gt;</code> &ndash; 
+<code>--spectrum-charge &lt;number range|all&gt;</code> &ndash; 
 The spectrum charges to search. With 'all' every spectrum will be
 searched and spectra with multiple charge states will be searched once
-at each charge state.  With 1, 2, or 3 only spectra with that charge
+at each charge state.  With 1-1,2-2,3-3 only spectra with that charge
 will be searched. Default = all. 
 
 <LI>
@@ -182,13 +166,6 @@ searched.  Default = 20.</li>
 <code>fragment-mass &lt;average|mono&gt;</code> &ndash; 
 Which isotopes to use in calculating fragment ion mass (average,
 mono). Default = mono.</li>
-
-<li>
-<code>use-flanking-peaks &lt;T|F&gt;</code> &ndash;
-Turn on or off the peaks flanking the b/y ions.  For <code>crux 
-search-for-matches</code>, default = F; for <code>crux
-  comet</code>, default = T; for <code> crux
-search-for-xlinks</code>, default = T.</li>
  
 <li>
 <code>precursor-window &lt;float&gt;</code> &ndash; Tolerance used for
@@ -220,20 +197,11 @@ of the mass window is then defined as the spectrum mass / (1.0 +
 defined as spectrum mass / (1.0 - (<code>precursor-window</code> /
 1000000)).  Default = mass.</li>
 
-<li>
-<code>use-mstoolkit &lt;T|F&gt;</code> &ndash;
-Use MSToolkit to parse the spectra. Required for parsing spectra from
-.mzXML files. Default = F.
-
-<li>
 <code>top-match &lt;int&gt;</code> &ndash; 
 The number of psms per spectrum written to the output files. Default =
 5.
 
-<li>
-<code>max-rank-preliminary &lt;int&gt;</code> &ndash;
-The number of PSMs to score with XCorr after ranking PSMs by Sp.
-Default = 500.
+
 
 <li>
 
@@ -294,46 +262,6 @@ peptide.
 The maximum number of modifications that can be applied to a single
 peptide. Default = no limit.
 
-<li>
-<code>max-aas-modified &lt;int&gt;</code> &ndash;
-The maximum number of modified amino acids that can appear in one
-peptide.  Each aa can be modified multiple times. Default = no limit.
-
-<li>
-<code>mod-mass-format &lt;mod-only|total|separate&gt;<code> &ndash;
-Specify how sequence modifications are reported in various ouptut
-files.  Each modification is reported as a number enclosed in square
-braces following the modified reside; however, the number may
-correspond to one of three different masses: (1) 'mod-only' reports
-the value of the mass shift induced by the modification; (2) 'total'
-reports the mass of the residue with the modification (residue mass
-plus modification mass); (3) 'separate' is the same as 'mod-only', but
-multiple modifications to a single amino acid are reported as a
-comma-separated list of values. For example, suppose amino
-acid <i>D</i> has an unmodified mass of 115 as well as two
-modifications of masses +14 and +2.  In this case, the amino acid
-would be reported as D[16] with 'mod-only', D[131] with 'total', and
-D[14,2] with 'separate'.</li>
-
-<li>
-<code>precision &lt;int&gt;</code> &ndash;
-Set the precision (number of significant digits) for scores
-written to text files. Default = 8.
-
-<li>
-<code>print-search-progress &lt;int&gt;</code> &ndash;
-Show search progress by printing every n spectra searched. Set to
-0 to show no search progress.  Default = 10.
-
-<li>
-<code>reverse-sequence &lt;T|F&gt;</code> &ndash;
-Generate decoy sequences by reversing the peptide rather than by
-shuffling.  The first and last residues of the sequence are not
-changed.  If the target sequence is a palindrome (the same when
-reversed), then the decoy will be generated by shuffling and a note to
-that effect will be printed at verbosity level 40 (DETAILED
-INFO). Default = generate decoys by shuffling.
-
 <p>
 <i>NOTE: the following parameters are also used when creating an index
 and must be compatible with any index used.</i></p>
@@ -347,13 +275,6 @@ The minimum neutral mass of the peptides to place in the index. Default
 <code>max-mass &lt;float&gt;</code> &ndash; 
 The maximum neutral mass of the peptides to place in index. Default = 7200.
 	
-<LI>
-<code>min-length &lt;int&gt;</code> &ndash; 
-The minimum length of the peptides to place in the index. Default = 6.
-	
-<LI>
-<code>max-length &lt;int&gt;</code> &ndash; 
-The maximum length of the peptides to place in the index. Default = 50.
 
 <LI>
 <code>enzyme &lt;trypsin|chymotrypsin|elastase|clostripain|cyanogen-bromide|idosobenzoate|proline-endopeptidase|staph-protease|modified-chymotrypsin|elastase-trypsin-chymotrypsin|no-enzyme&gt;
@@ -370,21 +291,6 @@ modified-chymotrypsin [FWYL]|{P}, elastase-trypsin-chymotrypsin
 [ALIVKRWFY]|{P},aspn [X]|[D] (cuts after any residue and before
 D). Default = trypsin.
 
-<li>
-<code>custom-enzyme &lt;residues before cleavage | residues after cleavage
-&gt;</code> &ndash
-Specify rules for <i>in silico</i> digestion of protein sequences.
-Overrides the <code>enzyme</code> option.  Two lists of residues are
-given enclosed in square brackets or curly braces and separated by a
-|. The first list contains residues required/prohibited before the
-cleavage site and the second list is residues after the cleavage site.
-If the residues are required for digestion, they are in square
-brackets, '[' and ']'.  If the residues prevent digestion, then they
-are enclosed in curly braces, '{' and '}'.  Use X to indicate all
-residues.  For example, trypsin cuts after R or K but not before P
-which is represented as <code>[RK]|{P}</code>.  AspN cuts after any
-residue but only before D which is represented as <code>[X]|[D]</code>.
-
 <LI>
 <code>digestion &lt;full-digest|partial-digest&gt;</code> &ndash;
 Degree of digestion used to generate peptides . Either both ends
@@ -395,7 +301,7 @@ when <code>enzyme</code> is not set to to 'no-enzyme'.   Default
 full-digest.
 
 <LI>
-<code>missed-cleavages &lt;T|F&gt;</code> &ndash;
+<code>missed-cleavages &lt;int&gt;</code> &ndash;
 Allow missed cleavage sites within a peptide.  When used with 
 <code>enzyme</code> and set to true, includes peptides containing
 one or more potential cleavage sites. Default = F.
@@ -415,7 +321,103 @@ peptides both with and without the mass change.  Default C=57.
 
 <B>Options/arguments not in Comet</B>
 <ul>
-<li></li>
+
+<li>
+<code>--decoys &lt;string&gt;</code> &ndash; Include a decoy version
+of every peptide by shuffling or reversing the target sequence.
+Possible values are <code>none, reverse, protein-shuffle,
+peptide-shuffle</code>. Use 'reverse' to reverse each protein sequence,
+'protein-shuffle' to shuffle each protein sequence, or 'peptide-shuffle'
+to shuffle the sequence between enzyme cleavage sites, leaving the
+termini in place. Use 'none' for no decoys.  Default=protein-shuffle. 
+</li>
+
+<LI>
+<code>--spectrum-min-mass &lt;float&gt;</code> &ndash; 
+The lowest spectrum m/z to search in the ms2 file. Default = 0.0
+
+<LI>
+<code>--spectrum-max-mass &lt;float&gt;</code> &ndash; 
+The highest spectrum m/z to search in the ms2 file. Default = no maximum.
+
+<li>
+<code>precision &lt;int&gt;</code> &ndash;
+Set the precision (number of significant digits) for scores
+written to text files. Default = 8.</li>
+
+<li>
+<code>print-search-progress &lt;int&gt;</code> &ndash;
+Show search progress by printing every n spectra searched. Set to
+0 to show no search progress.  Default = 10.</li>
+
+<li>
+<code>reverse-sequence &lt;T|F&gt;</code> &ndash;
+Generate decoy sequences by reversing the peptide rather than by
+shuffling.  The first and last residues of the sequence are not
+changed.  If the target sequence is a palindrome (the same when
+reversed), then the decoy will be generated by shuffling and a note to
+that effect will be printed at verbosity level 40 (DETAILED
+INFO). Default = generate decoys by shuffling.</li>
+
+<li>
+<code>max-aas-modified &lt;int&gt;</code> &ndash;
+The maximum number of modified amino acids that can appear in one
+peptide.  Each aa can be modified multiple times. Default = no limit.</li>
+
+<li>
+<code>mod-mass-format &lt;mod-only|total|separate&gt;<code> &ndash;
+Specify how sequence modifications are reported in various ouptut
+files.  Each modification is reported as a number enclosed in square
+braces following the modified reside; however, the number may
+correspond to one of three different masses: (1) 'mod-only' reports
+the value of the mass shift induced by the modification; (2) 'total'
+reports the mass of the residue with the modification (residue mass
+plus modification mass); (3) 'separate' is the same as 'mod-only', but
+multiple modifications to a single amino acid are reported as a
+comma-separated list of values. For example, suppose amino
+acid <i>D</i> has an unmodified mass of 115 as well as two
+modifications of masses +14 and +2.  In this case, the amino acid
+would be reported as D[16] with 'mod-only', D[131] with 'total', and
+D[14,2] with 'separate'.</li>
+
+<li>
+<code>use-flanking-peaks &lt;T|F&gt;</code> &ndash;
+Turn on or off the peaks flanking the b/y ions.  For <code>crux 
+search-for-matches</code>, default = F; for <code>crux
+  comet</code>, default = T; for <code> crux
+search-for-xlinks</code>, default = T.</li>
+
+<li>
+<code>custom-enzyme &lt;residues before cleavage | residues after cleavage
+&gt;</code> &ndash
+Specify rules for <i>in silico</i> digestion of protein sequences.
+Overrides the <code>enzyme</code> option.  Two lists of residues are
+given enclosed in square brackets or curly braces and separated by a
+|. The first list contains residues required/prohibited before the
+cleavage site and the second list is residues after the cleavage site.
+If the residues are required for digestion, they are in square
+brackets, '[' and ']'.  If the residues prevent digestion, then they
+are enclosed in curly braces, '{' and '}'.  Use X to indicate all
+residues.  For example, trypsin cuts after R or K but not before P
+which is represented as <code>[RK]|{P}</code>.  AspN cuts after any
+residue but only before D which is represented as <code>[X]|[D]</code>.</li>
+
+<LI>
+<code>min-length &lt;int&gt;</code> &ndash; 
+The minimum length of the peptides to place in the index. Default = 6.
+</LI>
+	
+<LI>
+<code>max-length &lt;int&gt;</code> &ndash; 
+The maximum length of the peptides to place in the index. Default = 50.
+</LI>
+
+<li>
+<code>max-rank-preliminary &lt;int&gt;</code> &ndash;
+The number of PSMs to score with XCorr after ranking PSMs by Sp.
+Default = 500.
+</li>
+
 </ul>
 
 <B>New Parameter file options</B>
@@ -426,6 +428,44 @@ peptides both with and without the mass change.  Default C=57.
 <li>
 <code>isotope-windows &lt;list of integers&gt;</code> &ndash;
 </li>
+<li>
+<code>use-a-ions &lt;T|F&gt;</code> &ndash;
+</li>
+<li>
+<code>use-b-ions &lt;T|F&gt;</code> &ndash;
+</li>
+<li>
+<code>use-c-ions &lt;T|F&gt;</code> &ndash;
+</li>
+<li>
+<code>use-x-ions &lt;T|F&gt;</code> &ndash;
+</li>
+<li>
+<code>use-y-ions &lt;T|F&gt;</code> &ndash;
+</li>
+<li>
+<code>use-z-ions &lt;T|F&gt;</code> &ndash;
+</li>
+<li>
+<code>use-nl-ions &lt;T|F&gt;</code> &ndash;
+</li>
+<li>
+<code>print-expect-score &lt;T|F&gt;</code> &ndash;
+</li>
+<li>
+<code>sample-enzyme</code> &lt;enzyme&gt;</code> &ndash;
+</li>
+<li>
+<code>ms-level</code> &lt; 2|3 &gt;</code> &ndash;
+</li>
+<li>
+<code>activation-method &lt;ALL|CID|ECD|ETD|PQD|HCD|IRMPD&gt;</code> &ndash;
+</li>
+<li>
+<code>minimum-intensity &lt;double&gt;</code> &ndash; minimum intensity to read in peaks. Default 0.
+</li>
+
+
 
 </ul>
 
@@ -463,8 +503,8 @@ it for harklor/bullseye.)
         <td>Parameter Description</td>
         <td>Crux Parameter</td>
         <td>Exists in Crux</td>
-        <td>Exists in Comet</td>
         <td>Priority</td>
+        <td>Notes</td>
       </tr>
       <tr>
         <td>-p</td>
@@ -480,7 +520,6 @@ it for harklor/bullseye.)
         <td>specify an alternate parameter file</td>
         <td>Override this with our generated parameter file</td>
         <td>N/A</td>
-        <td>Yes</td>
         <td>1</td>
       </tr>
       <tr>
@@ -489,7 +528,6 @@ it for harklor/bullseye.)
         <td>specifiy an alterate output base name</td>
         <td>Override this with crux-output</td>
         <td>Yes</td>
-        <td>Yes</td>
         <td>1</td>
       </tr>
       <tr>
@@ -497,7 +535,6 @@ it for harklor/bullseye.)
         <td>Command Line</td>
         <td>specify a sequence database, overrideing entry in parameters file</td>
         <td><code>protein database</code></td>
-        <td>Yes</td>
         <td>Yes</td>
         <td>Do not implement</td>
       </tr>
@@ -508,7 +545,6 @@ it for harklor/bullseye.)
         <td>Specify range of scans to search</td>
         <td><code>--scan-number</code</td>
         <td>Yes</td>
-        <td>Yes</td>
         <td>7</td>
       </tr>
       <tr>
@@ -518,7 +554,6 @@ it for harklor/bullseye.)
         <td>Fasta file of database</td>
         <td><code>protein database</code></td>
         <td>Yes</td>
-        <td>Yes</td>
         <td>1</td>
       </tr>
       <tr>
@@ -526,7 +561,6 @@ it for harklor/bullseye.)
         <td>Parameter File</td>
         <td>0= no, 1=concatenated, 2=separate search</td>
         <td><code>--decoy-location</code>,<code>--num-decoys-per-target</code></td>
-        <td>Yes*</td>
         <td>Yes</td>
       </tr>
       <tr>
@@ -535,7 +569,6 @@ it for harklor/bullseye.)
         <td>0=poll CPU to set threads; </td>
         <td><code>--num-threads</code></td>
         <td>No</td>
-        <td>Yes</td>
         <td>2</td>
       </tr>
       <tr>
@@ -547,7 +580,6 @@ it for harklor/bullseye.)
         <td>Mass tolerance to use when selecting candidate peptides</td>
         <td><code>--precursor-window</td>
         <td>Yes</td>
-        <td>Yes</td>
         <td>2</td>    
       </tr>
       <tr>
@@ -555,7 +587,6 @@ it for harklor/bullseye.)
         <td>Parameter File</td>
         <td>Units to use when selecting peptides, 0=amu, 1=mmu, 2=ppm</td>
         <td><code>--precursor-window-type</code></td>
-        <td>Yes</td>
         <td>Yes</td>
         <td>2</td>
       </tr>
@@ -565,7 +596,6 @@ it for harklor/bullseye.)
         <td>average or monoisotopic mass for calculating peptide mass 0=average mass, 1=monoisotopic mass</td>
         <td><code>--isotopic-mass</code>
         <td>Yes</td>
-        <td>Yes</td>
         <td>2</td>
       </tr>
 
@@ -574,7 +604,6 @@ it for harklor/bullseye.)
         <td>Parameter File</td>
         <td>average or monoisotopic mass for calculating fragment masses</td>
         <td><code>--fragment-mass</code>
-        <td>Yes</td>
         <td>Yes</td>
         <td>2</td>
       </tr>
@@ -591,7 +620,6 @@ it for harklor/bullseye.)
         <td>Search in small windows that are +/- 1 Neutron Mass away from precursor mass?</td>
         <td><code>--isotope-windows</td>
         <td>No</td>
-        <td>Yes</td>
         <td>7</td>
       </tr>
       <tr>
@@ -603,7 +631,6 @@ it for harklor/bullseye.)
         <td>Enzyme to use when digesting peptides</td>
         <td><code>--enzyme</code></td>
         <td>Yes</td>
-        <td>Yes</td>
         <td>4</td>
       </tr>
       <tr>
@@ -612,7 +639,6 @@ it for harklor/bullseye.)
         <td>selecting semi-digestion, full digestion, and others valid values are 1 (semi-digested), 2 (fully digested, default), 8 N-term, 9 C-term</td>
         <td><code>digestion</code></td>
         <td>Yes</td>
-        <td>Yes*</td>
         <td><code>digestion</code> only supports partial and full</td>
         <td>7</td>
       </tr>
@@ -622,14 +648,12 @@ it for harklor/bullseye.)
         <td>Number of missed cleavages allowed (max 5)</td>
         <td><code>--missed-cleaveages</code></td>
         <td>Yes</td>
-        <td>Yes</td>
       </tr>
       <tr>
         <td>variable_modX (X=1-6)</td>
         <td>Parameter File</td>
         <td>Variable modification support</td>
         <td>Supported using mod</td>
-        <td>Yes</td>
         <td>Yes</td>
       </tr>
       <tr>
@@ -638,14 +662,12 @@ it for harklor/bullseye.)
         <td>Maximum number of mods to consider in peptide</td>
         <td><code>--max-mods</code></td>
         <td>Yes</td>
-        <td>Yes</td>
       </tr>
       <tr>
         <td>fragment_bin_tol</td>
         <td>Parameter File</td>
         <td>bin width to use on fragment ions</td>
         <td>mz-bin-width</td>
-        <td>Yes</td>
         <td>Yes</td>
       </tr>
       <tr>
@@ -654,7 +676,6 @@ it for harklor/bullseye.)
         <td>offset to start the binning</td>
         <td>mz-bin-offset</td>
         <td>Yes</td>
-        <td>Yes</td>
       </tr>
       <tr>
         <td>theoretical_fragment_ions</td>
@@ -662,7 +683,6 @@ it for harklor/bullseye.)
         <td>??? 0=default peak shape, 1=M peak only</td>
         <td></td>
         <td>No</td>
-        <td>Yes</td>
       </tr>
       <tr>
         <td>use_A_ions</td>
@@ -670,7 +690,6 @@ it for harklor/bullseye.)
         <td>Whether or not to use a-ions</td>
         <td><code>use-a-ions</code></td>
         <td>No</td>
-        <td>Yes</td>
       </tr>
       <tr>
         <td>use_B_ions</td>
@@ -678,7 +697,6 @@ it for harklor/bullseye.)
         <td>Whether or not to use b-ions</td>
         <td><code>use-b-ions</code></td>
         <td>No</td>
-        <td>Yes</td>
       </tr>
       <tr>
         <td>use_C_ions</td>
@@ -686,7 +704,6 @@ it for harklor/bullseye.)
         <td>Whether or not to use c-ions</td>
         <td><code>use-c-ions</code></td>
         <td>No</td>
-        <td>Yes</td>
       </tr>        
       <tr>
         <td>use_X_ions</td>
@@ -694,7 +711,6 @@ it for harklor/bullseye.)
         <td>Whether or not to use x-ions</td>
         <td><code>use-x-ions</code></td>
         <td>No</td>
-        <td>Yes</td>
       </tr>
       <tr>
         <td>use_Y_ions</td>
@@ -702,7 +718,6 @@ it for harklor/bullseye.)
         <td>Whether or not to use y-ions</td>
         <td><code>use-y-ions</code></td>
         <td>No</td>
-        <td>Yes</td>
       </tr>
 
       <tr>
@@ -711,7 +726,6 @@ it for harklor/bullseye.)
         <td>Whether or not to use z-ions</td>
         <td><code>use-z-ions</code></td>
         <td>No</td>
-        <td>Yes</td>
       </tr>
        <tr>
         <td>use_NL_ions</td>
@@ -719,7 +733,6 @@ it for harklor/bullseye.)
         <td>Whether or not to use NH3/H2O neutral loss peaks</td>
         <td><code>use-nl-ions</code></td>
         <td>No</td>
-        <td>Yes</td>
       </tr>     
       <tr>
         <td>output_sqtstream</td>
@@ -727,7 +740,6 @@ it for harklor/bullseye.)
         <td>0=no, 1=yes  write sqt to standard output</td>
         <td>Not supported</td>
         <td>No</td>
-        <td>Yes</td>
       </tr>
       <tr>
         <td>output_sqtfile</td>
@@ -735,7 +747,6 @@ it for harklor/bullseye.)
         <td>0=no, 1=yes  write sqt file</td>
         <td>Always true</td>
         <td>No</td>
-        <td>Yes</td>
       </tr>
       <tr>
         <td>output_pepxmlfile</td>
@@ -743,7 +754,6 @@ it for harklor/bullseye.)
         <td>0=no, 1=yes  write pep.xml file</td>
         <td>Always true</td>
         <td>No</td>
-        <td>Yes</td>
       </tr>
       <tr>
         <td>output_outfiles</td>
@@ -751,7 +761,6 @@ it for harklor/bullseye.)
         <td>0=no, 1=yes  write .out files</td>
         <td>Always false</td>
         <td>No</td>
-        <td>Yes</td>
       </tr>
       <tr>
         <td>print_expect_score</td>
@@ -759,14 +768,12 @@ it for harklor/bullseye.)
         <td>to replace Sp with expect in out & sqt</td>
         <td><code>print-expect-score</code></td>
         <td>No</td>
-        <td>Yes</td>
       </tr>
       <tr>
         <td>num_output_lines</td><td>Parameter File</td>
         <td>num peptide results to show</td>
         <td><code>top-match</code></td>
         <td>No</td>
-        <td>Yes</td>
       </tr>
       <tr>
         <td>show_fragment_ions</td>
@@ -774,7 +781,6 @@ it for harklor/bullseye.)
         <td> 0=no, 1=yes for out files only</td>
         <td>Always false</td>
         <td>No</td>
-        <td>Yes</td>
       </tr>
       <tr>
         <td>sample_enzyme_number</td>
@@ -783,7 +789,6 @@ it for harklor/bullseye.)
           Used to calculate NTT & NMC in pepXML output (default=1 for trypsin).</td>
         <td><code>sample-enzymze</code></td>
         <td>No</td>
-        <td>Yes</td>
       </tr>
       <tr>
          <td colspan="6"><B>mzXML parameters</B></td>
@@ -793,21 +798,18 @@ it for harklor/bullseye.)
         <td>start and scan scan range to search; 0 as 1st entry ignores parameter</td>
         <td><code>scan-number</code></td>
         <td>No</td>
-        <td>Yes</td>
       </tr>
       <tr>
         <td>precursor_charge</td><td>Parameter File</td>
         <td>precursor charge range to analyze; does not override mzXML charge; 0 as 1st entry ignores parameter</td>
         <td><code>spectrum-charge</code></td>
         <td>Yes, we need to modify it to accept a range of charges</td>
-        <td>Yes</td>    
       </tr>
       <tr>
          <td>ms_level</td><td>Parameter File</td>
          <td>MS level to analyze, valid are levels 2 (default) or 3</td>
          <td><code>ms-level</code></td>
          <td>No</td>
-         <td>Yes</td>
       </tr>
       <tr>
         <td>activation_method</td>
@@ -815,7 +817,6 @@ it for harklor/bullseye.)
         <td>activation method; used if activation method set; allowed ALL, CID, ECD, ETD, PQD, HCD, IRMPD</td>
         <td><code>activation-method</code></td>
         <td>No</td>
-        <td>Yes</td>
       </tr>
       <tr>
         <td colspan="6"><B>misc parameters</B></td>
@@ -826,7 +827,6 @@ it for harklor/bullseye.)
         <td>MH+ peptide mass range to analyze</td>
         <td><code>min-mass,max-mass</code></td>
         <td>No</td> 
-        <td>Yes</td>
       </tr>
       <tr>
         <td>num_results</td>
@@ -834,7 +834,6 @@ it for harklor/bullseye.)
         <td>number of search hits to store internally</td>
         <td>Default it to 50</td>
         <td>No</td>
-        <td>Yes</td>
       </tr>
       <tr>
         <td>skip_researching</td>
@@ -842,7 +841,6 @@ it for harklor/bullseye.)
         <td>for '.out' file output only, 0=search everything again (default), 1=don't search if .out exists</td>
         <td>Default to 0</td>
         <td>No</td>
-        <td>Yes</td>
       </tr>
       <tr>
         <td>max_fragment_charge</td>
@@ -850,32 +848,29 @@ it for harklor/bullseye.)
         <td>set maximum fragment charge state to analyze (allowed max 5)</td>
         <td><code>max-ion-charge</code>, double check the 5</td>
         <td>No</td>
-        <td>Yes</td>
       </tr>
       <tr>
         <td>max_precursor_charge</td><td>Parameter File</td>
         <td>set maximum precursor charge state to analyze (allowed max 9)</td>
         <td><code>max-precursor-charge</code>, why this and not use <code>precursor_charge</code>?</td>
         <td>No</td>
-        <td>Yes</td>
       </tr>
       <tr>
         <td>nucleotide_reading_frame</td><td>Parameter File</td>
         <td>0=proteinDB, 1-6, 7=forward three, 8=reverse three, 9=all six</td>
         <td><code>nucleotide-reading-frame</code>, what does 1-6, 7 mean?</td>
         <td>No</td>
-        <td>Yes</td>
       </tr>
       <tr>
         <td>clip_nterm_methionine</td>
         <td>Parameter File</td>
         <td>0=leave sequences as-is; 1=also consider sequence w/o N-term methionine</td>
+        <td>No</td>
       </tr>
       <tr>
         <td>minimum_peaks</td><td>Parameter File</td>
         <td>minimum num. of peaks in spectrum to search (default 5)</td>
         <td><code>min-peaks</code></td>
-        <td>Yes</td>
         <td>Yes</td>
       </tr>
       <tr>
@@ -884,7 +879,6 @@ it for harklor/bullseye.)
         <td>minimum intensity value to read in</td>
         <td><code>minimum-intensity</code></td>
         <td>No</td>
-        <td>Yes</td>
       </tr>
       <tr>
         <td>remove_precursor_peak</td>
@@ -892,7 +886,6 @@ it for harklor/bullseye.)
         <td>0=no, 1=yes, 2=all charge reduced precursor peaks (for ETD)</td>
         <td><code>remove-precursor-peak</code></td>
         <td>No</td>
-        <td>Yes</td>
       </tr>
       <tr>
         <td>remove_precursor_tolerance</td>
@@ -900,17 +893,15 @@ it for harklor/bullseye.)
         <td> +- Da tolerance for precursor removal</td>
         <td><code>remove-precursor-tolerance</code></td>
         <td>No</td>
-        <td>Yes</td>
       </tr>
       <tr>
-          <td colspan="6">additional modifications</td>
+          <td colspan="6"><b>additional modifications</b></td>
       </tr>
       <tr>
           <td>variable_C_terminus</td>
           <td>Parameter File</td>
           <td></td>
           <td>No</td>
-          <td>Yes</td>
       </tr>
       <tr>
           <td>variable_N_terminus</td>
@@ -922,69 +913,185 @@ it for harklor/bullseye.)
           <td>-1=all peptides, 0=protein terminus, 1-N = maximum offset from C-terminus</td>
           <td></td>
       </tr>
-      <tr><td>variable_N_terminus_distance</td><td>Parameter File</td>
+      <tr>
+          <td>variable_N_terminus_distance</td>
+          <td>Parameter File</td>
           <td>-1=all peptides, 0=protein terminus, 1-N = maximum offset from N-terminus</td>
+          <td></td>  
       </tr>
-      <tr><td>add_Cterm_peptide</td><td>Parameter File</td></tr>
-      <tr><td>add_Nterm_peptide</td><td>Parameter File</td></tr>
-      <tr><td>add_Cterm_protein</td><td>Parameter File</td></tr>
-      <tr><td>add_Nterm_protein</td><td>Parameter File</td></tr>
-      <tr><td>add_G_glycine</td><td>Parameter File</td>
-          <td>added to G - avg.  57.0513, mono.  57.02146</td></tr>
-      <tr><td>add_A_alanine = 0.0000</td><td>Parameter File</td>
-          <td>added to A - avg.  71.0779, mono.  71.03711</td>
+      <tr>
+           <td>add_Cterm_peptide</td>
+           <td>Parameter File</td>
       </tr>
-      <tr><td>add_S_serine</td><td>Parameter File</td>
-          <td>added to S - avg.  87.0773, mono.  87.02303</td>
+      <tr>
+           <td>add_Nterm_peptide</td>
+           <td>Parameter File</td>
       </tr>
-      <tr><td>add_P_proline</td><td>Parameter File</td>
-          <td>added to P - avg.  97.1152, mono.  97.05276</td>
+      <tr>
+           <td>add_Cterm_protein</td>
+           <td>Parameter File</td>
       </tr>
-      <tr><td>add_V_valine</td><td>Parameter File</td>
-          <td>added to V - avg.  99.1311, mono.  99.06841</td>
+      <tr>
+           <td>add_Nterm_protein</td>
+           <td>Parameter File</td>
       </tr>
-      <tr><td>add_T_threonine</td><td>Parameter File</td>
-          <td>added to T - avg. 101.1038, mono. 101.04768</td></tr>
-      <tr><td>add_C_cysteine</td><td>Parameter File</td>
-          <td>added to C - avg. 103.1429, mono. 103.00918</td></tr>
-      <tr><td>add_L_leucine</td><td>Parameter File</td>
-          <td>added to L - avg. 113.1576, mono. 113.08406</td></tr>
-      <tr><td>add_I_isoleucine</td><td>Parameter File</td>
-          <td>added to I - avg. 113.1576, mono. 113.08406</td></tr>
-      <tr><td>add_N_asparagine</td><td>Parameter File</td>
-          <td>added to N - avg. 114.1026, mono. 114.04293</td></tr>
-      <tr><td>add_D_aspartic_acid</td><td>Parameter File</td>
-          <td>added to D - avg. 115.0874, mono. 115.02694</td></tr>
-      <tr><td>add_Q_glutamine</td><td>Parameter File</td>
-          <td>added to Q - avg. 128.1292, mono. 128.05858</td></tr>
-      <tr><td>add_K_lysine</td><td>Parameter File</td>
-          <td>added to K - avg. 128.1723, mono. 128.09496</td></tr>
-      <tr><td>add_E_glutamic_acid</td><td>Parameter File</td>
-          <td>added to E - avg. 129.1140, mono. 129.04259</td></tr>
-      <tr><td>add_M_methionine</td><td>Parameter File</td>
-          <td>added to M - avg. 131.1961, mono. 131.04048</td></tr>
-      <tr><td>add_O_ornithine</td><td>Parameter File</td>
-          <td>added to O - avg. 132.1610, mono  132.08988</td></tr>
-      <tr><td>add_H_histidine</td><td>Parameter File</td>
-          <td>added to H - avg. 137.1393, mono. 137.05891</td></tr>
-      <tr><td>add_F_phenylalanine</td><td>Parameter File</td>
-          <td>added to F - avg. 147.1739, mono. 147.06841</td></tr>
-      <tr><td>add_R_arginine</td><td>Parameter File</td>
-          <td>added to R - avg. 156.1857, mono. 156.10111</td></tr>
-      <tr><td>add_Y_tyrosine</td><td>Parameter File</td>
-          <td>added to Y - avg. 163.0633, mono. 163.06333</td></tr>
-      <tr><td>add_W_tryptophan</td><td>Parameter File</td>
-          <td>added to W - avg. 186.0793, mono. 186.07931</td></tr>
-      <tr><td>add_B_user_amino_acid</td><td>Parameter File</td>
-          <td>added to B - avg.   0.0000, mono.   0.00000</td></tr>
-      <tr><td>add_J_user_amino_acid</td><td>Parameter File</td>
-          <td>added to J - avg.   0.0000, mono.   0.00000</td></tr>
-      <tr><td>add_U_user_amino_acid</td><td>Parameter File</td>
-          <td>added to U - avg.   0.0000, mono.   0.00000</td></tr>
-      <tr><td>add_X_user_amino_acid</td><td>Parameter File</td>
-          <td>added to X - avg.   0.0000, mono.   0.00000</td></tr>
-      <tr><td>add_Z_user_amino_acid</td><td>Parameter File</td>
-          <td>added to Z - avg.   0.0000, mono.   0.00000</td></tr>
+      <tr>
+            <td>add_G_glycine</td>
+            <td>Parameter File</td>
+            <td>added to G - avg.  57.0513, mono.  57.02146</td>
+            <td><code>G</code></td>
+      </tr>
+      <tr>
+            <td>add_A_alanine = 0.0000</td>
+            <td>Parameter File</td>
+            <td>added to A - avg.  71.0779, mono.  71.03711</td>
+            <td><code>A</code></td>
+      </tr>
+      <tr>
+            <td>add_S_serine</td>
+            <td>Parameter File</td>
+            <td>added to S - avg.  87.0773, mono.  87.02303</td>
+            <td><code>S</code></td>
+      </tr>
+      <tr>
+            <td>add_P_proline</td>
+            <td>Parameter File</td>
+            <td>added to P - avg.  97.1152, mono.  97.05276</td>
+            <td><code>P</code></td>
+      </tr>
+      <tr>
+            <td>add_V_valine</td>
+            <td>Parameter File</td>
+            <td>added to V - avg.  99.1311, mono.  99.06841</td>
+            <td><code>V</code></td>
+      </tr>
+      <tr>
+            <td>add_T_threonine</td>
+            <td>Parameter File</td>
+            <td>added to T - avg. 101.1038, mono. 101.04768</td>
+            <td><code>T</code></td>
+      </tr>
+          
+      <tr>
+            <td>add_C_cysteine</td>
+            <td>Parameter File</td>
+            <td>added to C - avg. 103.1429, mono. 103.00918</td>
+            <td><code>C</code></td>
+      </tr>
+      <tr>
+            <td>add_L_leucine</td>
+            <td>Parameter File</td>
+            <td>added to L - avg. 113.1576, mono. 113.08406</td>
+            <td><code>L</code</td>
+      </tr>
+      <tr>
+            <td>add_I_isoleucine</td>
+            <td>Parameter File</td>
+            <td>added to I - avg. 113.1576, mono. 113.08406</td>
+            <td><code>I</code></td>
+      </tr>
+      <tr>
+            <td>add_N_asparagine</td>
+            <td>Parameter File</td>
+            <td>added to N - avg. 114.1026, mono. 114.04293</td>
+            <td><code>N</code></td>
+      </tr>
+      <tr>
+            <td>add_D_aspartic_acid</td>
+            <td>Parameter File</td>
+            <td>added to D - avg. 115.0874, mono. 115.02694</td>
+            <td><code>D</code></td>
+      </tr>
+      <tr>
+            <td>add_Q_glutamine</td>
+            <td>Parameter File</td>
+            <td>added to Q - avg. 128.1292, mono. 128.05858</td>
+            <td><code>Q</code></td>
+      </tr>
+      <tr>
+            <td>add_K_lysine</td>
+            <td>Parameter File</td>
+            <td>added to K - avg. 128.1723, mono. 128.09496</td>
+            <td><code>K</code></td>
+      </tr>
+      <tr>
+            <td>add_E_glutamic_acid</td>
+            <td>Parameter File</td>
+            <td>added to E - avg. 129.1140, mono. 129.04259</td>
+            <td><code>E</code></td>
+      </tr>
+      <tr>
+            <td>add_M_methionine</td>
+            <td>Parameter File</td>
+            <td>added to M - avg. 131.1961, mono. 131.04048</td>
+            <td><code>M</code></td>
+      </tr>
+      <tr>
+            <td>add_O_ornithine</td>
+            <td>Parameter File</td>
+            <td>added to O - avg. 132.1610, mono  132.08988</td>
+            <td><code>O</code></td>
+      </tr>
+      <tr>
+            <td>add_H_histidine</td>
+            <td>Parameter File</td>
+            <td>added to H - avg. 137.1393, mono. 137.05891</td>
+            <td><code>H</code></td>
+      </tr>
+      <tr>
+            <td>add_F_phenylalanine</td>
+            <td>Parameter File</td>
+            <td>added to F - avg. 147.1739, mono. 147.06841</td>
+            <td><code>F</code></td>
+      </tr>
+      <tr>
+            <td>add_R_arginine</td>
+            <td>Parameter File</td>
+            <td>added to R - avg. 156.1857, mono. 156.10111</td>
+            <td><code>R</code></td>
+      </tr>
+      <tr>
+            <td>add_Y_tyrosine</td>
+            <td>Parameter File</td>
+            <td>added to Y - avg. 163.0633, mono. 163.06333</td>
+            <td><code>Y</code></td>
+      </tr>
+      <tr>
+            <td>add_W_tryptophan</td>
+            <td>Parameter File</td>
+            <td>added to W - avg. 186.0793, mono. 186.07931</td>
+            <td><code>W</code></td>
+      </tr>
+      <tr>
+            <td>add_B_user_amino_acid</td>
+            <td>Parameter File</td>
+            <td>added to B - avg.   0.0000, mono.   0.00000</td>
+            <td><code>B</code></td>
+      </tr>
+      <tr>
+            <td>add_J_user_amino_acid</td>
+            <td>Parameter File</td>
+            <td>added to J - avg.   0.0000, mono.   0.00000</td>
+            <td><code>J</code></td>
+      </tr>
+      <tr>
+            <td>add_U_user_amino_acid</td>
+            <td>Parameter File</td>
+            <td>added to U - avg.   0.0000, mono.   0.00000</td>
+            <td><code>U</code></td>
+      </tr>
+      <tr>
+            <td>add_X_user_amino_acid</td>
+            <td>Parameter File</td>
+            <td>added to X - avg.   0.0000, mono.   0.00000</td>
+            <td><code>X</code></td>
+      </tr>
+      <tr>
+            <td>add_Z_user_amino_acid</td>
+            <td>Parameter File</td>
+            <td>added to Z - avg.   0.0000, mono.   0.00000</td>
+            <td><code>Z</code></td>
+      </tr>
 </table>
 
 <p>
