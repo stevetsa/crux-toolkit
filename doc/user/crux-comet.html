@@ -103,7 +103,6 @@ Replace existing files if true (T) or fail when trying to overwrite a
 file if false (F). Default =  F.</li>
 
 
-
 <LI>
 <code>--num-decoys-per-target &lt;0 or 1&gt;</code> &ndash; 
 Specify the number of decoy peptides to search for every target
@@ -200,8 +199,6 @@ defined as spectrum mass / (1.0 - (<code>precursor-window</code> /
 <code>top-match &lt;int&gt;</code> &ndash; 
 The number of psms per spectrum written to the output files. Default =
 5.
-
-
 
 <li>
 
@@ -461,8 +458,21 @@ Default = 500.
 <li>
 <code>activation-method &lt;ALL|CID|ECD|ETD|PQD|HCD|IRMPD&gt;</code> &ndash;
 </li>
+
+<li>
+<code>max-precursor-charge &lt;int&gt;</code> &ndash;
+</li>
+
 <li>
 <code>minimum-intensity &lt;double&gt;</code> &ndash; minimum intensity to read in peaks. Default 0.
+</li>
+
+<li>
+<code>remove-precursor-peak no|yes|etd</code> &ndash;
+</li>
+
+<li>
+<code>remove-precursor-tolerance &lt;T|F&gt;</code> &ndash;
 </li>
 
 
@@ -572,7 +582,7 @@ it for harklor/bullseye.)
         <td>2</td>
       </tr>
       <tr>
-        <td colspan="6"><b>masses</b></td>
+        <td colspan="7"><b>masses</b></td>
       </tr>
       <tr>
         <td><code>peptide_mass_tolerance</code></td>
@@ -623,7 +633,7 @@ it for harklor/bullseye.)
         <td>7</td>
       </tr>
       <tr>
-        <td colspan="6"><b>search enzyme</b></td>
+        <td colspan="7"><b>search enzyme</b></td>
       </tr>
       <tr>
         <td>search_enzyme_number</td>
@@ -791,7 +801,7 @@ it for harklor/bullseye.)
         <td>No</td>
       </tr>
       <tr>
-         <td colspan="6"><B>mzXML parameters</B></td>
+         <td colspan="7"><B>mzXML parameters</B></td>
       </tr>
       <tr>
         <td>scan_range</td><td>Parameter File</td>
@@ -819,7 +829,7 @@ it for harklor/bullseye.)
         <td>No</td>
       </tr>
       <tr>
-        <td colspan="6"><B>misc parameters</B></td>
+        <td colspan="7"><B>misc parameters</B></td>
       </tr>
       <tr>
         <td>digest_mass_range</td>
@@ -895,11 +905,12 @@ it for harklor/bullseye.)
         <td>No</td>
       </tr>
       <tr>
-          <td colspan="6"><b>additional modifications</b></td>
+          <td colspan="7"><b>additional modifications</b></td>
       </tr>
       <tr>
           <td>variable_C_terminus</td>
           <td>Parameter File</td>
+          <td></td>
           <td></td>
           <td>No</td>
       </tr>
