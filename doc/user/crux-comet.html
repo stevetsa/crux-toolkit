@@ -30,7 +30,9 @@ open source warning -->
 <blockquote>
 <p>
 This command searches a protein database with a set of spectra,
-assigning peptide sequences to the observed spectra.  This command is similar to <code>search-for-matches</code> but is based on an entirely different code base, developed by Jimmy Eng at the University of Washington Proteomics Resource.</p>
+assigning peptide sequences to the observed spectra.  This command is similar 
+to <code>search-for-matches</code> but is based on an entirely different code base, 
+developed by Jimmy Eng at the University of Washington Proteomics Resource.</p>
 
 </blockquote>
 
@@ -495,12 +497,28 @@ To do:</p>
 
 <ul>
 <li>
-<li>
 Figure out how to handle MSToolkit issues (Comet has its own copy, we need
-it for harklor/bullseye.)
+MSToolkit for harklor/bullseye.)
 </li>
 
 </ul>
+
+<p>
+Changes we are proposing on the Comet end of things:</p>
+<ul>
+<li>Have an option to compile Comet as a library in the with the main() replaced with comet_main().</li>
+
+</ul>
+
+<p>
+Questions to ask Jimmy:</p>
+
+<ul>
+<li>How are decoys generated?</li>
+<li>How are modifications reported?</li>
+
+</ul>
+
 <p>Argument parameter mappings</p>
 <br>
     Comet usage:  ../comet.exe [options] <input_files>[:range]<br>
@@ -1105,13 +1123,7 @@ it for harklor/bullseye.)
       </tr>
 </table>
 
-<p>
-Changes we are proposing on the Comet end of things:</p>
-<ul>
-<li>
-Have an option to compile Comet as a library in the with the main() replaced with comet_main().
-</li>
-</ul>
+
 
 </note>
 
