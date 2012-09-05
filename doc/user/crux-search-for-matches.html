@@ -33,7 +33,7 @@ This command searches a protein database with a set of spectra.  For
 each spectrum, the precursor mass is computed from either the measured precursor
 singly charged mass (m+h) or the mass-to-charge (m/z) and an assumed charge.  
 Candidate peptides whose masslies within a specified range of the precursor mass 
-are identified.  These candidate peptides scored with the SEQUEST XCorr 
+are identified.  These candidate peptides scored with the SEQUEST<sup>&reg;</sup> XCorr 
 and ranked by score. The top ranking matches are printed to file.  An 
 optional p-value may be computed for each spectrum based on the distribution 
 of scores for that spectrum (<a href="../../papers/klammer2009statistical.html">
@@ -258,7 +258,7 @@ info, 60-detailed debug info. Default = 30.</li>
 <ul>
 
 <LI>
-<code>--min-peaks &lt;int&gt;</code> &ndash;
+<code>min-peaks &lt;int&gt;</code> &ndash;
 The minimum number of peaks a spectrum must have in order to be
 searched.  Default = 20.
 
@@ -270,10 +270,10 @@ mono). Default = mono.
 <li>
 <code>use-flanking-peaks &lt;T|F&gt;</code> &ndash;
 Turn on or off the peaks flanking the b/y ions.  For <code>crux 
-search-for-matches</code>, default = F; for <code>crux
-  sequest-search</code>, default = T; for <code> crux
+search-for-matches</code>, default = F; for <code> crux
 search-for-xlinks</code>, default = T.</li>
 
+<li>
 <code>precursor-window &lt;float&gt;</code> &ndash; Tolerance used for
 matching peptides to spectra.  Peptides must be within +/-
 '<code>precursor-window</code>' of the spectrum value.  Definition of
@@ -448,7 +448,7 @@ D). Default = trypsin.
 
 <li>
 <code>custom-enzyme &lt;residues before cleavage | residues after cleavage
-&gt;</code> &ndash
+&gt;</code> &ndash;
 Specify rules for <i>in silico</i> digestion of protein sequences.
 Overrides the <code>enzyme</code> option.  Two lists of residues are
 given enclosed in square brackets or curly braces and separated by a

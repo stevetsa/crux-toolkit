@@ -1,28 +1,25 @@
 #include "Barista.h"
-
-double Barista :: check_gradients_hinge_one_net(int protind, int label)
-{
+#include "objects.h"
+using namespace std; 
+double Barista :: check_gradients_hinge_one_net(int protind, int label){
   int num_pep = d.protind2num_pep(protind);
   int *pepinds = d.protind2pepinds(protind);
   max_psm_inds.erase(max_psm_inds.begin(),max_psm_inds.end());
   max_psm_scores.erase(max_psm_scores.begin(),max_psm_scores.end());
-  for (int i = 0; i < num_pep; i++)
-    {
-      int pepind = pepinds[i];
-      int num_psms = d.pepind2num_psm(pepind);
-      int *psminds = d.pepind2psminds(pepind);
-      double max_sc = -1000000.0;
-      int max_ind = 0;
-      for (int j = 0; j < num_psms; j++)
-	{
-	  double *feat = d.psmind2features(psminds[j]);
-	  double *sc = net.fprop(feat);
-	  if(sc[0] > max_sc)
-	    {
-	      max_sc = sc[0];
-	      max_ind = j;
-	    }
-	}
+  for (int i = 0; i < num_pep; i++){
+    int pepind = pepinds[i];
+    int num_psms = d.pepind2num_psm(pepind);
+    int *psminds = d.pepind2psminds(pepind);
+    double max_sc = -1000000.0;
+    int max_ind = 0;
+    for (int j = 0; j < num_psms; j++){
+      double *feat = d.psmind2features(psminds[j]);
+      double *sc = net.fprop(feat);
+      if(sc[0] > max_sc){
+        max_sc = sc[0];
+	max_ind = j;
+      }
+    }
       max_psm_inds.push_back(max_ind);
       max_psm_scores.push_back(max_sc);
     }
@@ -33,7 +30,6 @@ double Barista :: check_gradients_hinge_one_net(int protind, int label)
   double n = pow(num_pep,alpha);
   for(unsigned int i = 0; i < max_psm_inds.size() ; i++)
     sm+= max_psm_scores[i];
-
   sm /= n;
 
   //if(sm < 1)
@@ -41,39 +37,34 @@ double Barista :: check_gradients_hinge_one_net(int protind, int label)
   net.clear_gradients();
   double *gc = new double[1];
   gc[0] = -label/n;
-  for(int i = 0; i < num_pep; i++)
-    {
-      int pepind = pepinds[i];
-      int *psminds = d.pepind2psminds(pepind);
-      int max_psm_ind = psminds[max_psm_inds[i]];
-      double *feat = d.psmind2features(max_psm_ind);
-      net.fprop(feat);
-      net.bprop(gc);
-    }
+  for(int i = 0; i < num_pep; i++){
+    int pepind = pepinds[i];
+    int *psminds = d.pepind2psminds(pepind);
+    int max_psm_ind = psminds[max_psm_inds[i]];
+    double *feat = d.psmind2features(max_psm_ind);
+    net.fprop(feat);
+    net.bprop(gc);
+  }
 
   double h = 0.000001;
   double diff = -(1-sm*label);
   double err = 0.0;
   double *w = net.get_weights(1);
   double *dw = net.get_dweights(1);
-  for (int k = 0; k < d.get_num_features(); k++)
-    {
+  for (int k = 0; k < d.get_num_features(); k++){
       w[k] += h;
       max_psm_inds.erase(max_psm_inds.begin(),max_psm_inds.end());
       max_psm_scores.erase(max_psm_scores.begin(),max_psm_scores.end());
-      for (int i = 0; i < num_pep; i++)
-	{
+      for (int i = 0; i < num_pep; i++){
 	  int pepind = pepinds[i];
 	  int num_psms = d.pepind2num_psm(pepind);
 	  int *psminds = d.pepind2psminds(pepind);
 	  double max_sc = -1000000.0;
 	  int max_ind = 0;
-	  for (int j = 0; j < num_psms; j++)
-	    {
+	  for (int j = 0; j < num_psms; j++){
 	      double *feat = d.psmind2features(psminds[j]);
 	      double *sc = net.fprop(feat);
-	      if(sc[0] > max_sc)
-		{
+	      if(sc[0] > max_sc){
 		  max_sc = sc[0];
 		  max_ind = j;
 		}
@@ -288,11 +279,9 @@ double Barista :: check_gradients_hinge_clones(int protind, int label)
 int Barista :: getOverFDRPSM(PSMScores &s, NeuralNet &n,double fdr)
 {
   double* featVec;
-  int label = 0;
   for(int i = 0; i < s.size(); i++)
     {
       featVec = d.psmind2features(s[i].psmind);
-      label = s[i].label;
       double *r = n.fprop(featVec);
       s[i].score = r[0];
     }
@@ -426,7 +415,7 @@ double Barista :: get_protein_score_parsimonious(int protind, NeuralNet &n)
 	  int num_psms = d.pepind2num_psm(pepind);
 	  int *psminds = d.pepind2psminds(pepind);
 	  double max_sc = -1000000.0;
-	  int max_ind = 0;
+
 	  for (int j = 0; j < num_psms; j++)
 	    {
 	      double *feat = d.psmind2features(psminds[j]);
@@ -434,7 +423,6 @@ double Barista :: get_protein_score_parsimonious(int protind, NeuralNet &n)
 	      if(sc[0] > max_sc)
 		{
 		  max_sc = sc[0];
-		  max_ind = j;
 		}
 	    }
 	  sm += max_sc;
@@ -556,21 +544,19 @@ void Barista :: get_pep_seq(string &pep, string &seq, string &n, string &c)
 
 void Barista :: get_tab_delim_proteins(string protein_str, vector<string> &proteins)
 {
-  proteins.clear();
+  proteins.clear(); 
   string str = protein_str;
-  size_t pos = str.find(1);
-  while(pos != string::npos)
-    {
-      if(pos == 0)
-	str = str.substr(1,str.size()-1);
-      else
-	{
-	  string prot = str.substr(0,pos);
-	  str = str.substr(pos+1,str.size()-1);
-	  proteins.push_back(prot);
-	}
-      pos = str.find(1);
+  size_t pos = str.find("\t");
+  while(pos != string::npos){
+    if(pos == 0){
+      str = str.substr(1,str.size()-1);
+   } else{
+      string prot = str.substr(0,pos);
+      str = str.substr(pos+1,str.size()-1); 
+      proteins.push_back(prot);
     }
+    pos = str.find("\t");
+  }
   proteins.push_back(str);
 }
 
@@ -671,6 +657,7 @@ void Barista :: write_results_prot_xml(ofstream &os)
 	  os << "  <q_value>" << trainset[i].q << "</q_value>" << endl;
 	  os << "  <score>" << trainset[i].score << "</score>" << endl;
 	  os << "  <nsaf>" << trainset[i].nsaf << "</nsaf>" << endl;
+          os<<"<barista PEP>"<<trainset[i].PEP<<"</barista PEP>"<<endl; 
 	  os << "  <protein_ids>" << endl;
 	  protein_str = d.ind2prot(protind);
 	  get_tab_delim_proteins(protein_str, tab_delim_proteins);
@@ -887,6 +874,8 @@ void Barista :: write_results_peptides_xml(ofstream &os)
 	  os << " <peptide peptide_id=\"" << seq << "\">" << endl;
 	  os << "  <q_value>" << peptrainset[i].q << "</q_value>" << endl;
 	  os << "  <score>" << peptrainset[i].score << "</score>" << endl;
+	  os << "  <nsaf>" << peptrainset[i].nsaf << "</nsaf>" << endl;
+          os << " <barista PEP>" <<peptrainset[i].PEP<<"</barista PEP>"<<endl; 
 	  //write out peptides
 	  int psmind = pepind_to_max_psmind[pepind];
 	  if(psmind > -1)
@@ -1140,7 +1129,8 @@ void Barista :: write_results_prot_special_case_tab(ofstream &os, int i)
 void Barista :: write_results_prot_tab(ofstream &os)
 {
   os << "group number" << "\t" << "q-value" << "\t" << "barista score" << "\t" << "NSAF score" << "\t";
-  os << "proteins" << "\t" << "peptides-scan.charge" << endl;
+  os<<"barista PEP\t";
+  os << "proteins" << "\t" << "peptides-scan.charge"<<endl;
 
   int cn = 0;
   for(int i = 0; i < trainset.size(); i++)
@@ -1160,6 +1150,7 @@ void Barista :: write_results_prot_tab(ofstream &os)
 	  os << trainset[i].q << "\t";
 	  os << trainset[i].score << "\t";
 	  os << trainset[i].nsaf << "\t";
+          os<<trainset[i].PEP<<"\t"; 
 	  os << d.ind2prot(protind); 
 	  for(unsigned int j = 0; j < trainset[i].indistinguishable_protinds.size(); j++)
 	    {
@@ -1408,39 +1399,129 @@ void Barista :: write_results_subset_prot_tab(ofstream &os)
 
 void Barista :: write_results_peptides_tab(ofstream &os)
 {
-  os << "peptide" << "\t" << "q-value" << "\t" << "barista score" << "\t";
-  os << "scan" << "\t" << "charge" << endl;
+  int ps = pepind_to_max_psmind[peptrainset[0].pepind]; 
+  os<< "q-value" << "\t" << "barista score" << "\t";
+  os << "NSAF score" << "\t";
+  os<<"barista PEP\t";
+  os << "scan" << "\t" ;
+  os<< "charge" << "\t";
+  os<<"spectrum precursor m/z"<<"\t";
+  os<<"spectrum neutral mass"<<"\t"; 
+  os<<"peptide mass"<<"\t";
+  os<< "delta_cn"<< "\t";
+  if(d.psmind2spscore(ps)!=-1){
+    os<<"sp score"<<"\t";
+    os<<"sp rank\t";
+  }
+  os<<"xcorr score"<<"\t";
+  os<<"xcorr rank"<<"\t";
+  if(d.psmind2spscore(ps)!=-1){
+    os<<"b/y ions matched"<<"\t";
+    os<<"b/y ions total"<<"\t";
+  }
+  os<<"matches/spectrum"<<"\t";
+  os<<"sequence\t"; 
+  os<<"cleavage type"<<"\t"; 
+  os<<"protein id"<<"\t";
+  os<<"flanking_aa"<<endl;
   int cn = 0;
-  for(int i = 0; i < peptrainset.size(); i++)
-    {
-      if(peptrainset[i].label == 1)
-	{
-	  cn++;
-	  //write out proteins
-	  int pepind = peptrainset[i].pepind;
-	  string pep = d.ind2pep(pepind);
-	  string seq, n, c;
-	  get_pep_seq(pep, seq, n, c);
-	  os << pep << "\t";
-	  os << peptrainset[i].q << "\t";
-	  os << peptrainset[i].score << "\t";
-	  //write out peptides
-	  int psmind = pepind_to_max_psmind[pepind];
-	  if(psmind > -1)
-	    os << d.psmind2scan(psmind) << "\t" << d.psmind2charge(psmind);
-	  else
-	    cout << "waning: did not assign peptide max psmind\n";
-	  os << endl;
-	}
+  for(int i = 0; i < peptrainset.size(); i++){
+    if(peptrainset[i].label == 1){
+      cn++;
+      //write out proteins
+      int pepind = peptrainset[i].pepind;
+      string pep = d.ind2pep(pepind);
+      string seq, n, c;
+      get_pep_seq(pep, seq, n, c);
+      //q-value
+      os << peptrainset[i].q << "\t";
+      //score 
+      os << peptrainset[i].score << "\t";
+      ///nsaf
+      os<<peptrainset[i].nsaf<<"\t";
+     //PEP
+      os<<peptrainset[i].PEP<<"\t"; 
+   
+      //write out peptides
+      int psmind = pepind_to_max_psmind[pepind];
+      if(psmind > -1){
+       //scan  
+	os << d.psmind2scan(psmind) << "\t" ;
+       //charge
+        os<< d.psmind2charge(psmind)<<"\t";
+        //mass-to-charge ratio 
+        os<<(d.psmind2precursor_mass(psmind)+
+        d.psmind2charge(psmind)*MASS_PROTON)/
+        d.psmind2charge(psmind)<<"\t";
+        //Spectrum Neutral Mass 
+        os<<d.psmind2precursor_mass(psmind)<<"\t";
+        //Peptide Mass
+        os<<d.psmind2peptide_mass(psmind)<<"\t";
+        //DELTA CN
+        os <<d.psmind2deltaCn(psmind)<< "\t";
+        if(d.psmind2spscore(ps)!=-1){
+          //Sp Score
+          os<<d.psmind2spscore(psmind)<<"\t";
+          //Sp Rank 
+          os<<d.psmind2sp_rank(psmind)<<"\t";
+        }
+        //xcorr Score
+      	os<<d.psmind2xcorr(psmind)<<"\t";
+      	//xcorr rank
+      	os<<d.psmind2xcorr_rank(psmind)<<"\t";
+        if(d.psmind2spscore(ps)!=-1){
+          //by ions match 
+          os<<d.psmind2by_ions_matched(psmind)<<"\t"; 
+          //by ions total 
+          os<<d.psmind2by_ions_total(psmind)<<"\t";
+        }
+      	//Matches/Spectrum 
+      	os<<d.psmind2matches_spectrum(psmind)<<"\t";
+        //sequence 
+        os<<seq<<"\t"; 
+        //cleavage type
+        os<<cleavage_type<<"\t"; 
+      	//protein id
+      	vector<string> prots;  
+        get_protein_id(pepind,prots);
+        print_protein_ids(prots,os,psmind);
+        //Flanking_aa 
+      	os<<n<<c<<endl;     
+      }else{
+	  cout<< "waning: did not assign peptide max psmind\n";
+          os<<"not assignd\t";
+       }
+
     }
+  }
 }
 
 void Barista :: write_results_psm_tab(ofstream &os)
 {
+  int ps= psmtrainset[0].psmind; 
   os << "scan" << "\t" << "charge" << "\t";
   os << "q-value" << "\t" << "barista score" << "\t";
-  os << "PEP\t";
-  os << "peptide" << "\t" << "filename" << endl;
+  os << "barista PEP\t";
+  os<<"spectrum precursor m/z"<<"\t";
+  os<<"spectrum neutral mass"<<"\t"; 
+  os<<"peptide mass"<<"\t";
+  os<< "delta_cn"<< "\t";
+  if(d.psmind2spscore(ps)!=-1){
+    os<<"sp score"<<"\t";
+    os<<"sp rank\t";
+  }
+  os<<"xcorr score"<<"\t";
+  os<<"xcorr rank"<<"\t";
+  if(d.psmind2spscore(ps)!=-1){
+    os<<"b/y ions matched"<<"\t";
+    os<<"b/y ions total"<<"\t";
+  }
+  os<<"matches/spectrum"<<"\t";
+  os<<"sequence"<<"\t";
+  os<<"cleavage type"<<"\t"; 
+  os<<"protein id"<<"\t";
+  os<<"flanking aa"<<"\t";
+  os << "filename" << endl;
  int cn = 0;
   for(int i = 0; i < psmtrainset.size(); i++)
     {
@@ -1448,18 +1529,56 @@ void Barista :: write_results_psm_tab(ofstream &os)
 	{
 	  cn++;
 	  //write out proteins
-	  int psmind = psmtrainset[i].psmind;
+	  int psmind = psmtrainset[i].psmind; 
+	  int pepind = d.psmind2pepind(psmind);
+	  string pep = d.ind2pep(pepind);
+	  string seq, n,c;
+	  get_pep_seq(pep,seq,n,c);
 	  //os << psmind << "\t";
 	  os << d.psmind2scan(psmind) << "\t";
 	  os << d.psmind2charge(psmind) << "\t";
 	  os << psmtrainset[i].q << "\t";
 	  os << psmtrainset[i].score << "\t";
           os << psmtrainset[i].PEP << "\t";
-	  int pepind = d.psmind2pepind(psmind);
-	  string pep = d.ind2pep(pepind);
-	  string seq, n,c;
-	  get_pep_seq(pep,seq,n,c);
-	  os << pep << "\t";
+          //mass-to-charge ratio 
+          os<<(d.psmind2precursor_mass(psmind)+
+          d.psmind2charge(psmind)*MASS_PROTON)/
+          d.psmind2charge(psmind)<<"\t";
+          //Spectrum Neutral Mass 
+          os<<d.psmind2precursor_mass(psmind)<<"\t";
+          //Peptide Mass
+          os<<d.psmind2peptide_mass(psmind)<<"\t";
+          //DELTA CN
+          os <<d.psmind2deltaCn(psmind)<< "\t";
+          if(d.psmind2spscore(ps)!=-1){
+            //Sp Score
+            os<<d.psmind2spscore(psmind)<<"\t";
+            //Sp Rank 
+            os<<d.psmind2sp_rank(psmind)<<"\t";
+          }
+          //xcorr Score
+      	  os<<d.psmind2xcorr(psmind)<<"\t";
+      	  //xcorr rank
+      	  os<<d.psmind2xcorr_rank(psmind)<<"\t";
+          if(d.psmind2spscore(ps)!=-1){
+            //by ions match 
+            os<<d.psmind2by_ions_matched(psmind)<<"\t"; 
+            //by ions total 
+            os<<d.psmind2by_ions_total(psmind)<<"\t";
+          }
+      	  //Matches/Spectrum 
+      	  os<<d.psmind2matches_spectrum(psmind)<<"\t";
+      	  get_pep_seq(pep,seq,n,c);
+      	  //Sequence 
+      	  os<<seq<<"\t";
+      	  //cleavage type
+      	  os<<cleavage_type<<"\t";
+      	  //protein id
+      	  vector<string> prots;  
+          get_protein_id(pepind,prots);
+          print_protein_ids(prots,os,psmind);
+      	  //Flanking_aa 
+      	  os<<n<<c<<"\t";   
 	  os << d.psmind2fname(psmind) << endl;
 	}
     }
@@ -1470,7 +1589,7 @@ void Barista :: write_results_psm_tab(ofstream &os)
 void Barista :: report_all_results_xml()
 {
   ostringstream fname;
-  fname << out_dir << "/" << fileroot << "barista_output.xml";
+  fname << out_dir << "/" << fileroot << "barista.xml";
   ofstream of(fname.str().c_str());
   of << "<barista_output>" << endl;
   of << endl;
@@ -1534,15 +1653,9 @@ void Barista :: report_all_results_tab()
 void Barista :: report_all_results_xml_tab()
 {
   setup_for_reporting_results();
-  
-
   stringstream fname;
-  
-  
-  
   report_all_results_xml();
   report_all_results_tab();
-  
   d.clear_data_all_results(); 
   
 }
@@ -1594,6 +1707,7 @@ void Barista :: setup_for_reporting_results()
   d.load_data_all_results();
     
   computeNSAF();
+  computePepNSAF();
   computePEP();
   
 }
@@ -1680,6 +1794,72 @@ int Barista :: computeNSAF()
   return 1;
 }
 
+int Barista :: computePepNSAF()
+{
+
+  //create auxiliary psmind_to_ind index
+  vector<int>psmind_to_ind;
+  psmind_to_ind.resize(psmtrainset.size(),0);
+  for(int i = 0; i < psmtrainset.size(); i++)
+    psmind_to_ind[psmtrainset[i].psmind] = i;
+
+  //compute NSAF for each peptide
+  double sum = 0.0;
+  for(int k = 0; k < peptrainset.size(); k++)
+    {
+      if(peptrainset[k].label == 1)
+	{
+	  int pepind = peptrainset[k].pepind;
+	  string pep = d.ind2pep(pepind);
+	  string seq, n,c;
+	  get_pep_seq(pep,seq,n,c);
+	  int len = seq.size();
+	  
+	  int cnt = 0;
+	  int num_psms = d.pepind2num_psm(pepind);
+	  int *psminds = d.pepind2psminds(pepind);
+	  for (int j = 0; j < num_psms; j++)
+	    {
+	      int psmind = psminds[j];
+	      int ind  = psmind_to_ind[psmind];
+	      assert(psmtrainset[ind].psmind == psmind);
+	      if(psmtrainset[ind].q <= 0.01)
+		cnt++;
+	    }
+	
+	  //compute NSAF for this protein
+	  double nsaf = 0.0;
+	  if(len != 0)
+	    nsaf = (double)cnt/(double)len;
+	  peptrainset[k].nsaf = nsaf;
+	  sum += nsaf;
+ 	}
+    }
+  
+  if(sum > 0)
+    {
+      for(int i = 0; i < peptrainset.size(); i++)
+	{
+	  if(peptrainset[i]. label == 1)
+	    peptrainset[i].nsaf /= sum;
+	}
+    }
+  else
+    return 0;
+
+  /*
+  double check = 0.0;
+  for(int i = 0; i < peptrainset.size(); i++)
+    {
+      if(peptrainset[i]. label == 1)
+	check += peptrainset[i].nsaf;
+    }
+  cout << check << endl;
+  */
+  psmind_to_ind.clear();
+  return 1;
+}
+
 
 void Barista :: computePEP(){
   carp(CARP_DEBUG, "Computing PEPs");
@@ -1720,6 +1900,84 @@ void Barista :: computePEP(){
   delete target_scores;
   delete decoy_scores;
   delete PEPs;
+
+  /** 
+   * Calculate Peptide PEPs
+   */
+  target_scores_vect.clear();
+  decoy_scores_vect.clear();
+  
+  //pull out the target and decoy scores for peptide PEPs
+  for(int i=0;i<peptrainset.size();i++){
+    if(peptrainset[i].label==1)
+      target_scores_vect.push_back(peptrainset[i].score);
+    else 
+      decoy_scores_vect.push_back(peptrainset[i].score);
+  }
+  num_targets = target_scores_vect.size();
+  num_decoys = decoy_scores_vect.size();
+  carp(CARP_DEBUG, "Found %d targets and %d decoys", num_targets, num_decoys);  
+
+  // copy them to an array as required by the compute_PEP method
+  target_scores = new double[num_targets];
+  copy(target_scores_vect.begin(), target_scores_vect.end(), target_scores);
+  decoy_scores = new double[num_decoys];
+  copy(decoy_scores_vect.begin(), decoy_scores_vect.end(), decoy_scores);
+  PEPs = compute_PEP(target_scores, num_targets, 
+                             decoy_scores, num_decoys);
+
+  // fill in the data set with the new scores for the targets
+  target_idx = 0;
+  for(int full_idx = 0; full_idx < psmtrainset.size(); full_idx++){
+    if( peptrainset[full_idx].label == 1 ){
+      peptrainset[full_idx].PEP = PEPs[target_idx];
+      target_idx++; 
+    } // else, skip decoys
+  }
+
+  delete target_scores;
+  delete decoy_scores;
+  delete PEPs;
+
+
+  /** 
+   * Calculate Protein PEPs
+   */
+  target_scores_vect.clear();
+  decoy_scores_vect.clear();
+  
+  //pull out the target and decoy scores for peptide PEPs
+  for(int i=0;i<trainset.size();i++){
+    if(trainset[i].label==1)
+      target_scores_vect.push_back(trainset[i].score);
+    else 
+      decoy_scores_vect.push_back(trainset[i].score);
+  }
+  num_targets = target_scores_vect.size();
+  num_decoys = decoy_scores_vect.size();
+  carp(CARP_DEBUG, "Found %d targets and %d decoys of Protein", num_targets, num_decoys);  
+
+  // copy them to an array as required by the compute_PEP method
+  target_scores = new double[num_targets];
+  copy(target_scores_vect.begin(), target_scores_vect.end(), target_scores);
+  decoy_scores = new double[num_decoys];
+  copy(decoy_scores_vect.begin(), decoy_scores_vect.end(), decoy_scores);
+  PEPs = compute_PEP(target_scores, num_targets, 
+                             decoy_scores, num_decoys);
+
+  // fill in the data set with the new scores for the targets
+  target_idx = 0;
+  for(int full_idx = 0; full_idx < trainset.size(); full_idx++){
+    if( trainset[full_idx].label == 1 ){
+      trainset[full_idx].PEP = PEPs[target_idx];
+      target_idx++; 
+    } // else, skip decoys
+  }
+
+  delete target_scores;
+  delete decoy_scores;
+  delete PEPs;
+
 
 }
 
@@ -1853,7 +2111,7 @@ double Barista :: get_protein_score(int protind, NeuralNet &n)
       int num_psms = d.pepind2num_psm(pepind);
       int *psminds = d.pepind2psminds(pepind);
       double max_sc = -1000000.0;
-      int max_ind = 0;
+
       for (int j = 0; j < num_psms; j++)
 	{
 	  double *feat = d.psmind2features(psminds[j]);
@@ -1861,7 +2119,7 @@ double Barista :: get_protein_score(int protind, NeuralNet &n)
 	  if(sc[0] > max_sc)
 	    {
 	      max_sc = sc[0];
-	      max_ind = j;
+
 	    }
 	}
       sm += max_sc;
@@ -1956,74 +2214,6 @@ void Barista :: calc_gradients(int protind, int label)
     }
   delete[] gc;
 }
-
-
-/*
-double Barista :: get_protein_score(int protind)
-{
-  int num_pep = d.protind2num_pep(protind);
-  int num_all_pep = d.protind2num_all_pep(protind);
-  int *pepinds = d.protind2pepinds(protind);
-  max_psm_inds.erase(max_psm_inds.begin(),max_psm_inds.end());
-  max_psm_scores.erase(max_psm_scores.begin(),max_psm_scores.end());
-  int psm_count = 0;
-  for (int i = 0; i < num_pep; i++)
-    //for (int i = 0; i < 1; i++)
-    {
-      int pepind = pepinds[i];
-      int num_psms = d.pepind2num_psm(pepind);
-      int *psminds = d.pepind2psminds(pepind);
-      double max_sc = -1000000.0;
-      int max_ind = 0;
-      for (int j = 0; j < num_psms; j++)
-	//for (int j = 0; j < 1; j++)
-	{
-	  double *feat = d.psmind2features(psminds[j]);
-	  double *sc = net_clones[psm_count].fprop(feat);
-	  if(sc[0] > max_sc)
-	    {
-	      max_sc = sc[0];
-	      max_ind = j;
-	    }
-	  psm_count++;
-	}
-      max_psm_inds.push_back(max_ind);
-      max_psm_scores.push_back(max_sc);
-    }
-  assert((int)max_psm_inds.size() == num_pep);
-  assert((int)max_psm_scores.size() == num_pep);
-  
-  double sm = 0.0;
-  double n = pow(num_all_pep,alpha);
-  for(unsigned int i = 0; i < max_psm_inds.size() ; i++)
-    sm+= max_psm_scores[i];
-  sm /= n;
-  return sm;
-}
-
-void Barista :: calc_gradients(int protind, int label)
-{
-  int num_pep = d.protind2num_pep(protind);
-  int num_all_pep = d.protind2num_all_pep(protind);
-  int *pepinds = d.protind2pepinds(protind);
-  double n = pow(num_all_pep,alpha);
-
-  double *gc = new double[1];
-  gc[0] = -label/n;
-  int psm_count = 0;
-  for(int i = 0; i < num_pep; i++)
-    //  for(int i = 0; i < 1; i++)
-    {
-      int pepind = pepinds[i];
-      int num_psms = d.pepind2num_psm(pepind);
-      int clone_ind = psm_count+max_psm_inds[i];
-      net_clones[clone_ind].bprop(gc);
-      psm_count += num_psms;
-    }
-  delete[] gc;
-}
-*/
-
 
 double Barista :: train_hinge(int protind, int label)
 {
@@ -2301,7 +2491,6 @@ void Barista :: setup_for_training(int trn_to_tst)
   max_net_prot = net;
   max_net_psm = net;
   max_net_pep = net;
-
   
   //get the max num peptides
   max_peptides = 0;
@@ -2426,6 +2615,7 @@ void Barista :: print_description()
   cout << "OPTIONAL ARGUMENTS:" << endl << endl;
   cout << "\t [--enzyme <string>] \n \t     The enzyme used to digest the proteins in the experiment. Default trypsin." << endl;
   cout << "\t [--decoy-prefix <string>] \n \t     Specifies the prefix of the protein names that indicates a decoy. Default decoy_" << endl;
+  cout << "\t [--optimization <string>] \n \t     Specifies whether to do optimization at the protein, peptide or psm level Default protein" << endl;
   cout << "\t [--separate-searches <string>] \n \t     If the target and decoy searches were run separately, the option then allows the user to specify the location of the decoy search results, the target database search should be provided as required argument." << endl;
   cout << "\t [--fileroot <string>] \n \t     The fileroot string will be added as a prefix to all output file names. Default = none." <<endl;
   cout << "\t [--output-dir <directory>] \n \t     The name of the directory where output files will be created. Default = crux-output." << endl;
@@ -2433,6 +2623,7 @@ void Barista :: print_description()
   cout << "\t [--skip-cleanup <T/F>] \n \t     When set to T, prevents the deletion of lookup tables created during the preprocessing step. Default = F." << endl; 
   cout << "\t [--re-run <directory>] \n \t      Re-run Barista analysis using a previously computed set of lookup tables." <<endl;  
   cout << "\t [--use-spec-features <T/F>] \n \t      When set to F, use minimal feature set. Default T." <<endl;  
+  cout<<  "\t [--list-of-files <T/F>] \n \t      When set to T,there is a list of files for search result. Default= F." <<endl;  
   cout << endl; 
 
 }
@@ -2451,7 +2642,9 @@ int Barista :: crux_set_command_line_options(int argc, char *argv[])
     "use-spec-features",
     "parameter-file",
     "verbosity",
-    "feature-file"
+    "list-of-files",
+    "feature-file",
+    "optimization"
   };
   int num_options = sizeof(option_list)/sizeof(char*);
 
@@ -2462,9 +2655,14 @@ int Barista :: crux_set_command_line_options(int argc, char *argv[])
   };
   int num_arguments = sizeof(argument_list)/sizeof(char*);
 
-  initialize(argument_list, num_arguments, 
-	     option_list, num_options,
-	     argc, argv);
+  initialize(
+    argument_list, 
+    num_arguments, 
+    option_list,
+    num_options,
+    argc,
+    argv
+  );
   
   string db_source;
   string sqt_source;
@@ -2472,40 +2670,45 @@ int Barista :: crux_set_command_line_options(int argc, char *argv[])
   string sqt_decoy_source;
   int separate_search_flag;
   string output_directory;
-
+  
   string enzyme;
   string decoy_prefix;
 
   string dir_with_tables;
   int found_dir_with_tables;
-
+  bool list_of_files_flag; 
   bool spec_features_flag;
+
+  opt_type = get_string_parameter_pointer("optimization");
+  
 
   fileroot = get_string_parameter_pointer("fileroot");
   if(fileroot != "__NULL_STR")
     fileroot.append(".");
   else
     fileroot = "";
-
-  decoy_prefix = get_string_parameter_pointer("decoy-prefix");
-  sqtp.set_decoy_prefix(decoy_prefix);
-
+  if(opt_type.compare("psm") == 0)
+    qr.set_fileroot(fileroot);
+  else if(opt_type.compare("peptide") == 0)
+    pr.set_fileroot(fileroot);
+  
   overwrite_flag = get_boolean_parameter("overwrite");
+  if(opt_type.compare("psm") == 0)
+    qr.set_overwrite_flag(overwrite_flag);
+  if(opt_type.compare("peptide") == 0)
+    pr.set_overwrite_flag(overwrite_flag);
+
+  //options for the parser
+  decoy_prefix = get_string_parameter_pointer("decoy-prefix");
 
   enzyme = get_string_parameter_pointer("enzyme");
-  sqtp.set_enzyme(enzyme);
 
   spec_features_flag = get_boolean_parameter("use-spec-features");
-  //num of spec features
-  if(spec_features_flag)
-    sqtp.set_num_spec_features(3);
-  else
-    sqtp.set_num_spec_features(0);
-
+  
   skip_cleanup_flag = get_boolean_parameter("skip-cleanup");
   
   dir_with_tables = get_string_parameter_pointer("re-run"); 
-  if(dir_with_tables != "__NULL_STR")
+    if(dir_with_tables != "__NULL_STR")
     found_dir_with_tables = 1;
   else
     found_dir_with_tables = 0;
@@ -2514,333 +2717,143 @@ int Barista :: crux_set_command_line_options(int argc, char *argv[])
 
   feature_file_flag = get_boolean_parameter("feature-file");
   feature_file_name << output_directory << "/" << fileroot << "barista.features.txt";
-
-  if(found_dir_with_tables)
-    {
+  
+  if(found_dir_with_tables){
+      parser= new SQTParser();
       //set input and output dirs
-      sqtp.set_output_dir(dir_with_tables);
+      parser->set_output_dir(dir_with_tables);
+      if(opt_type.compare("psm") == 0)
+	{
+	  qr.set_input_dir(dir_with_tables);
+	  qr.set_output_dir(output_directory);
+	}
+      else if(opt_type.compare("peptide") == 0)
+	{
+	  pr.set_input_dir(dir_with_tables);
+	  pr.set_output_dir(output_directory);
+	}
       set_input_dir(dir_with_tables);
       set_output_dir(output_directory);
 
       carp(CARP_INFO, "directory with tables: %s", dir_with_tables.c_str());
       carp(CARP_INFO, "output_directory: %s", output_directory.c_str());
-    }
-  else
-    {
+    }else{
       db_source = get_string_parameter_pointer("database");
       ms2_source = get_string_parameter_pointer("spectra");
       sqt_source = get_string_parameter_pointer("search results");
       sqt_decoy_source = get_string_parameter_pointer("separate-searches"); 
-      if(sqt_decoy_source != "__NULL_STR")
-	separate_search_flag = 1;
-      else
-	separate_search_flag = 0;
+      list_of_files_flag=get_boolean_parameter("list-of-files");
+      vector<string> files; 
+      string files_list; 
+       
+      if(list_of_files_flag==1){
+        ifstream f(sqt_source.c_str());
+        f>>files_list; 
+        while(!f.eof()){
+          files.push_back(files_list);
+          f>> files_list; 
+        } 
+      }else{
+         files.push_back(sqt_source);
+       }
+     
+     for(unsigned i=0; i<files.size();i++){
+        FILE_FORMAT_T format=check_file_format(files[i]);
+        //sqt_source 
+        switch (format) {
+          case SQT_FORMAT:
+            file_format_="sqt";
+            parser = new SQTParser();
+	    break;
+          case DELIMITED_FORMAT:
+            file_format_="txt";
+	    parser = new CruxParser();
+	    break;
+          case INVALID_FORMAT:
+          default:
+	    carp(CARP_FATAL, "Please enter .sqt or .txt search results"); 
+        } 
+        
+        parser->set_decoy_prefix(decoy_prefix);
+        parser->set_enzyme(enzyme);
+        if(enzyme.find("elastase") != string::npos){
+           cleavage_type="elastase-full-digest";
+        }else if (enzyme.find("chymotrypsin") != string::npos){
+           cleavage_type="chymotrypsin-full-digest";
+        }else if (enzyme.find("trypsin") != string::npos){
+           cleavage_type="trypsin-full-digest";
+        }else{
+           cleavage_type="Null";
+        }
       
-      //set the output directory for the parser
-      if(!sqtp.set_output_dir(output_directory))
-	return 0;
-      //set input and output for the leaning algo (in and out are the same as the out for the parser)
-      set_input_dir(output_directory);
-      set_output_dir(output_directory);
-            
-      if(!sqtp.set_database_source(db_source))
-	carp(CARP_FATAL, "could not find the database");
+        //num of spec features
+        if(spec_features_flag)
+          parser->set_num_spec_features(3);
+        else
+          parser->set_num_spec_features(0);
+
+        if(sqt_decoy_source != "__NULL_STR")
+	  separate_search_flag = 1;
+        else
+	  separate_search_flag = 0;
       
-      if(separate_search_flag)
-	{
-	  if(!sqtp.set_input_sources(ms2_source, sqt_source, sqt_decoy_source))
-	    carp(CARP_FATAL, "could not extract features for training");
-	  sqtp.set_num_hits_per_spectrum(1);
-	}
-      else
-	{
-	  if(!sqtp.set_input_sources(ms2_source, sqt_source))
-	    carp(CARP_FATAL, "could not extract features for training");
-	}
-      
-      //print some info
-      carp(CARP_INFO, "database source: %s", db_source.c_str());
-      carp(CARP_INFO, "sqt source: %s", sqt_source.c_str()); 
-      carp(CARP_INFO, "ms2 source: %s", ms2_source.c_str());
-      carp(CARP_INFO, "output_directory: %s", output_directory.c_str());
-      carp(CARP_INFO, "enzyme: %s", enzyme.c_str());
-      carp(CARP_INFO, "decoy prefix: %s", decoy_prefix.c_str());
-      
-      sqtp.set_use_quadratic_features(1);
-      if(!sqtp.run())
-	carp(CARP_FATAL, "Could not proceed with training.");
-      sqtp.clear();
-    }
- 
-   if(!sqtp.check_input_dir(in_dir))
-    carp(CARP_FATAL, "Please re-run with database, ms2 input and sqt input.");
-
-  return 1;
-  
-}
-
-/*
-
-int Barista :: set_command_line_options(int argc, char *argv[])
-{
-  string db_source;
-  string sqt_source;
-  string sqt_decoy_source;
-  int separate_search_flag = 0;
-  string ms2_source;
-  string output_directory = "crux-output";
-  string enzyme = "trypsin";
-  string decoy_prefix = "decoy_";
-  string dir_with_tables = "";
-  int found_dir_with_tables = 0;
-  int spec_features_flag = 1;
-  int arg = 1;
-  
-  while (arg < argc)
-    {
-      string str = argv[arg];
-      //parse the options
-      if(str.find("--") != string::npos)
-	{
-	  //found enzyme
-	  if(str.find("enzyme") != string::npos)
-	    {
-	      arg++;
-	      enzyme = argv[arg];
-	      sqtp.set_enzyme(enzyme);
-	    }
-	  //found decoy prefix
-	  else if(str.find("decoy-prefix") != string::npos)
-	    {
-	      arg++;
-	      decoy_prefix = argv[arg];
-	      sqtp.set_decoy_prefix(decoy_prefix);
-	    }
-	  //found output directory
-	  else if(str.find("output-dir") != string::npos)
-	    {
-	      arg++;
-	      output_directory = argv[arg];
-	      if(output_directory.at(output_directory.size()-1) == '/')
-		output_directory = output_directory.substr(0, output_directory.size()-1);
-	      set_output_dir(output_directory);
-	    }
-	  //found overwrite directory
-	  else if(str.find("overwrite") != string::npos)
-	    {
-	      arg++;
-	      string opt = argv[arg];
-	      if (opt.compare("T") == 0)
-		overwrite_flag = 1;
-	      else
-		overwrite_flag = 0;
-	    }
-	  //found fileroot
-	  else if(str.find("fileroot") != string::npos)
-	    {
-	      arg++;
-	      fileroot = argv[arg];
-	      fileroot.append(".");
-	    }
-	  //no cleanup
-	  else if(str.find("skip-cleanup") != string::npos)
-	    {
-	      arg++;
-	      string opt = argv[arg];
-	      if (opt.compare("T") == 0)
-		{
-		  skip_cleanup_flag = 1;
-		  cout << "INFO: will not do cleanup" << endl;
-		}
-	    }
-	  //
-	  else if(str.find("re-run") != string::npos)
-	    {
-	      arg++;
-	      dir_with_tables = argv[arg];
-	      if(dir_with_tables.at(dir_with_tables.size()-1) == '/')
-		dir_with_tables = dir_with_tables.substr(0, dir_with_tables.size()-1);
-	      found_dir_with_tables = 1;
-	      cout << "INFO: directory with preprocessed data: " << dir_with_tables << endl;
-	    }
-	  //found spec-features
-	  else if(str.find("spec-features") != string::npos)
-	    {
-	      arg++;
-	      string opt = argv[arg];
-	      if (opt.compare("T") == 0)
-		spec_features_flag = 1;
-	      else
-		spec_features_flag = 0;
-	    }
-	  //found separate search
-	  else if(str.find("separate-search") != string::npos)
-	    {
-	      arg++;
-	      string opt = argv[arg];
-	      sqt_decoy_source = opt;
-	      separate_search_flag = 1;
-	      cout << sqt_decoy_source << endl;
-	    }
-	  else
-	    {
-	      cout << "FATAL: option " << str << " does not exist" << endl;
-	      return 0;
-	    }
-	}
-      else
-	break;
-      arg++;
-    }
-
-  ostringstream cmd;
-  for(int k = 0; k < argc; k++)
-    cmd << argv[k] << " ";
-  
-  if(found_dir_with_tables)
-    {
-      //set input and output dirs
-      sqtp.set_output_dir(dir_with_tables, overwrite_flag);
-      set_input_dir(dir_with_tables);
-      set_output_dir(output_directory);
-
-      set_verbosity_level(CARP_INFO);
-      initialize_parameters();
-      //open log file
-      set_boolean_parameter("overwrite", overwrite_flag);
-      set_string_parameter("output-dir", output_directory.c_str());
-      ostringstream logfname;
-      logfname << fileroot << "barista.log.txt";
-      string str = logfname.str();
-      char *log_file = my_copy_string(str.c_str());
-      open_log_file(&log_file);
-      free(log_file);
-
-      //print some info
-      carp(CARP_INFO, "COMMAND: %s", cmd.str().c_str());
-      carp(CARP_INFO, "directory with tables: %s", dir_with_tables.c_str());
-      carp(CARP_INFO, "output_directory: %s", output_directory.c_str());
-      carp(CARP_INFO, "enzyme: %s", enzyme.c_str());
-      carp(CARP_INFO, "decoy prefix: %s", decoy_prefix.c_str());
-      if(fileroot.compare("") != 0)
-	carp(CARP_INFO, "fileroot: %s", fileroot.c_str());
-
-      //write out a parameter file
-      stringstream fname;
-      fname << output_directory << "/" << fileroot << "barista.params.txt";
-      ofstream fparam(fname.str().c_str());
-      fparam << "enzyme=" << enzyme << endl;
-      fparam << "decoy prefix=" << decoy_prefix << endl;
-      if(separate_search_flag)
-	fparam << "separate search=" << sqt_decoy_source << endl;
-      fparam << "fileroot=" << fileroot << endl;
-      fparam << "output directory=" << output_directory << endl;
-      if(skip_cleanup_flag)
-	fparam << "skip-cleanup=T" << endl;
-      else
-	fparam << "skip-cleanup=F" << endl;
-      fparam << "re-run=" << dir_with_tables << endl;
-      if(spec_features_flag)
-	fparam << "use spec features=T" << endl;
-      else
-	fparam << "use spec features=F" << endl;
-      fparam.close();
-    }
-  else
-    {
-      if(argc-arg < 3)
-	{
-	  print_description();
+      parser->write_features_header();
+      if(opt_type.compare("protein") == 0)
+	parser->set_use_quadratic_features(1);
+      if(parser->get_use_quadratic_features())
+        parser->add_quadratic_features_header(); 
+      d.get_features_header(parser->get_final_features_header());
+        //set the output directory for the parser
+        if(!parser->set_output_dir(output_directory))
 	  return 0;
-	} 
-      db_source = argv[arg]; arg++;
-      ms2_source = argv[arg]; arg++;
-      sqt_source = argv[arg];
-
-      //set the output directory for the parser
-      if(!sqtp.set_output_dir(output_directory, overwrite_flag))
-      	return 0;
-      //set input and output for the leaning algo (in and out are the same as the out for the parser)
-      set_input_dir(output_directory);
-      set_output_dir(output_directory);
-
-      //open log file 
-      set_verbosity_level(CARP_INFO);
-      initialize_parameters();
-      //open log file
-      set_boolean_parameter("overwrite", overwrite_flag);
-      set_string_parameter("output-dir", output_directory.c_str());
-      ostringstream logfname;
-      logfname << fileroot << "barista.log.txt";
-      string str = logfname.str();
-      char *log_file = my_copy_string(str.c_str());
-      open_log_file(&log_file);
-      free(log_file);
+        //set input and output for the leaning algo (in and out are the same as the out for the parser)
+		
+	if(opt_type.compare("psm") == 0)
+	  {
+	    qr.set_input_dir(output_directory);
+	    qr.set_output_dir(output_directory);
+	  }
+	else if(opt_type.compare("peptide") == 0)
+	  {
+	    pr.set_input_dir(output_directory);
+	    pr.set_output_dir(output_directory);
+	  }
+	set_input_dir(output_directory);
+	set_output_dir(output_directory);
+	            
+        if(!parser->set_database_source(db_source))
+	  carp(CARP_FATAL, "could not find the database");
       
-      if(!sqtp.set_database_source(db_source))
-	carp(CARP_FATAL, "could not find the database");
+        if(separate_search_flag){
+	    if(!parser->set_input_sources(ms2_source, sqt_source, sqt_decoy_source))
+	      carp(CARP_FATAL, "could not extract features for training");
+	    parser->set_num_hits_per_spectrum(1);
+        }else{
+	   if(!parser->set_input_sources(ms2_source, sqt_source))
+	      carp(CARP_FATAL, "could not extract features for training");
+         }
+        //print some info
+        carp(CARP_INFO, "database source: %s", db_source.c_str());
+        carp(CARP_INFO, "sqt source: %s", sqt_source.c_str()); 
+        carp(CARP_INFO, "ms2 source: %s", ms2_source.c_str());
+        carp(CARP_INFO, "output_directory: %s", output_directory.c_str());
+        carp(CARP_INFO, "enzyme: %s", enzyme.c_str());
+        carp(CARP_INFO, "decoy prefix: %s", decoy_prefix.c_str());
       
-      if(separate_search_flag)
-	{
-	  if(!sqtp.set_input_sources(ms2_source, sqt_source, sqt_decoy_source))
-	    carp(CARP_FATAL, "could not extract features for training");
-	  sqtp.set_num_hits_per_spectrum(1);
-	}
-      else
-	{
-	  if(!sqtp.set_input_sources(ms2_source, sqt_source))
-	    carp(CARP_FATAL, "could not extract features for training");
-	}
-      
-      //print some info
-      carp(CARP_INFO, "COMMAND: %s", cmd.str().c_str());
-      carp(CARP_INFO, "database source: %s", db_source.c_str());
-      carp(CARP_INFO, "sqt source: %s", sqt_source.c_str()); 
-      carp(CARP_INFO, "ms2 source: %s", ms2_source.c_str());
-      carp(CARP_INFO, "output_directory: %s", output_directory.c_str());
-      carp(CARP_INFO, "enzyme: %s", enzyme.c_str());
-      carp(CARP_INFO, "decoy prefix: %s", decoy_prefix.c_str());
-      if(fileroot.compare("") != 0)
-	carp(CARP_INFO, "fileroot: %s", fileroot.c_str());
-      
-      //write out a parameter file
-      stringstream fname;
-      fname << output_directory << "/" << fileroot << "barista.params.txt";
-      ofstream fparam(fname.str().c_str());
-      fparam << "enzyme=" << enzyme << endl;
-      fparam << "decoy prefix=" << decoy_prefix << endl;
-      if(separate_search_flag)
-	fparam << "separate search=" << sqt_decoy_source << endl;
-      fparam << "fileroot=" << fileroot << endl;
-      fparam << "output directory=" << output_directory << endl;
-      if(skip_cleanup_flag)
-	fparam << "skip-cleanup=T" << endl;
-      else
-	fparam << "skip-cleanup=F" << endl; 
-      if(spec_features_flag)
-	fparam << "use spec features=T" << endl;
-      else
-	fparam << "use spec features=F" << endl;
-      fparam.close();
-
-      //num of spec features
-      if(spec_features_flag)
-	sqtp.set_num_spec_features(3);
-      else
-	sqtp.set_num_spec_features(0);
-      if(!sqtp.run())
-	carp(CARP_FATAL, "Could not proceed with training.");
-      sqtp.clear();
+        
+        if(!parser->run())
+	  carp(CARP_FATAL, "Could not proceed with training.");
+        parser->clear();
+      } 
     }
-  
-  if(!sqtp.check_input_dir(in_dir))
+   
+ 
+   if(!parser->check_input_dir(in_dir))
     carp(CARP_FATAL, "Please re-run with database, ms2 input and sqt input.");
 
-  
   return 1;
-  
+
 }
-*/
 
 int Barista::main(int argc, char **argv) {
  //int main(int argc, char **argv){
@@ -2848,12 +2861,18 @@ int Barista::main(int argc, char **argv) {
   if(!crux_set_command_line_options(argc,argv))
     return 1;
 
-
-  //run();
-  run_tries();
-  //run_tries_multi_task();
-   if(skip_cleanup_flag != 1)
-    sqtp.clean_up(out_dir);
+  if(opt_type.compare("psm") == 0)
+    qr.run();
+  else if(opt_type.compare("peptide") == 0)
+    pr.run();
+  else
+    {
+      //run();
+      run_tries();
+      //run_tries_multi_task();
+    }
+  if(skip_cleanup_flag != 1)
+    parser->clean_up(out_dir);
   
   return 0;
 }   
@@ -2878,3 +2897,56 @@ string Barista::getDescription() {
 COMMAND_T Barista::getCommand(){
   return BARISTA_COMMAND;
 }
+
+// returns file extension 
+string Barista:: file_extension (string str){ 
+  return str.substr(str.find_last_of(".")+1);
+}
+
+
+//determins which parser to be called 
+FILE_FORMAT_T Barista:: check_file_format(string source){
+  string ext = file_extension(source);
+    if (ext=="sqt")
+      return SQT_FORMAT;
+    else if(ext=="txt")
+      return DELIMITED_FORMAT;
+    else 
+      carp(CARP_DEBUG,"The file format is invalid");
+    return INVALID_FORMAT;
+}
+
+void Barista :: get_protein_id(int pepind, vector<string> &prot){
+  int * protinds= d.pepind2protinds(pepind) ;
+  unsigned prot_length=d.pepind2num_prot(pepind);  
+  for (unsigned k=0;k<prot_length;k++){
+    string protein_str= d.ind2prot( protinds[k]);
+    prot.push_back(protein_str); 
+  }
+}
+
+void Barista :: print_protein_ids(vector<string> &prots, ofstream &os, int psmind){
+  if(file_format_=="txt"){
+    for (unsigned int j=0;j<prots.size();j++){
+       if(j==prots.size()-1)
+      	 os<<prots[j]<<"("<<d.psmind2peptide_position(psmind)<<")\t";
+       else
+         os<<prots[j]<<"("<<d.psmind2peptide_position(psmind)<<")"<<",";
+    }
+  }else if(file_format_=="sqt"){
+    for (unsigned int j=0;j<prots.size();j++){
+      if(j==prots.size()-1)
+      	os<<prots[j]<<"\t";
+      else
+        os<<prots[j]<<",";
+    }
+  }
+  prots.clear();
+}
+
+/*
+*Local Variables: 
+*mode: c
+*c-basic-offset: 2
+*End:
+*/

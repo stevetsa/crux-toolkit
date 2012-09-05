@@ -31,6 +31,12 @@ class Dataset
   void clear_labels_prot_training();
   void load_data_all_results();
   void clear_data_all_results();
+  void load_data_pep_training();
+  void clear_data_pep_training();
+  void load_labels_pep_training();
+  void clear_labels_pep_training();
+  void load_data_pep_results();
+  void clear_data_pep_results();
 
   inline void set_input_dir(string input_dir){in_dir = input_dir;}
   void normalize_psms();
@@ -66,7 +72,16 @@ class Dataset
   inline int protind2num_all_pep(int protind){return protind_to_num_all_pep[protind];}
   inline int protind2length(int protind){return protind_to_length[protind];}
   //returns false if not subset, true if yes, subset
-  inline bool is_prot_subset(int protind1, int protind2){return protind_to_pepinds.is_subset(protind1, protind2);}
+  inline bool is_prot_subset(int protind1, int protind2){return protind_to_pepinds.is_subset(protind1, protind2);} 
+  inline int psmind2sp_rank(int psmind){return psmind_to_sp_rank[psmind];}//Sp rank 
+  inline int psmind2xcorr_rank(int psmind){return psmind_to_xcorr_rank[psmind];}//xcorr rank
+  inline double psmind2by_ions_matched(int psmind){return psmind_to_by_ions_matched[psmind];}//b/y ions matched 
+  inline double psmind2by_ions_total(int psmind){return psmind_to_by_ions_total[psmind];}//b/y ions total 
+  inline int psmind2matches_spectrum(int psmind) {return psmind_to_matches_spectrum[psmind];}///<matchs/spectrum
+  inline int psmind2peptide_position(int psmind){return psmind_to_peptide_position[psmind];}///<peptide position in protein 
+  
+  inline void get_features_header(vector<string> str){features_header_.swap(str);}
+
 
  protected:
   int num_psms;
@@ -83,24 +98,37 @@ class Dataset
   double *psmind_to_deltaCn;
   double *psmind_to_calculated_mass;
   double *psmind_to_precursor_mass;
-  map <int, string> fileind_to_fname;
   int *psmind_to_fileind;
- 
   int num_pep;
   int num_pos_pep;
   int num_neg_pep;
-  BipartiteGraph pepind_to_psminds;
-  BipartiteGraph pepind_to_protinds;
-  map <int, string> ind_to_pep;
   int *pepind_to_label;
-
   int num_prot;
   int num_pos_prot;
   int num_neg_prot;
   int *protind_to_label;
-  BipartiteGraph protind_to_pepinds;
   int *protind_to_num_all_pep;
+  int* psmind_to_sp_rank;//Sp rank 
   int *protind_to_length;
+  int* psmind_to_xcorr_rank;//xcorr rank 
+  int *psmind_to_matches_spectrum;//matches/spectrum
+  double* psmind_to_by_ions_matched; //b/y ions matched
+  double* psmind_to_by_ions_total; //b/y ions total
+  int*  psmind_to_peptide_position;//<pepetide position in protein 
+
+  map <int, string> fileind_to_fname;
+ 
+  vector <string> features_header_;
+  
+  BipartiteGraph pepind_to_psminds;
+  BipartiteGraph pepind_to_protinds;
+  map <int, string> ind_to_pep;
+  
+
+ 
+  
+  BipartiteGraph protind_to_pepinds;
+ 
   map <int, string> ind_to_prot;
 
   string in_dir;

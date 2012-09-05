@@ -19,13 +19,17 @@ libqranker_barista_la_SOURCES = \
 	BipartiteGraph.h\
 	PepScores.cpp\
 	PSMScores.h\
+	PepRanker.h \
+	PepRanker.cpp \
 	SQTParser.cpp\
 	TabDelimParser.cpp\
 	TabDelimParser.h\
 	DataSet.cpp\
 	PepScores.h\
 	QRanker.cpp\
-	SQTParser.h
+	SQTParser.h\
+	CruxParser.cpp\
+	CruxParser.h
 
 libqranker_barista_la_CXXFLAGS = $(AM_CXXFLAGS) \
   -I$(top_srcdir)/src/external/proteowizard/install/include/ \

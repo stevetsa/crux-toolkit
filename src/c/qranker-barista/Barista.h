@@ -1,7 +1,6 @@
 #ifndef BARISTA_H
 #define BARISTA_H
 #define CRUX
-
 #include <sys/types.h>
 #ifndef _MSC_VER
 #include <dirent.h>
@@ -27,8 +26,11 @@
 #include "PepScores.h"
 #include "NeuralNet.h"
 #include "SQTParser.h"
+#include "CruxParser.h"
+#include "QRanker.h"
+#include "PepRanker.h"
 using namespace std;
-
+#include "mass.h"
 
 class Barista : public CruxApplication
 {
@@ -38,6 +40,7 @@ class Barista : public CruxApplication
     skip_cleanup_flag(0),
     overwrite_flag(0),
     feature_file_flag(0),
+    list_of_files_flag(0),
     in_dir(""), 
     out_dir(""), 
     fileroot(""), 
@@ -82,6 +85,7 @@ class Barista : public CruxApplication
   int getOverFDRProtParsimonious(ProtScores &set, NeuralNet &n, double fdr);
   void computePEP();
   int computeNSAF();
+  int computePepNSAF();
 
   void write_results_prot(string &out_dir, int fdr);
   void report_all_results();
@@ -108,6 +112,8 @@ class Barista : public CruxApplication
   void report_pep_fdr_counts(vector<double> &qvals, ofstream &of);
   void report_all_fdr_counts();
   void clean_up();
+  void get_protein_id(int pepind, vector<string> &prots);
+  void print_protein_ids(vector<string> &proteins,ofstream &os,int psmind);  
 
   int getOverFDRPSM(PSMScores &set, NeuralNet &n, double fdr);
   double get_peptide_score(int pepind, NeuralNet &n);
@@ -126,18 +132,24 @@ class Barista : public CruxApplication
 
   double check_gradients_hinge_one_net(int protind, int label);
   double check_gradients_hinge_clones(int protind, int label);
+
+  FILE_FORMAT_T check_file_format(string filename);
+  string file_extension(string str); 
  protected:
-  SQTParser sqtp;
+  SQTParser* parser; 
   int verbose;
   int skip_cleanup_flag;
   int overwrite_flag;
   int feature_file_flag;
   ostringstream feature_file_name;
+  int list_of_files_flag; 
 
   Dataset d;
   string in_dir;
   string out_dir;
   string fileroot;
+
+  string cleavage_type; 
 
   int seed;
   double selectionfdr;
@@ -173,7 +185,12 @@ class Barista : public CruxApplication
   NeuralNet max_net_pep;
   int max_fdr_pep;
   
+  string file_format_; 
   ofstream fdebug;
+
+  string opt_type;
+  QRanker qr;
+  PepRanker pr;
 
 };
 

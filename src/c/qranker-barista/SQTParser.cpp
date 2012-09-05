@@ -30,7 +30,8 @@ SQTParser :: SQTParser()
     protind_to_length(0),
     cur_fileind(0)
 {
-  int capacity = 10;
+
+  int capacity = 11;
   m.xcorr_rank.reserve(capacity);
   m.sp_rank.reserve(capacity);
   m.calc_mass.reserve(capacity);
@@ -42,6 +43,7 @@ SQTParser :: SQTParser()
   m.peptides.reserve(capacity);
   m.num_proteins_in_match.reserve(capacity);
   m.proteins.reserve(capacity);
+  m.peptide_pos.reserve(capacity);
 
   //num_psm_features
   num_features = 17;
@@ -58,19 +60,52 @@ SQTParser :: SQTParser()
   max_len = 50;
   //min peptide length to be considered
    min_len = 7;
+
+  //feature header
+  features_header_.push_back( "sp rank");
+  features_header_.push_back(  "delta cn");
+  features_header_.push_back( "delta cn"); 
+  features_header_.push_back( "xcorr rank");
+  features_header_.push_back("sp score");
+  features_header_.push_back("matched ions/predicted ions");
+  features_header_.push_back("observed mass");
+  features_header_.push_back("peptide length");
+  features_header_.push_back("charge 1");
+  features_header_.push_back("charge 2");
+  features_header_.push_back("charge 3");
+  features_header_.push_back( "c-term enz");
+  features_header_.push_back("t-term enz");
+  features_header_.push_back("missed cleavage");
+  features_header_.push_back("number of sequnce_comparision");
+  features_header_.push_back("delta mass");
+  features_header_.push_back("abs(delta mass)");
+ 
+  //spec_features_header_3
+  spec_features_header_3_.push_back("b ions");
+  spec_features_header_3_.push_back("y ions");
+  spec_features_header_3_.push_back("flanking");
   
+  //spec features 7 
+  spec_features_header_7_.push_back("b ions");
+  spec_features_header_7_.push_back("y ions");
+  spec_features_header_7_.push_back("flanking");
+  spec_features_header_7_.push_back("H2O-nl");
+  spec_features_header_7_.push_back("CO2-nl");
+  spec_features_header_7_.push_back("NH3-nl");
+  spec_features_header_7_.push_back("NH3-nl-y");
 }
 
 
 SQTParser :: ~SQTParser()
 {
-  clear();  
+   clear();  
 }
 
 void SQTParser :: clear()
 {
   clear_matches();
-  delete[] x; x = (double*)0;
+  delete[] x; 
+  x = (double*)0;
   delete[] xs; xs = (double*)0;
   delete[] protind_to_num_all_pep; protind_to_num_all_pep = (int*)0;
   delete[] protind_to_length; protind_to_length = (int*)0;
@@ -90,6 +125,11 @@ void SQTParser :: clear()
   protind_to_num_all_pep_map.clear();
   protein_to_length_map.clear();
   protind_to_length_map.clear();
+  
+  spec_features_header_3_.clear();
+  spec_features_header_7_.clear();
+  features_header_.clear();
+  final_features_header_.clear();
 
   num_features = 0;
   num_spec_features = 0;
@@ -136,7 +176,7 @@ void SQTParser :: clear_matches()
   m.xcorr_rank.clear();
   m.sp_rank.clear();
   m.calc_mass.clear();
-  m.delta_cn.clear();
+  m.delta_cn.clear(); 
   m.xcorr_score.clear();
   m.sp_score.clear();
   m.num_ions_matched.clear();
@@ -144,6 +184,7 @@ void SQTParser :: clear_matches()
   m.peptides.clear();
   m.num_proteins_in_match.clear();
   m.proteins.clear();
+  m.peptide_pos.clear();
 }
 
 
@@ -160,151 +201,132 @@ void SQTParser :: erase_matches()
   m.peptides.erase(m.peptides.begin(),m.peptides.end());
   m.num_proteins_in_match.erase(m.num_proteins_in_match.begin(),m.num_proteins_in_match.end());
   m.proteins.erase(m.proteins.begin(),m.proteins.end());
+  m.peptide_pos.erase(m.peptide_pos.begin(),m.peptide_pos.end());
 }
 
 
-void SQTParser :: add_matches_to_tables(sqt_match &m, string &decoy_prefix, int hits_read, int final_hits)
+void SQTParser :: add_matches_to_tables(sqt_match &m, string &decoy_prefix, int hits_read, int final_hits, bool decoy)
 {
   int protein_pos = 0;
-  for (int i = 0; i < min(hits_read,final_hits); i++)
-    {
-      set<string> proteins;
-      int label = 0;
-      // go through the proteins of the match
-      for (int j = 0; j < m.num_proteins_in_match[i]; j++)
-	{
-	  string prot = m.proteins[protein_pos];
-	  proteins.insert(prot);
-	  if(prot.find(decoy_prefix) != string::npos)
-	    label = -1;
-	  else
-	    label = 1;
-	  protein_pos++;
-	}
-      //record the psm label
-      f_psmind_to_label.write((char*)(&label),sizeof(int));
-      
-      string pep = m.peptides[i];
-      int pep_ind = -1;
-      //add peptide to pep_to_ind and ind_to_pep maps
-      if(pep_to_ind.find(pep) == pep_to_ind.end())
-	{
-	  pep_ind = num_pep;
-	  //add a new peptide
-	  pep_to_ind[pep] = pep_ind;
-	  ind_to_pep[pep_ind] = pep;
-	  //start a pepind_to_psminds entry for the new peptide
-	  set<int> tpsm;
-	  pepind_to_psminds_map[pep_ind] = tpsm;
-	  //start a pepind_to_protinds entry for the new peptide
-	  set<int> t;
-	  pepind_to_protinds_map[pep_ind] = t;
-	  //set the label of the new peptide
-	  f_pepind_to_label.write((char*)(&label),sizeof(int));
-	  //augment num_pep count
-	  num_pep++;
-	  if(label == 1)
-	    num_pos_pep++;
-	  else
-	    num_neg_pep++;
-	}
+  for (int i = 0; i < min(hits_read,final_hits); i++){
+    set<string> proteins;
+    int label = 0;
+    // go through the proteins of the match
+    for (int j = 0; j < m.num_proteins_in_match[i]; j++){
+      string prot = m.proteins[protein_pos];
+      proteins.insert(prot);
+      if(prot.find(decoy_prefix) != string::npos || decoy)
+        label = -1;
       else
-	{
-	  pep_ind = pep_to_ind[pep];
-	  string p = ind_to_pep[pep_ind];
-	  //if(pep.compare(p) != 0)
-	  //   cout << "warning : did not find peptide index in ind_to_pep_table\n"; 
-	}
-      //augment the pepinds_to_psminds table
-      (pepind_to_psminds_map[pep_ind]).insert(num_psm);
-      
-
-      for(set<string>::iterator it = proteins.begin(); it != proteins.end();it++)
-	{
-	  string prot = *it;
-	  //if the label is -1 but the protein name does not contain decoy_prefix_,
-	  // we don't include it
-	  //add prot to tables
-	  if((prot.find(decoy_prefix) == string::npos) && (label == -1))
-	    num_mixed_labels++; 
-	  else
-	    {
-
-	      int prot_ind = -1;
-	      if (prot_to_ind.find(prot) == prot_to_ind.end())
-		{
-		  prot_ind = num_prot;
-		  //add new protein
-		  prot_to_ind[prot] = prot_ind;
-		  ind_to_prot[prot_ind] = prot;
-		  //start a protind_to_pepinds entry for the new protein
-		  set<int> t;
-		  protind_to_pepinds_map[prot_ind] = t;
-		  //set the prot label
-		  f_protind_to_label.write((char*)(&label),sizeof(int));
-		  num_prot++; num_cur_prot++;
-		  if(label == 1)
-		    num_pos_prot++;
-		  else
-		    num_neg_prot++;
-		  
-		  //find the prot in the prot_to_num_all_pep
-		  if(database_exists)
-		    {
-		      int cnt = 0;
-		      int len = 0;
-		      if(protein_to_num_all_pep_map.find(prot) == protein_to_num_all_pep_map.end())
-			{
-			  /*
-			  for(map<string,int>::iterator itt = protein_to_num_all_pep_map.begin();
-			      itt != protein_to_num_all_pep_map.end(); itt++)
-			    {
-			      string protein = itt->first;
-			      if(protein.find(prot) != string :: npos)
-				cnt = itt->second;
-			    }
-			  */
-			}
-		      else
-			{
-			  cnt = protein_to_num_all_pep_map[prot];
-			  len = protein_to_length_map[prot];
-			  
-			}
-		      
-		      //add the cnt to protind_to_num_all_pep_map
-		      if(cnt == 0)
-			{
-			  num_prot_not_found_in_db++;
-			  if(label == 1)
-			    num_pos_prot_not_found_in_db++;
-			  else
-			    num_neg_prot_not_found_in_db++;
-			  //carp(CARP_WARNING, "did not find protein %s from sqt file in the database ", prot.c_str());
-			}
-		      else
-			{
-			  protind_to_num_all_pep_map[prot_ind] = cnt;
-			  protind_to_length_map[prot_ind] = len;
-			}
-		    }
-		}
-	      else
-		prot_ind = prot_to_ind[prot];
-	      
-	      //augment the pepind_to_protinds table
-	      (pepind_to_protinds_map[pep_ind]).insert(prot_ind);
-	      //augment to protind_to_pepinds table
-	      protind_to_pepinds_map[prot_ind].insert(pep_ind);
-	    }
-	}
-      //augment num psms
-      num_psm++;
-      if (label == 1)
-	num_pos_psm++;
-      else
-	num_neg_psm++;
+        label = 1;
+      protein_pos++;
     }
+    //record the psm label
+    f_psmind_to_label.write((char*)(&label),sizeof(int));
+      
+    string pep = m.peptides[i];
+    int pep_ind = -1;
+    //add peptide to pep_to_ind and ind_to_pep maps
+    if(pep_to_ind.find(pep) == pep_to_ind.end()){
+      pep_ind = num_pep;
+      //add a new peptide
+      pep_to_ind[pep] = pep_ind;
+      ind_to_pep[pep_ind] = pep;
+      //start a pepind_to_psminds entry for the new peptide
+      set<int> tpsm;
+      pepind_to_psminds_map[pep_ind] = tpsm;
+      //start a pepind_to_protinds entry for the new peptide
+      set<int> t;
+      pepind_to_protinds_map[pep_ind] = t;
+      //set the label of the new peptide
+      f_pepind_to_label.write((char*)(&label),sizeof(int));
+      //augment num_pep count
+      num_pep++;
+      if(label == 1)
+	num_pos_pep++;
+      else
+        num_neg_pep++;
+    }else{
+      pep_ind = pep_to_ind[pep];
+      string p = ind_to_pep[pep_ind];
+      //if(pep.compare(p) != 0)
+      //   cout << "warning : did not find peptide index in ind_to_pep_table\n"; 
+    }
+    //augment the pepinds_to_psminds table
+    pepind_to_psminds_map[pep_ind].insert(num_psm);
+      
+    for(set<string>::iterator it = proteins.begin(); it != proteins.end();it++){
+      string prot = *it;
+      //if the label is -1 but the protein name does not contain decoy_prefix_,
+      // we don't include it
+      //add prot to tables
+      if((prot.find(decoy_prefix) == string::npos) && (label == -1))
+	 num_mixed_labels++; 
+      else{
+        int prot_ind = -1;
+	if(prot_to_ind.find(prot) == prot_to_ind.end()){
+	  prot_ind = num_prot;
+	  //add new protein
+	  prot_to_ind[prot] = prot_ind;
+	  ind_to_prot[prot_ind] = prot;
+	  //start a protind_to_pepinds entry for the new protein
+	  set<int> t;
+	  protind_to_pepinds_map[prot_ind] = t;
+	  //set the prot label
+	  f_protind_to_label.write((char*)(&label),sizeof(int));
+	  num_prot++; num_cur_prot++;
+	  if(label == 1)
+	    num_pos_prot++;
+	  else
+	    num_neg_prot++;
+	 
+	  //find the prot in the prot_to_num_all_pep
+	  if(database_exists){
+	    int cnt = 0;
+	    int len = 0;
+	    if(protein_to_num_all_pep_map.find(prot) == protein_to_num_all_pep_map.end()){
+	      /*
+	       for(map<string,int>::iterator itt = protein_to_num_all_pep_map.begin();
+		itt != protein_to_num_all_pep_map.end(); itt++)
+	        {
+		 string protein = itt->first;
+		 if(protein.find(prot) != string :: npos)
+		 cnt = itt->second;
+		 }
+		 */
+	    }else{
+	      cnt = protein_to_num_all_pep_map[prot];
+	      len = protein_to_length_map[prot];
+			  
+	    }
+		      
+	    //add the cnt to protind_to_num_all_pep_map
+	    if(cnt == 0){
+	      num_prot_not_found_in_db++;
+	      if(label == 1)
+		num_pos_prot_not_found_in_db++;
+	      else
+		num_neg_prot_not_found_in_db++;
+		    //carp(CARP_WARNING, "did not find protein %s from sqt file in the database ", prot.c_str());
+	    }else{
+	      protind_to_num_all_pep_map[prot_ind] = cnt;
+	      protind_to_length_map[prot_ind] = len;
+	    }
+	  }
+        }else
+	  prot_ind = prot_to_ind[prot];
+	//augment the pepind_to_protinds table
+	(pepind_to_protinds_map[pep_ind]).insert(prot_ind);
+	//augment to protind_to_pepinds table
+	protind_to_pepinds_map[prot_ind].insert(pep_ind);
+      }
+    }   //augment num psms
+    num_psm++;
+    if(label == 1)
+      num_pos_psm++;
+    else
+      num_neg_psm++;
+  }
   num_spectra++;
 }
 
@@ -313,6 +335,8 @@ void SQTParser :: allocate_feature_space()
 {
   //space for feature vector
   x = new double[num_features];
+
+
   memset(x,0,sizeof(double)*num_features);
   //space for spec feature vector
   if (num_spec_features > 0)
@@ -633,14 +657,12 @@ void SQTParser :: extract_psm_features(sqt_match &m, enzyme enz, double *x, int 
 void SQTParser :: extract_features(sqt_match &m, int hits_read, int final_hits,enzyme enz)
 {
 
-  for (int i = 0; i < min(hits_read,final_hits); i++)
-    {
+  for (int i = 0; i < min(hits_read,final_hits); i++){
       //write the feature vector out to file
       //extract_psm_features(m, enz, x, i);
       extract_psm_features(m, enz, x, i, hits_read);
            
-      if (num_spec_features > 0)
-	{
+      if (num_spec_features > 0){
 	  
 	  ostringstream scan_stream;
 	  scan_stream << m.scan << "." << m.charge;
@@ -661,34 +683,27 @@ void SQTParser :: extract_features(sqt_match &m, int hits_read, int final_hits,e
 	  //write out features
 	  f_psm.write((char*)x, sizeof(double)*num_features);
 	  f_psm.write((char*)xs, sizeof(double)*num_spec_features);
-	}
-      else
+	}else
 	f_psm.write((char*)x, sizeof(double)*num_features);
 	  
       num_total_features = num_features+num_spec_features;
 
-      if(use_quadratic_features)
-	{
+      if(use_quadratic_features){
 	  //for(int i = 0; i < num_features; i++)
 	  //x[i] *= x[i];
 	  //f_psm.write((char*)x, sizeof(double)*num_features);
 	  //num_total_features += num_features;
 	  double *b = new double[1];
-	  for(int i = 0; i < num_features; i++)
-	    {
-	      for(int j = i; j < num_features; j++)
-		{
+	  for(int i = 0; i < num_features; i++){
+	      for(int j = i; j < num_features; j++){
 		  b[0] = x[i]*x[j];
 		  f_psm.write((char*)b, sizeof(double));
 		  num_total_features++;
 		}
 	    }
-	  if(num_spec_features > 0)
-	    {
-	      for(int i = 0; i < num_spec_features; i++)
-		{
-		  for(int j = i; j < num_spec_features; j++)
-		    {
+	  if(num_spec_features > 0){
+	      for(int i = 0; i < num_spec_features; i++){
+		  for(int j = i; j < num_spec_features; j++){
 		      b[0] = xs[i]*xs[j];
 		      f_psm.write((char*)b, sizeof(double));
 		      num_total_features++;
@@ -721,15 +736,39 @@ void SQTParser :: extract_features(sqt_match &m, int hits_read, int final_hits,e
       double precursor_mass = m.precursor_mass;
       f_psmind_to_precursor_mass.write((char*)(&precursor_mass),sizeof(double));
       
-      //get the pepind of the peptide
-      string pep = m.peptides[i];
-      int pepind = pep_to_ind[pep];
-      f_psmind_to_pepind.write((char*)(&pepind),sizeof(int));
+    //Sp rank 
+    int  sp_rank=m.sp_rank[i];
+    f_psmind_to_sp_rank.write((char*)(&sp_rank),sizeof(int));
       
-      f_psmind_to_fileind.write((char*)(&cur_fileind),sizeof(int));
+    //xcorr rank 
+    int  xc_rank=m.xcorr_rank[i]; 
+    f_psmind_to_xcorr_rank.write((char*)(&xc_rank),sizeof(int));
 
-      num_cur_psm++;
-    }
+    //matches_spectrum 
+    int matches_spectrum = m.num_sequence_comparisons;
+    f_pmsind_to_matches_spectrum.write((char*)(&matches_spectrum),sizeof(int));
+      
+    //b/y ions matched 
+    double by_ions_matched=m.num_ions_matched[i]; 
+    f_psmind_to_by_ions_matched.write((char*)(&by_ions_matched),sizeof(double));
+
+    //b/y ions total 
+    double by_ions_total=m.num_total_ions[i]; 
+    f_psmind_to_by_ions_total.write((char*)(&by_ions_total),sizeof(double));
+    
+    // peptide position 
+    int peptide_position=m.peptide_pos[i];
+    f_psmind_to_peptide_position.write((char*)(&peptide_position),sizeof(int));
+
+    //get the pepind of the peptide
+    string pep = m.peptides[i];
+    int pepind = pep_to_ind[pep];
+    f_psmind_to_pepind.write((char*)(&pepind),sizeof(int));
+      
+    f_psmind_to_fileind.write((char*)(&cur_fileind),sizeof(int));
+
+    num_cur_psm++;
+  }
 }
 
 
@@ -769,7 +808,7 @@ void SQTParser :: read_M_line(ifstream &is, sqt_match &m)
   m.sp_score.push_back(sp);
   
   //number of matched ions
-  double num_ions_matched;
+  int num_ions_matched;
   is >> num_ions_matched;
   m.num_ions_matched.push_back(num_ions_matched);
 
@@ -841,7 +880,7 @@ int SQTParser :: parse_sqt_spectrum_matches(ifstream &is, sqt_match &m)
   
 }
 
-void SQTParser :: read_sqt_file(ifstream &is, string &decoy_prefix, int final_hits, enzyme enz)
+void SQTParser :: read_sqt_file(ifstream &is, string &decoy_prefix, int final_hits, enzyme enz, bool decoy)
 {
   int cn = 0;
   string line;
@@ -859,7 +898,7 @@ void SQTParser :: read_sqt_file(ifstream &is, string &decoy_prefix, int final_hi
     {
       assert(tempstr.compare("S") == 0);
       num_hits = parse_sqt_spectrum_matches(is,m);
-      add_matches_to_tables(m, decoy_prefix, num_hits, final_hits);
+      add_matches_to_tables(m, decoy_prefix, num_hits, final_hits, decoy);
       extract_features(m, num_hits, final_hits,enz);
       cn++;
       //if(cn > 10)
@@ -1020,6 +1059,43 @@ int SQTParser :: check_input_dir(string &in_dir)
   if(!check_file(fname))
     return 0;
   fname.str("");
+  
+  //psmind_to_sp_rank
+  fname << in_dir << "/psmind_to_sp_rank";
+  if(!check_file(fname))
+    return 0;
+  fname.str("");
+  
+  //psmind_to_xcorr_rank
+  fname << in_dir << "/psmind_to_xcorr_rank";
+  if(!check_file(fname))
+    return 0;
+  fname.str("");
+  
+  //psmind_to_by_ions_matched
+  fname << in_dir << "/psmind_to_by_ions_matched";
+  if(!check_file(fname))
+    return 0;
+  fname.str("");
+  
+  //psmind_to_by_ions_total
+  fname << in_dir << "/psmind_to_by_ions_total";
+  if(!check_file(fname))
+    return 0;
+  fname.str("");
+
+  //psmind_matches_spectrum
+  fname << in_dir << "/psmind_to_matches_spectrum";
+  if(!check_file(fname))
+    return 0;
+  fname.str(""); 
+  
+  //pepind_peptide_position
+  fname << in_dir << "/psmind_to_peptide_position";
+  if(!check_file(fname))
+    return 0;
+  fname.str(""); 
+  
 
   return 1;
 }
@@ -1055,6 +1131,18 @@ void SQTParser :: clean_up(string dir)
 
   //psmind_to_precursor_mass
   fname << out_dir << "/psmind_to_precursor_mass";
+  remove(fname.str().c_str());
+  fname.str("");
+  remove(fname.str().c_str());
+  fname.str("");
+  
+  //psmind_to_sp_rank
+  fname << out_dir << "/psmind_to_sp_rank";
+  remove(fname.str().c_str());
+  fname.str(""); 
+  
+  //psmind_to_xcorr_rank
+  fname << out_dir << "/psmind_to_xcorr_rank";
   remove(fname.str().c_str());
   fname.str("");
 
@@ -1148,6 +1236,36 @@ void SQTParser :: clean_up(string dir)
   fname << out_dir << "/prot_to_ind";
   remove(fname.str().c_str());
   fname.str("");
+  
+  //psmind_to_sp_rank
+  fname << out_dir << "/psmind_to_sp_rank";
+  remove(fname.str().c_str());
+  fname.str(""); 
+  
+  //psmind_to_xcorr_rank
+  fname << out_dir << "/psmind_to_xcorr_rank";
+  remove(fname.str().c_str());
+  fname.str("");
+  
+  //psmind_to_by_ions_matched
+  fname << out_dir << "/psmind_to_by_ions_matched";
+  remove(fname.str().c_str());
+  fname.str("");
+
+  //psmind_to_by_ions_total
+  fname << out_dir << "/psmind_to_by_ions_total";
+  remove(fname.str().c_str());
+  fname.str("");
+  
+  //psmind_to_matches_spectrum
+  fname << out_dir << "/psmind_to_matches_spectrum";
+  remove(fname.str().c_str());
+  fname.str("");
+  
+  //psmind_to_peptide_position
+  fname << out_dir << "/psmind_to_peptide_position";
+  remove(fname.str().c_str());
+  fname.str("");
 
 }
 
@@ -1187,6 +1305,20 @@ void SQTParser :: open_files(string &out_dir)
   f_psmind_to_precursor_mass.open(fname.str().c_str(),ios::binary );
   fname.str("");
   
+  //psmind_to_sp_rank 
+  fname << out_dir << "/psmind_to_sp_rank";
+  f_psmind_to_sp_rank.open(fname.str().c_str(),ios::binary );
+  fname.str("");
+
+  //psmind_to_xcorr_rank 
+  fname << out_dir << "/psmind_to_xcorr_rank";
+  f_psmind_to_xcorr_rank.open(fname.str().c_str(),ios::binary );
+  fname.str("");
+     
+  //psmind_to_matches_spectrum 
+  fname << out_dir << "/psmind_to_matches_spectrum";
+  f_pmsind_to_matches_spectrum.open(fname.str().c_str(),ios::binary );
+  fname.str("");
   ///additional info
   //psmind_to_xcorr
   fname << out_dir << "/psmind_to_xcorr";
@@ -1207,6 +1339,22 @@ void SQTParser :: open_files(string &out_dir)
   fname << out_dir << "/psmind_to_calculated_mass";
   f_psmind_to_calculated_mass.open(fname.str().c_str(),ios::binary );
   fname.str("");
+
+  //psmind_to_by_ions_matched
+  fname << out_dir << "/psmind_to_by_ions_matched";
+  f_psmind_to_by_ions_matched.open(fname.str().c_str(),ios::binary );
+  fname.str("");
+  
+  //psmind_to_by_ions_total
+  fname << out_dir << "/psmind_to_by_ions_total";
+  f_psmind_to_by_ions_total.open(fname.str().c_str(),ios::binary );
+  fname.str("");
+
+  //psmind_to_peptide_position
+  fname << out_dir << "/psmind_to_peptide_position";
+  f_psmind_to_peptide_position.open(fname.str().c_str(),ios::binary );
+  fname.str("");
+  
   //end of additional info
   
   //pepind_to_label
@@ -1260,6 +1408,12 @@ void SQTParser :: close_files()
   f_protind_to_length.close();
   f_fileind_to_fname.close();
   f_psmind_to_fileind.close();
+  f_psmind_to_sp_rank.close();//sp rank
+  f_psmind_to_xcorr_rank.close();//xcorr rank
+  f_pmsind_to_matches_spectrum.close();//matches/spectrum
+  f_psmind_to_by_ions_matched.close();// b/y ions match  
+  f_psmind_to_by_ions_total.close();//b/y ions total  
+  f_psmind_to_peptide_position.close();//peptide position 
 }
 
 
@@ -1325,6 +1479,17 @@ void SQTParser :: digest_database(ifstream &f_db, enzyme e)
 }
 
 
+bool  SQTParser :: read_search_results(string& cur_fname, bool decoy) {
+  ifstream f_sqt(cur_fname.c_str());
+  if(!f_sqt.is_open()){
+    carp(CARP_WARNING, "could not open sqt file: %s", cur_fname.c_str());
+    return false; 
+  }
+      read_sqt_file(f_sqt, decoy_prefix, fhps,e, decoy);
+      f_sqt.close();
+  return true; 
+}
+
 int SQTParser :: run()
 {
   //parse database
@@ -1379,19 +1544,12 @@ int SQTParser :: run()
       cur_fileind = i;
       carp(CARP_INFO, "parsing file %s", cur_fname.c_str());
       f_fileind_to_fname << i << " " << cur_fname << endl;
-      ifstream f_sqt(cur_fname.c_str());
-      if(!f_sqt.is_open())
-	{
-	  carp(CARP_WARNING, "could not open sqt file: %s", cur_fname.c_str());
-	  continue;
-	}
-      read_sqt_file(f_sqt, decoy_prefix, fhps,e);
-      f_sqt.close();
-      num_files_read++;
+      if(read_search_results(cur_fname, i != 0)) 
+        num_files_read++;
     }
   if(num_files_read < 1)
     {
-      carp(CARP_WARNING, "could not parse any sqt files");
+      carp(CARP_WARNING, "Could not parse any search result files");
       return 0;
     }
   
@@ -1405,16 +1563,20 @@ int SQTParser :: run()
       if( (double)num_prot_not_found_in_db > (double)num_prot/3.0)
 	{
 	  if( num_neg_prot_not_found_in_db == num_neg_prot && (double)num_pos_prot_not_found_in_db < (double)num_pos_prot/2.0)
-	    carp(CARP_WARNING, "The database did not contain any of the decoy proteins that were found in the sqt files. This might mean that only target but the decoy database was provided.");
+	    carp(CARP_WARNING, "The database did not contain any of the decoy proteins that were found in the search result files. This might mean that only target but the decoy database was provided.");
 	  else
-	    carp(CARP_WARNING, "The database did not contain %d of the % d proteins that were found in the sqt files. This might mean that the database does not match sqt files.", num_prot_not_found_in_db, num_prot);
+	    carp(CARP_WARNING, "The database did not contain %d of the % d proteins that were found in the search result files. This might mean that the database does not match search result files.", num_prot_not_found_in_db, num_prot);
 	}
     }
 
   if(num_neg_prot == 0)
     {
-      carp(CARP_WARNING, "Found %d decoy proteins in the sqt files.", num_neg_prot);
-      return 0;
+      carp(CARP_WARNING, "Found %d decoy proteins in the search result files.", num_neg_prot);
+      //return 0;
+      //TODO SJM, how decoys are represented in the search results using a 
+      //fasta or index search is different for crux.  
+      //This temporary fix will work
+      //for q-ranker.
     }
 
   //save the data
@@ -1563,8 +1725,12 @@ int SQTParser :: set_database_source(string &db_source)
   return 1;
 }
 
+string SQTParser::get_parser_extension() {
 
-int SQTParser :: match_sqt_to_ms2(string &sqt_source, string &prefix)
+  return ".sqt";
+}
+
+int SQTParser :: match_file_to_ms2(string &sqt_source, string &prefix)
 {
   DIR *dp;
   struct dirent *dirp;
@@ -1578,7 +1744,7 @@ int SQTParser :: match_sqt_to_ms2(string &sqt_source, string &prefix)
   //read sqt files in the directory 
   while ((dirp = readdir(dp)) != NULL) 
     {
-      string ext_sqt = ".sqt";
+      string ext_sqt = get_parser_extension();
       string fname = string(dirp->d_name);
       int pos = is_ending(fname, ext_sqt);
       if((pos != 0) && (fname.find(prefix,0) != string::npos))
@@ -1628,7 +1794,7 @@ int SQTParser :: collect_ms2_files(string &ms2_source, string & sqt_source)
 	  fstr << fname;
 	  string ms2name = fstr.str();
 	  fstr.str("");
-	  int num_matched = match_sqt_to_ms2(sqt_source, prefix);
+	  int num_matched = match_file_to_ms2(sqt_source, prefix);
 	  total_matched += num_matched;
 	  if(!num_matched)
 	    carp(CARP_WARNING, "could not find %s*.sqt in directory %s to match %s, skipping", prefix.c_str(), sqt_source.c_str(), ms2name.c_str());
@@ -1677,12 +1843,12 @@ int SQTParser :: set_input_sources(string &ms2_source, string &sqt_source)
   else
     {
       string ext_ms2 = ".ms2";
-      string ext_sqt = ".sqt";
+      string ext_sqt = get_parser_extension();
       if(is_ending(ms2_source, ext_ms2))
 	{
 	  if(!is_ending(sqt_source, ext_sqt))
 	    {
-	      carp(CARP_WARNING,  "expecting sqt file to accompany the ms2 file");
+	      carp(CARP_WARNING,  "expecting search file to accompany the ms2 file");
 	      return 0;
 	    }
 	  ms2_file_names.push_back(ms2_source);
@@ -1694,7 +1860,7 @@ int SQTParser :: set_input_sources(string &ms2_source, string &sqt_source)
 	  read_list_of_files(sqt_source, sqt_file_names);
 	  if(ms2_file_names.size() != sqt_file_names.size())
 	    {
-	      carp(CARP_WARNING, " the number of sqt and ms2 files does not match: each sqt file should be accompaned by ms2 file");
+	      carp(CARP_WARNING, " the number of search and ms2 files does not match: each search file should be accompaned by ms2 file");
 	      return 0;
 	    }
 	}
@@ -1705,7 +1871,7 @@ int SQTParser :: set_input_sources(string &ms2_source, string &sqt_source)
 
 /*************** for separate searches ********************************************************/
 
-int SQTParser :: match_target_sqt_to_ms2(string &sqt_source, string &prefix)
+int SQTParser :: match_target_file_to_ms2(string &sqt_source, string &prefix)
 {
   DIR *dp;
   struct dirent *dirp;
@@ -1716,8 +1882,10 @@ int SQTParser :: match_target_sqt_to_ms2(string &sqt_source, string &prefix)
       return 0;
     }
   int cn = 0;
-  //read sqt files in the directory 
-  string ext_sqt = ".target.sqt";
+  //read sqt files in the directory
+  ostringstream oss;
+  oss << ".target" << get_parser_extension(); 
+  string ext_sqt = oss.str();
   while ((dirp = readdir(dp)) != NULL) 
     {
       string fname = string(dirp->d_name);
@@ -1740,7 +1908,7 @@ int SQTParser :: match_target_sqt_to_ms2(string &sqt_source, string &prefix)
 }
 
 
-int SQTParser :: match_decoy_sqt_to_ms2(string &sqt_source, string &prefix)
+int SQTParser :: match_decoy_file_to_ms2(string &sqt_source, string &prefix)
 {
   DIR *dp;
   struct dirent *dirp;
@@ -1752,7 +1920,9 @@ int SQTParser :: match_decoy_sqt_to_ms2(string &sqt_source, string &prefix)
     }
   int cn = 0;
   //read sqt files in the directory 
-  string ext_sqt = ".decoy.sqt";
+  ostringstream oss;
+  oss << ".decoy" << get_parser_extension();
+  string ext_sqt = oss.str();
   while ((dirp = readdir(dp)) != NULL) 
     {
       string fname = string(dirp->d_name);
@@ -1803,8 +1973,8 @@ int SQTParser :: collect_ms2_files(string &ms2_source, string &sqt_target_source
 	  fstr << fname;
 	  string ms2name = fstr.str();
 	  fstr.str("");
-	  int num_matched_targets = match_target_sqt_to_ms2(sqt_target_source, prefix); 
-	  int num_matched_decoys = match_decoy_sqt_to_ms2(sqt_decoy_source, prefix); 
+	  int num_matched_targets = match_target_file_to_ms2(sqt_target_source, prefix); 
+	  int num_matched_decoys = match_decoy_file_to_ms2(sqt_decoy_source, prefix); 
 	  	  
 	  if(!num_matched_targets)
 	    {
@@ -1852,18 +2022,18 @@ int SQTParser :: set_input_sources(string &ms2_source, string &sqt_target_source
   else
     {
       string ext_ms2 = ".ms2";
-      string ext_sqt = ".sqt";
+      string ext_sqt = get_parser_extension();
       
       if(is_ending(ms2_source, ext_ms2))
       	{
 	  if(!is_ending(sqt_target_source, ext_sqt))
 	    {
-	      carp(CARP_WARNING,  "expecting target sqt file to accompany the ms2 file");
+	      carp(CARP_WARNING,  "expecting target search file to accompany the ms2 file");
 	      return 0;
 	    }
 	  if(!is_ending(sqt_decoy_source, ext_sqt))
 	    {
-	      carp(CARP_WARNING,  "expecting decoy sqt file to accompany the ms2 file and the target sqt file for the separate searches");
+	      carp(CARP_WARNING,  "expecting decoy search file to accompany the ms2 file and the target search file for the separate searches");
 	      return 0;
 	    }
 	  
@@ -1888,6 +2058,80 @@ int SQTParser :: set_input_sources(string &ms2_source, string &sqt_target_source
 
   return 1;
 }
+void SQTParser :: write_features_header(){
+    //file features header
+  final_features_header_.insert(
+    final_features_header_.begin(),
+    features_header_.begin(),
+    features_header_.end()
+  );
+  if(num_spec_features==3){
+    final_features_header_.insert(
+      final_features_header_.end(),
+      spec_features_header_3_.begin(),
+      spec_features_header_3_.end()
+    ); 
+  }else if(num_spec_features==7){
+     final_features_header_.insert(
+       final_features_header_.end(),
+       spec_features_header_7_.begin(),
+       spec_features_header_7_.end()
+     ); 
+   }
+ }
+void SQTParser::add_quadratic_features_header(){ 
+  
+    for(unsigned int i=0;i<features_header_.size();i++){
+      for(unsigned int j=i;j<features_header_.size();j++){
+ 
+        final_features_header_.push_back(
+          "("
+          +features_header_[i]
+          +")"
+          +"*"
+          +"("
+          +features_header_[j]
+          +")"
+        );
+      }
+    }
+     
+    if(num_spec_features==3){
+      for(unsigned int i=0;i<spec_features_header_3_.size();i++){
+        for(unsigned int j=i;j<spec_features_header_3_.size();j++){
+          final_features_header_.push_back(
+            "("
+            +spec_features_header_3_[i]
+            +")"
+            +"*"
+            +"("
+            +spec_features_header_3_[j]
+            +")"
+          );
+        }
+      }
+    }  
+    if(num_spec_features==7){
+      for(unsigned int i=0;i<spec_features_header_7_.size();i++){
+        for(unsigned int j=i;j<spec_features_header_7_.size();j++){
+          final_features_header_.push_back(
+            "("
+            +spec_features_header_7_[i]
+            +")"
+            +"*"
+            +"("
+            +spec_features_header_7_[j]
+            +")"
+          );
+        } 
+      }
+    } 
+}
 
-
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 2
+ * End:
+ */
 
