@@ -101,6 +101,7 @@ SpectrumScoreDistribution::SpectrumScoreDistribution(
  	quantize(0.0, maxMass, massDelta, &mass_, ncols_);
  	assert(mass_);
 
+#if 0
 	// Determine the columns to sum up to form the null distribution, since we do
 	// not assume that each column corresponds to 1.0Da.
 	int l = max(0, (int) ceil(neutralmass_ - tol));
@@ -109,6 +110,15 @@ SpectrumScoreDistribution::SpectrumScoreDistribution(
 	for (int m = 0; m < ncols_; ++m) {
 		if (mass_[m] <= l) {
 			lower_ = m;
+			break;
+		}
+	}
+#endif
+	int l = max(0, (int)ROUND(neutralmass_));
+	for (int m = 0; m < ncols_; ++m) {
+		if (mass_[m] <= l) {
+			lower_ = m;
+			upper_ = m;
 			break;
 		}
 	}
@@ -331,6 +341,13 @@ FLOAT_T SpectrumScoreDistribution::pvalue(FLOAT_T xcorr) const
 {
 	double nBetter, nPeptides;
 	countHigherScoring(xcorr, nBetter, nPeptides);
+	if (fabs(nBetter) < epsilon_) {
+		return 10*epsilon_;
+	}
+	if (nPeptides < -epsilon_) {
+		carp(CARP_WARNING, "Overflow, return worst p-value");
+		return 1.0;
+	}
 	return nBetter/nPeptides;
 }
 
@@ -338,5 +355,12 @@ FLOAT_T SpectrumScoreDistribution::logpvalue(FLOAT_T xcorr) const
 {
 	double nBetter, nPeptides;
 	countHigherScoring(xcorr, nBetter, nPeptides);
+	if (fabs(nBetter) < epsilon_) {
+		return 10*epsilon_;
+	}
+	if (nPeptides < -epsilon_) {
+		carp(CARP_WARNING, "Overflow, return worst p-value");
+		return 0.0;
+	}	
 	return log(nBetter) - log(nPeptides);
 }

@@ -972,17 +972,19 @@ bool Scorer::createIntensityArrayObserved(
     }
   }
 
-  // HACK(ajit): Rescale the spectrum upwards, which changes the range of XCorr,
-  FLOAT_T minelt = *min_element(new_observed, new_observed + getMaxBin());
-  if (minelt < 0.0) {
-    for (int i = 0; i < getMaxBin(); ++i) {
-      new_observed[i] += -minelt;
+  if (get_boolean_parameter("compute-p-values")) {
+    // HACK(ajit): Rescale the spectrum upwards, which changes the range of XCorr,
+    FLOAT_T minelt = *min_element(new_observed, new_observed + getMaxBin());
+    if (minelt < 0.0) {
+      for (int i = 0; i < getMaxBin(); ++i) {
+        new_observed[i] += -minelt;
+      }
     }
-  }
-  // rescale so that the intensities are in [0.0 .. 50.0]
-  FLOAT_T maxelt = *max_element(new_observed, new_observed + getMaxBin());
-  for (int i = 0; i < getMaxBin(); ++i) {
-    new_observed[i] *= 50.0 / maxelt;
+    // rescale so that the intensities are in [0.0 .. 50.0]
+    FLOAT_T maxelt = *max_element(new_observed, new_observed + getMaxBin());
+    for (int i = 0; i < getMaxBin(); ++i) {
+      new_observed[i] *= 50.0 / maxelt;
+    }
   }
 
   // set new values
