@@ -115,6 +115,10 @@ class Database {
     DECOY_TYPE_T decoys = NO_DECOYS ///< is this to be a decoy database
     );         
 
+  void addProtein(
+    Protein* protein
+  );
+
   /**
    * Frees an allocated protein object.
    */
