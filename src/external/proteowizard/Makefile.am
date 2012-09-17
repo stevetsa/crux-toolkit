@@ -1,6 +1,6 @@
 # Automake template for external code
 #PWIZ_TARBALL=pwiz-src-without-v-3_0_3949.tar.bz2
-PWIZ_TARBALL=pwiz-src-without-v-3_0_3533.tar.bz2
+PWIZ_TARBALL=pwiz-src-without-tv-3_0_3533.tar.bz2
 
 
 EXTRA_DIST=${PWIZ_TARBALL} create_links.sh
