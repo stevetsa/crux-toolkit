@@ -28,7 +28,7 @@ static const char* parameter_type_strings[NUMBER_PARAMETER_TYPES] = {
   "INT_ARG", "DOUBLE_ARG", "STRING_ARG", "MASS_TYPE_T", "DIGEST_T", 
   "ENZYME_T", 
   "bool", "SCORER_TYPE_T", "ION_TYPE_T",
-  "HARDKLOR_ALGORITHM_T", "ALGORITHM_TYPE_T", "WINDOW_TYPE_T", "MEASURE_TYPE_T", 
+  "ALGORITHM_T", "HARDKLOR_ALGORITHM_TYPE_T", "SPECTRUM_PARSER_T" ,"WINDOW_TYPE_T", "MEASURE_TYPE_T", 
   "PARSIMONY_TYPE_T", "QUANT_LEVEL_TYPE_T", "DECOY_TYPE_T", "MASS_FORMAT_T"};
 
 //one hash for parameter values, one for usage statements, one for types
@@ -192,6 +192,13 @@ bool set_hardklor_algorithm_type_parameter(
   HARDKLOR_ALGORITHM_T set_value,
   const char* usage,
   const char* filenotes,
+  const char* foruser);
+
+bool set_spectrum_parser_parameter(
+  const char* name, ///< the name of the parameter looking for -in
+  SPECTRUM_PARSER_T set_value, ///< the value to be set -in
+  const char* usage, ///< string to print in usage statement
+  const char* filenotes, ///< additional info for param file
   const char* foruser);
 
 bool set_scorer_type_parameter(
@@ -458,6 +465,12 @@ void initialize_parameters(void){
       "Available for search-for-matches, search-for-xlinks.",
       "true");
 
+  set_spectrum_parser_parameter("spectrum-parser", CRUX_SPECTRUM_PARSER,
+    "Parser to use for reading in spectra "
+    "<string>=pwiz|mstoolkit|crux. Default=crux.",
+    "Available for search-for-matches, search-for-xlinks.",
+    "true");
+
   set_string_parameter("custom-enzyme", NULL, 
       "Specify rules for in silico digestion of proteins. "
       "See HTML documentation for syntax. Default is trypsin.",
@@ -523,12 +536,6 @@ void initialize_parameters(void){
   set_boolean_parameter("compute-p-values", false, 
       "Compute p-values for the main score type. Default=F.",
       "Currently only implemented for XCORR.", "true");
-  set_boolean_parameter("use-mstoolkit", false,
-      "Use MSToolkit to parse spectra. Default=F.",
-      "Available for crux-search-for-matches", "true");
-  set_boolean_parameter("use-pwiz", false,
-      "Use proteowizard to parse spectra. Default=F.",
-      "Available for all commands that read spectrum files", "true");
   set_string_parameter("scan-number", NULL,
       "Search only select spectra specified as a single "
       "scan number or as a range as in x-y.  Default=search all.",
@@ -1050,11 +1057,6 @@ void initialize_parameters(void){
   set_boolean_parameter("print-theoretical-spectrum", false,
       "Print the theoretical spectrum",
       "Available for xlink-predict-peptide-ions (Default=F).",
-      "true");
-
-  set_boolean_parameter("use-mgf", false,
-      "Use MGF file format for parsing files",
-      "Available for search-for-xlinks program (Default=F).",
       "true");
 
   set_boolean_parameter("use-old-xlink", true /* Turn to false later */,
@@ -2030,6 +2032,14 @@ bool check_option_type_and_bounds(const char* name){
                         value_str, name);
     }
     break;
+  case SPECTRUM_PARSER_P:
+    if (string_to_spectrum_parser_type(value_str) == INVALID_SPECTRUM_PARSER) {
+      success = false;
+      sprintf(die_str, "Illegal value '%s' for option '%s'.   "
+                       "Must be pwiz, mstoolkit, or crux",
+                       value_str, name);
+    }
+    break;
   case ION_TYPE_P:
     carp(CARP_DETAILED_DEBUG, "found ion_type param, value '%s'",
          value_str);
@@ -2592,6 +2602,23 @@ HARDKLOR_ALGORITHM_T get_hardklor_algorithm( const char* name ){
   }
   return hk_algorithm;
 }
+
+SPECTRUM_PARSER_T get_spectrum_parser_parameter( const char* name ) {
+
+  char* param = (char*)get_hash_value(parameters, name);
+  SPECTRUM_PARSER_T spectrum_parser = 
+    string_to_spectrum_parser_type(param);
+  
+  if ( spectrum_parser == INVALID_SPECTRUM_PARSER) {
+    carp(CARP_FATAL, "spectrum parser parameter %s has "
+      "the value of %s which is not of the correct type.", name, param);
+  }
+
+  return spectrum_parser;
+
+
+}
+
 
 
 MASS_TYPE_T get_mass_type_parameter(
@@ -3210,6 +3237,34 @@ bool set_hardklor_algorithm_type_parameter(
   result = add_or_update_hash(types, name, (void*)"HARDKLOR_ALGORITHM_TYPE_T");
   return result;
   
+}
+
+bool set_spectrum_parser_parameter(
+  const char* name,
+  SPECTRUM_PARSER_T set_value,
+  const char* usage,
+  const char* filenotes,
+  const char* foruser) {
+
+  bool result = true;
+
+  // check if parameters can be changed
+  if (!parameter_plasticity) {
+    carp(CARP_ERROR, "can't change parameters once they are confirmed");
+    return false;
+  }
+  /* stringify value */
+  char* value_str = spectrum_parser_type_to_string(set_value);
+  carp(CARP_DETAILED_DEBUG, "setting spectrum_parser type to %s", value_str);
+
+  result = add_or_update_hash(parameters, name, value_str);
+  result &= add_or_update_hash(usages, name, usage);
+  result &= add_or_update_hash(file_notes, name, filenotes);
+  result &= add_or_update_hash(for_users, name, foruser);
+  result &= add_or_update_hash(types, name, (void*)"SPECTRUM_PARSER_T");
+
+  return result;
+
 }
 
 

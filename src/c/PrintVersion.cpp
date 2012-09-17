@@ -4,7 +4,7 @@
  *****************************************************************************/
 #include "PrintVersion.h"
 #include "version.h"
-
+#include "pwiz/Version.hpp"
 
 using namespace std;
 
@@ -28,6 +28,10 @@ int PrintVersion::main(int argc, char** argv) {
   (void)argc;
   (void)argv;
   printf("Crux version %s\n", VERSION);
+  
+//  string proteowizard_version = pwiz::Version::str();
+//  printf("Proteowizard version %s\n", proteowizard_version.c_str());
+
   return 0;
 }
 

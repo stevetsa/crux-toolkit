@@ -48,12 +48,12 @@ PWIZ_LIBS = \
   -lpwiz_utility_misc \
   -lpwiz_utility_minimxml \
   -lpwiz_data_identdata_version \
-  -lboost_system-gcc41-mt-s \
-  -lboost_iostreams-gcc41-mt-s \
-  -lz-gcc41-mt-s-1_2 \
-  -lboost_filesystem-gcc41-mt-s \
-  -lboost_regex-gcc41-mt-s \
-  -lboost_thread-gcc41-mt-s \
+  -lboost_system-mt-s \
+  -lboost_iostreams-mt-s \
+  -lz-mt-s-1_2 \
+  -lboost_filesystem-mt-s \
+  -lboost_regex-mt-s \
+  -lboost_thread-mt-s \
   -lpthread
 
 

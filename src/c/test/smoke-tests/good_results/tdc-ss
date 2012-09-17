@@ -1,13 +1,13 @@
-INFO: CPU: n013.grid.gs.washington.edu
-INFO: Thu Aug  2 17:34:03 PDT 2012
+INFO: CPU: arginine.gs.washington.edu
+INFO: Mon Sep 17 13:49:53 PDT 2012
 COMMAND LINE: crux sequest-search --output-dir ss --fileroot tdc --parameter-file params/tdc-ss demo.ms2 small-yeast.fasta
 INFO: Preparing protein fasta file small-yeast.fasta
 INFO: Reading in ms2 file demo.ms2
 INFO: Created 1 peptide mods, keeping 1 with 255 or fewer aa mods
 INFO: Searching spectrum number 96 (2+), search number 100
-INFO: Elapsed time: 1.6 s
+INFO: Elapsed time: 3.28 s
 INFO: Finished crux sequest-search
-INFO: Elapsed time: 1.61 s
+INFO: Elapsed time: 3.28 s
 INFO: Finished crux sequest-search.
 INFO: Return Code:0
 # Which isotopes to use in calculating fragment ion mass.
@@ -259,6 +259,11 @@ overwrite=F
 # Available for crux hardklor
 hardklor-algorithm=fast-fewest-peptides
 
+# Parser to use for reading in spectra <string>=pwiz|mstoolkit|crux.
+# Default=crux.
+# Available for search-for-matches, search-for-xlinks.
+spectrum-parser=crux
+
 # Set additional options with values in the given file.
 # Available for all crux programs. Any options specified on the command
 # line will override values in the parameter file.
@@ -331,10 +336,6 @@ print-search-progress=100
 # spectrum is analyzed.
 # Available for crux hardklor
 mz-window=__NULL_STR
-
-# Use MSToolkit to parse spectra. Default=F.
-# Available for crux-search-for-matches
-use-mstoolkit=false
 
 # Set the signal-to-noise threshold. Any integer or decimal value
 # greater than or equal to 0.0 is valid. The default value is 1.0.
@@ -428,10 +429,6 @@ bullseye-min-mass=600.000000
 # Print the theoretical spectrum
 # Available for xlink-predict-peptide-ions (Default=F).
 print-theoretical-spectrum=false
-
-# Use MGF file format for parsing files
-# Available for search-for-xlinks program (Default=F).
-use-mgf=false
 
 # Set the tolerance (+/-units) around the retention time over which a
 # peptide can be matched to the MS/MS spectrum. The unit of time is
@@ -768,7 +765,7 @@ H	SQTGenerator Crux
 H	SQTGeneratorVersion 1.0
 H	Comment Crux was written by...
 H	Comment ref...
-H	StartTime	Thu Aug  2 17:34:03 2012
+H	StartTime	Mon Sep 17 13:49:54 2012
 H	EndTime                               
 H	Database	small-yeast.fasta
 H	DBSeqLength	?

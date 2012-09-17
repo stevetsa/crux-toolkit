@@ -426,6 +426,31 @@ char* hardklor_hardklor_algorithm_type_to_string(
   return type_str;
 }
 
+static const char* spectrum_parser_type_strings[NUMBER_SPECTRUM_PARSERS] = 
+  {"invalid", "pwiz", "mstoolkit", "crux"};
+
+SPECTRUM_PARSER_T string_to_spectrum_parser_type(char* name) {
+
+  int spectrum_parser = convert_enum_type_str(name, INVALID_ENUM_STRING,
+    spectrum_parser_type_strings, NUMBER_SPECTRUM_PARSERS);
+
+  if (spectrum_parser < 0) {
+    spectrum_parser = 0;
+  }
+
+  return (SPECTRUM_PARSER_T)spectrum_parser;
+
+}
+
+char* spectrum_parser_type_to_string(
+  SPECTRUM_PARSER_T type
+  ) {
+
+  char* type_str = my_copy_string(spectrum_parser_type_strings[type]);
+
+  return type_str;
+}
+
 
 char* ion_type_to_string(ION_TYPE_T type) {
 

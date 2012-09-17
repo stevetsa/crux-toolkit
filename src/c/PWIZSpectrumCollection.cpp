@@ -65,7 +65,9 @@ bool PWIZSpectrumCollection::parse() {
   // look at all spectra in file
   pwiz::msdata::SpectrumListPtr all_spectra = reader->run.spectrumListPtr;
   bool get_peaks = true;
+  
   int num_spec = all_spectra->size();
+  carp(CARP_INFO, "PWIZ:Number of spectra:%i",num_spec);
   for(int spec_idx = 0; spec_idx < num_spec; spec_idx++){
     carp(CARP_DETAILED_DEBUG, "Parsing spectrum index %d.", spec_idx);
     pwiz::msdata::SpectrumPtr spectrum = all_spectra->spectrum(spec_idx, 
@@ -77,7 +79,8 @@ bool PWIZSpectrumCollection::parse() {
     }
 
     // check that scan number is in range
-    int scan_number = pwiz::msdata::id::valueAs<int>(spectrum->id, "scan"); 
+    int scan_number = pwiz::msdata::id::valueAs<int>(spectrum->id, "scan");
+    carp(CARP_INFO,"found scan:%i",scan_number);
     if( scan_number < first_scan ){
       continue;
     } else if( scan_number > last_scan ){

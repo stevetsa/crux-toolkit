@@ -22,6 +22,8 @@ echo "path:$install_path"
 
 cd $install_path/lib
 
+
+
 ln -s libboost_date_time-*-mt-s.a libboost_data_time-mt-s.a
 ln -s libboost_iostreams-*-mt-s.a libboost_iostreams-mt-s.a 
 ln -s libboost_serialization-*-mt-s.a libboost_serialization-mt-s.a
