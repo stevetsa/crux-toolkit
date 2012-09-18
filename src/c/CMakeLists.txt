@@ -89,6 +89,7 @@ set (
   PepXMLWriter.cpp
   Percolator.cpp
   GeneratePeptides.cpp
+  PostProcessProtein.cpp
   PredictPeptideIons.cpp
   PrintProcessedSpectra.cpp
   PrintVersion.cpp

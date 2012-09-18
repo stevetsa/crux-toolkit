@@ -325,9 +325,10 @@ void initialize_parameters(void){
   // all arguments are left out of param file
 
   /* generate_peptide arguments */
-  set_string_parameter("protein database", NULL, 
+  set_string_parameter("protein-database", NULL, 
       "Fasta file of proteins or directory containing an index.",
-      "Argument for generate, index, search, analyze.", "false");
+      "Argument for generate, index, search. Optional for analyze and spectral-counts.", 
+      "false");
 
   set_string_parameter("search results directory", NULL, 
       "Directory containing the results of one search.",
@@ -896,7 +897,7 @@ void initialize_parameters(void){
        "Name of file in text format which holds match results.",
        "For quantify to retrieve scores for protein and peptides.",
        "false");
-  // also uses "protein database"
+  // also uses "protein-database"
 
   // ***** spectral-counts options *****
    set_string_parameter("input-ms2", NULL,

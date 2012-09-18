@@ -122,6 +122,8 @@ LIBFILES= \
   MS2SpectrumCollection.h \
   MSToolkitSpectrumCollection.cpp \
   MSToolkitSpectrumCollection.h \
+  MzIdentMLReader.cpp \
+  MzIdentMLReader.h \
   objects.h \
   OutputFiles.cpp \
   OutputFiles.h \
@@ -156,6 +158,8 @@ LIBFILES= \
   PrintVersion.h \
   Protein.cpp \
   Protein.h \
+  PostProcessProtein.cpp \
+  PostProcessProtein.h \
   ProteinPeptideIterator.cpp \
   ProteinPeptideIterator.h \
   ProteinIndex.cpp \
@@ -223,9 +227,13 @@ PWIZ_LIB_FILES = \
   -lpwiz_data_identdata \
   -lpwiz_data_msdata_version \
   -lpwiz_data_misc \
+  -lpwiz_utility_chemistry \
   -lpwiz_utility_misc \
   -lpwiz_utility_minimxml \
+  -lpwiz_data_common \
+  -lpwiz_data_identdata \
   -lpwiz_data_identdata_version \
+  -lpwiz_data_proteome \
   -lboost_system-mt-s \
   -lboost_iostreams-mt-s \
   -lz-mt-s-1_2 \

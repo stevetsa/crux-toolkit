@@ -69,11 +69,12 @@ int SpectralCounts::main(int argc, char** argv) {
     "quant-level",
     "measure",
     "custom-threshold",
-    "threshold-min"
+    "threshold-min",
+    "protein-database"
   };
   const char* argument_list[] = {
     "input PSMs",
-    "protein database"
+    
   };
 
   int num_options = sizeof(option_list) / sizeof(char*);
@@ -150,7 +151,7 @@ int SpectralCounts::main(int argc, char** argv) {
 void SpectralCounts::getParameterValues(){
   psm_file_ = get_string_parameter_pointer("input PSMs");
   threshold_ = get_double_parameter("threshold");
-  database_name_ = get_string_parameter_pointer("protein database");
+  database_name_ = get_string_parameter_pointer("protein-database");
   unique_mapping_ = get_boolean_parameter("unique-mapping");
   quantitation_ = get_quant_level_type_parameter("quant-level");
   parsimony_ = get_parsimony_type_parameter("parsimony");
@@ -593,12 +594,12 @@ void SpectralCounts::filterMatches() {
   MatchCollection* match_collection = MatchCollectionParser::create(
     psm_file_.c_str(),
     database_name_.c_str());
-    
-    if (custom_threshold_) {
-      filterMatchesCustom(match_collection);
-    } else {
-      filterMatchesQValue(match_collection);
-    }
+  carp(CARP_INFO, "Number of matches:%d", match_collection->getMatchTotal());
+  if (custom_threshold_) {
+    filterMatchesCustom(match_collection);
+  } else {
+    filterMatchesQValue(match_collection);
+  }
 }
 
 /**

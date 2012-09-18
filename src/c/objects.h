@@ -89,7 +89,11 @@ class FilteredSpectrumChargeIterator;
  * \class Peptide
  * \brief A peptide subsequence of a protein
  */
-class Peptide;
+namespace Crux {
+
+  class Peptide;
+
+};
 
 /**
  * \class PeptideConstraint
@@ -742,7 +746,7 @@ enum SPLITTYPE_T{
  * \typedef peptideToScore
  * \brief Mapping of peptide object to scores
  */
-typedef std::map<Peptide*, FLOAT_T, bool(*)(Peptide*, Peptide*) > PeptideToScore;
+typedef std::map<Crux::Peptide*, FLOAT_T, bool(*)(Crux::Peptide*, Crux::Peptide*) > PeptideToScore;
 
 /**
  * \typedef ProteinToScore

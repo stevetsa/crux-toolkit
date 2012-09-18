@@ -13,6 +13,7 @@
 #include "ModifiedPeptidesIterator.h"
 
 using namespace std;
+using namespace Crux; 
 
 /**
  * \returns A blank GeneratePeptides object.

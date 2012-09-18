@@ -35,6 +35,7 @@
 #include "WinCrux.h"
 
 using namespace std;
+using namespace Crux;
 
 // maximum proteins the index can handle
 static const int MAX_PROTEIN = 30000;

@@ -412,15 +412,27 @@ class Match {
     Scorer* scorer ///< the scorer from which to extract information -in
     );
 
+  void calcBYIonFractionMatched();
+
   /**
    * gets the match b_y_ion_match
    */
   FLOAT_T getBYIonFractionMatched();
 
   /**
+   * sets the match b_y_ion_matched
+   */
+  void setBYIonMatched(int matched);
+
+  /**
    * gets the match b_y_ion_matched
    */
   int getBYIonMatched();
+
+  /**
+   * sets the match b_y_ion_possible
+   */
+  void setBYIonPossible(int possible);
 
   /**
    * gets the match b_y_ion_possible

@@ -200,7 +200,6 @@ void Database::print(
   }
 }
 
-
 void Database::addProtein(
   Protein* protein
   ) {

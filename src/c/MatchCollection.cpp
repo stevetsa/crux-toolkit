@@ -1449,7 +1449,7 @@ void MatchCollection::printXmlHeader(
   time_t hold_time;
   ENZYME_T enzyme = get_enzyme_type_parameter("enzyme");
   char* enz_str = enzyme_type_to_string(enzyme);
-  char* database = get_string_parameter("protein database");
+  char* database = get_string_parameter("protein-database");
   char* msms_file = get_string_parameter("ms2 file");
   char* absolute_msms_path;
   if (msms_file == NULL){
@@ -1703,7 +1703,7 @@ void MatchCollection::printSqtHeader(
   fprintf(output, "H\tStartTime\t%s", ctime(&hold_time));
   fprintf(output, "H\tEndTime                               \n");
 
-  char* database = get_string_parameter("protein database");
+  char* database = get_string_parameter("protein-database");
   bool use_index = is_directory(database);
 
   if( use_index == true ){
@@ -2893,6 +2893,7 @@ void MatchCollection::assignPEPs(
       carp(CARP_FATAL, "Something is terribly wrong!");
     }
 
+    carp(CARP_INFO, "assigning %f",qvalue);
     match->setScore(derived_score_type, qvalue);
     scored_type_[derived_score_type] = true;
 

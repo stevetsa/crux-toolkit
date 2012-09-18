@@ -20,6 +20,7 @@
 #include "DelimitedFile.h"
 #include "parameter.h"
 #include "MatchCollectionParser.h"
+#include "Peptide.h"
 
 
 using namespace std;
@@ -90,6 +91,51 @@ MzIdentMLReader::~MzIdentMLReader() {
  * \returns the MatchCollection resulting from the parsed xml file
  */
 
+void addScores(
+  const SpectrumIdentificationItem& item, 
+  MatchCollection* collection,
+  Match* match) {
+  vector<CVParam>::const_iterator iter = item.cvParams.begin();
+  
+  FLOAT_T fvalue;
+  int ivalue;
+
+  for (; iter != item.cvParams.end(); ++iter) {
+    switch (iter->cvid) {
+      case MS_Sequest_xcorr:
+        from_string(fvalue, iter->value);
+        match->setScore(XCORR, fvalue);
+        collection->setScoredType(XCORR, true);
+        break;
+      case MS_Sequest_PeptideSp:
+        from_string(fvalue, iter->value);
+        match->setScore(SP, fvalue);
+        collection->setScoredType(SP, true);
+        break;
+      case MS_Sequest_PeptideRankSp:
+        from_string(ivalue, iter->value);
+        match->setRank(SP, ivalue);
+        break;
+      case MS_Sequest_deltacn:
+        from_string(fvalue, iter->value);
+        match->setDeltaCn(fvalue);
+        break;
+      case MS_Sequest_matched_ions:
+        from_string(ivalue, iter->value);
+        match->setBYIonMatched(ivalue);
+        break;
+      case MS_Sequest_total_ions:
+        from_string(ivalue, iter->value);
+        match->setBYIonPossible(ivalue);
+        break;
+      default:
+        string name = cvTermInfo((*iter).cvid).name;
+        from_string(fvalue, iter->value);
+        match->setCustomScore(name, fvalue);
+    }
+  }
+}
+
 void printScores(const SpectrumIdentificationItem& item) {
   vector<CVParam>::const_iterator iter = item.cvParams.begin();
   for (; iter!=item.cvParams.end(); ++iter) {
@@ -102,11 +148,32 @@ void printScores(const SpectrumIdentificationItem& item) {
 
 }
 
+/**
+ * \returns the MatchCollection resulting from the parsed xml file
+ */
+MatchCollection* MzIdentMLReader::parse(
+    const char* path, ///< path of the xml file
+    Database* database, ///< target protein database
+    Database* decoy_database ///< decoy protein database (can be null)
+  ) {
+
+  MzIdentMLReader* reader = new MzIdentMLReader(path);
+  reader->setDatabase(database);
+  reader->setDecoyDatabase(decoy_database);
+
+  MatchCollection* collection = reader->parse();
+
+  delete reader;
+
+  return collection;
+
+}
+ 
 
 MatchCollection* MzIdentMLReader::parse() {
 
   MatchCollection* match_collection = new MatchCollection();
-  //match_collection->preparePostProcess(database_->getNumProteins());
+  match_collection->preparePostProcess();
   cerr << "MzIdentMLReader::opening file:"<<file_path_<<endl;
   pwiz_reader_ = new IdentDataFile(file_path_);
 
@@ -150,6 +217,7 @@ MatchCollection* MzIdentMLReader::parse() {
 
 
         FLOAT_T calc_mz = item.calculatedMassToCharge;
+        FLOAT_T calc_mass = (calc_mz - MASS_PROTON ) * (FLOAT_T)charge;
         int rank = item.rank;
 
 
@@ -161,28 +229,46 @@ MatchCollection* MzIdentMLReader::parse() {
         string protein_id = peptide_evidence_ptr->dbSequencePtr->accession;
         int start_idx = peptide_evidence_ptr->start;
         bool is_decoy = peptide_evidence_ptr->isDecoy;
-/*
-        Protein* protein = database_->getProteinByIdString(protein_id.c_str());
+        bool is_decoy_test;
 
-        Peptide* peptide = new Peptide(length, obs_mass, protein, start_idx);
+        cerr << "gettting protein "<<protein_id<<endl;
 
-        Match* match = new Match(peptide, spectrum, zstate, is_decoy);
+        Protein* protein = MatchCollectionParser::getProtein(
+          database_, decoy_database_, protein_id, is_decoy_test);
 
-        match_collection->addMatchToPostMatchCollection(match);
-*/
+        if (is_decoy != is_decoy_test) {
+          carp(CARP_WARNING, "mzid says %d, but database says %d", is_decoy, is_decoy_test);
+        }
+  
+        start_idx = protein->findStart(sequence, "", "");
+        int length = sequence.length();
+        
+        cerr << "creating peptide "<<sequence<<" "<<calc_mass<<" "<<start_idx<<endl;
+
+        Crux::Peptide* peptide = 
+          new Crux::Peptide(length, calc_mass, protein, start_idx);
         
         for (int pe_idx = 1; pe_idx < peptide_evidences.size();pe_idx++) {
           PeptideEvidencePtr peptide_evidence_ptr = peptide_evidences[pe_idx];
           int start = peptide_evidence_ptr->start;
           int end = peptide_evidence_ptr->end;
-          string id = peptide_evidence_ptr->dbSequencePtr->accession; 
+          protein_id = peptide_evidence_ptr->dbSequencePtr->accession; 
           bool decoy = peptide_evidence_ptr->isDecoy;
-          cerr <<"id:"<<id<<" start:"<<start<<" end:"<<end<<" decoy:"<<decoy<<endl;
+          cerr <<"id:"<<protein_id<<" start:"<<start<<" end:"<<end<<" decoy:"<<decoy<<endl;
+          protein = MatchCollectionParser::getProtein(
+            database_, decoy_database_, protein_id, is_decoy_test);
+          start_idx = protein->findStart(sequence, "", "");
+          PeptideSrc* src = new PeptideSrc((DIGEST_T)0, protein, start_idx);
+          peptide->addPeptideSrc(src);
         }
-        
-        //cerr << "charge: "<<charge<<" obs mass:"<<obs_mass<<" calc mass:"<<calc_mass<<" sequence"<<sequence<<endl;
 
-        printScores(item);
+        Match* match = new Match(peptide, spectrum, zstate, is_decoy);  
+        match_collection->addMatchToPostMatchCollection(match);
+
+        match->setRank(XCORR, rank); // Is it safe to assume this?
+
+        //cerr << "charge: "<<charge<<" obs mass:"<<obs_mass<<" calc mass:"<<calc_mass<<" sequence"<<sequence<<endl;
+        addScores(item, match_collection, match);
       }
 
 
@@ -196,7 +282,7 @@ MatchCollection* MzIdentMLReader::parse() {
   
 
   cerr << "done!"<<endl;
-  exit(-1);
+//  exit(-1);
   
 
 
@@ -211,14 +297,14 @@ MatchCollection* MzIdentMLReader::parse() {
 int main(int argc, char** argv) {
 
   initialize_parameters();
-
+  set_verbosity_level(CARP_INFO);
   char* file_path = argv[1];
-//  char* database_path = argv[2];
+  const char* database_path = get_string_parameter_pointer("protein-database");
 
   Database* database = NULL;
   Database* decoy_database = NULL;
  
-//  MatchCollectionParser::loadDatabase(database_path, database, decoy_database);
+  MatchCollectionParser::loadDatabase(database_path, database, decoy_database);
 
 
   cerr << "creating reader"<<endl;
@@ -237,10 +323,13 @@ int main(int argc, char** argv) {
     Match* match = match_iterator->next();
 
     cout << "xcorr:"<<match->getScore(XCORR);
+    if (match_collection->getScoredType(SP)) {
+      cout <<" sp:"<<match->getScore(SP);
+    }
     cout <<" rank:"<<match->getRank(XCORR);
     cout <<" sequence:"<<match->getPeptide()->getSequence();
-    cout <<" protein:"<< match->getPeptide()->getProteinIdsLocations()<<endl;
-
+//    cout <<" protein:"<< match->getPeptide()->getProteinIdsLocations()<<endl;
+    cout << endl;
   }
 
 

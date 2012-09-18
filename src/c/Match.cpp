@@ -1563,6 +1563,10 @@ void Match::setBYIonInfo(
   b_y_ion_possible_ = scorer->getSpBYIonPossible(); 
 }
 
+void Match::calcBYIonFractionMatched() {
+  b_y_ion_fraction_matched_ = (FLOAT_T)b_y_ion_matched_ / (FLOAT_T)b_y_ion_possible_;
+}
+
 /**
  * gets the match b_y_ion_fraction_matched
  */
@@ -1572,12 +1576,32 @@ FLOAT_T Match::getBYIonFractionMatched()
 }
 
 /**
+ * sets the match b_y_ion_matched
+ */
+void Match::setBYIonMatched(int matched) {
+  if (b_y_ion_matched_ > 0 && b_y_ion_possible_ > 0) {
+    calcBYIonFractionMatched();
+  }
+  b_y_ion_matched_ = matched;
+}
+
+/**
  * gets the match b_y_ion_matched
  */
 int Match::getBYIonMatched()
 {
   return b_y_ion_matched_;
 }
+
+/**
+ * sets the match b_y_ion_possible
+ */
+void Match::setBYIonPossible(int possible) {
+  b_y_ion_possible_ = possible;
+  if (b_y_ion_possible_ > 0 && b_y_ion_matched_ > 0) {
+    calcBYIonFractionMatched();
+  }
+} 
 
 /**
  * gets the match b_y_ion_possible
