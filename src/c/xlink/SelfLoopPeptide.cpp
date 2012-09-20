@@ -63,16 +63,32 @@ void SelfLoopPeptide::addCandidates(
     if (this_aa_mods > cur_aa_mods) {
       cur_aa_mods = this_aa_mods;
     }
+
+    FLOAT_T delta_mass = peptide_mod_get_mass_change(peptide_mod);
+
     XLinkPeptide::addLinkablePeptides(
-      min_mass - XLinkPeptide::getLinkerMass(),
-      max_mass - XLinkPeptide::getLinkerMass(),
+      min_mass - XLinkPeptide::getLinkerMass() - delta_mass,
+      max_mass - XLinkPeptide::getLinkerMass() - delta_mass,
       index,
       database,
       peptide_mod,
       false,
       bondmap,
       linkable_peptides);
+    XLinkPeptide::addLinkablePeptides(
+      min_mass - XLinkPeptide::getLinkerMass() - delta_mass,
+      max_mass - XLinkPeptide::getLinkerMass() - delta_mass,
+      index,
+      database,
+      peptide_mod,
+      true,
+      bondmap,
+      linkable_peptides);
   }
+
+ 
+
+
   //cerr<<"We have "<<linkable_peptides.size()<<" linkable peptides"<<endl;
   //find linkable peptides that can have links to themselves.
   for (unsigned int idx =0;idx < linkable_peptides.size();idx++) {

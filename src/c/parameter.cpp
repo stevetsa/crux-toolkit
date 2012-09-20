@@ -1065,6 +1065,8 @@ void initialize_parameters(void){
       "Available for search-for-xlinks program (Default=F).",
       "false");
 
+  set_string_parameter("xlink-seq1-string", NULL, "","","true");
+
 
   // **** xlink-score-spectrum options ****
   set_string_parameter("xlink-score-method", "composite", 
@@ -1074,6 +1076,14 @@ void initialize_parameters(void){
   set_string_parameter("fragment-masses", NULL, "","","true");
 
   // **** search-xlink options ****
+
+  set_boolean_parameter("run-xranker", true, "run x-ranker after search completes",
+    "",
+    "false");
+
+  set_string_parameter("isotope-windows", "0",
+    "List of integers of isotopic masses to search",
+    "Used for crux search-for-xlinks", "true");
 
   set_boolean_parameter("xlink-print-db", false,
     "Print the database in tab delimited format to xlink_peptides.txt",

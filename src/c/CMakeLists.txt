@@ -54,6 +54,7 @@ set (
   hash.cpp
   Index.cpp
   IndexFile.cpp
+  IndexMap.cpp
   IndexPeptideIterator.cpp
   IndexFilteredPeptideIterator.cpp
   Ion.cpp

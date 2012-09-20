@@ -40,10 +40,10 @@ void LinearPeptide::addCandidates(
 
   for (int mod_idx=0;mod_idx<num_peptide_mods; mod_idx++) {
     PEPTIDE_MOD_T* peptide_mod = peptide_mods[mod_idx];
-
+    double delta_mass = peptide_mod_get_mass_change(peptide_mod);
     //
     ModifiedPeptidesIterator* peptide_iterator =
-      new ModifiedPeptidesIterator(min_mass, max_mass, peptide_mod, 
+      new ModifiedPeptidesIterator(min_mass - delta_mass, max_mass - delta_mass, peptide_mod, 
         false, index, database);
 
     //add the targets
@@ -64,7 +64,7 @@ void LinearPeptide::addCandidates(
 
     //add the decoys
     peptide_iterator = new
-      ModifiedPeptidesIterator(min_mass, max_mass, peptide_mod,
+      ModifiedPeptidesIterator(min_mass - delta_mass, max_mass - delta_mass, peptide_mod,
         true, index, database);
 
     while (peptide_iterator->hasNext()) {
@@ -86,7 +86,11 @@ void LinearPeptide::addCandidates(
 }
 
 XLINKMATCH_TYPE_T LinearPeptide::getCandidateType() {
-  return LINEAR_CANDIDATE;
+  if (isModified()) {
+    return DEADLINK_CANDIDATE;
+  } else {
+    return LINEAR_CANDIDATE;
+  }
 }
 
 string LinearPeptide::getSequenceString() {

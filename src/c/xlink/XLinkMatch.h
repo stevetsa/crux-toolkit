@@ -10,12 +10,13 @@
 #include <string>
 
 
-enum _xlinkmatch_type  
-  {LINEAR_CANDIDATE, 
+enum XLINKMATCH_TYPE_T  
+  {LINEAR_CANDIDATE,
+   DEADLINK_CANDIDATE,
    SELFLOOP_CANDIDATE, 
-   XLINK_CANDIDATE};
-
-typedef enum _xlinkmatch_type XLINKMATCH_TYPE_T; 
+   XLINK_INTER_CANDIDATE,
+   XLINK_INTRA_CANDIDATE,
+   XLINK_INTER_INTRA_CANDIDATE};
 
 class XLinkMatch : public Match {
 
@@ -37,6 +38,7 @@ class XLinkMatch : public Match {
   virtual ~XLinkMatch();
 
   virtual XLINKMATCH_TYPE_T getCandidateType() = 0;
+  std::string getCandidateTypeString();
 
   virtual std::string getSequenceString() = 0;
   virtual FLOAT_T calcMass(MASS_TYPE_T mass_type) = 0;

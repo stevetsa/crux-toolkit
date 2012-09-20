@@ -128,8 +128,11 @@ bool XLinkPeptide::isInter() {
   for (unsigned int idx_a=0;idx_a<proteins_a.size();idx_a++) {
 
     for (unsigned int idx_b=0;idx_b<proteins_b.size();idx_b++) {
+      
+      string id_a = proteins_a[idx_a] -> getIdPointer();
+      string id_b = proteins_b[idx_b] -> getIdPointer();
 
-      if (proteins_a[idx_a] != proteins_b[idx_b]) {
+      if (id_a.find(id_b) == string::npos && id_b.find(id_a) == string::npos) {
         //Found an instance where the proteins are not equal, therefore it is
         //inter. but still could be intra....
         return true;
@@ -172,8 +175,9 @@ bool XLinkPeptide::isIntra() {
   for (unsigned int idx_a=0;idx_a<proteins_a.size();idx_a++) {
 
     for (unsigned int idx_b=0;idx_b<proteins_b.size();idx_b++) {
-
-      if (proteins_a[idx_a] == proteins_b[idx_b]) {
+      string id_a = proteins_a[idx_a] -> getIdPointer();
+      string id_b = proteins_b[idx_b] -> getIdPointer();
+      if (id_a.find(id_b) != string::npos || id_b.find(id_a) != string::npos) {
         //Found an instance where the protein are equal, therefore it is
         //intra. but still also be inter as well....
         return true;
@@ -302,60 +306,69 @@ void XLinkPeptide::addCandidates(
 
   set<XLinkablePeptide> visited;
 
+  string xlink_seq1 = get_string_parameter_pointer("xlink-seq1-string");
+
+  bool seq1_known = xlink_seq1 != "__NULL_STR";
+
   while (iter1.hasNext()) {
     XLinkablePeptide pep1 = iter1.next();
     //cerr <<"pep1:"<<pep1.getSequence()<<endl;
+    char* seq1 = pep1.getPeptide()->getUnshuffledSequence();
+    string seq1_string(seq1);
+    std::free(seq1);
 
+    if (!seq1_known || (seq1_string == xlink_seq1)) {
+      //cerr <<"finding pep2"<<endl;
+      FLOAT_T peptide2_min_mass = min_mass - pep1.getMass() - linker_mass_;
+      FLOAT_T peptide2_max_mass = max_mass - pep1.getMass() - linker_mass_;
+      //cerr << "peptide2 min mass:"<<peptide2_min_mass << endl;
+      //cerr << "peptide2 max mass:"<<peptide2_max_mass << endl;
 
-    FLOAT_T peptide2_min_mass = min_mass - pep1.getMass() - linker_mass_;
-    FLOAT_T peptide2_max_mass = max_mass - pep1.getMass() - linker_mass_;
-    //cerr << "peptide2 min mass:"<<peptide2_min_mass << endl;
-    //cerr << "peptide2 max mass:"<<peptide2_max_mass << endl;
-
-    assert (peptide2_min_mass <= peptide2_max_mass);
+      assert (peptide2_min_mass <= peptide2_max_mass);
   
 
-    if (peptide2_max_mass >= pmin_) {
-      XLinkablePeptideIterator iter2(peptide2_min_mass, peptide2_max_mass, index, database, peptide_mod2, decoy2, bondmap);
-      while (iter2.hasNext()) {
-        XLinkablePeptide pep2 = iter2.next();
+      if (peptide2_max_mass >= pmin_) {
+        XLinkablePeptideIterator iter2(peptide2_min_mass, peptide2_max_mass, index, database, peptide_mod2, decoy2, bondmap);
+        while (iter2.hasNext()) {
+          XLinkablePeptide pep2 = iter2.next();
 
-        //cerr << "  pep2 is:"<<pep2.getSequence()<<endl;
-        if (visited.find(pep2) == visited.end()) {
-          //cerr << "pep1:"<<pep1.getSequence()<<" pep2:"<<pep2.getSequence()<<endl;
+          //cerr << "  pep2 is:"<<pep2.getSequence()<<endl;
+          if (visited.find(pep2) == visited.end()) {
+            //cerr << "pep1:"<<pep1.getSequence()<<" pep2:"<<pep2.getSequence()<<endl;
 
-          FLOAT_T mass = pep1.getMass() + pep2.getMass() + linker_mass_;
-  
-          if ((mass >= min_mass) && (mass <= max_mass)) {
-  
-            int mods = pep1.getPeptide()->countModifiedAAs() + pep2.getPeptide()->countModifiedAAs();
-            if (mods <= max_mod_xlink) {
-              //carp(CARP_INFO,"Generating xlink candidates");
-  
-              //for every linkable site, generate the candidate if it is legal.
-              for (unsigned int link1_idx=0;link1_idx < pep1.numLinkSites(); link1_idx++) {
-                for (unsigned int link2_idx=0;link2_idx < pep2.numLinkSites();link2_idx++) {
-                //cerr<<"link1_idx:"<<link1_idx<<endl;
-                //cerr<<"link2_idx:"<<link2_idx<<endl;
-                //cerr<<"Testing link:"<<endl;
-                  if (bondmap.canLink(pep1, pep2, link1_idx, link2_idx)) {
-                  //create the candidate
-                    XLinkMatch* newCandidate = 
-                      new XLinkPeptide(pep1, pep2, link1_idx, link2_idx);
-                    candidates.add(newCandidate);
+            FLOAT_T mass = pep1.getMass() + pep2.getMass() + linker_mass_;
+    
+            if ((mass >= min_mass) && (mass <= max_mass)) {
+    
+              int mods = pep1.getPeptide()->countModifiedAAs() + pep2.getPeptide()->countModifiedAAs();
+              if (mods <= max_mod_xlink) {
+                //carp(CARP_INFO,"Generating xlink candidates");
+    
+                //for every linkable site, generate the candidate if it is legal.
+                for (unsigned int link1_idx=0;link1_idx < pep1.numLinkSites(); link1_idx++) {
+                  for (unsigned int link2_idx=0;link2_idx < pep2.numLinkSites();link2_idx++) {
+                  //cerr<<"link1_idx:"<<link1_idx<<endl;
+                  //cerr<<"link2_idx:"<<link2_idx<<endl;
+                  //cerr<<"Testing link:"<<endl;
+                    if (bondmap.canLink(pep1, pep2, link1_idx, link2_idx)) {
+                    //create the candidate
+                      XLinkMatch* newCandidate = 
+                        new XLinkPeptide(pep1, pep2, link1_idx, link2_idx);
+                      candidates.add(newCandidate);
+                    }
                   }
-                }
-              } // for link1_idx 
-            } // if (mods <= max_mod_xlink .. 
-          } // if ((mass >= min_mass) && (mass <= max_mass))
- 
-        } // if (visited.find(pep2) == visited.end()
+                } // for link1_idx 
+              } // if (mods <= max_mod_xlink .. 
+            } // if ((mass >= min_mass) && (mass <= max_mass))
+   
+          } // if (visited.find(pep2) == visited.end()
+  
+        } // while (iter2.hasNext()) 
+  
+      } // if (peptide2_max_mass >= pmin_)
 
-      } // while (iter2.hasNext()) 
-
-    } // if (peptide2_max_mass >= pmin_)
-
-    visited.insert(pep1);
+      visited.insert(pep1);
+    } // if (seq1_string == "DYILEDGPIISFTSTLHGG")
   } // while (iter1.hasNext()) 
 }  
 
@@ -525,7 +538,19 @@ void XLinkPeptide::addCandidatesOld(
 }
 
 XLINKMATCH_TYPE_T XLinkPeptide::getCandidateType() {
-  return XLINK_CANDIDATE;
+
+  if (isInter()) {
+    if (isIntra()) {
+      return XLINK_INTER_INTRA_CANDIDATE;
+    } else {
+      return XLINK_INTER_CANDIDATE;
+    }
+  } else if (isIntra()) {
+    return XLINK_INTRA_CANDIDATE;
+  } else {
+    carp(CARP_ERROR, "Something wrong happened!");
+  }
+  return XLINK_INTER_INTRA_CANDIDATE;
 }
 
 string XLinkPeptide::getSequenceString() {

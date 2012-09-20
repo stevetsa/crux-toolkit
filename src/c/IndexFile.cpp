@@ -19,6 +19,7 @@ IndexFile::IndexFile(
   filename_ = filename;
   start_mass_ = start_mass;
   interval_ = range;
+   
 }
 
 
@@ -35,3 +36,15 @@ IndexFile::~IndexFile() {
 char* IndexFile::getFilename() {
   return filename_;
 }
+
+FLOAT_T IndexFile::getStartMass() {
+  return start_mass_;
+
+}
+
+FLOAT_T IndexFile::getRange() {
+  return interval_;
+}
+
+
+

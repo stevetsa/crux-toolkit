@@ -85,7 +85,7 @@ protected:
     double mu;
     double weightDecay;
 
-    
+    ofstream* epoch_fout_;
 
     int ind_low;
     int interval;

@@ -20,6 +20,7 @@ using namespace std;
 void get_min_max_mass(
   FLOAT_T precursor_mz, 
   SpectrumZState& zstate, 
+  int isotope,
   FLOAT_T window,
   WINDOW_TYPE_T precursor_window_type,
   FLOAT_T& min_mass, 
@@ -33,8 +34,8 @@ void get_min_max_mass(
   //     <<" window:"<<window<<endl;
   if (precursor_window_type == WINDOW_MASS) {
     //cerr<<"WINDOW_MASS"<<endl;
-    min_mass = zstate.getNeutralMass() - window;
-    max_mass = zstate.getNeutralMass() + window;
+    min_mass = zstate.getNeutralMass() + (double)isotope*MASS_NEUTRON - window;
+    max_mass = zstate.getNeutralMass() + (double)isotope*MASS_NEUTRON - window;
   } else if (precursor_window_type == WINDOW_MZ) {
     //cerr<<"WINDOW_MZ"<<endl;
     double min_mz = precursor_mz - window;
@@ -43,8 +44,8 @@ void get_min_max_mass(
     max_mass = (max_mz - MASS_PROTON) * (double)zstate.getCharge();
   } else if (precursor_window_type == WINDOW_PPM) {
     //cerr<<"WINDOW_PPM"<<endl;
-    min_mass = zstate.getNeutralMass() / (1.0 + window * 1e-6);
-    max_mass = zstate.getNeutralMass() / (1.0 - window * 1e-6);
+    min_mass = (zstate.getNeutralMass() + (double)isotope*MASS_NEUTRON) / (1.0 + window * 1e-6);
+    max_mass = (zstate.getNeutralMass() + (double)isotope*MASS_NEUTRON)/ (1.0 - window * 1e-6);
   }
   
   //cerr<<"min:"<<min_mass<<" "<<"max: "<<max_mass<<endl;
@@ -54,6 +55,7 @@ void get_min_max_mass(
 void get_min_max_mass(
   FLOAT_T precursor_mz, 
   SpectrumZState& zstate,
+  int isotope,
   bool use_decoy_window,
   FLOAT_T& min_mass, 
   FLOAT_T& max_mass) {
@@ -61,6 +63,7 @@ void get_min_max_mass(
   if (use_decoy_window) {
     get_min_max_mass(precursor_mz,
 		     zstate,
+                     isotope,
 		     get_double_parameter("precursor-window-decoy"),
 		     get_window_type_parameter("precursor-window-type-decoy"),
 		     min_mass,
@@ -68,6 +71,7 @@ void get_min_max_mass(
   } else {
     get_min_max_mass(precursor_mz,
 		     zstate,
+                     isotope,
 		     get_double_parameter("precursor-window"),
 		     get_window_type_parameter("precursor-window-type"),
 		     min_mass,
@@ -107,6 +111,7 @@ XLinkMatchCollection::XLinkMatchCollection(
     XLinkMatch* copyCandidate = NULL;
     switch (currentCandidate -> getCandidateType()) {
     case LINEAR_CANDIDATE:
+    case DEADLINK_CANDIDATE:
       copyCandidate = 
 	new LinearPeptide(*(LinearPeptide*)currentCandidate);
       break;
@@ -114,7 +119,9 @@ XLinkMatchCollection::XLinkMatchCollection(
       copyCandidate =
 	new SelfLoopPeptide(*(SelfLoopPeptide*)currentCandidate);
       break;
-    case XLINK_CANDIDATE:
+    case XLINK_INTER_CANDIDATE:
+    case XLINK_INTRA_CANDIDATE:
+    case XLINK_INTER_INTRA_CANDIDATE:
       copyCandidate =
 	new XLinkPeptide(*(XLinkPeptide*)currentCandidate);
       break;
@@ -190,7 +197,7 @@ void XLinkMatchCollection::addCandidates(
   }
 
   if (include_self_loops) {
-
+  
     SelfLoopPeptide::addCandidates(
       min_mass,
       max_mass,
@@ -202,6 +209,7 @@ void XLinkMatchCollection::addCandidates(
       *this);
   }
 }
+
 
 
 XLinkMatchCollection::XLinkMatchCollection(
@@ -222,10 +230,12 @@ XLinkMatchCollection::XLinkMatchCollection(
 
   FLOAT_T min_mass;
   FLOAT_T max_mass;
-
-  get_min_max_mass(precursor_mz, zstate, use_decoy_window, min_mass, max_mass);
-
-  addCandidates(min_mass, max_mass, bondmap, index, database, peptide_mods, num_peptide_mods);
+  vector<int> isotopes = get_int_vector_parameter("isotope-windows");
+  for (int idx = 0; idx < isotopes.size();idx++) {
+    get_min_max_mass(precursor_mz, zstate, isotopes[idx], use_decoy_window, min_mass, max_mass);
+    carp(CARP_INFO, "isotope %i min:%g max:%g", isotopes[idx], min_mass, max_mass);
+    addCandidates(min_mass, max_mass, bondmap, index, database, peptide_mods, num_peptide_mods);
+  }
 }
 
 

@@ -83,6 +83,7 @@ void MatchFileWriter::setPrecision(){
     case SPECTRUM_PRECURSOR_MZ_COL:
     case SPECTRUM_NEUTRAL_MASS_COL:
     case PEPTIDE_MASS_COL:
+    case PPM_ERROR_COL:
       match_precision_[col_idx] = get_int_parameter("mass-precision");
       match_fixed_float_[col_idx] = true;
       break;
@@ -242,6 +243,7 @@ void MatchFileWriter::addColumnNames(CruxApplication* application,
         addColumnName(CORR_COL);
       //}
       addColumnName(XLINK_PRODUCT_TYPE_COL);
+      addColumnName(PPM_ERROR_COL);
     }
     break;
 

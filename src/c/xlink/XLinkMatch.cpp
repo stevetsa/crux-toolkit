@@ -80,6 +80,36 @@ string XLinkMatch::getFlankingAAString() {
 
 }
 
+string XLinkMatch::getCandidateTypeString() {
+
+  string ans = "";
+  switch(getCandidateType()) {
+    case LINEAR_CANDIDATE:
+      ans = "linear";
+      break;
+    case DEADLINK_CANDIDATE:
+      ans = "dead-link";
+      break;
+    case SELFLOOP_CANDIDATE:
+      ans = "self-loop";
+      break;
+    case XLINK_INTER_CANDIDATE:
+      ans = "xlink-inter";
+      break;
+    case XLINK_INTRA_CANDIDATE:
+      ans = "xlink-intra";
+      break;
+    case XLINK_INTER_INTRA_CANDIDATE:
+      ans = "xlink-inter-intra";
+      break;
+    default:
+      ans = "unknown";
+  }
+
+  return ans;
+
+
+}
 
 
 FLOAT_T XLinkMatch::getMass(MASS_TYPE_T mass_type) {
@@ -94,8 +124,20 @@ FLOAT_T XLinkMatch::getMass(MASS_TYPE_T mass_type) {
 
 FLOAT_T XLinkMatch::getPPMError() {
   FLOAT_T mono_mass = getMass(MONO);
+  FLOAT_T obs_mass = parent_->getSpectrumNeutralMass();
+  FLOAT_T isotope;
   
-  return (mono_mass - parent_->getSpectrumNeutralMass()) / mono_mass * 1e6;
+  if (mono_mass > obs_mass) {
+    isotope = floor((mono_mass - obs_mass) / MASS_NEUTRON + 0.5);
+  } else {
+    isotope = -floor((obs_mass - mono_mass) / MASS_NEUTRON + 0.5);
+  }
+  
+
+  obs_mass = obs_mass + isotope * MASS_NEUTRON;
+
+  FLOAT_T ppm = (mono_mass - obs_mass) / obs_mass * 1e6;
+  return ppm;
   
 }
 
@@ -142,6 +184,15 @@ void XLinkMatch::printOneMatchField(
       (MATCH_COLUMNS_T)column_idx,
       getFlankingAAString());
     break;
+  case XLINK_PRODUCT_TYPE_COL:
+    output_file->setColumnCurrentRow(
+      (MATCH_COLUMNS_T)column_idx,
+      getCandidateTypeString());
+    break;
+  case PPM_ERROR_COL:
+    output_file->setColumnCurrentRow(
+      (MATCH_COLUMNS_T)column_idx,
+      getPPMError());
   default:
     Match::printOneMatchField(column_idx,
       collection,
@@ -155,3 +206,4 @@ void XLinkMatch::printOneMatchField(
     );
   }
 }
+

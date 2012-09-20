@@ -326,63 +326,65 @@ int SearchForXLinks::xlinkSearchMain() {
     xlink_compute_qvalues();
   }
 
-  //Calculate q-values via x-ranker.
-  carp(CARP_INFO, "Computing Q-Values using X-Ranker");
+  if (get_boolean_parameter("run-xranker")) {
 
-  vector<string> xr_args_vec;
-  xr_args_vec.push_back("q-ranker");
+    //Calculate q-values via x-ranker.
+    carp(CARP_INFO, "Computing Q-Values using X-Ranker");
 
-  xr_args_vec.push_back("--num-hu=7");
-
-  xr_args_vec.push_back("--mu=0.01");
-
-  xr_args_vec.push_back("--wd=1e-7");
-
-  {
-    ostringstream oss;
-    oss << "--ms2file=";
-    oss << ms2_file;
-    xr_args_vec.push_back(oss.str());
-  }
-
-  {
-    ostringstream oss;
-    oss << "--xlink-mass=";
-    oss << get_double_parameter("link mass");
-    xr_args_vec.push_back(oss.str());
-  }
+    vector<string> xr_args_vec;
+    xr_args_vec.push_back("q-ranker");
   
-  xr_args_vec.push_back("--bootstrap=5");
+    xr_args_vec.push_back("--num-hu=7");
+    
+    xr_args_vec.push_back("--mu=0.01");
 
-  {
-    ostringstream oss;
-    oss << output_directory << "/search.target.txt";
-    string target_file = oss.str();
-    xr_args_vec.push_back(target_file);
+    xr_args_vec.push_back("--wd=1e-7");
+
+    {
+      ostringstream oss;
+      oss << "--ms2file=";
+      oss << ms2_file;
+      xr_args_vec.push_back(oss.str());
+    }
+  
+    {
+      ostringstream oss;
+        oss << "--xlink-mass=";
+      oss << get_double_parameter("link mass");
+      xr_args_vec.push_back(oss.str());
+    }
+    
+    xr_args_vec.push_back("--bootstrap=5");
+  
+    {
+      ostringstream oss;
+      oss << output_directory << "/search.target.txt";
+      string target_file = oss.str();
+      xr_args_vec.push_back(target_file);
+    }
+    /*
+    {
+      ostringstream oss;
+      oss << output_directory << "/search.decoy.txt";
+      string decoy_file = oss.str();
+      xr_args_vec.push_back(decoy_file);
+    }
+    */
+    int xranker_argc;
+    char** xranker_argv;
+    buildArguments(xr_args_vec, xranker_argc, xranker_argv);
+  
+    carp(CARP_INFO, "argc:%i",xranker_argc);
+
+    for (int idx = 0;idx < xranker_argc;idx++) {
+      carp(CARP_INFO, "argv[%i]:%s",idx, xranker_argv[idx]);
+    }
+
+
+    QRanker* xranker = new QRanker();
+    xranker->main(xranker_argc, xranker_argv);
+    delete xranker;
   }
-  /*
-  {
-    ostringstream oss;
-    oss << output_directory << "/search.decoy.txt";
-    string decoy_file = oss.str();
-    xr_args_vec.push_back(decoy_file);
-  }
-  */
-  int xranker_argc;
-  char** xranker_argv;
-  buildArguments(xr_args_vec, xranker_argc, xranker_argv);
-
-  carp(CARP_INFO, "argc:%i",xranker_argc);
-
-  for (int idx = 0;idx < xranker_argc;idx++) {
-    carp(CARP_INFO, "argv[%i]:%s",idx, xranker_argv[idx]);
-  }
-
-
-  QRanker* xranker = new QRanker();
-  xranker->main(xranker_argc, xranker_argv);
-  delete xranker;
-
   carp(CARP_INFO, "Elapsed time: %.3g s", wall_clock() / 1e6);
   carp(CARP_INFO, "Finished crux search-for-xlink-mods.");
 

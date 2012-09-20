@@ -32,7 +32,7 @@ double QRanker:: getObjectiveError(
   }
 
   double sum = 0;
-
+  double count = 0;
   for (int idx1 = 0;idx1 < n_examples;idx1++) {
     if (set[idx1].label == 1) {
       for (int idx2 = 0; idx2 < n_examples; idx2++) {
@@ -41,12 +41,13 @@ double QRanker:: getObjectiveError(
           double score2 = set[idx2].score;
           double temp = max(0.0, 1.0 - (score1 - score2));
           sum += temp;
+          count++;
         }
       }
     }
   }
 
-  return sum / (double)n_examples;
+  return sum / count;
 
 }
 
@@ -130,7 +131,14 @@ void QRanker :: write_results(string filename, NeuralNet &net)
   //cerr << "Loading data for reporting results"<<endl;
   d.load_psm_data_for_reporting_results();
   //cerr << "Writing results" <<endl;
-  f1 << "psm ind" << "\t" << "q-value" << "\t" <<"score" << "\t" << "scan" << "\t" << "charge" << "\t" << "label" << "\t" << "rank" << "\t" << "sequence" << endl;
+  f1 << "psm ind" << "\t" << 
+        "q-value" << "\t" <<
+        "score" << "\t" << 
+        "scan" << "\t" << 
+        "charge" << "\t" << 
+        "label" << "\t" << 
+        "rank" << "\t" << 
+        "sequence" << endl;
   for(int i = 0; i < fullset.size(); i++)
     {
       //cerr << "Wrinting "<<i<<endl;
@@ -188,6 +196,7 @@ void QRanker :: write_results(string filename, PSMScores& set, bool decoy)
   f1 << "psmind" << "\t"; 
   f1 << "q-ranker q-value" << "\t" <<
         "q-ranker score" << "\t" <<
+        "q-ranker rank" << "\t" <<
         "q-ranker p-value" << "\t" <<
         "PEP" << "\t" <<
         "scan" << "\t" << 
@@ -206,6 +215,7 @@ void QRanker :: write_results(string filename, PSMScores& set, bool decoy)
       int psmind = set[i].psmind;
       int scan = d.psmind2scan(psmind);
       int charge = d.psmind2charge(psmind);
+      int rank = set[i].rank;
       double spectrum_neutral_mass = 0;//d.psmind2
 
   
@@ -250,7 +260,8 @@ void QRanker :: write_results(string filename, PSMScores& set, bool decoy)
 
         f1 << psmind   << "\t" <<
               qvalue   << "\t" << 
-              score    << "\t" << 
+              score    << "\t" <<
+              rank     << "\t" <<
               pvalue   << "\t" <<
               pep      << "\t" <<
               scan     << "\t" << 
@@ -635,6 +646,17 @@ void QRanker :: train_many_general_nets()
 	    max_net_gen[count] = net;
 	  }
       }
+    if (epoch_fout_ != NULL) {
+/*
+    (*epoch_fout_) << i << "\t" 
+                   << getObjectiveError(trainset, net) << "\t"
+                   << getObjectiveError(thresholdset, net) << "\t"
+                   << getObjectiveError(testset, net) << "\t"
+                   << getOverFDR(trainset, net, 0.01) << "\t" 
+                   << getOverFDR(thresholdset, net, 0.01) << "\t" 
+                   << getOverFDR(testset, net, 0.01) << endl;
+*/
+    }
     if((i % 10) == 0)
       {
         /*
@@ -711,7 +733,7 @@ void QRanker::train_many_nets()
   int max_fdr = 0;
   NeuralNet best_net;
 
-  for (int idx = 0; idx < 10; idx++) {
+  //for (int idx = 0; idx < 10; idx++) {
 
    
     num_qvals = 14;
@@ -805,11 +827,11 @@ void QRanker::train_many_nets()
       }
 
     //cerr <<"max count:"<<max_fdr<<endl;
-  cerr << idx <<" "<<max_fdr<<endl;
+  //cerr << idx <<" "<<max_fdr<<endl;
   if (ind != -1) {
     
     best_net = max_net_targ[ind];
-  }
+//  }
   //print out results, just to see
   /*
   for(unsigned int count = 0; count < qvals.size();count++)
@@ -911,9 +933,10 @@ void QRanker::selectHyperParameters() {
   wds.push_back(1e-6);
 
   vector<int> num_hus;
-  num_hus.push_back(3);
-  num_hus.push_back(5);
-  num_hus.push_back(7);
+  num_hus.push_back(1);
+  //num_hus.push_back(3);
+  //num_hus.push_back(5);
+  //num_hus.push_back(7);
  
   int best_iter_idx = -1;
   int best_mu_idx=-1;
@@ -1117,18 +1140,27 @@ int QRanker::run( ) {
   thresholdset = trainset;
   fullset.clear();
 
-//  selectHyperParameters();
+  epoch_fout_ = NULL;
+  selectHyperParameters();
 
+
+  epoch_fout_ = new ofstream("qranker.1.obj.txt");
  
   train_many_nets();
 
+  epoch_fout_ -> close();
+  delete epoch_fout_;
+  epoch_fout_ == NULL;
   double train1 = getObjectiveError(trainset, net);
   double test1 = getObjectiveError(testset, net);
 
   cerr << "train objective error:"<<getObjectiveError(trainset, net) << endl;
   cerr << "test objective error:"<<getObjectiveError(testset, net) << endl;
 
+ 
+
   calcScores(testset, net);
+  calcRanks(testset, net);
 //  testset.getMaxPerScan(d, max);
 //  max.calcPValues();
   testset.calcPValues();
@@ -1146,8 +1178,14 @@ int QRanker::run( ) {
   testset = trainset;
   trainset = thresholdset;
 
-//  selectHyperParameters();
+  selectHyperParameters();
+
+  epoch_fout_ = new ofstream("qranker.2.obj.txt");
+
   train_many_nets();
+
+  epoch_fout_ -> close();
+  delete epoch_fout_;
 
   cerr << "train objective error:"<<getObjectiveError(trainset, net) << endl;
   cerr << "test objective error:"<<getObjectiveError(testset, net) << endl;
@@ -1156,6 +1194,7 @@ int QRanker::run( ) {
   double test2 = getObjectiveError(testset, net);
 
   calcScores(testset, net);
+  calcRanks(testset, net);
   //testset.getMaxPerScan(d, max);
   //max.calcPValues();
   testset.calcPValues();

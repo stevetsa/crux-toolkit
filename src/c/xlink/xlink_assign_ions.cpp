@@ -37,6 +37,7 @@ int main(int argc, char** argv){
     "fragment-mass",
     "max-ion-charge",
     "mz-bin-width",
+    "use-mstoolkit",
     "precision"
   };
   int num_options = sizeof(option_list) / sizeof(char*);
