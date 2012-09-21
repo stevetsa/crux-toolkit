@@ -80,10 +80,34 @@ string XLinkMatch::getFlankingAAString() {
 
 }
 
+XLINKMATCH_TYPE_T XLinkMatch::getCandidateType(std::string& candidate) {
+//  cerr << "get candidate type:"<<candidate<<endl;
+  if (candidate == string("linear")) {
+    return LINEAR_CANDIDATE;
+  } else if (candidate == string("dead-link")) {
+    return DEADLINK_CANDIDATE;
+  } else if (candidate == string("self-loop")) {
+    return SELFLOOP_CANDIDATE;
+  } else if (candidate == string("xlink-inter")) {
+    return XLINK_INTER_CANDIDATE;
+  } else if (candidate == string("xlink-intra")) {
+    return XLINK_INTRA_CANDIDATE;
+  } else if (candidate == string("xlink-inter-intra")) {
+    return XLINK_INTER_INTRA_CANDIDATE;
+  } else {
+    return INVALID_CANDIDATE;
+  }
+
+}
+
 string XLinkMatch::getCandidateTypeString() {
+  return getCandidateTypeString(getCandidateType());
+}
+
+string XLinkMatch::getCandidateTypeString(XLINKMATCH_TYPE_T candidate) {
 
   string ans = "";
-  switch(getCandidateType()) {
+  switch(candidate) {
     case LINEAR_CANDIDATE:
       ans = "linear";
       break;
@@ -193,6 +217,17 @@ void XLinkMatch::printOneMatchField(
     output_file->setColumnCurrentRow(
       (MATCH_COLUMNS_T)column_idx,
       getPPMError());
+    break;
+  case XCORR_FIRST_COL:
+    output_file->setColumnCurrentRow(
+    (MATCH_COLUMNS_T)column_idx,
+    getScore(XCORR_FIRST));
+    break;
+  case XCORR_SECOND_COL:
+    output_file->setColumnCurrentRow(
+    (MATCH_COLUMNS_T)column_idx,
+    getScore(XCORR_SECOND));
+    break;
   default:
     Match::printOneMatchField(column_idx,
       collection,

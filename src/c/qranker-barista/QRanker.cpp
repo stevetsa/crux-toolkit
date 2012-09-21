@@ -3,6 +3,7 @@
 #include "analyze_psms.h"
 #include "carp.h"
 #include "objects.h"
+#include "XLinkMatch.h"
 
 QRanker::QRanker() :  seed(1),
                       selectionfdr(0.01),
@@ -189,7 +190,7 @@ void QRanker :: write_results(string filename, PSMScores& set, bool decoy)
   set.calcOverFDRBH(0.01);
 
   cerr <<"calculating PEP"<<endl;
-  computePEP(set);
+//  computePEP(set);
 
 
   cerr << "Writing results for " << set.size() <<" matches" << endl;
@@ -216,7 +217,7 @@ void QRanker :: write_results(string filename, PSMScores& set, bool decoy)
       int scan = d.psmind2scan(psmind);
       int charge = d.psmind2charge(psmind);
       int rank = set[i].rank;
-      double spectrum_neutral_mass = 0;//d.psmind2
+      double spectrum_neutral_mass = d.psmind2neutral_mass(psmind);
 
   
       double score = set[i].score;
@@ -238,25 +239,8 @@ void QRanker :: write_results(string filename, PSMScores& set, bool decoy)
   
         string sequence = oss.str();
         string product_type = "";
-      
-        switch (TabDelimParser::get_peptide_type(sequence)) {
-          case XLINKPRODUCT_LINEAR:
-            product_type = "linear";
-            break;
-          case XLINKPRODUCT_SELFLOOP:
-            product_type = "self-loop";
-            break;
-          case XLINKPRODUCT_DEADLINK:
-            product_type = "dead-link";
-            break;
-          case XLINKPRODUCT_XLINK:
-            product_type = "cross-linked";
-            break;
-          default:
-            product_type = "unknown";
-        }
 
-
+        product_type = XLinkMatch::getCandidateTypeString(d.psmind2product_type(psmind));
 
         f1 << psmind   << "\t" <<
               qvalue   << "\t" << 
@@ -659,7 +643,7 @@ void QRanker :: train_many_general_nets()
     }
     if((i % 10) == 0)
       {
-        /*
+/*        
 	cerr << "Iteration " << i << " : \n";
 	cerr << "trainset: ";
 	getMultiFDR(trainset,net,qvals);
@@ -669,7 +653,7 @@ void QRanker :: train_many_general_nets()
 	getMultiFDR(testset,net,qvals);
 	printNetResults(overFDRmulti);
 	cerr << "\n";
-        */
+  */      
       }
   }
 
@@ -707,7 +691,7 @@ void QRanker :: train_many_target_nets()
 
 	if((i % 10) == 0)
 	  {
-            /*
+/*            
 	    cerr << "Iteration " << i << " : \n";
             cerr << "trainset: ";
             getMultiFDR(trainset,net,qvals);
@@ -717,7 +701,7 @@ void QRanker :: train_many_target_nets()
 	    cerr << "testset: ";
 	    printNetResults(overFDRmulti);
 	    cerr << "\n";
-            */
+*/            
 	  }
 
       }
@@ -918,6 +902,7 @@ void QRanker::selectHyperParameters() {
   
 
   vector<pair<int, int> > iters;
+  //iters.push_back(pair<int,int>(2,4));
   iters.push_back(pair<int,int>(5,10));
   iters.push_back(pair<int,int>(10,20));
   iters.push_back(pair<int,int>(20,40));
@@ -934,8 +919,9 @@ void QRanker::selectHyperParameters() {
 
   vector<int> num_hus;
   num_hus.push_back(1);
-  //num_hus.push_back(3);
-  //num_hus.push_back(5);
+  num_hus.push_back(2);
+//  num_hus.push_back(3);
+//num_hus.push_back(5);
   //num_hus.push_back(7);
  
   int best_iter_idx = -1;
@@ -963,11 +949,9 @@ void QRanker::selectHyperParameters() {
           testset = cv_testset;
 
           train_many_nets();
-          calcScores(testset, net);
-          testset.getMaxPerScan(d, max);
-          max.calcPValues();
-          
-          cv_fullset.add_psms(max);
+
+          int score = getOverFDR(cv_testset, net, 0.01);
+
 
           //swap trainset and testset.
           trainset = cv_testset;
@@ -976,14 +960,8 @@ void QRanker::selectHyperParameters() {
 
           train_many_nets();
           
-          calcScores(testset, net);
-          testset.getMaxPerScan(d, max);
-          max.calcPValues();
-          cv_fullset.add_psms(max);
-          cv_fullset.calc_factor();
-          
-          
-          int score = cv_fullset.calcOverFDRBH(0.01);
+          score+= getOverFDR(cv_trainset, net, 0.01);
+
           cout <<"switch:"<<switch_iter<<" niter:"<<niter<<" hu:"<< num_hu << " mu:"<<mu<<" wd:"<<weightDecay<<" score:"<<score<<endl;
           if (score > best_score) {
             best_score = score;
@@ -1114,8 +1092,10 @@ void QRanker::writeFeatures() {
     fout << x[22] << "\t"; // cterm2
     fout << x[23] << "\t"; // nmissed
     fout << x[24] << "\t"; // obsmass
-    fout << x[25] << endl; // ncmp
-
+    fout << x[25] << "\t"; // ncmp
+    fout << x[26] << "\t"; // chargeX
+    fout << x[27] << "\t"; // chargeX+1
+    fout << x[28] << endl; // chargeX+2
   }
 }
 

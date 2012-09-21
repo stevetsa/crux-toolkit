@@ -48,7 +48,7 @@ class TabDelimParser{
   void save_data_in_binary_xlink(string out_dir);
   void clean_up_xlink(string dir);
   int get_peptide_length_sum(string& sequence);
-  static XLINK_PRODUCT_T get_peptide_type(string& sequence);
+//  static XLINK_PRODUCT_T get_peptide_type(string& sequence);
   void set_use_quadratic_features(int use);
   
   bool isMissedTryptic(std::string& sequence, int idx);
@@ -86,6 +86,7 @@ class TabDelimParser{
   int* psmind_to_num_pep;
   int* psmind_to_ofst;
   int* psmind_to_pepind;
+  XLINKMATCH_TYPE_T* psmind_to_product_type;
   double *psmind_to_neutral_mass;
   double *psmind_to_peptide_mass;
 
@@ -150,7 +151,7 @@ class TabDelimParser{
   
   void calc_xlink_locations(int psmind, int& loc1, int& loc2);
   void get_xlink_locations(int psmind, int& loc1, int& loc2);
-  XLINK_PRODUCT_T get_peptide_type(int psmind);
+//  XLINK_PRODUCT_T get_peptide_type(int psmind);
 
   void enzTerm(
     int psmind,

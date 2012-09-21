@@ -407,6 +407,24 @@ void Dataset :: load_psm_data_for_reporting_results()
   
     f_psmind_to_protein2.close();
   fname.str("");
+
+  cerr <<"psmind_to_product_type"<<endl;
+ //psmind_to_product_type
+  fname << in_dir << "/psmind_to_product_type";
+  ifstream f_psmind_to_product_type(fname.str().c_str(),ios::binary);
+  psmind_to_product_type = new XLINKMATCH_TYPE_T[num_psms];
+  f_psmind_to_product_type.read((char*)psmind_to_product_type,sizeof(XLINKMATCH_TYPE_T)*num_psms);
+  f_psmind_to_product_type.close();
+  fname.str("");
+
+  cerr <<"psmind_to_neutral_mass"<<endl;
+  fname << in_dir << "/psmind_to_neutral_mass";
+  ifstream f_psmind_to_neutral_mass(fname.str().c_str(),ios::binary);
+  psmind_to_neutral_mass = new double[num_psms];
+  f_psmind_to_neutral_mass.read((char*)psmind_to_neutral_mass,sizeof(XLINKMATCH_TYPE_T)*num_psms);
+  f_psmind_to_neutral_mass.close();
+  fname.str("");
+
   cerr << "Done!"<<endl;
 }
 

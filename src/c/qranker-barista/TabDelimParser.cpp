@@ -1,5 +1,6 @@
 #include "TabDelimParser.h"
 #include "carp.h"
+#include "XLinkMatch.h"
 /******************************/
 
 TabDelimParser :: TabDelimParser() 
@@ -47,7 +48,7 @@ TabDelimParser :: TabDelimParser()
   //final_hits_per_spectrum
   fhps = 1;
   //decoy prefix
-  decoy_prefix = "rand_";
+  decoy_prefix = "reverse_";
   //max peptide length to be considered
   max_len = 50;
   //min peptide length to be considered
@@ -69,7 +70,7 @@ void TabDelimParser :: clear()
   delete[] psmind_to_pepind; psmind_to_pepind = (int*)0;
   delete[] psmind_to_neutral_mass; psmind_to_neutral_mass = (double*)0;
   delete[] psmind_to_peptide_mass; psmind_to_peptide_mass = (double*)0;
-
+  delete[] psmind_to_product_type; psmind_to_product_type = (XLINKMATCH_TYPE_T*)0;
   cerr << "TabDelimParser::clear() - done"<<endl;
 }
 
@@ -141,7 +142,8 @@ const static int sequence_idx=14;
 const static int cleavage_type_idx=15;
 const static int protein_id_idx=16;
 const static int flanking_aa_idx=17;
-
+const static int product_type_idx=22;
+const static int ppm_idx=23;
 
 void TabDelimParser :: first_pass_xlink(ifstream &fin)
 {
@@ -313,20 +315,22 @@ int TabDelimParser :: cntMissedCleavages(int psmind) {
 
   
 
-  int type = get_peptide_type(psmind);
+  XLINKMATCH_TYPE_T type = psmind_to_product_type[psmind];
   int ans = 0;
   switch (type) {
-    case XLINKPRODUCT_LINEAR:
+    case LINEAR_CANDIDATE:
       //linear peptide
       ans = cntMissedCleavagesLinear(psmind);
       break;
-    case XLINKPRODUCT_SELFLOOP:
+    case SELFLOOP_CANDIDATE:
       ans = cntMissedCleavagesSelfLoop(psmind);
       break;
-    case XLINKPRODUCT_XLINK:
+    case XLINK_INTER_CANDIDATE:
+    case XLINK_INTRA_CANDIDATE:
+    case XLINK_INTER_INTRA_CANDIDATE:
       ans = cntMissedCleavagesCrossLink(psmind);
       break;
-    case XLINKPRODUCT_DEADLINK:
+    case DEADLINK_CANDIDATE:
       ans = cntMissedCleavagesDeadLink(psmind); 
       break;
     default:
@@ -419,6 +423,8 @@ void TabDelimParser :: allocate_feature_space_xlink()
   memset(psmind_to_charge,0,sizeof(int)*num_psm);
   psmind_to_neutral_mass = new double[num_psm];
 
+  psmind_to_product_type = new XLINKMATCH_TYPE_T[num_psm];
+  memset(psmind_to_product_type,0,sizeof(int)*num_psm);
 
 }
 
@@ -600,8 +606,6 @@ void TabDelimParser::get_xcorr_short_long(
   double& long_xcorr
   ) {
 
-  assert(get_peptide_type(psmind) == XLINKPRODUCT_XLINK);
-
   short_xcorr = 0;
   long_xcorr = 0;
 
@@ -772,76 +776,35 @@ bool TabDelimParser::get_cterm2(int psmind) {
 
 }
 
+double getPPMError(double obs_mass, double the_mass) {
 
-XLINK_PRODUCT_T TabDelimParser::get_peptide_type(int psmind) {
-  if (psmind_to_peptide2[psmind] == "_") {
-    //cerr << psmind_to_peptide1[psmind] << " : ";
-    if (psmind_to_loc1[psmind] == -1 ) {
-      //its a linear
-      //cerr << "linear"<<endl;
-      return XLINKPRODUCT_LINEAR;
-    } else if (psmind_to_loc2[psmind] == -1) {
-      //its a dead link
-      //cerr <<"dead-link"<<endl;
-      return XLINKPRODUCT_DEADLINK;
-    } else {
-      //its a self loop
-      //cerr << "self-loop"<<endl;
-      return XLINKPRODUCT_SELFLOOP;
-    }
-
+  double isotope;
+  if (the_mass > obs_mass) {
+    isotope = floor((the_mass - obs_mass) / MASS_NEUTRON + 0.5);
   } else {
-    //its a cross-link
-    return XLINKPRODUCT_XLINK;
-
+    isotope = -floor((obs_mass - the_mass) / MASS_NEUTRON + 0.5);
   }
+
+  double o_mass = obs_mass + isotope * MASS_NEUTRON;
+
+  double ppm = (the_mass - o_mass) / o_mass * 1e6;
+  return ppm;
+
 }
 
+bool isCrossLink(XLINKMATCH_TYPE_T type) {
 
-
-XLINK_PRODUCT_T TabDelimParser::get_peptide_type(string& sequence) {
-  string delim3 = " ";
-  vector<string> subtokens;
-  get_tokens(sequence,subtokens,delim3);
-/*
-  cout << sequence << endl;;
-  for(size_t i = 0; i < subtokens.size(); i++) {
-    cout<< i << " " <<subtokens[i] << endl;
+  if (type == XLINK_INTER_CANDIDATE) {
+    return true;
   }
-*/
-  XLINK_PRODUCT_T ans = XLINKPRODUCT_UNKNOWN;
-
-  if(subtokens.size() > 0) {
-    if (subtokens.size() == 2) {
-      //it it either a linear peptide or a self loop.
-      //cout << subtokens[0] <<" " << subtokens[0].length()<<endl;
-      //ans = subtokens[0].length();
-      if (subtokens[1].find(',') == string::npos) {
-        if (subtokens[0].find('[') == string::npos) {
-          //it is linear.
-          //cerr << sequence << " is linear"<<endl;
-          ans = XLINKPRODUCT_LINEAR;
-        } else {
-          //it is a dead-link
-          //cerr << sequence << " is dead-link"<<endl;
-          ans = XLINKPRODUCT_DEADLINK;
-        }
-      } else {
-        //it is a self-loop
-        ans = XLINKPRODUCT_SELFLOOP;
-        //cerr << sequence << " is self loop"<<endl;
-      }
-    } else if (subtokens.size() == 3) {
-      //it is a crosslinked peptide.
-      ans = XLINKPRODUCT_XLINK;
-      //cerr << sequence << " is cross-linked"<<endl;
-    } else {
-      cerr <<"get_peptide_type:error:"<<sequence<<endl;
-      exit(-1);
-    }
+  if (type == XLINK_INTRA_CANDIDATE) {
+    return true;
+  }
+  if (type == XLINK_INTER_INTRA_CANDIDATE) {
+    return true;
   }
 
-  return ans;
+  return false;
 }
 
 /*
@@ -870,75 +833,80 @@ void TabDelimParser :: extract_xlink_features(int psmind, vector<string> & token
           " peptide mass:" << tokens[peptide_mass_idx] << endl;
   */
   
-  XLINK_PRODUCT_T peptide_type = get_peptide_type(tokens[sequence_idx]);
+  XLINKMATCH_TYPE_T peptide_type = psmind_to_product_type[psmind];
 
   //xcorr score
   x[0] = atof(tokens[xcorr_idx].c_str());
   //x[0] = atof(tokens[pvalue_idx].c_str());
-
+/*
   x[1] = x[0];
   x[2] = x[0];
 
-  if (peptide_type == XLINKPRODUCT_XLINK) {
+  if (isCrossLink(peptide_type)) {
     get_xcorr_short_long(psmind, x[1], x[2]);
   }
-
-  x[7] = 0;
+*/
+//  x[7] = 0;
   //sp score
   //x[7] = atof(tokens[sp_score_idx].c_str());
 
  //log rank by Sp
-  x[8] = 0;
+//  x[8] = 0;
   //if(atof(tokens[sp_rank_idx].c_str()) > 0)
   //  x[8]=log(atof(tokens[sp_rank_idx].c_str()));
 
   //matched ions/predicted ions
-  x[9] = 0;
-  if(atof(tokens[by_total_idx].c_str()) != 0)
-    x[9] = atof(tokens[by_matched_idx].c_str())/atof(tokens[by_total_idx].c_str());
+//  x[9] = 0;
+//  if(atof(tokens[by_total_idx].c_str()) != 0)
+//    x[9] = atof(tokens[by_matched_idx].c_str())/atof(tokens[by_total_idx].c_str());
 
   // absolute value of difference between measured and calculated mass
-  x[10] = fabs(atof(tokens[spectrum_mass_idx].c_str())-atof(tokens[peptide_mass_idx].c_str()));
 
-  x[11] = peptide_type == XLINKPRODUCT_LINEAR; // linear peptide
-  x[12] = peptide_type == XLINKPRODUCT_SELFLOOP; // self-loop
-  x[13] = peptide_type == XLINKPRODUCT_XLINK; // cross-link
-  x[14] = peptide_type == XLINKPRODUCT_DEADLINK; // dead-link
+  double obsmass = atof(tokens[spectrum_mass_idx].c_str());
+  double themass = atof(tokens[peptide_mass_idx].c_str());
+
+//  x[10] = fabs(getPPMError(obsmass, themass));
+
+//  x[11] = peptide_type == LINEAR_CANDIDATE; // linear peptide
+//  x[12] = peptide_type == SELFLOOP_CANDIDATE; // self-loop
+//  x[13] = isCrossLink(peptide_type); // cross-link
+//  x[14] = peptide_type == DEADLINK_CANDIDATE; // dead-link
 
   /* short peptide length */
-  x[15] = get_peptide_length_short(psmind);
+//  x[15] = get_peptide_length_short(psmind);
 
   /* long peptide length */
-  x[16] = get_peptide_length_long(psmind);
+//  x[16] = get_peptide_length_long(psmind);
 
   /* peptide length */
-  x[17] = get_peptide_length_sum(psmind);
+//  x[17] = get_peptide_length_sum(psmind);
 
   /* number of enzymatic ends */
-  x[18] = get_num_enzymatic_ends(psmind);
+//  x[18] = get_num_enzymatic_ends(psmind);
 
   /* Does at least one of the peptides have an enzymatic cleavage in the N-terminus? */
-  x[19] = get_nterm1(psmind);
+//  x[19] = get_nterm1(psmind);
 
   /* Does at least one of the peptides have an enzymatic cleavage in the C-terminus? */
-  x[20] = get_cterm1(psmind);
+//  x[20] = get_cterm1(psmind);
 
   /* Do both peptides have an enzymatic cleavage in the N-terminus? */
-  x[21] = get_nterm2(psmind);
+//  x[21] = get_nterm2(psmind);
 
   /* Do both peptides have an enzymatic cleavage in the C-terminus? */
-  x[22] = get_cterm2(psmind);
+//  x[22] = get_cterm2(psmind);
 
   //number of missed-cleavages
-  x[23] = cntMissedCleavages(psmind);
+//  x[23] = cntMissedCleavages(psmind);
 
   //observed mass
-  x[24] = atof(tokens[spectrum_mass_idx].c_str());
+//  x[24] = atof(tokens[spectrum_mass_idx].c_str());
 
   // number of sequence_comparisons
-  x[25] = log(atof(tokens[matches_idx].c_str()));
+//  x[25] = log(atof(tokens[matches_idx].c_str()));
 
   //charge
+/*
   int charge = atoi(tokens[charge_idx].c_str());
 
   //cerr << "charge:"<<charge<<endl;
@@ -950,6 +918,8 @@ void TabDelimParser :: extract_xlink_features(int psmind, vector<string> & token
       x[num_base_features + idx] = 0.0;
     }
   }
+*/
+
 /*
   for (int idx = 0; idx < num_xlink_features;idx++) {
     cerr << idx << ":" << x[idx] << " " ;
@@ -994,6 +964,9 @@ void TabDelimParser :: second_pass_xlink(ifstream &fin, int label)
 
           double neutral_mass = atof(tokens[spectrum_mass_idx].c_str());
 	  //extract features
+          XLINKMATCH_TYPE_T product_type = XLinkMatch::getCandidateType(tokens[product_type_idx]);
+
+          psmind_to_product_type[psmind] = product_type;
 	  extract_xlink_features(psmind, tokens, x);
 	  f_psm.write((char*)x, sizeof(double)*num_xlink_features);
 	  if(num_spec_features > 0)
@@ -1071,6 +1044,7 @@ void TabDelimParser :: second_pass_xlink(ifstream &fin, int label)
 	  psmind_to_charge[psmind] = charge;
           psmind_to_neutral_mass[psmind] = neutral_mass;
 	  psmind_to_label[psmind] = label;
+
 	  if(label == 1)
 	    num_pos_psm++;
 	  else
@@ -1161,10 +1135,20 @@ void TabDelimParser :: save_data_in_binary_xlink(string out_dir)
   fname.str("");
 
   //psmind_to_neutralmass
-  /*
-  fname << out_dir << "/psmind_to_precursor_mass";
-  ofstream f_psmind_to_precursor_mass(fname.str().c_str(),ios::binary);
-  */
+  fname << out_dir << "/psmind_to_neutral_mass";
+  ofstream f_psmind_to_neutral_mass(fname.str().c_str(),ios::binary);
+  f_psmind_to_neutral_mass.write((char*)psmind_to_neutral_mass,sizeof(double)*num_psm);
+  f_psmind_to_neutral_mass.close();
+  fname.str("");
+
+  //psmind_to_product_type
+  fname << out_dir << "/psmind_to_product_type";
+  ofstream f_psmind_to_product_type(fname.str().c_str(), ios::binary);
+  f_psmind_to_product_type.write((char*)psmind_to_product_type,sizeof(XLINKMATCH_TYPE_T)*num_psm);
+  f_psmind_to_product_type.close();
+  fname.str("");
+
+  
 
 
 }

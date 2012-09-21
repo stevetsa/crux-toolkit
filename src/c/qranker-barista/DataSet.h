@@ -7,6 +7,8 @@
 #include <cmath>
 #include <map>
 #include "BipartiteGraph.h"
+#include "objects.h"
+
 using namespace std;
 
 
@@ -44,6 +46,8 @@ class Dataset
   inline string psmind2loc(int psmind){if(psmind_to_loc.find(psmind) != psmind_to_loc.end()) return psmind_to_loc[psmind];else return "";}
   inline string psmind2protein1(int psmind){if(psmind_to_protein1.find(psmind) != psmind_to_protein1.end()) return psmind_to_protein1[psmind];else return "";}
   inline string psmind2protein2(int psmind){if(psmind_to_protein2.find(psmind) != psmind_to_protein2.end()) return psmind_to_protein2[psmind];else return "";}
+  inline XLINKMATCH_TYPE_T psmind2product_type(int psmind){return psmind_to_product_type[psmind];}
+  inline double psmind2neutral_mass(int psmind) {return psmind_to_neutral_mass[psmind];}
   /**********************************************************************/
 
   inline int get_num_peptides(){return num_pep;}
@@ -72,6 +76,8 @@ class Dataset
   int *psmind_to_pepind;
   int *psmind_to_scan;
   int *psmind_to_charge;
+  XLINKMATCH_TYPE_T* psmind_to_product_type;
+  double* psmind_to_neutral_mass;
   map <int, string> ind_to_pep;
   map <int, string> psmind_to_fname;
 

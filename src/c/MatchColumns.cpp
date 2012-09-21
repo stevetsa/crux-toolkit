@@ -63,7 +63,9 @@ static const char* match_column_strings[NUMBER_MATCH_COLUMNS] = {
   "parsimony rank",
   "decoy matches/spectrum",
   "product type",
-  "ppm"
+  "ppm",
+  "xcorr 1",
+  "xcorr 2"
 };
 
 /**

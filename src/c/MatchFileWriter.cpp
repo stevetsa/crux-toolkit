@@ -92,6 +92,8 @@ void MatchFileWriter::setPrecision(){
     case DELTA_CN_COL:
     case SP_SCORE_COL:
     case XCORR_SCORE_COL:
+    case XCORR_FIRST_COL:
+    case XCORR_SECOND_COL:
     case PVALUE_COL:
     case WEIBULL_QVALUE_COL:
     case WEIBULL_PEP_COL:
@@ -244,6 +246,9 @@ void MatchFileWriter::addColumnNames(CruxApplication* application,
       //}
       addColumnName(XLINK_PRODUCT_TYPE_COL);
       addColumnName(PPM_ERROR_COL);
+      addColumnName(XCORR_FIRST_COL);
+      addColumnName(XCORR_SECOND_COL);
+
     }
     break;
 

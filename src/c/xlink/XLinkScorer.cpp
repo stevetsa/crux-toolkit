@@ -2,6 +2,7 @@
 #include "Scorer.h"
 #include "Ion.h"
 #include "IonSeries.h"
+#include "XLinkPeptide.h"
 
 #include <iostream>
 
@@ -86,6 +87,27 @@ FLOAT_T XLinkScorer::scoreCandidate(XLinkMatch* candidate) {
     candidate->setBYIonInfo(scorer_sp_);
 
   }
+
+  if (candidate->getCandidateType() == XLINK_INTER_CANDIDATE || candidate->getCandidateType() == XLINK_INTRA_CANDIDATE) {
+    carp(CARP_DEBUG, "Scoring xlink peptides individually");
+    XLinkPeptide* xlink_match = (XLinkPeptide*)candidate;
+    carp(CARP_DEBUG, "ions first");
+    xlink_match->predictIons(ion_series_xcorr_, charge_, true);
+    carp(CARP_DEBUG, "scoring first");
+    FLOAT_T xcorr1 = scorer_xcorr_->scoreSpectrumVIonSeries(spectrum_, ion_series_xcorr_);
+    carp(CARP_DEBUG, "first:%f", xcorr1);
+    xlink_match->predictIons(ion_series_xcorr_, charge_, false);
+    carp(CARP_DEBUG, "scoring second");
+    FLOAT_T xcorr2 = scorer_xcorr_->scoreSpectrumVIonSeries(spectrum_, ion_series_xcorr_); 
+    carp(CARP_DEBUG, "second:%f", xcorr2); 
+    candidate->setScore(XCORR_FIRST, xcorr1);
+    candidate->setScore(XCORR_SECOND, xcorr2);
+  } else {
+
+    candidate->setScore(XCORR_FIRST, xcorr);
+    candidate->setScore(XCORR_SECOND, xcorr);
+  }
+
   return xcorr;
 
 }

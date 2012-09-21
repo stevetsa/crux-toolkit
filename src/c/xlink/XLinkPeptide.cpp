@@ -597,6 +597,70 @@ XLinkMatch* XLinkPeptide::shuffle() {
 
 }
 
+
+void XLinkPeptide::predictIons(IonSeries* ion_series, int charge, bool first) {
+  carp(CARP_DEBUG, "predictIons:start");
+  MASS_TYPE_T fragment_mass_type = get_mass_type_parameter("fragment-mass");
+
+  char* seq = NULL;
+   MODIFIED_AA_T* mod_seq = NULL;
+  int link_pos;
+  FLOAT_T mod_mass;
+
+  if (first) {
+    carp(CARP_DEBUG, "predicting first peptide");
+    //predict the ion series from the first peptide
+    seq = linked_peptides_[0].getSequence();
+    mod_seq = linked_peptides_[0].getModifiedSequence(); 
+    link_pos = getLinkPos(0);
+    mod_mass = linked_peptides_[1].getMass(fragment_mass_type) + linker_mass_;
+  } else {
+    carp(CARP_DEBUG, "predicting second peptide"); 
+    //predict the ion series for the second peptide 
+    seq = linked_peptides_[1].getSequence();
+    mod_seq = linked_peptides_[1].getModifiedSequence();
+    link_pos = getLinkPos(1);
+    mod_mass = linked_peptides_[0].getMass(fragment_mass_type) + linker_mass_;
+  }
+  carp(CARP_DEBUG, "predicting ions");
+  //predict the ion series of the peptide
+  ion_series->setCharge(charge); 
+  ion_series->update(seq, mod_seq); 
+  ion_series->predictIons(); 
+ 
+  carp(CARP_DEBUG, "modifying ions");
+  //modify the necessary ions and add to the ion_series   
+  for (IonIterator ion_iter = ion_series->begin(); 
+    ion_iter != ion_series->end(); 
+    ++ion_iter) { 
+ 
+    Ion* ion = *ion_iter; 
+ 
+    unsigned int cleavage_idx = ion->getCleavageIdx(); 
+    if (ion->isForwardType()) { 
+      if (cleavage_idx > (unsigned int)link_pos) {
+        FLOAT_T mass = ion->getMassFromMassZ() + mod_mass;
+        ion->setMassZFromMass(mass); 
+        if (isnan(ion->getMassZ())) { 
+          carp(CARP_FATAL, "NAN3"); 
+        } 
+      } 
+    } else { 
+      if (cleavage_idx >= (strlen(seq)-(unsigned int)link_pos)) { 
+        FLOAT_T mass = ion->getMassFromMassZ() + mod_mass;
+        ion->setMassZFromMass(mass); 
+        if (isnan(ion->getMassZ())) { 
+          carp(CARP_FATAL, "NAN4"); 
+        } 
+      } 
+    } 
+  } 
+
+  free(seq); 
+  //carp(CARP_INFO,"free(mod_seq1)"); 
+  free(mod_seq);
+} 
+
 void XLinkPeptide::predictIons(IonSeries* ion_series, int charge) {
   //cerr << "Inside predictIons"<<endl;
   MASS_TYPE_T fragment_mass_type = get_mass_type_parameter("fragment-mass"); 

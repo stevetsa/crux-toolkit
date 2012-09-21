@@ -97,6 +97,7 @@ class XLinkPeptide : public XLinkMatch {
   virtual XLinkMatch* shuffle();
 
   virtual void predictIons(IonSeries* ion_series, int charge);
+  void predictIons(IonSeries* ion_series, int charge, bool first);
   std::string getIonSequence(Ion* ion);
   virtual Peptide* getPeptide(int peptide_idx);
 

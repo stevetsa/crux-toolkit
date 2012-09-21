@@ -35,7 +35,7 @@ void get_min_max_mass(
   if (precursor_window_type == WINDOW_MASS) {
     //cerr<<"WINDOW_MASS"<<endl;
     min_mass = zstate.getNeutralMass() + (double)isotope*MASS_NEUTRON - window;
-    max_mass = zstate.getNeutralMass() + (double)isotope*MASS_NEUTRON - window;
+    max_mass = zstate.getNeutralMass() + (double)isotope*MASS_NEUTRON + window;
   } else if (precursor_window_type == WINDOW_MZ) {
     //cerr<<"WINDOW_MZ"<<endl;
     double min_mz = precursor_mz - window;
