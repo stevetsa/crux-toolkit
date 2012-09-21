@@ -4,7 +4,7 @@ cmake_policy(VERSION 2.8.4)
 
 add_subdirectory(doc/user)
 add_subdirectory(src/external/MSToolkit)
-add_subdirectory(src/external/proteowizard)
+add_subdirectory(src/external/)
 add_subdirectory(src/c)
 
 # build a CPack driven installer package

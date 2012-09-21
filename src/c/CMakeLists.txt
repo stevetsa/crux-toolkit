@@ -19,7 +19,11 @@ include_directories(posterior-error)
 include_directories(xlink)
 include_directories(../external)
 include_directories(../external/include)
+include_directories(../external/build/src/ProteoWizard/libraries/boost_1_43_0)
+include_directories(../external/build/src/ProteoWizard/libraries/boost_aux)
 include_directories(../external/MSToolkit/include)
+
+link_directories(../external/lib)
 link_directories(../external/MSToolkit)
 link_directories(.)
 link_directories(./ArrayLibrary)
@@ -77,6 +81,7 @@ set (
   ModifiedPeptidesIterator.cpp
   MS2SpectrumCollection.cpp
   MSToolkitSpectrumCollection.cpp
+  MzIdentMLReader.cpp
   OutputFiles.cpp
   parameter.cpp
   parse_arguments.cpp
@@ -97,6 +102,7 @@ set (
   ProteinPeptideIterator.cpp
   ProteinIndex.cpp
   ProteinIndexIterator.cpp
+  PWIZSpectrumCollection.cpp
   q-value.cpp
   SequestSearch.cpp
   SortColumn.cpp
@@ -250,6 +256,24 @@ else(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     pthread
     xlink
     ArrayLibrary
+    pwiz_data_msdata
+    pwiz_data_common
+    pwiz_data_identdata
+    pwiz_data_msdata_version
+    pwiz_data_misc
+    pwiz_utility_chemistry
+    pwiz_utility_misc
+    pwiz_utility_minimxml
+    pwiz_data_common
+    pwiz_data_identdata
+    pwiz_data_identdata_version
+    pwiz_data_proteome
+    boost_system-mt-s
+    boost_iostreams-mt-s
+    z-mt-s-1_2
+    boost_filesystem-mt-s
+    boost_regex-mt-s
+    boost_thread-mt-s
   )
   target_link_libraries(
     xlink-predict-peptide-ions
@@ -259,6 +283,24 @@ else(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     xlink
     crux-support
     MSToolkit
+    pwiz_data_msdata
+    pwiz_data_common
+    pwiz_data_identdata
+    pwiz_data_msdata_version
+    pwiz_data_misc
+    pwiz_utility_chemistry
+    pwiz_utility_misc
+    pwiz_utility_minimxml
+    pwiz_data_common
+    pwiz_data_identdata
+    pwiz_data_identdata_version
+    pwiz_data_proteome
+    boost_system-mt-s
+    boost_iostreams-mt-s
+    z-mt-s-1_2
+    boost_filesystem-mt-s
+    boost_regex-mt-s
+    boost_thread-mt-s
   )
   target_link_libraries(
     xlink-score-spectrum
@@ -268,6 +310,24 @@ else(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     xlink
     crux-support
     MSToolkit
+    pwiz_data_msdata
+    pwiz_data_common
+    pwiz_data_identdata
+    pwiz_data_msdata_version
+    pwiz_data_misc
+    pwiz_utility_chemistry
+    pwiz_utility_misc
+    pwiz_utility_minimxml
+    pwiz_data_common
+    pwiz_data_identdata
+    pwiz_data_identdata_version
+    pwiz_data_proteome
+    boost_system-mt-s
+    boost_iostreams-mt-s
+    z-mt-s-1_2
+    boost_filesystem-mt-s
+    boost_regex-mt-s
+    boost_thread-mt-s
   )
   target_link_libraries(
     xlink-assign-ions
@@ -277,6 +337,24 @@ else(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     xlink
     crux-support
     MSToolkit
+    pwiz_data_msdata
+    pwiz_data_common
+    pwiz_data_identdata
+    pwiz_data_msdata_version
+    pwiz_data_misc
+    pwiz_utility_chemistry
+    pwiz_utility_misc
+    pwiz_utility_minimxml
+    pwiz_data_common
+    pwiz_data_identdata
+    pwiz_data_identdata_version
+    pwiz_data_proteome
+    boost_system-mt-s
+    boost_iostreams-mt-s
+    z-mt-s-1_2
+    boost_filesystem-mt-s
+    boost_regex-mt-s
+    boost_thread-mt-s
   )
 endif(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 
