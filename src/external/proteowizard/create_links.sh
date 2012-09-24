@@ -9,7 +9,7 @@ install_path=.
 STARING_DIR=$(pwd)
 for arg in $*; do
     echo "arg:$arg"
-    if [[ $arg =~ "--prefix=*" ]]; then
+    if [[ $arg = --prefix=* ]]; then
         echo "parsing $arg"
         install_path=`echo "$arg" | cut -d"=" -f2`
     fi
