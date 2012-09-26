@@ -256,18 +256,16 @@ else(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     pthread
     xlink
     ArrayLibrary
-    pwiz_data_msdata
-    pwiz_data_common
-    pwiz_data_identdata
-    pwiz_data_msdata_version
-    pwiz_data_misc
-    pwiz_utility_chemistry
-    pwiz_utility_misc
-    pwiz_utility_minimxml
-    pwiz_data_common
     pwiz_data_identdata
     pwiz_data_identdata_version
+    pwiz_data_misc
+    pwiz_data_msdata
+    pwiz_data_msdata_version
     pwiz_data_proteome
+    pwiz_data_common
+    pwiz_utility_chemistry
+    pwiz_utility_minimxml
+    pwiz_utility_misc
     boost_system-mt-s
     boost_iostreams-mt-s
     z-mt-s-1_2
