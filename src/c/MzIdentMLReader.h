@@ -24,24 +24,33 @@ class MzIdentMLReader {
   Database* decoy_database_; ///< decoy database of proteins
   std::string file_path_; ///< path of the mzidentml file
 
-  pwiz::identdata::IdentDataFile* pwiz_reader_;
+  pwiz::identdata::IdentDataFile* pwiz_reader_; ///< proteowizard's reader for mzid.
 
-  MatchCollection* match_collection_;
-  bool use_pass_threshold_;
+  MatchCollection* match_collection_; ///<resulting match collection
+  bool use_pass_threshold_; ///<indicator of whether to use the passThreshold attribute
 
 
-  /*
+  /**
    * Initializes the object
    */
   void init();
 
-
+  /**
+   * parses the psms from the mzid file
+   */
   void parsePSMs();
+
+  /**
+   * parses the database sequences from the mzid file
+   */
   void parseDatabaseSequences();
 
+  /**
+   * adds the scores for a particular psm from the mzid file to a match object
+   */
   void addScores(
-    const pwiz::identdata::SpectrumIdentificationItem& item, 
-    Match* match
+    const pwiz::identdata::SpectrumIdentificationItem& item, ///<proteowizard psm
+    Match* match ///<our psm
   );
 
  public:  

@@ -203,10 +203,13 @@ void Protein::print(
   free(annotation);
 }
 
+/**
+ * \returns the starting location of the sequence in a protein.  If not found, returns -1
+ */
 int Protein::findStart(
-  string peptide_sequence,
-  string prev_aa,
-  string next_aa
+  string peptide_sequence, ///< the sequence to find
+  string prev_aa, ///< the previous amino acid for the sequence
+  string next_aa ///< the next amino acid for the sequence
   ) {
 
   if (getSequencePointer() == NULL) {
@@ -229,7 +232,8 @@ int Protein::findStart(
       seq = peptide_sequence;
       pos = protein_seq.find(seq);
       if (pos == string::npos) {
-        carp(CARP_FATAL, "could not %s in protein %s\n%s", seq.c_str(), getIdPointer(), protein_seq.c_str());
+        carp(CARP_ERROR, "could not %s in protein %s\n%s", seq.c_str(), getIdPointer(), protein_seq.c_str());
+        return -1;
       }
       return (pos+1);
     }

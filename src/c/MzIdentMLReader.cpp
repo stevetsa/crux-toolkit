@@ -155,17 +155,6 @@ void MzIdentMLReader::addScores(
 
 }
 
-void printScores(const SpectrumIdentificationItem& item) {
-  vector<CVParam>::const_iterator iter = item.cvParams.begin();
-  for (; iter!=item.cvParams.end(); ++iter) {
-    string name = cvTermInfo((*iter).cvid).name;
-
-    if (iter->cvid == MS_Sequest_xcorr) { cerr<< "XCORR!"<<endl;}
-
-    cerr << name <<" = " << iter->value << endl;
-  }
-
-}
 
 /**
  * \returns the MatchCollection resulting from the parsed xml file
@@ -193,7 +182,7 @@ MatchCollection* MzIdentMLReader::parse() {
 
   match_collection_ = new MatchCollection();
   match_collection_ -> preparePostProcess();
-  cerr << "MzIdentMLReader::opening file:"<<file_path_<<endl;
+  carp(CARP_DEBUG, "MzIdentMLReader::opening file:%s", file_path_.c_str());
   pwiz_reader_ = new IdentDataFile(file_path_);
 
   parseDatabaseSequences();
@@ -204,7 +193,35 @@ MatchCollection* MzIdentMLReader::parse() {
 }
 
 void MzIdentMLReader::parseDatabaseSequences() {
+  vector<DBSequencePtr>::const_iterator db_iter;
+  vector<DBSequencePtr>::const_iterator db_end;
 
+  db_iter = pwiz_reader_->sequenceCollection.dbSequences.begin();
+  db_end = pwiz_reader_->sequenceCollection.dbSequences.end();
+
+  for (; db_iter != db_end; ++db_iter) {
+
+    DBSequence& db_sequence = (**db_iter);
+    int length = db_sequence.length;
+    string accession = db_sequence.accession;
+    string seq = db_sequence.seq;
+
+    //cerr <<"protein accession:"<<accession<<endl;
+    //cerr <<"protein length:"<<length<<endl;
+    //cerr <<"protein sequence:"<<seq<<endl;
+    //cerr <<"sequence length:"<<seq.length()<<endl;
+    Protein* protein = NULL;
+    bool is_decoy;
+
+    if (seq.length() == 0) {
+      protein = MatchCollectionParser::getProtein(
+        database_, decoy_database_, accession, is_decoy);
+    } else {
+      protein = MatchCollectionParser::getProtein(
+        database_, decoy_database_, accession, seq, is_decoy);
+    }
+  }
+  
 
 
 }
@@ -228,7 +245,6 @@ void MzIdentMLReader::parsePSMs() {
       SpectrumIdentificationResult& result = **sir_iter;
       string idStr = result.spectrumID;
       string filename = result.spectraDataPtr->location;
-      cerr << idStr <<" "<<filename << endl;
 
       for (sii_iter = result.spectrumIdentificationItem.begin();
         sii_iter != result.spectrumIdentificationItem.end();
@@ -273,6 +289,9 @@ void MzIdentMLReader::parsePSMs() {
           }
   
           start_idx = protein->findStart(sequence, "", "");
+          if (start_idx == -1) {
+            carp(CARP_FATAL, "can't find sequence %s in first protein %s",sequence.c_str(), protein->getIdPointer());
+          }
           int length = sequence.length();
         
           carp(CARP_DEBUG, "creating peptide %s %f %i",sequence.c_str(), calc_mass, start_idx);
@@ -292,16 +311,17 @@ void MzIdentMLReader::parsePSMs() {
             protein = MatchCollectionParser::getProtein(
               database_, decoy_database_, protein_id, is_decoy_test);
             start_idx = protein->findStart(sequence, "", "");
-            PeptideSrc* src = new PeptideSrc((DIGEST_T)0, protein, start_idx);
-            peptide->addPeptideSrc(src);
+            if (start_idx != -1) {
+              PeptideSrc* src = new PeptideSrc((DIGEST_T)0, protein, start_idx);
+              peptide->addPeptideSrc(src);
+            }
           }
 
           Match* match = new Match(peptide, spectrum, zstate, is_decoy);  
           match_collection_->addMatchToPostMatchCollection(match);
 
           match->setRank(XCORR, rank); // Is it safe to assume this?
-
-          //cerr << "charge: "<<charge<<" obs mass:"<<obs_mass<<" calc mass:"<<calc_mass<<" sequence"<<sequence<<endl;
+          carp(CARP_DEBUG, "charge: %i obs mz: %f calc mass: %f sequence: %s", charge, obs_mz, calc_mass, sequence.c_str());
           addScores(item, match);
         }
       }

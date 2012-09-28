@@ -285,7 +285,6 @@ int MatchSearch::main(int argc, char** argv){
     "scan-number",
     "mz-bin-width",
     "mz-bin-offset",
-    "spectrum-parser",
     "parameter-file",
     "verbosity"
   };

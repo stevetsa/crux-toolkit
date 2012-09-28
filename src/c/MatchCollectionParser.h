@@ -46,6 +46,14 @@ class MatchCollectionParser {
     bool& is_decoy
   );
 
+  static Protein* getProtein(
+    Database* database,
+    Database* decoy_database,
+    std::string& protein_id,
+    std::string& sequence,
+    bool& is_decoy
+  );
+
 };
 
 /*

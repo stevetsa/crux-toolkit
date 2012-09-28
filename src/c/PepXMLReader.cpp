@@ -421,10 +421,9 @@ void PepXMLReader::searchScoreOpen(
   } else if (name == "qranker_PEP") {
     current_match_collection_->setScoredType(QRANKER_PEP, true);
     current_match_->setScore(QRANKER_PEP, value);
-  } else {
-    //it is a custom score
-    current_match_->setCustomScore(name, value);
-  }
+  } 
+  //set the custom score
+  current_match_->setCustomScore(name, value);
 
 }
 
