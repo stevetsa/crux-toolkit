@@ -1,11 +1,11 @@
 
-PWIZ_DIR=/scratch/svn/code/sourceforge/pwiz/install
+PWIZ_DIR=../external/include
 
 CC=g++
-COPTS=-I../external/MSToolkit/include -I${PWIZ_DIR}/include -DMAIN
+COPTS=-I../external/include 
 
-MST_LIB=-L../external/MSToolkit/.libs -lmstoolkit
-CRUX_LIB=-L./.libs -lcrux
+MST_LIB=-L../external/MSToolkit/ -lMSToolkit
+CRUX_LIB=-L. -lcrux-support
 
 PWIZ_LIB_FILES = \
   -lpwiz_data_msdata \
@@ -28,17 +28,17 @@ PWIZ_LIB_FILES = \
   -lboost_thread-mt-s \
   -lpthread
 
-PWIZ_LIB=-L${PWIZ_DIR}/lib ${PWIZ_LIB_FILES}
+PWIZ_LIB=-L../external/lib ${PWIZ_LIB_FILES}
 
 
 all:mzid
 
 
-MzIdentMLReader.o:MzIdentMLReader.cpp MzIdentMLReader.h
-	g++ ${COPTS} -c MzIdentMLReader.cpp -o MzIdentMLReader.o
+mzid.o:mzid.cpp 
+	g++ ${COPTS} -c mzid.cpp -o mzid.o
 
-mzid:MzIdentMLReader.o
-	g++ MzIdentMLReader.o ${CRUX_LIB} ${MST_LIB} ${PWIZ_LIB} -o mzid
+mzid:mzid.o
+	g++ mzid.o ${CRUX_LIB} ${MST_LIB} ${PWIZ_LIB} -o mzid
 
 clean:
 	rm -f mzid MzIdentMLReader.o

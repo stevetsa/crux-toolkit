@@ -211,6 +211,17 @@ enum _quant_level_type {
 };
 
 /**
+ * The enum of type of threshold to use for spectral counts
+ */
+enum THRESHOLD_T {
+  THRESHOLD_INVALID,
+  THRESHOLD_NONE,
+  THRESHOLD_QVALUE,
+  THRESHOLD_CUSTOM,
+  NUMBER_THRESHOLD_TYPES
+};
+
+/**
  * \typedef QUANT_LEVEL_TYPE_T
  * \brief The typdef for quantificaiton level (peptide, protein)
  */

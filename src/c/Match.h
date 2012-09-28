@@ -294,9 +294,14 @@ class Match {
   /**
    * get the custom score
    */
-  FLOAT_T getCustomScore(
-    const std::string& match_score_name ///< the name of the score -in
+  bool getCustomScore(
+    const std::string& match_score_name, ///< the name of the score -in
+    FLOAT_T& score ///< the value of the score -out
     );
+
+  void getCustomScoreNames(
+    std::vector<std::string>& custom_score_names
+  );
 
   bool isDecoy();
 

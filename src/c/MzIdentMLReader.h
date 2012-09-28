@@ -14,7 +14,6 @@
 #include <vector>
 
 #include "pwiz/data/identdata/IdentDataFile.hpp"
-
 #include "objects.h"
 
 class MzIdentMLReader {
@@ -27,8 +26,8 @@ class MzIdentMLReader {
 
   pwiz::identdata::IdentDataFile* pwiz_reader_;
 
-  MatchCollection* current_match_collection_;
-
+  MatchCollection* match_collection_;
+  bool use_pass_threshold_;
 
 
   /*
@@ -36,6 +35,14 @@ class MzIdentMLReader {
    */
   void init();
 
+
+  void parsePSMs();
+  void parseDatabaseSequences();
+
+  void addScores(
+    const pwiz::identdata::SpectrumIdentificationItem& item, 
+    Match* match
+  );
 
  public:  
 

@@ -80,6 +80,7 @@ enum parameter_type {
   SPECTRUM_PARSER_P, ///< parameters of type SPECTRUM_PARSER_T
   WINDOW_TYPE_P,     ///< parameters of type WINDOW_TYPE_T
   MEASURE_TYPE_P,    ///< parameters of type MEASURE_TYPE_T
+  THRESHOLD_P,       ///< parameters of type THRESHOLD_TYPE_T
   PARSIMONY_TYPE_P,  ///< parameters of type PARSIMONY_TYPE_T
   QUANT_LEVEL_TYPE_P,///< parameters of type QUANT_LEVEL_TYPE_T
   DECOY_TYPE_P,      ///< parameters of type DECOY_TYPE_T
@@ -221,6 +222,10 @@ ENZYME_T get_enzyme_type_parameter(
   );
 
 WINDOW_TYPE_T get_window_type_parameter(
+  const char* name
+  );
+
+THRESHOLD_T get_threshold_type_parameter(
   const char* name
   );
 

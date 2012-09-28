@@ -28,7 +28,8 @@ static const char* parameter_type_strings[NUMBER_PARAMETER_TYPES] = {
   "INT_ARG", "DOUBLE_ARG", "STRING_ARG", "MASS_TYPE_T", "DIGEST_T", 
   "ENZYME_T", 
   "bool", "SCORER_TYPE_T", "ION_TYPE_T",
-  "ALGORITHM_T", "HARDKLOR_ALGORITHM_TYPE_T", "SPECTRUM_PARSER_T" ,"WINDOW_TYPE_T", "MEASURE_TYPE_T", 
+  "ALGORITHM_T", "HARDKLOR_ALGORITHM_TYPE_T", "SPECTRUM_PARSER_T" ,
+  "WINDOW_TYPE_T", "MEASURE_TYPE_T", "THRESHOLD_T", 
   "PARSIMONY_TYPE_T", "QUANT_LEVEL_TYPE_T", "DECOY_TYPE_T", "MASS_FORMAT_T"};
 
 //one hash for parameter values, one for usage statements, one for types
@@ -175,6 +176,14 @@ bool set_enzyme_type_parameter(
 bool set_window_type_parameter(
  const char*     name,  ///< the name of the parameter looking for -in
  WINDOW_TYPE_T set_value,  ///< the value to be set -in
+ const char* usage,      ///< string to print in usage statement
+ const char* filenotes,   ///< additional info for param file
+ const char* foruser
+  );
+
+bool set_threshold_type_parameter(
+ const char*     name,  ///< the name of the parameter looking for -in
+ THRESHOLD_T set_value,  ///< the value to be set -in
  const char* usage,      ///< string to print in usage statement
  const char* filenotes,   ///< additional info for param file
  const char* foruser
@@ -904,15 +913,21 @@ void initialize_parameters(void){
        "MS2 file corresponding to the psm file. Required for SIN.",
        "Available for spectral-counts with measure=SIN.",
        "true");
+
+  set_threshold_type_parameter("threshold-type", THRESHOLD_QVALUE,
+    "What type of threshold to use when parsing matches "
+    "none|qvalue|custom",
+    "used for crux spectral-counts",
+    "true");
+
   set_double_parameter("threshold", 0.01, -BILLION, BILLION, 
        "The threshold to use for filtering matches.  If no" 
-       "custom-threshold parameter given, then q-value will be "
        "used.  Default=0.01.",
        "Available for spectral-counts.  All PSMs with higher (or lower) than "
        "this will be ignored.",
        "true");
 
-  set_boolean_parameter("threshold-min", true,
+  set_boolean_parameter("custom-threshold-min", true,
     "Direction of threshold for matches.  If true, then all matches "
      "whose value is <= threshold will be accepted.  If false, "
      "then all matches >= threshold will be accepted.  Used with "
@@ -920,9 +935,9 @@ void initialize_parameters(void){
      "Available for spectral-counts.",
      "true");
 
-  set_string_parameter("custom-threshold", "__NULL_STR",
-     "Use a custom threshold rather than q-value (default NULL)",
-     "Availabel for spectral-counts.", "true");
+  set_string_parameter("custom-threshold-name", "__NULL_STR",
+     "Use a name of custom threshold rather than (default NULL)",
+     "Available for spectral-counts.", "true");
 
 
   set_measure_type_parameter("measure", MEASURE_NSAF,
@@ -950,6 +965,11 @@ void initialize_parameters(void){
        "Default=none. Can be <string>=none|simple|greedy",
        "Available for spectral-counts.",
        "true");
+
+  set_boolean_parameter("mzid-use-pass-threshold", false,
+    "Use mzid's passThreshold attribute to filter matches. Default false.",
+    "Used when parsing mzIdentML files.",
+    "true");
 
 
   // ***** static mods *****
@@ -2068,6 +2088,15 @@ bool check_option_type_and_bounds(const char* name){
               "Must be (NSAF, SIN, EMPAI)", value_str, name);
     }
     break;
+  case THRESHOLD_P:
+    carp(CARP_DETAILED_DEBUG, "found threshold type param, value '%s'",
+       value_str);
+    if (string_to_threshold_type(value_str) == THRESHOLD_INVALID) {
+      success = false;
+      sprintf(die_str, "Illegal threshold type '%s' for option '%s'."
+                       "Must be (none, qvalue, custom).", value_str, name);
+    }
+    break;
   case PARSIMONY_TYPE_P:
     carp(CARP_DETAILED_DEBUG, "found parsimony type param, value '%s'",
      value_str);
@@ -2647,6 +2676,17 @@ WINDOW_TYPE_T get_window_type_parameter(
   return param_value;
 }
 
+THRESHOLD_T get_threshold_type_parameter(
+  const char* name
+  ){
+  char* param_value_str = (char*)get_hash_value(parameters, name);
+  THRESHOLD_T param_value =  
+    string_to_threshold_type(param_value_str);
+
+  return param_value;
+}
+
+
 PARSIMONY_TYPE_T get_parsimony_type_parameter(
   const char* name
   ){
@@ -3045,6 +3085,35 @@ bool set_window_type_parameter(
   return result;
 
 }
+
+bool set_threshold_type_parameter(
+ const char*     name,  ///< the name of the parameter looking for -in
+ THRESHOLD_T set_value,  ///< the value to be set -in
+ const char* usage,      ///< string to print in usage statement
+ const char* filenotes,   ///< additional info for param file
+ const char* foruser
+  ) {
+  bool result = true;
+  
+  // check if parameters can be changed
+  if(!parameter_plasticity){
+    carp(CARP_ERROR, "can't change parameters once they are confirmed");
+    return false;
+  }
+  
+  /* stringify the value */
+  char* value_str = threshold_type_to_string(set_value);
+
+  result = add_or_update_hash(parameters, name, value_str);
+  result = add_or_update_hash(usages, name, usage);
+  result = add_or_update_hash(file_notes, name, filenotes);
+  result = add_or_update_hash(for_users, name, foruser);
+  result = add_or_update_hash(types, name, "THRESHOLD_T");
+  free(value_str);
+  return result;
+
+}
+
 
 bool set_measure_type_parameter(
   const char* name, ///< the name of the parameter looking for -in

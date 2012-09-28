@@ -1344,6 +1344,22 @@ void MatchCollection::setScoredType(
 }
 
 /**
+ *
+ */
+void MatchCollection::getCustomScoreNames(
+  vector<string>& custom_score_names
+  ) {
+  custom_score_names.clear();
+
+  if (match_total_ > 0) {
+
+    match_[0]->getCustomScoreNames(custom_score_names);
+
+  }
+
+}
+
+/**
  *\returns true, if there is a  match_iterators instantiated by match collection 
  */
 bool MatchCollection::getIteratorLock()

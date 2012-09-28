@@ -1389,15 +1389,35 @@ void Match::setCustomScore(
 /**
  * get the custom score
  */
-FLOAT_T Match::getCustomScore(
-  const std::string& match_score_name ///< the name of the score -in
+bool Match::getCustomScore(
+  const std::string& match_score_name, ///< the name of the score -in
+  FLOAT_T& score ///< the value of the score -out
   ) {
 
   if (match_custom_scores_.find(match_score_name) == match_custom_scores_.end()) {
-    carp(CARP_FATAL, "custom match score:%s doesn't exist!", match_score_name.c_str());
+    carp(CARP_ERROR, "custom match score:%s doesn't exist!", match_score_name.c_str());
+    return false;
   }
-  return match_custom_scores_[match_score_name];
+
+  score = match_custom_scores_[match_score_name];
+  return true;
+
 }
+
+void Match::getCustomScoreNames(
+  vector<string>& custom_score_names
+  ) {
+
+  custom_score_names.clear();
+
+  for (map<string,FLOAT_T>::iterator iter = match_custom_scores_.begin();
+    iter != match_custom_scores_.end();
+      ++iter) {
+    custom_score_names.push_back(iter->first);
+  }
+
+}
+
 
 bool Match::isDecoy() {
 
