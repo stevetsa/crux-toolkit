@@ -6,6 +6,7 @@
  */
 
 #include "PostProcessProtein.h"
+#include <iostream>
 
 using namespace std;
 
@@ -73,7 +74,6 @@ char* PostProcessProtein::getSequence(
 char* PostProcessProtein::getSequencePointer(
   int offset ///< The offset (or sequence index) for the sequence
   ) {
-
   return (char*)(sequences_[offset].c_str());
 
 }

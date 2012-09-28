@@ -129,6 +129,7 @@ Protein* MatchCollectionParser::getProtein(
   protein->setSequence(sequence.c_str());
   protein->setLength(sequence.length());
   
+
   string decoy_prefix = get_string_parameter_pointer("decoy-prefix");
   if (protein_id.find(decoy_prefix) != string::npos) {
     is_decoy = true;

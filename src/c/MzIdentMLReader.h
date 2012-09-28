@@ -88,7 +88,7 @@ class MzIdentMLReader {
    * sets the decoy protein database
    */
   void setDecoyDatabase(
-    Database* decoy_database ///< sets the decoy protein database
+    Database* decoy_database ///<  the decoy protein database
   );
 
   /**

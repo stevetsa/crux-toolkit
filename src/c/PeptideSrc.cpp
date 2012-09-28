@@ -197,8 +197,8 @@ int PeptideSrc::getStartIdx() {
  */
 char* PeptideSrc::getSequencePointer() {
 
-  char* start_pointer = parent_protein_->getSequencePointer();
-  return &(start_pointer[start_idx_ - 1]);
+  return parent_protein_->getSequencePointer(start_idx_ - 1);
+
 }
 
 /**

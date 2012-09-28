@@ -70,12 +70,23 @@ MzIdentMLReader::MzIdentMLReader(
 
 }
 
-void MzIdentMLReader::setDatabase(Database* database) {
+/**
+ * sets the target database for the parser
+ */
+void MzIdentMLReader::setDatabase(
+  Database* database ///< the target protein database
+  ) {
+
   database_ = database;
 
 }
 
-void MzIdentMLReader::setDecoyDatabase(Database* decoy_database) {
+/**
+ * sets the decoy protein database for the parser
+ */
+void MzIdentMLReader::setDecoyDatabase(
+  Database* decoy_database ///<  the decoy protein database
+  ) {
 
   decoy_database_ = decoy_database;
 
@@ -93,8 +104,8 @@ MzIdentMLReader::~MzIdentMLReader() {
  */
 
 void MzIdentMLReader::addScores(
-  const SpectrumIdentificationItem& item, 
-  Match* match
+  const SpectrumIdentificationItem& item, ///<proteowizard psm
+  Match* match ///<our psm
 ) {
   vector<CVParam>::const_iterator iter = item.cvParams.begin();
   
@@ -149,12 +160,7 @@ void MzIdentMLReader::addScores(
       match->setCustomScore(name, fvalue);
     }
   }
-
-
-
-
 }
-
 
 /**
  * \returns the MatchCollection resulting from the parsed xml file
@@ -177,7 +183,9 @@ MatchCollection* MzIdentMLReader::parse(
 
 }
  
-
+/**
+ * \returns the MatchCollection resulting from the parsed xml file
+ */
 MatchCollection* MzIdentMLReader::parse() {
 
   match_collection_ = new MatchCollection();
@@ -192,6 +200,9 @@ MatchCollection* MzIdentMLReader::parse() {
   return match_collection_;
 }
 
+/**
+ * parses the database sequences from the mzid file
+ */
 void MzIdentMLReader::parseDatabaseSequences() {
   vector<DBSequencePtr>::const_iterator db_iter;
   vector<DBSequencePtr>::const_iterator db_end;
@@ -226,6 +237,9 @@ void MzIdentMLReader::parseDatabaseSequences() {
 
 }
 
+/**
+ * parses the psms from the mzid file
+ */
 void MzIdentMLReader::parsePSMs() {
 
   vector<SpectrumIdentificationListPtr>::const_iterator sil_iter;

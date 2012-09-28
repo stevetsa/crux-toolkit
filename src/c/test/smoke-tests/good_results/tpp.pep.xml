@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?xml-stylesheet type="text/xsl" href=""?>
-<msms_pipeline_analysis date="Mon Sep 17 13:03:19 2012
+<msms_pipeline_analysis date="Thu Sep 27 19:23:38 2012
 " xmlns="http://regis-web.systemsbiology.net/pepXML" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://regis-web.systemsbiology.net/pepXML /usr/local/tpp/schema/pepXML_v110.xsd" summary_xml="">
 <msms_run_summary base_name="/scratch/svn/code/noble/crux-pwiz/src/c/test/smoke-tests/test" msManufacturer="NA" msModel="NA" msIonization="NA" msAnalyzer="NA" msDectector="NA" raw_data_type="NA" raw_data="NA" >
 <sample_enzyme name="trypsin">
@@ -18,6 +18,7 @@
 <parameter name="comparison" value="eq"/>
 <parameter name="min-weibull-points" value="4000"/>
 <parameter name="scan-tolerance" value="3"/>
+<parameter name="mzid-use-pass-threshold" value="false"/>
 <parameter name="isotope" value="0"/>
 <parameter name="precursor-window-type-decoy" value="mass"/>
 <parameter name="primary-ions" value="by"/>
@@ -28,6 +29,7 @@
 <parameter name="quant-level" value="protein"/>
 <parameter name="precursor-window-type" value="mass"/>
 <parameter name="precursor-window" value="3.000000"/>
+<parameter name="threshold-type" value="qvalue"/>
 <parameter name="mass-precision" value="4"/>
 <parameter name="custom-enzyme" value="__NULL_STR"/>
 <parameter name="flanking" value="false"/>
@@ -66,12 +68,12 @@
 <parameter name="min-peaks" value="20"/>
 <parameter name="nh3" value="0"/>
 <parameter name="measure" value="NSAF"/>
+<parameter name="custom-threshold-min" value="true"/>
 <parameter name="max-rank-preliminary" value="500"/>
 <parameter name="max-mods" value="255"/>
 <parameter name="persist-tolerance" value="10.000000"/>
 <parameter name="spectrum-charge" value="all"/>
 <parameter name="input-ms2" value="__NULL_STR"/>
-<parameter name="threshold-min" value="true"/>
 <parameter name="print-search-progress" value="10"/>
 <parameter name="mz-window" value="__NULL_STR"/>
 <parameter name="signal-to-noise" value="1.000000"/>
@@ -83,7 +85,6 @@
 <parameter name="compute-sp" value="false"/>
 <parameter name="corr" value="0.850000"/>
 <parameter name="bullseye-max-mass" value="8000.000000"/>
-<parameter name="custom-threshold" value="__NULL_STR"/>
 <parameter name="separate-searches" value="__NULL_STR"/>
 <parameter name="verbosity" value="30"/>
 <parameter name="mz-bin-offset" value="0.680000"/>
@@ -131,6 +132,7 @@
 <parameter name="enzyme" value="trypsin"/>
 <parameter name="column-type" value="string"/>
 <parameter name="h2o" value="0"/>
+<parameter name="custom-threshold-name" value="__NULL_STR"/>
 <parameter name="unique-mapping" value="false"/>
 <parameter name="sensitivity" value="2"/>
 <parameter name="compute-p-values" value="false"/>
