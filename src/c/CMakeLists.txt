@@ -134,6 +134,7 @@ add_library(
 if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     set_property(
       DIRECTORY
+      APPEND
       PROPERTY
       COMPILE_DEFINITIONS
       _CRT_SECURE_NO_WARNINGS
@@ -142,6 +143,7 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 else (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 	set_property(
 	  DIRECTORY
+    APPEND
 	  PROPERTY
 	  COMPILE_DEFINITIONS
 	  _LARGEFILE_SOURCE
@@ -153,21 +155,31 @@ else (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 	)
 	if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 	  set_property(
-		DIRECTORY
-		APPEND
-		PROPERTY
-		COMPILE_DEFINITIONS
-		DARWIN
+      DIRECTORY
+      APPEND
+      PROPERTY
+      COMPILE_DEFINITIONS
+      DARWIN
 	  )
+	  if (${CMAKE_SYSTEM_VERSION} VERSION_LESS "12")
+      set_property(
+        DIRECTORY
+        APPEND
+        PROPERTY
+        COMPILE_DEFINITIONS
+        PRE_MOUNTAIN_LION
+      )
+	  endif (${CMAKE_SYSTEM_VERSION} VERSION_LESS "12")
 	  if (${CMAKE_SYSTEM_VERSION} VERSION_LESS "11")
-		set_property(
-		  DIRECTORY
-		  PROPERTY
-		  COMPILE_DEFINITIONS
-		  PRE_LION
-		)
-       endif(${CMAKE_SYSTEM_VERSION} VERSION_LESS "11")
-    endif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+      set_property(
+        DIRECTORY
+        APPEND
+        PROPERTY
+        COMPILE_DEFINITIONS
+        PRE_LION
+      )
+    endif(${CMAKE_SYSTEM_VERSION} VERSION_LESS "11")
+  endif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 endif (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 
 add_executable(crux crux-main.cpp)
