@@ -8,7 +8,6 @@
 #include "WinCrux.h"
 
 using namespace Crux;
-
 /***********************************************
  *  The basic index_peptide_iterator functions.
  ***********************************************/
