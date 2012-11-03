@@ -34,7 +34,9 @@ public:
     void train_many_general_nets();
     void train_many_target_nets();
     void train_many_nets();
+    void train_xcorr(PSMScores& set);
 
+    double getObjectiveErrorFDR(PSMScores& set, NeuralNet& n, double fdr=1);
     double getObjectiveError(PSMScores& set, NeuralNet& n, int interval=-1);
 
     
@@ -56,6 +58,8 @@ public:
     //void getMinRank(PSMScores& in, PSMScores& out);
     void selectHyperParameters();
     void writeFeatures();
+
+    int get_interval(PSMScores& set, NeuralNet& net, double qval,int min_targets=30,int min_decoys=30);
 
     inline void set_input_dir(string input_dir) {in_dir = input_dir; d.set_input_dir(input_dir);}
     inline void set_output_dir(string output_dir){out_dir = output_dir;}

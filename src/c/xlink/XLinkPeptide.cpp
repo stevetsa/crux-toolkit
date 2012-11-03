@@ -885,6 +885,56 @@ string XLinkPeptide::getProteinIdString() {
   return oss.str();
 }
 
+string XLinkPeptide::getProteinIdsXLocations(int idx) {
+  cerr << "getting peptide :"<<idx<<endl;
+  Peptide* peptide = this ->getPeptide(idx);
+
+  ostringstream oss;
+
+  set<string> xlocations;
+
+  int link_pos = getLinkPos(idx);
+
+  cerr <<"getting proteins"<<endl;
+
+  for (PeptideSrcIterator iter = peptide->getPeptideSrcBegin();
+    iter != peptide->getPeptideSrcEnd();
+    ++iter) {
+    cerr <<"protein"<<endl;
+    PeptideSrc* peptide_src = *iter;
+    Protein* protein = peptide_src->getParentProtein();
+    string protein_id = protein->getIdPointer();
+    int peptide_loc = peptide_src->getStartIdx();
+    ostringstream protein_loc_stream;
+    protein_loc_stream << protein_id << "(" << (peptide_loc + link_pos) << ")";
+    xlocations.insert(protein_loc_stream.str());
+  }
+  cerr <<"done gettign proteins"<<endl;
+  
+
+  set<string>::iterator result_iter = xlocations.begin();
+  string result_string = *result_iter;
+
+  while (++result_iter != xlocations.end()) {
+    result_string += "," + *result_iter;
+  }
+
+  return result_string;
+}
+
+string XLinkPeptide::getProteinIdXString() {
+  doSort();
+
+  ostringstream oss;
+
+  oss << getProteinIdsXLocations(0);
+  oss << ";";
+  oss << getProteinIdsXLocations(1);
+  return oss.str();
+
+}
+
+
 string XLinkPeptide::getFlankingAAString() {
 
   doSort();

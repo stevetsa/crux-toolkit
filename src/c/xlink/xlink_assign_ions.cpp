@@ -83,8 +83,9 @@ int main(int argc, char** argv){
 
   char* ms2_file = get_string_parameter("ms2 file");
 
-  LinkedPeptide::setLinkerMass(get_double_parameter("link mass"));
- 
+  double linker_mass = get_double_parameter("link mass");
+  XLinkPeptide::setLinkerMass(linker_mass);
+
   // create new ion series
   
   // a single peptide linked to itself
@@ -101,8 +102,6 @@ int main(int argc, char** argv){
   //cout << "lp " << lp << endl; 
   Spectrum* spectrum = NULL;
   Spectrum* current_spectrum = NULL;
-
-  //TODO allow a binary search on both mgf and ms2 files.
 
   for (SpectrumIterator spectrum_iterator = collection->begin();
     spectrum_iterator != collection->end();
@@ -121,6 +120,10 @@ int main(int argc, char** argv){
     delete collection;
     exit(1);
   }
+
+
+  XLinkMatch* lined_peptide 
+
 
   //created linked peptide.
   LinkedPeptide lp = LinkedPeptide(peptideA, peptideB, posA-1, posB-1, charge);

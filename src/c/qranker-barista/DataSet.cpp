@@ -7,6 +7,11 @@ Dataset::Dataset()
     psmind_to_pepind((int*)0),
     psmind_to_scan(0),
     psmind_to_charge(0),
+    psmind_to_neutral_mass(NULL),
+    psmind_to_product_type(NULL),
+    psmind_to_xcorr(NULL),
+    psmind_to_xcorr1(NULL),
+    psmind_to_xcorr2(NULL),
     protind_to_label(0),
     protind_to_num_all_pep(0)
 {
@@ -21,6 +26,11 @@ Dataset::~Dataset()
   delete[] psmind_to_charge;
   delete[] protind_to_label;
   delete[] protind_to_num_all_pep;
+  delete[] psmind_to_neutral_mass;
+  delete[] psmind_to_product_type;
+  delete[] psmind_to_xcorr;
+  delete[] psmind_to_xcorr1;
+  delete[] psmind_to_xcorr2;
 }
 
 void Dataset :: load_prot_data()
@@ -64,7 +74,7 @@ void Dataset :: load_prot_data()
   fname.str("");
 
 
-  //protind_to_label
+ //protind_to_label
   fname << in_dir << "/protind_to_label.txt";
   ifstream f_protind_to_label(fname.str().c_str(),ios::binary);
   protind_to_label = new int[num_prot];
@@ -302,6 +312,27 @@ void Dataset :: load_psm_data_for_training()
   f_psmind_to_scan.close();
   fname.str("");
 
+  //psmind_to_xcorr
+  fname << in_dir << "/psmind_to_xcorr";
+  ifstream f_psmind_to_xcorr(fname.str().c_str(), ios::binary);
+  psmind_to_xcorr = new double[num_psms];
+  f_psmind_to_xcorr.read((char*)psmind_to_xcorr,sizeof(double)*num_psms);
+  fname.str("");
+
+  //psmind_to_xcorr1
+  fname << in_dir << "/psmind_to_xcorr1";
+  ifstream f_psmind_to_xcorr1(fname.str().c_str(), ios::binary);
+  psmind_to_xcorr1 = new double[num_psms];
+  f_psmind_to_xcorr1.read((char*)psmind_to_xcorr1,sizeof(double)*num_psms);
+  fname.str("");
+
+  //psmind_to_xcorr2
+  fname << in_dir << "/psmind_to_xcorr2";
+  ifstream f_psmind_to_xcorr2(fname.str().c_str(), ios::binary);
+  psmind_to_xcorr2 = new double[num_psms];
+  f_psmind_to_xcorr2.read((char*)psmind_to_xcorr2,sizeof(double)*num_psms);
+  fname.str("");
+
 }
 
 
@@ -421,8 +452,31 @@ void Dataset :: load_psm_data_for_reporting_results()
   fname << in_dir << "/psmind_to_neutral_mass";
   ifstream f_psmind_to_neutral_mass(fname.str().c_str(),ios::binary);
   psmind_to_neutral_mass = new double[num_psms];
-  f_psmind_to_neutral_mass.read((char*)psmind_to_neutral_mass,sizeof(XLINKMATCH_TYPE_T)*num_psms);
+  f_psmind_to_neutral_mass.read((char*)psmind_to_neutral_mass,sizeof(double)*num_psms);
   f_psmind_to_neutral_mass.close();
+  fname.str("");
+
+
+  //psmind_to_xcorr
+  cerr << "psmind_to_xcorr"<<endl;
+  fname << in_dir << "/psmind_to_xcorr";
+  ifstream f_psmind_to_xcorr(fname.str().c_str(), ios::binary);
+  psmind_to_xcorr = new double[num_psms];
+  f_psmind_to_xcorr.read((char*)psmind_to_xcorr,sizeof(double)*num_psms);
+  fname.str("");
+
+  //psmind_to_xcorr1
+  fname << in_dir << "/psmind_to_xcorr1";
+  ifstream f_psmind_to_xcorr1(fname.str().c_str(), ios::binary);
+  psmind_to_xcorr1 = new double[num_psms];
+  f_psmind_to_xcorr1.read((char*)psmind_to_xcorr1,sizeof(double)*num_psms);
+  fname.str("");
+
+  //psmind_to_xcorr2
+  fname << in_dir << "/psmind_to_xcorr2";
+  ifstream f_psmind_to_xcorr2(fname.str().c_str(), ios::binary);
+  psmind_to_xcorr2 = new double[num_psms];
+  f_psmind_to_xcorr2.read((char*)psmind_to_xcorr2,sizeof(double)*num_psms);
   fname.str("");
 
   cerr << "Done!"<<endl;

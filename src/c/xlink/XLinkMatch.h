@@ -59,6 +59,7 @@ class XLinkMatch : public Match {
 
   FLOAT_T getPPMError();
   virtual std::string getProteinIdString();
+  virtual std::string getProteinIdXString();
   virtual std::string getFlankingAAString();
 
   void setParent(XLinkMatchCollection* parent);

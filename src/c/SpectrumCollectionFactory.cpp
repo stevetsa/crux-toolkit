@@ -35,6 +35,8 @@ SpectrumCollection* SpectrumCollectionFactory::create(const char* filename){
    } else {
      collection = new MS2SpectrumCollection(filename);
    }
+
+  carp(CARP_INFO, "read %d spectra and %d charged spectra", collection->getNumSpectra(), collection->getNumChargedSpectra());
    
   return collection;
 }

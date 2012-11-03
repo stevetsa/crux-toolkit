@@ -670,7 +670,7 @@ int Scorer::calculateIonTypeSp(
   while(ion_iterator->hasNext()){
     ion = ion_iterator->next();
     intensity_array_idx 
-      = INTEGERIZE(ion->getMassZ(), bin_width, bin_offset);
+      = INTEGERIZE(ion->getMassZ(), bin_width, 0);
     // get the intensity matching to ion's m/z
 
     if (intensity_array_idx < 0) {
@@ -1043,7 +1043,7 @@ bool Scorer::createIntensityArrayTheoretical(
 
     ion = *ion_iterator;
     intensity_array_idx 
-      = INTEGERIZE(ion->getMassZ(), bin_width, bin_offset);
+      = INTEGERIZE(ion->getMassZ(), bin_width, 0);
     ion_type = ion->getType();
     ion_charge = ion->getCharge();
 
@@ -1097,13 +1097,13 @@ bool Scorer::createIntensityArrayTheoretical(
         if(ion_type == B_ION){
           int h2o_array_idx = 
             INTEGERIZE((ion->getMassZ() - (MASS_H2O_MONO/ion_charge)),
-                       bin_width, bin_offset);
+                       bin_width, 0);
           addIntensity(theoretical, h2o_array_idx, LOSS_HEIGHT);
         }
 
         int nh3_array_idx 
           = INTEGERIZE((ion->getMassZ() -  (MASS_NH3_MONO/ion_charge)),
-                       bin_width, bin_offset);
+                       bin_width, 0);
         addIntensity(theoretical, nh3_array_idx, LOSS_HEIGHT);
       }
 
@@ -1472,7 +1472,7 @@ void Scorer::setSpMaxMz(
  *\returns the max bin index of the scorer array(s).
  */
 int Scorer::getMaxBin() {
-    return INTEGERIZE(sp_max_mz_, bin_width_, bin_offset_);
+    return INTEGERIZE(sp_max_mz_, bin_width_, max(FLOAT_T(0.0), bin_offset_));
 }
 
 /**

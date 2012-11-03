@@ -71,6 +71,9 @@ void TabDelimParser :: clear()
   delete[] psmind_to_neutral_mass; psmind_to_neutral_mass = (double*)0;
   delete[] psmind_to_peptide_mass; psmind_to_peptide_mass = (double*)0;
   delete[] psmind_to_product_type; psmind_to_product_type = (XLINKMATCH_TYPE_T*)0;
+  delete[] psmind_to_xcorr; psmind_to_xcorr = (double*)0;
+  delete[] psmind_to_xcorr1; psmind_to_xcorr1 = (double*)0;
+  delete[] psmind_to_xcorr2; psmind_to_xcorr2 = (double*)0;
   cerr << "TabDelimParser::clear() - done"<<endl;
 }
 
@@ -133,7 +136,7 @@ const static int delta_cn_idx=5;
 const static int sp_score_idx=6;
 const static int sp_rank_idx=7;
 const static int xcorr_idx=8;
-const static int xcorr_rank=9;
+const static int xcorr_rank_idx=9;
 const static int pvalue_idx=10;
 const static int by_matched_idx=11;
 const static int by_total_idx=12;
@@ -144,6 +147,8 @@ const static int protein_id_idx=16;
 const static int flanking_aa_idx=17;
 const static int product_type_idx=22;
 const static int ppm_idx=23;
+const static int xcorr1_idx = 24;
+const static int xcorr2_idx = 25;
 
 void TabDelimParser :: first_pass_xlink(ifstream &fin)
 {
@@ -205,6 +210,15 @@ void TabDelimParser :: first_pass_xlink(ifstream &fin)
 	  psmind_to_flankingaas[num_psm] = tokens[flanking_aa_idx];
           num_psm++;
 	}
+
+      int xcorr_rank = atoi(tokens[xcorr_rank_idx].c_str());
+      if (xcorr_rank == 2) {
+      
+        int scan = atoi(tokens[scan_idx].c_str());
+        double xcorr = atof(tokens[xcorr_idx].c_str());
+        //cerr << "adding "<<xcorr<<" for scan "<<scan<<endl;
+        scan_to_xcorr2[scan] = xcorr;
+      }
       int charge = atoi(tokens[charge_idx].c_str());
       charges.insert(charge);
 
@@ -407,6 +421,8 @@ void TabDelimParser :: allocate_feature_space_xlink()
   cerr << "num_charge_features:"<<num_charge_features<<endl;
   num_xlink_features = num_base_features + num_charge_features;
   cerr << "num_xlink_features:"<<num_xlink_features<<endl;
+  cerr << "num_spec_features:"<<num_spec_features<<endl;
+  cerr << "total_features:"<<(num_xlink_features+num_spec_features)<<endl;
   x = new double[num_xlink_features];
   memset(x,0,sizeof(double)*num_xlink_features);
   //space for spec feature vector
@@ -425,6 +441,15 @@ void TabDelimParser :: allocate_feature_space_xlink()
 
   psmind_to_product_type = new XLINKMATCH_TYPE_T[num_psm];
   memset(psmind_to_product_type,0,sizeof(int)*num_psm);
+
+  psmind_to_xcorr = new double[num_psm];
+  memset(psmind_to_xcorr,0,sizeof(double)*num_psm);
+
+  psmind_to_xcorr1 = new double[num_psm];
+  memset(psmind_to_xcorr1, 0, sizeof(double)*num_psm);
+
+  psmind_to_xcorr2 = new double[num_psm];
+  memset(psmind_to_xcorr2, 0, sizeof(double)*num_psm);
 
 }
 
@@ -602,37 +627,24 @@ int TabDelimParser::get_peptide_length_sum(int psmind) {
 
 void TabDelimParser::get_xcorr_short_long(
   int psmind, 
+  double xcorr1,
+  double xcorr2,
   double& short_xcorr, 
   double& long_xcorr
   ) {
 
   short_xcorr = 0;
   long_xcorr = 0;
+  string seq1 = psmind_to_peptide1[psmind];
+  string seq2 = psmind_to_peptide2[psmind];
 
-  if (have_spectra_) {
-    string seq1 = psmind_to_peptide1[psmind];
-    string seq2 = psmind_to_peptide2[psmind];
-
-    int loc1 = psmind_to_loc1[psmind];
-    int loc2 = psmind_to_loc2[psmind];
-    int scan = psmind_to_scan[psmind];
-    int charge = psmind_to_charge[psmind];
-    double xcorr1=0;
-    double xcorr2=0;
-
-    sfg.get_xlink_features(scan, charge, seq1, seq2, loc1, loc2, xcorr1, xcorr2);
-
-    if (seq1.length() <= seq2.length()) {
-      short_xcorr = xcorr1;
-      long_xcorr = xcorr2;
-    } else {
-      short_xcorr = xcorr2;
-      long_xcorr = xcorr1;
-    }
+  if (seq1.length() <= seq2.length()) {
+    short_xcorr = xcorr1;
+    long_xcorr = xcorr2;
   } else {
-    carp(CARP_DEBUG, "Don't have spectra");
+    short_xcorr = xcorr2;
+    long_xcorr = xcorr1;
   }
-
 }
 
 void TabDelimParser::get_flanking_aas(int psmind, bool second, vector<string>& flanking_aas) {
@@ -833,27 +845,43 @@ void TabDelimParser :: extract_xlink_features(int psmind, vector<string> & token
           " peptide mass:" << tokens[peptide_mass_idx] << endl;
   */
   
+  int scan = atoi(tokens[scan_idx].c_str());
+
   XLINKMATCH_TYPE_T peptide_type = psmind_to_product_type[psmind];
 
   //xcorr score
   x[0] = atof(tokens[xcorr_idx].c_str());
   //x[0] = atof(tokens[pvalue_idx].c_str());
-/*
-  x[1] = x[0];
-  x[2] = x[0];
 
-  if (isCrossLink(peptide_type)) {
-    get_xcorr_short_long(psmind, x[1], x[2]);
+  //Lucas's delta cn.
+  x[1] = 0;
+  if ((x[0] > 0) && (scan_to_xcorr2.find(scan) != scan_to_xcorr2.end())) {
+    double x2 = scan_to_xcorr2[scan];
+    x[1] = (x[0] - x2) / x[0];
   }
-*/
+
+  double xcorr1 = psmind_to_xcorr1[psmind];
+  double xcorr2 = psmind_to_xcorr2[psmind];
+//  x[1] = x[0];
+//  x[2] = x[0];
+  if (isCrossLink(peptide_type)) {
+    //get_xcorr_short_long(psmind, xcorr1, xcorr2, x[3], x[4]);
+  }
+
+  //if (isCrossLink(peptide_type)) {
+  //  x[1] = min(xcorr1, xcorr2);
+  //  x[2] = max(xcorr1, xcorr2);
+  //}
+
+
 //  x[7] = 0;
   //sp score
-  //x[7] = atof(tokens[sp_score_idx].c_str());
+//  x[7] = atof(tokens[sp_score_idx].c_str());
 
  //log rank by Sp
 //  x[8] = 0;
-  //if(atof(tokens[sp_rank_idx].c_str()) > 0)
-  //  x[8]=log(atof(tokens[sp_rank_idx].c_str()));
+//  if(atof(tokens[sp_rank_idx].c_str()) > 0)
+//    x[8]=log(atof(tokens[sp_rank_idx].c_str()));
 
   //matched ions/predicted ions
 //  x[9] = 0;
@@ -865,21 +893,21 @@ void TabDelimParser :: extract_xlink_features(int psmind, vector<string> & token
   double obsmass = atof(tokens[spectrum_mass_idx].c_str());
   double themass = atof(tokens[peptide_mass_idx].c_str());
 
-//  x[10] = fabs(getPPMError(obsmass, themass));
+  x[10] = fabs(getPPMError(obsmass, themass));
 
-//  x[11] = peptide_type == LINEAR_CANDIDATE; // linear peptide
+//  x[11] = peptide_type == LINEAR_CANDIDATE || SELFLOOP_CANDIDATE || DEADLINK_CANDIDATE; // linear peptide
 //  x[12] = peptide_type == SELFLOOP_CANDIDATE; // self-loop
 //  x[13] = isCrossLink(peptide_type); // cross-link
 //  x[14] = peptide_type == DEADLINK_CANDIDATE; // dead-link
 
   /* short peptide length */
-//  x[15] = get_peptide_length_short(psmind);
+  //x[15] = get_peptide_length_short(psmind);
 
   /* long peptide length */
-//  x[16] = get_peptide_length_long(psmind);
+  //x[16] = get_peptide_length_long(psmind);
 
   /* peptide length */
-//  x[17] = get_peptide_length_sum(psmind);
+  x[17] = get_peptide_length_sum(psmind);
 
   /* number of enzymatic ends */
 //  x[18] = get_num_enzymatic_ends(psmind);
@@ -900,17 +928,17 @@ void TabDelimParser :: extract_xlink_features(int psmind, vector<string> & token
 //  x[23] = cntMissedCleavages(psmind);
 
   //observed mass
-//  x[24] = atof(tokens[spectrum_mass_idx].c_str());
+  x[24] = atof(tokens[spectrum_mass_idx].c_str());
 
   // number of sequence_comparisons
 //  x[25] = log(atof(tokens[matches_idx].c_str()));
 
   //charge
-/*
+
   int charge = atoi(tokens[charge_idx].c_str());
 
   //cerr << "charge:"<<charge<<endl;
-
+/*
   for (size_t idx = 0; idx < charge_vec.size();idx++) {
     if (charge == charge_vec[idx]) {
       x[num_base_features + idx] = 1.0;
@@ -962,10 +990,18 @@ void TabDelimParser :: second_pass_xlink(ifstream &fin, int label)
 	  psmind_to_scan[psmind] = scan;
 	  psmind_to_charge[psmind] = charge;
 
+          double xcorr = atof(tokens[xcorr_idx].c_str());
+          psmind_to_xcorr[psmind] = xcorr;
+
+          double xcorr1 = atof(tokens[xcorr1_idx].c_str());
+          psmind_to_xcorr1[psmind] =  xcorr1;
+          double xcorr2 = atof(tokens[xcorr2_idx].c_str());
+          psmind_to_xcorr2[psmind] = xcorr2;
+
           double neutral_mass = atof(tokens[spectrum_mass_idx].c_str());
+          psmind_to_neutral_mass[psmind] = neutral_mass;
 	  //extract features
           XLINKMATCH_TYPE_T product_type = XLinkMatch::getCandidateType(tokens[product_type_idx]);
-
           psmind_to_product_type[psmind] = product_type;
 	  extract_xlink_features(psmind, tokens, x);
 	  f_psm.write((char*)x, sizeof(double)*num_xlink_features);
@@ -1000,9 +1036,15 @@ void TabDelimParser :: second_pass_xlink(ifstream &fin, int label)
 
               
               
-              if (have_spectra_ && num_spec_features == 3) {
-                sfg.get_spec_features_m3( scan, charge, pept1, pept2, loc1, loc2, xs);
+              if (have_spectra_) { 
+                if (num_spec_features == 3) {
+                  sfg.get_spec_features_m3( scan, charge, pept1, pept2, loc1, loc2, xs);
+                }
+                if (num_spec_features == 6) {
+                  sfg.get_spec_features_m6( scan, charge, pept1, pept2, loc1, loc2, xs);
+                }
               }
+              
 
 	      f_psm.write((char*)xs, sizeof(double)*num_spec_features);
 	      
@@ -1057,7 +1099,6 @@ void TabDelimParser :: second_pass_xlink(ifstream &fin, int label)
 	}
     }
 }
-
 
 void TabDelimParser :: save_data_in_binary_xlink(string out_dir)
 {
@@ -1148,7 +1189,27 @@ void TabDelimParser :: save_data_in_binary_xlink(string out_dir)
   f_psmind_to_product_type.close();
   fname.str("");
 
-  
+  //psmind_to_xcorr
+  fname << out_dir << "/psmind_to_xcorr";
+  ofstream f_psmind_to_xcorr(fname.str().c_str(), ios::binary);
+  f_psmind_to_xcorr.write((char*)psmind_to_xcorr,sizeof(double)*num_psm);
+  f_psmind_to_xcorr.close();
+  fname.str("");
+
+  //psmind_to_xcorr1
+  fname << out_dir << "/psmind_to_xcorr1";
+  ofstream f_psmind_to_xcorr1(fname.str().c_str(), ios::binary);
+  f_psmind_to_xcorr1.write((char*)psmind_to_xcorr1,sizeof(double)*num_psm);
+  f_psmind_to_xcorr1.close();
+  fname.str("");
+
+ //psmind_to_xcorr2
+  fname << out_dir << "/psmind_to_xcorr2";
+  ofstream f_psmind_to_xcorr2(fname.str().c_str(), ios::binary);
+  f_psmind_to_xcorr2.write((char*)psmind_to_xcorr2,sizeof(double)*num_psm);
+  f_psmind_to_xcorr2.close();
+  fname.str("");
+
 
 
 }
@@ -1301,7 +1362,7 @@ int TabDelimParser :: run_on_xlink(vector<string> &filenames, string &ms2filenam
   if (have_spectra_) {
     sfg.read_ms2_file();
     sfg.initialize_aa_tables();
-    num_spec_features = 3;
+    num_spec_features = 6;
   }
   
   allocate_feature_space_xlink();

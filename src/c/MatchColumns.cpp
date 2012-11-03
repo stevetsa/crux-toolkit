@@ -65,7 +65,8 @@ static const char* match_column_strings[NUMBER_MATCH_COLUMNS] = {
   "product type",
   "ppm",
   "xcorr 1",
-  "xcorr 2"
+  "xcorr 2",
+  "protein id x"
 };
 
 /**

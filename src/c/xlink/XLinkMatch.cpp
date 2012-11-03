@@ -64,6 +64,16 @@ string XLinkMatch::getProteinIdString() {
   }
 }
 
+string XLinkMatch::getProteinIdXString() {
+  Peptide* peptide = this -> getPeptide(0);
+  if (peptide == NULL) {
+    return string("");
+  } else {
+    return XLink::get_protein_ids_locations(peptide);
+  }
+
+}
+
 string XLinkMatch::getFlankingAAString() {
   Peptide* peptide = this -> getPeptide(0);
 
@@ -228,6 +238,12 @@ void XLinkMatch::printOneMatchField(
     (MATCH_COLUMNS_T)column_idx,
     getScore(XCORR_SECOND));
     break;
+  case PROTEIN_ID_X_COL:
+    output_file->setColumnCurrentRow(
+      (MATCH_COLUMNS_T)column_idx,
+      getProteinIdXString());
+    break;
+
   default:
     Match::printOneMatchField(column_idx,
       collection,

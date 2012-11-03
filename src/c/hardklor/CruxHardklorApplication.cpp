@@ -205,9 +205,12 @@ int CruxHardklorApplication::main(
   
   if (string(get_string_parameter_pointer("hardklor-options")) != "__NULL_STR") {
     string hardklor_options = get_string_parameter_pointer("hardklor-options");
+    //cerr << hardklor_options<<endl;
+    
     vector<string> tokens;
     DelimitedFile::tokenize(hardklor_options, tokens, ',');
     for (size_t idx=0;idx < tokens.size();idx++) {
+      
       hk_args_vec.push_back(tokens.at(idx));
     }
   }

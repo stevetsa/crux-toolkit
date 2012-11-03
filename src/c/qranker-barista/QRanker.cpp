@@ -6,7 +6,7 @@
 #include "XLinkMatch.h"
 
 QRanker::QRanker() :  seed(1),
-                      selectionfdr(0.01),
+                      selectionfdr(0.02),
                       num_hu(4),
                       mu(0.01),
                       weightDecay(0.0000),
@@ -18,6 +18,16 @@ QRanker::~QRanker()
 {
 }
 
+double QRanker:: getObjectiveErrorFDR(
+  PSMScores& set,
+  NeuralNet& n,
+  double fdr) {
+
+  int interval = get_interval(set, n, fdr, 0, 1);
+  cerr << "interval is:"<<interval<<endl;
+  return getObjectiveError(set, n, interval);
+
+}
 
 double QRanker:: getObjectiveError(
   PSMScores& set, 
@@ -47,8 +57,11 @@ double QRanker:: getObjectiveError(
       }
     }
   }
-
-  return sum / count;
+  if (count == 0) {
+    return 0.0;
+  } else {
+    return sum / count;
+  }
 
 }
 
@@ -187,7 +200,7 @@ void QRanker :: write_results(string filename, PSMScores& set, bool decoy)
 
   //use the best rank/scan to calculate q-values
   cerr <<"calculating FDR"<<endl;
-  set.calcOverFDRBH(0.01);
+  set.calcOverFDRBH(selectionfdr);
 
   cerr <<"calculating PEP"<<endl;
 //  computePEP(set);
@@ -205,7 +218,10 @@ void QRanker :: write_results(string filename, PSMScores& set, bool decoy)
         "spectrum neutral mass" << "\t"
         "sequence" << "\t" << 
         "protein id" << "\t" <<
-        "product type";
+        "product type" << "\t" <<
+        "xcorr score" << "\t" <<
+        "xcorr 1" << "\t" <<
+        "xcorr 2" ; 
   //if (decoy) {
   f1 << "\tlabel";
   //}
@@ -226,6 +242,9 @@ void QRanker :: write_results(string filename, PSMScores& set, bool decoy)
       double pvalue = set[i].p;
       double pep = set[i].PEP;
       string proteins = d.psmind2protein1(psmind);
+      double xcorr = d.psmind2xcorr(psmind);
+      double xcorr1 = d.psmind2xcorr1(psmind);
+      double xcorr2 = d.psmind2xcorr2(psmind);
       ostringstream oss;
       if (label == 1 || decoy) {
         oss << d.psmind2peptide1(psmind);
@@ -253,7 +272,10 @@ void QRanker :: write_results(string filename, PSMScores& set, bool decoy)
               spectrum_neutral_mass << "\t" << 
               sequence << "\t" << 
               proteins << "\t" << 
-              product_type;
+              product_type << "\t" <<
+              xcorr << "\t" <<
+              xcorr1 << "\t" <<
+              xcorr2 ;
         //if (decoy) {
           f1 << "\t" << label;
         //}
@@ -612,13 +634,51 @@ void QRanker :: train_net_hybrid(PSMScores &set, int interval)
 }
 
 
+void QRanker :: train_xcorr(PSMScores& set) {
+
+  double* gc = new double[1];
+
+  for (int idx = 0; idx < switch_iter ;idx++) {
+    bool converged = true;
+    getOverFDR(set, net, 1.0);
+    double *r1;
+    double *r2;
+    for (int idx = 0; idx < set.size()-1; idx++) {
+      if (d.psmind2xcorr(set[idx].psmind) < d.psmind2xcorr(set[idx+1].psmind)) {
+        double xcorr1 = d.psmind2xcorr(set[idx].psmind);
+        double xcorr2 = d.psmind2xcorr(set[idx+1].psmind);
+        r1 = nets[0].fprop(d.psmind2features(set[idx].psmind));
+        r2 = nets[1].fprop(d.psmind2features(set[idx+1].psmind));
+        //cerr << idx << " " << r1[0] << " " << r2[0] << " " << d.psmind2xcorr(set[idx].psmind) << " " << d.psmind2xcorr(set[idx+1].psmind)<<endl; 
+        double xdiff = xcorr2-xcorr1;
+        if (xdiff > 0.01 && r2[0] < r1[0] ) {
+          net.clear_gradients();
+          gc[0] = 1;
+          nets[0].bprop(gc);
+          gc[0] = -1;
+          nets[1].bprop(gc);
+          net.update(mu, weightDecay);
+          r1 = nets[0].fprop(d.psmind2features(set[idx].psmind));
+          r2 = nets[1].fprop(d.psmind2features(set[idx+1].psmind));
+          //cerr << "now "<<r1[0] << " " << r2[0] <<endl; 
+          
+          //cerr << "======================="<<endl;
+
+          converged = false;
+        }
+      }
+    }
+    if (converged) break;
+  }
+  delete []gc;
+}
 
 void QRanker :: train_many_general_nets()
 {
   interval = trainset.size();
   for(int i=0;i<switch_iter;i++) {
     train_net_ranking(trainset, interval);
-    //train_net_hybrid(trainset, interval);
+    //train_net_hybrid(trainset, interval); 
            
     //record the best result
     getMultiFDR(thresholdset,net,qvals);
@@ -643,7 +703,7 @@ void QRanker :: train_many_general_nets()
     }
     if((i % 10) == 0)
       {
-/*        
+    /*    
 	cerr << "Iteration " << i << " : \n";
 	cerr << "trainset: ";
 	getMultiFDR(trainset,net,qvals);
@@ -653,22 +713,82 @@ void QRanker :: train_many_general_nets()
 	getMultiFDR(testset,net,qvals);
 	printNetResults(overFDRmulti);
 	cerr << "\n";
-  */      
+    */  
       }
   }
 
 }
 
+
+int QRanker :: get_interval(PSMScores& set, NeuralNet& net, double qval, int min_targets, int min_decoys) {
+
+  int current_ntargets = 0;
+  int current_ndecoys = 0;
+
+  int interval = 0;
+  int ntargets = 0;
+  int ndecoys = 0;
+  int idx = 0;
+
+  getOverFDR(set, net, qval);
+
+  for (int idx = 0; idx < set.size();idx++) {
+    int label = set[idx].label;
+    if (label == 1) {
+      current_ntargets++;
+    } else {
+      current_ndecoys++;
+    }
+
+    if (current_ntargets > 0) {
+      double fdr = (double)current_ndecoys / (double)current_ntargets * set.factor; 
+      if (fdr <=qval) {
+        interval = idx;
+        ntargets = current_ntargets;
+        ndecoys = current_ndecoys;
+      }
+    }
+  }
+/*
+  cerr <<"fdr:"<<qval<<
+         " interval:" << interval << 
+         " ntargets:"<<ntargets<<
+         " ndecoys:"<<ndecoys<<
+         " size:"<<set.size() << endl;
+*/
+  while ((ntargets < min_targets || ndecoys < min_decoys) & interval < set.size()-1) {
+    interval++;
+    if (set[interval].label == 1) {
+      ntargets++;
+    } else {
+      ndecoys++;
+    }
+  }
+
+//  cerr <<"final interval:"<<interval<<" ntargets:"<<ntargets<<" ndecoys:"<<ndecoys<<endl;
+  return interval;
+
+}
+
+
 void QRanker :: train_many_target_nets()
 {
 
+  //PSMScores trainset_max;
+  //PSMScores testset_max;
   int  thr_count = num_qvals-1;
   while (thr_count > 0)
     {
       net.copy(max_net_gen[thr_count]);
           
+      //calcScores(trainset, net);
+      //trainset.getMaxPerScan(d, trainset_max);
+
       //cerr << "training thresh " << thr_count  << "\n";
-      interval = getOverFDR(trainset, net, qvals[thr_count]);
+      //interval = getOverFDR(trainset, net, qvals[thr_count]);
+      //cerr << interval << " "<< get_interval(trainset, net, qvals[thr_count]);
+      interval = get_interval(trainset, net, qvals[thr_count]);
+      //cerr << "interval: "<<interval<<endl;
       //interval = max_overFDR[thr_count];
       if(interval < 10)
 	interval = (int)trainset.size()/50;
@@ -677,9 +797,17 @@ void QRanker :: train_many_target_nets()
 		
 	//sorts the examples in the training set according to the current net scores
 	getMultiFDR(trainset,net,qvals);
-	//train_net_ranking(trainset, interval);
-	train_net_hybrid(trainset, interval);
-				
+	train_net_ranking(trainset, interval);
+	//train_net_hybrid(trainset, interval);
+        //calcScores(trainset, net);
+        //trainset.getMaxPerScan(d, trainset_max);
+        int new_interval = get_interval(trainset, net, qvals[thr_count]);
+        if (new_interval > interval) {
+          //cerr << "interval_old:"<<interval<<" new:"<<new_interval<<endl;
+          interval = new_interval;
+          
+        }
+	getMultiFDR(trainset,net,qvals);			
 	for(int count = 0; count < num_qvals;count++)
 	  {
 	    if(overFDRmulti[count] > max_overFDR[count])
@@ -694,10 +822,12 @@ void QRanker :: train_many_target_nets()
 /*            
 	    cerr << "Iteration " << i << " : \n";
             cerr << "trainset: ";
-            getMultiFDR(trainset,net,qvals);
+            getMultiFDR(trainset_max,net,qvals);
             printNetResults(overFDRmulti);
             cerr << "\n";
-	    getMultiFDR(testset,net,qvals);
+            calcScores(testset,net);
+            testset.getMaxPerScan(d, testset_max);
+	    getMultiFDR(testset_max,net,qvals);
 	    cerr << "testset: ";
 	    printNetResults(overFDRmulti);
 	    cerr << "\n";
@@ -757,12 +887,7 @@ void QRanker::train_many_nets()
     int bs = 0;
     
     net.initialize(d.get_num_features(),num_hu,lf,bs);
-    for(int count = 0; count < num_qvals; count++){
-      max_net_gen[count] = net;
-    }
-    for(int count = 0; count < num_qvals; count++){
-      max_net_targ[count] = net;
-    }
+
   /*
     for(int count = 0; count < num_qvals; count++) {
       cerr <<"max_overFDR["<<count<<"]="<<max_overFDR[count]<<endl;
@@ -772,7 +897,17 @@ void QRanker::train_many_nets()
     nets = new NeuralNet[2];
       nets[0].clone(net);
     nets[1].clone(net);
-  /*
+
+    //train_xcorr(trainset);
+
+    for(int count = 0; count < num_qvals; count++){
+      max_net_gen[count] = net;
+    }
+    for(int count = 0; count < num_qvals; count++){
+      max_net_targ[count] = net;
+    }
+
+/*
     cerr << "Before iterating\n";
     cerr << "trainset: ";
     getMultiFDR(trainset,net,qvals);
@@ -785,7 +920,9 @@ void QRanker::train_many_nets()
     getMultiFDR(testset,net,qvals);
     printNetResults(overFDRmulti);
     cerr << "\n";
-    */
+*/
+    //switch_iter =0;niter=20;
+
     train_many_general_nets();
     
     //copy the general net into target nets;
@@ -895,109 +1032,171 @@ void QRanker::selectHyperParameters() {
   PSMScores cv_trainset;
   PSMScores cv_testset;
   PSMScores cv_fullset;
-  PSMScores max;
+  PSMScores max_per_scan;
 
   PSMScores::fillFeaturesSplitScan(trainset, d, cv_trainset, cv_testset);
 
   
+  vector<int> general_iters;
+  general_iters.push_back(5);
+  general_iters.push_back(10);
+  general_iters.push_back(20);
+  general_iters.push_back(40);
 
-  vector<pair<int, int> > iters;
-  //iters.push_back(pair<int,int>(2,4));
-  iters.push_back(pair<int,int>(5,10));
-  iters.push_back(pair<int,int>(10,20));
-  iters.push_back(pair<int,int>(20,40));
+  vector<int> ranking_iters;
+  ranking_iters.push_back(5);
+  ranking_iters.push_back(10);
+  ranking_iters.push_back(20);
+  ranking_iters.push_back(40);
 
   vector<double> mus;
+  mus.push_back(0.0005);
   mus.push_back(0.001);
   mus.push_back(0.005);
   mus.push_back(0.01);
-  
+//  mus.push_back(0.05);
+//  mus.push_back(0.1);
+
   vector<double> wds;
   wds.push_back(0.000);
   wds.push_back(1e-7);
   wds.push_back(1e-6);
+//  wds.push_back(1e-5);
 
   vector<int> num_hus;
   num_hus.push_back(1);
   num_hus.push_back(2);
-//  num_hus.push_back(3);
+  num_hus.push_back(3);
 //num_hus.push_back(5);
   //num_hus.push_back(7);
  
-  int best_iter_idx = -1;
+  int best_general_iter_idx = -1;
+  int best_ranking_iter_idx = -1;
   int best_mu_idx=-1;
   int best_wd_idx=-1;
   int best_num_hu_idx=-1;
 
   int best_score = -1;
+  double best_obj = -1;
 
-  for (size_t iter_idx = 0; iter_idx < iters.size(); iter_idx++) {
+  for (size_t general_iter_idx = 0; general_iter_idx < general_iters.size();general_iter_idx++) {
 
-    for (size_t mu_idx = 0; mu_idx < mus.size(); mu_idx++) {
+    for (size_t ranking_iter_idx = 0; ranking_iter_idx < ranking_iters.size(); ranking_iter_idx++) {
 
-      for (size_t wd_idx = 0; wd_idx < wds.size(); wd_idx++) {
+      for (size_t mu_idx = 0; mu_idx < mus.size(); mu_idx++) {
 
-        for (size_t num_hu_idx = 0; num_hu_idx < num_hus.size(); num_hu_idx++) {
-          this->switch_iter = iters[iter_idx].first;
-          this->niter = iters[iter_idx].second;
-          this->mu = mus[mu_idx];
-          this->weightDecay = wds[wd_idx];
-          this->num_hu = num_hus[num_hu_idx];
-          cv_fullset.clear();
-          trainset = cv_trainset;
-          thresholdset = cv_trainset;
-          testset = cv_testset;
+        for (size_t wd_idx = 0; wd_idx < wds.size(); wd_idx++) {
 
-          train_many_nets();
+          for (size_t num_hu_idx = 0; num_hu_idx < num_hus.size(); num_hu_idx++) {
+            this->switch_iter = general_iters[general_iter_idx];
+            this->niter = general_iters[general_iter_idx]+ranking_iters[ranking_iter_idx];
+            if (this->switch_iter == 0 && this->niter == 0) {
+              continue;
+            }
 
-          int score = getOverFDR(cv_testset, net, 0.01);
+            this->mu = mus[mu_idx];
+            this->weightDecay = wds[wd_idx];
+            this->num_hu = num_hus[num_hu_idx];
+            cv_fullset.clear();
+            trainset = cv_trainset;
+            thresholdset = cv_trainset;
+            testset = cv_testset;
+
+            train_many_nets();
+
+            calcScores(testset, net);
+            testset.getMaxPerScan(d, max_per_scan);
+
+            int score = max_per_scan.calcOverFDR(selectionfdr);
+            double obj = getObjectiveError(max_per_scan, net);
+
+//            int score = trainset.calcOverFDR(selectionfdr);
+//            double obj = getObjectiveError(trainset, net);
+
+            //swap trainset and testset.
+            trainset = cv_testset;
+            thresholdset = cv_testset;
+            testset = cv_trainset;
+  
+            train_many_nets();
+  
+            calcScores(testset, net);
+            testset.getMaxPerScan(d, max_per_scan);
+            
+            score+= max_per_scan.calcOverFDR(selectionfdr);
+            obj += getObjectiveError(max_per_scan, net);
+    
+
+//            score+= testset.calcOverFDR(selectionfdr);
+//            obj += getObjectiveError(testset, net);
+            obj = obj / 2.0;
 
 
-          //swap trainset and testset.
-          trainset = cv_testset;
-          thresholdset = cv_testset;
-          testset = cv_trainset;
-
-          train_many_nets();
-          
-          score+= getOverFDR(cv_trainset, net, 0.01);
-
-          cout <<"switch:"<<switch_iter<<" niter:"<<niter<<" hu:"<< num_hu << " mu:"<<mu<<" wd:"<<weightDecay<<" score:"<<score<<endl;
-          if (score > best_score) {
-            best_score = score;
-            best_iter_idx = iter_idx;
-            best_num_hu_idx = num_hu_idx;
-            best_wd_idx = wd_idx;
-            best_mu_idx = mu_idx;
+            if (score > best_score || (score == best_score && best_obj > obj)) {
+              cout <<"switch:"<<switch_iter<<
+                   " niter:"<<niter<<
+                   " hu:"<< num_hu << 
+                   " mu:"<<mu<<
+                   " wd:"<<weightDecay<<
+                   " score:"<<score<<
+                   " obj: " << obj << endl;
+              best_score = score;
+              best_obj = obj;
+              best_general_iter_idx = general_iter_idx;
+              best_ranking_iter_idx = ranking_iter_idx;
+              best_num_hu_idx = num_hu_idx;
+              best_wd_idx = wd_idx;
+              best_mu_idx = mu_idx;
+            }
           }
         }
       }
     }
   }
 
-  if (best_iter_idx != -1) {
-    this->switch_iter = iters[best_iter_idx].first;
-    this->niter = iters[best_iter_idx].second;
+  if (best_general_iter_idx != -1) {
+    if ((best_general_iter_idx == 0) || (best_general_iter_idx == general_iters.size()-1)) {
+      cerr <<"edge with general iters! :"<<general_iters[best_general_iter_idx]<<endl;
+    }
+    this->switch_iter = general_iters[best_general_iter_idx];
+    this->niter = this->switch_iter;
+  }
+
+  if (best_ranking_iter_idx != -1) {
+    if (best_ranking_iter_idx == 0 || best_ranking_iter_idx == ranking_iters.size() -1) {
+      cerr <<"edge with ranking iters! :"<<ranking_iters[best_ranking_iter_idx] << endl;
+    }
+    this->niter = this->switch_iter + ranking_iters[best_ranking_iter_idx];
   }
 
   if (best_mu_idx != -1) {
+    if (best_mu_idx == 0 || best_mu_idx == mus.size()-1) {
+      cerr <<"edge with mu! :"<<mus[best_mu_idx]<<endl;
+    }
     this->mu = mus[best_mu_idx];
   }
   if (best_wd_idx != -1) {
+    if (best_wd_idx == 0 || best_wd_idx == wds.size()-1) {
+      cerr << "egde with wd! :"<<wds[best_wd_idx] << endl;
+    }
     this->weightDecay = wds[best_wd_idx];
   }
 
   if (best_num_hu_idx != -1) {
+    if (best_num_hu_idx == 0 || best_num_hu_idx == num_hus.size()-1) {
+      cerr << "edge with num_hus! :"<<num_hus[best_num_hu_idx]<<endl;
+    }
     this->num_hu = num_hus[best_num_hu_idx];
   }
 
   cerr << "best switch:"<<switch_iter<<endl;
-  cerr << "best niter:"<<niter<<endl;
+  cerr << "best iter:"<<niter<<endl;
   cerr << "best num_hu:"<<num_hu<<endl;;
   cerr << "best mu:"<<mu<<endl;
   cerr << "best wd:"<<weightDecay<<endl;
   cerr << "best score:"<<best_score<<endl;
-  
+  cerr << "best obj:"<<best_obj<<endl;
+
   trainset = previous_trainset;
   testset  = previous_testset;
   thresholdset = previous_thresholdset;
@@ -1109,7 +1308,7 @@ int QRanker::run( ) {
   writeFeatures();
 
   PSMScores max;
-  
+  PSMScores fullset_max;
   d.load_psm_data_for_training();
   d.normalize_psms();
   //PSMScores::fillFeaturesSplit(trainset, testset, d, 0.5);
@@ -1141,8 +1340,8 @@ int QRanker::run( ) {
 
   calcScores(testset, net);
   calcRanks(testset, net);
-//  testset.getMaxPerScan(d, max);
-//  max.calcPValues();
+  testset.getMaxPerScan(d, max);
+  max.calcPValues();
   testset.calcPValues();
 
   // write out the testset results
@@ -1152,7 +1351,7 @@ int QRanker::run( ) {
   
   //fullset.add_psms(max);
   fullset.add_psms(testset);
-
+  fullset_max.add_psms(max);
   //swap trainset and test set.
   thresholdset = testset;
   testset = trainset;
@@ -1175,8 +1374,8 @@ int QRanker::run( ) {
 
   calcScores(testset, net);
   calcRanks(testset, net);
-  //testset.getMaxPerScan(d, max);
-  //max.calcPValues();
+  testset.getMaxPerScan(d, max);
+  max.calcPValues();
   testset.calcPValues();
 
   //write out the trainset results
@@ -1185,7 +1384,9 @@ int QRanker::run( ) {
   write_results(res.str(), testset, true);
 
   fullset.add_psms(testset);
+  fullset_max.add_psms(max);
   fullset.calc_factor();
+  fullset_max.calc_factor();
 
   //write out the fullset results
   res.str("");
@@ -1195,9 +1396,9 @@ int QRanker::run( ) {
 
   res.str("");
   res << out_dir << "/qranker.target";
-  write_results(res.str(), fullset, false);
+  write_results(res.str(), fullset_max, true);
 
-  int q = fullset.calcOverFDRBH(0.01);
+  int q = fullset_max.calcOverFDRBH(selectionfdr);
   
   ofstream fout("objective.txt");
   fout << "train1\ttest1\ttrain2\ttest2\tq"<<endl;

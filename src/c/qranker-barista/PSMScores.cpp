@@ -125,7 +125,9 @@ int PSMScores::calcOverFDR(double fdr) {
   int positives=0,nulls=0;
   double efp=0.0,q;
   posNow = 0;
-  register unsigned int ix=0;
+  register int ix=0;
+
+  map<double,double> score_to_fdr;
   for(it=scores.begin();it!=scores.end();it++) {
     if (it->label!=-1)
       positives++;
@@ -139,14 +141,33 @@ int PSMScores::calcOverFDR(double fdr) {
       q=pi0;
     if (q>pi0)
       q=pi0;
-    it->q=q;
+    score_to_fdr[it->score] = q;
+/*
     if (fdr>=q)
       posNow = positives;
+*/
   }
-  for (ix=scores.size();--ix;) {
-    if (scores[ix-1].q > scores[ix].q)
-      scores[ix-1].q = scores[ix].q;  
+
+
+  double min_fdr = pi0;
+  //cerr << "assigning q-values"<<endl;
+  for (ix=scores.size()-1;ix >=0;ix--) {
+    //cerr << "ix:"<<ix << endl;
+    double current_score = scores[ix].score;
+    
+    //cerr << "score:"<< current_score << endl;
+    double current_fdr = score_to_fdr[current_score];
+    //cerr << "fdr:"<<current_fdr<<endl;
+    if (current_fdr < min_fdr) {
+      min_fdr = current_fdr;
+    }
+    scores[ix].q = min_fdr;
+    if (min_fdr <= fdr) {
+      posNow++;
+    }
   }
+  
+
   return posNow;
 }
 
@@ -163,11 +184,10 @@ void PSMScores::calcPValues() {
 
   for ( vector<PSMScoreHolder>::iterator it = scores.begin();
     it != scores.end(); it++) {
-
-      it->p = nulls;
       if (it->label == -1) {
         nulls++;
       }
+      it->p = nulls;
    }
 
   for ( vector<PSMScoreHolder>::iterator it = scores.begin();
@@ -310,7 +330,7 @@ void PSMScores::split(PSMScores& train, PSMScores& test, Dataset& d, map<int, pa
   }
 
   set<int> train_scans;
-
+  set<int> test_scans;
   for (map<pair<int,int>, vector<int> >::iterator iter = pos_neg_to_scans.begin();
     iter != pos_neg_to_scans.end();
     ++iter) {
@@ -325,6 +345,9 @@ void PSMScores::split(PSMScores& train, PSMScores& test, Dataset& d, map<int, pa
     for (int idx = 0; idx < nscans_train;idx++) {
       train_scans.insert(scans[idx]);
     }
+    for (int idx = nscans_train; idx < scans.size();idx++) {
+      test_scans.insert(scans[idx]);
+    }
 
   } 
 
@@ -335,7 +358,7 @@ void PSMScores::split(PSMScores& train, PSMScores& test, Dataset& d, map<int, pa
     psm.label = d.psmind2label(idx);
     if (train_scans.find(scan) != train_scans.end()) {
       train.add_psm(psm);
-    } else {
+    } else if (test_scans.find(scan) != test_scans.end()) {
       test.add_psm(psm);
     }
   }

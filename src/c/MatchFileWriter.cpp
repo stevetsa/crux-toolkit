@@ -70,6 +70,7 @@ void MatchFileWriter::setPrecision(){
     case SEQUENCE_COL:
     case CLEAVAGE_TYPE_COL:
     case PROTEIN_ID_COL:
+    case PROTEIN_ID_X_COL:
     case FLANKING_AA_COL:
     case UNSHUFFLED_SEQUENCE_COL:
     case PARSIMONY_RANK_COL:
@@ -248,6 +249,7 @@ void MatchFileWriter::addColumnNames(CruxApplication* application,
       addColumnName(PPM_ERROR_COL);
       addColumnName(XCORR_FIRST_COL);
       addColumnName(XCORR_SECOND_COL);
+      addColumnName(PROTEIN_ID_X_COL);
 
     }
     break;

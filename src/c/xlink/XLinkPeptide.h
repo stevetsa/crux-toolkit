@@ -106,6 +106,8 @@ class XLinkPeptide : public XLinkMatch {
   virtual bool isModified();
 
   virtual std::string getProteinIdString();
+  virtual std::string getProteinIdsXLocations(int idx);
+  virtual std::string getProteinIdXString();
   virtual std::string getFlankingAAString();
 
 };

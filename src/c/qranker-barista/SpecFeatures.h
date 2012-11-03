@@ -78,12 +78,24 @@ class SpecFeaturesGenerator
     int mod_location,
     double mod_mass);
 
+  void add_peaks_xlink_m6(
+    int ch,
+    string& peptide,
+    int mod_location,
+    double mod_mass);
+
+
   void get_spec_features_m3(
     int scan, int ch, 
     string& pep1, string & pep2, 
     int loc1, int loc2, 
     double *features);
 
+  void get_spec_features_m6(
+    int scan, int ch, 
+    string& pep1, string & pep2, 
+    int loc1, int loc2, 
+    double *features);
 
   void get_xlink_features(
     int scan, int ch, 

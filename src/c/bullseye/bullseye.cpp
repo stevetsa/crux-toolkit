@@ -90,7 +90,7 @@ int main(int argc, char* argv[]){
 			}
 		}
 	}
-
+ 
 	p1.processHK(argv[argc-4]);
 
 	//Remove contaminants
@@ -221,6 +221,7 @@ void matchMS2(CKronik2& p, char* ms2File, char* outFile, char* outFile2){
 		
     //see if we can pick it up on base peak alone
     for(i=lookup[j-1];i<=lookup[j+1];i++){
+      if (strstr(p.at(i).mods,"Ox") == NULL) { continue; }
       ppm = (p.at(i).basePeak-s.getMZ())/s.getMZ()*1000000;
       if( fabs(ppm)<ppmTolerance &&
           s.getRTime() > p.at(i).firstRTime-rtTolerance &&
@@ -230,10 +231,12 @@ void matchMS2(CKronik2& p, char* ms2File, char* outFile, char* outFile2){
         vHit.push_back(i);
       }
     }
+    
 
     //if base peak wasn't enough, perhaps a different peak was isolated
     if(!bMatchPrecursorOnly){
       for(i=0;i<p.size();i++){
+        if (strstr(p.at(i).mods,"Ox") == NULL) {continue;}
         lowMass = (p.at(i).monoMass+p.at(i).charge*1.00727649)/p.at(i).charge-0.05;
         switch(p.at(i).charge){
           case 1:
@@ -276,6 +279,7 @@ void matchMS2(CKronik2& p, char* ms2File, char* outFile, char* outFile2){
       } else {
         s.addZState(p.at(index).charge,p.at(index).monoMass+1.00727649);
         s.addEZState(p.at(index).charge,p.at(index).monoMass+1.00727649,p.at(index).rTime,p.at(index).sumIntensity);
+        cerr << "scan:"<<s.getScanNumber()<<" mods:"<<p.at(index).mods<<endl;
       }
       o.add(s);
       if(o.size()>500){
@@ -309,6 +313,7 @@ void matchMS2(CKronik2& p, char* ms2File, char* outFile, char* outFile2){
         } else {
           s.addZState(p.at(vHit[i]).charge,p.at(vHit[i]).monoMass+1.00727649);
           s.addEZState(p.at(vHit[i]).charge,p.at(vHit[i]).monoMass+1.00727649,p.at(vHit[i]).rTime,p.at(vHit[i]).sumIntensity);
+          cerr << "scan:"<<s.getScanNumber()<<" mods:"<<p.at(index).mods<<endl;
         }
       }
 

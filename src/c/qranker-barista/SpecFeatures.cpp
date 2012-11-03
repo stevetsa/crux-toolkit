@@ -729,6 +729,111 @@ void SpecFeaturesGenerator :: get_spec_features_m3(int scan, int ch , string &pe
 
 }
 
+
+void SpecFeaturesGenerator::add_peaks_xlink_m6(
+  int ch,
+  string& peptide,
+  int mod_location,
+  double mod_mass) {
+  /*
+   * 0. b-ion
+   * 1. y_ion
+   * 2. flanking
+   * 3. h2o_nl
+   * 4. co2_nl
+   * 5. nh3_nl
+   */
+  //start from beginning of peptide and do the B-ION
+  double fragment_mass = 0.0;
+
+//  cerr << "Peptide:"<<peptide<<" mod:"<<mod_location<<" mod mass:"<<mod_mass<<endl;
+//  cerr << "BIONS"<<endl;
+  for (unsigned int i = 0 ;i < peptide.length()-1;i++) {
+    char aa = peptide.at(i);
+      
+    int aa_ind = aa-'A';
+
+
+    
+    //do the B-ION
+    fragment_mass += aa_masses_mono[aa_ind];
+    //is it the xlink index? 
+    if ((int)i == mod_location) {
+      //yes, add the mod mass
+//      cerr << "adding "<<mod_mass<<" to "<<i<<endl;
+        fragment_mass += mod_mass;
+    }
+    
+    //cerr << "  aa["<<i<<"]="<<aa<<" " << fragment_mass << endl;
+
+
+    for (int charg = 1; charg < ch;charg++) {
+     
+      //add the ion itself (0 in array)
+      double mz = (fragment_mass+charg*proton_mass)/charge;
+      int idx = (int)(mz/bin_width_mono+0.5);
+      add_intensity(ts_m6[0], idx, 1.0);
+      //add its flanking peaks (2 in array)
+      add_intensity(ts_m6[2], idx-1, 1.0);
+      add_intensity(ts_m6[2], idx+1, 1.0);
+
+      //add its neutral losses nh3 (5 in array)
+      double mz_nh3 = mz-(mass_nh3_mono/charg);
+      idx = (int)(mz_nh3/bin_width_mono+0.5);
+      add_intensity(ts_m6[5], idx, 1.0);
+      //add its neutral losses h20 (3 in array)
+      double mz_h2o = mz-(mass_h2o_mono/charg);
+      idx = (int)(mz_h2o/bin_width_mono+0.5);
+      add_intensity(ts_m6[3], idx, 1.0);
+
+      //add neutral loss co (4 in array) 
+      double mz_co = mz-(mass_co_mono/charg);
+      idx = (int)(mz_co/bin_width_mono+0.5);
+      add_intensity(ts_m6[4], idx, 1.0);
+    }
+  }
+
+  //cerr << "YIONS"<<endl;
+  //do the Y-ION for peptide 
+  fragment_mass = mass_h2o_mono;
+      
+  for(unsigned int i = peptide.size(); i > 1;i--)
+    {
+      char aa = peptide.at(i-1);
+      fragment_mass += aa_masses_mono[aa-'A'];
+
+      //is it xlink index?
+      if ((int)(i-1) == mod_location) {
+        //cerr << "adding "<<mod_mass<<" to "<<i<<endl;
+        //yes, add the pep2 mod mass
+        fragment_mass += mod_mass;
+      }
+    //cerr << "  aa["<<i<<"]="<<aa<<" " << fragment_mass << endl;
+	  //add the fragment
+	  for (int charg = 1; charg < ch; charg++)
+	    {
+	      //add the ion itself (1 in array)
+	      double mz = (fragment_mass+charg*proton_mass)/charg;
+	      int idx = (int)(mz/bin_width_mono+0.5);
+	      add_intensity(ts_m6[1], idx, 1.0);
+		
+	      //add its flanking peaks (2 in array)
+	      add_intensity(ts_m6[2], idx-1, 1.0);
+	      add_intensity(ts_m6[2], idx+1, 1.0);
+		
+	      //add its neutral losses (5 in array)
+	      double mz_nh3 = mz-(mass_nh3_mono/charg);
+	      idx = (int)(mz_nh3/bin_width_mono+0.5);
+	      add_intensity(ts_m6[5], idx, 1.0);
+	      //double mz_h2o = mz-(mass_h2o_mono/charg);
+	      //idx = (int)(mz_h2o/bin_width_mono+0.5);
+	      //add_intensity(ts_m3[2], idx, 1.0);
+	    }
+	  }
+      
+
+}
+
 void SpecFeaturesGenerator::add_peaks_xlink_m3(
   int ch,
   string& peptide,
@@ -737,20 +842,26 @@ void SpecFeaturesGenerator::add_peaks_xlink_m3(
 
   //start from beginning of peptide and do the B-ION
   double fragment_mass = 0.0;
+
+//  cerr << "Peptide:"<<peptide<<" mod:"<<mod_location<<" mod mass:"<<mod_mass<<endl;
+//  cerr << "BIONS"<<endl;
   for (unsigned int i = 0 ;i < peptide.length()-1;i++) {
     char aa = peptide.at(i);
       
     int aa_ind = aa-'A';
 
+
+    
     //do the B-ION
     fragment_mass += aa_masses_mono[aa_ind];
     //is it the xlink index? 
     if ((int)i == mod_location) {
       //yes, add the mod mass
+//      cerr << "adding "<<mod_mass<<" to "<<i<<endl;
         fragment_mass += mod_mass;
     }
-
-    //cerr << "aa["<<i<<"]="<<aa<<" " << fragment_mass << endl;
+    
+    //cerr << "  aa["<<i<<"]="<<aa<<" " << fragment_mass << endl;
 
 
     for (int charg = 1; charg < ch;charg++) {
@@ -777,6 +888,8 @@ void SpecFeaturesGenerator::add_peaks_xlink_m3(
       add_intensity(ts_m3[2], idx, 1.0);
     }
   }
+
+  //cerr << "YIONS"<<endl;
   //do the Y-ION for peptide 
   fragment_mass = mass_h2o_mono;
       
@@ -786,11 +899,12 @@ void SpecFeaturesGenerator::add_peaks_xlink_m3(
       fragment_mass += aa_masses_mono[aa-'A'];
 
       //is it xlink index?
-      if ((int)i == mod_location) {
+      if ((int)(i-1) == mod_location) {
+        //cerr << "adding "<<mod_mass<<" to "<<i<<endl;
         //yes, add the pep2 mod mass
         fragment_mass += mod_mass;
       }
-
+    //cerr << "  aa["<<i<<"]="<<aa<<" " << fragment_mass << endl;
 	  //add the fragment
 	  for (int charg = 1; charg < ch; charg++)
 	    {
@@ -955,7 +1069,7 @@ void SpecFeaturesGenerator::get_xlink_features(
   double pep1_mod_mass = calculate_peptide_mass(pep1) + xlink_mass;
   double pep2_mod_mass = calculate_peptide_mass(pep2) + xlink_mass;
 
-  //cerr << "adding 1"<<endl;
+  //cerr << "adding 1 -"<<pep1 << endl;
 
   add_peaks_xlink_m3(ch, pep1, loc1-1, pep2_mod_mass);
 
@@ -999,7 +1113,7 @@ void SpecFeaturesGenerator::get_spec_features_m3(
   int loc1, int loc2, 
   double *features) {
 
-  //cerr << "getting spec features for "<<pep1 << " "<<pep2 <<" " << loc1 << " " << loc2 << " " << ch << " " << scan<<endl;
+//  cerr << "getting spec features for "<<pep1 << " "<<pep2 <<" " << loc1 << " " << loc2 << " " << ch << " " << scan<<endl;
 
 
   if (pep2 == string("_") && loc2 == -1) {
@@ -1043,8 +1157,77 @@ void SpecFeaturesGenerator::get_spec_features_m3(
   features[1] = sproduct(ts_m3[1],peaks);
   features[2] = sproduct(ts_m3[2],peaks);
 
+//  cerr << "features[0]="<<features[0]<<endl;
+//  cerr << "features[1]="<<features[1]<<endl;
+//  cerr << "features[2]="<<features[2]<<endl;
+//  cerr << "============"<<endl;
 
 }
+
+void SpecFeaturesGenerator::get_spec_features_m6(
+  int scan, int ch, 
+  string& pep1, string & pep2, 
+  int loc1, int loc2, 
+  double *features) {
+
+//  cerr << "getting spec features for "<<pep1 << " "<<pep2 <<" " << loc1 << " " << loc2 << " " << ch << " " << scan<<endl;
+
+
+  if (pep2 == string("_") && loc2 == -1) {
+    //cerr << "Linear or deadlink peptide"<<endl;
+    get_spec_features_m6(scan, ch, pep1, features);
+    return;
+  }
+
+  
+  ostringstream scan_stream;
+  scan_stream << scan << "." << ch;
+  string spec = scan_stream.str();
+
+  get_observed_spectrum(spec);
+  
+  //allocate the theoretical spectrum if necessary
+  if(!ts_m6)
+    allocate_tspec(&ts_m6,6,max_mz);
+  zero_out_tspec(ts_m6,6,max_mz);
+
+  bool self_loop = pep2 == string("_") && loc1 != -1 && loc2 != -1;
+  bool xlink  = pep2 != string("_");
+  if (self_loop) {
+    //cerr << "self loop peptide"<<endl;
+    add_peaks_self_loop_m3(ch, pep1, loc1-1, loc2-1);
+  } else if (xlink) {
+    //cerr << "xlinked peptide"<<endl;
+    double pep1_mod_mass = calculate_peptide_mass(pep1) + xlink_mass;
+    //cerr << "mod mass 1:"<<pep1_mod_mass<<endl;
+    double pep2_mod_mass = calculate_peptide_mass(pep2) + xlink_mass;
+    //cerr << "mod mass 2:"<<pep2_mod_mass<<endl;
+    add_peaks_xlink_m6(ch, pep1, loc1-1, pep2_mod_mass);
+    //cerr << "generating 2nd peptide ions"<<endl;
+    add_peaks_xlink_m6(ch, pep2, loc2-1, pep1_mod_mass);
+  } else {
+    cerr << "SpecFeaturesGenerator::get_spec_features_m3 - Error!"<<endl;
+    exit(-1);
+  }
+  
+  features[0] = sproduct(ts_m6[0],peaks);
+  features[1] = sproduct(ts_m6[1],peaks);
+  features[2] = sproduct(ts_m6[2],peaks);
+  features[3] = sproduct(ts_m6[3],peaks);
+  features[4] = sproduct(ts_m6[4],peaks);
+  features[5] = sproduct(ts_m6[5],peaks);
+
+  //cerr << "features[0]="<<features[0]<<endl;
+  //cerr << "features[1]="<<features[1]<<endl;
+  //cerr << "features[2]="<<features[2]<<endl;
+  //cerr << "features[3]="<<features[3]<<endl;
+  //cerr << "features[4]="<<features[4]<<endl;
+  //cerr << "features[5]="<<features[5]<<endl;
+  //cerr << "============"<<endl;
+
+}
+
+
 
 void SpecFeaturesGenerator :: get_spec_features_m6(int scan, int ch, string &peptide, double *features)
 {
@@ -1147,7 +1330,7 @@ void SpecFeaturesGenerator :: get_spec_features_m6(int scan, int ch, string &pep
   features[4] = sproduct(ts_m6[4],peaks);
   features[5] = sproduct(ts_m6[5],peaks);
 
-  //cout << features[0] << " " << features[1] << " " << features[2] << " " << features[3] << " " << features[4] << " " << features[5] << endl;
+  cout << features[0] << " " << features[1] << " " << features[2] << " " << features[3] << " " << features[4] << " " << features[5] << endl;
 
 }
 

@@ -58,7 +58,7 @@ class TabDelimParser{
   int cntMissedCleavagesDeadLink(int psmind);
   int cntMissedCleavages(int psmind);
 
-  void get_xcorr_short_long(int psmind, double& short_xcorr, double& long_xcorr);
+  void get_xcorr_short_long(int psmind, double xcorr1, double xcorr2, double& short_xcorr, double& long_xcorr);
 
   int get_peptide_length_short(int psmind);
   int get_peptide_length_long(int psmind);
@@ -89,7 +89,9 @@ class TabDelimParser{
   XLINKMATCH_TYPE_T* psmind_to_product_type;
   double *psmind_to_neutral_mass;
   double *psmind_to_peptide_mass;
-
+  double *psmind_to_xcorr;
+  double *psmind_to_xcorr1;
+  double *psmind_to_xcorr2;
   //peptide info
   map<string,int> pep_to_ind;
   map<int,string> ind_to_pep;
@@ -147,7 +149,7 @@ class TabDelimParser{
   map<int,string> psmind_to_protein1;
   map<int,string> psmind_to_protein2;
   map<int,string> psmind_to_flankingaas;
-
+  map<int,double> scan_to_xcorr2;
   
   void calc_xlink_locations(int psmind, int& loc1, int& loc2);
   void get_xlink_locations(int psmind, int& loc1, int& loc2);

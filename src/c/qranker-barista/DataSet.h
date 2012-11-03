@@ -48,6 +48,9 @@ class Dataset
   inline string psmind2protein2(int psmind){if(psmind_to_protein2.find(psmind) != psmind_to_protein2.end()) return psmind_to_protein2[psmind];else return "";}
   inline XLINKMATCH_TYPE_T psmind2product_type(int psmind){return psmind_to_product_type[psmind];}
   inline double psmind2neutral_mass(int psmind) {return psmind_to_neutral_mass[psmind];}
+  inline double psmind2xcorr(int psmind) {return psmind_to_xcorr[psmind];}
+  inline double psmind2xcorr1(int psmind) {return psmind_to_xcorr1[psmind];}
+  inline double psmind2xcorr2(int psmind) {return psmind_to_xcorr2[psmind];}
   /**********************************************************************/
 
   inline int get_num_peptides(){return num_pep;}
@@ -72,6 +75,10 @@ class Dataset
   int num_neg_psms;
   int num_features;
   double* psmind_to_features;
+  double* psmind_to_xcorr;
+  double* psmind_to_xcorr1;
+  double* psmind_to_xcorr2;
+
   int* psmind_to_label;
   int *psmind_to_pepind;
   int *psmind_to_scan;

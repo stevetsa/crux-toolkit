@@ -159,7 +159,11 @@ int SearchForXLinks::xhhcSearchMain() {
   search_target_file << "by observed bin\t";
   search_target_file << "ion current total\t";
   search_target_file << "ion current observed"<<"\t";
-  search_target_file << "ions observable bin (0-1200)"<<endl;
+  search_target_file << "ions observable bin (0-1200)"<<"\t";
+  search_target_file << "eta"<<"\t";
+  search_target_file << "beta" << "\t";
+  search_target_file << "shift" << "\t";
+  search_target_file << "corr" << endl;
 
   const char *decoy_filename = "search.decoy.txt";
   string decoy_path = string(output_directory) + "/" + string(decoy_filename);
@@ -196,7 +200,7 @@ int SearchForXLinks::xhhcSearchMain() {
     //SCORER_T* scorer = new_scorer(XCORR);
     scan_num = spectrum->getFirstScan();
 
-    if (search_count % 100 == 0)
+    if (search_count % 10 == 0)
       carp(CARP_INFO,"count %d scan %d charge %d", search_count, scan_num, charge);
     search_count++;
 
@@ -345,12 +349,12 @@ int SearchForXLinks::xhhcSearchMain() {
     double create_array_time =(double(create_array_clock) - double(train_decoy_clock)) / CLOCKS_PER_SEC;
     double weibull_time = (double(weibull_clock) - double(create_array_clock)) / CLOCKS_PER_SEC;
 
-    carp(CARP_DEBUG, "candidate:%g", candidate_time);
-    carp(CARP_DEBUG, "target:%g", target_time);
-    carp(CARP_DEBUG, "decoy:%g", decoy_time);
-    carp(CARP_DEBUG, "train decoy:%g", train_decoy_time);
-    carp(CARP_DEBUG, "create array:%g", create_array_time);
-    carp(CARP_DEBUG, "weibull:%g", weibull_time);
+    carp(CARP_INFO, "candidate:%g", candidate_time);
+    carp(CARP_INFO, "target:%g", target_time);
+    carp(CARP_INFO, "decoy:%g", decoy_time);
+    carp(CARP_INFO, "train decoy:%g", train_decoy_time);
+    carp(CARP_INFO, "create array:%g", create_array_time);
+    carp(CARP_INFO, "weibull:%g", weibull_time);
     carp(CARP_DEBUG, "========================");
 
 
@@ -444,7 +448,11 @@ int SearchForXLinks::xhhcSearchMain() {
         search_target_file << by_observed_bin << "\t";
         search_target_file << ion_current_total << "\t";
         search_target_file << ion_current_observed << "\t";
-        search_target_file << ions_observable_bin;
+        search_target_file << ions_observable_bin << "\t";
+        search_target_file << eta_linked << "\t";
+        search_target_file << beta_linked << "\t";
+        search_target_file << shift_linked << "\t";
+        search_target_file << correlation_linked << "\t";
         
         search_target_file << endl;
 
