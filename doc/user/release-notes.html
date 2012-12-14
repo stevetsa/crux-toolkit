@@ -25,7 +25,9 @@ The new conversion formula is
   floor( (x / mz-bin-size) + 1.0 - mz-bin-offset )
 </pre>
 The default values of the two parameters (mz-bin-size and
-mz-bin-offset) have not changed.
+mz-bin-offset) have not changed.  The allowed range of the
+mz-bin-offset parameter was previously [-1,1], but has been changed to
+[0,1].
 </li>
 
 <li>
