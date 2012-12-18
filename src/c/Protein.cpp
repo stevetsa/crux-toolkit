@@ -879,9 +879,9 @@ bool protein_id_less_than(Protein* protein_one, Protein* protein_two){
 }
 
 /**
- * Rearrange the sequence_ between cleavage sites, keeping residues
- * on either side of a cleavage in place.  Get enzyme from
- * parameters.  Cases of NO_ENZYME or NON_SPECIFIC_DIGEST are the same
+ * Rearrange the sequence_ between cleavage sites, keeping residues on
+ * either side of a cleavage in place.  Get enzyme from parameters.
+ * Cases of NO_ENZYME, NO_CLEAVAGE or NON_SPECIFIC_DIGEST are the same
  * as shuffling the whole protein.  Same behavior for full and partial
  * digest, min/max length/mass and missed cleavages, i.e. shuffle
  * between every cleavage site.
@@ -899,6 +899,7 @@ void Protein::peptideShuffleSequence(){
   ENZYME_T enzyme = get_enzyme_type_parameter("enzyme");
   // cases where peptide-shuffle is really protein shuffle
   if( enzyme == NO_ENZYME 
+      || enzyme == NO_CLEAVAGE
       || get_digest_type_parameter("digestion") == NON_SPECIFIC_DIGEST){
     this->shuffle(PROTEIN_SHUFFLE_DECOYS);
     return;

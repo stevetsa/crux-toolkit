@@ -157,7 +157,7 @@ class ProteinPeptideIterator {
   /**
    * Compares the first and second amino acids in the given sequence to
    * see if they conform to the cleavage rules of the given enzyme.  For
-   * NO_ENZYME, always returns TRUE.
+   * NO_ENZYME, always returns TRUE; for NO_CLEAVAGE, always returns false.
    *
    * \returns TRUE if this is a valid cleavage position for the given enzyme.
    */

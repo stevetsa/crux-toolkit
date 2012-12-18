@@ -135,6 +135,7 @@ typedef enum _digest_type DIGEST_T;
 enum _enzyme_type {
   INVALID_ENZYME,        ///< required invalid value for the enum
   NO_ENZYME,             ///< cleave anywhere
+  NO_CLEAVAGE,           ///< cleave nowhere
   TRYPSIN,               ///< cleave after K or R, not before P
   CHYMOTRYPSIN,          ///< cleave after FWY, not before P
   ELASTASE,              ///< cleave after ALIV, not before P

@@ -64,7 +64,7 @@ bool ProteinPeptideIterator::isResidueLegal(char aa,
 /**
  * Compares the first and second amino acids in the given sequence to
  * see if they conform to the cleavage rules of the given enzyme.  For
- * NO_ENZYME, always returns true.
+ * NO_ENZYME, always returns true; for NO_CLEAVAGE, always return false.
  *
  * \returns true if this is a valid cleavage position for the given enzyme.
  */
@@ -175,8 +175,6 @@ bool ProteinPeptideIterator::validCleavagePosition(
     break;
 
   case CUSTOM_ENZYME:
-    //carp(CARP_FATAL, "The custom enzyme is not yet implmented.");
-
     return ( isResidueLegal(sequence[0], 
                               pre_cleavage_list,
                               pre_list_size, 
@@ -187,6 +185,9 @@ bool ProteinPeptideIterator::validCleavagePosition(
                               post_list_size, 
                               post_for_inclusion) );
     break;
+
+  case NO_CLEAVAGE:
+    return false;
 
   case NO_ENZYME:
     return true;

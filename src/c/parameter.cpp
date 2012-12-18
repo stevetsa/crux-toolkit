@@ -1745,7 +1745,8 @@ bool parse_cmd_line_into_params_hash(int argc,
 
   // user may set --enzyme OR --digestion, update the other
   // if no-enzyme is used, set digestion as non-specific
-  if( get_enzyme_type_parameter("enzyme") == NO_ENZYME ){
+  if( get_enzyme_type_parameter("enzyme") == NO_ENZYME ||
+      get_enzyme_type_parameter("enzyme") == NO_CLEAVAGE ){
     char* value_str = digest_type_to_string(NON_SPECIFIC_DIGEST);
     update_hash_value(parameters, "digestion", value_str);
     free (value_str);
@@ -1915,7 +1916,7 @@ void check_parameter_consistency(){
          " must be less than max (%.2f).", min_spec_mass, max_spec_mass);
   }
 
-  /* If no-enzyme, set digestion to non-specific and missed to true */
+  // If no-enzyme, set digestion to non-specific and missed to a large value.
   if( get_enzyme_type_parameter("enzyme") == NO_ENZYME ){
     char* val_str = digest_type_to_string(NON_SPECIFIC_DIGEST);
     update_hash_value(parameters, "digestion", val_str);
