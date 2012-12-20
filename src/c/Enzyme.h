@@ -19,6 +19,12 @@ using namespace Crux;
 class Enzyme {
 
  private:
+
+  /* Keep track of whether a cleavage if the given amino acid appears before
+   * or after the position. */
+  map<char,bool> precedingCleavage;
+  map<char,bool> followingCleavage;
+
   /**
    * Initializes an enzyme of the specified type.
    */
