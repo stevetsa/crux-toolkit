@@ -11,7 +11,11 @@
 #include "Enzyme.h"
 int main(int argc, char** argv){
 
+  if (argc != 2) {
+    fprintf(stderr, "enzyme <name>|<rule>\n");
+    return(1);
+  }
   Enzyme myEnzyme(argv[1]);
-  return(0)
+  return(0);
 
 }

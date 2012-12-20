@@ -8,43 +8,42 @@
  * CREATE DATE: 19 December 2012
  * $Revision: 1.22 $
  *****************************************************************************/
-#ifndef ENZYME_H
-#define ENZYME_H
+#include "Enzyme.h"
+#include "carp.h"
+#include <string.h> // For the strcmp function.
 
-#include <stdio.h>
-#include <string>
-
-using namespace Crux;
+//using namespace Crux;
 
 /**
  * Remove ambiguous characters from a set of amino acids.  Note that
  * the resulting string may contain the same amino acid twice.
  */
 void Enzyme::removeAmbiguousAminos(
-  string& aminos
+  std::string& aminos
 ) {
 
-  string nonAmbiguousAminos;
-  for (myChar = aminos.begin(); myChar < aminos.end(); myChar++) {
+  std::string nonAmbiguousAminos;
+  for (int idx = 0; idx < aminos.size(); idx++) {
+    char myChar = aminos[myChar];
 
     // B = D or N
-    if (myChar == "B") {
+    if (myChar == 'B') {
       nonAmbiguousAminos.append("DN");
     }
     // Z = E or Q
-    else if (myChar == "Z") {
+    else if (myChar == 'Z') {
       nonAmbiguousAminos.append("EQ");
     }
     // O, J, U = illegal
-    else if ((myChar == "O") || (myChar == "U") || (myChar == "J")) {
+    else if ((myChar == 'O') || (myChar == 'U') || (myChar == 'J')) {
       carp(CARP_ERROR, "Illegal amino acid (%c) in enzyme rule.\n", myChar);
       exit(1);
     }
     // X = any amino acid
-    else if (myChar == "X") {
-      nonAmbiguousAminos.append(allAminoAcids_);
+    else if (myChar == 'X') {
+      nonAmbiguousAminos.append(allAminos_);
     } else {
-      nonAmbiguousAminos.append(myChar);
+      nonAmbiguousAminos.append(&myChar);
     }
   }
 
@@ -55,24 +54,26 @@ void Enzyme::removeAmbiguousAminos(
  * Take the complement of a set of amino acids.
  */
 void Enzyme::complementAminos(
-  string& aminos
+  std::string& aminos
 ) {
 
-  string complementAminos;
-  for (myChar = allAminos_.begin(); myChar < allAminos_.end(); myChar++) {
-    if (aminos.find(myChar) == string::npos) {
-      complementAminos.append(myChar);
+  std::string complementAminos;
+  for (int idx = 0; idx < allAminos_.size(); idx++) {
+    char myChar = allAminos_[myChar];
+    if (aminos.find(myChar) == std::string::npos) {
+      complementAminos.append(&myChar);
     }
   }
-  aminos = complementAminos
+  aminos = complementAminos;
 }
 
 void Enzyme::init(
   const char* enzymeName
 ) {
+  allAminos_ = "ACDEFGHIKLMNPQRSTVWY";
 
   // If the enzyme is named, convert it to the corresponding custom string.
-  string enzymeRule;
+  std::string enzymeRule;
   if (strcmp(enzymeName, "trypsin") == 0){
     enzymeRule = "[KR]|{P}";
   } else if (strcmp(enzymeName, "chymotrypsin") == 0){
@@ -104,62 +105,63 @@ void Enzyme::init(
   }
 
   // Find the vertical bar.
-  barPosition = -1;
-  for (int idx = 0; idx < enzymeRule.len(); idx++) {
-    if (enzymeRule[idx] == "|") {
+  int barPosition = -1;
+  for (int idx = 0; idx < enzymeRule.length(); idx++) {
+    if (enzymeRule[idx] == '|') {
       if (barPosition == -1) {
         barPosition = idx;
       } else {
 	carp(CARP_ERROR, "Two vertical bars in enzyme rule (%s).\n",
-	     enzymeRule);
+	     enzymeRule.c_str());
 	exit(1);
       }
     }
   }
   if (barPosition == -1) {
-    carp(CARP_ERROR, "Unrecognized enzyme name (%s).\n", enzymeRule);
+    carp(CARP_ERROR, "Unrecognized enzyme name (%s).\n", enzymeRule.c_str());
     exit(1);
   }
 
   // Extract the two strings.
-  string precedingAminos = enzymeRule.substr(1, barPosition - 2);
-  string followingAminos = 
+  std::string precedingAminos = enzymeRule.substr(1, barPosition - 2);
+  std::string followingAminos = 
     enzymeRule.substr(barPosition + 1,
 		      enzymeRule.length() - barPosition - 2);
 
   // Remove ambiguous characters.
-  removeAmbiguousAminos(&precedingAminos);
-  removeAmbiguousAminos(&followingAminos);
+  removeAmbiguousAminos(precedingAminos);
+  removeAmbiguousAminos(followingAminos);
 
   // Complement the two strings, if necessary.
-  if ((enzymeRule[0] == "[") && (enzymeRule[barPosition - 1] == "]")) {
-    complementAminos(&precedingAminos);
-  } else if !((enzymeRule[0] == "{") && (enzymeRule[barPosition - 1] == "}")) {
+  if ((enzymeRule[0] == '[') && (enzymeRule[barPosition - 1] == ']')) {
+    complementAminos(precedingAminos);
+  } else if (!((enzymeRule[0] == '{') && 
+	       (enzymeRule[barPosition - 1] == '}'))) {
     carp(CARP_ERROR, "Failure to parse first half of enzyme rule (%s).\n",
-	 enzymeRule);
+	 enzymeRule.c_str());
     exit(1);
   }
-  if ((enzymeRule[barPosition + 1] == "[") && 
-      (enzymeRule[enzymeRule.length() - 1] == "]")) {
-    complementAminos(&followingAminos);
-  } else if !((enzymeRule[barPosition + 1] == "{") && 
-	      (enzymeRule[enzymeRule.length() - 1] == "}")) {
+  if ((enzymeRule[barPosition + 1] == '[') && 
+      (enzymeRule[enzymeRule.length() - 1] == ']')) {
+    complementAminos(followingAminos);
+  } else if (!((enzymeRule[barPosition + 1] == '{') && 
+	       (enzymeRule[enzymeRule.length() - 1] == '}'))) {
     carp(CARP_ERROR, "Failure to parse second half of enzyme rule (%s).\n",
-	 enzymeRule);
+	 enzymeRule.c_str());
     exit(1);
   }
 
   // Fill in the mappings.
-  for (myChar = 'A'; myChar <= 'Z'; myChar++) {
+  for (char myChar = 'A'; myChar <= 'Z'; myChar++) {
     precedingCleavage_[myChar] = false;
     followingCleavage_[myChar] = false;
   }
-  for (myChar = precedingString.begin(); 
-       myChar < precedingString.end(); myChar++) {
+  for (int idx = 0; idx < precedingAminos.size(); idx++) {
+    char myChar = precedingAminos[myChar];
     precedingCleavage_[myChar] = true;
   }
-  for (myChar = followingString.begin(); 
-       myChar < followingString.end(); myChar++) {
+  for (int idx = 0; idx < followingAminos.size(); idx++) {
+    char myChar = followingAminos[myChar];
     followingCleavage_[myChar] = true;
   }
 
@@ -173,7 +175,7 @@ void Enzyme::init(
 Enzyme::Enzyme(
   const char* enzymeName
 ) {
-  return(init(enzymeName));
+  init(enzymeName);
 }
 
 /**  
@@ -187,17 +189,9 @@ bool Enzyme::cleaves(
   return(precedingCleavage_[preceding] && followingCleavage_[following]);
 }
 
-/**
- * Frees an allocated Enzyme object.
- */
-Enzyme::~Scorer() {
-  // FIXME
-}
-
 /*
  * Local Variables:
  * mode: c
  * c-basic-offset: 2
  * End:
  */
-#endif

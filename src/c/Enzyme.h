@@ -13,8 +13,9 @@
 
 #include <stdio.h>
 #include <string>
+#include <map>
 
-using namespace Crux;
+//using namespace Crux;
 
 class Enzyme {
 
@@ -22,11 +23,26 @@ class Enzyme {
 
   /* Keep track of whether a cleavage if the given amino acid appears before
    * or after the position. */
-  map<char,bool> precedingCleavage_;
-  map<char,bool> followingCleavage_;
+  std::map<char,bool> precedingCleavage_;
+  std::map<char,bool> followingCleavage_;
 
   /* List of all amino acids. */
-  const string allAminos_ = "ACDEFGHIKLMNPQRSTVWY";
+  std::string allAminos_;
+
+  /**
+   * Remove ambiguous characters from a set of amino acids.  Note that
+   * the resulting string may contain the same amino acid twice.
+   */
+  void removeAmbiguousAminos(
+    std::string& aminos
+  );
+
+  /**
+   * Take the complement of a set of amino acids.
+   */
+  void complementAminos(
+    std::string& aminos
+  );
 
   /**
    * Initializes an enzyme of the specified type.
@@ -52,12 +68,7 @@ class Enzyme {
     char preceding,
     char following
   );
-
-  /**
-   * Frees an allocated Enzyme object.
-   */
-  ~Scorer();
-}
+};
 
 /*
  * Local Variables:
