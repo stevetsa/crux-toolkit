@@ -53,6 +53,7 @@ set (
   DelimitedFileWriter.cpp
   ExtractColumns.cpp
   ExtractRows.cpp
+  Enzyme.cpp
   FilteredSpectrumChargeIterator.cpp
   GeneratePeptidesIterator.cpp
   GetMs2Spectrum.cpp
@@ -217,6 +218,16 @@ set_property(
   MAIN
 )
 
+add_executable(enzyme enzyme-main.cpp)
+set_property(
+  TARGET
+  enzyme
+  PROPERTY
+  COMPILE_DEFINITIONS
+  MAIN
+)
+
+
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   target_link_libraries(
     crux
@@ -365,6 +376,10 @@ else(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     boost_filesystem-mt-s
     boost_regex-mt-s
     boost_thread-mt-s
+  )
+  target_link_libraries(
+    enzyme
+    crux-support
   )
 endif(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 

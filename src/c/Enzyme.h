@@ -22,8 +22,11 @@ class Enzyme {
 
   /* Keep track of whether a cleavage if the given amino acid appears before
    * or after the position. */
-  map<char,bool> precedingCleavage;
-  map<char,bool> followingCleavage;
+  map<char,bool> precedingCleavage_;
+  map<char,bool> followingCleavage_;
+
+  /* List of all amino acids. */
+  const string allAminos_ = "ACDEFGHIKLMNPQRSTVWY";
 
   /**
    * Initializes an enzyme of the specified type.

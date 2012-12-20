@@ -16,6 +16,57 @@
 
 using namespace Crux;
 
+/**
+ * Remove ambiguous characters from a set of amino acids.  Note that
+ * the resulting string may contain the same amino acid twice.
+ */
+void Enzyme::removeAmbiguousAminos(
+  string& aminos
+) {
+
+  string nonAmbiguousAminos;
+  for (myChar = aminos.begin(); myChar < aminos.end(); myChar++) {
+
+    // B = D or N
+    if (myChar == "B") {
+      nonAmbiguousAminos.append("DN");
+    }
+    // Z = E or Q
+    else if (myChar == "Z") {
+      nonAmbiguousAminos.append("EQ");
+    }
+    // O, J, U = illegal
+    else if ((myChar == "O") || (myChar == "U") || (myChar == "J")) {
+      carp(CARP_ERROR, "Illegal amino acid (%c) in enzyme rule.\n", myChar);
+      exit(1);
+    }
+    // X = any amino acid
+    else if (myChar == "X") {
+      nonAmbiguousAminos.append(allAminoAcids_);
+    } else {
+      nonAmbiguousAminos.append(myChar);
+    }
+  }
+
+  aminos = nonAmbiguousAminos;
+}
+
+/**
+ * Take the complement of a set of amino acids.
+ */
+void Enzyme::complementAminos(
+  string& aminos
+) {
+
+  string complementAminos;
+  for (myChar = allAminos_.begin(); myChar < allAminos_.end(); myChar++) {
+    if (aminos.find(myChar) == string::npos) {
+      complementAminos.append(myChar);
+    }
+  }
+  aminos = complementAminos
+}
+
 void Enzyme::init(
   const char* enzymeName
 ) {
@@ -76,22 +127,25 @@ void Enzyme::init(
     enzymeRule.substr(barPosition + 1,
 		      enzymeRule.length() - barPosition - 2);
 
+  // Remove ambiguous characters.
+  removeAmbiguousAminos(&precedingAminos);
+  removeAmbiguousAminos(&followingAminos);
 
   // Complement the two strings, if necessary.
   if ((enzymeRule[0] == "[") && (enzymeRule[barPosition - 1] == "]")) {
-    precedingAminos = complementAminos(precedingAminos);
+    complementAminos(&precedingAminos);
   } else if !((enzymeRule[0] == "{") && (enzymeRule[barPosition - 1] == "}")) {
-    carp(CARP_ERROR, "Failure to parse enzyme rule (%s).\n", enzymeRule);
+    carp(CARP_ERROR, "Failure to parse first half of enzyme rule (%s).\n",
+	 enzymeRule);
     exit(1);
   }
-
-  bool followingComplement;
   if ((enzymeRule[barPosition + 1] == "[") && 
       (enzymeRule[enzymeRule.length() - 1] == "]")) {
-    followingAminos = complementAminos(followingAminos);
+    complementAminos(&followingAminos);
   } else if !((enzymeRule[barPosition + 1] == "{") && 
 	      (enzymeRule[enzymeRule.length() - 1] == "}")) {
-    carp(CARP_ERROR, "Failure to parse enzyme rule (%s).\n", enzymeRule);
+    carp(CARP_ERROR, "Failure to parse second half of enzyme rule (%s).\n",
+	 enzymeRule);
     exit(1);
   }
 
@@ -108,6 +162,8 @@ void Enzyme::init(
        myChar < followingString.end(); myChar++) {
     followingCleavage_[myChar] = true;
   }
+
+  // FIXME: Cope with ambiguity codes in input.
 
 }
 
