@@ -45,6 +45,14 @@ class Enzyme {
   );
 
   /**
+   * Given a Boolean mapping without ambiguity codes, compute values
+   * for ambiguity codes.
+   */
+  void addAmbiguityCodes(
+    std::map<char,bool> cleavageMap
+  );
+
+  /**
    * Initializes an enzyme of the specified type.
    */
   void init(

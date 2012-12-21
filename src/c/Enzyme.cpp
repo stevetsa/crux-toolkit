@@ -67,6 +67,38 @@ void Enzyme::complementAminos(
   aminos = complementAminos;
 }
 
+/**
+ * Given a Boolean mapping without ambiguity codes, compute values
+ * for ambiguity codes.
+ */
+void Enzyme::addAmbiguityCodes(
+  std::map<char,bool> cleavageMap
+) {
+
+  if (cleavageMap['D'] && cleavageMap['N']) {
+    cleavageMap['B'] = true;
+  }
+
+  if (cleavageMap['E'] && cleavageMap['Q']) {
+    cleavageMap['Z'] = true;
+  }
+
+  cleavageMap['X'] = true;
+  for (int idx = 0; idx < allAminos_.size(); idx++) {
+    char myChar = allAminos_[myChar];
+    if (not cleavageMap[myChar]) {
+      cleavageMap['X'] = false;
+    }
+  }
+
+
+}
+
+
+/**
+ * Initialize an enzyme object and precompute which pairs of amino
+ * acids it cleaves.
+ */
 void Enzyme::init(
   const char* enzymeName
 ) {
@@ -165,8 +197,26 @@ void Enzyme::init(
     followingCleavage_[myChar] = true;
   }
 
-  // FIXME: Cope with ambiguity codes in input.
+  // Cope with ambiguity codes in input.
+  addAmbiguityCodes(precedingCleavage_);
+  addAmbiguityCodes(followingCleavage_);
 
+  // Give the user an update on what we cleave.
+  std::string message = "Enzyme rule: ";
+  message.append(enzymeRule);
+  message.append("\nCleavage sites: ");
+  for (int first_idx = 0; first_idx < allAminos_.size(); first_idx++) {
+    char firstChar = allAminos_[first_idx];
+    for (int second_idx = 0; second_idx < allAminos_.size(); second_idx++) {
+      char secondChar = allAminos_[second_idx];
+      if (this->cleaves(firstChar, secondChar)) {
+	message.append(&firstChar);
+	message.append(&secondChar);
+	message.append(" ");
+      }
+    }
+  }
+  carp(CARP_WARNING, message);
 }
 
 /**
