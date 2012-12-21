@@ -43,8 +43,7 @@ void Enzyme::removeAmbiguousAminos(
     else if (myChar == 'X') {
       nonAmbiguousAminos.append(allAminos_);
     } else {
-      // FIXME: This doesn't work!!
-      nonAmbiguousAminos.append(&myChar);
+      nonAmbiguousAminos.append(1, myChar);
     }
   }
 
@@ -64,7 +63,7 @@ void Enzyme::complementAminos(
   for (int idx = 0; idx < allAminos_.size(); idx++) {
     char myChar = allAminos_[myChar];
     if (aminos.find(myChar) == std::string::npos) {
-      complementAminos.append(&myChar);
+      complementAminos.append(1, myChar);
     }
   }
   carp(CARP_WARNING, "Complement: %s -> %s.", aminos.c_str(), 
@@ -171,19 +170,19 @@ void Enzyme::init(
   removeAmbiguousAminos(followingAminos);
 
   // Complement the two strings, if necessary.
-  if ((enzymeRule[0] == '[') && (enzymeRule[barPosition - 1] == ']')) {
+  if ((enzymeRule[0] == '{') && (enzymeRule[barPosition - 1] == '}')) {
     complementAminos(precedingAminos);
-  } else if (!((enzymeRule[0] == '{') && 
-	       (enzymeRule[barPosition - 1] == '}'))) {
+  } else if (!((enzymeRule[0] == '[') && 
+	       (enzymeRule[barPosition - 1] == ']'))) {
     carp(CARP_ERROR, "Failure to parse first half of enzyme rule (%s).\n",
 	 enzymeRule.c_str());
     exit(1);
   }
-  if ((enzymeRule[barPosition + 1] == '[') && 
-      (enzymeRule[enzymeRule.length() - 1] == ']')) {
+  if ((enzymeRule[barPosition + 1] == '{') && 
+      (enzymeRule[enzymeRule.length() - 1] == '}')) {
     complementAminos(followingAminos);
-  } else if (!((enzymeRule[barPosition + 1] == '{') && 
-	       (enzymeRule[enzymeRule.length() - 1] == '}'))) {
+  } else if (!((enzymeRule[barPosition + 1] == '[') && 
+	       (enzymeRule[enzymeRule.length() - 1] == ']'))) {
     carp(CARP_ERROR, "Failure to parse second half of enzyme rule (%s).\n",
 	 enzymeRule.c_str());
     exit(1);
