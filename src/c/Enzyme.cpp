@@ -1,5 +1,5 @@
 /**
- * \file Enzyme.h
+ * \file Enzyme.cpp
  * \brief Decides which pairs of amino acids the digestion enzyme cleaves.
  */
 
@@ -43,10 +43,13 @@ void Enzyme::removeAmbiguousAminos(
     else if (myChar == 'X') {
       nonAmbiguousAminos.append(allAminos_);
     } else {
+      // FIXME: This doesn't work!!
       nonAmbiguousAminos.append(&myChar);
     }
   }
 
+  carp(CARP_WARNING, "Remove ambiguous: %s -> %s", aminos.c_str(),
+       nonAmbiguousAminos.c_str());
   aminos = nonAmbiguousAminos;
 }
 
@@ -64,6 +67,8 @@ void Enzyme::complementAminos(
       complementAminos.append(&myChar);
     }
   }
+  carp(CARP_WARNING, "Complement: %s -> %s.", aminos.c_str(), 
+       complementAminos.c_str());
   aminos = complementAminos;
 }
 
@@ -90,8 +95,6 @@ void Enzyme::addAmbiguityCodes(
       cleavageMap['X'] = false;
     }
   }
-
-
 }
 
 
@@ -153,12 +156,15 @@ void Enzyme::init(
     carp(CARP_ERROR, "Unrecognized enzyme name (%s).\n", enzymeRule.c_str());
     exit(1);
   }
+  carp(CARP_ERROR, "Vertical bar at %d.", barPosition);
 
   // Extract the two strings.
   std::string precedingAminos = enzymeRule.substr(1, barPosition - 2);
   std::string followingAminos = 
-    enzymeRule.substr(barPosition + 1,
-		      enzymeRule.length() - barPosition - 2);
+    enzymeRule.substr(barPosition + 2,
+		      enzymeRule.length() - (barPosition + 3));
+  carp(CARP_WARNING, "Rule=%s|%s", precedingAminos.c_str(), 
+       followingAminos.c_str());
 
   // Remove ambiguous characters.
   removeAmbiguousAminos(precedingAminos);
