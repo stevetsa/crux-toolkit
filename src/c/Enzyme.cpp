@@ -24,7 +24,7 @@ void Enzyme::removeAmbiguousAminos(
 
   std::string nonAmbiguousAminos;
   for (int idx = 0; idx < aminos.size(); idx++) {
-    char myChar = aminos[myChar];
+    char myChar = aminos[idx];
 
     // B = D or N
     if (myChar == 'B') {
@@ -47,7 +47,7 @@ void Enzyme::removeAmbiguousAminos(
     }
   }
 
-  carp(CARP_WARNING, "Remove ambiguous: %s -> %s", aminos.c_str(),
+  carp(CARP_DETAILED_INFO, "Remove ambiguous: %s -> %s", aminos.c_str(),
        nonAmbiguousAminos.c_str());
   aminos = nonAmbiguousAminos;
 }
@@ -61,12 +61,13 @@ void Enzyme::complementAminos(
 
   std::string complementAminos;
   for (int idx = 0; idx < allAminos_.size(); idx++) {
-    char myChar = allAminos_[myChar];
+    char myChar = allAminos_[idx];
     if (aminos.find(myChar) == std::string::npos) {
       complementAminos.append(1, myChar);
     }
+
   }
-  carp(CARP_WARNING, "Complement: %s -> %s.", aminos.c_str(), 
+  carp(CARP_DETAILED_INFO, "Complement: %s -> %s.", aminos.c_str(), 
        complementAminos.c_str());
   aminos = complementAminos;
 }
@@ -89,7 +90,7 @@ void Enzyme::addAmbiguityCodes(
 
   cleavageMap['X'] = true;
   for (int idx = 0; idx < allAminos_.size(); idx++) {
-    char myChar = allAminos_[myChar];
+    char myChar = allAminos_[idx];
     if (not cleavageMap[myChar]) {
       cleavageMap['X'] = false;
     }
@@ -155,14 +156,13 @@ void Enzyme::init(
     carp(CARP_ERROR, "Unrecognized enzyme name (%s).\n", enzymeRule.c_str());
     exit(1);
   }
-  carp(CARP_ERROR, "Vertical bar at %d.", barPosition);
 
   // Extract the two strings.
   std::string precedingAminos = enzymeRule.substr(1, barPosition - 2);
   std::string followingAminos = 
     enzymeRule.substr(barPosition + 2,
 		      enzymeRule.length() - (barPosition + 3));
-  carp(CARP_WARNING, "Rule=%s|%s", precedingAminos.c_str(), 
+  carp(CARP_INFO, "Rule=%s|%s", precedingAminos.c_str(), 
        followingAminos.c_str());
 
   // Remove ambiguous characters.
@@ -194,11 +194,11 @@ void Enzyme::init(
     followingCleavage_[myChar] = false;
   }
   for (int idx = 0; idx < precedingAminos.size(); idx++) {
-    char myChar = precedingAminos[myChar];
+    char myChar = precedingAminos[idx];
     precedingCleavage_[myChar] = true;
   }
   for (int idx = 0; idx < followingAminos.size(); idx++) {
-    char myChar = followingAminos[myChar];
+    char myChar = followingAminos[idx];
     followingCleavage_[myChar] = true;
   }
 
@@ -207,21 +207,24 @@ void Enzyme::init(
   addAmbiguityCodes(followingCleavage_);
 
   // Give the user an update on what we cleave.
-  std::string message = "Enzyme rule: ";
-  message.append(enzymeRule);
-  message.append("\nCleavage sites: ");
+  carp(CARP_DETAILED_INFO, "Enzyme rule: %s|%s", precedingAminos.c_str(), 
+       followingAminos.c_str());
+  std::string siteList = "Cleavage sites:";
+  int numSites = 0;
   for (int first_idx = 0; first_idx < allAminos_.size(); first_idx++) {
     char firstChar = allAminos_[first_idx];
     for (int second_idx = 0; second_idx < allAminos_.size(); second_idx++) {
       char secondChar = allAminos_[second_idx];
       if (this->cleaves(firstChar, secondChar)) {
-	message.append(&firstChar);
-	message.append(&secondChar);
-	message.append(" ");
+	siteList.append(" ");
+	siteList.append(1, firstChar);
+	siteList.append(1, secondChar);
+	numSites++;
       }
     }
   }
-  carp(CARP_WARNING, message);
+  carp(CARP_DETAILED_INFO, siteList);
+  carp(CARP_INFO, "%d possible enymatic cleavage sites.", numSites);
 }
 
 /**
