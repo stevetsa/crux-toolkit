@@ -77,32 +77,28 @@ The minimum length of the peptides to place in the index. Default = 6.
 The maximum length of the peptides to place in the index. Default = 50.
 
 <LI>
-<code>--enzyme trypsin|chymotrypsin|elastase|clostripain|cyanogen-bromide|idosobenzoate|proline-endopeptidase|staph-protease|modified-chymotrypsin|elastase-trypsin-chymotrypsin|no-enzyme</code> &ndash;
-Enzyme to use for <i>in silico</i> digestion of protein
+<code>--enzyme &lt;enzyme name&gt;|&lt;enzyme rule&gt;</code> &ndash;
+Specify the enzyme to use for <i>in silico</i> digestion of protein
 sequences. Used in conjunction with the <code>digestion</code>
-and <code>missed-cleavages</code> options. Use 'no-enzyme' for
-non-specific digestion.  Digestion rules are as follows: enzyme name
-[cuts after one of these residues]|{but not before one of these
-residues}.  trypsin [RK]|{P}, elastase [ALIV]|{P}, chymotrypsin
-[FWY]|{P}, clostripain [R]|[], cyanogen-bromide [M]|[], iodosobenzoate
-[W]|[], proline-endopeptidase [P]|[], staph-protease [E]|[],
-modified-chymotrypsin [FWYL]|{P}, elastase-trypsin-chymotrypsin
-[ALIVKRWFY]|{P},aspn [X]|[D] (cuts after any residue and before
-D). Default = trypsin.
-
-<li>
-<code>--custom-enzyme &lt;residues before cleavage&gt;|&lt;residues after cleavage&gt;</code> &ndash;
-Specify rules for <i>in silico</i> digestion of protein sequences.
-Overrides the <code>enzyme</code> option.  Two lists of residues are
-given enclosed in square brackets or curly braces and separated by a
-|. The first list contains residues required/prohibited before the
-cleavage site and the second list is residues after the cleavage site.
-If the residues are required for digestion, they are in square
-brackets, '[' and ']'.  If the residues prevent digestion, then they
-are enclosed in curly braces, '{' and '}'.  Use X to indicate all
-residues.  For example, trypsin cuts after R or K but not before P
-which is represented as <code>[RK]|{P}</code>.  AspN cuts after any
-residue but only before D which is represented as <code>[X]|[D]</code>.
+and <code>missed-cleavages</code> options. The argument can be either
+the name of an enzyme or an enzyme cleavage rule.  A rule is specified
+as two lists of residues separated by a |. The first list contains
+residues required/prohibited before the cleavage site, and the second
+list contains residues required/prohibited after the cleavage site.
+If the residues are required for digestion, then they are enclosed in
+square brackets, whereas if if the residues prevent digestion, then
+they are enclosed in curly braces.  Use X to indicate all residues.
+For example, trypsin cuts after R or K but not before P, which is
+represented as <code>[RK]|{P}</code>.  AspN cuts after any residue but
+only before D, which is represented as <code>[X]|[D]</code>.  The
+following named enzymes are defined: trypsin [RK]|{P}, elastase
+[ALIV]|{P}, chymotrypsin [FWY]|{P}, clostripain [R]|[],
+cyanogen-bromide [M]|[], iodosobenzoate [W]|[], proline-endopeptidase
+[P]|[], staph-protease [E]|[], modified-chymotrypsin [FWYL]|{P},
+elastase-trypsin-chymotrypsin [ALIVKRWFY]|{P}, and aspn [X]|[D].  Use
+'no-cleavage' to prevent any cleavages (i.e., if the input is a
+peptide database) and use 'all-cleavage' to cleave everywhere (i.e.,
+non-specific digestion).  Default = trypsin.</li>
 
 <LI>
 <code>--digestion full-digest|partial-digest </code>&ndash;
