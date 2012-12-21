@@ -11,11 +11,8 @@
 #ifndef ENZYME_H
 #define ENZYME_H
 
-#include <stdio.h>
 #include <string>
 #include <map>
-
-//using namespace Crux;
 
 class Enzyme {
 

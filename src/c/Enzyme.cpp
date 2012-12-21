@@ -10,9 +10,6 @@
  *****************************************************************************/
 #include "Enzyme.h"
 #include "carp.h"
-#include <string.h> // For the strcmp function.
-
-//using namespace Crux;
 
 /**
  * Remove ambiguous characters from a set of amino acids.  Note that
@@ -23,32 +20,30 @@ void Enzyme::removeAmbiguousAminos(
 ) {
 
   std::string nonAmbiguousAminos;
-  for (int idx = 0; idx < aminos.size(); idx++) {
-    char myChar = aminos[idx];
+  for (std::string::iterator myChar = aminos.begin(); myChar < aminos.end(); 
+       myChar++) {
 
     // B = D or N
-    if (myChar == 'B') {
+    if (*myChar == 'B') {
       nonAmbiguousAminos.append("DN");
     }
     // Z = E or Q
-    else if (myChar == 'Z') {
+    else if (*myChar == 'Z') {
       nonAmbiguousAminos.append("EQ");
     }
     // O, J, U = illegal
-    else if ((myChar == 'O') || (myChar == 'U') || (myChar == 'J')) {
-      carp(CARP_ERROR, "Illegal amino acid (%c) in enzyme rule.\n", myChar);
+    else if ((*myChar == 'O') || (*myChar == 'U') || (*myChar == 'J')) {
+      carp(CARP_ERROR, "Illegal amino acid (%c) in enzyme rule.\n", *myChar);
       exit(1);
     }
     // X = any amino acid
-    else if (myChar == 'X') {
+    else if (*myChar == 'X') {
       nonAmbiguousAminos.append(allAminos_);
     } else {
-      nonAmbiguousAminos.append(1, myChar);
+      nonAmbiguousAminos.append(1, *myChar);
     }
   }
 
-  carp(CARP_DETAILED_INFO, "Remove ambiguous: %s -> %s", aminos.c_str(),
-       nonAmbiguousAminos.c_str());
   aminos = nonAmbiguousAminos;
 }
 
@@ -67,8 +62,6 @@ void Enzyme::complementAminos(
     }
 
   }
-  carp(CARP_DETAILED_INFO, "Complement: %s -> %s.", aminos.c_str(), 
-       complementAminos.c_str());
   aminos = complementAminos;
 }
 
@@ -89,9 +82,10 @@ void Enzyme::addAmbiguityCodes(
   }
 
   cleavageMap['X'] = true;
-  for (int idx = 0; idx < allAminos_.size(); idx++) {
-    char myChar = allAminos_[idx];
-    if (not cleavageMap[myChar]) {
+  for (std::string::iterator myChar = allAminos_.begin(); 
+       myChar < allAminos_.end();
+       myChar++) {
+    if (not cleavageMap[*myChar]) {
       cleavageMap['X'] = false;
     }
   }
@@ -103,37 +97,39 @@ void Enzyme::addAmbiguityCodes(
  * acids it cleaves.
  */
 void Enzyme::init(
-  const char* enzymeName
+  const char* name
 ) {
   allAminos_ = "ACDEFGHIKLMNPQRSTVWY";
 
+  std::string enzymeName(name);
+
   // If the enzyme is named, convert it to the corresponding custom string.
   std::string enzymeRule;
-  if (strcmp(enzymeName, "trypsin") == 0){
+  if (enzymeName == "trypsin"){
     enzymeRule = "[KR]|{P}";
-  } else if (strcmp(enzymeName, "chymotrypsin") == 0){
+  } else if (enzymeName == "chymotrypsin"){
     enzymeRule = "[FWY]|{P}";
-  } else if (strcmp(enzymeName, "elastase") == 0){
+  } else if (enzymeName == "elastase"){
     enzymeRule = "[ALIV]|{P}";
-  } else if (strcmp(enzymeName, "clostripain") == 0){
+  } else if (enzymeName == "clostripain"){
     enzymeRule = "[R]|[]";
-  } else if (strcmp(enzymeName, "cyanogen-bromide") == 0){
+  } else if (enzymeName == "cyanogen-bromide"){
     enzymeRule = "[M]|[]";
-  } else if (strcmp(enzymeName, "iodosobenzoate") == 0){
+  } else if (enzymeName == "iodosobenzoate"){
     enzymeRule = "[W]|[]";
-  } else if (strcmp(enzymeName, "proline-endopeptidase") == 0){
+  } else if (enzymeName == "proline-endopeptidase"){
     enzymeRule = "[P]|[]";
-  } else if (strcmp(enzymeName, "staph-protease") == 0){
+  } else if (enzymeName == "staph-protease"){
     enzymeRule = "[E]|[]";
-  } else if (strcmp(enzymeName, "modified-chymotrypsin") == 0){
+  } else if (enzymeName == "modified-chymotrypsin"){
     enzymeRule = "[FWYL]|{P}";
-  } else if (strcmp(enzymeName, "elastase-trypsin-chymotrypsin") == 0){
+  } else if (enzymeName == "elastase-trypsin-chymotrypsin"){
     enzymeRule = "[ALIVKRWFY]|{P}";
-  } else if (strcmp(enzymeName, "aspn") == 0){
+  } else if (enzymeName == "aspn"){
     enzymeRule = "[]|[D]";
-  } else if (strcmp(enzymeName, "no-enzyme") == 0){
+  } else if (enzymeName == "no-enzyme"){
     enzymeRule = "[X]|[X]";
-  } else if (strcmp(enzymeName, "no-cleavage") == 0){
+  } else if (enzymeName == "no-cleavage"){
     enzymeRule = "[]|[]";
   } else {
     enzymeRule = enzymeName;
@@ -162,8 +158,6 @@ void Enzyme::init(
   std::string followingAminos = 
     enzymeRule.substr(barPosition + 2,
 		      enzymeRule.length() - (barPosition + 3));
-  carp(CARP_INFO, "Rule=%s|%s", precedingAminos.c_str(), 
-       followingAminos.c_str());
 
   // Remove ambiguous characters.
   removeAmbiguousAminos(precedingAminos);
@@ -193,13 +187,15 @@ void Enzyme::init(
     precedingCleavage_[myChar] = false;
     followingCleavage_[myChar] = false;
   }
-  for (int idx = 0; idx < precedingAminos.size(); idx++) {
-    char myChar = precedingAminos[idx];
-    precedingCleavage_[myChar] = true;
+  for (std::string::iterator myChar = precedingAminos.begin(); 
+       myChar < precedingAminos.end();
+       myChar++) {
+    precedingCleavage_[*myChar] = true;
   }
-  for (int idx = 0; idx < followingAminos.size(); idx++) {
-    char myChar = followingAminos[idx];
-    followingCleavage_[myChar] = true;
+  for (std::string::iterator myChar = followingAminos.begin(); 
+       myChar < followingAminos.end();
+       myChar++) {
+    followingCleavage_[*myChar] = true;
   }
 
   // Cope with ambiguity codes in input.
@@ -207,18 +203,20 @@ void Enzyme::init(
   addAmbiguityCodes(followingCleavage_);
 
   // Give the user an update on what we cleave.
-  carp(CARP_DETAILED_INFO, "Enzyme rule: %s|%s", precedingAminos.c_str(), 
-       followingAminos.c_str());
+  carp(CARP_INFO, "Expanded enzyme rule: %s|%s", 
+       precedingAminos.c_str(), followingAminos.c_str());
   std::string siteList = "Cleavage sites:";
   int numSites = 0;
-  for (int first_idx = 0; first_idx < allAminos_.size(); first_idx++) {
-    char firstChar = allAminos_[first_idx];
-    for (int second_idx = 0; second_idx < allAminos_.size(); second_idx++) {
-      char secondChar = allAminos_[second_idx];
-      if (this->cleaves(firstChar, secondChar)) {
+  for (std::string::iterator myChar1 = allAminos_.begin(); 
+       myChar1 < allAminos_.end();
+       myChar1++) {
+    for (std::string::iterator myChar2 = allAminos_.begin(); 
+	 myChar2 < allAminos_.end();
+	 myChar2++) {
+      if (this->cleaves(*myChar1, *myChar2)) {
 	siteList.append(" ");
-	siteList.append(1, firstChar);
-	siteList.append(1, secondChar);
+	siteList.append(1, *myChar1);
+	siteList.append(1, *myChar2);
 	numSites++;
       }
     }
