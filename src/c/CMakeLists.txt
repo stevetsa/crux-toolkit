@@ -379,7 +379,28 @@ else(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   )
   target_link_libraries(
     enzyme
+    m
+    pthread
     crux-support
+    MSToolkit
+    pwiz_data_msdata
+    pwiz_data_common
+    pwiz_data_identdata
+    pwiz_data_msdata_version
+    pwiz_data_misc
+    pwiz_utility_chemistry
+    pwiz_utility_misc
+    pwiz_utility_minimxml
+    pwiz_data_common
+    pwiz_data_identdata
+    pwiz_data_identdata_version
+    pwiz_data_proteome
+    boost_system-mt-s
+    boost_iostreams-mt-s
+    z-mt-s-1_2
+    boost_filesystem-mt-s
+    boost_regex-mt-s
+    boost_thread-mt-s
   )
 endif(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 
