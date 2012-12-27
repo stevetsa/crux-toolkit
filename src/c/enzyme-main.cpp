@@ -12,12 +12,18 @@
 #include "carp.h"
 int main(int argc, char** argv){
 
-  if (argc != 2) {
-    fprintf(stderr, "enzyme <name>|<rule>\n");
+  if (argc != 3) {
+    fprintf(stderr, "enzyme <name>|<rule> <name>|<rule>\n");
     return(1);
   }
   set_verbosity_level(40);
-  Enzyme myEnzyme(argv[1]);
+  Enzyme myEnzyme1(argv[1]);
+  Enzyme myEnzyme2(argv[2]);
+
+  if (myEnzyme1.compare(&myEnzyme2)) {
+    fprintf(stdout, "%s cleaves everywhere that %s cleaves.\n",
+	    myEnzyme2.getName()->c_str(), myEnzyme1.getName()->c_str());
+  }
   return(0);
 
 }

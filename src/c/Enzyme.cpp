@@ -33,7 +33,7 @@ void Enzyme::removeAmbiguousAminos(
     }
     // O, J, U = illegal
     else if ((*myChar == 'O') || (*myChar == 'U') || (*myChar == 'J')) {
-      carp(CARP_ERROR, "Illegal amino acid (%c) in enzyme rule.\n", *myChar);
+      carp(CARP_ERROR, "Illegal amino acid (%c) in enzyme rule.", *myChar);
       exit(1);
     }
     // X = any amino acid
@@ -101,7 +101,7 @@ void Enzyme::init(
 ) {
   allAminos_ = "ACDEFGHIKLMNPQRSTVWY";
 
-  std::string enzymeName(name);
+  enzymeName = name;
 
   // If the enzyme is named, convert it to the corresponding custom string.
   std::string enzymeRule;
@@ -142,14 +142,14 @@ void Enzyme::init(
       if (barPosition == -1) {
         barPosition = idx;
       } else {
-	carp(CARP_ERROR, "Two vertical bars in enzyme rule (%s).\n",
+	carp(CARP_ERROR, "Two vertical bars in enzyme rule (%s).",
 	     enzymeRule.c_str());
 	exit(1);
       }
     }
   }
   if (barPosition == -1) {
-    carp(CARP_ERROR, "Unrecognized enzyme name (%s).\n", enzymeRule.c_str());
+    carp(CARP_ERROR, "Unrecognized enzyme name (%s).", enzymeRule.c_str());
     exit(1);
   }
 
@@ -168,7 +168,7 @@ void Enzyme::init(
     complementAminos(precedingAminos);
   } else if (!((enzymeRule[0] == '[') && 
 	       (enzymeRule[barPosition - 1] == ']'))) {
-    carp(CARP_ERROR, "Failure to parse first half of enzyme rule (%s).\n",
+    carp(CARP_ERROR, "Failure to parse first half of enzyme rule (%s).",
 	 enzymeRule.c_str());
     exit(1);
   }
@@ -177,7 +177,7 @@ void Enzyme::init(
     complementAminos(followingAminos);
   } else if (!((enzymeRule[barPosition + 1] == '[') && 
 	       (enzymeRule[enzymeRule.length() - 1] == ']'))) {
-    carp(CARP_ERROR, "Failure to parse second half of enzyme rule (%s).\n",
+    carp(CARP_ERROR, "Failure to parse second half of enzyme rule (%s).",
 	 enzymeRule.c_str());
     exit(1);
   }
@@ -222,7 +222,7 @@ void Enzyme::init(
     }
   }
   carp(CARP_DETAILED_INFO, siteList);
-  carp(CARP_INFO, "%d possible enymatic cleavage sites.", numSites);
+  carp(CARP_INFO, "%d possible enzymatic cleavage sites.", numSites);
 }
 
 /**
@@ -243,6 +243,39 @@ bool Enzyme::cleaves(
   char following
 ) {
   return(precedingCleavage_[preceding] && followingCleavage_[following]);
+}
+
+/**
+ * \return The name of the enzyme, or the cleavage rule.
+ */
+std::string* Enzyme::getName() {
+  return(&(this->enzymeName));
+}
+
+/**
+ * \returns True if the given enzyme cleaves all of the positions that
+ * are cleaved by this enzyme.
+ */
+bool Enzyme::compare(
+  Enzyme* otherEnzyme
+)
+{
+  for (std::string::iterator myChar1 = allAminos_.begin(); 
+       myChar1 < allAminos_.end();
+       myChar1++) {
+    for (std::string::iterator myChar2 = allAminos_.begin(); 
+	 myChar2 < allAminos_.end();
+	 myChar2++) {
+      if (this->cleaves(*myChar1, *myChar2) &&
+	  !otherEnzyme->cleaves(*myChar1, *myChar2)) {
+	carp(CARP_INFO, "%s cleaves %c|%c but %s does not.",
+	     this->getName()->c_str(), *myChar1, *myChar2,
+	     otherEnzyme->getName()->c_str());
+	return(false);
+      }
+    }
+  }
+  return(true);
 }
 
 /*

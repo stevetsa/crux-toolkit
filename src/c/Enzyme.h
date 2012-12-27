@@ -18,12 +18,15 @@ class Enzyme {
 
  private:
 
+  // The name or the cleavage rule.
+  std::string enzymeName;
+
   /* Keep track of whether a cleavage if the given amino acid appears before
    * or after the position. */
   std::map<char,bool> precedingCleavage_;
   std::map<char,bool> followingCleavage_;
 
-  /* List of all amino acids. */
+  // List of all amino acids.
   std::string allAminos_;
 
   /**
@@ -72,6 +75,19 @@ class Enzyme {
   bool cleaves(
     char preceding,
     char following
+  );
+
+  /**
+   * \return The name of the enzyme, or the cleavage rule.
+   */
+  std::string* getName();
+
+  /**
+   * \returns True if the given enzyme cleaves all of the positions that
+   * are cleaved by this enzyme.
+   */
+  bool compare(
+    Enzyme* otherEnzyme
   );
 };
 
