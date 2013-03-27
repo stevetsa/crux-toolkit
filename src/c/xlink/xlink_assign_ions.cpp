@@ -6,6 +6,10 @@
 #include "LinkedPeptide.h"
 #include "XHHC_Peptide.h"
 
+#include "XLinkMatch.h"
+#include "XLinkPeptide.h"
+
+
 #include "objects.h"
 #include "Scorer.h"
 #include "SpectrumCollectionFactory.h"
@@ -122,7 +126,7 @@ int main(int argc, char** argv){
   }
 
 
-  XLinkMatch* lined_peptide 
+  //XLinkMatch* lined_peptide 
 
 
   //created linked peptide.
