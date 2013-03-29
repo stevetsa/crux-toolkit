@@ -4,7 +4,7 @@ AC_INIT(crux, 1.0, aklammer@u.washington.edu)
 AC_CONFIG_SRCDIR(src/c/IonSeries.cpp)
 AC_CONFIG_AUX_DIR(config)
 AM_INIT_AUTOMAKE(crux, 1.37)
-AM_CONFIG_HEADER([config.h])
+AC_CONFIG_HEADERS([config.h])
 
 # Check for required programs.
 AC_PROG_CC
