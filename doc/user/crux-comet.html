@@ -83,14 +83,14 @@ programs.
 </li>
 
 <li>
-<b>comete.target.sqt</b>: an <a href="sqt-format.html">SQT</a> file
+<b>comet.target.sqt</b>: an <a href="sqt-format.html">SQT</a> file
 containing the PSMs.</li>
 
 <li>
 <b>comet.target.pep.xml</b></li>
 
 <li>
-<b>comete.log.txt</b>: a log file containing a copy of all messages
+<b>comet.log.txt</b>: a log file containing a copy of all messages
 that were printed to stderr.</li>
 
 </ul>
@@ -126,7 +126,7 @@ output file names. Default = none.</li>
 <li>
 <code>--output-dir &lt;filename&gt;</code> &ndash; 
 The name of the directory where output files will be created.
-Default = crux-out.</li>
+Default = crux-output.</li>
 
 <li>
 <code>--overwrite &lt;T|F&gt;</code> &ndash;
@@ -279,9 +279,38 @@ To do:</p>
 
 <ul>
 <li>
-Figure out how to handle MSToolkit issues (Comet has its own copy, we need
-MSToolkit for harklor/bullseye.)
+Resolve MSToolkit issues (Comet has its own copy, we need
+MSToolkit for harklor/bullseye.)  Also, latest version of comet has a version of MSToolkit that doesn't compile on MAC.
 </li>
+
+<li>Figure out how to either 1) tie duplicate parameters together or 2) make crux use comet parameters so when when crux writes out
+the parameter file, this can instantly be used by calling comet.</li>
+
+<li>Handle specifying enzymes.  Comet does this with the <code>search_enzyme_number</code> and the following lines at the end of the parameter file:<br>
+<code><br>
+#<br>
+# COMET_ENZYME_INFO _must_ be at the end of this parameters file<br>
+#<br>
+[COMET_ENZYME_INFO]<br>
+0.  No_enzyme              0      -           -<br>
+1.  Trypsin                1      KR          P<br>
+2.  Trypsin/P              1      KR          -<br>
+3.  Lys_C                  1      K           P<br>
+4.  Lys_N                  0      K           -<br>
+5.  Arg_C                  1      R           P<br>
+6.  Asp_N                  0      D           -<br>
+7.  CNBr                   1      M           -<br>
+8.  Glu_C                  1      DE          P<br>
+9.  PepsinA                1      FL          P<br>
+10. Chymotrypsin           1      FWYL        P<br>
+</code>
+
+The <code>search_enzyme_number</code> keys into this list of enzymes.  This can be modified to support other enzymes.
+If we go with the mixed crux/comet parameters, then this will have to be put at the end of the parameter file and the rest of the crux programs
+will have to be modified to ignore this list.
+</li>
+
+<li>Modify documentation of the parameters to point to the comet parameters after the documentation is added to the comet source.</li>
 
 </ul>
 
@@ -289,17 +318,25 @@ MSToolkit for harklor/bullseye.)
 Changes we are proposing on the Comet end of things:</p>
 <ul>
 <li>Have an option to compile Comet as a library in the with the main() replaced with comet_main().</li>
-
+<li>Make sure comet ignore parameters that are not part of comet (i.e. part of crux).</li>
+<li>Allow for an option that can specify the full path(s) of the outputted results file(s).</li>
+<li>Maybe map the modifications to actual mass changes instead of using special characters (*).  This will affect the downstream analysis tools (i.e. percolator).</li>
+<li>Have documentation availabe in comet source distribution.</li>
 </ul>
 
 <p>
-Questions to ask Jimmy:</p>
+Questions:
+</p>
 
 <ul>
 <li>How are decoys generated?</li>
-<li>How are modifications reported?</li>
+Decoys are generated when decoy_search is 1 or 2 by reversing on the peptide-level.
+
+
 
 </ul>
+<!--
+Delete sometime in the future
 
 <p>Argument parameter mappings</p>
 <br>
@@ -904,7 +941,7 @@ Questions to ask Jimmy:</p>
             <td><code>Z</code></td>
       </tr>
 </table>
-
+-->
 
 
 </note>
