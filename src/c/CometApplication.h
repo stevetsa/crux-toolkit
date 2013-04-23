@@ -11,6 +11,7 @@
 
 #include <string>
 #include <fstream>
+#include <iostream>
 
 class CometApplication: public CruxApplication {
 
@@ -47,6 +48,13 @@ class CometApplication: public CruxApplication {
    * \returns whether the application needs the output directory or not. (default false).
    */
   virtual bool needsOutputDirectory();
+
+  /**
+   * \write parameters 
+   */
+  void writeParams(std::ofstream &fout, 
+    std::string protein_database
+  );
   
 };
 

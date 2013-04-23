@@ -67,7 +67,7 @@ void CometPostAnalysis::PostAnalysisThreadProc(PostAnalysisThreadData *pThreadDa
 void CometPostAnalysis::AnalyzeSP(int i)
 {
    int iSize = g_pvQuery.at(i)->iDoXcorrCount;
-
+ 
    if (iSize > g_StaticParams.options.iNumStored)
       iSize = g_StaticParams.options.iNumStored;
 

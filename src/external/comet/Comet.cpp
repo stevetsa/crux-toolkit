@@ -397,9 +397,7 @@ void ProcessCmdLine(int argc,
    int iStartInputFile = 1;
    char *arg;
    FILE *fpcheck;
-
    strcpy(szParamsFile, "comet.params");
-
    g_StaticParams.databaseInfo.szDatabase[0] = '\0';
    g_StaticParams.inputFile.szBaseName[0] = '\0';
 
@@ -699,7 +697,7 @@ void LoadParameters(char *pszParamsFile)
    FILE  *fp;
    bool  bCurrentParamsFile = 0; // Track a parameter to make sure present.
    char *pStr;
-
+  
    if ((fp=fopen(pszParamsFile, "r")) == NULL)
    {
       fprintf(stderr, " Error - cannot open parameter file %s.\n\n", pszParamsFile);

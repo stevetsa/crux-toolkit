@@ -139,9 +139,10 @@ char* digest_type_to_string(DIGEST_T type){
  * The string version of enzyme types
  */
 static const char* enzyme_type_strings[NUMBER_ENZYME_TYPES] = 
-  {"invalid", "no-enzyme", "trypsin", "chymotrypsin", "elastase",
-   "clostripain", "cyanogen-bromide", "iodosobenzoate", 
-   "proline-endopeptidase", "staph-protease", "aspn", 
+  {"invalid", "no-enzyme", "trypsin","trypsin/p", "chymotrypsin", 
+   "elastase","clostripain", "cyanogen-bromide", "iodosobenzoate", 
+   "proline-endopeptidase", "staph-protease", "aspn", "lysc",
+   "lysn" , "arg_c" , "glue_c" ,"pepsin_a",
    "modified-chymotrypsin", "elastase-trypsin-chymotrypsin",
    "custom-enzyme"};
 

@@ -55,7 +55,7 @@ int main(int argc, char** argv){
   // search
   applications.add(new MatchSearch());
   applications.add(new SequestSearch());
-  applications.add(new CometApplication());
+  //applications.add(new CometApplication());
   applications.add(new SearchForXLinks());
 
   // post-search

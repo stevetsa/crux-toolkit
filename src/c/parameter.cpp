@@ -591,7 +591,7 @@ void initialize_parameters(void){
       "Only valid for fasta searches when --decoys is not none. Default=0.",
       "Use --decoy-location to control where they are returned (which "
       "file(s)) and --decoys to control how targets are randomized.  Available "
-      "for search-for-matches and sequest-search when searching a fasta file. ",
+      "for search-for-matches and comet when searching a fasta file. ",
       "true");
   set_string_parameter("decoy-location", "separate-decoy-files",
       "Specify location of decoy search results. "
@@ -744,6 +744,125 @@ void initialize_parameters(void){
      "<fileroot>.percolator.features.txt or <fileroot>.qranker.features.txt.",
      "true");
 
+  // **** Comet additional options ****
+  set_string_parameter("input spectra", NULL,
+     "Tha name of file (in MS2 format) from which to parse the spectra.",
+     "Available for comet.  File will be named ",
+     "false");
+  set_int_parameter("num-threads",0,0,32, 
+    "",
+    "option for Comet only",
+    "ture"
+  );
+  set_int_parameter("isotope-windows",0,0,2, 
+    "",
+    "option for Comet only",
+    "ture"
+  );
+  set_boolean_parameter("use-a-ions",
+    false, 
+    "",
+    "option for Comet only",
+    "ture"
+  );
+  set_boolean_parameter("use-b-ions",
+    true, 
+    "",
+    "option for Comet only",
+    "ture"
+  );
+  set_boolean_parameter("use-c-ions",
+    false, 
+    "",
+    "option for Comet only",
+    "ture"
+  );
+  set_boolean_parameter("use-x-ions",
+    false, 
+    "",
+    "option for Comet only",
+    "ture"
+  );
+
+  set_boolean_parameter("use-y-ions",
+    true, 
+    "",
+    "option for Comet only",
+    "ture"
+  );
+  set_boolean_parameter("use-z-ions",
+    false, 
+    "",
+    "option for Comet only",
+    "ture"
+  );
+  set_boolean_parameter("use-nl-ions",
+    true, 
+    "",
+    "option for Comet only",
+    "ture"
+  );
+  set_boolean_parameter("print-expect-score",
+    true, 
+    "",
+    "option for Comet.",
+    "false"
+  );
+  set_int_parameter("sample-enzyme",
+    1,0,10, 
+    "",
+    "option for Comet. ",
+    "false"
+  );
+  set_int_parameter("ms-level",
+    2,2,3, 
+    "",
+    "option for Comet. ",
+    "false"
+  );
+
+  set_string_parameter("activation-method",
+    "ALL" ,
+    "<string>= ALL|CID|ECD|ETD|PQD|HCD|IRMPD. Default=All",
+    "option for Comet. ",
+    "false"
+  );
+  set_int_parameter("max-precursor-charge",
+    6,6,9, 
+    "",
+    "option for Comet. ",
+    "false"
+  );
+  set_double_parameter("minimum-intensity",
+    0,0,BILLION,
+    "",
+    "option for comet. ",
+    "false"
+  );
+  set_int_parameter("remove-precursor-peak",
+    0,0,2, 
+    "",
+    "option for Comet. ",
+    "false"
+  );
+  set_double_parameter("remove-precursor-tolerance",
+    1.5,-BILLION,BILLION, 
+    "",
+    "option for Comet. ",
+    "false"
+  );
+  set_int_parameter("start-scan", 
+    0,0,BILLION, 
+    "",
+    "option for comet",
+    "true"
+  );
+  set_int_parameter("end-scan",
+    0,0,BILLION, 
+    "", 
+    "option for comet",
+    "true"
+  );
   // **** q-ranker-barista arguments ****
   set_string_parameter("database", NULL,
      "The program requires the FASTA format protein database files against "
