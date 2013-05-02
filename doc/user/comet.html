@@ -8,7 +8,7 @@
 
 <H1 ALIGN=CENTER>crux comet</H1>
 
-<B>Usage:</B>
+<h2>Usage:</h2>
 
 <blockquote>
 <code>crux comet [options]
@@ -16,7 +16,7 @@
 </code>
 </blockquote>
 
-<B>Description:</B>
+<h2>Description:</h2>
 
 <blockquote>
 <p>
@@ -28,9 +28,8 @@ Resource.</p>
 <p>
 Although its history goes back two decades, the Comet search engine
 was first made publicly available in August 2012 on SourceForge under
-the Apache License, version 2.0. Comet is multithreaded, supports
-multiple input and output formats, and binaries are available for both
-Windows and Linux operating systems.  The current Comet version in
+the Apache License, version 2.0. Comet is multithreaded and supports
+multiple input and output formats.  The current Comet version in
 Crux is FIXME.</p>
 
 <blockquote>
@@ -42,7 +41,7 @@ search tool."  Eng JK, Jahan TA, Hoopmann MR.
 </blockquote>
 
 <p>
-<B>Input:</B>
+<h2>Input:</h2>
 
 <ul>
 
@@ -64,7 +63,7 @@ search tool."  Eng JK, Jahan TA, Hoopmann MR.
 
 </UL>
 
-<B>Output:</B>
+<h2>Output:</h2>
 
 <p>
 The program writes files to the folder <code>crux-output</code> by
@@ -96,50 +95,20 @@ that were printed to standard error.</li>
 
 </ul>
 
-<B>Options:</B>
+<h2>Options:</h2>
 
 <p>
 Because Comet was developed externally to Crux, the names of various
 command line parameters are somewhat different.  For example, Comet
 uses underscores ("_") within parameter names, whereas other Crux
-commands use hyphens ("-").  To avoid confusion, the Crux comet
+commands use hyphens ("-").  The <code>crux comet</code>
 command will accept parameters using either convention.</p>
 
+<p>
+Note that the following parameters from stand-alone Comet are not
+available via <code>crux comet</code>: <code>output_sqtstream</code>.</p>
+
 <UL>
-
-<h3>Crux options</h3>
-
-<ul>
-
-<LI><code>--parameter-file &lt;filename&gt;</code> &ndash; 
-A file containing command-line or additional parameters.  See
-the <a href="parameter-file.html">parameter documentation</a> page
-for details.  Default = no parameter file.
-
-<LI>
-<code>--verbosity &lt;0-100&gt;</code> &ndash; 
-Specify the verbosity of the current processes. Each level prints the
-following messages, including all those at lower verbosity levels:
-0-fatal errors, 10-non-fatal errors, 20-warnings, 30-information on
-the progress of execution, 40-more progress information, 50-debug
-info, 60-detailed debug info. Default = 30.
-
-<li>
-<code>--fileroot &lt;string&gt;</code> &ndash; 
-The <code>fileroot</code> string will be added as a prefix to all
-output file names. Default = none.</li>
-
-<li>
-<code>--output-dir &lt;filename&gt;</code> &ndash; 
-The name of the directory where output files will be created.
-Default = crux-output.</li>
-
-<li>
-<code>--overwrite &lt;T|F&gt;</code> &ndash;
-Replace existing files if true (T) or fail when trying to overwrite a
-file if false (F). Default =  F.</li>
-
-</ul>
 
 <h3>Database</h3>
 <ul>
@@ -184,7 +153,21 @@ file if false (F). Default =  F.</li>
 
 <h3>Output</h3>
 <ul>
-<li><a href="comet-options/output_sqtstream.html">output_sqtstream</a></li>
+<li>
+<code>--fileroot &lt;string&gt;</code> &ndash; 
+The <code>fileroot</code> string will be added as a prefix to all
+output file names. Default = none.</li>
+
+<li>
+<code>--output-dir &lt;filename&gt;</code> &ndash; 
+The name of the directory where output files will be created.
+Default = crux-output.</li>
+
+<li>
+<code>--overwrite &lt;T|F&gt;</code> &ndash;
+Replace existing files if true (T) or fail when trying to overwrite a
+file if false (F). Default =  F.</li>
+
 <li><a href="comet-options/output_sqtfile.html">output_sqtfile</a></li>
 <li><a href="comet-options/output_pepxmlfile.html">output_pepxmlfile</a></li>
 <li><a href="comet-options/output_outfiles.html">output_outfiles</a></li>
@@ -202,8 +185,21 @@ file if false (F). Default =  F.</li>
 <li><a href="comet-options/activation_method.html">activation_method</a></li>
 </ul>
 
-<h3>Misc. parameters</h3>
+<h3>Miscellaneous parameters</h3>
 <ul>
+<LI><code>--parameter-file &lt;filename&gt;</code> &ndash; 
+A file containing command-line or additional parameters.  See
+the <a href="parameter-file.html">parameter documentation</a> page
+for details.  Default = no parameter file.</li>
+
+<LI>
+<code>--verbosity &lt;0-100&gt;</code> &ndash; 
+Specify the verbosity of the current processes. Each level prints the
+following messages, including all those at lower verbosity levels:
+0-fatal errors, 10-non-fatal errors, 20-warnings, 30-information on
+the progress of execution, 40-more progress information, 50-debug
+info, 60-detailed debug info. Default = 30.</li>
+
 <li><a href="comet-options/digest_mass_range.html">digest_mass_range</a></li>
 <li><a href="comet-options/num_results.html">num_results</a></li>
 <li><a href="comet-options/skip_researching.html">skip_researching</a></li>
@@ -316,18 +312,15 @@ If we go with the mixed crux/comet parameters, then this will have to be put at 
 will have to be modified to ignore this list.
 </li>
 
-<li>Modify documentation of the parameters to point to the comet parameters after the documentation is added to the comet source.</li>
-
 </ul>
 
 <p>
 Changes we are proposing on the Comet end of things:</p>
 <ul>
 <li>Have an option to compile Comet as a library in the with the main() replaced with comet_main().</li>
-<li>Make sure comet ignore parameters that are not part of comet (i.e. part of crux).</li>
-<li>Allow for an option that can specify the full path(s) of the outputted results file(s).</li>
-<li>Maybe map the modifications to actual mass changes instead of using special characters (*).  This will affect the downstream analysis tools (i.e. percolator).</li>
-<li>Have documentation availabe in comet source distribution.</li>
+<li>Make sure comet ignores parameters that are not part of comet (i.e. part of crux).</li>
+<li>Allow an option that can specify the full paths of the results files.</li>
+<li>Map the modifications to actual mass changes instead of using special characters.</li>
 </ul>
 
 <p>
@@ -335,9 +328,8 @@ Questions:
 </p>
 
 <ul>
-<li>How are decoys generated?</li>
-Decoys are generated when decoy_search is 1 or 2 by reversing on the peptide-level.
-
+<li>When a decoy search is performed, how are the decoys indicated in
+  the output?</li>
 
 
 </ul>
