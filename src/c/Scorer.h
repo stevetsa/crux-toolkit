@@ -24,7 +24,13 @@
 #include "Peptide.h"
 #include "Ion.h"
 
-using namespace Crux;
+
+/**
+ * Macro for converting floating point to integers.
+ */
+
+#define INTEGERIZE(VALUE,BIN_SIZE,BIN_OFFSET) \
+  ((int)( ( ( VALUE / BIN_SIZE ) + 1.0 ) - BIN_OFFSET ) )
 
 class Scorer {
 
@@ -114,7 +120,7 @@ class Scorer {
    * \returns true if successful, else FLASE
    */
   bool createIntensityArraySp(
-    Spectrum* spectrum,    ///< the spectrum to score -in
+    Crux::Spectrum* spectrum,    ///< the spectrum to score -in
     int charge               ///< the peptide charge -in 
     );
 
@@ -123,7 +129,7 @@ class Scorer {
    *\returns the sp score 
    */
   FLOAT_T genScoreSp(
-    Spectrum* spectrum,    ///< the spectrum to score -in
+    Crux::Spectrum* spectrum,    ///< the spectrum to score -in
     IonSeries* ion_series ///< the ion series to score against the spectrum -in
     );
 
@@ -147,7 +153,7 @@ class Scorer {
    *\returns the xcorr score 
    */
   FLOAT_T genScoreXcorr(
-    Spectrum* spectrum,    ///< the spectrum to score -in
+    Crux::Spectrum* spectrum,    ///< the spectrum to score -in
     IonSeries* ion_series ///< the ion series to score against the spectrum -in
     );
 
@@ -203,7 +209,7 @@ class Scorer {
    * Score a spectrum vs. an ion series
    */
   FLOAT_T scoreSpectrumVIonSeries(
-    Spectrum* spectrum,      ///< the spectrum to score -in
+    Crux::Spectrum* spectrum,      ///< the spectrum to score -in
     IonSeries* ion_series ///< the ion series to score against the spectrum -in
   );
 
@@ -224,8 +230,8 @@ class Scorer {
    * Score a spectrum vs. another spectrum
    */
   FLOAT_T scoreSpectrumVSpectrum(
-    Spectrum* first_spectrum,   ///< the first spectrum to score -in
-    Spectrum* second_spectrum   ///<  the second spectrum to score -in
+    Crux::Spectrum* first_spectrum,   ///< the first spectrum to score -in
+    Crux::Spectrum* second_spectrum   ///<  the second spectrum to score -in
   );
 
   /*******************************
@@ -358,7 +364,7 @@ class Scorer {
    * .
    */
   static void getProcessedPeaks(
-    Spectrum* spectrum, 
+    Crux::Spectrum* spectrum, 
     int charge,
     SCORER_TYPE_T score_type,
     FLOAT_T** intensities, ///< pointer to array of intensities
@@ -370,7 +376,7 @@ class Scorer {
    * \returns true if successful, else false
    */
   bool createIntensityArrayXcorr(
-    Spectrum* spectrum,    ///< the spectrum to score(observed) -in
+    Crux::Spectrum* spectrum,    ///< the spectrum to score(observed) -in
     int charge               ///< the peptide charge -in 
     );
 
@@ -387,7 +393,7 @@ class Scorer {
   FLOAT_T* getIntensityArrayObserved();
 
   bool createIntensityArrayObserved(
-    Spectrum* spectrum,    ///< the spectrum to score(observed) -in
+    Crux::Spectrum* spectrum,    ///< the spectrum to score(observed) -in
     int charge               ///< the peptide charge -in 
     );
 

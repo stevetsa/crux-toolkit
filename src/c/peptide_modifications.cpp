@@ -20,6 +20,9 @@
  */
 
 #include "peptide_modifications.h"
+#include "Peptide.h"
+
+using namespace Crux;
 
 /* Private data types, typedefed in objects.h */
 /**

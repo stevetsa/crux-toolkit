@@ -32,7 +32,7 @@
 #include "ModifiedPeptidesIterator.h"
 
 using namespace std;
-
+using namespace Crux;
 /**
  * \returns a blank MatchSearch object
  */
@@ -96,6 +96,7 @@ int MatchSearch::searchPepMods(
   SpectrumZState& zstate, ///< seach spectrum at this z-state
   PEPTIDE_MOD_T** peptide_mods, ///< list of peptide mods to apply
   int num_peptide_mods, ///< how many p_mods to use from the list
+  bool compute_sp,  ///< compute sp scores
   bool store_scores///< save all scores for p-value estimation
   ){
 
@@ -148,7 +149,7 @@ int MatchSearch::searchPepMods(
                             peptide_iterator,
                             is_decoy,
                             store_scores,
-                            get_boolean_parameter("compute-sp"),
+                            compute_sp,
                             false // don't filtery by Sp
                             );
     
@@ -181,7 +182,7 @@ void MatchSearch::printSpectrumMatches(
   ){
 
   // now print matches to one, two or several files
-  if( combine_target_decoy == true ){
+  if( combine_target_decoy ){
     // merge all collections
     MatchCollection* all_psms = target_psms;
     for(size_t decoy_idx = 0; decoy_idx < decoy_psms.size(); decoy_idx++){
@@ -189,8 +190,9 @@ void MatchSearch::printSpectrumMatches(
     }
     
     // sort and rank
-    if( all_psms->getScoredType(SP) == true ){
+    if( all_psms->getScoredType(SP) ){
       all_psms->populateMatchRank(SP);
+      all_psms->saveTopSpMatch();
     }
     all_psms->populateMatchRank(XCORR);
 
@@ -266,7 +268,6 @@ void MatchSearch::addDecoyScores(
 
 }
 
-#ifdef SEARCH_ENABLED // Discard this code in open source release
 int MatchSearch::main(int argc, char** argv){
 
   /* Define optional command line arguments */
@@ -274,6 +275,11 @@ int MatchSearch::main(int argc, char** argv){
     "fileroot",
     "output-dir",
     "overwrite",
+    "sqt-output",
+    "mzid-output",
+    "pinxml-output",
+    "pepxml-output",
+    "txt-output",
     "num-decoys-per-target",
     "decoys",
     "decoy-location",
@@ -282,16 +288,18 @@ int MatchSearch::main(int argc, char** argv){
     "spectrum-min-mass",
     "spectrum-max-mass",
     "spectrum-charge",
+    "max-ion-charge",
     "scan-number",
     "mz-bin-width",
     "mz-bin-offset",
+    "spectrum-parser",
     "parameter-file",
     "verbosity"
   };
   int num_options = sizeof(option_list) / sizeof(char*);
 
   /* Define required command line arguments */
-  const char* argument_list[] = {"ms2 file", "protein database"};
+  const char* argument_list[] = {"ms2 file", "protein-database"};
   int num_arguments = sizeof(argument_list) / sizeof(char*);
 
   initialize(argument_list, num_arguments,
@@ -313,7 +321,7 @@ int MatchSearch::main(int argc, char** argv){
        spectra->getNumSpectra());
 
   /* Get input: protein file */
-  char* input_file = get_string_parameter("protein database");
+  char* input_file = get_string_parameter("protein-database");
 
   /* Prepare input, fasta or index */
   Index* index = NULL;
@@ -331,6 +339,7 @@ int MatchSearch::main(int argc, char** argv){
   bool combine_target_decoy = get_boolean_parameter("tdc");
   OutputFiles output_files(this); 
   output_files.writeHeaders(num_proteins, combine_target_decoy);
+  //output_files.writeHeader();
   // TODO (BF oct-21-09): consider adding pvalue file to OutputFiles
   FILE* decoy_pvalue_file = NULL;
   if( get_boolean_parameter("decoy-p-values") ){
@@ -353,6 +362,12 @@ int MatchSearch::main(int argc, char** argv){
     new FilteredSpectrumChargeIterator(spectra);
 
   // get search parameters for match_collection
+  bool compute_sp = get_boolean_parameter("compute-sp");
+  if (get_boolean_parameter("sqt-output") && !compute_sp){
+    compute_sp = true;
+    carp(CARP_INFO, "Enabling parameter compute-sp since SQT output is enabled "
+                    " (this will increase runtime).");
+  }
   bool compute_pvalues = get_boolean_parameter("compute-p-values");
   int num_decoy_files = get_int_parameter("num-decoy-files");
 
@@ -387,6 +402,7 @@ int MatchSearch::main(int argc, char** argv){
                                         zstate,
                                         peptide_mods, 
                                         num_peptide_mods,
+                                        compute_sp,
                                         compute_pvalues); 
  
     // are there any matches?
@@ -419,6 +435,7 @@ int MatchSearch::main(int argc, char** argv){
                       zstate, 
                       peptide_mods, 
                       max_pep_mods,
+                      compute_sp,
                       compute_pvalues);
     }
 
@@ -484,21 +501,6 @@ int MatchSearch::main(int argc, char** argv){
   return 0;
 }// end main
 
-#else // SEARCH_ENABLED not defined
-int MatchSearch::main(int argc, char **argv){
-  (void) argc;
-  (void) argv;
-  fputs(
-    "You are using the open source version of Crux. Due to intellectual\n"
-    "property issues, we are unable to provide database search functionality\n"
-    "in this version. To obtain a licence for the full functional version of\n"
-    "Crux that includes the database search tools, please visit the following URL:\n"
-    "\nhttp://depts.washington.edu/ventures/UW_Technology/Express_Licenses/crux.php\n",
-    stderr
-  );
-  return 1;
-}
-#endif // SEARCH_ENABLED
 
 /**
  * \returns the command name for MatchSearch

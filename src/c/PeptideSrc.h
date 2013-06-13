@@ -20,10 +20,10 @@ class PeptideSrc {
 
  protected:
   DIGEST_T digestion_; ///< how specific the ends are relative to the enzyme
-  Protein* parent_protein_; ///< the parent of this preptide
+  Crux::Protein* parent_protein_; ///< the parent of this preptide
   int start_idx_; ///< start index of the peptide in the protein sequence, first residue is 1 
-  static std::map<std::string, Peptide* > sequence_to_peptide_; ///< Maps a sequence to a peptide object
-  static std::map<std::string, Peptide* > decoy_sequence_to_peptide_; ///< Maps a decoy sequence to a peptide object
+  static std::map<std::string, Crux::Peptide* > sequence_to_peptide_; ///< Maps a sequence to a peptide object
+  static std::map<std::string, Crux::Peptide* > decoy_sequence_to_peptide_; ///< Maps a decoy sequence to a peptide object
 
   /**
    * \brief fills the sequence_to_peptide_ member variable for use in parseTabDelimited
@@ -48,7 +48,7 @@ class PeptideSrc {
    */
   PeptideSrc(
     DIGEST_T digest,
-    Protein* parent_protein, ///< the parent of this preptide -in
+    Crux::Protein* parent_protein, ///< the parent of this preptide -in
     int start_idx ///< peptide start index in protein sequence, first is 1 -in
     );
 
@@ -99,13 +99,13 @@ class PeptideSrc {
    * sets the parent protein
    */
   void setParentProtein(
-    Protein* parent_protein ///< the parent of this preptide -in  
+    Crux::Protein* parent_protein ///< the parent of this preptide -in  
     );
 
   /**
    * \returns a pointer to the parent protein
    */
-  Protein* getParentProtein();
+  Crux::Protein* getParentProtein();
 
   /**
    * sets the start index of the peptide in the protein sequence
@@ -154,7 +154,7 @@ class PeptideSrc {
    * returns false.
    */
   static bool parseTabDelimited(
-    Peptide* peptide,   ///< assign peptide_src(s) to this peptide
+    Crux::Peptide* peptide,   ///< assign peptide_src(s) to this peptide
     MatchFileReader& file,           ///< file to read from
     Database* database, ///< database containing proteins
     Database* decoy_database = NULL ///< optional database with decoy proteins
@@ -173,7 +173,7 @@ class PeptideSrc {
    * NULL. 
    */
   static bool parse(
-    Peptide* peptide,   ///< assign peptide_src(s) to this peptide
+    Crux::Peptide* peptide,   ///< assign peptide_src(s) to this peptide
     FILE* file,           ///< file to read from
     Database* database); ///< database containing proteins
 

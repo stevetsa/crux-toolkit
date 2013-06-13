@@ -16,6 +16,8 @@
 #include "PeptideConstraint.h"
 #include "Database.h"
 #include "Alphabet.h"
+#include "IndexMap.h"
+
 
 static const int MAX_INDEX_FILES = 1024;
 
@@ -62,6 +64,8 @@ class Index {
   int num_pointers_; ///< The number of pointers to this index.
   Database* database_; ///< The database that has been indexed.
   Database* decoy_database_; ///< The decoy verision of the database.
+  IndexMap* index_map_;
+  IndexMap* decoy_index_map_;
   char* directory_; ///< The directory containing the indexed files
   PeptideConstraint* disk_constraint_;///< Defines peptides on disk
   PeptideConstraint* search_constraint_;///< Defines peptides being searched
@@ -302,6 +306,18 @@ class Index {
     );
 
   /**
+   * \returns the disk constraint pointer from index
+   */
+  PeptideConstraint* getDiskConstraint();
+
+  /**
+   * \returns the IndexMap for the target or decoy index
+   */
+  IndexMap* getIndexMap(
+    bool decoy ///< return decoy index?
+  );
+
+  /**
    *\returns TRUE if only allow unique peptides else FALSE
    */
   bool getIsUnique();
@@ -346,7 +362,7 @@ bool void_index_peptide_iterator_has_next(
 /**
  * \returns The next peptide in the index.
  */
-Peptide* void_index_peptide_iterator_next(
+Crux::Peptide* void_index_peptide_iterator_next(
     void* index_peptide_iterator ///< the iterator of interest -in
     );
 
@@ -370,7 +386,7 @@ BIN_PEPTIDE_ITERATOR_T* new_bin_peptide_iterator(
  *  The basic iterator functions.
  * \returns The next peptide in the index.
  */
-Peptide* bin_peptide_iterator_next(
+Crux::Peptide* bin_peptide_iterator_next(
   BIN_PEPTIDE_ITERATOR_T* bin_peptide_iterator 
    ///< the bin_peptide_iterator to get peptide -in
   );
@@ -414,7 +430,7 @@ BIN_SORTED_PEPTIDE_ITERATOR_T* new_bin_sorted_peptide_iterator(
  *  The basic iterator functions.
  * \returns The next peptide in the index.
  */
-Peptide* bin_sorted_peptide_iterator_next(
+Crux::Peptide* bin_sorted_peptide_iterator_next(
   BIN_SORTED_PEPTIDE_ITERATOR_T* bin_sorted_peptide_iterator 
   ///< the bin_peptide_iterator to get peptide -in
   );

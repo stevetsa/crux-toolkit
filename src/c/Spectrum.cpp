@@ -25,6 +25,8 @@
 #include "MSToolkit/include/Spectrum.h"
 
 using namespace std;
+using namespace Crux;
+namespace pzd = pwiz::msdata;
 
 /**
  * Default constructor.
@@ -212,7 +214,7 @@ void Spectrum::printSqt(
           0.0, // FIXME dummy <process time>
           "server", // FIXME dummy <server>
           get_int_parameter("mass-precision"),
-          zstate.getNeutralMass(), //this is used in search
+          zstate.getSinglyChargedMass(), //this is used in search
           0.0, // FIXME dummy <total intensity>
           get_int_parameter("precision"),
           0.0, // FIXME dummy <lowest sp>
@@ -253,6 +255,39 @@ void Spectrum::printSqt(
   }
   */
 }
+
+void Spectrum::copyFrom(Spectrum *src) {
+
+ first_scan_ = src->first_scan_;
+ last_scan_ = src->last_scan_;
+ precursor_mz_ = src->precursor_mz_;
+ zstates_ = src->zstates_;
+ min_peak_mz_ = src->min_peak_mz_;
+ max_peak_mz_ = src->max_peak_mz_;
+ total_energy_ = src->total_energy_;
+ filename_ = src->filename_;
+ i_lines_v_  = src->i_lines_v_;
+ d_lines_v_ = src-> d_lines_v_;
+ has_peaks_ = src-> has_peaks_;
+ sorted_by_mz_ = src->sorted_by_mz_;
+ sorted_by_intensity_ = src->sorted_by_intensity_;
+ has_mz_peak_array_ = src->has_mz_peak_array_;
+ // copy each peak
+ for(int peak_idx=0; peak_idx < (int)src->peaks_.size(); ++peak_idx){
+   this->addPeak(src->peaks_[peak_idx]->getIntensity(),
+                  src->peaks_[peak_idx]->getLocation());
+  }
+
+  /*  Should we do this??
+  if( old_spectrum.mz_peak_array ){
+    populateMzPeakArray();
+  }
+  */
+
+}
+
+
+
 
 /**
  * Parses a spectrum from an .mgf file
@@ -336,14 +371,37 @@ bool Spectrum::parseMgf
       
       carp(CARP_DETAILED_DEBUG, "parsing scans:%s",scans_str.c_str());
       vector<string> tokens;
-      DelimitedFile::tokenize(scans_str, tokens, '-');
-      from_string(first_scan_, tokens[0]);
-
-      if (tokens.size() > 1) {
-        from_string(last_scan_,tokens[1]);
-      } else {
-        last_scan_ = first_scan_;
+      DelimitedFile::tokenize(scans_str, tokens, ',');
+      if (scans_str.size() > 1) {
+        carp_once(CARP_WARNING, "Disjoint scan range detected: '%s'",
+                                scans_str.c_str());
       }
+      for (vector<string>::iterator token_iter = tokens.begin();
+           token_iter != tokens.end();
+           ++token_iter) {
+        vector<string> range_tokens;
+        DelimitedFile::tokenize(*token_iter, range_tokens, '-');
+        for (vector<string>::iterator range_token_iter = range_tokens.begin();
+             range_token_iter != range_tokens.end();
+             ++range_token_iter) {
+          int scan_number;
+          if (!from_string(scan_number, *range_token_iter)) {
+            // skip, could not convert to number
+            carp(CARP_ERROR, "Unknown format for scan number '%s'",
+                             range_token_iter->c_str());
+            continue;
+          }
+          if (first_scan_ < 1 ||
+              scan_number < first_scan_) {
+            first_scan_ = scan_number;
+          }
+          if (last_scan_ < 1 ||
+              scan_number > last_scan_) {
+            last_scan_ = scan_number;
+          }
+        }
+      }
+
       carp(CARP_DETAILED_DEBUG,
         "first scan:%i last scan:%i",
         first_scan_,last_scan_);
@@ -665,7 +723,7 @@ bool Spectrum::parseSLine
    int buf_length ///< line length -in
    )
 {
-  char *spliced_line = new char[buf_length];
+  char spliced_line[buf_length];
   int line_index = 0;
   int spliced_line_index = 0;
   int read_first_scan;
@@ -914,6 +972,118 @@ bool Spectrum::parseMstoolkitSpectrum
     }
   } else { // if no charge states detected, decide based on spectrum
     assignZState(); 
+  }
+
+  return true;
+}
+
+/**
+ * Transfer values from a proteowizard SpectrumInfo object to the
+ * crux spectrum.
+ */
+bool Spectrum::parsePwizSpecInfo(
+  const pzd::SpectrumPtr& pwiz_spectrum,
+  int assigned_scan ///< forced scan number
+){
+  // clear any existing values
+  zstates_.clear();
+  ezstates_.clear();
+  free_peak_vector(peaks_);
+  i_lines_v_.clear();
+  d_lines_v_.clear();
+  if( mz_peak_array_ ){ free(mz_peak_array_); }
+
+  // assign new values
+  first_scan_ = (assigned_scan == 0) ?
+    pzd::id::valueAs<int>(pwiz_spectrum->id, "scan") : assigned_scan;
+  last_scan_ = first_scan_;
+
+  // get peaks
+  int num_peaks = pwiz_spectrum->defaultArrayLength;
+  vector<double>& mzs = pwiz_spectrum->getMZArray()->data;
+  vector<double>& intensities = pwiz_spectrum->getIntensityArray()->data;
+  for(int peak_idx = 0; peak_idx < num_peaks; peak_idx++){
+    Peak* peak = new Peak(intensities[peak_idx], mzs[peak_idx]);
+    peaks_.push_back(peak);
+  }
+  has_peaks_ = true;
+
+  // get precursor m/z and charge
+  // is there exactly one precursor?
+  if( pwiz_spectrum->precursors.size() != 1 ){  
+    carp(CARP_FATAL, 
+         "Spectrum %d has more than one precursor.", first_scan_);
+  }
+  // get the isolation window as the precursor m/z
+  pzd::IsolationWindow iso_window = 
+                       pwiz_spectrum->precursors[0].isolationWindow;
+  bool have_precursor_mz = false;
+  if (iso_window.hasCVParam(pzd::MS_isolation_window_target_m_z)) {
+    precursor_mz_ =
+      iso_window.cvParam(pzd::MS_isolation_window_target_m_z).valueAs<double>();
+    have_precursor_mz = true;
+  }
+
+  // each charge state(s) stored in selectedIon(s)
+  // is there at least one selected ion?
+  vector<pzd::SelectedIon> ions = pwiz_spectrum->precursors[0].selectedIons;
+  if( ions.empty() ){
+    carp(CARP_FATAL, "No selected ions in spectrum %d.", first_scan_);
+  }
+
+  // possible charge states will all be stored in the first selected ion
+  if( ions[0].hasCVParam(pzd::MS_possible_charge_state) ){
+    carp(CARP_INFO, "charges stored ion");
+    vector<pzd::CVParam> charges = 
+      ions[0].cvParamChildren(pzd::MS_possible_charge_state);
+
+    for(size_t charge_idx = 0; charge_idx < charges.size(); charge_idx++){
+      SpectrumZState zstate;
+      zstate.setMZ(precursor_mz_, charges[charge_idx].valueAs<int>());
+      zstates_.push_back(zstate);
+    }
+  }
+  // determined charge states will be stored
+  // one per selected ion
+  else if( ions[0].hasCVParam(pzd::MS_charge_state) ){
+    // get each charge state and possibly the associated mass
+    for(size_t ion_idx = 0; ion_idx < ions.size(); ion_idx++){
+      int charge = ions[ion_idx].cvParam(pzd::MS_charge_state).valueAs<int>();
+      if ( ions[ion_idx].hasCVParam(pzd::MS_accurate_mass)) {
+        //bullseye-determined charge states
+        FLOAT_T accurate_mass = 
+          ions[ion_idx].cvParam(pzd::MS_accurate_mass).valueAs<FLOAT_T>();
+        carp(CARP_INFO, "accurate mass:%f charge:%i",accurate_mass, charge);
+        SpectrumZState zstate;
+        zstate.setSinglyChargedMass(accurate_mass, charge);
+        ezstates_.push_back(zstate);
+      } else if (ions[ion_idx].hasCVParam(pzd::MS_selected_ion_m_z)) {
+        FLOAT_T mz =
+          ions[ion_idx].cvParam(pzd::MS_selected_ion_m_z).valueAs<FLOAT_T>();
+        //if we don't have a precursor set yet, set it now.
+        if (!have_precursor_mz) {
+          precursor_mz_ = mz;
+	}
+        SpectrumZState zstate;
+        
+        zstate.setMZ(mz, charge);
+        ezstates_.push_back(zstate);
+      } else {
+
+	ostringstream oss;
+        oss << "Cannot find precursor mass! CVParams:"<<endl;
+
+	for (vector<pwiz::data::CVParam>::iterator iter = ions[0].cvParams.begin();
+	     iter != ions[0].cvParams.end();
+	     ++iter) {
+	  oss<<"id:"<<(int)iter->cvid<<" value:"<<iter->value;
+	}
+        string err_string = oss.str();
+        carp(CARP_FATAL, err_string);
+      }
+    }   
+  } else { // we have no charge information
+    assignZState(); //do choose charge and add +1 or +2,+3
   }
 
   return true;

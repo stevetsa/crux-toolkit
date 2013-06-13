@@ -1,45 +1,64 @@
-cmake_minimum_required(VERSION 2.8.1)
-cmake_policy(VERSION 2.8.1)
+cmake_minimum_required(VERSION 2.8.4)
+cmake_policy(VERSION 2.8.4)
+
+configure_file (
+ "CruxConfig.h.in"
+ "${CMAKE_CURRENT_BINARY_DIR}/CruxConfig.h"
+ )
 
 add_subdirectory(ArrayLibrary)
 add_subdirectory(bullseye)
 add_subdirectory(hardklor)
-add_subdirectory(percolator)
 add_subdirectory(posterior-error)
 add_subdirectory(qranker-barista)
 add_subdirectory(xlink)
 
+include_directories("${CMAKE_CURRENT_BINARY_DIR}")
 include_directories(.)
 include_directories(ArrayLibrary)
 include_directories(bullseye)
 include_directories(hardklor)
-include_directories(percolator)
 include_directories(qranker-barista)
 include_directories(posterior-error)
 include_directories(xlink)
+include_directories(../..)
 include_directories(../external)
+include_directories(../external/include)
+include_directories(../external/build/src/ProteoWizard/libraries/boost_1_43_0)
+include_directories(../external/build/src/ProteoWizard/libraries/boost_aux)
 include_directories(../external/MSToolkit/include)
 include_directories(../external/comet)
+include_directories(../external/build/src/percolator/src/)
+include_directories(../external/build/src/percolator/src/fido)
+include_directories(../external/build/src/percolator-build/src/)
+include_directories(../external/build/src/percolator-build/src/fido)
 
+
+link_directories(../external/lib)
 link_directories(../external/MSToolkit)
 link_directories(../external/comet)
 link_directories(.)
 link_directories(./ArrayLibrary)
 link_directories(./bullseye)
 link_directories(./hardklor)
-link_directories(./percolator)
 link_directories(./posterior-error)
 link_directories(./qranker-barista)
 link_directories(./xlink)
+link_directories(../external/build/src/percolator-build/src) 
+link_directories(../external/lib)
+link_directories(../external/build/src/percolator-build/src/fido)
 
 set (
   crux_lib_files
+  CruxConfig.h
   Alphabet.cpp
   analyze_psms.cpp
   carp.cpp
+  CarpStreamBuf.cpp
   CometApplication.cpp
   ComputeQValues.cpp
   CreateIndex.cpp
+  crux-file-utils.cpp
   crux-utils.cpp
   Database.cpp
   DatabaseProteinIterator.cpp
@@ -57,6 +76,7 @@ set (
   hash.cpp
   Index.cpp
   IndexFile.cpp
+  IndexMap.cpp
   IndexPeptideIterator.cpp
   IndexFilteredPeptideIterator.cpp
   Ion.cpp
@@ -64,6 +84,8 @@ set (
   IonFilteredIterator.cpp
   IonSeries.cpp
   linked_list.cpp
+  LineFileReader.cpp
+  MakePinApplication.cpp
   mass.cpp
   Match.cpp
   MatchColumns.cpp
@@ -79,6 +101,8 @@ set (
   ModifiedPeptidesIterator.cpp
   MS2SpectrumCollection.cpp
   MSToolkitSpectrumCollection.cpp
+  MzIdentMLReader.cpp
+  MzIdentMLWriter.cpp
   OutputFiles.cpp
   parameter.cpp
   parse_arguments.cpp
@@ -89,8 +113,11 @@ set (
   PeptideSrc.cpp
   PepXMLReader.cpp
   PepXMLWriter.cpp
-  Percolator.cpp
+  PercolatorAdapter.cpp
+  PercolatorApplication.cpp
   GeneratePeptides.cpp
+  PinXMLWriter.cpp
+  PostProcessProtein.cpp
   PredictPeptideIons.cpp
   PrintProcessedSpectra.cpp
   PrintVersion.cpp
@@ -98,6 +125,15 @@ set (
   ProteinPeptideIterator.cpp
   ProteinIndex.cpp
   ProteinIndexIterator.cpp
+  ProteinMatchCollection.cpp
+  AbstractMatch.cpp
+  ProteinMatch.cpp
+  PeptideMatch.cpp
+  PMCDelimitedFileWriter.cpp
+  PMCPepXMLWriter.cpp
+  PMCSQTWriter.cpp
+  SpectrumMatch.cpp
+  PWIZSpectrumCollection.cpp
   q-value.cpp
   SequestSearch.cpp
   SortColumn.cpp
@@ -109,6 +145,8 @@ set (
   Spectrum.cpp
   SpectrumZState.cpp
   StatColumn.cpp
+  SQTReader.cpp
+  SQTWriter.cpp
   utils.cpp
 )
 
@@ -129,14 +167,15 @@ add_library(
 if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     set_property(
       DIRECTORY
+      APPEND
       PROPERTY
       COMPILE_DEFINITIONS
       _CRT_SECURE_NO_WARNINGS
-      SEARCH_ENABLED
     )
 else (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 	set_property(
 	  DIRECTORY
+    APPEND
 	  PROPERTY
 	  COMPILE_DEFINITIONS
 	  _LARGEFILE_SOURCE
@@ -144,25 +183,34 @@ else (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 	  _GNU_SOURCE
 	  GCC
 	  HAVE_EXPAT_CONFIG_H
-    SEARCH_ENABLED
 	)
 	if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 	  set_property(
-		DIRECTORY
-		APPEND
-		PROPERTY
-		COMPILE_DEFINITIONS
-		DARWIN
+      DIRECTORY
+      APPEND
+      PROPERTY
+      COMPILE_DEFINITIONS
+      DARWIN
 	  )
+	  if (${CMAKE_SYSTEM_VERSION} VERSION_LESS "12")
+      set_property(
+        DIRECTORY
+        APPEND
+        PROPERTY
+        COMPILE_DEFINITIONS
+        PRE_MOUNTAIN_LION
+      )
+	  endif (${CMAKE_SYSTEM_VERSION} VERSION_LESS "12")
 	  if (${CMAKE_SYSTEM_VERSION} VERSION_LESS "11")
-		set_property(
-		  DIRECTORY
-		  PROPERTY
-		  COMPILE_DEFINITIONS
-		  PRE_LION
-		)
-       endif(${CMAKE_SYSTEM_VERSION} VERSION_LESS "11")
-    endif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+      set_property(
+        DIRECTORY
+        APPEND
+        PROPERTY
+        COMPILE_DEFINITIONS
+        PRE_LION
+      )
+    endif(${CMAKE_SYSTEM_VERSION} VERSION_LESS "11")
+  endif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 endif (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 
 add_executable(crux crux-main.cpp)
@@ -210,7 +258,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     hardklor
     Comet
     MSToolkit
-    percolator
+    perclibrary
     posterior_error
     xlink
     ws2_32
@@ -249,12 +297,34 @@ else(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     hardklor
     m
     MSToolkit
-    percolator
     posterior_error
+    perclibrary
     pthread
     xlink
     ArrayLibrary
+    xerces-c
+    boost_filesystem
+    boost_system
+    fido
+    pwiz_data_identdata
+    pwiz_data_identdata_version
+    pwiz_data_misc
+    pwiz_data_msdata
+    pwiz_data_msdata_version
+    pwiz_data_proteome
+    pwiz_data_common
+    pwiz_utility_chemistry
+    pwiz_utility_minimxml
+    pwiz_utility_misc
+    pwiz_version
+    boost_system-mt-s
+    boost_iostreams-mt-s
+    z-mt-s-1_2
+    boost_filesystem-mt-s
+    boost_regex-mt-s
+    boost_thread-mt-s
   )
+    
   target_link_libraries(
     xlink-predict-peptide-ions
     dl
@@ -263,6 +333,24 @@ else(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     xlink
     crux-support
     MSToolkit
+    pwiz_data_msdata
+    pwiz_data_common
+    pwiz_data_identdata
+    pwiz_data_msdata_version
+    pwiz_data_misc
+    pwiz_utility_chemistry
+    pwiz_utility_misc
+    pwiz_utility_minimxml
+    pwiz_data_common
+    pwiz_data_identdata
+    pwiz_data_identdata_version
+    pwiz_data_proteome
+    boost_system-mt-s
+    boost_iostreams-mt-s
+    z-mt-s-1_2
+    boost_filesystem-mt-s
+    boost_regex-mt-s
+    boost_thread-mt-s
   )
   target_link_libraries(
     xlink-score-spectrum
@@ -272,6 +360,24 @@ else(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     xlink
     crux-support
     MSToolkit
+    pwiz_data_msdata
+    pwiz_data_common
+    pwiz_data_identdata
+    pwiz_data_msdata_version
+    pwiz_data_misc
+    pwiz_utility_chemistry
+    pwiz_utility_misc
+    pwiz_utility_minimxml
+    pwiz_data_common
+    pwiz_data_identdata
+    pwiz_data_identdata_version
+    pwiz_data_proteome
+    boost_system-mt-s
+    boost_iostreams-mt-s
+    z-mt-s-1_2
+    boost_filesystem-mt-s
+    boost_regex-mt-s
+    boost_thread-mt-s
   )
   target_link_libraries(
     xlink-assign-ions
@@ -281,6 +387,24 @@ else(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     xlink
     crux-support
     MSToolkit
+    pwiz_data_msdata
+    pwiz_data_common
+    pwiz_data_identdata
+    pwiz_data_msdata_version
+    pwiz_data_misc
+    pwiz_utility_chemistry
+    pwiz_utility_misc
+    pwiz_utility_minimxml
+    pwiz_data_common
+    pwiz_data_identdata
+    pwiz_data_identdata_version
+    pwiz_data_proteome
+    boost_system-mt-s
+    boost_iostreams-mt-s
+    z-mt-s-1_2
+    boost_filesystem-mt-s
+    boost_regex-mt-s
+    boost_thread-mt-s
   )
 endif(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 

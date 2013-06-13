@@ -17,7 +17,6 @@
 #include "SequestSearch.h"
 #include "ComputeQValues.h"
 #include "ComputeQValuesLegacy.h"
-#include "Percolator.h"
 #include "QRanker.h"
 #include "Barista.h"
 #include "PrintProcessedSpectra.h"
@@ -33,8 +32,9 @@
 #include "SortColumn.h"
 #include "CruxHardklorApplication.h"
 #include "CruxBullseyeApplication.h"
+#include "PercolatorApplication.h"
+#include "MakePinApplication.h"
 #include "CometApplication.h"
-
 /**
  * The starting point for crux.  Prints a general usage statement when
  * given no arguments.  Runs one of the crux commands, including
@@ -55,13 +55,13 @@ int main(int argc, char** argv){
   // search
   applications.add(new MatchSearch());
   applications.add(new SequestSearch());
-  //applications.add(new CometApplication());
+  applications.add(new CometApplication());
   applications.add(new SearchForXLinks());
 
   // post-search
   applications.add(new ComputeQValues());
   applications.add(new ComputeQValuesLegacy()); // depricated name
-  applications.add(new Percolator());
+  applications.add(new PercolatorApplication());
   applications.add(new QRanker());
   applications.add(new Barista());
   applications.add(new SpectralCounts());
@@ -83,8 +83,8 @@ int main(int argc, char** argv){
   applications.add(new PrintVersion());
   
 
-
-
+  // make pin file 
+  applications.add(new MakePinApplication());
   int ret = applications.main(argc, argv);
   return ret;
 

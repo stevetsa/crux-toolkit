@@ -10,6 +10,8 @@
 #include "crux-utils.h"
 #include "parameter.h"
 #include "WinCrux.h"
+#include "Peptide.h"
+#include <iostream>
 
 using namespace std;
 
@@ -28,7 +30,8 @@ static const char* parameter_type_strings[NUMBER_PARAMETER_TYPES] = {
   "INT_ARG", "DOUBLE_ARG", "STRING_ARG", "MASS_TYPE_T", "DIGEST_T", 
   "ENZYME_T", 
   "bool", "SCORER_TYPE_T", "ION_TYPE_T",
-  "HARDKLOR_ALGORITHM_T", "ALGORITHM_TYPE_T", "WINDOW_TYPE_T", "MEASURE_TYPE_T", 
+  "ALGORITHM_T", "HARDKLOR_ALGORITHM_TYPE_T", "SPECTRUM_PARSER_T" ,
+  "WINDOW_TYPE_T", "MEASURE_TYPE_T", "THRESHOLD_T", 
   "PARSIMONY_TYPE_T", "QUANT_LEVEL_TYPE_T", "DECOY_TYPE_T", "MASS_FORMAT_T"};
 
 //one hash for parameter values, one for usage statements, one for types
@@ -180,6 +183,14 @@ bool set_window_type_parameter(
  const char* foruser
   );
 
+bool set_threshold_type_parameter(
+ const char*     name,  ///< the name of the parameter looking for -in
+ THRESHOLD_T set_value,  ///< the value to be set -in
+ const char* usage,      ///< string to print in usage statement
+ const char* filenotes,   ///< additional info for param file
+ const char* foruser
+  );
+
 bool set_algorithm_type_parameter(
  const char* name,
  ALGORITHM_TYPE_T set_value,
@@ -192,6 +203,13 @@ bool set_hardklor_algorithm_type_parameter(
   HARDKLOR_ALGORITHM_T set_value,
   const char* usage,
   const char* filenotes,
+  const char* foruser);
+
+bool set_spectrum_parser_parameter(
+  const char* name, ///< the name of the parameter looking for -in
+  SPECTRUM_PARSER_T set_value, ///< the value to be set -in
+  const char* usage, ///< string to print in usage statement
+  const char* filenotes, ///< additional info for param file
   const char* foruser);
 
 bool set_scorer_type_parameter(
@@ -318,9 +336,10 @@ void initialize_parameters(void){
   // all arguments are left out of param file
 
   /* generate_peptide arguments */
-  set_string_parameter("protein database", NULL, 
+  set_string_parameter("protein-database", NULL, 
       "Fasta file of proteins or directory containing an index.",
-      "Argument for generate, index, search, analyze.", "false");
+      "Argument for generate, index, search. Optional for analyze and spectral-counts.", 
+      "false");
 
   set_string_parameter("search results directory", NULL, 
       "Directory containing the results of one search.",
@@ -365,7 +384,41 @@ void initialize_parameters(void){
                        "Argument, not option, for hardklor",
                        "false");
 
-
+  /*Percolator arguments*/
+  set_string_parameter(
+    "pin.xml", NULL,
+    "PIN files are XML files for PIN format whose structure is defined by "
+    "the schema percolator_in.xml. <code>crux search-for-matches</code> generates this file. "
+    "Also, this argument can be \"-\" which indicates the pin file will come from standard input. "
+    "Alternately, a SQT, PepXML, or tab-delimited file may be given (a corresponding decoy"
+    "file must also exist in the same directory), in which case a pin.xml file will be "
+    "generated in the output directory prior to execution.",
+    "Argument, not option for percolator",
+    "false"
+  );
+  /*make-pin arguments*/
+  set_string_parameter(
+    "target input", NULL,
+    "make-pin can convert any file format in sqt, tab-delimited and pep.xml file "
+    "to pin.xml file "
+    "Also, this argument can be  which indicates the pin file will come from standard input",
+    "Argument, not option for make-pin",
+    "false"
+  );
+  set_string_parameter(
+    "decoy input", NULL,
+    "make-pin can convert any file format in sqt, tab-delimited and pep.xml file "
+    "to pin.xml file ",
+    "Argument, not option for make-pin",
+    "false"
+  );
+  set_string_parameter(
+    "output-file", NULL,
+    "File where pin.xml will be written"
+    "to pin.xml file ",
+    "It is optional for make-pin",
+    "false"
+  );
   /* *** Initialize Options (command line and param file) *** */
 
   /* options for all executables */
@@ -458,6 +511,12 @@ void initialize_parameters(void){
       "Available for search-for-matches, search-for-xlinks.",
       "true");
 
+  set_spectrum_parser_parameter("spectrum-parser", CRUX_SPECTRUM_PARSER,
+    "Parser to use for reading in spectra "
+    "<string>=pwiz|mstoolkit|crux. Default=crux.",
+    "Available for search-for-matches, search-for-xlinks.",
+    "true");
+
   set_string_parameter("custom-enzyme", NULL, 
       "Specify rules for in silico digestion of proteins. "
       "See HTML documentation for syntax. Default is trypsin.",
@@ -484,7 +543,7 @@ void initialize_parameters(void){
 
   set_boolean_parameter("unique-peptides", true,
       "Generate peptides only once, even if they appear in more "
-      "than one protein (T,F).  Default=F.",
+      "than one protein (T,F).  Default=T.",
       "Available from command line or parameter file for "
       "crux-genereate-peptides. Returns one line per peptide "
       "when true or one line per peptide per protein occurence when false.  ",
@@ -502,6 +561,23 @@ void initialize_parameters(void){
       "Available only for crux-generate-peptides.", "true");
 
   /* search-for-matches command line options */
+  set_boolean_parameter("sqt-output", false,
+      "Output SQT in the output directory.  Default=F",
+      "Available for search-for-matches.", "true");
+  set_boolean_parameter("mzid-output", false,
+      "Output MZID in the output directory.  Default=F",
+      "Available for search-for-matches, percolator.", "true");
+  set_boolean_parameter("pinxml-output", false,
+      "Output PIN XML in the output directory.  Default=F",
+      "Available for search-for-matches.", "true");
+  set_boolean_parameter("pepxml-output", false,
+      "Output pepXML in the output directory.  Default=F",
+      "Available for search-for-matches, q-ranker, barista, percolator.",
+      "true");
+  set_boolean_parameter("txt-output", true,
+      "Output tab-delimited text in the output directory.  Default=T",
+      "Available for search-for-matches, percolator, q-ranker, barista.",
+      "true");
   set_scorer_type_parameter("prelim-score-type", SP, 
       "Initial scoring (sp, xcorr). Default=sp,", 
       "Available for crux-search-for-matches.  The score applied to all "
@@ -523,9 +599,6 @@ void initialize_parameters(void){
   set_boolean_parameter("compute-p-values", false, 
       "Compute p-values for the main score type. Default=F.",
       "Currently only implemented for XCORR.", "true");
-  set_boolean_parameter("use-mstoolkit", false,
-      "Use MSToolkit to parse spectra. Default=F.",
-      "Available for crux-search-for-matches", "true");
   set_string_parameter("scan-number", NULL,
       "Search only select spectra specified as a single "
       "scan number or as a range as in x-y.  Default=search all.",
@@ -539,7 +612,7 @@ void initialize_parameters(void){
       "ions.  Default=1.0005079 for monoisotopic mass "
       "or 1.0011413 for average mass.",
       "Available for crux-search-for-matches and xlink-assign-ions.", "true");
-  set_double_parameter("mz-bin-offset", SMART_MZ_OFFSET, -1.0, 1.0,
+  set_double_parameter("mz-bin-offset", SMART_MZ_OFFSET, 0.0, 1.0,
       "Specify the location of the left edge of the "
       "first bin used to discretize the m/z axis. Default=0.68",
       "Available for crux-search-for-matches.", "true");
@@ -583,12 +656,12 @@ void initialize_parameters(void){
   set_string_parameter("decoys", "peptide-shuffle",
       "Include a decoy version of every peptide by shuffling or reversing the "
       "target sequence.  <string>=none|reverse|protein-shuffle|peptide-shuffle."
-      " Use 'none' for no decoys.  Default=protein-shuffle.",
+      " Use 'none' for no decoys.  Default=peptide-shuffle.",
       "For create-index, store the decoys in the index.  For search, either "
       "use decoys in the index or generate them from the fasta file.", "true");
   set_int_parameter("num-decoys-per-target", 1, 0, 10,
       "Number of decoy peptides to search for every target peptide searched."
-      "Only valid for fasta searches when --decoys is not none. Default=0.",
+      "Only valid for fasta searches when --decoys is not none. Default=1.",
       "Use --decoy-location to control where they are returned (which "
       "file(s)) and --decoys to control how targets are randomized.  Available "
       "for search-for-matches and comet when searching a fasta file. ",
@@ -630,9 +703,12 @@ void initialize_parameters(void){
       "true");
   set_int_parameter("psms-per-spectrum-reported", 0, 0, BILLION,
                    "place holder", "this may be replaced by top-match","false");
-  set_string_parameter("seed", "time", "HIDE ME FROM USER",
-      "Given a real-number value, will always produce the same decoy seqs",
-      "false");
+  set_string_parameter("seed", "1",
+      "When given a unsigned integer value seeds the random number generator with that value. "
+      "When given the string \"time\" seeds the random number generator with the system time. "
+      "Default = 1.",
+      "Available for all Crux commands.",
+      "true");
   set_double_parameter("precursor-window", 3.0, 0, 100, 
       "Search peptides within +/- 'precursor-window' "
       "of the spectrum mass.  Definition of precursor window depends "
@@ -743,8 +819,264 @@ void initialize_parameters(void){
      "Available for percolator and q-ranker.  File will be named "
      "<fileroot>.percolator.features.txt or <fileroot>.qranker.features.txt.",
      "true");
+  
+  set_boolean_parameter("feature-in-file", false,
+      "Input files are given as a tab delimited file. In this case the only argument should be a file name "
+      "of the data file. The tab delimited fields should be id <tab> label <tab> feature1 "
+      "<tab> ... <tab> featureN <tab> peptide <tab> proteinId1 <tab> .. <tab> proteinIdM "
+      "Labels are interpreted as 1 -- positive set "
+      "and test set, -1 -- negative set.",
+      "Available for percolator",
+      "true");
+  
+  set_boolean_parameter(
+    "protein",
+    false,
+    "output protein level probability. Default=F",
+    "Available for crux percolator",
+    "true"
+  );
+ 
+  set_boolean_parameter(
+    "decoy-xml-output",
+    false,
+    "Include decoys (PSMs, peptides, and/or proteins) in the "
+    "xml-output. Only available if -X is used. Default=F",
+    "Available for crux percolator",
+    "true"
+  );
+  set_string_parameter(
+    "decoy-prefix",
+    "random_",
+    "Option for single SQT file mode defining the name pattern "
+    "used for shuffled database. Default=random_.",
+    "Available for percolator",
+    "true"
+  );
+ 
+  set_double_parameter(
+    "c-pos",
+    0.01,-BILLION,BILLION,
+    "Penalty for mistakes made on positive examples. Set by "
+    "cross validation if not specified. Default=cross-validate ",
+    "Available for crux percolator",
+    "true"
+  );
+  set_double_parameter(
+    "c-neg",
+    0.0,0.0,0.90,
+    "Penalty for mistake made on negative examples. Set by cross "
+    "validation if not specified or --c-pos not specified.",
+    "Available for crux percolator",
+    "true"
+  );
+ 
+  set_double_parameter(
+    "trian-fdr",
+    0.01,0.0,0.90,
+    "False discovery rate thereshold to define positive examples in training. "
+    "Set by cross validation if 0. Default is 0.01",
+    "Available for crux percolatior",
+    "true"
+  );
 
-  // **** Comet additional options ****
+  set_double_parameter(
+    "test-fdr",
+    0.01,0.0,1.0,
+    "False discovery rate threshold for evaluating best cross validation result "
+    "and the reported end result. Default is 0.01.",
+    "Availble for crux percolator.",
+    "true"
+  );
+ 
+  set_int_parameter(
+    "maxiter",
+    10,0,100000000,
+    "Maximum number of iterations for training (default 10).",
+    "Available for crux percolator",
+    "false"
+  );
+  set_double_parameter(
+    "train-ratio",
+    0.6,0.0,1.0,
+    "Fraction of the negative data set to be used as train set when only providing"
+    " one negative set, remaining examples will be used as test set.Default 0.6",
+    "Available for crux percolator.",
+    "true"
+  );
+  set_boolean_parameter(
+    "output-weights",
+    false,
+    "Output final weights to percolator.target.weights.txt.Default=T.",
+    "Available for crux percolator",
+    "true"
+  );
+  set_string_parameter(
+    "input-weights",
+    NULL,
+    " Read initial weights from the given file (one per line). Default do not read " 
+    "initial weights. Default=F",
+    "Available for crux percolator ",
+    "true"
+  );
+/*
+  set_boolean_parameter(
+    "output-feature-file",
+    false,
+    " Output the computed features to the given file in tab-delimited format. " 
+    "A file with the features with the given file name will be created. Default=F",
+    "Available for crux percolator ",
+    "true"
+  );
+ */
+  set_int_parameter(
+    "default-direction",
+    0,0,10,
+    "The most informative feature given as feature number, can be negated to indicate "
+    "that a lower value is better",
+    "Available for crux percolator",
+    "true"
+  );
+  set_boolean_parameter(
+    "unitnorm",
+    false,
+    "Use unit normalization [0-1] instead of standard deviation normalization",
+    "Available for crux percolator.",
+    "true"
+  );
+ 
+  set_double_parameter(
+    "train-fdr",
+    0.01,0,BILLION,
+    "False discovery rate threshold to define positive examples in training. "
+    "Set by cross validation if 0. Default is 0.01.",
+    "Available for crux percolator",
+    "true"
+  );
+
+  set_double_parameter(
+    "alpha",
+    0.0,0.0,1.0,
+    "Probability with which a present protein emits an associated peptide (--protein T "
+    "must be set). Set by grid search if not specified.",
+    "Available for crux percolator if --protein T is set.",
+    "true"
+  );
+  set_double_parameter(
+    "beta",
+    0.0,0.0,10.0,
+    "Probability of the creation of a peptide from noise (--protein T "
+    "must be set). Set by grid search if not specified.",
+    "Available for crux percolator if --protein T is set.",
+    "true"
+  );
+ 
+  set_double_parameter(
+    "gamma",
+    0.0,0.0,10.0,
+    "Prior probability of that a protein is present in the sample (--protein T "
+    "must be set). Set by grid search if not specified.",
+    "Available for crux percolator if --protein T is set.",
+    "true"
+  );
+  set_boolean_parameter(
+    "test-each-iteration",
+    false,
+    "Measure performance on test set each iteration",
+    "Available for crux percolator.",
+    "true"
+  );
+ 
+  set_boolean_parameter(
+    "static-override",
+    false,
+    "Override error check and do not fall back on default score vector in case of suspect score vector.",
+    "Available for crux percolator.",
+    "true"
+  );
+ 
+  set_boolean_parameter(
+    "klammer",
+    false,
+    "Using retention time features calculated as in Klammer et al.",
+    "Available for crux percolator",
+    "true"
+  );
+
+
+  set_int_parameter(
+    "doc",
+    -1,0,15,
+    "Include description of correct features.",
+    "Avilable for crux percolator",
+    "true"
+  );
+ 
+  set_boolean_parameter(
+    "only-psms",
+    false,
+    "Do not remove redundant peptides, keep all PSMs and exclude peptide level probability.",
+    "Available for crux percolator",
+    "true"
+  );
+
+  set_boolean_parameter(
+    "allow-protein-group",
+    false,
+    "Treat ties as if it were one protein ",
+    "Available for crux percolator.",
+    "true"
+  );
+  set_boolean_parameter(
+    "protein-level-pi0",
+    false,
+    "Use pi_0 value when calculating empirical q-values (--protein T must be set).",
+    "Available for crux percolator if --protein T is set.",
+    "true"
+  );
+ 
+  set_int_parameter(
+    "default-direction",
+    1,1,4,
+    "The most informative feature given as feature number, can be negtaed to indicate that "
+    "a lower value is better.",
+    "Available for crux-percolator.",
+    "true"
+  );
+  set_boolean_parameter(
+    "group-proteins",
+    false,
+    "Proteins with same probabilities will be grouped (--protein T must be set).",
+    "Available for crux percolator if --protein T is set.",
+    "true"
+  );
+
+  set_boolean_parameter(
+    "empirical-protein-q",
+    false,
+    "Output empirical q-values from target-decoy analysis (--protein T must be set).",
+    "Available for crux percolator if --protein T is set.",
+    "true"
+  );
+ 
+  set_boolean_parameter(
+    "no-prune-proteins",
+    false,
+    "Peptides with low score will not be pruned before calculating protein probabilities "
+    "(--protein T must be set).",
+    "Available for crux percolator if --protein T is set.",
+    "true"
+  );
+
+  set_int_parameter(
+    "deepness",
+    3,0,3,
+    "Setting deepness 0 or 1 or 2 or 3 from high deepness to low deepness(less computational time) "
+    "for the grid search for Alpha,Beta and Gamma estimation(--protein T must be set). "
+    "Default value is 3.",
+    "Available for crux percolator if --protein T is set.",
+    "true"
+  );
   set_string_parameter("input spectra", NULL,
      "Tha name of file (in MS2 format) from which to parse the spectra.",
      "Available for comet.  File will be named ",
@@ -948,8 +1280,8 @@ void initialize_parameters(void){
     "Search result can be as a file or a list of files. This option"
     " allows users to specify the search results are provided as a list of files by " 
     "setting the --list-of-files option to T."
-    " Defualt= false.", 
-    "Availabe for barista.","true");
+    " Default= false.", 
+    "Available for barista.","true");
 
   set_string_parameter("optimization", "protein",
      "Specifies whether to do optimization at the protein, peptide or psm level. "
@@ -984,7 +1316,7 @@ void initialize_parameters(void){
       "Predict flanking peaks for b and y ions (T,F). Default=F.",
       "Only available for crux-predict-peptide-ion.", "true");
   set_string_parameter("max-ion-charge", "peptide",
-      "Predict ions up to max charge state (1,2,...,6) or up to the charge state "
+      "Predict theoretical ions up to max charge state (1,2,...,6) or up to the charge state "
       "of the peptide (peptide).  If the max-ion-charge is greater than the "
       "charge state of the peptide, then the max is the peptide charge. "
       "Default='peptide'.",
@@ -1005,22 +1337,28 @@ void initialize_parameters(void){
        "Name of file in text format which holds match results.",
        "For quantify to retrieve scores for protein and peptides.",
        "false");
-  // also uses "protein database"
+  // also uses "protein-database"
 
   // ***** spectral-counts options *****
    set_string_parameter("input-ms2", NULL,
        "MS2 file corresponding to the psm file. Required for SIN.",
        "Available for spectral-counts with measure=SIN.",
        "true");
+
+  set_threshold_type_parameter("threshold-type", THRESHOLD_QVALUE,
+    "What type of threshold to use when parsing matches "
+    "none|qvalue|custom. Default=qvalue.",
+    "used for crux spectral-counts",
+    "true");
+
   set_double_parameter("threshold", 0.01, -BILLION, BILLION, 
-       "The threshold to use for filtering matches.  If no" 
-       "custom-threshold parameter given, then q-value will be "
-       "used.  Default=0.01.",
+       "The threshold to use for filtering matches. " 
+       "Default=0.01.",
        "Available for spectral-counts.  All PSMs with higher (or lower) than "
        "this will be ignored.",
        "true");
 
-  set_boolean_parameter("threshold-min", true,
+  set_boolean_parameter("custom-threshold-min", true,
     "Direction of threshold for matches.  If true, then all matches "
      "whose value is <= threshold will be accepted.  If false, "
      "then all matches >= threshold will be accepted.  Used with "
@@ -1028,9 +1366,9 @@ void initialize_parameters(void){
      "Available for spectral-counts.",
      "true");
 
-  set_string_parameter("custom-threshold", "__NULL_STR",
-     "Use a custom threshold rather than q-value (default NULL)",
-     "Availabel for spectral-counts.", "true");
+  set_string_parameter("custom-threshold-name", "__NULL_STR",
+     "Use a name of custom threshold rather than (default NULL)",
+     "Available for spectral-counts.", "true");
 
 
   set_measure_type_parameter("measure", MEASURE_NSAF,
@@ -1058,6 +1396,11 @@ void initialize_parameters(void){
        "Default=none. Can be <string>=none|simple|greedy",
        "Available for spectral-counts.",
        "true");
+
+  set_boolean_parameter("mzid-use-pass-threshold", false,
+    "Use mzid's passThreshold attribute to filter matches. Default false.",
+    "Used when parsing mzIdentML files.",
+    "true");
 
 
   // ***** static mods *****
@@ -1168,11 +1511,6 @@ void initialize_parameters(void){
       "Available for xlink-predict-peptide-ions (Default=F).",
       "true");
 
-  set_boolean_parameter("use-mgf", false,
-      "Use MGF file format for parsing files",
-      "Available for search-for-xlinks program (Default=F).",
-      "true");
-
   set_boolean_parameter("use-old-xlink", true /* Turn to false later */,
       "Use old xlink searching algorihtm",
       "Available for search-for-xlinks program (Default=F).",
@@ -1214,17 +1552,17 @@ void initialize_parameters(void){
                                       xlink code is implemented */
                         );
 
-  set_double_parameter("precursor-window-decoy", 20.0, 0, 1e6, 
+  set_double_parameter("precursor-window-weibull", 20.0, 0, 1e6, 
       "Search decoy-peptides within +/- "
       " 'mass-window-decoy' of the spectrum mass.  Default=20.0.",
       "Available for crux search-for-xlinks. ",
       "true");
 
-  set_window_type_parameter("precursor-window-type-decoy", WINDOW_MASS,
+  set_window_type_parameter("precursor-window-type-weibull", WINDOW_MASS,
       "Window type to use for selecting "
       "decoy peptides from precursor mz. <string>=mass|mz|ppm. "
       "Default=mass.",
-      "Available for crux search-for-matches",
+      "Available for crux search-for-xlinks",
       "true");
 
   set_string_parameter("link sites", NULL, 
@@ -1527,8 +1865,7 @@ bool select_cmd_line(  //remove options from name
   /* for each option name in list */
   int i;
   for( i=0; i< num_options; i++){
-    carp(CARP_DETAILED_DEBUG, "Option is: %s", option_names[i]);
-
+    //carp(CARP_INFO, "%i Option is: %s", i, option_names[i]);
     /* get value, usage, types */
     void* value_ptr = get_hash_value(parameters, option_names[i]);
     void* usage_ptr = get_hash_value(usages, option_names[i]);
@@ -2146,6 +2483,14 @@ bool check_option_type_and_bounds(const char* name){
                         value_str, name);
     }
     break;
+  case SPECTRUM_PARSER_P:
+    if (string_to_spectrum_parser_type(value_str) == INVALID_SPECTRUM_PARSER) {
+      success = false;
+      sprintf(die_str, "Illegal value '%s' for option '%s'.   "
+                       "Must be pwiz, mstoolkit, or crux",
+                       value_str, name);
+    }
+    break;
   case ION_TYPE_P:
     carp(CARP_DETAILED_DEBUG, "found ion_type param, value '%s'",
          value_str);
@@ -2171,6 +2516,15 @@ bool check_option_type_and_bounds(const char* name){
       success = false;
       sprintf(die_str, "Illegal measure type '%s' for option '%s'. "
               "Must be (NSAF, SIN, EMPAI)", value_str, name);
+    }
+    break;
+  case THRESHOLD_P:
+    carp(CARP_DETAILED_DEBUG, "found threshold type param, value '%s'",
+       value_str);
+    if (string_to_threshold_type(value_str) == THRESHOLD_INVALID) {
+      success = false;
+      sprintf(die_str, "Illegal threshold type '%s' for option '%s'."
+                       "Must be (none, qvalue, custom).", value_str, name);
     }
     break;
   case PARSIMONY_TYPE_P:
@@ -2600,7 +2954,7 @@ double get_double_parameter(
   
   /* there is a parameter with the right name.  Now 
      try to convert it to a double*/
-  value = strtod(double_value, &endptr);
+  value = strtod(double_value, NULL);
  
   return(value);
   
@@ -2709,6 +3063,23 @@ HARDKLOR_ALGORITHM_T get_hardklor_algorithm( const char* name ){
   return hk_algorithm;
 }
 
+SPECTRUM_PARSER_T get_spectrum_parser_parameter( const char* name ) {
+
+  char* param = (char*)get_hash_value(parameters, name);
+  SPECTRUM_PARSER_T spectrum_parser = 
+    string_to_spectrum_parser_type(param);
+  
+  if ( spectrum_parser == INVALID_SPECTRUM_PARSER) {
+    carp(CARP_FATAL, "spectrum parser parameter %s has "
+      "the value of %s which is not of the correct type.", name, param);
+  }
+
+  return spectrum_parser;
+
+
+}
+
+
 
 MASS_TYPE_T get_mass_type_parameter(
    const char* name
@@ -2734,6 +3105,17 @@ WINDOW_TYPE_T get_window_type_parameter(
 
   return param_value;
 }
+
+THRESHOLD_T get_threshold_type_parameter(
+  const char* name
+  ){
+  char* param_value_str = (char*)get_hash_value(parameters, name);
+  THRESHOLD_T param_value =  
+    string_to_threshold_type(param_value_str);
+
+  return param_value;
+}
+
 
 PARSIMONY_TYPE_T get_parsimony_type_parameter(
   const char* name
@@ -3134,6 +3516,35 @@ bool set_window_type_parameter(
 
 }
 
+bool set_threshold_type_parameter(
+ const char*     name,  ///< the name of the parameter looking for -in
+ THRESHOLD_T set_value,  ///< the value to be set -in
+ const char* usage,      ///< string to print in usage statement
+ const char* filenotes,   ///< additional info for param file
+ const char* foruser
+  ) {
+  bool result = true;
+  
+  // check if parameters can be changed
+  if(!parameter_plasticity){
+    carp(CARP_ERROR, "can't change parameters once they are confirmed");
+    return false;
+  }
+  
+  /* stringify the value */
+  char* value_str = threshold_type_to_string(set_value);
+
+  result = add_or_update_hash(parameters, name, value_str);
+  result = add_or_update_hash(usages, name, usage);
+  result = add_or_update_hash(file_notes, name, filenotes);
+  result = add_or_update_hash(for_users, name, foruser);
+  result = add_or_update_hash(types, name, "THRESHOLD_T");
+  free(value_str);
+  return result;
+
+}
+
+
 bool set_measure_type_parameter(
   const char* name, ///< the name of the parameter looking for -in
   MEASURE_TYPE_T set_value, ///< the value to be set -in
@@ -3324,8 +3735,38 @@ bool set_hardklor_algorithm_type_parameter(
   result = add_or_update_hash(file_notes, name, filenotes);
   result = add_or_update_hash(for_users, name, foruser);
   result = add_or_update_hash(types, name, (void*)"HARDKLOR_ALGORITHM_TYPE_T");
+  free(value_str);
   return result;
   
+}
+
+bool set_spectrum_parser_parameter(
+  const char* name,
+  SPECTRUM_PARSER_T set_value,
+  const char* usage,
+  const char* filenotes,
+  const char* foruser) {
+
+  bool result = true;
+  char value_str[SMALL_BUFFER];
+
+  // check if parameters can be changed
+  if (!parameter_plasticity) {
+    carp(CARP_ERROR, "can't change parameters once they are confirmed");
+    return false;
+  }
+  /* stringify value */
+  strcpy(value_str, spectrum_parser_type_to_string(set_value));
+  carp(CARP_DETAILED_DEBUG, "setting spectrum_parser type to %s", value_str);
+
+  result = add_or_update_hash(parameters, name, value_str);
+  result &= add_or_update_hash(usages, name, usage);
+  result &= add_or_update_hash(file_notes, name, filenotes);
+  result &= add_or_update_hash(for_users, name, foruser);
+  result &= add_or_update_hash(types, name, (void*)"SPECTRUM_PARSER_T");
+
+  return result;
+
 }
 
 

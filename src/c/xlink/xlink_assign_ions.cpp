@@ -21,7 +21,7 @@
 #include <fstream>
 
 
-
+using namespace Crux;
 
 void print_spectrum(Spectrum* spectrum, LinkedIonSeries& ion_series);
 int main(int argc, char** argv){
@@ -33,7 +33,7 @@ int main(int argc, char** argv){
   const char* option_list[] = {
     "verbosity",
     "version",
-    "use-mgf",
+    "spectrum-parser",
     "fragment-mass",
     "max-ion-charge",
     "mz-bin-width",

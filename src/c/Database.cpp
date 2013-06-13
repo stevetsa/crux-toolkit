@@ -33,7 +33,7 @@
 #include <iostream>
 
 using namespace std;
-
+using namespace Crux; 
 const string Database::binary_suffix = "-binary-fasta";
 const string Database::decoy_binary_suffix = "-binary-fasta-decoy";
 const string Database::decoy_fasta_suffix = "-random.fasta";
@@ -197,6 +197,23 @@ void Database::print(
   }
   else{
     fprintf(file, "false\n");
+  }
+}
+
+void Database::addProtein(
+  Protein* protein
+  ) {
+
+  protein->setDatabase(this);
+      
+  // add protein to database
+  proteins_->push_back(protein);
+  
+  protein->setProteinIdx(proteins_->size()-1);
+
+  if (is_hashed_) {
+    char* id = protein->getIdPointer();
+    protein_map_->insert(make_pair(id, protein));
   }
 }
 

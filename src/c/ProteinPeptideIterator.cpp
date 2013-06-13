@@ -6,6 +6,7 @@
 #include "ProteinPeptideIterator.h"
 
 using namespace std;
+using namespace Crux;
 
 /*
  * Takes a cumulative distribution of peptide masses (the mass_array) and
@@ -413,6 +414,9 @@ void ProteinPeptideIterator::prepareMc(
 
   int num_cleavage_positions = cleavage_position_idx;
   int num_non_cleavage_positions = non_cleavage_position_idx;
+  if (mass_array_ != NULL) {
+    free(mass_array_);
+  }
   mass_array_ = mass_array;
 
   carp(CARP_DETAILED_DEBUG, "num_cleavage_positions = %i", num_cleavage_positions);
@@ -581,7 +585,7 @@ bool ProteinPeptideIterator::hasNext()
  * \returns The next peptide in the protein, in an unspecified order
  * the Peptide is new heap allocated object, user must free it
  */
-Peptide* ProteinPeptideIterator::next()
+Crux::Peptide* ProteinPeptideIterator::next()
 {
   if( !has_next_){
     carp(CARP_DEBUG, "Returning null");

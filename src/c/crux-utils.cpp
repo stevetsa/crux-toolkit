@@ -8,9 +8,11 @@
 #include <sys/stat.h>
 #ifndef _MSC_VER
 #include <unistd.h>
+#include <iostream>
 #endif
 #include "crux-utils.h"
 #include "parameter.h"
+#include "Index.h"
 #include "WinCrux.h"
 
 using namespace std;
@@ -253,6 +255,35 @@ char * measure_type_to_string(MEASURE_TYPE_T type){
 }
 
 /**
+ * the string version of threshold type
+ */
+static const char* threshold_type_strings[NUMBER_THRESHOLD_TYPES] =
+  {"invalid","none","qvalue","custom"};
+
+THRESHOLD_T string_to_threshold_type(char* name) {
+
+  int threshold_int = convert_enum_type_str(name, INVALID_ENUM_STRING,
+    threshold_type_strings,
+    NUMBER_THRESHOLD_TYPES);
+
+  if ( threshold_int < 0) {
+    threshold_int = 0;
+  }
+  return (THRESHOLD_T)threshold_int;
+
+}
+
+char* threshold_type_to_string(THRESHOLD_T type) {
+  if ( (int)type > NUMBER_THRESHOLD_TYPES) {
+    return NULL;
+  }
+
+  char* type_str = my_copy_string(threshold_type_strings[type]);
+
+  return type_str;
+}
+
+/**
  * The string version of quantification level  types
  */
 static const char* quant_level_type_strings[NUMBER_QUANT_LEVEL_TYPES] =
@@ -427,6 +458,29 @@ char* hardklor_hardklor_algorithm_type_to_string(
   return type_str;
 }
 
+static const char* spectrum_parser_type_strings[NUMBER_SPECTRUM_PARSERS] = 
+  {"invalid", "pwiz", "mstoolkit", "crux"};
+
+SPECTRUM_PARSER_T string_to_spectrum_parser_type(char* name) {
+
+  int spectrum_parser = convert_enum_type_str(name, INVALID_ENUM_STRING,
+    spectrum_parser_type_strings, NUMBER_SPECTRUM_PARSERS);
+
+  if (spectrum_parser < 0) {
+    spectrum_parser = 0;
+  }
+
+  return (SPECTRUM_PARSER_T)spectrum_parser;
+
+}
+
+const char* spectrum_parser_type_to_string(
+  SPECTRUM_PARSER_T type
+  ) {
+
+  return spectrum_parser_type_strings[type];
+}
+
 
 char* ion_type_to_string(ION_TYPE_T type) {
 
@@ -466,7 +520,12 @@ static const char* scorer_type_strings[NUMBER_SCORER_TYPES] =
    "barista_score", 
    "barista_qvalue",
    "barista_peptide_qvalue",
-   "barista_PEP"
+   "barista_PEP",
+
+   "delta_cn",
+   "delta_lcn",
+   "by_ions_matched",
+   "by_ions_total",
   };
 
 bool string_to_scorer_type(const char* name, SCORER_TYPE_T* result){
@@ -719,11 +778,9 @@ bool has_extension(const char* filename, const char* extension){
   }
   // point to the last few characters of the name 
   const char* look_here = filename + (name_length - extension_length);
-
   if( strcmp(look_here, extension) == 0){
     return true;
   }
-
   return false;
 }
 
@@ -1296,6 +1353,50 @@ FILE* create_file_in_path(
 
   return file;
 }
+
+ofstream* create_stream_in_path(
+  const char* filename,  ///< the filename to create & open -in
+  const char* directory,  ///< the directory to open the file in -in
+  bool overwrite  ///< replace file (T) or die if exists (F)
+  )
+{
+  char* file_full_path = get_full_filename(directory, filename);
+  // FIXME CEG consider using stat instead
+  FILE* file = fopen(file_full_path, "rb"); //to test if file exists
+  if( file != NULL ){  
+    //The file exists, are we allowed to overwrite it?
+    fclose(file);
+    file = NULL;
+    if( ! overwrite ){
+        // Not allowed to overwrite, we must die.
+        carp(
+          CARP_FATAL, 
+          "The file '%s' already exists and cannot be overwritten. " \
+            "Use --overwrite T to replace or choose a different output file name",
+          file_full_path
+        );
+    }
+    else {
+      // Allowed to overwrite, send warning message.
+      carp(
+        CARP_WARNING, 
+        "The file '%s' already exists and will be overwritten.",
+        file_full_path
+      );
+    }
+  }
+  
+  ofstream* fout = new ofstream(file_full_path);
+
+  if(fout == NULL){
+    carp(CARP_FATAL, "Failed to create and open file: %s", file_full_path);
+  }
+  
+  free(file_full_path);
+
+  return fout;
+}
+
 
 /**
  *\returns a heap allocated feature name array

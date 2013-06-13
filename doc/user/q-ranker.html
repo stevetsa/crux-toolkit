@@ -81,7 +81,7 @@ created:</p>
 </li>
 
 <li>
- <b> qranker_output.xml </b>: An xml file containing ranked list of target peptide-spectrum matches. The
+ <b> qranker.xml </b>: An xml file containing ranked list of target peptide-spectrum matches. The
  following entries are included:
 <ol>
 <li>scan: the scan number</li>
@@ -215,6 +215,14 @@ following messages, including all those at lower verbosity levels:
 0-fatal errors, 10-non-fatal errors, 20-warnings, 30-information on
 the progress of execution, 40-more progress information, 50-debug
 info, 60-detailed debug info. Default = 30.</li>
+
+<li>
+<code>--txt-output &lt;T|F&gt;</code> &ndash; Output a tab-delimited
+results file to the output directory. Default = T.</li>
+
+<li>
+<code>--pepxml-output &lt;T|F&gt;</code> &ndash; Output a pepXML
+results file to the output directory. Default = F.</li>
 
 
 </ul>

@@ -11,6 +11,7 @@
 #define MATCH_COLLECTION_H
 
 
+#include <algorithm>
 #include <math.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -53,7 +54,7 @@ static const int _MAX_NUMBER_PEPTIDES = 10000000;
 class MatchCollection {
  friend class MatchIterator;
  protected:
-  Match* match_[_MAX_NUMBER_PEPTIDES]; ///< array of match object
+  Crux::Match* match_[_MAX_NUMBER_PEPTIDES]; ///< array of match object
   int match_total_;      ///< size of match array, may vary w/truncation
   int experiment_size_;  ///< total matches before any truncation
   int target_experiment_size_; ///< total target matches for same spectrum
@@ -85,7 +86,7 @@ class MatchCollection {
   FLOAT_T shift_; ///< The location parameter for the Weibull distribution.
   FLOAT_T correlation_; ///< The correlation parameter for the Weibull distribution.
   // replace this ...
-  Match* sample_matches_[_PSM_SAMPLE_SIZE];
+  Crux::Match* sample_matches_[_PSM_SAMPLE_SIZE];
   int num_samples_;  // the number of items in the above array
   // ...with this
   FLOAT_T xcorrs_[_MAX_NUMBER_PEPTIDES]; ///< xcorrs to be used for weibull
@@ -95,21 +96,14 @@ class MatchCollection {
   // post_process_collection boolean is true 
   bool post_process_collection_; 
   ///< Is this a post process match_collection?
-  int post_protein_counter_size_; 
-  ///< the size of the protein counter array, usually the number of proteins in database
-  int* post_protein_counter_; 
-  ///< the counter for how many each protein has matches other PSMs
-  int* post_protein_peptide_counter_; 
-  ///< the counter for how many each unique peptides each protein has matches other PSMs
-  HASH_T* post_hash_; ///< hash table that keeps tracks of the peptides
   bool post_scored_type_set_; 
   ///< has the scored type been confirmed for the match collection,
   // set after the first match collection is extended
-  Match* top_scoring_sp_; ///< the match with Sp rank == 1
+  Crux::Match* top_scoring_sp_; ///< the match with Sp rank == 1
 
   /******* Private function declarations ***/
   int addUnscoredPeptides(
-    Spectrum* spectrum, 
+    Crux::Spectrum* spectrum, 
     SpectrumZState& charge, 
     ModifiedPeptidesIterator* peptide_iterator,
     bool is_decoy
@@ -117,7 +111,7 @@ class MatchCollection {
 
   bool scoreMatchesOneSpectrum(
     SCORER_TYPE_T score_type, 
-    Spectrum* spectrum,
+    Crux::Spectrum* spectrum,
     int charge,
     bool store_scores
     );
@@ -130,13 +124,13 @@ class MatchCollection {
   void collapseRedundantMatches();
 
   void consolidateMatches(
-    Match** matches, 
+    Crux::Match** matches, 
     int start_idx, 
     int end_idx
     );
 
   void updateProteinCounters(
-    Peptide* peptide  
+    Crux::Peptide* peptide  
     );
 
 
@@ -196,7 +190,7 @@ class MatchCollection {
    * \returns The number of matches added.
    */
   int addMatches(
-    Spectrum* spectrum,  ///< compare peptides to this spectrum
+    Crux::Spectrum* spectrum,  ///< compare peptides to this spectrum
     SpectrumZState& zstate,            ///< use this charge state for spectrum
     ModifiedPeptidesIterator* peptide_iterator, ///< use these peptides
     bool is_decoy,     ///< do we shuffle the peptides
@@ -258,9 +252,11 @@ class MatchCollection {
     bool value
   );
 
-  void preparePostProcess(
-    int num_proteins
+  void getCustomScoreNames(
+    std::vector<std::string>& custom_score_names
   );
+
+  void preparePostProcess();
 
   bool extendTabDelimited(
     Database* database, ///< the database holding the peptides -in
@@ -350,21 +346,13 @@ class MatchCollection {
    */
   int getCharge();
 
-  bool calculateDeltaCn(
-    COMMAND_T search_type = SEARCH_COMMAND
-  );
+  bool calculateDeltaCn();
 
   /**
    * Must have been scored by Xcorr, returns error if not scored by Xcorr
    *\returns the delta cn value(difference in top and second ranked Xcorr values)
    */
   FLOAT_T getDeltaCn();
-
-  /**
-   * \brief Get the number of proteins in the database associated with
-   * this match collection.
-   */
-  int getNumProteins();
 
   /**
    * \brief Transfer the Weibull distribution parameters, including the
@@ -402,7 +390,7 @@ class MatchCollection {
    * match_collection, does not allocate a new match.
    */
   bool addMatch(
-    Match* match                        ///< add this match
+    Crux::Match* match                        ///< add this match
   );
 
   /**
@@ -410,7 +398,7 @@ class MatchCollection {
    * appropriate files. 
    */
   void print(
-    Spectrum* spectrum, 
+    Crux::Spectrum* spectrum, 
     bool is_decoy,
     FILE* psm_file,
     FILE* sqt_file, 
@@ -475,7 +463,7 @@ class MatchCollection {
   bool printXml(
     PepXMLWriter* output,
     int top_match,
-    Spectrum* spectrum,
+    Crux::Spectrum* spectrum,
     SCORER_TYPE_T main_score
     );
 
@@ -487,7 +475,7 @@ class MatchCollection {
   bool printSqt(
     FILE* output, ///< the output file -out
     int top_match, ///< the top matches to output -in
-    Spectrum* spectrum ///< the spectrum to print sqt -in
+    Crux::Spectrum* spectrum ///< the spectrum to print sqt -in
     );
 
   /**
@@ -498,7 +486,7 @@ class MatchCollection {
   bool printTabDelimited(
     MatchFileWriter* output, ///< the output file -out
     int top_match, ///< the top matches to output -in
-    Spectrum* spectrum, ///< the spectrum to print sqt -in
+    Crux::Spectrum* spectrum, ///< the spectrum to print sqt -in
     SCORER_TYPE_T main_score  ///< the main score to report -in
     );
 
@@ -541,7 +529,7 @@ class MatchCollection {
   bool estimateWeibullParameters(
     SCORER_TYPE_T score_type,
     int sample_count, 
-    Spectrum* spectrum,
+    Crux::Spectrum* spectrum,
     int charge
     );
 
@@ -555,7 +543,7 @@ class MatchCollection {
    * http:// www.chinarel.com/onlincebook/LifeDataWeb/rank_regression_on_y.htm
    */
   bool estimateWeibullParametersFromXcorrs(
-    Spectrum* spectrum,
+    Crux::Spectrum* spectrum,
     int charge
     );
 
@@ -581,7 +569,7 @@ class MatchCollection {
    * parameter estimation but do not save the matches
    */
   void addDecoyScores(
-    Spectrum* spectrum, ///< search this spectrum
+    Crux::Spectrum* spectrum, ///< search this spectrum
     SpectrumZState& zstate, ///< search spectrum at this charge state
     ModifiedPeptidesIterator* peptides ///< use these peptides to search
   );
@@ -634,33 +622,11 @@ class MatchCollection {
    */
   void processRunSpecificFeatures();
 
-  /**
-   *\returns the match_collection protein counter for the protein idx
-   */
-  int getProteinCounter(
-    unsigned int protein_idx ///< the protein index to return protein counter -in
-    );
-
-  /**
-   *\returns the match_collection protein peptide counter for the protein idx
-   */
-  int getProteinPeptideCounter(
-    unsigned int protein_idx ///< the protein index to return protein peptiide counter -in
-    );
-
-  /**
-   *\returns the match_collection hash value of PSMS for which this 
-   * is the best scoring peptide
-   */
-  int getHash(
-    Peptide* peptide  ///< the peptide to check hash value
-    );
-
 // cheater functions for testing
   void forceScoredBy(SCORER_TYPE_T type);
 
   bool addMatchToPostMatchCollection(
-    Match* match 
+    Crux::Match* match 
     );
 
 

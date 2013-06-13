@@ -42,6 +42,8 @@ static const char* match_column_strings[NUMBER_MATCH_COLUMNS] = {
   "q-ranker score",
   "q-ranker q-value",
   "q-ranker PEP",
+  "barista score",
+  "barista q-value",
 #endif
   "b/y ions matched",
   "b/y ions total",
@@ -49,6 +51,7 @@ static const char* match_column_strings[NUMBER_MATCH_COLUMNS] = {
   "sequence",
   "cleavage type",
   "protein id",
+  "peptides",
   "flanking aa",
   "unshuffled sequence",
   "eta",

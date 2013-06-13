@@ -36,8 +36,8 @@ class Database {
   FILE*        file_;     ///< Open filehandle for this database.
                          ///  A database has only one associated file.
   bool is_parsed_;  ///< Has this database been parsed yet.
-  std::vector<Protein*>* proteins_; ///< Proteins in this database.
-  std::map<char*, Protein*, cmp_str>* protein_map_; //map for proteins 
+  std::vector<Crux::Protein*>* proteins_; ///< Proteins in this database.
+  std::map<char*, Crux::Protein*, cmp_str>* protein_map_; //map for proteins 
   bool is_hashed_; //Indicator of whether the database has been hashed/mapped.
   unsigned long int size_; ///< The size of the database in bytes (convenience)
   bool use_light_protein_; ///< should I use the light/heavy protein option
@@ -114,6 +114,10 @@ class Database {
     bool is_memmap, ///< are we using a memory mapped binary fasta file, thus proteins are all memory mapped -in
     DECOY_TYPE_T decoys = NO_DECOYS ///< is this to be a decoy database
     );         
+
+  void addProtein(
+    Crux::Protein* protein
+  );
 
   /**
    * Frees an allocated protein object.
@@ -236,14 +240,14 @@ class Database {
   /**
    *\returns the nth protein of the database
    */
-  Protein* getProteinAtIdx(
+  Crux::Protein* getProteinAtIdx(
     unsigned int protein_idx ///< The index of the protein to retrieve -in
     );
 
   /**
    *\returns the protein designated by protein id of the database
    */
-  Protein* getProteinByIdString(
+  Crux::Protein* getProteinByIdString(
     const char* protein_id ///< The id string for this protein -in
     );
 
@@ -294,7 +298,7 @@ bool void_database_peptide_iterator_has_next(
 /**
  * \returns The next peptide in the database.
  */
-Peptide* void_database_peptide_iterator_next(
+Crux::Peptide* void_database_peptide_iterator_next(
   void* database_peptide_iterator ///< the iterator of interest -in
   );
 
@@ -325,7 +329,7 @@ bool void_database_sorted_peptide_iterator_has_next(
  * returns each peptide in sorted order
  * \returns The next peptide in the database.
  */
-Peptide* void_database_sorted_peptide_iterator_next(
+Crux::Peptide* void_database_sorted_peptide_iterator_next(
   void* database_peptide_iterator ///< the iterator of interest -in
   );
 

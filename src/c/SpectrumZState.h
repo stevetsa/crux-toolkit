@@ -39,6 +39,13 @@ class SpectrumZState {
     int charge
   );
 
+  /**
+   * copy constructor
+   */
+  SpectrumZState(
+    const SpectrumZState& other
+  );
+
   /** 
    * Default destructor
    */
@@ -56,6 +63,8 @@ class SpectrumZState {
   void setMZ(
     FLOAT_T mz,
     int charge);
+
+  FLOAT_T getMZ();
 
 
   /**

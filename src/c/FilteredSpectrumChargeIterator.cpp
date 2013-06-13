@@ -9,6 +9,7 @@
 #include "parameter.h"
 
 using namespace std;
+using namespace Crux;
 
 /**
  * \brief Sets up an iterator with the next spectrum that complies
@@ -46,6 +47,12 @@ void FilteredSpectrumChargeIterator::queueNextSpectrum() {
   }
   double mz = spec->getPrecursorMz();
   int num_peaks = spec->getNumPeaks();
+
+  // Warn if we skip due to too few peaks.
+  if ( num_peaks < min_peaks_ ) {
+    carp(CARP_INFO, "Skipping scan %d with %d (< %d) peaks.",
+	 spectrum_index_, num_peaks, min_peaks_);
+  }
 
   if( search_charge_ == 0 || search_charge_ == this_charge ){
     if( mz >= min_mz_ && mz <= max_mz_

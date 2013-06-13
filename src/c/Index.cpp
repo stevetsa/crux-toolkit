@@ -35,6 +35,7 @@
 #include "WinCrux.h"
 
 using namespace std;
+using namespace Crux;
 
 // maximum proteins the index can handle
 static const int MAX_PROTEIN = 30000;
@@ -153,6 +154,8 @@ void Index::init() {
   num_pointers_ = 1;
   database_ = NULL;
   decoy_database_ = NULL;
+  index_map_ = NULL;
+  decoy_index_map_ = NULL;
   directory_ = NULL;
   disk_constraint_ = NULL;
   search_constraint_ = NULL;
@@ -178,7 +181,7 @@ Index::Index() {
  * Database::binary_suffix.
  * \returns 1 if filename has ending, else 0
  */
-#if (defined DARWIN || defined WIN32)
+#if ((defined DARWIN && defined PRE_MOUNTAIN_LION) || defined WIN32)
 int is_binary_fasta_name(struct dirent *entry){
 #else
 int is_binary_fasta_name(const struct dirent *entry){
@@ -211,7 +214,7 @@ int is_binary_fasta_name(const struct dirent *entry){
  * Database::decoy_binary_suffix.
  * \returns 1 if filename has ending, else 0. 
  */
-#if (defined DARWIN || defined WIN32)
+#if ((defined DARWIN && defined PRE_MOUNTAIN_LION) || defined WIN32)
 int is_decoy_binary_fasta_name(struct dirent *entry){
 #else
 int is_decoy_binary_fasta_name(const struct dirent *entry){
@@ -1358,6 +1361,12 @@ PeptideConstraint* Index::getSearchConstraint() {
   return search_constraint_;
 }
 
+/**
+ * \returns the disk constraint pointer from index
+ */
+PeptideConstraint* Index::getDiskConstraint() {
+  return disk_constraint_;
+}
 
 /**
  * \brief Sets the peptide search constraint to be used by the
@@ -1406,6 +1415,29 @@ bool Index::getIsUnique()
 DECOY_TYPE_T Index::getDecoyType(){
   return decoys_;
 }
+
+/**
+ * \returns the IndexMap for the target or decoy index
+ */
+IndexMap* Index::getIndexMap(
+  bool decoy ///< return decoy index?
+  ) {
+
+  if (decoy) {
+    if (decoy_index_map_ == NULL) {
+      decoy_index_map_ = new IndexMap(this, true);
+    }
+    return decoy_index_map_;
+  } else {
+    if (index_map_ == NULL) {
+      index_map_ = new IndexMap(this, false);
+    }
+    return index_map_;
+  }
+
+
+}
+
 
 /****************************
  * bin_peptide_iterator

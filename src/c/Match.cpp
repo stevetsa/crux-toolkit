@@ -35,6 +35,7 @@
 #include "MatchFileReader.h"
 
 using namespace std;
+using namespace Crux;
 
 void Match::init() {
 
@@ -56,7 +57,7 @@ void Match::init() {
   digest_ = INVALID_DIGEST;
   post_process_match_ = 0;
   delta_cn_ = 0;
-  ln_delta_cn_ = 0;
+  delta_lcn_ = 0;
   ln_experiment_size_ = 0;
   num_target_matches_ = 0;
   num_decoy_matches_ = 0;
@@ -416,6 +417,7 @@ int comparePercolatorScore(
 
 }
 
+
 /**
  * Compare two matches by spectrum scan number and percolator score,
  * used for qsort. 
@@ -526,6 +528,26 @@ int compareSpectrumBaristaScore(
   return return_me;
 }
 
+
+/**
+ * Compare two matches by spectrum scan number,
+ * used for PinXMLWriter. 
+ * \returns -1 if match a spectrum number is less than that of match b
+ * or if scan number is same, if score of match a is less than
+ * match b.  1 if scan number and score are equal, else 0.
+ */
+int compareSpectrumScan(
+  Match** match_a, ///< the first match -in  
+  Match** match_b  ///< the scond match -in
+  )
+{
+
+  int return_me = compareSpectrum( match_a, match_b );
+  if( return_me == 0 ){
+    return_me = compareSpectrum(match_a, match_b);
+  }
+  return return_me;
+}
 /**
  * Compare two matches by spectrum scan number and q-value (from the decoys and xcorr score),
  * used for qsort. 
@@ -601,7 +623,7 @@ void Match::printSqt(
           getRank(XCORR),
           getRank(SP),
           get_int_parameter("mass-precision"),
-          peptide->getPeptideMass(),
+          peptide->getPeptideMass() + MASS_PROTON,
           delta_cn,
           precision,
           score_main,
@@ -1109,6 +1131,8 @@ Match* Match::parseTabDelimited(
   Database* decoy_database ///< database with decoy peptides
   ) {
 
+  string decoy_prefix = get_string_parameter_pointer("decoy-prefix");
+
   Match* match = new Match();
 
   Spectrum* spectrum = NULL;
@@ -1162,6 +1186,11 @@ Match* Match::parseTabDelimited(
     match->match_scores_[QRANKER_QVALUE] = result_file.getFloat(QRANKER_QVALUE_COL);
   }
 
+  if (!result_file.empty(BARISTA_SCORE_COL)) {
+    match->match_scores_[BARISTA_SCORE] = result_file.getFloat(BARISTA_SCORE_COL);
+    match->match_scores_[BARISTA_QVALUE] = result_file.getFloat(BARISTA_QVALUE_COL);
+  }
+
   // get experiment size
   match->ln_experiment_size_ = log((FLOAT_T) result_file.getInteger(MATCHES_SPECTRUM_COL));
   match->num_target_matches_ = result_file.getInteger(MATCHES_SPECTRUM_COL);
@@ -1196,6 +1225,12 @@ Match* Match::parseTabDelimited(
   //We could check if unshuffled sequence is "", since that field is not
   //set for not null peptides.
   match -> null_peptide_ = !result_file.empty(UNSHUFFLED_SEQUENCE_COL);
+
+  if (!result_file.empty(PROTEIN_ID_COL) && 
+    result_file.getString(PROTEIN_ID_COL).find(decoy_prefix) != string::npos) {
+    match -> null_peptide_ = true;
+  }
+
 
   //assign fields
   match -> peptide_sequence_ = NULL;
@@ -1254,7 +1289,8 @@ char* Match::getSequenceSqt(){
   int length = getPeptide()->getLength();
 
   // turn it into string
-  char* seq = modified_aa_string_to_string_with_symbols(mod_seq, length);
+  char* seq = modified_aa_string_to_string_with_masses(mod_seq, length,
+                get_mass_format_type_parameter("mod-mass-format"));
 
   // get peptide flanking residues 
   char c_term = peptide_->getCTermFlankingAA();
@@ -1264,11 +1300,11 @@ char* Match::getSequenceSqt(){
   char* final_string = (char*)mycalloc((strlen(seq)+5), sizeof(char));
 
   // copy pieces in
-  final_string[0] = c_term;
+  final_string[0] = n_term;
   final_string[1] = '.';
   strcpy(&final_string[2], seq);
   final_string[strlen(seq) + 2] = '.';
-  final_string[strlen(seq) + 3] = n_term;
+  final_string[strlen(seq) + 3] = c_term;
   final_string[strlen(seq) + 4] = '\0';
 
   carp(CARP_DETAILED_DEBUG, "start string %s, final %s", seq, final_string);
@@ -1389,15 +1425,35 @@ void Match::setCustomScore(
 /**
  * get the custom score
  */
-FLOAT_T Match::getCustomScore(
-  const std::string& match_score_name ///< the name of the score -in
+bool Match::getCustomScore(
+  const std::string& match_score_name, ///< the name of the score -in
+  FLOAT_T& score ///< the value of the score -out
   ) {
 
   if (match_custom_scores_.find(match_score_name) == match_custom_scores_.end()) {
-    carp(CARP_FATAL, "custom match score:%s doesn't exist!", match_score_name.c_str());
+    carp(CARP_ERROR, "custom match score:%s doesn't exist!", match_score_name.c_str());
+    return false;
   }
-  return match_custom_scores_[match_score_name];
+
+  score = match_custom_scores_[match_score_name];
+  return true;
+
 }
+
+void Match::getCustomScoreNames(
+  vector<string>& custom_score_names
+  ) {
+
+  custom_score_names.clear();
+
+  for (map<string,FLOAT_T>::iterator iter = match_custom_scores_.begin();
+    iter != match_custom_scores_.end();
+      ++iter) {
+    custom_score_names.push_back(iter->first);
+  }
+
+}
+
 
 bool Match::isDecoy() {
 
@@ -1405,6 +1461,14 @@ bool Match::isDecoy() {
 
 }
 
+/**
+ * sets whether the match is post process or not
+ */
+void Match::setPostProcess(
+  bool post_process ///< whether the match is post process or not
+) {
+  post_process_match_ = post_process;
+}
 
 /**
  * Must ask for score that has been computed
@@ -1503,19 +1567,19 @@ FLOAT_T Match::getDeltaCn()
 /**
  * sets the match ln_delta_cn
  */
-void Match::setLnDeltaCn(
-  FLOAT_T ln_delta_cn  ///< the ln delta cn value of PSM -in
+void Match::setDeltaLCn(
+  FLOAT_T delta_lcn  ///< the delta lcn value of PSM -in
   )
 {
-  ln_delta_cn_ = ln_delta_cn;
+  delta_lcn_ = delta_lcn;
 }
 
 /**
- * gets the match ln_delta_cn
+ * gets the match delta_lcn
  */
-FLOAT_T Match::getLnDeltaCn()
+FLOAT_T Match::getDeltaLCn()
 {
-  return ln_delta_cn_;
+  return delta_lcn_;
 }
 
 /**
@@ -1563,6 +1627,17 @@ void Match::setBYIonInfo(
   b_y_ion_possible_ = scorer->getSpBYIonPossible(); 
 }
 
+void Match::setBYIonFractionMatched(
+  FLOAT_T fraction_matched
+  ) {
+
+  b_y_ion_fraction_matched_ = fraction_matched;
+}
+
+void Match::calcBYIonFractionMatched() {
+  b_y_ion_fraction_matched_ = (FLOAT_T)b_y_ion_matched_ / (FLOAT_T)b_y_ion_possible_;
+}
+
 /**
  * gets the match b_y_ion_fraction_matched
  */
@@ -1572,12 +1647,34 @@ FLOAT_T Match::getBYIonFractionMatched()
 }
 
 /**
+ * sets the match b_y_ion_matched
+ */
+void Match::setBYIonMatched(int matched) {
+  b_y_ion_matched_ = matched;
+  if (b_y_ion_matched_ > 0 && b_y_ion_possible_ > 0) {
+    calcBYIonFractionMatched();
+  }
+  
+}
+
+/**
  * gets the match b_y_ion_matched
  */
 int Match::getBYIonMatched()
 {
   return b_y_ion_matched_;
 }
+
+
+/**
+ * sets the match b_y_ion_possible
+ */
+void Match::setBYIonPossible(int possible) {
+  b_y_ion_possible_ = possible;
+  if (b_y_ion_possible_ > 0 && b_y_ion_matched_ > 0) {
+    calcBYIonFractionMatched();
+  }
+} 
 
 /**
  * gets the match b_y_ion_possible

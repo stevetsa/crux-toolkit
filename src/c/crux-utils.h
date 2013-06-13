@@ -27,7 +27,6 @@
 #include "objects.h"
 #include "parameter.h"
 #include "Peak.h"
-#include "Index.h"
 
 #include "CruxApplication.h"
 
@@ -260,6 +259,15 @@ FILE* create_file_in_path(
   );
 
 /**
+ * \brief c++ version of create_file_in_path
+ */
+std::ofstream* create_stream_in_path(
+  const char* filename,  ///< the filename to create & open -in
+  const char* directory,  ///< the directory to open the file in -in
+  bool overwrite  ///< replace file (T) or die if exists (F)
+  );
+
+/**
  * check if the string has the correct suffix
  * \returns TRUE, if the string starts with the suffix, else FALSE
  */
@@ -405,6 +413,8 @@ PARSIMONY_TYPE_T string_to_parsimony_type(char* name);
 char * parsimony_type_to_string(PARSIMONY_TYPE_T type);
 MEASURE_TYPE_T string_to_measure_type(char* name);
 char * measure_type_to_string(MEASURE_TYPE_T type);
+THRESHOLD_T string_to_threshold_type(char* name);
+char * threshold_type_to_string(THRESHOLD_T type);
 QUANT_LEVEL_TYPE_T string_to_quant_level_type(char* name);
 char * quant_level_type_to_string(QUANT_LEVEL_TYPE_T type);
 COLTYPE_T string_to_column_type(char* name);
@@ -417,6 +427,10 @@ char* mass_format_type_to_string(MASS_FORMAT_T type);
 HARDKLOR_ALGORITHM_T string_to_hardklor_algorithm_type(char* name);
 char* hardklor_algorithm_type_to_string(HARDKLOR_ALGORITHM_T type);
 char* hardklor_hardklor_algorithm_type_to_string(HARDKLOR_ALGORITHM_T type);
+
+SPECTRUM_PARSER_T string_to_spectrum_parser_type(char* name);
+const char* spectrum_parser_type_to_string(SPECTRUM_PARSER_T type);
+
 
 /**
  * \brief Open either the index or fasta file and prepare it for
@@ -455,7 +469,7 @@ static bool get_range_from_string(
   TValue& last ///< the last value
   ) {
 
-  if (const_range_string == NULL) {
+  if (const_range_string == NULL || strcmp(const_range_string, "__NULL_STR") == 0) {
     first = (TValue)0;
     last = std::numeric_limits<TValue>::max();
     return true;

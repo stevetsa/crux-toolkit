@@ -21,7 +21,7 @@
 #include "ProteinPeptideIterator.h"
 
 using namespace std;
-
+using namespace Crux;
 /**
  * Constants
  */
@@ -81,6 +81,9 @@ Protein::Protein(
   database_ = Database::copyPtr(database); 
   is_memmap_ = false;
 }         
+
+
+
 
 /**
  * \returns A new light protein object.
@@ -200,6 +203,50 @@ void Protein::print(
   free(annotation);
 }
 
+/**
+ * \returns the starting location of the sequence in a protein.  If not found, returns -1
+ */
+int Protein::findStart(
+  string peptide_sequence, ///< the sequence to find
+  string prev_aa, ///< the previous amino acid for the sequence
+  string next_aa ///< the next amino acid for the sequence
+  ) {
+
+  if (getSequencePointer() == NULL) {
+    return -1;
+  }
+
+  if (prev_aa == "-") {
+    return 1;
+  } else if (next_aa == "-") {
+    return getLength() - peptide_sequence.length();
+  } else {
+    //use the flanking amino acids to further constrain our search in the sequence
+    size_t pos = string::npos; 
+    string seq = prev_aa + peptide_sequence + next_aa;
+    string protein_seq = getSequencePointer();
+    pos = protein_seq.find(seq);
+    if (pos == string::npos) {
+      carp(CARP_DEBUG, "could not find %s in protein %s\n%s", seq.c_str(), getIdPointer(), protein_seq.c_str());
+      //finding the sequence with the flanks failed, try finding without the flanks.
+      seq = peptide_sequence;
+      pos = protein_seq.find(seq);
+      if (pos == string::npos) {
+        carp(CARP_ERROR, "could not %s in protein %s\n%s", seq.c_str(), getIdPointer(), protein_seq.c_str());
+        return -1;
+      }
+      return (pos+1);
+    }
+    return (pos+2);
+  }
+
+}
+
+bool Protein::isPostProcess() {
+
+  return false;
+
+}
 
 /**
  * prints a binary representation of the protein
@@ -646,27 +693,30 @@ void Protein::setId(
  * user must free the return sequence 
  * assumes that the protein is heavy
  */
-char* Protein::getSequence()
-{
+char* Protein::getSequence(
+  int offset
+) {
   if(is_light_){
     carp(CARP_FATAL, "Cannot get sequence from light protein.");
   }
-  unsigned int sequence_length = strlen(sequence_) +1; // +\0
+  unsigned int sequence_length = strlen(sequence_) +1-offset; // +\0
   char * copy_sequence = 
     (char *)mymalloc(sizeof(char)*sequence_length);
-  return strncpy(copy_sequence, sequence_, sequence_length);  
+  return strncpy(copy_sequence, sequence_+offset, sequence_length);  
 }
 
 /**
  *\returns a pointer to the sequence of the protein
  * assumes that the protein is heavy
  */
-char* Protein::getSequencePointer()
+char* Protein::getSequencePointer(
+  int offset
+)
 {
   if(is_light_){
     carp(CARP_FATAL, "Cannot get sequence pointer from light protein.");
   }
-  return sequence_;
+  return sequence_+offset;
 }
 
 /**
@@ -822,7 +872,7 @@ Database* Protein::getDatabase()
 /** 
  * Comparison function for sorting proteins by protein id.
  */
-bool protein_id_less_than(Protein* protein_one, Protein* protein_two){
+bool Crux::protein_id_less_than(Protein* protein_one, Protein* protein_two){
   int compare = strcmp(protein_one->getIdPointer(),
                        protein_two->getIdPointer());
   return (compare > 0);

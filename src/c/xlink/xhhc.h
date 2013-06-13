@@ -50,7 +50,7 @@
  * \returns the peptide objects from a sequence string
  * TODO - eliminate this from xlink (this is a HACK)
  */
-std::vector<Peptide*>& get_peptides_from_sequence(
+std::vector<Crux::Peptide*>& get_peptides_from_sequence(
   std::string& sequence ///< the peptide sequence string
   );
 
@@ -99,6 +99,7 @@ void add_decoy(
  * search.
  */
 void find_all_precursor_ions(
+  Database* db,
   std::vector<LinkedPeptide>& all_ions ///< all of the precursors found -out 
   );
 

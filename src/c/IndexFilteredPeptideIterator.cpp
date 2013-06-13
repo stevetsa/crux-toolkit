@@ -8,6 +8,7 @@
 #include <vector>
 
 using namespace std;
+using namespace Crux;
 
 /**
  * Instantiates a new index_filtered_peptide_iterator from a index.
@@ -15,7 +16,7 @@ using namespace std;
  */
 IndexFilteredPeptideIterator::IndexFilteredPeptideIterator(
     Index* index ///< The index object which we are iterating over -in
- ) : IndexPeptideIterator(index)
+ ) : IndexPeptideIterator(index, NULL)
 {
   setup();
 }

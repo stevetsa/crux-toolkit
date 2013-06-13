@@ -38,27 +38,30 @@ int SearchForXLinks::main(int argc, char** argv) {
     "output-dir",
     "precursor-window",
     "precursor-window-type",
-    "precursor-window-decoy",
-    "precursor-window-type-decoy",
+    "precursor-window-weibull",
+    "precursor-window-type-weibull",
     "max-ion-charge",
     "min-weibull-points",
-    "xlink-prevents-cleavage", //TODO will be implemented later (SJM)
+    "mz-bin-width",
+    "mz-bin-offset",
+    "xlink-prevents-cleavage", 
+    "scan-number",
     "spectrum-min-mass",
     "spectrum-max-mass",
     "spectrum-charge",
+    "spectrum-parser",
     "top-match",
     "xlink-include-linears",
     "xlink-include-deadends",
     "xlink-include-selfloops",
-    "use-flanking-peaks",
-    "use-mgf"
+    "use-flanking-peaks"
   };
   int num_options = sizeof(option_list) / sizeof(char*);
 
   /* Define required command line arguments */
   const char* argument_list[] = {
     "ms2 file", 
-    "protein database", 
+    "protein-database", 
     "link sites", 
     "link mass"
   };

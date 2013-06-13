@@ -44,7 +44,7 @@ commands:</p>
 <table>
 
 <tr>
-<td colspan="2"><b>Pre-search commands</b></td>
+<td colspan="2"><b>Primary commands</b></td>
 </tr>
 
 <tr>
@@ -56,19 +56,8 @@ commands:</p>
 <td>
 <a href="crux-create-index.html">create-index</a></td>
 <td>
-Speed up subsequent runs of <code>search-for-matches</code> by
-creating an index for all peptides in a fasta file.</td>
-</tr>
-
-<tr>
-<td colspan="2"><b>Search commands</b></td>
-</tr>
-
-<tr>
-<td><a href="comet.html">comet</a></td>
-<td>
-Search a collection of spectra against a sequence database, returning
-a collection of peptide-spectrum matches (PSMs).</td>
+Speed up subsequent searches by creating an index for all peptides in
+a fasta file.</td>
 </tr>
 
 <tr>
@@ -78,18 +67,6 @@ a collection of peptide-spectrum matches (PSMs).</td>
 Search a collection of spectra against a sequence database, returning
 a collection of peptide-spectrum matches (PSMs).</td>
 </tr>
-
-<tr>
-<td>
-<a href="crux-search-for-xlinks.html">search-for-xlinks</a></td>
-<td>
-Search a collection of spectra against a sequence database, finding
-cross-linked peptide matches</td></tr>
-
-<tr>
-<td colspan="2"><b>Post-search commands</b></td>
-</tr>
-
 <tr>
 <td>
 <a href="calibrate-scores.html">calibrate-scores</a></td>
@@ -115,6 +92,14 @@ Re-rank a collection of PSMs using the Q-ranker algorithm.</td></tr>
 <td>
 Rank proteins and assign a confidence measure to each
 protein identification.</td></tr> 
+
+
+<tr>
+<td>
+<a href="crux-search-for-xlinks.html">search-for-xlinks</a></td>
+<td>
+Search a collection of spectra against a sequence database, finding
+cross-linked peptide matches</td></tr>
 
 <tr>
 <td>
@@ -163,6 +148,17 @@ an <code>MS2</code> file.</td>
 
 <tr>
 <td>
+version</td>
+<td>
+Print the Crux version number to standard output, then exit.</td>
+</tr>
+
+<tr>
+<td colspan="2"><b>Utilities for processing tab-delimited text files</b>
+</tr>
+
+<tr>
+<td>
 <a href="extract-columns.html">extract-columns</a></td>
 <td>Print specified columns from a tab-delimited file.</td>
 </tr>
@@ -185,53 +181,10 @@ an <code>MS2</code> file.</td>
 <td>Sort a tab-delimited file by a column.</td>
 </tr>
 
-<tr>
-<td>
-version</td>
-<td>
-Print the Crux version number to standard output, then exit.</td>
-</tr>
-
 </table>
 
-<h2>Which search tool should I use?</h2>
-
 <p>
-Crux offers four commands for searching a peptide database with a
-collection of MS2 fragmentation spectra.
-The <code>search-for-xlinks</code> command is specifically designed
-for searching for cross-linked pairs of peptides.  The other three
-commands, <code>comet</code>, <code>tide-search</code>
-and <code>search-for-matches</code>, are functionally similar to one
-another.  In particular, all three tools use the same XCorr scoring
-routine.  Here are some of the major differences among the three
-commands:</p>
-<ul>
-<li>
-<code>Tide</code> is the fastest.  For large searches (of large
-databases or many spectra), Tide will give you your results most
-quickly.  However, <code>tide</code> does not offer all of the
-functionality of the other two search tools.  Also, to achieve its
-high speed, <code>tide</code> requires that you first
-run <code>tide-index</code> on your protein database.</li>
-<li>
-<code>Comet</code> is quite fast and offers fuller functionality.
-Relative to <code>tide</code>, Comet offers FIXME.  <code>Comet</code>
-does not require you to index your protein database before the
-search.</li>
-<li>
-<code>Search-for-matches</code> is the slowest of the three tools, but
-is the only one that will automatically generate a decoy database for
-you.  To perform target-decoy analysis, the other two search tools
-require that you generate your decoys independently and then run two
-searches.  <code>Search-for-matches</code> will run (quite slowly) on a protein
-database in FASTA format or (more efficiently) on a database that has
-been indexed using the <code>create-index</code> command.
-Also, <code>search-for-matches</code> offers a slightly more general
-method of specifying variable modifications.</li>
-</ul>
-
-<h2>File formats</h2>
+<b>File formats</b></p>
 
 <ul>
 <table border="1">
@@ -420,7 +373,8 @@ Percolator XML<br> (<a href="https://github.com/percolator/percolator/blob/maste
 </table>
 </ul>
 
-<h2>Tutorials</h2>
+<p>
+<b>Tutorials</b>
 
 <ul>
 
@@ -445,7 +399,8 @@ Percolator XML<br> (<a href="https://github.com/percolator/percolator/blob/maste
 </ul>
 
 
-<h2>Download</h2>
+<p>
+<b>Download</b>
 
 <ul>
 Crux source code and binaries can be
@@ -457,6 +412,9 @@ license</a>.
 
 <p>
 <b><a href="crux-faq.html">Crux frequently asked questions</a></b></p>
+
+<p>
+<a href="http://scholar.google.com/citations?hl=en&user=Rw9S1HIAAAAJ">Crux Google Scholar profile</a></p>
 
 <p>
 To receive announcements of new versions, sign up for the Crux users 
