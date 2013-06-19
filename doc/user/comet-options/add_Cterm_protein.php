@@ -12,7 +12,7 @@
 
          <ul>
          <li>Specify a static modification to the c-terminal peptide of each protein entry.
-         <li>The specified mass is added to the unmodified c-terminal mass (mass of OH or 17.0).
+         <li>The specified mass is added to the unmodified c-terminal mass (mass of OH or 17.00274).
          </ul>
 
          <p>Example:

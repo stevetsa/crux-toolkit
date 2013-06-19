@@ -8,7 +8,7 @@
    <div id="content_full">
       <div class="post hr">
 
-         <h2>Comet parameter: add_J_user_amino_acid.php</h2>
+         <h2>Comet parameter: add_J_user_amino_acid</h2>
 
          <ul>
          <li>This parameter allows users to define their own custom residue. Just
@@ -18,7 +18,7 @@
          </ul>
 
          <p>Example:
-         <br><tt>add_J_user_amino_acid.php = 100.8</tt>
+         <br><tt>add_J_user_amino_acid = 100.8</tt>
 
       </div>
    </div>

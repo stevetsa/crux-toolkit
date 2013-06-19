@@ -24,8 +24,9 @@
          </ul>
 
          <p>Example:
+         <br><tt>fragment_bin_tol = 1.0005</tt>
          <br><tt>fragment_bin_tol = 0.36</tt>
-         <br><tt>fragment_bin_tol = 0.03</tt>
+         <br><tt>fragment_bin_tol = 0.02</tt>
 
       </div>
    </div>

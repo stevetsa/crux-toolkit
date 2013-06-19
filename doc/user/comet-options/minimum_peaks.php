@@ -15,11 +15,14 @@
          that must be present in a spectrum before it is searched.
          <li>This parameter can be used to avoid searching nearly sparse spectra
          that will not likely yield an indentification.
+         <li>This parameter is checked against the spectrum after
+         <a href="clear_mz_range.php">clear_mz_range</a> is applied but before
+         any other spectral processing occurs (i.e.  <a href="remove_precursor_peak.php">remove_precursor_peak</a>).
          <li>Valid values are any integer number.
          </ul>
 
          <p>Example:
-         <br><tt>minimum_peaks = 20</tt>
+         <br><tt>minimum_peaks = 10</tt>
 
       </div>
    </div>
