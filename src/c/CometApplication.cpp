@@ -41,7 +41,7 @@ int CometApplication::main(int argc, char** argv) {
   int num_options = sizeof(option_list) / sizeof(char*);
 
   /* Define required command line arguments */
-  const char* argument_list[] = {"input spectra","protein database"};
+  const char* argument_list[] = {"input spectra","protein-database"};
   int num_arguments = sizeof(argument_list) / sizeof(char*);
 
   /* Initialize the application */

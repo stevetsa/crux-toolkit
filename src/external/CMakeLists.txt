@@ -128,10 +128,24 @@ ExternalProject_Add(
 )
 endif(APPLE)
 
+
+ExternalProject_Add(
+  comet
+  SVN_REPOSITORY svn://svn.code.sf.net/p/comet-ms/code/trunk/comet-ms
+  SVN_REVISION -r 110
+  PREFIX ${CMAKE_CURRENT_SOURCE_DIR}/build/src/comet
+  CONFIGURE_COMMAND ""
+  BUILD_COMMAND make 
+  INSTALL_COMMAND ""
+  PATCH_COMMAND patch -d ${CMAKE_CURRENT_SOURCE_DIR}/build/src/comet/src/comet -p0 -N -f -i ${CMAKE_CURRENT_SOURCE_DIR}/patches/comet/compile_patch.diff
+  BUILD_IN_SOURCE 1
+)  
+
+
 add_dependencies(XSD Proteowizard)
 add_dependencies(XSD XercesC)
 add_dependencies(percolator Proteowizard)
 add_dependencies(percolator XercesC)
 add_dependencies(percolator XSD)
-add_subdirectory(MSToolkit)
-add_subdirectory(comet)
+#add_subdirectory(MSToolkit)
+#add_subdirectory(comet)

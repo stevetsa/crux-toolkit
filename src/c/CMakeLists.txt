@@ -26,8 +26,8 @@ include_directories(../external)
 include_directories(../external/include)
 include_directories(../external/build/src/ProteoWizard/libraries/boost_1_43_0)
 include_directories(../external/build/src/ProteoWizard/libraries/boost_aux)
-include_directories(../external/MSToolkit/include)
-include_directories(../external/comet)
+include_directories(../external/build/src/comet/src/comet/MSToolkit/include)
+include_directories(../external/build/src/comet/src/comet)
 include_directories(../external/build/src/percolator/src/)
 include_directories(../external/build/src/percolator/src/fido)
 include_directories(../external/build/src/percolator-build/src/)
@@ -35,8 +35,10 @@ include_directories(../external/build/src/percolator-build/src/fido)
 
 
 link_directories(../external/lib)
-link_directories(../external/MSToolkit)
-link_directories(../external/comet)
+#link_directories(../external/MSToolkit)
+#link_directories(../external/comet)
+link_directories(../external/build/src/comet/src/comet)
+link_directories(../external/build/src/comet/src/comet/MSToolkit)
 link_directories(.)
 link_directories(./ArrayLibrary)
 link_directories(./bullseye)
@@ -179,9 +181,14 @@ else (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 	  PROPERTY
 	  COMPILE_DEFINITIONS
 	  _LARGEFILE_SOURCE
+	  _LARGEFILE64_SOURCE
+	  _BSD_SOURCE
+	  _POSIX_C_SOURCE=199506L
+	  NDEBUG
 	  _FILE_OFFSET_BITS=64
 	  _GNU_SOURCE
 	  GCC
+	  CRUX
 	  HAVE_EXPAT_CONFIG_H
 	)
 	if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
@@ -257,7 +264,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     crux-support
     hardklor
     Comet
-    MSToolkit
+    mstoolkitlite
     perclibrary
     posterior_error
     xlink
@@ -269,21 +276,21 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     xlink
     crux-support
     Comet
-    MSToolkit
+    mstoolkitlite
     ws2_32
   )
   target_link_libraries(
     xlink-score-spectrum
     xlink
     crux-support
-    MSToolkit
+    mstoolkitlite
     ws2_32
   )
   target_link_libraries(
     xlink-assign-ions
     xlink
     crux-support
-    MSToolkit
+    mstoolkitlite
     ws2_32
   )
 else(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
@@ -296,7 +303,7 @@ else(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     dl
     hardklor
     m
-    MSToolkit
+    mstoolkitlite
     posterior_error
     perclibrary
     pthread
@@ -332,7 +339,7 @@ else(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     pthread
     xlink
     crux-support
-    MSToolkit
+    mstoolkitlite
     pwiz_data_msdata
     pwiz_data_common
     pwiz_data_identdata
@@ -359,7 +366,7 @@ else(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     pthread
     xlink
     crux-support
-    MSToolkit
+    mstoolkitlite
     pwiz_data_msdata
     pwiz_data_common
     pwiz_data_identdata
@@ -386,7 +393,7 @@ else(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     pthread
     xlink
     crux-support
-    MSToolkit
+    mstoolkitlite
     pwiz_data_msdata
     pwiz_data_common
     pwiz_data_identdata
