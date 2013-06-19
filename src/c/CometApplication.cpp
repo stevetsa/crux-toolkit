@@ -51,8 +51,8 @@ int CometApplication::main(int argc, char** argv) {
   /*Get input file*/
   //1.protein database 
   string protein_dbase="/some/path/db.fasta";
-  if( get_string_parameter("protein database")!= "_NULL_STR")
-    protein_dbase= get_string_parameter("protein database");
+  if( get_string_parameter("protein-database")!= "_NULL_STR")
+    protein_dbase= get_string_parameter("protein-database");
 
   //2.get ms2 file 
   string spectra_file=get_string_parameter_pointer("input spectra");
@@ -109,30 +109,31 @@ int CometApplication::main(int argc, char** argv) {
  */
 void CometApplication:: writeParams(ofstream &fout, string protein_dbase){
   string space="\t\t\t\t";
-  string header_file="# Comet MS/MS search engine parameters file."
+  string header_file= "# comet_version 2013.01 rev. 0"
+ "\n# Comet MS/MS search engine parameters file."
   "\n# Everything following the \'#\' symbol is treated as a comment.\n";
   fout<<header_file<<endl;
 
   //database 
-  fout<<"database_name = "<<protein_dbase<<"\n";
+  fout<<"database_name="<<protein_dbase<<"\n";
   //decoy_search 
-  fout<<"decoy_search = " << 1;
+  fout<<"decoy_search=" << 1;
   /*
   if(get_int_parameter("num-decoys-per-target")== 0)
-    fout<<"decoy_search = " << 0;
+    fout<<"decoy_search=" << 0;
   else if(get_int_parameter("num-decoys-per-target")== 1){
     string decoy_location= get_string_parameter("decoy-location");
     if(decoy_location == "target-file")
-       fout<<"decoy_search = "<< 1;
+       fout<<"decoy_search="<< 1;
     else if( decoy_location== "one-decoy-search" || decoy_location == "separate-decoy-files")
-       fout<<"decoy_search = "<< 2;
+       fout<<"decoy_search="<< 2;
     
   }else {
     carp(CARP_FATAL,"Invalid num-decoys-per-target %s", get_int_parameter("num-decoys-per-target"));
   }*/
   fout<<"                       # 0=no (default), 1=concatenated search, 2=separate search"<<endl;
     
-  fout<<"num_threads = "<<get_int_parameter("num-threads");
+  fout<<"num_threads="<<get_int_parameter("num-threads");
   fout<<"                        # 0=poll CPU to set num threads; else specify num threads directly (max 32)"<<endl;
 
   /*mass*/
@@ -140,9 +141,9 @@ void CometApplication:: writeParams(ofstream &fout, string protein_dbase){
   fout <<"#"<<endl;
   fout <<"# masses"<<endl;
   fout <<"#"<<endl;
-  fout <<"peptide_mass_tolerance = "<< get_double_parameter("precursor-window")<<endl;
-  WINDOW_TYPE_T window_type = get_window_type_parameter("precursor-window-type");
-  fout <<"peptide_mass_units = ";
+  fout <<"peptide_mass_tolerance="<< get_double_parameter("precursor-window")<<endl;
+  WINDOW_TYPE_T window_type=get_window_type_parameter("precursor-window-type");
+  fout <<"peptide_mass_units=";
   
   switch (window_type) {
     case WINDOW_MASS:
@@ -158,13 +159,13 @@ void CometApplication:: writeParams(ofstream &fout, string protein_dbase){
   }
   fout<<"\t\t"<<"       "<<"# 0=amu, 1=mmu, 2=ppm "<<endl;
 
-    fout <<"mass_type_parent = "<<get_mass_type_parameter("isotopic-mass");
+    fout <<"mass_type_parent="<<get_mass_type_parameter("isotopic-mass");
     fout<<"                   # 0=average masses, 1=monoisotopic masses "<<endl;
 
-    fout <<"mass_type_fragment = "<<get_mass_type_parameter("fragment-mass");
+    fout <<"mass_type_fragment="<<get_mass_type_parameter("fragment-mass");
     fout<<"                 # 0=average masses, 1=monoisotopic masses"<<endl;
-    fout <<"precursor_tolerance_type = 0           # 0=MH+ (default), 1=precursor m/z"<<endl;
-    fout <<"isotope_error = 0                      # 0=off, 1=on -1/0/1/2/3 (standard C13 error), 2= -8/-4/0/4/8 (for +4/+8 labeling)"<<endl;
+    fout <<"precursor_tolerance_type=0           # 0=MH+ (default), 1=precursor m/z"<<endl;
+    fout <<"isotope_error=0                      # 0=off, 1=on -1/0/1/2/3 (standard C13 error), 2= -8/-4/0/4/8 (for +4/+8 labeling)"<<endl;
 
     /*search enzyme*/
     fout<<endl;
@@ -176,12 +177,12 @@ void CometApplication:: writeParams(ofstream &fout, string protein_dbase){
     ENZYME_T enzyme; //2.question 
     enzyme= get_enzyme_type_parameter("enzyme");
 
-    fout<<"search_enzyme_number = ";
+    fout<<"search_enzyme_number=";
     map<ENZYME_T,int> enzyme_map;
 
-    enzyme_map [NO_ENZYME ] = 0; 
-    enzyme_map [TRYPSIN] = 1;
-    enzyme_map [TRYPSINP] = 2;
+    enzyme_map [NO_ENZYME ]=0; 
+    enzyme_map [TRYPSIN]=1;
+    enzyme_map [TRYPSINP]=2;
     enzyme_map [LYSC]= 3 ;
     enzyme_map [LYSN]= 4 ;
     enzyme_map [ARGC]= 5 ;
@@ -214,32 +215,32 @@ void CometApplication:: writeParams(ofstream &fout, string protein_dbase){
     fout<<"               "<<"# choose from list at end of this params file"<<endl;
     //digestion
     if(get_digest_type_parameter("digestion")==FULL_DIGEST)    
-      fout <<"num_enzyme_termini = "<<"2";
+      fout <<"num_enzyme_termini="<<"2";
     else if(get_digest_type_parameter("digestion")==PARTIAL_DIGEST)
-      fout <<"num_enzyme_termini = "<<"1";
+      fout <<"num_enzyme_termini="<<"1";
     else
       carp(CARP_FATAL,"Digestion value is not accaptable");
     fout<<"                 # valid values are 1 (semi-digested), 2 (fully digested, default), 8 N-term, 9 C-term"<<endl;
     //missed-cleavages
-    fout <<"allowed_missed_cleavage = "<<get_int_parameter("missed-cleavages");
+    fout <<"allowed_missed_cleavage="<<get_int_parameter("missed-cleavages");
     fout<<"            # maximum value is 5; for enzyme search"<<endl;
     
 
     /*variable mod*/
     
-    string filename = get_string_parameter("protein database");
-    bool use_index = is_directory(filename.c_str());
-    Index* index = NULL;
-    Database* database = NULL;
+    string filename=get_string_parameter("protein-database");
+    bool use_index=is_directory(filename.c_str());
+    Index* index=NULL;
+    Database* database=NULL;
 
     if( use_index == true ){
-      index = new Index(filename.c_str()); 
+      index=new Index(filename.c_str()); 
     }else{
-      database = new Database(filename.c_str(), false); // not memmapped
+      database=new Database(filename.c_str(), false); // not memmapped
     }
 
     AA_MOD_T** aa_mods =NULL; 
-    int num_aa_mods = get_all_aa_mod_list(&aa_mods);
+    int num_aa_mods=get_all_aa_mod_list(&aa_mods);
    
         
     fout << endl;
@@ -249,19 +250,19 @@ void CometApplication:: writeParams(ofstream &fout, string protein_dbase){
     fout << "#     e.g. 79.966331 STY 0 3" << endl;
     fout << "#" << endl;
 
-    int count = 1;
-    for (int mod_idx = 0; mod_idx < num_aa_mods; mod_idx++) {
-      AA_MOD_T* mod = aa_mods[mod_idx];
+    int count=1;
+    for (int mod_idx=0; mod_idx < num_aa_mods; mod_idx++) {
+      AA_MOD_T* mod=aa_mods[mod_idx];
       if (aa_mod_get_position(mod) == ANY_POSITION && mod_idx < 7) {
-        int max_per_peptide = aa_mod_get_max_per_peptide(mod);
-        FLOAT_T mass_change = aa_mod_get_mass_change(mod);
-        char* residues = aa_mod_get_aa_list_string(mod);
-        fout <<"variable_mod"<<(count)<<" = " <<
+        int max_per_peptide=aa_mod_get_max_per_peptide(mod);
+        FLOAT_T mass_change=aa_mod_get_mass_change(mod);
+        char* residues=aa_mod_get_aa_list_string(mod);
+        fout <<"variable_mod"<<(count)<<"=" <<
                mass_change << " " << residues << " 0 " << max_per_peptide << endl;
         count++;
       }
     }
-    fout <<"max_variable_mods_in_peptide = "<<get_int_parameter("max-mods")<<endl;
+    fout <<"max_variable_mods_in_peptide="<<get_int_parameter("max-mods")<<endl;
 
     /*fragment ions*/
     fout << endl;
@@ -272,20 +273,20 @@ void CometApplication:: writeParams(ofstream &fout, string protein_dbase){
     fout << "# high res ms/ms:  0.01 tolerance, 0.00 offset (mono masses)"<<endl;
     fout << "#"<< endl;
    
-    fout << "fragment_bin_tol = "<<get_double_parameter("mz-bin-width");
+    fout << "fragment_bin_tol="<<get_double_parameter("mz-bin-width");
     fout<< "             # binning to use on fragment ions"<<endl;
 
-    fout << "fragment_bin_offset = "<<get_double_parameter("mz-bin-offset");
+    fout << "fragment_bin_offset="<<get_double_parameter("mz-bin-offset");
     fout<< "             # offset position to start the binning"<<endl;
 
-    fout << "theoretical_fragment_ions = 0          # 0=default peak shape, 1=M peak only"<<endl;
-    fout << "use_A_ions = " <<get_boolean_parameter("use-a-ions")<<endl;
-    fout << "use_B_ions = " <<get_boolean_parameter("use-b-ions")<<endl;
-    fout << "use_C_ions = " <<get_boolean_parameter("use-c-ions")<<endl;
-    fout << "use_X_ions = " <<get_boolean_parameter("use-x-ions")<<endl;
-    fout << "use_Y_ions = " <<get_boolean_parameter("use-y-ions")<<endl;
-    fout << "use_Z_ions = " <<get_boolean_parameter("use-z-ions")<<endl;
-    fout << "use_NL_ions = "<<get_boolean_parameter("use-nl-ions");
+    fout << "theoretical_fragment_ions=0          # 0=default peak shape, 1=M peak only"<<endl;
+    fout << "use_A_ions=" <<get_boolean_parameter("use-a-ions")<<endl;
+    fout << "use_B_ions=" <<get_boolean_parameter("use-b-ions")<<endl;
+    fout << "use_C_ions=" <<get_boolean_parameter("use-c-ions")<<endl;
+    fout << "use_X_ions=" <<get_boolean_parameter("use-x-ions")<<endl;
+    fout << "use_Y_ions=" <<get_boolean_parameter("use-y-ions")<<endl;
+    fout << "use_Z_ions=" <<get_boolean_parameter("use-z-ions")<<endl;
+    fout << "use_NL_ions="<<get_boolean_parameter("use-nl-ions");
     fout << "                        # 0=no, 1=yes to consider NH3/H2O neutral loss peaks"<<endl;
 
     /*output*/
@@ -294,20 +295,20 @@ void CometApplication:: writeParams(ofstream &fout, string protein_dbase){
     fout << "# output"<<endl;
     fout << "#"<<endl;
 
-    fout << "output_format = 2                      # 0=sqt stdout (default), 1=sqt file, 2=out files, 3=pepXML file"<<endl;
-    fout << "output_sqtfile = 1                     # 0=no, 1=yes write sqt file"<<endl;//always true 
-    fout << "output_pepxmlfile = 1                  # 0=no, 1=yes write pep.xml file"<<endl;//always true 
-    fout << "output_outfiles = 0                    # 0=no, 1=yes write pep.xml file"<<endl;//always false
+    fout << "output_format=2                      # 0=sqt stdout (default), 1=sqt file, 2=out files, 3=pepXML file"<<endl;
+    fout << "output_sqtfile=1                     # 0=no, 1=yes write sqt file"<<endl;//always true 
+    fout << "output_pepxmlfile=1                  # 0=no, 1=yes write pep.xml file"<<endl;//always true 
+    fout << "output_outfiles=0                    # 0=no, 1=yes write pep.xml file"<<endl;//always false
  
-    fout << "print_expect_score = "<<get_boolean_parameter("print-expect-score");
+    fout << "print_expect_score="<<get_boolean_parameter("print-expect-score");
     fout<<"                 # 0=no, 1=yes to replace Sp with expect"<<endl;
 
-    fout << "num_output_lines = "<<get_int_parameter("top-match");
+    fout << "num_output_lines="<<get_int_parameter("top-match");
     fout << "                   # num peptide results to show" << endl;
 
-    fout << "show_fragment_ions = 0                 # 0=no, 1=yes"<<endl; //always false
+    fout << "show_fragment_ions=0                 # 0=no, 1=yes"<<endl; //always false
     fout << ""<<endl;
-    fout << "sample_enzyme_number = " << get_int_parameter("sample-enzyme");
+    fout << "sample_enzyme_number=" << get_int_parameter("sample-enzyme");
     fout <<"               # Sample enzyme which is possibly different than the one applied to the search."<<endl;
     fout << "                                       # Used to calculate NTT & NMC in pepXML output (default=1 for trypsin)."<<endl;
     fout << endl;
@@ -318,18 +319,18 @@ void CometApplication:: writeParams(ofstream &fout, string protein_dbase){
     fout <<"# mzXML parameters"<<endl;
     fout <<"#"<<endl;
  
-    fout <<"scan_range = " << get_int_parameter("start-scan") << " " ;
+    fout <<"scan_range=" << get_int_parameter("start-scan") << " " ;
     fout << get_int_parameter("end-scan");
     fout <<"                       # start and scan scan range to search; 0 as 1st entry ignores parameter"<<endl;
 
-    fout <<"precursor_charge = 0 0";
+    fout <<"precursor_charge=0 0";
     fout <<"                 # precursor charge range to analyze; does not override mzXML charge;"; 
     fout <<"0 as 1st entry ignores parameter"<<endl;
 
-    fout <<"ms_level = "<<get_int_parameter("ms-level");
+    fout <<"ms_level="<<get_int_parameter("ms-level");
     fout <<"                           # MS level to analyze, valid are levels 2 (default) or 3"<<endl;
 
-    fout <<"activation_method = "<<get_string_parameter("activation-method");
+    fout <<"activation_method="<<get_string_parameter("activation-method");
     fout <<"                # activation method; used if activation method set; allowed ALL, CID, ECD, ETD, PQD, HCD, IRMPD"<<endl;
     
     fout <<""<<endl;
@@ -337,47 +338,47 @@ void CometApplication:: writeParams(ofstream &fout, string protein_dbase){
     fout <<"# misc parameters"<<endl;
     fout <<"#"<<endl;
 
-    fout <<"digest_mass_range = "<< get_double_parameter("min-mass");;
+    fout <<"digest_mass_range="<< get_double_parameter("min-mass");;
     fout<<" "<< get_double_parameter("max-mass");;
     fout <<"           # MH+ peptide mass range to analyze"<<endl;
 
-    fout <<"num_results = 50"; //default it to 50 
+    fout <<"num_results=50"; //default it to 50 
     fout <<"                       # number of search hits to store internally"<<endl;
 
-    fout <<"skip_researching = 0 "; //default it to 0 
+    fout <<"skip_researching=0 "; //default it to 0 
     fout <<"                  # for '.out' file output only, 0=search everything again (default), 1=don't search if .out exists"<<endl;
     
-    int max_ion_charge = 3; 
+    int max_ion_charge=3; 
     if(max_ion_charge>5)
       carp(CARP_FATAL,"max_fragment_charge cann't be more than 5.");
     else 
-      fout <<"max_fragment_charge = "<< max_ion_charge; 
+      fout <<"max_fragment_charge="<< max_ion_charge; 
     fout <<"                # set maximum fragment charge state to analyze (allowed max 5)"<<endl;
     
-    int max_precursor_charge =  get_int_parameter("max-precursor-charge");
+    int max_precursor_charge= get_int_parameter("max-precursor-charge");
     if(max_precursor_charge > 9)
       carp(CARP_FATAL, "max_precusor_charge cann't be more than 9.");
     else 
-      fout <<"max_precursor_charge = "<< max_precursor_charge;
+      fout <<"max_precursor_charge="<< max_precursor_charge;
     fout <<"               # set maximum precursor charge state to analyze (allowed max 9)"<<endl; //make sure not more than 9
 
-    fout <<"nucleotide_reading_frame = 0"; //sean will fix it 
+    fout <<"nucleotide_reading_frame=0"; //sean will fix it 
     fout <<"           # 0=proteinDB, 1-6, 7=forward three, 8=reverse three, 9=all six"<<endl;
 
-    fout <<"clip_nterm_methionine = 0";
+    fout <<"clip_nterm_methionine=0";
     fout <<"              # 0=leave sequences as-is; 1=also consider sequence w/o N-term methionine"<<endl;
     
     fout <<""<<endl;
     fout <<"#"<<endl;
     fout <<"# spectral processing"<<endl;
     fout <<"#"<<endl;
-    fout <<"minimum_peaks = "<< get_int_parameter("min-peaks");
+    fout <<"minimum_peaks="<< get_int_parameter("min-peaks");
     fout <<"                     # minimum num. of peaks in spectrum to search (default 5)"<<endl;
 
-    fout <<"remove_precursor_peak = "<<get_int_parameter("remove-precursor-peak");
+    fout <<"remove_precursor_peak="<<get_int_parameter("remove-precursor-peak");
     fout <<"              # 0=no, 1=yes, 2=all charge reduced precursor peaks (for ETD)"<<endl;
 
-    fout <<"remove_precursor_tolerance = "<<get_double_parameter("remove-precursor-tolerance");
+    fout <<"remove_precursor_tolerance="<<get_double_parameter("remove-precursor-tolerance");
     fout <<"       # +- Da tolerance for precursor removal"<<endl;
     fout<<endl;
 
@@ -388,119 +389,119 @@ void CometApplication:: writeParams(ofstream &fout, string protein_dbase){
     fout <<""<<endl;
     //question : send email to => ask Jimmy 
    
-    AA_MOD_T** c_mods = NULL; 
-    AA_MOD_T** n_mods = NULL; 
-    int num_c_mods = get_c_mod_list(&c_mods);
-    int num_n_mods = get_n_mod_list(&n_mods);
+    AA_MOD_T** c_mods=NULL; 
+    AA_MOD_T** n_mods=NULL; 
+    int num_c_mods=get_c_mod_list(&c_mods);
+    int num_n_mods=get_n_mod_list(&n_mods);
     
     //print c_mod
    
-    for (int cmod_idx = 0; cmod_idx < num_c_mods; cmod_idx++) {
-      AA_MOD_T* cmod = c_mods[cmod_idx];
+    for (int cmod_idx=0; cmod_idx < num_c_mods; cmod_idx++) {
+      AA_MOD_T* cmod=c_mods[cmod_idx];
      
       if (aa_mod_get_position(cmod) == C_TERM) {
-        fout <<"variable_C_terminus = "<< aa_mod_get_mass_change(cmod) << endl;
-        fout <<"variable_C_terminus_distance = " << aa_mod_get_max_distance(cmod);         
-        fout <<"      # -1=all peptides, 0=protein terminus, 1-N = maximum offset from C-terminus"<<endl;
+        fout <<"variable_C_terminus="<< aa_mod_get_mass_change(cmod) << endl;
+        fout <<"variable_C_terminus_distance=" << aa_mod_get_max_distance(cmod);         
+        fout <<"      # -1=all peptides, 0=protein terminus, 1-N=maximum offset from C-terminus"<<endl;
         
       }
      
     }
     
     //print n_mod 
-    for (int nmod_idx = 0; nmod_idx < num_c_mods; nmod_idx++) {
-      AA_MOD_T* nmod = n_mods[nmod_idx];
+    for (int nmod_idx=0; nmod_idx < num_c_mods; nmod_idx++) {
+      AA_MOD_T* nmod=n_mods[nmod_idx];
       if (aa_mod_get_position(nmod) == N_TERM) {
-        fout <<"variable_N_terminus = "<< aa_mod_get_mass_change(nmod)<< endl;
-        int n_distance = aa_mod_get_max_distance(nmod);
-        fout <<"variable_N_terminus_distance = " << aa_mod_get_max_per_peptide(nmod);         
-        fout <<"       # -1=all peptides, 0=protein terminus, 1-N = maximum offset from N-terminus"<<endl;        
+        fout <<"variable_N_terminus="<< aa_mod_get_mass_change(nmod)<< endl;
+        int n_distance=aa_mod_get_max_distance(nmod);
+        fout <<"variable_N_terminus_distance=" << aa_mod_get_max_per_peptide(nmod);         
+        fout <<"       # -1=all peptides, 0=protein terminus, 1-N=maximum offset from N-terminus"<<endl;        
       } 
     }   
     fout <<endl;
 
 
-    fout <<"add_Cterm_peptide = 0.0"<<endl;
-    fout <<"add_Nterm_peptide = 0.0"<<endl;
-    fout <<"add_Cterm_protein = 0.0"<<endl;
-    fout <<"add_Nterm_protein = 0.0"<<endl;
+    fout <<"add_Cterm_peptide=0.0"<<endl;
+    fout <<"add_Nterm_peptide=0.0"<<endl;
+    fout <<"add_Cterm_protein=0.0"<<endl;
+    fout <<"add_Nterm_protein=0.0"<<endl;
     fout <<endl;
 
     fout <<"add_G_glycine ="<< get_double_parameter("G");
     fout <<"                       # added to G - avg.  57.0513, mono.  57.02146"<<endl;
 
-    fout <<"add_A_alanine = "<<get_double_parameter("A");
+    fout <<"add_A_alanine="<<get_double_parameter("A");
     fout <<"                      # added to A - avg.  71.0779, mono.  71.03711"<<endl;
 
-    fout <<"add_S_serine = "<<get_double_parameter("S");
+    fout <<"add_S_serine="<<get_double_parameter("S");
     fout <<"                       # added to S - avg.  87.0773, mono.  87.02303"<<endl;
 
-    fout <<"add_P_proline = "<<get_double_parameter("P");
+    fout <<"add_P_proline="<<get_double_parameter("P");
     fout <<"                      # added to P - avg.  97.1152, mono.  97.05276"<<endl;
 
-    fout <<"add_V_valine = "<<get_double_parameter("V");
+    fout <<"add_V_valine="<<get_double_parameter("V");
     fout <<"                       # added to V - avg.  99.1311, mono.  99.06841"<<endl;
 
-    fout <<"add_T_threonine = "<<get_double_parameter("T");
+    fout <<"add_T_threonine="<<get_double_parameter("T");
     fout <<"                    # added to T - avg. 101.1038, mono. 101.04768"<<endl;
 
-    fout <<"add_C_cysteine = "<<get_double_parameter("C");
+    fout <<"add_C_cysteine="<<get_double_parameter("C");
     fout <<"               # added to C - avg. 103.1429, mono. 103.00918"<<endl;
 
-    fout <<"add_L_leucine = "<<get_double_parameter("L");
+    fout <<"add_L_leucine="<<get_double_parameter("L");
     fout <<"                      # added to L - avg. 113.1576, mono. 113.08406"<<endl;
 
-    fout <<"add_I_isoleucine = "<<get_double_parameter("I");
+    fout <<"add_I_isoleucine="<<get_double_parameter("I");
     fout <<"                   # added to I - avg. 113.1576, mono. 113.08406"<<endl;
 
-    fout <<"add_N_asparagine = "<<get_double_parameter("N");
+    fout <<"add_N_asparagine="<<get_double_parameter("N");
     fout <<"                   # added to N - avg. 114.1026, mono. 114.04293"<<endl;
 
-    fout <<"add_D_aspartic_acid = "<<get_double_parameter("D");
+    fout <<"add_D_aspartic_acid="<<get_double_parameter("D");
     fout <<"                # added to D - avg. 115.0874, mono. 115.02694"<<endl;
 
-    fout <<"add_Q_glutamine = "<<get_double_parameter("Q");
+    fout <<"add_Q_glutamine="<<get_double_parameter("Q");
     fout <<"                    # added to Q - avg. 128.1292, mono. 128.05858"<<endl;
 
-    fout <<"add_K_lysine =  "<<get_double_parameter("K");
+    fout <<"add_K_lysine= "<<get_double_parameter("K");
     fout <<"                      # added to K - avg. 128.1723, mono. 128.09496"<<endl;
 
-    fout <<"add_E_glutamic_acid =  "<<get_double_parameter("E");
+    fout <<"add_E_glutamic_acid= "<<get_double_parameter("E");
     fout <<"               # added to E - avg. 129.1140, mono. 129.04259"<<endl;
 
-    fout <<"add_M_methionine =  "<<get_double_parameter("M");
+    fout <<"add_M_methionine= "<<get_double_parameter("M");
     fout <<"                  # added to M - avg. 131.1961, mono. 131.04048"<<endl;
 
-    fout <<"add_O_ornithine =  "<<get_double_parameter("O");
+    fout <<"add_O_ornithine= "<<get_double_parameter("O");
     fout <<"                   # added to O - avg. 132.1610, mono  132.08988"<<endl;
           
-    fout <<"add_H_histidine = "<<get_double_parameter("H");
+    fout <<"add_H_histidine="<<get_double_parameter("H");
     fout <<"                    # added to H - avg. 137.1393, mono. 137.05891"<<endl;
 
-    fout <<"add_F_phenylalanine = "<<get_double_parameter("F");
+    fout <<"add_F_phenylalanine="<<get_double_parameter("F");
     fout <<"                # added to F - avg. 147.1739, mono. 147.06841"<<endl; 
 
-    fout <<"add_R_arginine = "<<get_double_parameter("R");
+    fout <<"add_R_arginine="<<get_double_parameter("R");
     fout <<"                     # added to R - avg. 156.1857, mono. 156.10111"<<endl;
 
-    fout <<"add_Y_tyrosine = "<<get_double_parameter("Y");
+    fout <<"add_Y_tyrosine="<<get_double_parameter("Y");
     fout <<"                     # added to Y - avg. 163.0633, mono. 163.06333"<<endl;
 
-    fout <<"add_W_tryptophan = "<<get_double_parameter("W");
+    fout <<"add_W_tryptophan="<<get_double_parameter("W");
     fout <<"                   # added to W - avg. 186.0793, mono. 186.07931"<<endl;
 
-    fout <<"add_B_user_amino_acid = "<<get_double_parameter("B");
+    fout <<"add_B_user_amino_acid="<<get_double_parameter("B");
     fout <<"              # added to B - avg.   0.0000, mono.   0.00000"<<endl;
 
-    fout <<"add_J_user_amino_acid = "<<get_double_parameter("J");
+    fout <<"add_J_user_amino_acid="<<get_double_parameter("J");
     fout <<"              # added to J - avg.   0.0000, mono.   0.00000"<<endl;
-    fout <<"add_U_user_amino_acid = "<<get_double_parameter("U");
+    fout <<"add_U_user_amino_acid="<<get_double_parameter("U");
     fout <<"              # added to U - avg.   0.0000, mono.   0.00000"<<endl;
 
-    fout <<"add_X_user_amino_acid = "<<get_double_parameter("X");
+    fout <<"add_X_user_amino_acid="<<get_double_parameter("X");
     fout <<"              # added to X - avg.   0.0000, mono.   0.00000"<<endl;
 
-    fout <<"add_Z_user_amino_acid = "<<get_double_parameter("Z");
+    fout <<"add_Z_user_amino_acid="<<get_double_parameter("Z");
     fout <<"              # added to Z - avg.   0.0000, mono.   0.00000"<<endl;
     fout <<endl;
      
