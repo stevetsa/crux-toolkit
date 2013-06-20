@@ -1077,124 +1077,497 @@ void initialize_parameters(void){
     "Available for crux percolator if --protein T is set.",
     "true"
   );
+
+  /*
+   * Comet parameters
+   */
   set_string_parameter("input spectra", NULL,
      "Tha name of file (in MS2 format) from which to parse the spectra.",
      "Available for comet.  File will be named ",
      "false");
-  set_int_parameter("num-threads",0,0,32, 
+
+  set_string_parameter("database_name", NULL,
+		       "",
+		       "Comet only", "true");
+
+  set_int_parameter("decoy_search", 0, 0, 2,
+		    "",
+		    "option for Comet only", "true");
+
+  set_int_parameter("num_threads",0,0,32, 
     "",
     "option for Comet only",
-    "ture"
-  );
-  set_int_parameter("isotope-windows",0,0,2, 
-    "",
-    "option for Comet only",
-    "ture"
-  );
-  set_boolean_parameter("use-a-ions",
-    false, 
-    "",
-    "option for Comet only",
-    "ture"
-  );
-  set_boolean_parameter("use-b-ions",
-    true, 
-    "",
-    "option for Comet only",
-    "ture"
-  );
-  set_boolean_parameter("use-c-ions",
-    false, 
-    "",
-    "option for Comet only",
-    "ture"
-  );
-  set_boolean_parameter("use-x-ions",
-    false, 
-    "",
-    "option for Comet only",
-    "ture"
+    "true"
   );
 
-  set_boolean_parameter("use-y-ions",
-    true, 
+  set_double_parameter("peptide_mass_tolerance", 3.0, 0, BILLION,
+		       "", "option for Comet only","true");
+
+  set_int_parameter("peptide_mass_units", 0,0,2,
+		    "",
+		    "option for Comet only", "true");
+
+  set_int_parameter("mass_type_parent", 1,0,1,
+		    "","option for Comet only", "true");
+  
+  set_int_parameter("mass_type_fragment", 1,0,1,
+		    "","option for Comet only", "true");
+  
+  set_int_parameter("precursor_tolerance_type", 0, 0, 1,
+		    "","option for Comet only", "true");
+
+  set_int_parameter("isotope_error",0,0,2, 
     "",
     "option for Comet only",
-    "ture"
+    "true"
   );
-  set_boolean_parameter("use-z-ions",
-    false, 
-    "",
-    "option for Comet only",
-    "ture"
+
+  set_int_parameter("search_enzyme_number", 1, 1, BILLION,
+		    "",
+		    "option for Comet only",
+		    "true");
+  set_int_parameter("num_enzyme_termini", 2,1,2,
+		    "",
+		    "option for Comet only",
+		    "true");
+  set_int_parameter("allowed_missed_cleavage", 2, 0, BILLION,
+		    "",
+		    "option for Comet only",
+		    "true");
+  set_double_parameter("fragment_bin_tol", 1.0005, 0, BILLION,
+		       "",
+		       "option for Comet only",
+		       "true");
+  set_double_parameter("fragment_bin_offset", 0.4, 0, BILLION,
+		       "",
+		       "option for Comet only",
+		       "true");
+  set_int_parameter("theoretical_fragment_ions", 1, 0, 1,
+		    "",
+		    "option for Comet only",
+		    "true");
+  
+  set_int_parameter("use_A_ions",
+		    0, 0, 1, 
+		    "",
+		    "option for Comet only",
+		    "true"
+		    );
+
+  set_int_parameter("use_B_ions",
+		    1, 0, 1, 
+		    "",
+		    "option for Comet only",
+		    "true"
+		    );
+
+  set_int_parameter("use_C_ions",
+		    0,0, 1, 
+		    "",
+		    "option for Comet only",
+		    "true"
   );
-  set_boolean_parameter("use-nl-ions",
-    true, 
-    "",
-    "option for Comet only",
-    "ture"
+
+  set_int_parameter("use_X_ions",
+		    0, 0, 1, 
+		    "",
+		    "option for Comet only",
+		    "true"
   );
-  set_boolean_parameter("print-expect-score",
-    true, 
-    "",
-    "option for Comet.",
-    "false"
+
+  set_int_parameter("use_Y_ions",
+			1, 0, 1,
+			"",
+			"option for Comet only",
+			"true"
   );
-  set_int_parameter("sample-enzyme",
+
+  set_int_parameter("use_Z_ions",
+		    0, 0, 1, 
+		    "",
+		    "option for Comet only",
+		    "true"
+  );
+
+  set_int_parameter("use_NL_ions",
+		    1, 0, 1,
+		    "",
+		    "option for Comet only",
+		    "true"
+  );
+
+  set_int_parameter("use_sparse_matrix",
+		    0, 0, 1,
+		    "",
+		    "option for Comet only",
+		    "true"
+		    );
+  /*
+  set_int_parameter("output_sqtstream",
+		    0, 0, 1,
+		    "",
+		    "option for Comet only",
+		    "true");
+  */
+  set_int_parameter("output_sqtfile",
+		    0, 0, 1,
+		    "",
+		    "option for Comet only",
+		    "true");
+
+  set_int_parameter("output_pepxmlfile",
+		    1, 0, 1,
+		    "",
+		    "option for Comet only",
+		    "true");
+
+  set_int_parameter("output_outfiles",
+		    0, 0, 1,
+		    "",
+		    "option for Comet only",
+		    "true");
+
+  set_int_parameter("print_expect_score",
+		    1, 0, 1,
+		    "",
+		    "option for Comet.",
+		    "false"
+  );
+
+  set_int_parameter("num_output_lines",
+		    5, 1, BILLION,
+		    "",
+		    "option for Comet.",
+		    "false"
+  );
+
+  set_int_parameter("show_fragment_ions",
+		    0, 0, 1,
+		    "",
+		    "option for Comet.",
+		    "false"
+  );
+
+  set_int_parameter("sample_enzyme_number",
     1,0,10, 
     "",
     "option for Comet. ",
     "false"
   );
-  set_int_parameter("ms-level",
+
+  set_string_parameter("scan_range", "0 0",
+		       "",
+		       "option for Comet",
+		       "false"
+		       );
+  
+
+  set_string_parameter("precursor_charge", "0 0",
+		       "",
+		       "option for Comet.",
+		       "false"
+		       );
+  
+  set_int_parameter("ms_level",
     2,2,3, 
     "",
     "option for Comet. ",
     "false"
   );
 
-  set_string_parameter("activation-method",
+  set_string_parameter("activation_method",
     "ALL" ,
     "<string>= ALL|CID|ECD|ETD|PQD|HCD|IRMPD. Default=All",
     "option for Comet. ",
     "false"
   );
-  set_int_parameter("max-precursor-charge",
-    6,6,9, 
-    "",
-    "option for Comet. ",
-    "false"
-  );
-  set_double_parameter("minimum-intensity",
+
+
+  set_string_parameter("digest_mass_range", "600.0 5000.0",
+		       "",
+		       "option for Comet.",
+		       "false"
+		       );
+  set_int_parameter("num_results", 50,0,BILLION,
+		    "",
+		    "option for Comet.",
+		    "false");
+
+  set_int_parameter("skip_researching", 1, 0, 1,
+		    "",
+		    "option for Comet",
+		    "false");
+
+  set_int_parameter("max_fragment_charge", 3, 1, BILLION,
+		    "",
+		    "option for Comet",
+		    "false");
+  set_int_parameter("max_precursor_charge", 6, 1, BILLION,
+		    "",
+		    "option for Comet",
+		    "false");
+  set_int_parameter("nucleotide_reading_frame", 0, 0, 9,
+		    "",
+		    "option for Comet",
+		    "false");
+
+  set_int_parameter("clip_nterm_methionine", 0, 0, 1,
+		    "",
+		    "option for Comet",
+		    "false");
+
+  set_int_parameter("spectrum_batch_size", 0, 0, BILLION,
+		    "",
+		    "option for Comet",
+		    "false");
+
+  set_int_parameter("minimum_peaks", 10, 0, BILLION,
+		    "",
+		    "option for Comet",
+		    "false");
+
+  set_double_parameter("minimum_intensity",
     0,0,BILLION,
     "",
     "option for comet. ",
     "false"
   );
-  set_int_parameter("remove-precursor-peak",
+
+  set_int_parameter("remove_precursor_peak",
     0,0,2, 
     "",
     "option for Comet. ",
     "false"
   );
-  set_double_parameter("remove-precursor-tolerance",
+
+  set_double_parameter("remove_precursor_tolerance",
     1.5,-BILLION,BILLION, 
     "",
     "option for Comet. ",
     "false"
   );
-  set_int_parameter("start-scan", 
-    0,0,BILLION, 
-    "",
-    "option for comet",
-    "true"
-  );
-  set_int_parameter("end-scan",
-    0,0,BILLION, 
-    "", 
-    "option for comet",
-    "true"
-  );
+
+  set_string_parameter("clear_mz_range", "0.0 0.0",
+		       "",
+		       "option for Comet",
+		       "false"
+		       );
+
+  set_string_parameter("variable_mod1", "15.9949 M 0 3",
+		       "",
+		       "option for Comet",
+		       "false"
+		       );
+  
+  set_string_parameter("variable_mod2", "0.0 X 0 3",
+		       "",
+		       "option for Comet",
+		       "false"
+		       );
+  
+  set_string_parameter("variable_mod3", "0.0 X 0 3",
+		       "",
+		       "option for Comet",
+		       "false"
+		       );
+  
+  set_string_parameter("variable_mod4", "0.0 X 0 3",
+		       "",
+		       "option for Comet",
+		       "false"
+		       );
+  
+  set_string_parameter("variable_mod5", "0.0 X 0 3",
+		       "",
+		       "option for Comet",
+		       "false"
+		       );
+  
+  set_string_parameter("variable_mod6", "0.0 X 0 3",
+		       "",
+		       "option for Comet",
+		       "false"
+		       );
+  
+  set_int_parameter("max_variable_mods_in_peptide", 5, 0, BILLION,
+		    "",
+		    "option for Comet",
+		    "false"
+		    );
+
+  set_double_parameter("variable_C_terminus", 0, 0, BILLION,
+		       "",
+		       "option for Comet",
+		       "false"
+		       );
+
+  set_double_parameter("variable_N_terminus", 0, 0, BILLION,
+		       "",
+		       "option for Comet",
+		       "false");
+
+  set_int_parameter("variable_C_terminus_distance", -1, -1, BILLION,
+		    "",
+		    "option for Comet",
+		    "false");
+
+  set_int_parameter("variable_N_terminus_distance", -1, -1, BILLION,
+		    "",
+		    "option for Comet",
+		    "false");
+
+  set_double_parameter("add_Cterm_peptide", 0, 0, BILLION,
+		       "",
+		       "option for Comet",
+		       "false");
+
+  set_double_parameter("add_Nterm_peptide", 0, 0, BILLION,
+		       "",
+		       "option for Comet",
+		       "false");
+  
+  set_double_parameter("add_Cterm_protein", 0, 0, BILLION,
+		       "",
+		       "option for Comet",
+		       "false");
+
+  set_double_parameter("add_Nterm_protein", 0, 0, BILLION,
+		       "",
+		       "option for Comet",
+		       "false");
+
+  set_double_parameter("add_G_glycine", 0, 0, BILLION,
+		       "",
+		       "option for Comet",
+		       "false");
+
+  set_double_parameter("add_A_alanine", 0, 0, BILLION,
+		       "",
+		       "option for Comet",
+		       "false");
+
+  set_double_parameter("add_S_serine", 0, 0, BILLION,
+		       "",
+		       "option for Comet",
+		       "false");
+
+  set_double_parameter("add_P_proline", 0, 0, BILLION,
+		       "",
+		       "option for Comet",
+		       "false");
+  
+  set_double_parameter("add_V_valine", 0, 0, BILLION,
+		       "",
+		       "option for Comet",
+		       "false");
+
+  set_double_parameter("add_T_threonine", 0, 0, BILLION,
+		       "",
+		       "option for Comet",
+		       "false");
+
+  set_double_parameter("add_C_cysteine", 57.021464, 0, BILLION,
+		       "",
+		       "option for Comet",
+		       "false");
+
+  set_double_parameter("add_L_leucine", 0, 0, BILLION,
+		       "",
+		       "option for Comet",
+		       "false");
+
+  set_double_parameter("add_I_isoleucine", 0, 0, BILLION,
+		       "",
+		       "option for Comet",
+		       "false");
+
+  set_double_parameter("add_N_asparagine", 0, 0, BILLION,
+		       "",
+		       "option for Comet",
+		       "false");
+
+  set_double_parameter("add_D_aspartic_acid", 0, 0, BILLION,
+		       "",
+		       "option for Comet",
+		       "false");
+
+  set_double_parameter("add_Q_glutamine", 0, 0, BILLION,
+		       "",
+		       "option for Comet",
+		       "false");
+
+  set_double_parameter("add_K_lysine", 0, 0, BILLION,
+		       "",
+		       "option for Comet",
+		       "false");
+
+  set_double_parameter("add_E_glutamic_acid", 0, 0, BILLION,
+		       "",
+		       "option for Comet",
+		       "false");
+
+  set_double_parameter("add_M_methionine", 0, 0, BILLION,
+		       "",
+		       "option for Comet",
+		       "false");
+
+  set_double_parameter("add_O_ornithine", 0, 0, BILLION,
+		       "",
+		       "option for Comet",
+		       "false");
+
+  set_double_parameter("add_H_histidine", 0, 0, BILLION,
+		       "",
+		       "option for Comet",
+		       "false");
+
+  set_double_parameter("add_F_phenylalanine", 0, 0, BILLION,
+		       "",
+		       "option for Comet",
+		       "false");
+
+  set_double_parameter("add_R_arginine", 0, 0, BILLION,
+		       "",
+		       "option for Comet",
+		       "false");
+
+  set_double_parameter("add_Y_tyrosine", 0, 0, BILLION,
+		       "",
+		       "option for Comet",
+		       "false");
+
+  set_double_parameter("add_W_tryptophan", 0, 0, BILLION,
+		       "",
+		       "option for Comet",
+		       "false");
+
+  set_double_parameter("add_B_user_amino_acid", 0, 0, BILLION,
+		       "",
+		       "option for Comet",
+		       "false");
+
+  set_double_parameter("add_J_user_amino_acid", 0, 0, BILLION,
+		       "",
+		       "option for Comet",
+		       "false");
+
+  set_double_parameter("add_U_user_amino_acid", 0, 0, BILLION,
+		       "",
+		       "option for Comet",
+		       "false");
+
+  set_double_parameter("add_X_user_amino_acid", 0, 0, BILLION,
+		       "",
+		       "option for Comet",
+		       "false");
+
+  set_double_parameter("add_Z_user_amino_acid", 0, 0, BILLION,
+		       "",
+		       "option for Comet",
+		       "false");
+
+
+
   // **** q-ranker-barista arguments ****
   set_string_parameter("database", NULL,
      "The program requires the FASTA format protein database files against "
@@ -2659,6 +3032,8 @@ void print_parameters_xml(FILE* output){
 }
 
 
+
+
 /**
  * \brief Creates a file containing all parameters and their current
  * values in the parameter file format. Created in the output directory
@@ -2704,6 +3079,8 @@ void print_parameter_file(char** filename){
   fclose(param_file);
   free(output_dir);
 }
+
+
 
 /**
  * free heap allocated parameters

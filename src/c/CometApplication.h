@@ -52,9 +52,7 @@ class CometApplication: public CruxApplication {
   /**
    * \write parameters 
    */
-  void writeParams(std::ofstream &fout, 
-    std::string protein_database
-  );
+  void writeParams(std::ofstream &fout);
   
 };
 
