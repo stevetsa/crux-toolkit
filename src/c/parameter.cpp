@@ -1006,7 +1006,7 @@ void initialize_parameters(void){
 
   set_int_parameter(
     "doc",
-    -1,0,15,
+    -1,-1,15,
     "Include description of correct features.",
     "Avilable for crux percolator",
     "true"
@@ -1091,47 +1091,48 @@ void initialize_parameters(void){
 		       "Comet only", "true");
 
   set_int_parameter("decoy_search", 0, 0, 2,
-		    "",
+		    "0=no (default), 1=concatenated search, 2=separate search",
 		    "option for Comet only", "true");
 
   set_int_parameter("num_threads",0,0,32, 
-    "",
+    "0=poll CPU to set num threads; else specify num threads directly (max 32)",
     "option for Comet only",
     "true"
   );
 
   set_double_parameter("peptide_mass_tolerance", 3.0, 0, BILLION,
-		       "", "option for Comet only","true");
+		       "", 
+		       "option for Comet only","true");
 
   set_int_parameter("peptide_mass_units", 0,0,2,
-		    "",
+		    "0=amu, 1=mmu, 2=ppm",
 		    "option for Comet only", "true");
 
   set_int_parameter("mass_type_parent", 1,0,1,
-		    "","option for Comet only", "true");
+		    "0=average masses, 1=monoisotopic masses","option for Comet only", "true");
   
   set_int_parameter("mass_type_fragment", 1,0,1,
-		    "","option for Comet only", "true");
+		    "0=average masses, 1=monoisotopic masses","option for Comet only", "true");
   
   set_int_parameter("precursor_tolerance_type", 0, 0, 1,
-		    "","option for Comet only", "true");
+		    "0=MH+ (default), 1=precursor m/z","option for Comet only", "true");
 
   set_int_parameter("isotope_error",0,0,2, 
-    "",
+    "0=off, 1=on -1/0/1/2/3 (standard C13 error), 2= -8/-4/0/4/8 (for +4/+8 labeling)",
     "option for Comet only",
     "true"
   );
 
   set_int_parameter("search_enzyme_number", 1, 1, BILLION,
-		    "",
+		    "choose from list at end of this params file",
 		    "option for Comet only",
 		    "true");
   set_int_parameter("num_enzyme_termini", 2,1,2,
-		    "",
+		    "valid values are 1 (semi-digested), 2 (fully digested, default), 8 N-term, 9 C-term",
 		    "option for Comet only",
 		    "true");
-  set_int_parameter("allowed_missed_cleavage", 2, 0, BILLION,
-		    "",
+  set_int_parameter("allowed_missed_cleavage", 2, 0, 5,
+		    "maximum value is 5; for enzyme search",
 		    "option for Comet only",
 		    "true");
   set_double_parameter("fragment_bin_tol", 1.0005, 0, BILLION,
@@ -3049,7 +3050,10 @@ void print_parameter_file(char** filename){
                                          output_dir, 
                                          overwrite);
 
-  // TODO (BF Nov-12-08): could add header to file
+  // Add header to file for comet parsing
+  fprintf(param_file, "# comet_version 2013.01 rev. 0"
+	  "\n# Comet MS/MS search engine parameters file."
+	  "\n# Everything following the \'#\' symbol is treated as a comment.\n");
 
   // iterate over all parameters and print to file
   HASH_ITERATOR_T* iterator = new_hash_iterator(parameters);
@@ -3076,6 +3080,90 @@ void print_parameter_file(char** filename){
   print_mods_parameter_file(param_file, "cmod", get_c_mod_list);
   
   free_hash_iterator(iterator);
+
+  // now print out Comet enzyme information
+      
+  fprintf(param_file, "#\n");
+  fprintf(param_file, "# COMET_ENZYME_INFO _must_ be at the end of this parameters file\n");
+  fprintf(param_file, "#\n");
+  fprintf(param_file, "[COMET_ENZYME_INFO]\n");
+  
+  fprintf(param_file, "0.  No_enzyme\t\t\t\t");
+  fprintf(param_file, "0");
+  fprintf(param_file, "       -           -\n");
+  
+  fprintf(param_file, "1.  Trypsin\t\t\t\t");
+  fprintf(param_file, "1");
+  fprintf(param_file, "      KR           P\n");
+  
+  fprintf(param_file, "2.  Trypsin/P\t\t\t\t");
+  fprintf(param_file, "1");
+  fprintf(param_file, "      KR           -\n");
+  
+  fprintf(param_file, "3.  Lys_C\t\t\t\t");
+  fprintf(param_file, "1");
+  fprintf(param_file, "      K            P\n");
+  
+  fprintf(param_file, "4.  Lys_N\t\t\t\t");
+  fprintf(param_file, "0");
+  fprintf(param_file, "      K            -\n");
+
+  fprintf(param_file, "5.  Arg_C\t\t\t\t");
+  fprintf(param_file, "1");
+  fprintf(param_file, "      R            P\n");
+  
+  fprintf(param_file, "6.  Asp_N\t\t\t\t");
+  fprintf(param_file, "0");
+  fprintf(param_file, "      D            -\n");
+  
+  fprintf(param_file, "7.  CNBr\t\t\t\t");
+  fprintf(param_file, "1");
+  fprintf(param_file, "      M            -\n");
+
+  fprintf(param_file, "8.  Glu_C\t\t\t\t");
+  fprintf(param_file, "1");
+  fprintf(param_file, "      DE           P\n");
+  
+  fprintf(param_file, "9.  PepsinA\t\t\t\t");
+  fprintf(param_file, "1");
+  fprintf(param_file, "      FL           P\n");
+
+  fprintf(param_file, "10. Chymotrypsin\t\t\t");
+  fprintf(param_file, "1");
+  fprintf(param_file, "      FWYL         P\n");
+   
+  fprintf(param_file, "11. Elastase \t\t\t\t");
+  fprintf(param_file, "1");
+  fprintf(param_file, "      ALIV         P\n");
+
+  fprintf(param_file, "12. Clostripai\t\t\t\t");
+  fprintf(param_file, "1");
+  fprintf(param_file, "      R            -\n");
+
+  fprintf(param_file, "13. Iodosobenzoate\t\t\t");
+  fprintf(param_file, "1");
+  fprintf(param_file, "      W            -\n");
+
+  fprintf(param_file, "14. Proline_Endopeptidase\t\t");
+  fprintf(param_file, "1");
+  fprintf(param_file, "      P            -\n");
+
+  fprintf(param_file, "15. Staph_Protease\t\t\t");
+  fprintf(param_file, "1");
+  fprintf(param_file, "      E            -\n");
+
+  fprintf(param_file, "16. Modified_Chymotrypsin\t\t");
+  fprintf(param_file, "1");
+  fprintf(param_file, "      FWYL         P\n");
+
+  
+  fprintf(param_file, "17. Elastase_Trypisn_Chymotrypsin\t");
+  fprintf(param_file, "1");
+  fprintf(param_file, "      ALIVKRWFY    P\n");
+
+
+
+
   fclose(param_file);
   free(output_dir);
 }
@@ -3153,7 +3241,7 @@ void parse_parameter_file(
         line[idx] = '\0';
     }
     /* empty lines and those beginning with '#' are ignored */
-    if(line[0] != '#' && line[0] != '\0'){
+    if(line[0] != '#' && line[0] != '\0' && line[0] != '[' && !isdigit(line[0])){
 
       /* find the '=' in the line.  Exit with error if the line 
          has no equals sign. */

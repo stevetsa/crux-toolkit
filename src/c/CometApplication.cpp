@@ -58,7 +58,7 @@ int CometApplication::main(int argc, char** argv) {
   
   //pritn out comet params
   string param_file=make_file_path("comet.params");
- 
+  string param_file2=make_file_path("comet.params.txt");
 
   //Alterate ouput base name
   string basename =make_file_path(getName()); 
@@ -75,7 +75,7 @@ int CometApplication::main(int argc, char** argv) {
   //push param files 
   
   ostringstream param_oss;
-  param_oss << "-P" << param_file;
+  param_oss << "-P" << param_file2;
   cmt_args_vec.push_back(param_oss.str());
 
   ostringstream bsname_oss; 
@@ -93,9 +93,14 @@ int CometApplication::main(int argc, char** argv) {
     cmt_argv[idx]=(char*)cmt_args_vec[idx].c_str(); 
     
   }
- 
-  return comet_main(cmt_argc, cmt_argv);
- 
+
+  /* Call comet_main */
+  int retVal = -1;
+  retVal = comet_main(cmt_argc, cmt_argv);
+
+  delete []cmt_argv;
+
+  return retVal;
 }
 
 
@@ -167,6 +172,7 @@ void CometApplication:: writeParams(ofstream &fout){
   fout << "variable_C_terminus="<<get_double_parameter("variable_C_terminus")<<endl;
   fout << "variable_N_terminus="<<get_double_parameter("variable_N_terminus")<<endl;
   fout << "variable_C_terminus_distance="<<get_int_parameter("variable_C_terminus_distance")<<endl;
+  fout << "variable_N_terminus_distance="<<get_int_parameter("variable_N_terminus_distance")<<endl;
   fout << "add_Cterm_peptide="<<get_double_parameter("add_Cterm_peptide")<<endl;
   fout << "add_Nterm_peptide="<<get_double_parameter("add_Nterm_peptide")<<endl;
   fout << "add_Cterm_protein="<<get_double_parameter("add_Cterm_protein")<<endl;
@@ -249,7 +255,7 @@ void CometApplication:: writeParams(ofstream &fout){
   fout << "10. Chymotrypsin"<<"\t\t\t";
   fout << 1;
   fout << "      FWYL         P" << endl;
-  /*  
+   
   fout << "11. Elastase \t\t\t\t";
   fout << 1;
   fout << "      ALIV         P" << endl;
@@ -278,14 +284,6 @@ void CometApplication:: writeParams(ofstream &fout){
   fout << 1;
   fout << "      ALIVKRWFY    P" << endl;
 
-  fout << "18. Custom_Enzyme"<<"\t\t\t";
-  fout << 1;
-  fout << "      x            x" << endl;
-
-  fout << "19. Invalid_Enzyme"<<"\t\t\t";
-  fout << 1;
-  fout << endl;
-  */
 }
 /**
  * \returns the command name for CometApplication
