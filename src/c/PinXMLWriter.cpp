@@ -638,12 +638,20 @@ bool PinXMLWriter::setProcessInfo(
   const char* target_file, 
   const char* decoy_file
 ){
-  if (decoy_file ==NULL || target_file==NULL)
-   return false; 
-  decoy_file_path_=absolutPath(decoy_file);
-  target_file_path_=absolutPath(target_file);
-  //output_file_path_=absolutPath(output_file);
-  return true; 
+
+  if (decoy_file == NULL || strlen(decoy_file) == 0) {
+    decoy_file_path_ = "";
+  } else {
+    decoy_file_path_ = absolutPath(decoy_file);
+  }
+
+  if (target_file == NULL || strlen(target_file) == 0) {
+    return false;
+  } else {
+    target_file_path_ = absolutPath(target_file);
+    return true;
+  }
+
 }
 
 

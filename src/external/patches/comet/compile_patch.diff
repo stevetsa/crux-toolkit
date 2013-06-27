@@ -1,213 +1,3 @@
-Index: Common.h
-===================================================================
---- Common.h	(revision 110)
-+++ Common.h	(working copy)
-@@ -50,4 +50,10 @@
- // now between 0.0 and 1.0 and scales to the binWidth.
- #define BIN(dMass) (int)(dMass*g_StaticParams.dInverseBinWidth + g_StaticParams.dOneMinusBinOffset)
- 
-+#ifdef CRUX
-+int comet_main(int argc, char*argv[]);
-+#endif
-+using namespace MSToolkit;
-+
-+
- #endif // _COMMON_H_
-Index: Makefile
-===================================================================
---- Makefile	(revision 110)
-+++ Makefile	(working copy)
-@@ -1,12 +1,16 @@
- CXX = g++
- MSTOOLKIT = MSToolkit
--CXXFLAGS = -O3 -static -Wall -Wno-char-subscripts -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -I$(MSTOOLKIT)/include
-+CXXFLAGS = -O3 -static -Wall -Wno-char-subscripts -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -I$(MSTOOLKIT)/include -DCRUX 
- EXECNAME = comet.exe
- OBJS = Comet.o Threading.o CometSearch.o CometPreprocess.o CometPostAnalysis.o CometMassSpecUtils.o CometWriteOut.o CometWriteSqt.o CometWritePepXML.o CometWriteTxt.o
- DEPS = Common.h OSSpecificThreading.h CometData.h CometSearch.h CometPreprocess.h ThreadPool.h CometPostAnalysis.h CometMassSpecUtils.h
- LIBS = -lm -lmstoolkitlite -lpthread
- 
-+all: comet.exe libComet.a
- 
-+libComet.a: $(OBJS)
-+	ar rcs libComet.a $(OBJS)
-+
- comet.exe: $(OBJS)
- 	cd MSToolkit ; make
- 	${CXX} $(CXXFLAGS) $(OBJS) -L$(MSTOOLKIT) $(LIBS) -o ${EXECNAME}
-Index: MSToolkit/include/Spectrum.h
-===================================================================
---- MSToolkit/include/Spectrum.h	(revision 110)
-+++ MSToolkit/include/Spectrum.h	(working copy)
-@@ -9,6 +9,7 @@
- 
- using namespace std;
- 
-+namespace MSToolkit {
- class Spectrum {
-  public:
-   //Constructors & Destructors
-@@ -148,6 +149,7 @@
- 
- };
- 
-+}
- 
- #endif
- 
-Index: MSToolkit/include/MSObject.h
-===================================================================
---- MSToolkit/include/MSObject.h	(revision 110)
-+++ MSToolkit/include/MSObject.h	(working copy)
-@@ -8,6 +8,7 @@
- 
- using namespace std;
- 
-+namespace MSToolkit {
- class MSObject {
-  public:
-   //Constructors & Destructors
-@@ -40,5 +41,6 @@
-   
- };
- 
-+}
- #endif
- 
-Index: MSToolkit/include/xmltok.h
-===================================================================
---- MSToolkit/include/xmltok.h	(revision 110)
-+++ MSToolkit/include/xmltok.h	(working copy)
-@@ -5,6 +5,8 @@
- #ifndef XmlTok_INCLUDED
- #define XmlTok_INCLUDED 1
- 
-+#include "expat.h"
-+
- #ifdef __cplusplus
- extern "C" {
- #endif
-Index: MSToolkit/include/H5Object.h
-===================================================================
---- MSToolkit/include/H5Object.h	(revision 110)
-+++ MSToolkit/include/H5Object.h	(working copy)
-@@ -27,7 +27,7 @@
- namespace H5 {
- #endif
- 
--#ifndef DOXYGEN_SHOULD_SKIP_THIS
-+  //#ifndef DOXYGEN_SHOULD_SKIP_THIS
- class H5_DLLCPP H5Object;  // forward declaration for UserData4Aiterate
- 
- // Define the operator function pointer for H5Aiterate().
-@@ -41,7 +41,7 @@
- 	void* opData;
- 	H5Object* object;
- };
--#endif // DOXYGEN_SHOULD_SKIP_THIS
-+  //#endif // DOXYGEN_SHOULD_SKIP_THIS
- 
- // The above part is being moved into Iterator, but not completed
- 
-@@ -99,7 +99,7 @@
- 	virtual ~H5Object();
- 
-    protected:
--#ifndef DOXYGEN_SHOULD_SKIP_THIS
-+  //#ifndef DOXYGEN_SHOULD_SKIP_THIS
- 	// Default constructor
- 	H5Object();
- 
-@@ -123,7 +123,7 @@
- 	// Retrieves a dataspace with the region pointed to selected.
- 	hid_t p_get_region(void *ref, H5R_type_t ref_type) const;
- 
--#endif // DOXYGEN_SHOULD_SKIP_THIS
-+  //#endif // DOXYGEN_SHOULD_SKIP_THIS
- 
- }; /* end class H5Object */
- 
-Index: MSToolkit/include/MSToolkitTypes.h
-===================================================================
---- MSToolkit/include/MSToolkitTypes.h	(revision 110)
-+++ MSToolkit/include/MSToolkitTypes.h	(working copy)
-@@ -2,6 +2,7 @@
- #define _MSTOOLKITTYPES_H
- 
- #include <stddef.h>
-+namespace MSToolkit {
- 
- enum MSSpectrumType {
-   MS1,
-@@ -114,6 +115,8 @@
-   float pArea;    //precursor retention time
- };
- 
-+}
-+
- #endif
- 
- 
-Index: MSToolkit/include/MSReader.h
-===================================================================
---- MSToolkit/include/MSReader.h	(revision 110)
-+++ MSToolkit/include/MSReader.h	(working copy)
-@@ -53,6 +53,7 @@
- 
- using namespace std;
- 
-+namespace MSToolkit {
- class MSReader {
-  public:
-   //Constructors & Destructors
-@@ -173,5 +174,6 @@
- 
- };
- 
-+}
- #endif
- 
-Index: MSToolkit/include/H5DataSet.h
-===================================================================
---- MSToolkit/include/H5DataSet.h	(revision 110)
-+++ MSToolkit/include/H5DataSet.h	(working copy)
-@@ -110,7 +110,7 @@
-    private:
- 	hid_t id;       // HDF5 dataset id
- 
--#ifndef DOXYGEN_SHOULD_SKIP_THIS
-+  //#ifndef DOXYGEN_SHOULD_SKIP_THIS
-         // This function contains the common code that is used by
-         // getTypeClass and various API functions getXxxType
-         // defined in AbstractDs for generic datatype and specific
-@@ -124,7 +124,7 @@
-    protected:
-         // Sets the dataset id.
-         virtual void p_setId(const hid_t new_id);
--#endif // DOXYGEN_SHOULD_SKIP_THIS
-+  //#endif // DOXYGEN_SHOULD_SKIP_THIS
- };
- #ifndef H5_NO_NAMESPACE
- }
-Index: MSToolkit/include/H5CommonFG.h
-===================================================================
---- MSToolkit/include/H5CommonFG.h	(revision 110)
-+++ MSToolkit/include/H5CommonFG.h	(working copy)
-@@ -147,12 +147,12 @@
- 	VarLenType openVarLenType(const char* name) const;
- 	VarLenType openVarLenType(const H5std_string& name) const;
- 
--#ifndef DOXYGEN_SHOULD_SKIP_THIS
-+  //#ifndef DOXYGEN_SHOULD_SKIP_THIS
- 	/// For subclasses, H5File and Group, to return the correct
- 	/// object id, i.e. file or group id.
- 	virtual hid_t getLocId() const = 0;
- 
--#endif // DOXYGEN_SHOULD_SKIP_THIS
-+  //#endif // DOXYGEN_SHOULD_SKIP_THIS
- 
- 	/// For subclasses, H5File and Group, to throw appropriate exception.
- 	virtual void throwException(const H5std_string& func_name, const H5std_string& msg) const = 0;
 Index: MSToolkit/src/expat-2.0.1/xmlparse.c
 ===================================================================
 --- MSToolkit/src/expat-2.0.1/xmlparse.c	(revision 110)
@@ -274,6 +64,179 @@ Index: MSToolkit/src/MSToolkit/MSReader.cpp
  }
  
 +}
+Index: MSToolkit/include/MSReader.h
+===================================================================
+--- MSToolkit/include/MSReader.h	(revision 110)
++++ MSToolkit/include/MSReader.h	(working copy)
+@@ -53,6 +53,7 @@
+ 
+ using namespace std;
+ 
++namespace MSToolkit {
+ class MSReader {
+  public:
+   //Constructors & Destructors
+@@ -173,5 +174,6 @@
+ 
+ };
+ 
++}
+ #endif
+ 
+Index: MSToolkit/include/MSToolkitTypes.h
+===================================================================
+--- MSToolkit/include/MSToolkitTypes.h	(revision 110)
++++ MSToolkit/include/MSToolkitTypes.h	(working copy)
+@@ -2,6 +2,7 @@
+ #define _MSTOOLKITTYPES_H
+ 
+ #include <stddef.h>
++namespace MSToolkit {
+ 
+ enum MSSpectrumType {
+   MS1,
+@@ -114,6 +115,8 @@
+   float pArea;    //precursor retention time
+ };
+ 
++}
++
+ #endif
+ 
+ 
+Index: MSToolkit/include/H5CommonFG.h
+===================================================================
+--- MSToolkit/include/H5CommonFG.h	(revision 110)
++++ MSToolkit/include/H5CommonFG.h	(working copy)
+@@ -147,12 +147,12 @@
+ 	VarLenType openVarLenType(const char* name) const;
+ 	VarLenType openVarLenType(const H5std_string& name) const;
+ 
+-#ifndef DOXYGEN_SHOULD_SKIP_THIS
++  //#ifndef DOXYGEN_SHOULD_SKIP_THIS
+ 	/// For subclasses, H5File and Group, to return the correct
+ 	/// object id, i.e. file or group id.
+ 	virtual hid_t getLocId() const = 0;
+ 
+-#endif // DOXYGEN_SHOULD_SKIP_THIS
++  //#endif // DOXYGEN_SHOULD_SKIP_THIS
+ 
+ 	/// For subclasses, H5File and Group, to throw appropriate exception.
+ 	virtual void throwException(const H5std_string& func_name, const H5std_string& msg) const = 0;
+Index: MSToolkit/include/Spectrum.h
+===================================================================
+--- MSToolkit/include/Spectrum.h	(revision 110)
++++ MSToolkit/include/Spectrum.h	(working copy)
+@@ -9,6 +9,7 @@
+ 
+ using namespace std;
+ 
++namespace MSToolkit {
+ class Spectrum {
+  public:
+   //Constructors & Destructors
+@@ -148,6 +149,7 @@
+ 
+ };
+ 
++}
+ 
+ #endif
+ 
+Index: MSToolkit/include/xmltok.h
+===================================================================
+--- MSToolkit/include/xmltok.h	(revision 110)
++++ MSToolkit/include/xmltok.h	(working copy)
+@@ -5,6 +5,8 @@
+ #ifndef XmlTok_INCLUDED
+ #define XmlTok_INCLUDED 1
+ 
++#include "expat.h"
++
+ #ifdef __cplusplus
+ extern "C" {
+ #endif
+Index: MSToolkit/include/MSObject.h
+===================================================================
+--- MSToolkit/include/MSObject.h	(revision 110)
++++ MSToolkit/include/MSObject.h	(working copy)
+@@ -8,6 +8,7 @@
+ 
+ using namespace std;
+ 
++namespace MSToolkit {
+ class MSObject {
+  public:
+   //Constructors & Destructors
+@@ -40,5 +41,6 @@
+   
+ };
+ 
++}
+ #endif
+ 
+Index: MSToolkit/include/H5DataSet.h
+===================================================================
+--- MSToolkit/include/H5DataSet.h	(revision 110)
++++ MSToolkit/include/H5DataSet.h	(working copy)
+@@ -110,7 +110,7 @@
+    private:
+ 	hid_t id;       // HDF5 dataset id
+ 
+-#ifndef DOXYGEN_SHOULD_SKIP_THIS
++  //#ifndef DOXYGEN_SHOULD_SKIP_THIS
+         // This function contains the common code that is used by
+         // getTypeClass and various API functions getXxxType
+         // defined in AbstractDs for generic datatype and specific
+@@ -124,7 +124,7 @@
+    protected:
+         // Sets the dataset id.
+         virtual void p_setId(const hid_t new_id);
+-#endif // DOXYGEN_SHOULD_SKIP_THIS
++  //#endif // DOXYGEN_SHOULD_SKIP_THIS
+ };
+ #ifndef H5_NO_NAMESPACE
+ }
+Index: MSToolkit/include/H5Object.h
+===================================================================
+--- MSToolkit/include/H5Object.h	(revision 110)
++++ MSToolkit/include/H5Object.h	(working copy)
+@@ -27,7 +27,7 @@
+ namespace H5 {
+ #endif
+ 
+-#ifndef DOXYGEN_SHOULD_SKIP_THIS
++  //#ifndef DOXYGEN_SHOULD_SKIP_THIS
+ class H5_DLLCPP H5Object;  // forward declaration for UserData4Aiterate
+ 
+ // Define the operator function pointer for H5Aiterate().
+@@ -41,7 +41,7 @@
+ 	void* opData;
+ 	H5Object* object;
+ };
+-#endif // DOXYGEN_SHOULD_SKIP_THIS
++  //#endif // DOXYGEN_SHOULD_SKIP_THIS
+ 
+ // The above part is being moved into Iterator, but not completed
+ 
+@@ -99,7 +99,7 @@
+ 	virtual ~H5Object();
+ 
+    protected:
+-#ifndef DOXYGEN_SHOULD_SKIP_THIS
++  //#ifndef DOXYGEN_SHOULD_SKIP_THIS
+ 	// Default constructor
+ 	H5Object();
+ 
+@@ -123,7 +123,7 @@
+ 	// Retrieves a dataspace with the region pointed to selected.
+ 	hid_t p_get_region(void *ref, H5R_type_t ref_type) const;
+ 
+-#endif // DOXYGEN_SHOULD_SKIP_THIS
++  //#endif // DOXYGEN_SHOULD_SKIP_THIS
+ 
+ }; /* end class H5Object */
+ 
 Index: Comet.cpp
 ===================================================================
 --- Comet.cpp	(revision 110)
@@ -291,3 +254,125 @@ Index: Comet.cpp
  {
     char szParamsFile[SIZE_FILE];
  
+@@ -148,9 +151,9 @@
+        if (g_StaticParams.options.bOutputSqtFile)
+        {
+           if (iAnalysisType == AnalysisType_EntireFile)
+-             sprintf(szOutputSQT, "%s.sqt", g_StaticParams.inputFile.szBaseName);
++             sprintf(szOutputSQT, "%s.target.sqt", g_StaticParams.inputFile.szBaseName);
+           else
+-             sprintf(szOutputSQT, "%s.%d-%d.sqt", g_StaticParams.inputFile.szBaseName, iFirstScan, iLastScan);
++             sprintf(szOutputSQT, "%s.target.%d-%d.sqt", g_StaticParams.inputFile.szBaseName, iFirstScan, iLastScan);
+ 
+           if ((fpout_sqt = fopen(szOutputSQT, "w")) == NULL)
+           {
+@@ -176,9 +179,9 @@
+        if (g_StaticParams.options.bOutputTxtFile)
+        {
+           if (iAnalysisType == AnalysisType_EntireFile)
+-             sprintf(szOutputTxt, "%s.txt", g_StaticParams.inputFile.szBaseName);
++             sprintf(szOutputTxt, "%s.target.txt", g_StaticParams.inputFile.szBaseName);
+           else
+-             sprintf(szOutputTxt, "%s.%d-%d.txt", g_StaticParams.inputFile.szBaseName, iFirstScan, iLastScan);
++             sprintf(szOutputTxt, "%s.target.%d-%d.txt", g_StaticParams.inputFile.szBaseName, iFirstScan, iLastScan);
+ 
+           if ((fpout_txt = fopen(szOutputTxt, "w")) == NULL)
+           {
+@@ -204,9 +207,9 @@
+        if (g_StaticParams.options.bOutputPepXMLFile)
+        {
+           if (iAnalysisType == AnalysisType_EntireFile)
+-             sprintf(szOutputPepXML, "%s.pep.xml", g_StaticParams.inputFile.szBaseName);
++             sprintf(szOutputPepXML, "%s.target.pep.xml", g_StaticParams.inputFile.szBaseName);
+           else
+-             sprintf(szOutputPepXML, "%s.%d-%d.pep.xml", g_StaticParams.inputFile.szBaseName, iFirstScan, iLastScan);
++             sprintf(szOutputPepXML, "%s.target.%d-%d.pep.xml", g_StaticParams.inputFile.szBaseName, iFirstScan, iLastScan);
+ 
+           if ((fpout_pepxml = fopen(szOutputPepXML, "w")) == NULL)
+           {
+@@ -698,6 +701,10 @@
+          {
+             sscanf(szParamVal, "%512s", g_StaticParams.databaseInfo.szDatabase);
+          }
++         if (!strcmp(szParamName, "decoy-prefix"))
++         {
++            sscanf(szParamVal, "%200s", g_StaticParams.szDecoyPrefix);
++         }
+          else if (!strcmp(szParamName, "nucleotide_reading_frame"))
+          {
+             sscanf(szParamVal, "%d", &(g_StaticParams.options.iWhichReadingFrame));
+@@ -1851,6 +1858,8 @@
+ num_threads = 0                        # 0=poll CPU to set num threads; else specify num threads directly (max %d)\n\
+ \n", MAX_THREADS);
+ 
++   fprintf(fp, "decoy-prefix=DECOY_            # Prefix to attach to protein ids for decoy peptides");
++
+    fprintf(fp,
+ "#\n\
+ # masses\n\
+Index: CometData.h
+===================================================================
+--- CometData.h	(revision 110)
++++ CometData.h	(working copy)
+@@ -369,6 +369,7 @@
+    char            szIonSeries[200];   // used for .out files
+    char            szDisplayLine[200]; // used for .out files
+    char            szMod[280];         // used for .out files
++   char            szDecoyPrefix[200]; // used for prefix to indicate decoys
+    int             iElapseTime;
+    DateTimeInfo    _dtInfoStart;
+    Options         options;
+Index: Makefile
+===================================================================
+--- Makefile	(revision 110)
++++ Makefile	(working copy)
+@@ -1,12 +1,16 @@
+ CXX = g++
+ MSTOOLKIT = MSToolkit
+-CXXFLAGS = -O3 -static -Wall -Wno-char-subscripts -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -I$(MSTOOLKIT)/include
++CXXFLAGS = -O3 -static -Wall -Wno-char-subscripts -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -I$(MSTOOLKIT)/include -DCRUX 
+ EXECNAME = comet.exe
+ OBJS = Comet.o Threading.o CometSearch.o CometPreprocess.o CometPostAnalysis.o CometMassSpecUtils.o CometWriteOut.o CometWriteSqt.o CometWritePepXML.o CometWriteTxt.o
+ DEPS = Common.h OSSpecificThreading.h CometData.h CometSearch.h CometPreprocess.h ThreadPool.h CometPostAnalysis.h CometMassSpecUtils.h
+ LIBS = -lm -lmstoolkitlite -lpthread
+ 
++all: comet.exe libComet.a
+ 
++libComet.a: $(OBJS)
++	ar rcs libComet.a $(OBJS)
++
+ comet.exe: $(OBJS)
+ 	cd MSToolkit ; make
+ 	${CXX} $(CXXFLAGS) $(OBJS) -L$(MSTOOLKIT) $(LIBS) -o ${EXECNAME}
+Index: CometSearch.cpp
+===================================================================
+--- CometSearch.cpp	(revision 110)
++++ CometSearch.cpp	(working copy)
+@@ -414,10 +414,10 @@
+                      if (g_StaticParams.options.iDecoySearch)
+                      {
+ #ifdef _WIN32
+-                        _snprintf(szDecoyProteinName, WIDTH_REFERENCE, "DECOY_%s", szProteinName);
++                        _snprintf(szDecoyProteinName, WIDTH_REFERENCE, "%s%s", g_StaticParams.szDecoyPrefix, szProteinName);
+                         szDecoyProteinName[WIDTH_REFERENCE-1]=0;  // _snprintf does not guarantee null termination
+ #else
+-                        snprintf(szDecoyProteinName, WIDTH_REFERENCE, "DECOY_%s", szProteinName);
++                        snprintf(szDecoyProteinName, WIDTH_REFERENCE, "%s%s", g_StaticParams.szDecoyPrefix, szProteinName);
+ #endif
+                         // Generate reverse peptide.  Keep prev and next AA in szDecoyPeptide string.
+                         // So actual reverse peptide starts at position 1 and ends at len-2 (as len-1
+Index: Common.h
+===================================================================
+--- Common.h	(revision 110)
++++ Common.h	(working copy)
+@@ -50,4 +50,10 @@
+ // now between 0.0 and 1.0 and scales to the binWidth.
+ #define BIN(dMass) (int)(dMass*g_StaticParams.dInverseBinWidth + g_StaticParams.dOneMinusBinOffset)
+ 
++#ifdef CRUX
++int comet_main(int argc, char*argv[]);
++#endif
++using namespace MSToolkit;
++
++
+ #endif // _COMMON_H_

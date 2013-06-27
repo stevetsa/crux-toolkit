@@ -850,7 +850,7 @@ void initialize_parameters(void){
     "random_",
     "Option for single SQT file mode defining the name pattern "
     "used for shuffled database. Default=random_.",
-    "Available for percolator",
+    "Available for percolator and comet",
     "true"
   );
  
