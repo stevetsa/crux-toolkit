@@ -11,7 +11,6 @@
 #include <iomanip>
 #include <string>
 
-using namespace Crux;
 using namespace std;
 
 class SQTWriter {
@@ -23,18 +22,19 @@ class SQTWriter {
   void closeFile();
 
   void writeHeader(
+    string database,
     int num_proteins,
     bool is_decoy = false
   );
 
   void writeSpectrum(
-    Spectrum* spectrum,
+    Crux::Spectrum* spectrum,
     SpectrumZState& z_state,
     int num_matches
   );
 
   void writePSM(
-    Peptide* peptide,
+    Crux::Peptide* peptide,
     FLOAT_T xcorr_score,
     int xcorr_rank,
     FLOAT_T sp_score,

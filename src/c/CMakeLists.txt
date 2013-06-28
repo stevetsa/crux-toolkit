@@ -12,6 +12,7 @@ add_subdirectory(hardklor)
 add_subdirectory(posterior-error)
 add_subdirectory(qranker-barista)
 add_subdirectory(xlink)
+add_subdirectory(tide)
 
 include_directories("${CMAKE_CURRENT_BINARY_DIR}")
 include_directories(.)
@@ -21,6 +22,7 @@ include_directories(hardklor)
 include_directories(qranker-barista)
 include_directories(posterior-error)
 include_directories(xlink)
+include_directories(tide/protoobj)
 include_directories(../..)
 include_directories(../external)
 include_directories(../external/include)
@@ -35,8 +37,6 @@ include_directories(../external/build/src/percolator-build/src/fido)
 
 
 link_directories(../external/lib)
-#link_directories(../external/MSToolkit)
-#link_directories(../external/comet)
 link_directories(../external/build/src/comet/src/comet)
 link_directories(../external/build/src/comet/src/comet/MSToolkit)
 link_directories(.)
@@ -137,6 +137,7 @@ set (
   SpectrumMatch.cpp
   PWIZSpectrumCollection.cpp
   q-value.cpp
+  ReadSpectrumRecordsApplication.cpp
   SequestSearch.cpp
   SortColumn.cpp
   Scorer.cpp
@@ -145,10 +146,14 @@ set (
   SpectrumCollection.cpp
   SpectrumCollectionFactory.cpp
   Spectrum.cpp
+  SpectrumRecordWriter.cpp
   SpectrumZState.cpp
   StatColumn.cpp
   SQTReader.cpp
   SQTWriter.cpp
+  TideIndexApplication.cpp
+  TideMatchSet.cpp
+  TideSearchApplication.cpp
   utils.cpp
 )
 
@@ -165,6 +170,7 @@ add_library(
   STATIC
   ${crux_lib_files}
 )
+add_dependencies(crux-support tide-support)
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     set_property(
@@ -299,6 +305,9 @@ else(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     barista
     bullseye
     crux-support
+    tide-support
+    protobuf
+    gflags
     Comet
     dl
     hardklor
