@@ -52,7 +52,7 @@ search tool."  Eng JK, Jahan TA, Hoopmann MR.
   with the exception of the vendor's formats.</li>
 
 <LI>
-&lt;protein input&gt; &ndash; The name of the file in fasta format
+&lt;database_name&gt; &ndash; The name of the file in fasta format
   from which to retrieve proteins and peptides.  The database can
   contain amino acid sequences or nucleic acid sequences.  If
   sequences are amino acid sequences, set the parameter
@@ -167,6 +167,11 @@ Default = crux-output.</li>
 <code>--overwrite &lt;T|F&gt;</code> &ndash;
 Replace existing files if true (T) or fail when trying to overwrite a
 file if false (F). Default =  F.</li>
+
+<li>
+<code>--decoy-prefix &lt;string&gt;</code> &ndash; Specifies the
+prefix of the protein names that indicates a decoy. Default = rand_.
+</li>
 
 <li><a href="comet-options/output_sqtfile.html">output_sqtfile</a></li>
 <li><a href="comet-options/output_pepxmlfile.html">output_pepxmlfile</a></li>

@@ -1083,11 +1083,18 @@ void initialize_parameters(void){
    */
   set_string_parameter("input spectra", NULL,
      "Tha name of file (in MS2 format) from which to parse the spectra.",
-     "Available for comet.  File will be named ",
+     "Available for comet.",
      "false");
 
   set_string_parameter("database_name", NULL,
-		       "",
+		       "A full or relative path to the sequence database, "
+                       "in FASTA format, to search. Example databases include "
+                       "RefSeq or UniProt.  Database can contain amino acid "
+                       "sequences or nucleic acid sequences. If sequences are "
+                       "amino acid sequences, set the parameter \"nucleotide_reading_frame = 0\". "
+                       "If the sequences are nucleic acid sequences, you must instruct Comet to "
+                       "translate these to amino acid sequences. Do this by setting "
+                       "nucleotide_reading_frame\" to a value between 1 and 9. ",
 		       "Comet only", "true");
 
   set_int_parameter("decoy_search", 0, 0, 2,
@@ -1101,7 +1108,11 @@ void initialize_parameters(void){
   );
 
   set_double_parameter("peptide_mass_tolerance", 3.0, 0, BILLION,
-		       "", 
+		       "Controls the mass tolerance value.  The mass tolerance "
+                       "is set at +/- the specified number i.e. an entered value "
+                       "of \"1.0\" applies a -1.0 to +1.0 tolerance. "
+                       "The units of the mass tolerance is controlled by the parameter "
+                       "\"peptide_mass_units\". ", 
 		       "option for Comet only","true");
 
   set_int_parameter("peptide_mass_units", 0,0,2,
@@ -1127,151 +1138,161 @@ void initialize_parameters(void){
 		    "choose from list at end of this params file",
 		    "option for Comet only",
 		    "true");
+
   set_int_parameter("num_enzyme_termini", 2,1,2,
-		    "valid values are 1 (semi-digested), 2 (fully digested, default), 8 N-term, 9 C-term",
+		    "valid values are 1 (semi-digested), "
+                    "2 (fully digested, default), 8 N-term, 9 C-term",
 		    "option for Comet only",
 		    "true");
+
   set_int_parameter("allowed_missed_cleavage", 2, 0, 5,
 		    "maximum value is 5; for enzyme search",
 		    "option for Comet only",
 		    "true");
+
   set_double_parameter("fragment_bin_tol", 1.0005, 0, BILLION,
-		       "",
+		       "binning to use on fragment ions",
 		       "option for Comet only",
 		       "true");
-  set_double_parameter("fragment_bin_offset", 0.4, 0, BILLION,
-		       "",
+
+  set_double_parameter("fragment_bin_offset", 0.4, 0, 1.0,
+		       "offset position to start the binning (0.0 to 1.0)",
 		       "option for Comet only",
 		       "true");
+
   set_int_parameter("theoretical_fragment_ions", 1, 0, 1,
-		    "",
+		    "0=default peak shape, 1=M peak only",
 		    "option for Comet only",
 		    "true");
   
   set_int_parameter("use_A_ions",
 		    0, 0, 1, 
-		    "",
+		    "Controls whether or not A-ions are considered in the "
+                    "search (0 - no, 1 - yes)",
 		    "option for Comet only",
 		    "true"
 		    );
 
   set_int_parameter("use_B_ions",
 		    1, 0, 1, 
-		    "",
+		    "Controls whether or not B-ions are considered in the "
+                    "search (0 - no, 1 - yes)",
 		    "option for Comet only",
 		    "true"
 		    );
 
   set_int_parameter("use_C_ions",
 		    0,0, 1, 
-		    "",
+		    "Controls whether or not C-ions are considered in the "
+                    "search (0 - no, 1 - yes)",
 		    "option for Comet only",
 		    "true"
   );
 
   set_int_parameter("use_X_ions",
 		    0, 0, 1, 
-		    "",
+		    "Controls whether or not X-ions are considered in the "
+                    "search (0 - no, 1 - yes)",
 		    "option for Comet only",
 		    "true"
   );
 
   set_int_parameter("use_Y_ions",
-			1, 0, 1,
-			"",
+		      1, 0, 1,
+		      "Controls whether or not Y-ions are considered in the "
+                      "search (0 - no, 1 - yes)",
 			"option for Comet only",
 			"true"
   );
 
   set_int_parameter("use_Z_ions",
 		    0, 0, 1, 
-		    "",
+		    "Controls whether or not Z-ions are considered in the "
+                    "search (0 - no, 1 - yes)",
 		    "option for Comet only",
 		    "true"
   );
 
   set_int_parameter("use_NL_ions",
 		    1, 0, 1,
-		    "",
+		    "0=no, 1= yes to consider NH3/H2O neutral loss peak",
 		    "option for Comet only",
 		    "true"
   );
 
   set_int_parameter("use_sparse_matrix",
 		    0, 0, 1,
-		    "",
+		    "Controls whether or not internal sparse matrix data "
+                    "representation is used.",
 		    "option for Comet only",
 		    "true"
 		    );
-  /*
-  set_int_parameter("output_sqtstream",
-		    0, 0, 1,
-		    "",
-		    "option for Comet only",
-		    "true");
-  */
+
   set_int_parameter("output_sqtfile",
 		    0, 0, 1,
-		    "",
+		    "0=no, 1=yes  write sqt file",
 		    "option for Comet only",
 		    "true");
 
   set_int_parameter("output_pepxmlfile",
 		    1, 0, 1,
-		    "",
+		    "0=no, 1=yes  write pep.xml file",
 		    "option for Comet only",
 		    "true");
 
   set_int_parameter("output_outfiles",
 		    0, 0, 1,
-		    "",
+		    "0=no, 1=yes  write .out files",
 		    "option for Comet only",
 		    "true");
 
   set_int_parameter("print_expect_score",
 		    1, 0, 1,
-		    "",
+		    "0=no, 1=yes to replace Sp with expect in out & sqt",
 		    "option for Comet.",
 		    "false"
   );
 
   set_int_parameter("num_output_lines",
 		    5, 1, BILLION,
-		    "",
+		    "num peptide results to show",
 		    "option for Comet.",
 		    "false"
   );
 
   set_int_parameter("show_fragment_ions",
 		    0, 0, 1,
-		    "",
+		    "0=no, 1=yes for out files only",
 		    "option for Comet.",
 		    "false"
   );
 
   set_int_parameter("sample_enzyme_number",
     1,0,10, 
-    "",
+    "Sample enzyme which is possibly different than the one applied to the search."
+    "Used to calculate NTT & NMC in pepXML output (default=1 for trypsin).",
     "option for Comet. ",
     "false"
   );
 
   set_string_parameter("scan_range", "0 0",
-		       "",
+		       "start and scan scan range to search; 0 as 1st entry "
+                       "ignores parameter",
 		       "option for Comet",
 		       "false"
 		       );
   
 
   set_string_parameter("precursor_charge", "0 0",
-		       "",
+		       "precursor charge range to analyze; does not override "
+                       "mzXML charge; 0 as 1st entry ignores parameter",
 		       "option for Comet.",
 		       "false"
 		       );
   
   set_int_parameter("ms_level",
     2,2,3, 
-    "",
+    "MS level to analyze, valid are levels 2 (default) or 3",
     "option for Comet. ",
     "false"
   );
@@ -1283,291 +1304,304 @@ void initialize_parameters(void){
     "false"
   );
 
-
   set_string_parameter("digest_mass_range", "600.0 5000.0",
-		       "",
+		       "MH+ peptide mass range to analyze",
 		       "option for Comet.",
 		       "false"
 		       );
   set_int_parameter("num_results", 50,0,BILLION,
-		    "",
+		    "number of search hits to store internally",
 		    "option for Comet.",
 		    "false");
 
   set_int_parameter("skip_researching", 1, 0, 1,
-		    "",
+		    "for '.out' file output only, 0=search everything again "
+                    "(default), 1=don't search if .out exists",
 		    "option for Comet",
 		    "false");
 
-  set_int_parameter("max_fragment_charge", 3, 1, BILLION,
-		    "",
+  set_int_parameter("max_fragment_charge", 3, 1, 5,
+		    "set maximum fragment charge state to analyze (allowed max 5)",
 		    "option for Comet",
 		    "false");
-  set_int_parameter("max_precursor_charge", 6, 1, BILLION,
-		    "",
+  
+  set_int_parameter("max_precursor_charge", 6, 1, 9,
+		    "set maximum precursor charge state to analyze (allowed max 9)",
 		    "option for Comet",
 		    "false");
+  
   set_int_parameter("nucleotide_reading_frame", 0, 0, 9,
-		    "",
+		    "0=proteinDB, 1-6, 7=forward three, 8=reverse three, 9=all six",
 		    "option for Comet",
 		    "false");
 
   set_int_parameter("clip_nterm_methionine", 0, 0, 1,
-		    "",
+		    "0=leave sequences as-is; 1=also consider sequence w/o N-term methionine",
 		    "option for Comet",
 		    "false");
 
   set_int_parameter("spectrum_batch_size", 0, 0, BILLION,
-		    "",
+		    "max. # of spectra to search at a time; 0 to search the "
+                    "entire scan range in one loop",
 		    "option for Comet",
 		    "false");
 
-  set_int_parameter("minimum_peaks", 10, 0, BILLION,
-		    "",
+  set_int_parameter("minimum_peaks", 10, 1, BILLION,
+		    "minimum num. of peaks in spectrum to search (default 10)",
 		    "option for Comet",
 		    "false");
 
-  set_double_parameter("minimum_intensity",
-    0,0,BILLION,
-    "",
+  set_double_parameter("minimum_intensity", 0, 0, BILLION,
+    "minimum intensity value to read in",
     "option for comet. ",
     "false"
   );
 
-  set_int_parameter("remove_precursor_peak",
-    0,0,2, 
-    "",
+  set_int_parameter("remove_precursor_peak", 0, 0, 2, 
+    "0=no, 1=yes, 2=all charge reduced precursor peaks (for ETD)",
     "option for Comet. ",
     "false"
   );
 
-  set_double_parameter("remove_precursor_tolerance",
-    1.5,-BILLION,BILLION, 
-    "",
+  set_double_parameter("remove_precursor_tolerance", 1.5, -BILLION, BILLION, 
+    "+- Da tolerance for precursor removal",
     "option for Comet. ",
     "false"
   );
 
   set_string_parameter("clear_mz_range", "0.0 0.0",
-		       "",
+		       "for iTRAQ/TMT type data; will clear out all peaks in the specified m/z range",
 		       "option for Comet",
 		       "false"
 		       );
 
   set_string_parameter("variable_mod1", "15.9949 M 0 3",
-		       "",
+		       "Up to 6 variable modifications are supported\n"
+                       "format:  <mass> <residues> <0=variable/1=binary> <max mods per a peptide>\n"
+                       "    e.g. 79.966331 STY 0 3",
 		       "option for Comet",
 		       "false"
 		       );
   
   set_string_parameter("variable_mod2", "0.0 X 0 3",
-		       "",
+		       "Up to 6 variable modifications are supported\n"
+                       "format:  <mass> <residues> <0=variable/1=binary> <max mods per a peptide>\n"
+                       "    e.g. 79.966331 STY 0 3",
 		       "option for Comet",
 		       "false"
 		       );
   
   set_string_parameter("variable_mod3", "0.0 X 0 3",
-		       "",
+		       "Up to 6 variable modifications are supported\n"
+                       "format:  <mass> <residues> <0=variable/1=binary> <max mods per a peptide>\n"
+                       "    e.g. 79.966331 STY 0 3",
 		       "option for Comet",
 		       "false"
 		       );
   
   set_string_parameter("variable_mod4", "0.0 X 0 3",
-		       "",
+		       "Up to 6 variable modifications are supported\n"
+                       "format:  <mass> <residues> <0=variable/1=binary> <max mods per a peptide>\n"
+                       "    e.g. 79.966331 STY 0 3",
 		       "option for Comet",
 		       "false"
 		       );
   
   set_string_parameter("variable_mod5", "0.0 X 0 3",
-		       "",
+		       "Up to 6 variable modifications are supported\n"
+                       "format:  <mass> <residues> <0=variable/1=binary> <max mods per a peptide>\n"
+                       "    e.g. 79.966331 STY 0 3",
 		       "option for Comet",
 		       "false"
 		       );
   
   set_string_parameter("variable_mod6", "0.0 X 0 3",
-		       "",
+		       "Up to 6 variable modifications are supported\n"
+                       "format:  <mass> <residues> <0=variable/1=binary> <max mods per a peptide>\n"
+                       "    e.g. 79.966331 STY 0 3",
 		       "option for Comet",
 		       "false"
 		       );
   
   set_int_parameter("max_variable_mods_in_peptide", 5, 0, BILLION,
-		    "",
+		    "Specifies the total/maximum number of residues that can "
+                    "be modified in a peptide",
 		    "option for Comet",
 		    "false"
 		    );
 
   set_double_parameter("variable_C_terminus", 0, 0, BILLION,
-		       "",
+		       "Specifiy a variable modification to peptide's c-terminus"
+                       "Works in conjunction with variable_c_terminus_distance",
 		       "option for Comet",
 		       "false"
 		       );
 
-  set_double_parameter("variable_N_terminus", 0, 0, BILLION,
-		       "",
+  set_double_parameter("variable_N_terminus", -1, -1, BILLION,
+		       "Specifiy a variable modification to peptide's c-terminus"
+                       "Works in conjunction with variable_c_terminus_distance",
 		       "option for Comet",
 		       "false");
 
   set_int_parameter("variable_C_terminus_distance", -1, -1, BILLION,
-		    "",
+		    "-1=all peptides, 0=protein terminus, 1-N = maximum offset from C-terminus",
 		    "option for Comet",
 		    "false");
 
   set_int_parameter("variable_N_terminus_distance", -1, -1, BILLION,
-		    "",
+		    "-1=all peptides, 0=protein terminus, 1-N = maximum offset from N-terminus",
 		    "option for Comet",
 		    "false");
 
   set_double_parameter("add_Cterm_peptide", 0, 0, BILLION,
-		       "",
+		       "Specifiy a static modification to the c-terminus of all peptides",
 		       "option for Comet",
 		       "false");
 
   set_double_parameter("add_Nterm_peptide", 0, 0, BILLION,
-		       "",
+		       "Specify a static modification to the n-terminus of all peptides",
 		       "option for Comet",
 		       "false");
   
   set_double_parameter("add_Cterm_protein", 0, 0, BILLION,
-		       "",
+		       "Specify a static modification to the c-terminal peptide of each protein",
 		       "option for Comet",
 		       "false");
 
   set_double_parameter("add_Nterm_protein", 0, 0, BILLION,
-		       "",
+		       "Specify a static modification to the n-terminal peptide of each protein",
 		       "option for Comet",
 		       "false");
 
   set_double_parameter("add_G_glycine", 0, 0, BILLION,
-		       "",
+		       "added to G - avg.  57.0513, mono.  57.02146",
 		       "option for Comet",
 		       "false");
 
   set_double_parameter("add_A_alanine", 0, 0, BILLION,
-		       "",
+		       "added to A - avg.  71.0779, mono.  71.03711",
 		       "option for Comet",
 		       "false");
 
   set_double_parameter("add_S_serine", 0, 0, BILLION,
-		       "",
+		       "added to S - avg.  87.0773, mono.  87.03203",
 		       "option for Comet",
 		       "false");
 
   set_double_parameter("add_P_proline", 0, 0, BILLION,
-		       "",
+		       "added to P - avg.  97.1152, mono.  97.05276",
 		       "option for Comet",
 		       "false");
   
   set_double_parameter("add_V_valine", 0, 0, BILLION,
-		       "",
+		       "added to V - avg.  99.1311, mono.  99.06841",
 		       "option for Comet",
 		       "false");
 
   set_double_parameter("add_T_threonine", 0, 0, BILLION,
-		       "",
+		       "added to T - avg. 101.1038, mono. 101.04768",
 		       "option for Comet",
 		       "false");
 
   set_double_parameter("add_C_cysteine", 57.021464, 0, BILLION,
-		       "",
+		       "added to C - avg. 103.1429, mono. 103.00918",
 		       "option for Comet",
 		       "false");
 
   set_double_parameter("add_L_leucine", 0, 0, BILLION,
-		       "",
+		       "added to L - avg. 113.1576, mono. 113.08406",
 		       "option for Comet",
 		       "false");
 
   set_double_parameter("add_I_isoleucine", 0, 0, BILLION,
-		       "",
+		       "added to I - avg. 113.1576, mono. 113.08406",
 		       "option for Comet",
 		       "false");
 
   set_double_parameter("add_N_asparagine", 0, 0, BILLION,
-		       "",
+		       "added to N - avg. 114.1026, mono. 114.04293",
 		       "option for Comet",
 		       "false");
 
   set_double_parameter("add_D_aspartic_acid", 0, 0, BILLION,
-		       "",
+		       "added to D - avg. 115.0874, mono. 115.02694",
 		       "option for Comet",
 		       "false");
 
   set_double_parameter("add_Q_glutamine", 0, 0, BILLION,
-		       "",
+		       "added to Q - avg. 128.1292, mono. 128.05858",
 		       "option for Comet",
 		       "false");
 
   set_double_parameter("add_K_lysine", 0, 0, BILLION,
-		       "",
+		       "added to K - avg. 128.1723, mono. 128.09496",
 		       "option for Comet",
 		       "false");
 
   set_double_parameter("add_E_glutamic_acid", 0, 0, BILLION,
-		       "",
+		       "added to E - avg. 129.1140, mono. 129.04259",
 		       "option for Comet",
 		       "false");
 
   set_double_parameter("add_M_methionine", 0, 0, BILLION,
-		       "",
+		       "added to M - avg. 131.1961, mono. 131.04048",
 		       "option for Comet",
 		       "false");
 
   set_double_parameter("add_O_ornithine", 0, 0, BILLION,
-		       "",
+		       "added to O - avg. 132.1610, mono  132.08988",
 		       "option for Comet",
 		       "false");
 
   set_double_parameter("add_H_histidine", 0, 0, BILLION,
-		       "",
+		       "added to H - avg. 137.1393, mono. 137.05891",
 		       "option for Comet",
 		       "false");
 
   set_double_parameter("add_F_phenylalanine", 0, 0, BILLION,
-		       "",
+		       "added to F - avg. 147.1739, mono. 147.06841",
 		       "option for Comet",
 		       "false");
 
   set_double_parameter("add_R_arginine", 0, 0, BILLION,
-		       "",
+		       "added to R - avg. 156.1857, mono. 156.10111",
 		       "option for Comet",
 		       "false");
 
   set_double_parameter("add_Y_tyrosine", 0, 0, BILLION,
-		       "",
+		       "added to Y - avg. 163.0633, mono. 163.06333",
 		       "option for Comet",
 		       "false");
 
   set_double_parameter("add_W_tryptophan", 0, 0, BILLION,
-		       "",
+		       "added to W - avg. 186.0793, mono. 186.07931",
 		       "option for Comet",
 		       "false");
 
   set_double_parameter("add_B_user_amino_acid", 0, 0, BILLION,
-		       "",
+		       "added to B - avg.   0.0000, mono.   0.00000",
 		       "option for Comet",
 		       "false");
 
   set_double_parameter("add_J_user_amino_acid", 0, 0, BILLION,
-		       "",
+		       "added to J - avg.   0.0000, mono.   0.00000",
 		       "option for Comet",
 		       "false");
 
   set_double_parameter("add_U_user_amino_acid", 0, 0, BILLION,
-		       "",
+		       "added to U - avg.   0.0000, mono.   0.00000",
 		       "option for Comet",
 		       "false");
 
   set_double_parameter("add_X_user_amino_acid", 0, 0, BILLION,
-		       "",
+		       "added to X - avg.   0.0000, mono.   0.00000",
 		       "option for Comet",
 		       "false");
 
   set_double_parameter("add_Z_user_amino_acid", 0, 0, BILLION,
-		       "",
+		       "added to Z - avg.   0.0000, mono.   0.00000",
 		       "option for Comet",
 		       "false");
-
-
 
   // **** q-ranker-barista arguments ****
   set_string_parameter("database", NULL,
