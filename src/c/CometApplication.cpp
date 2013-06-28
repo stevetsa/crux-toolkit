@@ -7,6 +7,7 @@
 #include "DelimitedFile.h"
 #include "Common.h"
 #include "ModifiedPeptidesIterator.h"
+#include "CarpStreamBuf.h"
 
 using namespace std;
 
@@ -94,9 +95,17 @@ int CometApplication::main(int argc, char** argv) {
     
   }
 
+  /* Re-route stderr to log file */
+  CarpStreamBuf buffer;
+  streambuf* old = std::cerr.rdbuf();
+  std::cerr.rdbuf(&buffer);
+
   /* Call comet_main */
   int retVal = -1;
   retVal = comet_main(cmt_argc, cmt_argv);
+
+  /* Recover stderr */
+  std::cerr.rdbuf(old);
 
   delete []cmt_argv;
 
