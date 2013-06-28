@@ -1,18 +1,56 @@
-Index: CometWritePepXML.cpp
+Index: CometData.h
 ===================================================================
---- CometWritePepXML.cpp	(revision 110)
-+++ CometWritePepXML.cpp	(working copy)
-@@ -98,7 +98,7 @@
-    // Grab file extension from file name
-    if ( (pStr2 = strrchr(g_StaticParams.inputFile.szFileName, '.')) == NULL)
+--- CometData.h	(revision 110)
++++ CometData.h	(working copy)
+@@ -369,6 +369,7 @@
+    char            szIonSeries[200];   // used for .out files
+    char            szDisplayLine[200]; // used for .out files
+    char            szMod[280];         // used for .out files
++   char            szDecoyPrefix[200]; // used for prefix to indicate decoys
+    int             iElapseTime;
+    DateTimeInfo    _dtInfoStart;
+    Options         options;
+Index: Makefile
+===================================================================
+--- Makefile	(revision 110)
++++ Makefile	(working copy)
+@@ -1,12 +1,16 @@
+ CXX = g++
+ MSTOOLKIT = MSToolkit
+-CXXFLAGS = -O3 -static -Wall -Wno-char-subscripts -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -I$(MSTOOLKIT)/include
++CXXFLAGS = -O3 -static -Wall -Wno-char-subscripts -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -I$(MSTOOLKIT)/include -DCRUX 
+ EXECNAME = comet.exe
+ OBJS = Comet.o Threading.o CometSearch.o CometPreprocess.o CometPostAnalysis.o CometMassSpecUtils.o CometWriteOut.o CometWriteSqt.o CometWritePepXML.o CometWriteTxt.o
+ DEPS = Common.h OSSpecificThreading.h CometData.h CometSearch.h CometPreprocess.h ThreadPool.h CometPostAnalysis.h CometMassSpecUtils.h
+ LIBS = -lm -lmstoolkitlite -lpthread
+ 
++all: comet.exe libComet.a
+ 
++libComet.a: $(OBJS)
++	ar rcs libComet.a $(OBJS)
++
+ comet.exe: $(OBJS)
+ 	cd MSToolkit ; make
+ 	${CXX} $(CXXFLAGS) $(OBJS) -L$(MSTOOLKIT) $(LIBS) -o ${EXECNAME}
+Index: CometWriteOut.cpp
+===================================================================
+--- CometWriteOut.cpp	(revision 110)
++++ CometWriteOut.cpp	(working copy)
+@@ -139,7 +139,7 @@
+ 
+    if ((fpout = fopen(szOutput, "w")) == NULL)
     {
--      printf(" Error - in WriteXMLHeader missing last period in file name: %s\n", g_StaticParams.inputFile.szFileName);
-+      log(" Error - in WriteXMLHeader missing last period in file name: %s\n", g_StaticParams.inputFile.szFileName);
+-      fprintf(stderr, "Error - cannot write to file %s.\n\n", szOutput);
++      logerr("Error - cannot write to file %s.\n\n", szOutput);
        exit(1);
     }
-    pStr2++;
-@@ -126,7 +126,7 @@
-    char szParamBuf[SIZE_BUF];
+ 
+Index: CometWriteSqt.cpp
+===================================================================
+--- CometWriteSqt.cpp	(revision 110)
++++ CometWriteSqt.cpp	(working copy)
+@@ -94,7 +94,7 @@
+    // write out entire parameters file to SQT header
     if ((fp=fopen(szParamsFile, "r")) == NULL)
     {
 -      fprintf(stderr, " Error - cannot open parameter file %s.\n\n", szParamsFile);
@@ -20,6 +58,37 @@ Index: CometWritePepXML.cpp
        exit(1);
     }
  
+Index: CometPostAnalysis.cpp
+===================================================================
+--- CometPostAnalysis.cpp	(revision 110)
++++ CometPostAnalysis.cpp	(working copy)
+@@ -34,7 +34,7 @@
+                                      int maxNumThreads)
+ {
+    if (!g_StaticParams.options.bOutputSqtStream)
+-      printf(" - Perform post-search analysis\n");
++      log(" - Perform post-search analysis\n");
+ 
+    // Create the thread pool containing g_StaticParams.options.iNumThreads,
+    // each hanging around and sleeping until asked to do a post analysis.
+@@ -664,7 +664,7 @@
+                   }
+                   else
+                   {
+-                     printf(" Error - XCORR DECOY: dFragMass %f, iFragMass %d, ArraySize %d, InputMass %f, scan %d, z %d\n",
++                     log(" Error - XCORR DECOY: dFragMass %f, iFragMass %d, ArraySize %d, InputMass %f, scan %d, z %d\n",
+                            dFragmentIonMass, 
+                            iFragmentIonMass,
+                            pQuery->_spectrumInfoInternal.iArraySize, 
+@@ -683,7 +683,7 @@
+                   }
+                   else
+                   {
+-                     printf(" Error - XCORR DECOY: dFragMass %f, iFragMass %d, ArraySize %d, InputMass %f, scan %d, z %d\n",
++                     log(" Error - XCORR DECOY: dFragMass %f, iFragMass %d, ArraySize %d, InputMass %f, scan %d, z %d\n",
+                            dFragmentIonMass,
+                            iFragmentIonMass,
+                            pQuery->_spectrumInfoInternal.iArraySize,
 Index: CometSearch.cpp
 ===================================================================
 --- CometSearch.cpp	(revision 110)
@@ -160,207 +229,41 @@ Index: CometSearch.cpp
                 exit(1);
              }
  
-Index: CometWriteOut.cpp
+Index: Common.h
 ===================================================================
---- CometWriteOut.cpp	(revision 110)
-+++ CometWriteOut.cpp	(working copy)
-@@ -139,7 +139,7 @@
+--- Common.h	(revision 110)
++++ Common.h	(working copy)
+@@ -42,7 +42,11 @@
+ #include "MSObject.h"
+ #include <vector>
  
-    if ((fpout = fopen(szOutput, "w")) == NULL)
-    {
--      fprintf(stderr, "Error - cannot write to file %s.\n\n", szOutput);
-+      logerr("Error - cannot write to file %s.\n\n", szOutput);
-       exit(1);
-    }
++#ifdef CRUX
++#include <iostream>
++#endif
  
-Index: CometWriteSqt.cpp
-===================================================================
---- CometWriteSqt.cpp	(revision 110)
-+++ CometWriteSqt.cpp	(working copy)
-@@ -94,7 +94,7 @@
-    // write out entire parameters file to SQT header
-    if ((fp=fopen(szParamsFile, "r")) == NULL)
-    {
--      fprintf(stderr, " Error - cannot open parameter file %s.\n\n", szParamsFile);
-+      logerr(" Error - cannot open parameter file %s.\n\n", szParamsFile);
-       exit(1);
-    }
- 
-Index: CometPreprocess.cpp
-===================================================================
---- CometPreprocess.cpp	(revision 110)
-+++ CometPreprocess.cpp	(working copy)
-@@ -235,21 +235,21 @@
-    pdTempRawData = (double *)calloc((size_t)pScoring->_spectrumInfoInternal.iArraySize, (size_t)sizeof(double));
-    if (pdTempRawData == NULL)
-    {
--      fprintf(stderr, " Error - calloc(pdTempRawData[%d]).\n\n", pScoring->_spectrumInfoInternal.iArraySize);
-+      logerr(" Error - calloc(pdTempRawData[%d]).\n\n", pScoring->_spectrumInfoInternal.iArraySize);
-       exit(1);
-    }
- 
-    pdTmpFastXcorrData = (double *)calloc((size_t)pScoring->_spectrumInfoInternal.iArraySize, (size_t)sizeof(double));
-    if (pdTmpFastXcorrData == NULL)
-    {
--      fprintf(stderr, " Error - calloc(pdTmpFastXcorrData[%d]).\n\n", pScoring->_spectrumInfoInternal.iArraySize);
-+      logerr(" Error - calloc(pdTmpFastXcorrData[%d]).\n\n", pScoring->_spectrumInfoInternal.iArraySize);
-       exit(1);
-    }
- 
-    pScoring->pfFastXcorrData = (float *)calloc((size_t)pScoring->_spectrumInfoInternal.iArraySize, (size_t)sizeof(float));
-    if (pScoring->pfFastXcorrData == NULL)
-    {
--      fprintf(stderr, " Error - calloc(pfFastXcorrData[%d]).\n\n", pScoring->_spectrumInfoInternal.iArraySize);
-+      logerr(" Error - calloc(pfFastXcorrData[%d]).\n\n", pScoring->_spectrumInfoInternal.iArraySize);
-       exit(1);
-    }
- 
-@@ -261,7 +261,7 @@
-       pScoring->pfFastXcorrDataNL = (float *)calloc((size_t)pScoring->_spectrumInfoInternal.iArraySize, (size_t)sizeof(float));
-       if (pScoring->pfFastXcorrDataNL == NULL)
-       {
--         fprintf(stderr, " Error - calloc(pfFastXcorrDataNL[%d]).\n", pScoring->_spectrumInfoInternal.iArraySize);
-+         logerr(" Error - calloc(pfFastXcorrDataNL[%d]).\n", pScoring->_spectrumInfoInternal.iArraySize);
-          exit(1);
-       }
-    }
-@@ -350,7 +350,7 @@
-       pScoring->pSparseFastXcorrData = (SparseMatrix *)calloc((size_t)pScoring->iFastXcorrData, (size_t)sizeof(SparseMatrix));
-       if (pScoring->pSparseFastXcorrData == NULL)
-       {
--         fprintf(stderr, " Error - calloc(pScoring->pSparseFastXcorrData[%d]).\n\n", pScoring->iFastXcorrData);
-+         logerr(" Error - calloc(pScoring->pSparseFastXcorrData[%d]).\n\n", pScoring->iFastXcorrData);
-          exit(1);
-       }
-       pScoring->pSparseFastXcorrData[0].bin=0;
-@@ -379,7 +379,7 @@
-          pScoring->pSparseFastXcorrDataNL = (SparseMatrix *)calloc((size_t)pScoring->iFastXcorrDataNL, (size_t)sizeof(SparseMatrix));
-          if (pScoring->pSparseFastXcorrDataNL == NULL)
-          {
--            fprintf(stderr, " Error - calloc(pScoring->pSparseFastXcorrDataNL[%d]).\n\n", pScoring->iFastXcorrDataNL);
-+            logerr(" Error - calloc(pScoring->pSparseFastXcorrDataNL[%d]).\n\n", pScoring->iFastXcorrDataNL);
-             exit(1);
-          }
-          pScoring->pSparseFastXcorrDataNL[0].bin=0;
-@@ -433,7 +433,7 @@
-       pScoring->pSparseSpScoreData = (SparseMatrix *)calloc((size_t)NUM_SP_IONS, (size_t)sizeof(SparseMatrix));
-       if (pScoring->pSparseSpScoreData == NULL)
-       {
--         fprintf(stderr, " Error - calloc(pScoring->pSparseSpScoreData[%d]).\n\n", pScoring->iSpScoreData);
-+         logerr(" Error - calloc(pScoring->pSparseSpScoreData[%d]).\n\n", pScoring->iSpScoreData);
-          exit(1);
-       }
-       pScoring->iSpScoreData=0;
-@@ -452,7 +452,7 @@
-       pScoring->pfSpScoreData = (float *)calloc((size_t)pScoring->_spectrumInfoInternal.iArraySize, (size_t)sizeof(float ));
-       if (pScoring->pfSpScoreData == NULL)
-       {
--         fprintf(stderr, " Error - calloc(pfSpScoreData[%d])\n", pScoring->_spectrumInfoInternal.iArraySize);
-+         logerr(" Error - calloc(pfSpScoreData[%d])\n", pScoring->_spectrumInfoInternal.iArraySize);
-          exit(1);
-       }
- 
-@@ -778,7 +778,7 @@
-    }
-    else  // Should not get here.
-    {
--      printf(" Error - iIsotopeError=%d\n\n", g_StaticParams.tolerances.iIsotopeError);
-+      log(" Error - iIsotopeError=%d\n\n", g_StaticParams.tolerances.iIsotopeError);
-       exit(1);
-    }
- }
-@@ -800,7 +800,7 @@
-    pPre->pdCorrelationData = (double *)calloc((size_t)pScoring->_spectrumInfoInternal.iArraySize, (size_t)sizeof(double));
-    if (pPre->pdCorrelationData == NULL)
-    {
--      fprintf(stderr, " Error - calloc(pdCorrelationData[%d]).\n\n", pScoring->_spectrumInfoInternal.iArraySize);
-+      logerr(" Error - calloc(pdCorrelationData[%d]).\n\n", pScoring->_spectrumInfoInternal.iArraySize);
-       exit(1);
-    }
- 
-@@ -962,7 +962,7 @@
- 
-    if (pdSmoothedSpectrum == NULL)
-    {
--      fprintf(stderr, " Error - calloc(pdSmoothedSpectrum[%d]).\n", iArraySize);
-+      logerr(" Error - calloc(pdSmoothedSpectrum[%d]).\n", iArraySize);
-       exit(1);
-    }
- 
-@@ -993,7 +993,7 @@
-    pdPeakExtracted = (double *)calloc((size_t)iArraySize, (size_t)sizeof(double));
-    if (pdPeakExtracted == NULL)
-    {
--      fprintf(stderr, " Error - calloc(pdPeakExtracted[%d]).\n", iArraySize);
-+      logerr(" Error - calloc(pdPeakExtracted[%d]).\n", iArraySize);
-       exit(1);
-    }
- 
-Index: CometPostAnalysis.cpp
-===================================================================
---- CometPostAnalysis.cpp	(revision 110)
-+++ CometPostAnalysis.cpp	(working copy)
-@@ -34,7 +34,7 @@
-                                      int maxNumThreads)
- {
-    if (!g_StaticParams.options.bOutputSqtStream)
--      printf(" - Perform post-search analysis\n");
-+      log(" - Perform post-search analysis\n");
- 
-    // Create the thread pool containing g_StaticParams.options.iNumThreads,
-    // each hanging around and sleeping until asked to do a post analysis.
-@@ -664,7 +664,7 @@
-                   }
-                   else
-                   {
--                     printf(" Error - XCORR DECOY: dFragMass %f, iFragMass %d, ArraySize %d, InputMass %f, scan %d, z %d\n",
-+                     log(" Error - XCORR DECOY: dFragMass %f, iFragMass %d, ArraySize %d, InputMass %f, scan %d, z %d\n",
-                            dFragmentIonMass, 
-                            iFragmentIonMass,
-                            pQuery->_spectrumInfoInternal.iArraySize, 
-@@ -683,7 +683,7 @@
-                   }
-                   else
-                   {
--                     printf(" Error - XCORR DECOY: dFragMass %f, iFragMass %d, ArraySize %d, InputMass %f, scan %d, z %d\n",
-+                     log(" Error - XCORR DECOY: dFragMass %f, iFragMass %d, ArraySize %d, InputMass %f, scan %d, z %d\n",
-                            dFragmentIonMass,
-                            iFragmentIonMass,
-                            pQuery->_spectrumInfoInternal.iArraySize,
-Index: Makefile
-===================================================================
---- Makefile	(revision 110)
-+++ Makefile	(working copy)
-@@ -1,12 +1,16 @@
- CXX = g++
- MSTOOLKIT = MSToolkit
--CXXFLAGS = -O3 -static -Wall -Wno-char-subscripts -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -I$(MSTOOLKIT)/include
-+CXXFLAGS = -O3 -static -Wall -Wno-char-subscripts -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -I$(MSTOOLKIT)/include -DCRUX 
- EXECNAME = comet.exe
- OBJS = Comet.o Threading.o CometSearch.o CometPreprocess.o CometPostAnalysis.o CometMassSpecUtils.o CometWriteOut.o CometWriteSqt.o CometWritePepXML.o CometWriteTxt.o
- DEPS = Common.h OSSpecificThreading.h CometData.h CometSearch.h CometPreprocess.h ThreadPool.h CometPostAnalysis.h CometMassSpecUtils.h
- LIBS = -lm -lmstoolkitlite -lpthread
- 
-+all: comet.exe libComet.a
- 
-+libComet.a: $(OBJS)
-+	ar rcs libComet.a $(OBJS)
 +
- comet.exe: $(OBJS)
- 	cd MSToolkit ; make
- 	${CXX} $(CXXFLAGS) $(OBJS) -L$(MSTOOLKIT) $(LIBS) -o ${EXECNAME}
-Index: CometData.h
-===================================================================
---- CometData.h	(revision 110)
-+++ CometData.h	(working copy)
-@@ -369,6 +369,7 @@
-    char            szIonSeries[200];   // used for .out files
-    char            szDisplayLine[200]; // used for .out files
-    char            szMod[280];         // used for .out files
-+   char            szDecoyPrefix[200]; // used for prefix to indicate decoys
-    int             iElapseTime;
-    DateTimeInfo    _dtInfoStart;
-    Options         options;
+ #define comet_version   "2013.01 rev. 0"
+ #define copyright "(c) University of Washington"
+ 
+@@ -50,4 +54,18 @@
+ // now between 0.0 and 1.0 and scales to the binWidth.
+ #define BIN(dMass) (int)(dMass*g_StaticParams.dInverseBinWidth + g_StaticParams.dOneMinusBinOffset)
+ 
++#ifdef CRUX
++int comet_main(int argc, char*argv[]);
++#endif
++using namespace MSToolkit;
++
++#ifdef CRUX
++#define log(...) {char sbuf[1000]; snprintf(sbuf, 1000, __VA_ARGS__); cerr << sbuf;}
++#define logerr(...) {char sbuf[1000]; snprintf(sbuf, 1000, __VA_ARGS__); cerr << sbuf;}
++#else
++#define log(...) printf(format, __VA_ARGS__)
++#define logerr(...) fprintf(stderr, format, __VA_ARGS__)
++#endif
++
++
+ #endif // _COMMON_H_
 Index: MSToolkit/src/expat-2.0.1/xmlparse.c
 ===================================================================
 --- MSToolkit/src/expat-2.0.1/xmlparse.c	(revision 110)
@@ -440,6 +343,28 @@ Index: MSToolkit/include/xmltok.h
  #ifdef __cplusplus
  extern "C" {
  #endif
+Index: MSToolkit/include/H5DataSet.h
+===================================================================
+--- MSToolkit/include/H5DataSet.h	(revision 110)
++++ MSToolkit/include/H5DataSet.h	(working copy)
+@@ -110,7 +110,7 @@
+    private:
+ 	hid_t id;       // HDF5 dataset id
+ 
+-#ifndef DOXYGEN_SHOULD_SKIP_THIS
++  //#ifndef DOXYGEN_SHOULD_SKIP_THIS
+         // This function contains the common code that is used by
+         // getTypeClass and various API functions getXxxType
+         // defined in AbstractDs for generic datatype and specific
+@@ -124,7 +124,7 @@
+    protected:
+         // Sets the dataset id.
+         virtual void p_setId(const hid_t new_id);
+-#endif // DOXYGEN_SHOULD_SKIP_THIS
++  //#endif // DOXYGEN_SHOULD_SKIP_THIS
+ };
+ #ifndef H5_NO_NAMESPACE
+ }
 Index: MSToolkit/include/Spectrum.h
 ===================================================================
 --- MSToolkit/include/Spectrum.h	(revision 110)
@@ -460,27 +385,6 @@ Index: MSToolkit/include/Spectrum.h
  
  #endif
  
-Index: MSToolkit/include/MSToolkitTypes.h
-===================================================================
---- MSToolkit/include/MSToolkitTypes.h	(revision 110)
-+++ MSToolkit/include/MSToolkitTypes.h	(working copy)
-@@ -2,6 +2,7 @@
- #define _MSTOOLKITTYPES_H
- 
- #include <stddef.h>
-+namespace MSToolkit {
- 
- enum MSSpectrumType {
-   MS1,
-@@ -114,6 +115,8 @@
-   float pArea;    //precursor retention time
- };
- 
-+}
-+
- #endif
- 
- 
 Index: MSToolkit/include/MSObject.h
 ===================================================================
 --- MSToolkit/include/MSObject.h	(revision 110)
@@ -500,6 +404,25 @@ Index: MSToolkit/include/MSObject.h
 +}
  #endif
  
+Index: MSToolkit/include/H5CommonFG.h
+===================================================================
+--- MSToolkit/include/H5CommonFG.h	(revision 110)
++++ MSToolkit/include/H5CommonFG.h	(working copy)
+@@ -147,12 +147,12 @@
+ 	VarLenType openVarLenType(const char* name) const;
+ 	VarLenType openVarLenType(const H5std_string& name) const;
+ 
+-#ifndef DOXYGEN_SHOULD_SKIP_THIS
++  //#ifndef DOXYGEN_SHOULD_SKIP_THIS
+ 	/// For subclasses, H5File and Group, to return the correct
+ 	/// object id, i.e. file or group id.
+ 	virtual hid_t getLocId() const = 0;
+ 
+-#endif // DOXYGEN_SHOULD_SKIP_THIS
++  //#endif // DOXYGEN_SHOULD_SKIP_THIS
+ 
+ 	/// For subclasses, H5File and Group, to throw appropriate exception.
+ 	virtual void throwException(const H5std_string& func_name, const H5std_string& msg) const = 0;
 Index: MSToolkit/include/H5Object.h
 ===================================================================
 --- MSToolkit/include/H5Object.h	(revision 110)
@@ -540,47 +463,6 @@ Index: MSToolkit/include/H5Object.h
  
  }; /* end class H5Object */
  
-Index: MSToolkit/include/H5CommonFG.h
-===================================================================
---- MSToolkit/include/H5CommonFG.h	(revision 110)
-+++ MSToolkit/include/H5CommonFG.h	(working copy)
-@@ -147,12 +147,12 @@
- 	VarLenType openVarLenType(const char* name) const;
- 	VarLenType openVarLenType(const H5std_string& name) const;
- 
--#ifndef DOXYGEN_SHOULD_SKIP_THIS
-+  //#ifndef DOXYGEN_SHOULD_SKIP_THIS
- 	/// For subclasses, H5File and Group, to return the correct
- 	/// object id, i.e. file or group id.
- 	virtual hid_t getLocId() const = 0;
- 
--#endif // DOXYGEN_SHOULD_SKIP_THIS
-+  //#endif // DOXYGEN_SHOULD_SKIP_THIS
- 
- 	/// For subclasses, H5File and Group, to throw appropriate exception.
- 	virtual void throwException(const H5std_string& func_name, const H5std_string& msg) const = 0;
-Index: MSToolkit/include/H5DataSet.h
-===================================================================
---- MSToolkit/include/H5DataSet.h	(revision 110)
-+++ MSToolkit/include/H5DataSet.h	(working copy)
-@@ -110,7 +110,7 @@
-    private:
- 	hid_t id;       // HDF5 dataset id
- 
--#ifndef DOXYGEN_SHOULD_SKIP_THIS
-+  //#ifndef DOXYGEN_SHOULD_SKIP_THIS
-         // This function contains the common code that is used by
-         // getTypeClass and various API functions getXxxType
-         // defined in AbstractDs for generic datatype and specific
-@@ -124,7 +124,7 @@
-    protected:
-         // Sets the dataset id.
-         virtual void p_setId(const hid_t new_id);
--#endif // DOXYGEN_SHOULD_SKIP_THIS
-+  //#endif // DOXYGEN_SHOULD_SKIP_THIS
- };
- #ifndef H5_NO_NAMESPACE
- }
 Index: MSToolkit/include/MSReader.h
 ===================================================================
 --- MSToolkit/include/MSReader.h	(revision 110)
@@ -599,6 +481,27 @@ Index: MSToolkit/include/MSReader.h
  
 +}
  #endif
+ 
+Index: MSToolkit/include/MSToolkitTypes.h
+===================================================================
+--- MSToolkit/include/MSToolkitTypes.h	(revision 110)
++++ MSToolkit/include/MSToolkitTypes.h	(working copy)
+@@ -2,6 +2,7 @@
+ #define _MSTOOLKITTYPES_H
+ 
+ #include <stddef.h>
++namespace MSToolkit {
+ 
+ enum MSSpectrumType {
+   MS1,
+@@ -114,6 +115,8 @@
+   float pArea;    //precursor retention time
+ };
+ 
++}
++
+ #endif
+ 
  
 Index: Comet.cpp
 ===================================================================
@@ -1079,38 +982,135 @@ Index: Comet.cpp
        exit(1);
     }
  
-Index: Common.h
+Index: CometWritePepXML.cpp
 ===================================================================
---- Common.h	(revision 110)
-+++ Common.h	(working copy)
-@@ -42,7 +42,11 @@
- #include "MSObject.h"
- #include <vector>
+--- CometWritePepXML.cpp	(revision 110)
++++ CometWritePepXML.cpp	(working copy)
+@@ -98,7 +98,7 @@
+    // Grab file extension from file name
+    if ( (pStr2 = strrchr(g_StaticParams.inputFile.szFileName, '.')) == NULL)
+    {
+-      printf(" Error - in WriteXMLHeader missing last period in file name: %s\n", g_StaticParams.inputFile.szFileName);
++      log(" Error - in WriteXMLHeader missing last period in file name: %s\n", g_StaticParams.inputFile.szFileName);
+       exit(1);
+    }
+    pStr2++;
+@@ -126,7 +126,7 @@
+    char szParamBuf[SIZE_BUF];
+    if ((fp=fopen(szParamsFile, "r")) == NULL)
+    {
+-      fprintf(stderr, " Error - cannot open parameter file %s.\n\n", szParamsFile);
++      logerr(" Error - cannot open parameter file %s.\n\n", szParamsFile);
+       exit(1);
+    }
  
-+#ifdef CRUX
-+#include <iostream>
-+#endif
+Index: CometPreprocess.cpp
+===================================================================
+--- CometPreprocess.cpp	(revision 110)
++++ CometPreprocess.cpp	(working copy)
+@@ -235,21 +235,21 @@
+    pdTempRawData = (double *)calloc((size_t)pScoring->_spectrumInfoInternal.iArraySize, (size_t)sizeof(double));
+    if (pdTempRawData == NULL)
+    {
+-      fprintf(stderr, " Error - calloc(pdTempRawData[%d]).\n\n", pScoring->_spectrumInfoInternal.iArraySize);
++      logerr(" Error - calloc(pdTempRawData[%d]).\n\n", pScoring->_spectrumInfoInternal.iArraySize);
+       exit(1);
+    }
  
-+
- #define comet_version   "2013.01 rev. 0"
- #define copyright "(c) University of Washington"
+    pdTmpFastXcorrData = (double *)calloc((size_t)pScoring->_spectrumInfoInternal.iArraySize, (size_t)sizeof(double));
+    if (pdTmpFastXcorrData == NULL)
+    {
+-      fprintf(stderr, " Error - calloc(pdTmpFastXcorrData[%d]).\n\n", pScoring->_spectrumInfoInternal.iArraySize);
++      logerr(" Error - calloc(pdTmpFastXcorrData[%d]).\n\n", pScoring->_spectrumInfoInternal.iArraySize);
+       exit(1);
+    }
  
-@@ -50,4 +54,18 @@
- // now between 0.0 and 1.0 and scales to the binWidth.
- #define BIN(dMass) (int)(dMass*g_StaticParams.dInverseBinWidth + g_StaticParams.dOneMinusBinOffset)
+    pScoring->pfFastXcorrData = (float *)calloc((size_t)pScoring->_spectrumInfoInternal.iArraySize, (size_t)sizeof(float));
+    if (pScoring->pfFastXcorrData == NULL)
+    {
+-      fprintf(stderr, " Error - calloc(pfFastXcorrData[%d]).\n\n", pScoring->_spectrumInfoInternal.iArraySize);
++      logerr(" Error - calloc(pfFastXcorrData[%d]).\n\n", pScoring->_spectrumInfoInternal.iArraySize);
+       exit(1);
+    }
  
-+#ifdef CRUX
-+int comet_main(int argc, char*argv[]);
-+#endif
-+using namespace MSToolkit;
-+
-+#ifdef CRUX
-+#define log(...) {char sbuf[1000]; snprintf(sbuf, 1000, __VA_ARGS__); cerr << sbuf;}
-+#define logerr(...) {char sbuf[1000]; snprintf(sbuf, 1000, __VA_ARGS__); cerr << sbuf;}
-+#else
-+#define log(...) printf(format, __VA_ARGS__)
-+#define logerr(...) fprintf(stderr, format, __VA_ARGS__)
-+#endif
-+
-+
- #endif // _COMMON_H_
+@@ -261,7 +261,7 @@
+       pScoring->pfFastXcorrDataNL = (float *)calloc((size_t)pScoring->_spectrumInfoInternal.iArraySize, (size_t)sizeof(float));
+       if (pScoring->pfFastXcorrDataNL == NULL)
+       {
+-         fprintf(stderr, " Error - calloc(pfFastXcorrDataNL[%d]).\n", pScoring->_spectrumInfoInternal.iArraySize);
++         logerr(" Error - calloc(pfFastXcorrDataNL[%d]).\n", pScoring->_spectrumInfoInternal.iArraySize);
+          exit(1);
+       }
+    }
+@@ -350,7 +350,7 @@
+       pScoring->pSparseFastXcorrData = (SparseMatrix *)calloc((size_t)pScoring->iFastXcorrData, (size_t)sizeof(SparseMatrix));
+       if (pScoring->pSparseFastXcorrData == NULL)
+       {
+-         fprintf(stderr, " Error - calloc(pScoring->pSparseFastXcorrData[%d]).\n\n", pScoring->iFastXcorrData);
++         logerr(" Error - calloc(pScoring->pSparseFastXcorrData[%d]).\n\n", pScoring->iFastXcorrData);
+          exit(1);
+       }
+       pScoring->pSparseFastXcorrData[0].bin=0;
+@@ -379,7 +379,7 @@
+          pScoring->pSparseFastXcorrDataNL = (SparseMatrix *)calloc((size_t)pScoring->iFastXcorrDataNL, (size_t)sizeof(SparseMatrix));
+          if (pScoring->pSparseFastXcorrDataNL == NULL)
+          {
+-            fprintf(stderr, " Error - calloc(pScoring->pSparseFastXcorrDataNL[%d]).\n\n", pScoring->iFastXcorrDataNL);
++            logerr(" Error - calloc(pScoring->pSparseFastXcorrDataNL[%d]).\n\n", pScoring->iFastXcorrDataNL);
+             exit(1);
+          }
+          pScoring->pSparseFastXcorrDataNL[0].bin=0;
+@@ -433,7 +433,7 @@
+       pScoring->pSparseSpScoreData = (SparseMatrix *)calloc((size_t)NUM_SP_IONS, (size_t)sizeof(SparseMatrix));
+       if (pScoring->pSparseSpScoreData == NULL)
+       {
+-         fprintf(stderr, " Error - calloc(pScoring->pSparseSpScoreData[%d]).\n\n", pScoring->iSpScoreData);
++         logerr(" Error - calloc(pScoring->pSparseSpScoreData[%d]).\n\n", pScoring->iSpScoreData);
+          exit(1);
+       }
+       pScoring->iSpScoreData=0;
+@@ -452,7 +452,7 @@
+       pScoring->pfSpScoreData = (float *)calloc((size_t)pScoring->_spectrumInfoInternal.iArraySize, (size_t)sizeof(float ));
+       if (pScoring->pfSpScoreData == NULL)
+       {
+-         fprintf(stderr, " Error - calloc(pfSpScoreData[%d])\n", pScoring->_spectrumInfoInternal.iArraySize);
++         logerr(" Error - calloc(pfSpScoreData[%d])\n", pScoring->_spectrumInfoInternal.iArraySize);
+          exit(1);
+       }
+ 
+@@ -778,7 +778,7 @@
+    }
+    else  // Should not get here.
+    {
+-      printf(" Error - iIsotopeError=%d\n\n", g_StaticParams.tolerances.iIsotopeError);
++      log(" Error - iIsotopeError=%d\n\n", g_StaticParams.tolerances.iIsotopeError);
+       exit(1);
+    }
+ }
+@@ -800,7 +800,7 @@
+    pPre->pdCorrelationData = (double *)calloc((size_t)pScoring->_spectrumInfoInternal.iArraySize, (size_t)sizeof(double));
+    if (pPre->pdCorrelationData == NULL)
+    {
+-      fprintf(stderr, " Error - calloc(pdCorrelationData[%d]).\n\n", pScoring->_spectrumInfoInternal.iArraySize);
++      logerr(" Error - calloc(pdCorrelationData[%d]).\n\n", pScoring->_spectrumInfoInternal.iArraySize);
+       exit(1);
+    }
+ 
+@@ -962,7 +962,7 @@
+ 
+    if (pdSmoothedSpectrum == NULL)
+    {
+-      fprintf(stderr, " Error - calloc(pdSmoothedSpectrum[%d]).\n", iArraySize);
++      logerr(" Error - calloc(pdSmoothedSpectrum[%d]).\n", iArraySize);
+       exit(1);
+    }
+ 
+@@ -993,7 +993,7 @@
+    pdPeakExtracted = (double *)calloc((size_t)iArraySize, (size_t)sizeof(double));
+    if (pdPeakExtracted == NULL)
+    {
+-      fprintf(stderr, " Error - calloc(pdPeakExtracted[%d]).\n", iArraySize);
++      logerr(" Error - calloc(pdPeakExtracted[%d]).\n", iArraySize);
+       exit(1);
+    }
+ 
