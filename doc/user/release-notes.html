@@ -10,16 +10,30 @@
 <h2>Version 1.XX</h2>
 <h3>Major enhancements</h3>
 <ul>
+
+<li>
+Two new search engines are now included in Crux: Comet and Tide.  The
+old search engine, search-for-matches, has been retired.</li>
+
 </ul>
 
 <h3>Minor changes</h3>
+
 <ul>
 <li>
 Previously, the PinXML file produced
 by <code>search-for-matches</code> always contained a single PSM per
 charge/spectrum combination.  Now the <code>top-match</code> parameter
 controls how many PSMs are written to the PinXML file.</li>
+
+<li>
+When reading from tab-delimited text, SQT or PepXML files, Crux
+Percolator now accepts input files that contain a mixture of target
+and decoy PSMs, rather than requiring two separate input files.</li>
+
 </ul>
+
+<hr></hr>
 
 <h2>Version 1.40</h2> 
 <h3>Major enchancements</h3>
