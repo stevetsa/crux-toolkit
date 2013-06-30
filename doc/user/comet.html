@@ -54,12 +54,11 @@ search tool."  Eng JK, Jahan TA, Hoopmann MR.
 <LI>
 &lt;database_name&gt; &ndash; The name of the file in fasta format
   from which to retrieve proteins and peptides.  The database can
-  contain amino acid sequences or nucleic acid sequences.  If
-  sequences are amino acid sequences, set the parameter
-  "nucleotide_reading_frame = 0".  If the sequences are nucleic acid
-  sequences, you must instruct Comet to translate these to amino acid
-  sequences. Do this by setting "nucleotide_reading_frame" to a value
-  between 1 and 9.</li>
+  contain amino acid sequences or nucleic acid sequences.  If the
+  sequences are nucleic acid sequences, then you must instruct Comet
+  to translate these to amino acid sequences by setting
+  <code>nucleotide_reading_frame</code> to a value between 1 and
+  9.</li>
 
 </UL>
 
@@ -104,11 +103,7 @@ uses underscores ("_") within parameter names, whereas other Crux
 commands use hyphens ("-").  The <code>crux comet</code>
 command will accept parameters using either convention.</p>
 
-<p>
-Note that the following parameters from stand-alone Comet are not
-available via <code>crux comet</code>: <code>output_sqtstream</code>.</p>
-
-<UL>
+<ul>
 
 <h3>Database</h3>
 <ul>
