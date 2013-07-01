@@ -169,6 +169,10 @@ file if false (F). Default =  F.</li>
 prefix of the protein names that indicates a decoy. Default = rand_.
 </li>
 
+<li>
+<code>--output-txtfile &lt;T|F&gt;</code> &ndash; Create a
+tab-delimited output file.  Default=T.</li>
+
 <li><a href="comet-options/output_sqtfile.html">output_sqtfile</a></li>
 <li><a href="comet-options/output_pepxmlfile.html">output_pepxmlfile</a></li>
 <li><a href="comet-options/output_outfiles.html">output_outfiles</a></li>
@@ -293,12 +297,14 @@ info, 60-detailed debug info. Default = 30.</li>
 
 The <code>search_enzyme_number</code> keys into this list of enzymes.  This list can be further modified to support other enzymes.
 
-<h3>TODO</h3>
+<h3>TO DO</h3>
+
 <p>
-Changes we are proposing on the Comet end of things:</p>
 <ul>
-<li>Allow an option that can specify the full paths of the results files.</li>
-<li>Map the modifications to actual mass changes instead of using special characters.</li>
+<li>Accept parameters using either "_" or "-".</li>
+<li>Enable the --fileroot and --output-dir options.</li>
+<li>Map the modifications to actual mass changes instead of using
+  special characters.</li>
 </ul>
 
 <hr></hr>
