@@ -33,8 +33,8 @@ multiple input and output formats.  The current Comet version in
 Crux is 2013.01.rev.0.</p>
 
 <blockquote>
-"Comet: an open source tandem mass spectrometry sequence database
-search tool."  Eng JK, Jahan TA, Hoopmann MR.
+<a href="http://onlinelibrary.wiley.com/doi/10.1002/pmic.201200439/abstract">"Comet: an open source tandem mass spectrometry sequence database
+search tool."</a>  Eng JK, Jahan TA, Hoopmann MR.
 <i>Proteomics</i>. 2012 Nov 12. doi: 10.1002/pmic.201200439
 </blockquote>
 
@@ -275,9 +275,13 @@ info, 60-detailed debug info. Default = 30.</li>
 </ul>
 
 <h3>Enzyme handling</h3>
-<code>crux comet</code> handles specifying enzymatic digestions with the
-<code>search_enzyme_number</code> and the following lines at the end of the parameter file:<br>
-<code><br>
+
+<p>
+Enzymatic digestion rules are specified
+using <code>search_enzyme_number</code> and the following lines at the
+end of the parameter file:</p>
+
+<code>
 #<br>
 # COMET_ENZYME_INFO _must_ be at the end of this parameters file<br>
 #<br>
@@ -295,14 +299,35 @@ info, 60-detailed debug info. Default = 30.</li>
 10. Chymotrypsin           1      FWYL        P<br>
 </code>
 
-The <code>search_enzyme_number</code> keys into this list of enzymes.  This list can be further modified to support other enzymes.
+<p>
+The <code>search_enzyme_number</code> keys into this list of enzymes.
+This list can be further modified to support other enzymes.</p>
 
-<h3>TO DO</h3>
+</ul>
+
+<h2>Differences between the Crux and standalone versions of Comet</h2>
+
+<p>
+Unlike the standalone version of Comet, the <code>comet</code> command
+in Crux
+<ul>
+<li>
+reads input spectra in any format supported by Proteowizard,</li>
+<li>
+offers a variety of additional options (--fileroot, --output-dir,
+--overwrite, --decoy-prefix, --output-txtfile, --parameter-file,
+--verbosity),</li>
+<li>
+prints all messages both to the screen and to a log file, and</li>
+<li>
+uses hyphens, rather than underscores, within parameter names.</li>
+</ul>
+
+<h3>To do list</h3>
 
 <p>
 <ul>
-<li>Accept parameters using either "_" or "-".</li>
-<li>Enable the --fileroot and --output-dir options.</li>
+<li>Change parameters to use hyphens.</li>
 <li>Map the modifications to actual mass changes instead of using
   special characters.</li>
 </ul>
