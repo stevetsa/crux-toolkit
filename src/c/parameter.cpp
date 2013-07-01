@@ -1291,6 +1291,12 @@ void initialize_parameters(void){
 		    "option for Comet only",
 		    "true");
 
+  set_int_parameter("output_txtfile",
+		    1, 0, 1,
+		    "0=no, 1=yes  write tab-delimited text file",
+		    "option for Comet only",
+		    "true");
+                    
   set_int_parameter("output_outfiles",
 		    0, 0, 1,
 		    "0=no, 1=yes  write .out files",
