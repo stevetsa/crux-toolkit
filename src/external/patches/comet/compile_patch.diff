@@ -1,3 +1,127 @@
+Index: Common.h
+===================================================================
+--- Common.h	(revision 110)
++++ Common.h	(working copy)
+@@ -42,7 +42,11 @@
+ #include "MSObject.h"
+ #include <vector>
+ 
++#ifdef CRUX
++#include <iostream>
++#endif
+ 
++
+ #define comet_version   "2013.01 rev. 0"
+ #define copyright "(c) University of Washington"
+ 
+@@ -50,4 +54,18 @@
+ // now between 0.0 and 1.0 and scales to the binWidth.
+ #define BIN(dMass) (int)(dMass*g_StaticParams.dInverseBinWidth + g_StaticParams.dOneMinusBinOffset)
+ 
++#ifdef CRUX
++int comet_main(int argc, char*argv[]);
++#endif
++using namespace MSToolkit;
++
++#ifdef CRUX
++#define log(...) {char sbuf[1000]; snprintf(sbuf, 1000, __VA_ARGS__); cerr << sbuf;}
++#define logerr(...) {char sbuf[1000]; snprintf(sbuf, 1000, __VA_ARGS__); cerr << sbuf;}
++#else
++#define log(...) printf(format, __VA_ARGS__)
++#define logerr(...) fprintf(stderr, format, __VA_ARGS__)
++#endif
++
++
+ #endif // _COMMON_H_
+Index: CometData.h
+===================================================================
+--- CometData.h	(revision 110)
++++ CometData.h	(working copy)
+@@ -369,6 +369,7 @@
+    char            szIonSeries[200];   // used for .out files
+    char            szDisplayLine[200]; // used for .out files
+    char            szMod[280];         // used for .out files
++   char            szDecoyPrefix[200]; // used for prefix to indicate decoys
+    int             iElapseTime;
+    DateTimeInfo    _dtInfoStart;
+    Options         options;
+Index: CometWritePepXML.cpp
+===================================================================
+--- CometWritePepXML.cpp	(revision 110)
++++ CometWritePepXML.cpp	(working copy)
+@@ -98,7 +98,7 @@
+    // Grab file extension from file name
+    if ( (pStr2 = strrchr(g_StaticParams.inputFile.szFileName, '.')) == NULL)
+    {
+-      printf(" Error - in WriteXMLHeader missing last period in file name: %s\n", g_StaticParams.inputFile.szFileName);
++      log(" Error - in WriteXMLHeader missing last period in file name: %s\n", g_StaticParams.inputFile.szFileName);
+       exit(1);
+    }
+    pStr2++;
+@@ -126,7 +126,7 @@
+    char szParamBuf[SIZE_BUF];
+    if ((fp=fopen(szParamsFile, "r")) == NULL)
+    {
+-      fprintf(stderr, " Error - cannot open parameter file %s.\n\n", szParamsFile);
++      logerr(" Error - cannot open parameter file %s.\n\n", szParamsFile);
+       exit(1);
+    }
+ 
+Index: MSToolkit/include/H5DataSet.h
+===================================================================
+--- MSToolkit/include/H5DataSet.h	(revision 110)
++++ MSToolkit/include/H5DataSet.h	(working copy)
+@@ -110,7 +110,7 @@
+    private:
+ 	hid_t id;       // HDF5 dataset id
+ 
+-#ifndef DOXYGEN_SHOULD_SKIP_THIS
++  //#ifndef DOXYGEN_SHOULD_SKIP_THIS
+         // This function contains the common code that is used by
+         // getTypeClass and various API functions getXxxType
+         // defined in AbstractDs for generic datatype and specific
+@@ -124,7 +124,7 @@
+    protected:
+         // Sets the dataset id.
+         virtual void p_setId(const hid_t new_id);
+-#endif // DOXYGEN_SHOULD_SKIP_THIS
++  //#endif // DOXYGEN_SHOULD_SKIP_THIS
+ };
+ #ifndef H5_NO_NAMESPACE
+ }
+Index: MSToolkit/include/xmltok.h
+===================================================================
+--- MSToolkit/include/xmltok.h	(revision 110)
++++ MSToolkit/include/xmltok.h	(working copy)
+@@ -5,6 +5,8 @@
+ #ifndef XmlTok_INCLUDED
+ #define XmlTok_INCLUDED 1
+ 
++#include "expat.h"
++
+ #ifdef __cplusplus
+ extern "C" {
+ #endif
+Index: MSToolkit/include/Spectrum.h
+===================================================================
+--- MSToolkit/include/Spectrum.h	(revision 110)
++++ MSToolkit/include/Spectrum.h	(working copy)
+@@ -9,6 +9,7 @@
+ 
+ using namespace std;
+ 
++namespace MSToolkit {
+ class Spectrum {
+  public:
+   //Constructors & Destructors
+@@ -148,6 +149,7 @@
+ 
+ };
+ 
++}
+ 
+ #endif
+ 
 Index: MSToolkit/include/H5CommonFG.h
 ===================================================================
 --- MSToolkit/include/H5CommonFG.h	(revision 110)
@@ -17,6 +141,25 @@ Index: MSToolkit/include/H5CommonFG.h
  
  	/// For subclasses, H5File and Group, to throw appropriate exception.
  	virtual void throwException(const H5std_string& func_name, const H5std_string& msg) const = 0;
+Index: MSToolkit/include/MSObject.h
+===================================================================
+--- MSToolkit/include/MSObject.h	(revision 110)
++++ MSToolkit/include/MSObject.h	(working copy)
+@@ -8,6 +8,7 @@
+ 
+ using namespace std;
+ 
++namespace MSToolkit {
+ class MSObject {
+  public:
+   //Constructors & Destructors
+@@ -40,5 +41,6 @@
+   
+ };
+ 
++}
+ #endif
+ 
 Index: MSToolkit/include/H5Object.h
 ===================================================================
 --- MSToolkit/include/H5Object.h	(revision 110)
@@ -57,25 +200,6 @@ Index: MSToolkit/include/H5Object.h
  
  }; /* end class H5Object */
  
-Index: MSToolkit/include/MSReader.h
-===================================================================
---- MSToolkit/include/MSReader.h	(revision 110)
-+++ MSToolkit/include/MSReader.h	(working copy)
-@@ -53,6 +53,7 @@
- 
- using namespace std;
- 
-+namespace MSToolkit {
- class MSReader {
-  public:
-   //Constructors & Destructors
-@@ -173,5 +174,6 @@
- 
- };
- 
-+}
- #endif
- 
 Index: MSToolkit/include/MSToolkitTypes.h
 ===================================================================
 --- MSToolkit/include/MSToolkitTypes.h	(revision 110)
@@ -97,75 +221,20 @@ Index: MSToolkit/include/MSToolkitTypes.h
  #endif
  
  
-Index: MSToolkit/include/xmltok.h
+Index: MSToolkit/include/MSReader.h
 ===================================================================
---- MSToolkit/include/xmltok.h	(revision 110)
-+++ MSToolkit/include/xmltok.h	(working copy)
-@@ -5,6 +5,8 @@
- #ifndef XmlTok_INCLUDED
- #define XmlTok_INCLUDED 1
- 
-+#include "expat.h"
-+
- #ifdef __cplusplus
- extern "C" {
- #endif
-Index: MSToolkit/include/H5DataSet.h
-===================================================================
---- MSToolkit/include/H5DataSet.h	(revision 110)
-+++ MSToolkit/include/H5DataSet.h	(working copy)
-@@ -110,7 +110,7 @@
-    private:
- 	hid_t id;       // HDF5 dataset id
- 
--#ifndef DOXYGEN_SHOULD_SKIP_THIS
-+  //#ifndef DOXYGEN_SHOULD_SKIP_THIS
-         // This function contains the common code that is used by
-         // getTypeClass and various API functions getXxxType
-         // defined in AbstractDs for generic datatype and specific
-@@ -124,7 +124,7 @@
-    protected:
-         // Sets the dataset id.
-         virtual void p_setId(const hid_t new_id);
--#endif // DOXYGEN_SHOULD_SKIP_THIS
-+  //#endif // DOXYGEN_SHOULD_SKIP_THIS
- };
- #ifndef H5_NO_NAMESPACE
- }
-Index: MSToolkit/include/Spectrum.h
-===================================================================
---- MSToolkit/include/Spectrum.h	(revision 110)
-+++ MSToolkit/include/Spectrum.h	(working copy)
-@@ -9,6 +9,7 @@
+--- MSToolkit/include/MSReader.h	(revision 110)
++++ MSToolkit/include/MSReader.h	(working copy)
+@@ -53,6 +53,7 @@
  
  using namespace std;
  
 +namespace MSToolkit {
- class Spectrum {
+ class MSReader {
   public:
    //Constructors & Destructors
-@@ -148,6 +149,7 @@
+@@ -173,5 +174,6 @@
  
- };
- 
-+}
- 
- #endif
- 
-Index: MSToolkit/include/MSObject.h
-===================================================================
---- MSToolkit/include/MSObject.h	(revision 110)
-+++ MSToolkit/include/MSObject.h	(working copy)
-@@ -8,6 +8,7 @@
- 
- using namespace std;
- 
-+namespace MSToolkit {
- class MSObject {
-  public:
-   //Constructors & Destructors
-@@ -40,5 +41,6 @@
-   
  };
  
 +}
@@ -720,7 +789,7 @@ Index: Makefile
 ===================================================================
 --- Makefile	(revision 110)
 +++ Makefile	(working copy)
-@@ -1,12 +1,16 @@
+@@ -1,12 +1,20 @@
  CXX = g++
  MSTOOLKIT = MSToolkit
 -CXXFLAGS = -O3 -static -Wall -Wno-char-subscripts -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -I$(MSTOOLKIT)/include
@@ -730,10 +799,14 @@ Index: Makefile
  DEPS = Common.h OSSpecificThreading.h CometData.h CometSearch.h CometPreprocess.h ThreadPool.h CometPostAnalysis.h CometMassSpecUtils.h
  LIBS = -lm -lmstoolkitlite -lpthread
  
-+all: libComet.a
++all: libComet.a ./MSToolkit/mstoolkitlite.a
  
 +libComet.a: $(OBJS)
 +	ar rcs libComet.a $(OBJS)
++
++./MSToolkit/mstoolkitlite.a:
++	cd MSToolkit ; make
++
 +
  comet.exe: $(OBJS)
  	cd MSToolkit ; make
@@ -1045,72 +1118,3 @@ Index: CometPostAnalysis.cpp
                             dFragmentIonMass,
                             iFragmentIonMass,
                             pQuery->_spectrumInfoInternal.iArraySize,
-Index: Common.h
-===================================================================
---- Common.h	(revision 110)
-+++ Common.h	(working copy)
-@@ -42,7 +42,11 @@
- #include "MSObject.h"
- #include <vector>
- 
-+#ifdef CRUX
-+#include <iostream>
-+#endif
- 
-+
- #define comet_version   "2013.01 rev. 0"
- #define copyright "(c) University of Washington"
- 
-@@ -50,4 +54,18 @@
- // now between 0.0 and 1.0 and scales to the binWidth.
- #define BIN(dMass) (int)(dMass*g_StaticParams.dInverseBinWidth + g_StaticParams.dOneMinusBinOffset)
- 
-+#ifdef CRUX
-+int comet_main(int argc, char*argv[]);
-+#endif
-+using namespace MSToolkit;
-+
-+#ifdef CRUX
-+#define log(...) {char sbuf[1000]; snprintf(sbuf, 1000, __VA_ARGS__); cerr << sbuf;}
-+#define logerr(...) {char sbuf[1000]; snprintf(sbuf, 1000, __VA_ARGS__); cerr << sbuf;}
-+#else
-+#define log(...) printf(format, __VA_ARGS__)
-+#define logerr(...) fprintf(stderr, format, __VA_ARGS__)
-+#endif
-+
-+
- #endif // _COMMON_H_
-Index: CometData.h
-===================================================================
---- CometData.h	(revision 110)
-+++ CometData.h	(working copy)
-@@ -369,6 +369,7 @@
-    char            szIonSeries[200];   // used for .out files
-    char            szDisplayLine[200]; // used for .out files
-    char            szMod[280];         // used for .out files
-+   char            szDecoyPrefix[200]; // used for prefix to indicate decoys
-    int             iElapseTime;
-    DateTimeInfo    _dtInfoStart;
-    Options         options;
-Index: CometWritePepXML.cpp
-===================================================================
---- CometWritePepXML.cpp	(revision 110)
-+++ CometWritePepXML.cpp	(working copy)
-@@ -98,7 +98,7 @@
-    // Grab file extension from file name
-    if ( (pStr2 = strrchr(g_StaticParams.inputFile.szFileName, '.')) == NULL)
-    {
--      printf(" Error - in WriteXMLHeader missing last period in file name: %s\n", g_StaticParams.inputFile.szFileName);
-+      log(" Error - in WriteXMLHeader missing last period in file name: %s\n", g_StaticParams.inputFile.szFileName);
-       exit(1);
-    }
-    pStr2++;
-@@ -126,7 +126,7 @@
-    char szParamBuf[SIZE_BUF];
-    if ((fp=fopen(szParamsFile, "r")) == NULL)
-    {
--      fprintf(stderr, " Error - cannot open parameter file %s.\n\n", szParamsFile);
-+      logerr(" Error - cannot open parameter file %s.\n\n", szParamsFile);
-       exit(1);
-    }
- 
