@@ -3,6 +3,8 @@
  * \brief General-use functions for crux
  */
 
+#include <dirent.h>
+#include <sys/types.h>
 #include <fstream>
 #include <errno.h>
 #include <sys/stat.h>
