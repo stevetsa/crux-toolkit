@@ -30,6 +30,7 @@ include_directories(../external/build/src/ProteoWizard/libraries/boost_1_43_0)
 include_directories(../external/build/src/ProteoWizard/libraries/boost_aux)
 include_directories(../external/build/src/comet/src/comet/MSToolkit/include)
 include_directories(../external/build/src/comet/src/comet)
+include_directories(../external/build/src/comet/src/comet/CometSearch)
 include_directories(../external/build/src/percolator/src/)
 include_directories(../external/build/src/percolator/src/fido)
 include_directories(../external/build/src/percolator-build/src/)
@@ -37,7 +38,7 @@ include_directories(../external/build/src/percolator-build/src/fido)
 
 
 link_directories(../external/lib)
-link_directories(../external/build/src/comet/src/comet)
+link_directories(../external/build/src/comet/src/comet/CometSearch)
 link_directories(../external/build/src/comet/src/comet/MSToolkit)
 link_directories(.)
 link_directories(./ArrayLibrary)
@@ -204,6 +205,7 @@ else (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
       PROPERTY
       COMPILE_DEFINITIONS
       DARWIN
+      _DARWIN_C_SOURCE
 	  )
 	  if (${CMAKE_SYSTEM_VERSION} VERSION_LESS "12")
       set_property(
@@ -269,7 +271,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     bullseye
     crux-support
     hardklor
-    Comet
+    cometsearch
     mstoolkitlite
     perclibrary
     posterior_error
@@ -281,7 +283,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     xlink-predict-peptide-ions
     xlink
     crux-support
-    Comet
+    cometsearch
     mstoolkitlite
     ws2_32
   )
@@ -308,7 +310,7 @@ else(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     tide-support
     protobuf
     gflags
-    Comet
+    cometsearch
     dl
     hardklor
     m
@@ -339,6 +341,7 @@ else(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     boost_filesystem-mt-s
     boost_regex-mt-s
     boost_thread-mt-s
+
   )
     
   target_link_libraries(

@@ -1,60 +1,556 @@
-Index: Common.h
+Index: Comet.cpp
 ===================================================================
---- Common.h	(revision 110)
-+++ Common.h	(working copy)
-@@ -42,7 +42,11 @@
- #include "MSObject.h"
- #include <vector>
- 
-+#ifdef CRUX
-+#include <iostream>
-+#endif
- 
-+
- #define comet_version   "2013.01 rev. 0"
- #define copyright "(c) University of Washington"
- 
-@@ -50,4 +54,18 @@
- // now between 0.0 and 1.0 and scales to the binWidth.
- #define BIN(dMass) (int)(dMass*g_StaticParams.dInverseBinWidth + g_StaticParams.dOneMinusBinOffset)
- 
-+#ifdef CRUX
-+int comet_main(int argc, char*argv[]);
-+#endif
-+using namespace MSToolkit;
-+
-+#ifdef CRUX
-+#define log(...) {char sbuf[1000]; snprintf(sbuf, 1000, __VA_ARGS__); cerr << sbuf;}
-+#define logerr(...) {char sbuf[1000]; snprintf(sbuf, 1000, __VA_ARGS__); cerr << sbuf;}
-+#else
-+#define log(...) printf(format, __VA_ARGS__)
-+#define logerr(...) fprintf(stderr, format, __VA_ARGS__)
-+#endif
-+
-+
- #endif // _COMMON_H_
-Index: CometData.h
+--- Comet.cpp	(revision 131)
++++ Comet.cpp	(working copy)
+@@ -233,6 +233,10 @@
+          {
+             sscanf(szParamVal, "%512s", staticParams.databaseInfo.szDatabase);
+          }
++         if (!strcmp(szParamName, "decoy-prefix"))
++         {
++            sscanf(szParamVal, "%200s", g_staticParams.szDecoyPrefix);
++         }
+          else if (!strcmp(szParamName, "nucleotide_reading_frame"))
+          {
+             sscanf(szParamVal, "%d", &(staticParams.options.iWhichReadingFrame));
+Index: CometSearch/CometData.h
 ===================================================================
---- CometData.h	(revision 110)
-+++ CometData.h	(working copy)
-@@ -369,6 +369,7 @@
+--- CometSearch/CometData.h	(revision 131)
++++ CometSearch/CometData.h	(working copy)
+@@ -559,6 +559,7 @@
     char            szIonSeries[200];   // used for .out files
     char            szDisplayLine[200]; // used for .out files
     char            szMod[280];         // used for .out files
 +   char            szDecoyPrefix[200]; // used for prefix to indicate decoys
     int             iElapseTime;
-    DateTimeInfo    _dtInfoStart;
+    char            szDate[28];
     Options         options;
-Index: CometWritePepXML.cpp
+Index: CometSearch/CometPostAnalysis.cpp
 ===================================================================
---- CometWritePepXML.cpp	(revision 110)
-+++ CometWritePepXML.cpp	(working copy)
+--- CometSearch/CometPostAnalysis.cpp	(revision 131)
++++ CometSearch/CometPostAnalysis.cpp	(working copy)
+@@ -34,7 +34,7 @@
+                                      int maxNumThreads)
+ {
+    if (!g_staticParams.options.bOutputSqtStream)
+-      printf(" - Perform post-search analysis\n");
++      logout(" - Perform post-search analysis\n");
+ 
+    // Create the thread pool containing g_staticParams.options.iNumThreads,
+    // each hanging around and sleeping until asked to do a post analysis.
+@@ -669,7 +669,7 @@
+                   }
+                   else
+                   {
+-                     printf(" Error - XCORR DECOY: dFragMass %f, iFragMass %d, ArraySize %d, InputMass %f, scan %d, z %d\n",
++                     logout(" Error - XCORR DECOY: dFragMass %f, iFragMass %d, ArraySize %d, InputMass %f, scan %d, z %d\n",
+                            dFragmentIonMass, 
+                            iFragmentIonMass,
+                            pQuery->_spectrumInfoInternal.iArraySize, 
+@@ -688,7 +688,7 @@
+                   }
+                   else
+                   {
+-                     printf(" Error - XCORR DECOY: dFragMass %f, iFragMass %d, ArraySize %d, InputMass %f, scan %d, z %d\n",
++                     logout(" Error - XCORR DECOY: dFragMass %f, iFragMass %d, ArraySize %d, InputMass %f, scan %d, z %d\n",
+                            dFragmentIonMass,
+                            iFragmentIonMass,
+                            pQuery->_spectrumInfoInternal.iArraySize,
+Index: CometSearch/CometPreprocess.cpp
+===================================================================
+--- CometSearch/CometPreprocess.cpp	(revision 131)
++++ CometSearch/CometPreprocess.cpp	(working copy)
+@@ -235,21 +235,21 @@
+    pdTempRawData = (double *)calloc((size_t)pScoring->_spectrumInfoInternal.iArraySize, (size_t)sizeof(double));
+    if (pdTempRawData == NULL)
+    {
+-      fprintf(stderr, " Error - calloc(pdTempRawData[%d]).\n\n", pScoring->_spectrumInfoInternal.iArraySize);
++      logerr( " Error - calloc(pdTempRawData[%d]).\n\n", pScoring->_spectrumInfoInternal.iArraySize);
+       exit(1);
+    }
+ 
+    pdTmpFastXcorrData = (double *)calloc((size_t)pScoring->_spectrumInfoInternal.iArraySize, (size_t)sizeof(double));
+    if (pdTmpFastXcorrData == NULL)
+    {
+-      fprintf(stderr, " Error - calloc(pdTmpFastXcorrData[%d]).\n\n", pScoring->_spectrumInfoInternal.iArraySize);
++      logerr( " Error - calloc(pdTmpFastXcorrData[%d]).\n\n", pScoring->_spectrumInfoInternal.iArraySize);
+       exit(1);
+    }
+ 
+    pScoring->pfFastXcorrData = (float *)calloc((size_t)pScoring->_spectrumInfoInternal.iArraySize, (size_t)sizeof(float));
+    if (pScoring->pfFastXcorrData == NULL)
+    {
+-      fprintf(stderr, " Error - calloc(pfFastXcorrData[%d]).\n\n", pScoring->_spectrumInfoInternal.iArraySize);
++      logerr( " Error - calloc(pfFastXcorrData[%d]).\n\n", pScoring->_spectrumInfoInternal.iArraySize);
+       exit(1);
+    }
+ 
+@@ -261,7 +261,7 @@
+       pScoring->pfFastXcorrDataNL = (float *)calloc((size_t)pScoring->_spectrumInfoInternal.iArraySize, (size_t)sizeof(float));
+       if (pScoring->pfFastXcorrDataNL == NULL)
+       {
+-         fprintf(stderr, " Error - calloc(pfFastXcorrDataNL[%d]).\n", pScoring->_spectrumInfoInternal.iArraySize);
++         logerr( " Error - calloc(pfFastXcorrDataNL[%d]).\n", pScoring->_spectrumInfoInternal.iArraySize);
+          exit(1);
+       }
+    }
+@@ -350,7 +350,7 @@
+       pScoring->pSparseFastXcorrData = (SparseMatrix *)calloc((size_t)pScoring->iFastXcorrData, (size_t)sizeof(SparseMatrix));
+       if (pScoring->pSparseFastXcorrData == NULL)
+       {
+-         fprintf(stderr, " Error - calloc(pScoring->pSparseFastXcorrData[%d]).\n\n", pScoring->iFastXcorrData);
++         logerr( " Error - calloc(pScoring->pSparseFastXcorrData[%d]).\n\n", pScoring->iFastXcorrData);
+          exit(1);
+       }
+       pScoring->pSparseFastXcorrData[0].bin=0;
+@@ -379,7 +379,7 @@
+          pScoring->pSparseFastXcorrDataNL = (SparseMatrix *)calloc((size_t)pScoring->iFastXcorrDataNL, (size_t)sizeof(SparseMatrix));
+          if (pScoring->pSparseFastXcorrDataNL == NULL)
+          {
+-            fprintf(stderr, " Error - calloc(pScoring->pSparseFastXcorrDataNL[%d]).\n\n", pScoring->iFastXcorrDataNL);
++            logerr( " Error - calloc(pScoring->pSparseFastXcorrDataNL[%d]).\n\n", pScoring->iFastXcorrDataNL);
+             exit(1);
+          }
+          pScoring->pSparseFastXcorrDataNL[0].bin=0;
+@@ -433,7 +433,7 @@
+       pScoring->pSparseSpScoreData = (SparseMatrix *)calloc((size_t)NUM_SP_IONS, (size_t)sizeof(SparseMatrix));
+       if (pScoring->pSparseSpScoreData == NULL)
+       {
+-         fprintf(stderr, " Error - calloc(pScoring->pSparseSpScoreData[%d]).\n\n", pScoring->iSpScoreData);
++         logerr( " Error - calloc(pScoring->pSparseSpScoreData[%d]).\n\n", pScoring->iSpScoreData);
+          exit(1);
+       }
+       pScoring->iSpScoreData=0;
+@@ -452,7 +452,7 @@
+       pScoring->pfSpScoreData = (float *)calloc((size_t)pScoring->_spectrumInfoInternal.iArraySize, (size_t)sizeof(float ));
+       if (pScoring->pfSpScoreData == NULL)
+       {
+-         fprintf(stderr, " Error - calloc(pfSpScoreData[%d])\n", pScoring->_spectrumInfoInternal.iArraySize);
++         logerr( " Error - calloc(pfSpScoreData[%d])\n", pScoring->_spectrumInfoInternal.iArraySize);
+          exit(1);
+       }
+ 
+@@ -778,7 +778,7 @@
+    }
+    else  // Should not get here.
+    {
+-      printf(" Error - iIsotopeError=%d\n\n", g_staticParams.tolerances.iIsotopeError);
++      logout(" Error - iIsotopeError=%d\n\n", g_staticParams.tolerances.iIsotopeError);
+       exit(1);
+    }
+ }
+@@ -800,7 +800,7 @@
+    pPre->pdCorrelationData = (double *)calloc((size_t)pScoring->_spectrumInfoInternal.iArraySize, (size_t)sizeof(double));
+    if (pPre->pdCorrelationData == NULL)
+    {
+-      fprintf(stderr, " Error - calloc(pdCorrelationData[%d]).\n\n", pScoring->_spectrumInfoInternal.iArraySize);
++      logerr( " Error - calloc(pdCorrelationData[%d]).\n\n", pScoring->_spectrumInfoInternal.iArraySize);
+       exit(1);
+    }
+ 
+@@ -962,7 +962,7 @@
+ 
+    if (pdSmoothedSpectrum == NULL)
+    {
+-      fprintf(stderr, " Error - calloc(pdSmoothedSpectrum[%d]).\n", iArraySize);
++      logerr( " Error - calloc(pdSmoothedSpectrum[%d]).\n", iArraySize);
+       exit(1);
+    }
+ 
+@@ -993,7 +993,7 @@
+    pdPeakExtracted = (double *)calloc((size_t)iArraySize, (size_t)sizeof(double));
+    if (pdPeakExtracted == NULL)
+    {
+-      fprintf(stderr, " Error - calloc(pdPeakExtracted[%d]).\n", iArraySize);
++      logerr( " Error - calloc(pdPeakExtracted[%d]).\n", iArraySize);
+       exit(1);
+    }
+ 
+Index: CometSearch/CometSearch.cpp
+===================================================================
+--- CometSearch/CometSearch.cpp	(revision 131)
++++ CometSearch/CometSearch.cpp	(working copy)
+@@ -57,7 +57,7 @@
+ 
+    if ((fptr=fopen(g_staticParams.databaseInfo.szDatabase, "rb")) == NULL)
+    {
+-       fprintf(stderr, " Error - cannot read database file \"%s\".\n\n", g_staticParams.databaseInfo.szDatabase);
++       logerr( " Error - cannot read database file \"%s\".\n\n", g_staticParams.databaseInfo.szDatabase);
+        exit(1);
+    }
+ 
+@@ -70,7 +70,7 @@
+ 
+    if (!g_staticParams.options.bOutputSqtStream)
+    {
+-      printf(" - Search progress: ");
++      logout(" - Search progress: ");
+       fflush(stdout);
+    }
+ 
+@@ -86,13 +86,13 @@
+       // Expect a '>' for sequence header line.
+       if (iTmpCh != '>')
+       {
+-         fprintf(stderr, "\n\n Error - database file, expecting definition line here.\n");
++         logerr( "\n\n Error - database file, expecting definition line here.\n");
+          fgets(szBuf, SIZE_BUF, fptr);
+-         fprintf(stderr, "%c%s", iTmpCh, szBuf);
++         logerr( "%c%s", iTmpCh, szBuf);
+          fgets(szBuf, SIZE_BUF, fptr);
+-         fprintf(stderr, "%s", szBuf);
++         logerr( "%s", szBuf);
+          fgets(szBuf, SIZE_BUF, fptr);
+-         fprintf(stderr, "%s", szBuf);
++         logerr( "%s", szBuf);
+          exit(1);
+       } 
+ 
+@@ -126,9 +126,9 @@
+             && !(g_staticParams.databaseInfo.iTotalNumProteins%200))
+       {
+          lCurrPos = ftell(fptr);
+-         printf("%3d%%", (int)(100.0 * (double)lCurrPos/(double)lEndPos));
++         logout("%3d%%", (int)(100.0 * (double)lCurrPos/(double)lEndPos));
+          fflush(stdout);
+-         printf("\b\b\b\b");
++         logout("\b\b\b\b");
+       }
+ 
+       // Now search sequence entry; add threading here so that
+@@ -144,7 +144,7 @@
+ 
+    if (!g_staticParams.options.bOutputSqtStream)
+    {
+-      printf(" 100%%\n");
++      logout(" 100%%\n");
+    }
+ }
+ 
+@@ -215,7 +215,7 @@
+          pszTemp=(char *)malloc(seqSize);
+          if (pszTemp == NULL)
+          {
+-            fprintf(stderr, " Error - malloc(szTemp[%d])\n",seqSize);
++            logerr( " Error - malloc(szTemp[%d])\n",seqSize);
+             exit(1);
+          }
+ 
+@@ -373,7 +373,7 @@
+                      // Now get the set of binned fragment ions once to compare this peptide against all matching spectra.
+                      if ((pbDuplFragment = (bool*)malloc(g_pvQuery.at(iWhichQuery)->_spectrumInfoInternal.iArraySize * (size_t)sizeof(bool)))==NULL)
+                      {
+-                        fprintf(stderr, " Error - malloc pbDuplFragments; iWhichQuery = %d\n\n", iWhichQuery);
++                        logerr( " Error - malloc pbDuplFragments; iWhichQuery = %d\n\n", iWhichQuery);
+                         exit(1);
+                      }
+ 
+@@ -414,10 +414,10 @@
+                      if (g_staticParams.options.iDecoySearch)
+                      {
+ #ifdef _WIN32
+-                        _snprintf(szDecoyProteinName, WIDTH_REFERENCE, "DECOY_%s", szProteinName);
++                        _snprintf(szDecoyProteinName, WIDTH_REFERENCE, "%s%s", g_staticParams.szDecoyPrefix, szProteinName);
+                         szDecoyProteinName[WIDTH_REFERENCE-1]=0;  // _snprintf does not guarantee null termination
+ #else
+-                        snprintf(szDecoyProteinName, WIDTH_REFERENCE, "DECOY_%s", szProteinName);
++                        snprintf(szDecoyProteinName, WIDTH_REFERENCE, "%s%s", g_staticParams.szDecoyPrefix, szProteinName);
+ #endif
+                         // Generate reverse peptide.  Keep prev and next AA in szDecoyPeptide string.
+                         // So actual reverse peptide starts at position 1 and ends at len-2 (as len-1
+@@ -780,7 +780,7 @@
+       }
+       else
+       {
+-         fprintf(stderr, " Error - iIsotopeError=%d, should not be here!\n\n", g_staticParams.tolerances.iIsotopeError);
++         logerr( " Error - iIsotopeError=%d, should not be here!\n\n", g_staticParams.tolerances.iIsotopeError);
+          exit(1);
+       }
+    }
+@@ -811,10 +811,10 @@
+             pTmp=(char *)realloc(_proteinInfo.pszProteinSeq, ii+100);
+             if (pTmp == NULL)
+             {
+-               fprintf(stderr, " Error realloc(szProteinSeq) ... size=%d\n", ii);
+-               fprintf(stderr, " A sequence entry is larger than your system can handle.\n");
+-               fprintf(stderr, " Either add more memory or edit the database and divide\n");
+-               fprintf(stderr, " the sequence into multiple, overlapping, smaller entries.\n\n");
++               logerr( " Error realloc(szProteinSeq) ... size=%d\n", ii);
++               logerr( " A sequence entry is larger than your system can handle.\n");
++               logerr( " Either add more memory or edit the database and divide\n");
++               logerr( " the sequence into multiple, overlapping, smaller entries.\n\n");
+                exit(1);
+             }
+ 
+@@ -841,10 +841,10 @@
+             pTmp=(char *)realloc(_proteinInfo.pszProteinSeq, ii+100);
+             if (pTmp == NULL)
+             {
+-               fprintf(stderr, " Error realloc(szProteinSeq) ... size=%d\n", ii);
+-               fprintf(stderr, " A sequence entry is larger than your system can handle.\n");
+-               fprintf(stderr, " Either add more memory or edit the database and divide\n");
+-               fprintf(stderr, " the sequence into multiple, overlapping, smaller entries.\n\n");
++               logerr( " Error realloc(szProteinSeq) ... size=%d\n", ii);
++               logerr( " A sequence entry is larger than your system can handle.\n");
++               logerr( " Either add more memory or edit the database and divide\n");
++               logerr( " the sequence into multiple, overlapping, smaller entries.\n\n");
+                exit(1);
+             }
+ 
+@@ -2227,7 +2227,7 @@
+             // now get the set of binned fragment ions once for all matching peptides
+             if ((pbDuplFragment = (bool*)malloc(g_pvQuery.at(iWhichQuery)->_spectrumInfoInternal.iArraySize * (size_t)sizeof(bool)))==NULL)
+             {
+-               fprintf(stderr, " Error - malloc pbDuplFragments; iWhichQuery = %d\n\n", iWhichQuery);
++               logerr( " Error - malloc pbDuplFragments; iWhichQuery = %d\n\n", iWhichQuery);
+                exit(1);
+             }
+ 
+Index: CometSearch/CometSearchManager.cpp
+===================================================================
+--- CometSearch/CometSearchManager.cpp	(revision 131)
++++ CometSearch/CometSearchManager.cpp	(working copy)
+@@ -124,8 +124,8 @@
+ 
+        if (!g_staticParams.options.bOutputSqtStream)
+        {
+-          printf(" Comet version \"%s\"\n", comet_version);
+-          printf(" Search start:  %s\n", g_staticParams.szDate);
++          logout(" Comet version \"%s\"\n", comet_version);
++          logout(" Search start:  %s\n", g_staticParams.szDate);
+        }
+ 
+        int iFirstScan = g_staticParams.inputFile.iFirstScan;             // First scan to search specified by user.
+@@ -156,13 +156,17 @@
+        if (g_staticParams.options.bOutputSqtFile)
+        {
+           if (iAnalysisType == AnalysisType_EntireFile)
++             #ifdef CRUX
++             sprintf(szOutputSQT, "%s.target.sqt", g_staticParams.inputFile.szBaseName);
++             #else
+              sprintf(szOutputSQT, "%s.sqt", g_staticParams.inputFile.szBaseName);
++             #endif
+           else
+              sprintf(szOutputSQT, "%s.%d-%d.sqt", g_staticParams.inputFile.szBaseName, iFirstScan, iLastScan);
+ 
+           if ((fpout_sqt = fopen(szOutputSQT, "w")) == NULL)
+           {
+-             fprintf(stderr, "Error - cannot write to file \"%s\".\n\n", szOutputSQT);
++             logerr("Error - cannot write to file \"%s\".\n\n", szOutputSQT);
+              exit(1);
+           }
+ 
+@@ -175,7 +179,7 @@
+ 
+              if ((fpoutd_sqt = fopen(szOutputDecoySQT, "w")) == NULL)
+              {
+-                fprintf(stderr, "Error - cannot write to decoy file \"%s\".\n\n", szOutputDecoySQT);
++                logerr("Error - cannot write to decoy file \"%s\".\n\n", szOutputDecoySQT);
+                 exit(1);
+              }
+           }
+@@ -184,13 +188,17 @@
+        if (g_staticParams.options.bOutputTxtFile)
+        {
+           if (iAnalysisType == AnalysisType_EntireFile)
++             #ifdef CRUX
++             sprintf(szOutputTxt, "%s.target.txt", g_staticParams.inputFile.szBaseName);
++             #else
+              sprintf(szOutputTxt, "%s.txt", g_staticParams.inputFile.szBaseName);
++             #endif
+           else
+              sprintf(szOutputTxt, "%s.%d-%d.txt", g_staticParams.inputFile.szBaseName, iFirstScan, iLastScan);
+ 
+           if ((fpout_txt = fopen(szOutputTxt, "w")) == NULL)
+           {
+-             fprintf(stderr, "Error - cannot write to file \"%s\".\n\n", szOutputTxt);
++             logerr("Error - cannot write to file \"%s\".\n\n", szOutputTxt);
+              exit(1);
+           }
+ 
+@@ -203,7 +211,7 @@
+ 
+              if ((fpoutd_txt= fopen(szOutputDecoyTxt, "w")) == NULL)
+              {
+-                fprintf(stderr, "Error - cannot write to decoy file \"%s\".\n\n", szOutputDecoyTxt);
++                logerr("Error - cannot write to decoy file \"%s\".\n\n", szOutputDecoyTxt);
+                 exit(1);
+              }
+           }
+@@ -212,13 +220,17 @@
+        if (g_staticParams.options.bOutputPepXMLFile)
+        {
+           if (iAnalysisType == AnalysisType_EntireFile)
++             #ifdef CRUX
++             sprintf(szOutputPepXML, "%s.target.pep.xml", g_staticParams.inputFile.szBaseName);
++             #else
+              sprintf(szOutputPepXML, "%s.pep.xml", g_staticParams.inputFile.szBaseName);
++             #endif
+           else
+              sprintf(szOutputPepXML, "%s.%d-%d.pep.xml", g_staticParams.inputFile.szBaseName, iFirstScan, iLastScan);
+ 
+           if ((fpout_pepxml = fopen(szOutputPepXML, "w")) == NULL)
+           {
+-             fprintf(stderr, "Error - cannot write to file \"%s\".\n\n", szOutputPepXML);
++             logerr("Error - cannot write to file \"%s\".\n\n", szOutputPepXML);
+              exit(1);
+           }
+ 
+@@ -234,7 +246,7 @@
+ 
+              if ((fpoutd_pepxml = fopen(szOutputDecoyPepXML, "w")) == NULL)
+              {
+-                fprintf(stderr, "Error - cannot write to decoy file \"%s\".\n\n", szOutputDecoyPepXML);
++                logerr("Error - cannot write to decoy file \"%s\".\n\n", szOutputDecoyPepXML);
+                 exit(1);
+              }
+ 
+@@ -246,13 +258,17 @@
+        if (g_staticParams.options.bOutputPinXMLFile)
+        {
+           if (iAnalysisType == AnalysisType_EntireFile)
++             #ifdef CRUX
++             sprintf(szOutputPinXML, "%s.target.pin.xml", g_staticParams.inputFile.szBaseName);
++             #else
+              sprintf(szOutputPinXML, "%s.pin.xml", g_staticParams.inputFile.szBaseName);
++             #endif
+           else
+              sprintf(szOutputPinXML, "%s.%d-%d.pin.xml", g_staticParams.inputFile.szBaseName, iFirstScan, iLastScan);
+ 
+           if ((fpout_pinxml = fopen(szOutputPinXML, "w")) == NULL)
+           {
+-             fprintf(stderr, "Error - cannot write to file \"%s\".\n\n", szOutputPinXML);
++             logerr("Error - cannot write to file \"%s\".\n\n", szOutputPinXML);
+              exit(1);
+           }
+ 
+@@ -277,7 +293,7 @@
+        {
+           // Load and preprocess all the spectra.
+           if (!g_staticParams.options.bOutputSqtStream)
+-             printf(" - Load and process input spectra\n");
++             logout(" - Load and process input spectra\n");
+ 
+           CometPreprocess::LoadAndPreprocessSpectra(mstReader,
+                 iFirstScan, iLastScan, iAnalysisType,
+@@ -291,12 +307,12 @@
+ 
+           // Allocate memory to store results for each query spectrum.
+           if (!g_staticParams.options.bOutputSqtStream)
+-             printf(" - Allocate memory to store results\n");
++             logout(" - Allocate memory to store results\n");
+ 
+           AllocateResultsMem();
+ 
+           if (!g_staticParams.options.bOutputSqtStream)
+-             printf(" - Number of mass-charge spectra loaded: %d\n", (int)g_pvQuery.size());
++             logout(" - Number of mass-charge spectra loaded: %d\n", (int)g_pvQuery.size());
+ 
+           // Sort g_pvQuery vector by dExpPepMass.
+           std::sort(g_pvQuery.begin(), g_pvQuery.end(), compareByPeptideMass);
+@@ -313,7 +329,7 @@
+           CalcRunTime(tStartTime);
+ 
+           if (!g_staticParams.options.bOutputSqtStream)
+-             printf(" - Write output\n");
++             logout(" - Write output\n");
+ 
+           if (g_staticParams.options.bOutputOutFiles)
+              CometWriteOut::WriteOut();
+@@ -341,14 +357,14 @@
+        }
+        if (iTotalSpectraSearched == 0)
+        {
+-          printf(" Warning - no spectra searched.\n\n");
++          logout(" Warning - no spectra searched.\n\n");
+        }
+ 
+        if (!g_staticParams.options.bOutputSqtStream)
+        {
+           time(&tStartTime);
+           strftime(g_staticParams.szDate, 26, "%m/%d/%Y, %I:%M:%S %p", localtime(&tStartTime));
+-          printf(" Search end:    %s\n\n", g_staticParams.szDate);
++          logout(" Search end:    %s\n\n", g_staticParams.szDate);
+        }
+ 
+        if (NULL != fpout_pepxml)
+@@ -444,7 +460,7 @@
+ 
+          if (err != EEXIST) 
+          {
+-            fprintf(stderr, "\n Error - could not create directory \"%s\".\n", g_staticParams.inputFile.szBaseName);
++            logerr("\n Error - could not create directory \"%s\".\n", g_staticParams.inputFile.szBaseName);
+             exit(1);
+          }
+       }
+@@ -460,7 +476,7 @@
+ 
+             if (err != EEXIST) 
+             {
+-               fprintf(stderr, "\n Error - could not create directory \"%s\".\n", szDecoyDir);
++               logerr("\n Error - could not create directory \"%s\".\n", szDecoyDir);
+                exit(1);
+             }
+          }
+@@ -468,7 +484,7 @@
+ #else
+       if ((mkdir(g_staticParams.inputFile.szBaseName, 0775) == -1) && (errno != EEXIST))
+       {
+-         fprintf(stderr, "\n Error - could not create directory \"%s\".\n", g_staticParams.inputFile.szBaseName);
++         logerr("\n Error - could not create directory \"%s\".\n", g_staticParams.inputFile.szBaseName);
+          exit(1);
+       }
+       if (g_staticParams.options.iDecoySearch == 2)
+@@ -478,7 +494,7 @@
+ 
+          if ((mkdir(szDecoyDir , 0775) == -1) && (errno != EEXIST))
+          {
+-            fprintf(stderr, "\n Error - could not create directory \"%s\".\n\n", szDecoyDir);
++            logerr("\n Error - could not create directory \"%s\".\n\n", szDecoyDir);
+             exit(1);
+          }
+       }
+@@ -511,7 +527,7 @@
+ 
+       if (pQuery->_pResults == NULL)
+       {
+-         fprintf(stderr, " Error malloc(_pResults[])\n");
++         logerr(" Error malloc(_pResults[])\n");
+          exit(1);
+       }
+ 
+@@ -529,7 +545,7 @@
+ 
+          if (pQuery->_pDecoys == NULL)
+          {
+-            fprintf(stderr, " Error malloc(_pDecoys[])\n");
++            logerr(" Error malloc(_pDecoys[])\n");
+             exit(1);
+          }
+ 
+Index: CometSearch/CometWriteOut.cpp
+===================================================================
+--- CometSearch/CometWriteOut.cpp	(revision 131)
++++ CometSearch/CometWriteOut.cpp	(working copy)
+@@ -139,7 +139,7 @@
+ 
+    if ((fpout = fopen(szOutput, "w")) == NULL)
+    {
+-      fprintf(stderr, "Error - cannot write to file %s.\n\n", szOutput);
++      logerr( "Error - cannot write to file %s.\n\n", szOutput);
+       exit(1);
+    }
+ 
+Index: CometSearch/CometWritePepXML.cpp
+===================================================================
+--- CometSearch/CometWritePepXML.cpp	(revision 131)
++++ CometSearch/CometWritePepXML.cpp	(working copy)
 @@ -98,7 +98,7 @@
     // Grab file extension from file name
-    if ( (pStr2 = strrchr(g_StaticParams.inputFile.szFileName, '.')) == NULL)
+    if ( (pStr2 = strrchr(g_staticParams.inputFile.szFileName, '.')) == NULL)
     {
--      printf(" Error - in WriteXMLHeader missing last period in file name: %s\n", g_StaticParams.inputFile.szFileName);
-+      log(" Error - in WriteXMLHeader missing last period in file name: %s\n", g_StaticParams.inputFile.szFileName);
+-      printf(" Error - in WriteXMLHeader missing last period in file name: %s\n", g_staticParams.inputFile.szFileName);
++      logout(" Error - in WriteXMLHeader missing last period in file name: %s\n", g_staticParams.inputFile.szFileName);
        exit(1);
     }
     pStr2++;
@@ -67,83 +563,188 @@ Index: CometWritePepXML.cpp
        exit(1);
     }
  
-Index: MSToolkit/include/H5DataSet.h
+Index: CometSearch/CometWritePinXML.cpp
 ===================================================================
---- MSToolkit/include/H5DataSet.h	(revision 110)
-+++ MSToolkit/include/H5DataSet.h	(working copy)
-@@ -110,7 +110,7 @@
-    private:
- 	hid_t id;       // HDF5 dataset id
+--- CometSearch/CometWritePinXML.cpp	(revision 131)
++++ CometSearch/CometWritePinXML.cpp	(working copy)
+@@ -18,8 +18,8 @@
+ #include "CometData.h"
+ #include "CometMassSpecUtils.h"
+ #include "CometWritePinXML.h"
++#include <math.h>
  
--#ifndef DOXYGEN_SHOULD_SKIP_THIS
-+  //#ifndef DOXYGEN_SHOULD_SKIP_THIS
-         // This function contains the common code that is used by
-         // getTypeClass and various API functions getXxxType
-         // defined in AbstractDs for generic datatype and specific
-@@ -124,7 +124,7 @@
-    protected:
-         // Sets the dataset id.
-         virtual void p_setId(const hid_t new_id);
--#endif // DOXYGEN_SHOULD_SKIP_THIS
-+  //#endif // DOXYGEN_SHOULD_SKIP_THIS
- };
- #ifndef H5_NO_NAMESPACE
+-
+ CometWritePinXML::CometWritePinXML()
+ {
  }
-Index: MSToolkit/include/xmltok.h
-===================================================================
---- MSToolkit/include/xmltok.h	(revision 110)
-+++ MSToolkit/include/xmltok.h	(working copy)
-@@ -5,6 +5,8 @@
- #ifndef XmlTok_INCLUDED
- #define XmlTok_INCLUDED 1
+@@ -152,7 +152,7 @@
+    }
+    else
+    {
+-      fprintf(stderr, " Error, dMZ=0. scan %d\n", pQuery->_spectrumInfoInternal.iScanNumber);
++      logerr(" Error, dMZ=0. scan %d\n", pQuery->_spectrumInfoInternal.iScanNumber);
+       exit(1);
+    }
  
-+#include "expat.h"
+Index: CometSearch/CometWriteSqt.cpp
+===================================================================
+--- CometSearch/CometWriteSqt.cpp	(revision 131)
++++ CometSearch/CometWriteSqt.cpp	(working copy)
+@@ -94,7 +94,7 @@
+    // write out entire parameters file to SQT header
+    if ((fp=fopen(szParamsFile, "r")) == NULL)
+    {
+-      fprintf(stderr, " Error - cannot open parameter file %s.\n\n", szParamsFile);
++      logerr(" Error - cannot open parameter file %s.\n\n", szParamsFile);
+       exit(1);
+    }
+ 
+Index: CometSearch/Common.h
+===================================================================
+--- CometSearch/Common.h	(revision 131)
++++ CometSearch/Common.h	(working copy)
+@@ -42,6 +42,11 @@
+ #include "MSObject.h"
+ #include <vector>
+ 
++#ifdef CRUX
++#include <iostream>
++#endif
 +
- #ifdef __cplusplus
- extern "C" {
- #endif
-Index: MSToolkit/include/Spectrum.h
++
+ #define comet_version   "2013.01 rev. 0"
+ #define copyright "(c) University of Washington"
+ 
+@@ -49,4 +54,13 @@
+ // now between 0.0 and 1.0 and scales to the binWidth.
+ #define BIN(dMass) (int)(dMass*g_staticParams.dInverseBinWidth + g_staticParams.dOneMinusBinOffset)
+ 
++using namespace MSToolkit;
++#ifdef CRUX
++#define logout(...) {char sbuf[1000]; snprintf(sbuf, 1000, __VA_ARGS__); cerr << sbuf;}
++#define logerr(...) {char sbuf[1000]; snprintf(sbuf, 1000, __VA_ARGS__); cerr << sbuf;}
++#else
++#define logout(...) printf(__VA_ARGS__)
++#define logerr(...) fprintf(stderr, __VA_ARGS__)
++#endif
++
+ #endif // _COMMON_H_
+Index: MSToolkit/include/H5pubconf.h
 ===================================================================
---- MSToolkit/include/Spectrum.h	(revision 110)
-+++ MSToolkit/include/Spectrum.h	(working copy)
-@@ -9,6 +9,7 @@
+--- MSToolkit/include/H5pubconf.h	(revision 131)
++++ MSToolkit/include/H5pubconf.h	(working copy)
+@@ -74,7 +74,7 @@
+ #define H5_HAVE_C99_FUNC 1
  
- using namespace std;
+ /* Define to 1 if you have the `clock_gettime' function. */
+-#define H5_HAVE_CLOCK_GETTIME 1
++/* #undef H5_HAVE_CLOCK_GETTIME */
  
-+namespace MSToolkit {
- class Spectrum {
-  public:
-   //Constructors & Destructors
-@@ -148,6 +149,7 @@
+ /* Define if the function stack tracing code is to be compiled in */
+ /* #undef H5_HAVE_CODESTACK */
+@@ -99,7 +99,7 @@
+ #define H5_HAVE_EMBEDDED_LIBINFO 1
  
- };
+ /* Define to 1 if you have the <features.h> header file. */
+-#define H5_HAVE_FEATURES_H 1
++/* #undef H5_HAVE_FEATURES_H */
  
-+}
+ /* Define if support for deflate (zlib) filter is enabled */
+ #define H5_HAVE_FILTER_DEFLATE 1
+@@ -132,7 +132,7 @@
+ #define H5_HAVE_FSEEKO 1
  
- #endif
+ /* Define to 1 if you have the `fseeko64' function. */
+-#define H5_HAVE_FSEEKO64 1
++/* #undef H5_HAVE_FSEEKO64 */
  
-Index: MSToolkit/include/H5CommonFG.h
-===================================================================
---- MSToolkit/include/H5CommonFG.h	(revision 110)
-+++ MSToolkit/include/H5CommonFG.h	(working copy)
-@@ -147,12 +147,12 @@
- 	VarLenType openVarLenType(const char* name) const;
- 	VarLenType openVarLenType(const H5std_string& name) const;
+ /* Define to 1 if you have the `fstat64' function. */
+ #define H5_HAVE_FSTAT64 1
+@@ -141,10 +141,10 @@
+ #define H5_HAVE_FTELLO 1
  
--#ifndef DOXYGEN_SHOULD_SKIP_THIS
-+  //#ifndef DOXYGEN_SHOULD_SKIP_THIS
- 	/// For subclasses, H5File and Group, to return the correct
- 	/// object id, i.e. file or group id.
- 	virtual hid_t getLocId() const = 0;
+ /* Define to 1 if you have the `ftello64' function. */
+-#define H5_HAVE_FTELLO64 1
++/* #undef H5_HAVE_FTELLO64 */
  
--#endif // DOXYGEN_SHOULD_SKIP_THIS
-+  //#endif // DOXYGEN_SHOULD_SKIP_THIS
+ /* Define to 1 if you have the `ftruncate64' function. */
+-#define H5_HAVE_FTRUNCATE64 1
++/* #undef H5_HAVE_FTRUNCATE64 */
  
- 	/// For subclasses, H5File and Group, to throw appropriate exception.
- 	virtual void throwException(const H5std_string& func_name, const H5std_string& msg) const = 0;
+ /* Define if the compiler understands the __FUNCTION__ keyword */
+ #define H5_HAVE_FUNCTION 1
+@@ -229,13 +229,13 @@
+ #define H5_HAVE_LONGJMP 1
+ 
+ /* Define to 1 if you have the `lseek64' function. */
+-#define H5_HAVE_LSEEK64 1
++/* #undef H5_HAVE_LSEEK64 */
+ 
+ /* Define to 1 if you have the `lstat' function. */
+ #define H5_HAVE_LSTAT 1
+ 
+ /* Define to 1 if you have the <mach/mach_time.h> header file. */
+-/* #undef H5_HAVE_MACH_MACH_TIME_H */
++#define H5_HAVE_MACH_MACH_TIME_H 1
+ 
+ /* Define to 1 if you have the <memory.h> header file. */
+ #define H5_HAVE_MEMORY_H 1
+@@ -286,7 +286,7 @@
+ #define H5_HAVE_SIGPROCMASK 1
+ 
+ /* Define to 1 if you have the `sigsetjmp' function. */
+-/* #undef H5_HAVE_SIGSETJMP */
++#define H5_HAVE_SIGSETJMP 1
+ 
+ /* Define to 1 if you have the `snprintf' function. */
+ #define H5_HAVE_SNPRINTF 1
+@@ -373,7 +373,7 @@
+ /* #undef H5_HAVE_THREADSAFE */
+ 
+ /* Define if `timezone' is a global variable */
+-/* #undef H5_HAVE_TIMEZONE */
++#define H5_HAVE_TIMEZONE 1
+ 
+ /* Define if the ioctl TIOCGETD is defined */
+ #define H5_HAVE_TIOCGETD 1
+@@ -534,10 +534,10 @@
+ #define H5_SIZEOF_INT8_T 1
+ 
+ /* The size of `int_fast16_t', as computed by sizeof. */
+-#define H5_SIZEOF_INT_FAST16_T 8
++#define H5_SIZEOF_INT_FAST16_T 2
+ 
+ /* The size of `int_fast32_t', as computed by sizeof. */
+-#define H5_SIZEOF_INT_FAST32_T 8
++#define H5_SIZEOF_INT_FAST32_T 4
+ 
+ /* The size of `int_fast64_t', as computed by sizeof. */
+ #define H5_SIZEOF_INT_FAST64_T 8
+@@ -567,7 +567,7 @@
+ #define H5_SIZEOF_LONG_LONG 8
+ 
+ /* The size of `off64_t', as computed by sizeof. */
+-#define H5_SIZEOF_OFF64_T 8
++#define H5_SIZEOF_OFF64_T 0
+ 
+ /* The size of `off_t', as computed by sizeof. */
+ #define H5_SIZEOF_OFF_T 8
+@@ -597,10 +597,10 @@
+ #define H5_SIZEOF_UINT8_T 1
+ 
+ /* The size of `uint_fast16_t', as computed by sizeof. */
+-#define H5_SIZEOF_UINT_FAST16_T 8
++#define H5_SIZEOF_UINT_FAST16_T 2
+ 
+ /* The size of `uint_fast32_t', as computed by sizeof. */
+-#define H5_SIZEOF_UINT_FAST32_T 8
++#define H5_SIZEOF_UINT_FAST32_T 4
+ 
+ /* The size of `uint_fast64_t', as computed by sizeof. */
+ #define H5_SIZEOF_UINT_FAST64_T 8
 Index: MSToolkit/include/MSObject.h
 ===================================================================
---- MSToolkit/include/MSObject.h	(revision 110)
+--- MSToolkit/include/MSObject.h	(revision 131)
 +++ MSToolkit/include/MSObject.h	(working copy)
 @@ -8,6 +8,7 @@
  
@@ -160,49 +761,28 @@ Index: MSToolkit/include/MSObject.h
 +}
  #endif
  
-Index: MSToolkit/include/H5Object.h
+Index: MSToolkit/include/MSReader.h
 ===================================================================
---- MSToolkit/include/H5Object.h	(revision 110)
-+++ MSToolkit/include/H5Object.h	(working copy)
-@@ -27,7 +27,7 @@
- namespace H5 {
- #endif
+--- MSToolkit/include/MSReader.h	(revision 131)
++++ MSToolkit/include/MSReader.h	(working copy)
+@@ -53,6 +53,7 @@
  
--#ifndef DOXYGEN_SHOULD_SKIP_THIS
-+  //#ifndef DOXYGEN_SHOULD_SKIP_THIS
- class H5_DLLCPP H5Object;  // forward declaration for UserData4Aiterate
+ using namespace std;
  
- // Define the operator function pointer for H5Aiterate().
-@@ -41,7 +41,7 @@
- 	void* opData;
- 	H5Object* object;
++namespace MSToolkit {
+ class MSReader {
+  public:
+   //Constructors & Destructors
+@@ -173,5 +174,6 @@
+ 
  };
--#endif // DOXYGEN_SHOULD_SKIP_THIS
-+  //#endif // DOXYGEN_SHOULD_SKIP_THIS
  
- // The above part is being moved into Iterator, but not completed
- 
-@@ -99,7 +99,7 @@
- 	virtual ~H5Object();
- 
-    protected:
--#ifndef DOXYGEN_SHOULD_SKIP_THIS
-+  //#ifndef DOXYGEN_SHOULD_SKIP_THIS
- 	// Default constructor
- 	H5Object();
- 
-@@ -123,7 +123,7 @@
- 	// Retrieves a dataspace with the region pointed to selected.
- 	hid_t p_get_region(void *ref, H5R_type_t ref_type) const;
- 
--#endif // DOXYGEN_SHOULD_SKIP_THIS
-+  //#endif // DOXYGEN_SHOULD_SKIP_THIS
- 
- }; /* end class H5Object */
++}
+ #endif
  
 Index: MSToolkit/include/MSToolkitTypes.h
 ===================================================================
---- MSToolkit/include/MSToolkitTypes.h	(revision 110)
+--- MSToolkit/include/MSToolkitTypes.h	(revision 131)
 +++ MSToolkit/include/MSToolkitTypes.h	(working copy)
 @@ -2,6 +2,7 @@
  #define _MSTOOLKITTYPES_H
@@ -221,63 +801,29 @@ Index: MSToolkit/include/MSToolkitTypes.h
  #endif
  
  
-Index: MSToolkit/include/MSReader.h
+Index: MSToolkit/include/Spectrum.h
 ===================================================================
---- MSToolkit/include/MSReader.h	(revision 110)
-+++ MSToolkit/include/MSReader.h	(working copy)
-@@ -53,6 +53,7 @@
+--- MSToolkit/include/Spectrum.h	(revision 131)
++++ MSToolkit/include/Spectrum.h	(working copy)
+@@ -9,6 +9,7 @@
  
  using namespace std;
  
 +namespace MSToolkit {
- class MSReader {
+ class Spectrum {
   public:
    //Constructors & Destructors
-@@ -173,5 +174,6 @@
+@@ -148,6 +149,7 @@
  
  };
  
 +}
+ 
  #endif
  
-Index: MSToolkit/src/MSToolkit/Spectrum.cpp
-===================================================================
---- MSToolkit/src/MSToolkit/Spectrum.cpp	(revision 110)
-+++ MSToolkit/src/MSToolkit/Spectrum.cpp	(working copy)
-@@ -4,6 +4,7 @@
- 
- using namespace std;
- 
-+namespace MSToolkit {
- Spectrum::Spectrum(){
-   //cout<<"in Spectrum constructor!"<<endl;
- 
-@@ -569,3 +570,4 @@
-   else return 0;
- }
- 
-+}
-Index: MSToolkit/src/MSToolkit/MSReader.cpp
-===================================================================
---- MSToolkit/src/MSToolkit/MSReader.cpp	(revision 110)
-+++ MSToolkit/src/MSToolkit/MSReader.cpp	(working copy)
-@@ -2,6 +2,8 @@
- #include <iostream>
- using namespace std;
- 
-+namespace MSToolkit {
-+
- MSReader::MSReader(){
-   fileIn=NULL;
-   rampFileIn=NULL;
-@@ -1976,3 +1978,4 @@
- 
- }
- 
-+}
 Index: MSToolkit/src/MSToolkit/MSObject.cpp
 ===================================================================
---- MSToolkit/src/MSToolkit/MSObject.cpp	(revision 110)
+--- MSToolkit/src/MSToolkit/MSObject.cpp	(revision 131)
 +++ MSToolkit/src/MSToolkit/MSObject.cpp	(working copy)
 @@ -3,6 +3,8 @@
  
@@ -293,828 +839,51 @@ Index: MSToolkit/src/MSToolkit/MSObject.cpp
  };
  
 +}
-Index: MSToolkit/src/expat-2.0.1/xmlparse.c
+Index: MSToolkit/src/MSToolkit/MSReader.cpp
 ===================================================================
---- MSToolkit/src/expat-2.0.1/xmlparse.c	(revision 110)
-+++ MSToolkit/src/expat-2.0.1/xmlparse.c	(working copy)
-@@ -21,7 +21,7 @@
- #endif /* ndef COMPILED_FROM_DSP */
+--- MSToolkit/src/MSToolkit/MSReader.cpp	(revision 131)
++++ MSToolkit/src/MSToolkit/MSReader.cpp	(working copy)
+@@ -2,6 +2,8 @@
+ #include <iostream>
+ using namespace std;
  
- #include "ascii.h"
--#include "expat.h"
-+//#include "expat.h"
- 
- #ifdef XML_UNICODE
- #define XML_ENCODE_MAX XML_UTF16_ENCODE_MAX
-Index: Comet.cpp
-===================================================================
---- Comet.cpp	(revision 110)
-+++ Comet.cpp	(working copy)
-@@ -67,8 +67,11 @@
-    return (a->_pepMassInfo.dExpPepMass < b->_pepMassInfo.dExpPepMass);
- }
- 
--
-+#if CRUX
-+int comet_main(int argc, char *argv[])
-+#else
- int main(int argc, char *argv[])
-+#endif 
- {
-    char szParamsFile[SIZE_FILE];
- 
-@@ -85,8 +88,8 @@
-          && !g_StaticParams.options.bOutputPepXMLFile
-          && !g_StaticParams.options.bOutputOutFiles)
-    {
--      printf("\n Comet version \"%s\"\n", comet_version);
--      printf(" Please specify at least one output format.\n\n");
-+      log("\n Comet version \"%s\"\n", comet_version);
-+      log(" Please specify at least one output format.\n\n");
-       exit(1);
-    }
- 
-@@ -118,8 +121,8 @@
- 
-        if (!g_StaticParams.options.bOutputSqtStream)
-        {
--          printf(" Comet version \"%s\"\n", comet_version);
--          printf(" Search start:  %s\n", g_StaticParams._dtInfoStart.szDate);
-+          log(" Comet version \"%s\"\n", comet_version);
-+          log(" Search start:  %s\n", g_StaticParams._dtInfoStart.szDate);
-        }
- 
-        int iFirstScan = g_StaticParams.inputFile.iFirstScan;             // First scan to search specified by user.
-@@ -148,13 +151,13 @@
-        if (g_StaticParams.options.bOutputSqtFile)
-        {
-           if (iAnalysisType == AnalysisType_EntireFile)
--             sprintf(szOutputSQT, "%s.sqt", g_StaticParams.inputFile.szBaseName);
-+             sprintf(szOutputSQT, "%s.target.sqt", g_StaticParams.inputFile.szBaseName);
-           else
--             sprintf(szOutputSQT, "%s.%d-%d.sqt", g_StaticParams.inputFile.szBaseName, iFirstScan, iLastScan);
-+             sprintf(szOutputSQT, "%s.target.%d-%d.sqt", g_StaticParams.inputFile.szBaseName, iFirstScan, iLastScan);
- 
-           if ((fpout_sqt = fopen(szOutputSQT, "w")) == NULL)
-           {
--             fprintf(stderr, "Error - cannot write to file \"%s\".\n\n", szOutputSQT);
-+             logerr("Error - cannot write to file \"%s\".\n\n", szOutputSQT);
-              exit(1);
-           }
- 
-@@ -167,7 +170,7 @@
- 
-              if ((fpoutd_sqt = fopen(szOutputDecoySQT, "w")) == NULL)
-              {
--                fprintf(stderr, "Error - cannot write to decoy file \"%s\".\n\n", szOutputDecoySQT);
-+                logerr("Error - cannot write to decoy file \"%s\".\n\n", szOutputDecoySQT);
-                 exit(1);
-              }
-           }
-@@ -176,13 +179,13 @@
-        if (g_StaticParams.options.bOutputTxtFile)
-        {
-           if (iAnalysisType == AnalysisType_EntireFile)
--             sprintf(szOutputTxt, "%s.txt", g_StaticParams.inputFile.szBaseName);
-+             sprintf(szOutputTxt, "%s.target.txt", g_StaticParams.inputFile.szBaseName);
-           else
--             sprintf(szOutputTxt, "%s.%d-%d.txt", g_StaticParams.inputFile.szBaseName, iFirstScan, iLastScan);
-+             sprintf(szOutputTxt, "%s.target.%d-%d.txt", g_StaticParams.inputFile.szBaseName, iFirstScan, iLastScan);
- 
-           if ((fpout_txt = fopen(szOutputTxt, "w")) == NULL)
-           {
--             fprintf(stderr, "Error - cannot write to file \"%s\".\n\n", szOutputTxt);
-+             logerr("Error - cannot write to file \"%s\".\n\n", szOutputTxt);
-              exit(1);
-           }
- 
-@@ -195,7 +198,7 @@
- 
-              if ((fpoutd_txt= fopen(szOutputDecoyTxt, "w")) == NULL)
-              {
--                fprintf(stderr, "Error - cannot write to decoy file \"%s\".\n\n", szOutputDecoyTxt);
-+                logerr("Error - cannot write to decoy file \"%s\".\n\n", szOutputDecoyTxt);
-                 exit(1);
-              }
-           }
-@@ -204,13 +207,13 @@
-        if (g_StaticParams.options.bOutputPepXMLFile)
-        {
-           if (iAnalysisType == AnalysisType_EntireFile)
--             sprintf(szOutputPepXML, "%s.pep.xml", g_StaticParams.inputFile.szBaseName);
-+             sprintf(szOutputPepXML, "%s.target.pep.xml", g_StaticParams.inputFile.szBaseName);
-           else
--             sprintf(szOutputPepXML, "%s.%d-%d.pep.xml", g_StaticParams.inputFile.szBaseName, iFirstScan, iLastScan);
-+             sprintf(szOutputPepXML, "%s.target.%d-%d.pep.xml", g_StaticParams.inputFile.szBaseName, iFirstScan, iLastScan);
- 
-           if ((fpout_pepxml = fopen(szOutputPepXML, "w")) == NULL)
-           {
--             fprintf(stderr, "Error - cannot write to file \"%s\".\n\n", szOutputPepXML);
-+             logerr("Error - cannot write to file \"%s\".\n\n", szOutputPepXML);
-              exit(1);
-           }
- 
-@@ -225,7 +228,7 @@
- 
-              if ((fpoutd_pepxml = fopen(szOutputDecoyPepXML, "w")) == NULL)
-              {
--                fprintf(stderr, "Error - cannot write to decoy file \"%s\".\n\n", szOutputDecoyPepXML);
-+                logerr("Error - cannot write to decoy file \"%s\".\n\n", szOutputDecoyPepXML);
-                 exit(1);
-              }
- 
-@@ -248,7 +251,7 @@
-        {
-           // Load and preprocess all the spectra.
-           if (!g_StaticParams.options.bOutputSqtStream)
--             printf(" - Load and process input spectra\n");
-+             log(" - Load and process input spectra\n");
- 
-           CometPreprocess::LoadAndPreprocessSpectra(mstReader,
-                 iFirstScan, iLastScan, iAnalysisType,
-@@ -262,12 +265,12 @@
- 
-           // Allocate memory to store results for each query spectrum.
-           if (!g_StaticParams.options.bOutputSqtStream)
--             printf(" - Allocate memory to store results\n");
-+             log(" - Allocate memory to store results\n");
- 
-           AllocateResultsMem();
- 
-           if (!g_StaticParams.options.bOutputSqtStream)
--             printf(" - Number of mass-charge spectra loaded: %d\n", (int)g_pvQuery.size());
-+             log(" - Number of mass-charge spectra loaded: %d\n", (int)g_pvQuery.size());
- 
-           // Sort g_pvQuery vector by dExpPepMass.
-           std::sort(g_pvQuery.begin(), g_pvQuery.end(), compareByPeptideMass);
-@@ -284,7 +287,7 @@
-           CalcRunTime(tStartTime);
- 
-           if (!g_StaticParams.options.bOutputSqtStream)
--             printf(" - Write output\n");
-+             log(" - Write output\n");
- 
-           if (g_StaticParams.options.bOutputOutFiles)
-              CometWriteOut::WriteOut();
-@@ -308,14 +311,14 @@
-        }
-        if (iTotalSpectraSearched == 0)
-        {
--          printf(" Warning - no spectra searched.\n\n");
-+          log(" Warning - no spectra searched.\n\n");
-        }
- 
-        if (!g_StaticParams.options.bOutputSqtStream)
-        {
-           time(&tStartTime);
-           strftime(g_StaticParams._dtInfoStart.szDate, 26, "%m/%d/%Y, %I:%M:%S %p", localtime(&tStartTime));
--          printf(" Search end:    %s\n\n", g_StaticParams._dtInfoStart.szDate);
-+          log(" Search end:    %s\n\n", g_StaticParams._dtInfoStart.szDate);
-        }
- 
-        if (NULL != fpout_pepxml)
-@@ -371,7 +374,7 @@
- 
-       if (pQuery->_pResults == NULL)
-       {
--         fprintf(stderr, " Error malloc(_pResults[])\n");
-+         logerr(" Error malloc(_pResults[])\n");
-          exit(1);
-       }
- 
-@@ -389,7 +392,7 @@
- 
-          if (pQuery->_pDecoys == NULL)
-          {
--            fprintf(stderr, " Error malloc(_pDecoys[])\n");
-+            logerr(" Error malloc(_pDecoys[])\n");
-             exit(1);
-          }
- 
-@@ -430,25 +433,25 @@
- 
- void Usage(int failure, char *pszCmd)
- {
--   printf("\n");
--   printf(" Comet version \"%s\"\n %s\n", comet_version, copyright);
--   printf("\n");
--   printf(" Comet usage:  %s [options] <input_files>\n", pszCmd);
--   printf("\n");
--   printf(" Supported input formats include mzXML, mzXML, mz5 and ms2 variants (cms2, bms2, ms2)\n");
--   printf("\n");
--   printf("       options:  -p         to print out a comet.params file (named comet.params.new)\n");
--   printf("                 -P<params> to specify an alternate parameters file (default comet.params)\n");
--   printf("                 -N<name>   to specify an alternate output base name; valid only with one input file\n");
--   printf("                 -D<dbase>  to specify a sequence database, overriding entry in parameters file\n");
--   printf("                 -F<num>    to specify the first/start scan to search, overriding entry in parameters file\n");
--   printf("                 -L<num>    to specify the last/end scan to search, overriding entry in parameters file\n");
--   printf("                            (-L option is required if -F option is used)\n");
--   printf("\n");
--   printf("       example:  %s file1.mzXML file2.mzXML\n", pszCmd);
--   printf("            or   %s -F1000 -L1500 file1.mzXML    <- to search scans 1000 through 1500\n", pszCmd);
--   printf("            or   %s -pParams.txt *.mzXML         <- use parameters in the file 'Params.txt'\n", pszCmd);
--   printf("\n");
-+   log("\n");
-+   log(" Comet version \"%s\"\n %s\n", comet_version, copyright);
-+   log("\n");
-+   log(" Comet usage:  %s [options] <input_files>\n", pszCmd);
-+   log("\n");
-+   log(" Supported input formats include mzXML, mzXML, mz5 and ms2 variants (cms2, bms2, ms2)\n");
-+   log("\n");
-+   log("       options:  -p         to print out a comet.params file (named comet.params.new)\n");
-+   log("                 -P<params> to specify an alternate parameters file (default comet.params)\n");
-+   log("                 -N<name>   to specify an alternate output base name; valid only with one input file\n");
-+   log("                 -D<dbase>  to specify a sequence database, overriding entry in parameters file\n");
-+   log("                 -F<num>    to specify the first/start scan to search, overriding entry in parameters file\n");
-+   log("                 -L<num>    to specify the last/end scan to search, overriding entry in parameters file\n");
-+   log("                            (-L option is required if -F option is used)\n");
-+   log("\n");
-+   log("       example:  %s file1.mzXML file2.mzXML\n", pszCmd);
-+   log("            or   %s -F1000 -L1500 file1.mzXML    <- to search scans 1000 through 1500\n", pszCmd);
-+   log("            or   %s -pParams.txt *.mzXML         <- use parameters in the file 'Params.txt'\n", pszCmd);
-+   log("\n");
- 
-    exit(1);
- }
-@@ -484,38 +487,44 @@
-    switch (arg[1])
-    {
-       case 'D':   // Alternate sequence database.
--         if (sscanf(arg+2, "%512s", szTmp) == 0)
--            fprintf(stderr, "Cannot read command line database: '%s'.  Ignored.\n", szTmp);
-+         if (sscanf(arg+2, "%512s", szTmp) == 0) {
-+            logerr("Cannot read command line database: '%s'.  Ignored.\n", szTmp);
-+         }
-          else
-             strcpy(g_StaticParams.databaseInfo.szDatabase, szTmp);
-          break;
-       case 'P':   // Alternate parameters file.
--         if (sscanf(arg+2, "%512s", szTmp) == 0 )
--            fprintf(stderr, "Missing text for parameter option -P<params>.  Ignored.\n");
-+         if (sscanf(arg+2, "%512s", szTmp) == 0 ) {
-+            logerr("Missing text for parameter option -P<params>.  Ignored.\n");
-+         }
-          else
-             strcpy(szParamsFile, szTmp);
-          break;
-       case 'N':   // Set basename of output file (for .out, SQT, and pepXML)
--         if (sscanf(arg+2, "%512s", szTmp) == 0 )
--            fprintf(stderr, "Missing text for parameter option -N<basename>.  Ignored.\n");
-+         if (sscanf(arg+2, "%512s", szTmp) == 0 ) {
-+            logerr("Missing text for parameter option -N<basename>.  Ignored.\n");
-+         }
-          else
-             strcpy(g_StaticParams.inputFile.szBaseName, szTmp);
-          break;
-       case 'F':
--         if (sscanf(arg+2, "%512s", szTmp) == 0 )
--            fprintf(stderr, "Missing text for parameter option -F<num>.  Ignored.\n");
-+         if (sscanf(arg+2, "%512s", szTmp) == 0 ) {
-+            logerr("Missing text for parameter option -F<num>.  Ignored.\n");
-+         }
-          else
-             g_StaticParams.options.iStartScan = atoi(szTmp);
-          break;
-       case 'L':
--         if (sscanf(arg+2, "%512s", szTmp) == 0 )
--            fprintf(stderr, "Missing text for parameter option -L<num>.  Ignored.\n");
-+         if (sscanf(arg+2, "%512s", szTmp) == 0 ) {
-+            logerr("Missing text for parameter option -L<num>.  Ignored.\n");
-+         }
-          else
-              g_StaticParams.options.iEndScan = atoi(szTmp);
-          break;
-       case 'B':
--         if (sscanf(arg+2, "%512s", szTmp) == 0 )
--            fprintf(stderr, "Missing text for parameter option -B<num>.  Ignored.\n");
-+         if (sscanf(arg+2, "%512s", szTmp) == 0 ) {
-+            logerr("Missing text for parameter option -B<num>.  Ignored.\n");
-+         }
-          else
-              g_StaticParams.options.iSpectrumBatchSize = atoi(szTmp);
-          break;
-@@ -643,8 +652,8 @@
- 
-    if ((fp=fopen(pszParamsFile, "r")) == NULL)
-    {
--      fprintf(stderr, "\n Comet version %s\n %s\n", comet_version, copyright);
--      fprintf(stderr, " Error - cannot open parameter file \"%s\".\n\n", pszParamsFile);
-+      logerr("\n Comet version %s\n %s\n", comet_version, copyright);
-+      logerr(" Error - cannot open parameter file \"%s\".\n\n", pszParamsFile);
-       exit(1);
-    }
- 
-@@ -668,12 +677,12 @@
- 
-    if (!bValidParamsFile)
-    {
--      printf("\n");
--      printf(" Comet version is %s\n", comet_version);
--      printf(" The comet.params file is from version %s\n", szVersion);
--      printf(" Please update your comet.params file.  You can generate\n");
--      printf(" a new parameters file using \"comet -p\"\n");
--      printf("\n");
-+      log("\n");
-+      log(" Comet version is %s\n", comet_version);
-+      log(" The comet.params file is from version %s\n", szVersion);
-+      log(" Please update your comet.params file.  You can generate\n");
-+      log(" a new parameters file using \"comet -p\"\n");
-+      log("\n");
-       exit(1);
-    }
- 
-@@ -698,6 +707,10 @@
-          {
-             sscanf(szParamVal, "%512s", g_StaticParams.databaseInfo.szDatabase);
-          }
-+         if (!strcmp(szParamName, "decoy-prefix"))
-+         {
-+            sscanf(szParamVal, "%200s", g_StaticParams.szDecoyPrefix);
-+         }
-          else if (!strcmp(szParamName, "nucleotide_reading_frame"))
-          {
-             sscanf(szParamVal, "%d", &(g_StaticParams.options.iWhichReadingFrame));
-@@ -1313,12 +1326,12 @@
- 
-    if (!strcmp(g_StaticParams.enzymeInformation.szSearchEnzymeName, "-"))
-    {
--      printf(" Error - search enzyme number %d is missing definition in params file.\n\n", iSearchEnzymeNumber);
-+      log(" Error - search enzyme number %d is missing definition in params file.\n\n", iSearchEnzymeNumber);
-       exit(1);
-    }
-    if (!strcmp(g_StaticParams.enzymeInformation.szSampleEnzymeName, "-"))
-    {
--      printf(" Error - sample enzyme number %d is missing definition in params file.\n\n", iSampleEnzymeNumber);
-+      log(" Error - sample enzyme number %d is missing definition in params file.\n\n", iSampleEnzymeNumber);
-       exit(1);
-    }
- 
-@@ -1442,13 +1455,13 @@
- 
-    if (!bCurrentParamsFile)
-    {
--      fprintf(stderr, " Error - outdated params file; generate an update params file using '-p' option.\n\n");
-+      logerr(" Error - outdated params file; generate an update params file using '-p' option.\n\n");
-       exit(1);
-    }
- 
-    if (g_StaticParams.tolerances.dFragmentBinStartOffset < 0.0 || g_StaticParams.tolerances.dFragmentBinStartOffset >1.0)
-    {
--      fprintf(stderr, " Error - bin offset %f must between 0.0 and 1.0\n",
-+      logerr(" Error - bin offset %f must between 0.0 and 1.0\n",
-             g_StaticParams.tolerances.dFragmentBinStartOffset);
-       exit(1);
-    }
-@@ -1623,10 +1636,10 @@
- 
-    if (iStartInputFile == argc)
-    {
--      printf("\n");
--      printf(" Comet version %s\n %s\n", comet_version, copyright);
--      printf("\n");
--      printf(" Error - no input files specified so nothing to do.\n\n");
-+      log("\n");
-+      log(" Comet version %s\n %s\n", comet_version, copyright);
-+      log("\n");
-+      log(" Error - no input files specified so nothing to do.\n\n");
-       exit(1);
-    }
- 
-@@ -1674,7 +1687,7 @@
-           InputFileInfo *pInputFileInfo = new InputFileInfo();
-           if (!ParseCmdLine(arg, pInputFileInfo))
-           {
--              fprintf(stderr, " Error - input MS/MS file \"%s\" not found.\n\n", pInputFileInfo->szFileName);
-+              logerr(" Error - input MS/MS file \"%s\" not found.\n\n", pInputFileInfo->szFileName);
-               g_pvInputFiles.clear();
-               exit(1);
-           }
-@@ -1692,8 +1705,8 @@
-    // time reading & processing spectra and then reporting this error.
-    if ((fpcheck=fopen(g_StaticParams.databaseInfo.szDatabase, "r")) == NULL)
-    {
--      fprintf(stderr, "\n Error - cannot read database file \"%s\".\n", g_StaticParams.databaseInfo.szDatabase);
--      fprintf(stderr, " Check that the file exists and is readable.\n\n");
-+      logerr("\n Error - cannot read database file \"%s\".\n", g_StaticParams.databaseInfo.szDatabase);
-+      logerr(" Check that the file exists and is readable.\n\n");
-       g_pvInputFiles.clear();
-       exit(1);
-    }
-@@ -1701,9 +1714,9 @@
- 
-    if (g_StaticParams.options.iEndScan < g_StaticParams.options.iStartScan && g_StaticParams.options.iEndScan!= 0)
-    {
--      fprintf(stderr, "\n Comet version %s\n %s\n\n", comet_version, copyright);
--      fprintf(stderr, " Error - start scan is %d but end scan is %d.\n", g_StaticParams.options.iStartScan, g_StaticParams.options.iEndScan);
--      fprintf(stderr, " The end scan must be >= to the start scan.\n\n");
-+      logerr("\n Comet version %s\n %s\n\n", comet_version, copyright);
-+      logerr(" Error - start scan is %d but end scan is %d.\n", g_StaticParams.options.iStartScan, g_StaticParams.options.iEndScan);
-+      logerr(" The end scan must be >= to the start scan.\n\n");
-       g_pvInputFiles.clear();
-       exit(1);
-    }
-@@ -1785,7 +1798,7 @@
- 
-          if (err != EEXIST) 
-          {
--            fprintf(stderr, "\n Error - could not create directory \"%s\".\n", g_StaticParams.inputFile.szBaseName);
-+            logerr("\n Error - could not create directory \"%s\".\n", g_StaticParams.inputFile.szBaseName);
-             exit(1);
-          }
-       }
-@@ -1801,7 +1814,7 @@
- 
-             if (err != EEXIST) 
-             {
--               fprintf(stderr, "\n Error - could not create directory \"%s\".\n", szDecoyDir);
-+               logerr("\n Error - could not create directory \"%s\".\n", szDecoyDir);
-                exit(1);
-             }
-          }
-@@ -1809,7 +1822,7 @@
- #else
-       if ((mkdir(g_StaticParams.inputFile.szBaseName, 0775) == -1) && (errno != EEXIST))
-       {
--         fprintf(stderr, "\n Error - could not create directory \"%s\".\n", g_StaticParams.inputFile.szBaseName);
-+         logerr("\n Error - could not create directory \"%s\".\n", g_StaticParams.inputFile.szBaseName);
-          exit(1);
-       }
-       if (g_StaticParams.options.iDecoySearch == 2)
-@@ -1819,7 +1832,7 @@
- 
-          if ((mkdir(szDecoyDir , 0775) == -1) && (errno != EEXIST))
-          {
--            fprintf(stderr, "\n Error - could not create directory \"%s\".\n\n", szDecoyDir);
-+            logerr("\n Error - could not create directory \"%s\".\n\n", szDecoyDir);
-             exit(1);
-          }
-       }
-@@ -1835,7 +1848,7 @@
- 
-    if ( (fp=fopen("comet.params.new", "w"))==NULL)
-    {
--      fprintf(stderr, "\n Error - cannot write file comet.params.new\n\n");
-+      logerr("\n Error - cannot write file comet.params.new\n\n");
-       exit(1);
-    }
- 
-@@ -1851,6 +1864,8 @@
- num_threads = 0                        # 0=poll CPU to set num threads; else specify num threads directly (max %d)\n\
- \n", MAX_THREADS);
- 
-+   fprintf(fp, "decoy-prefix=DECOY_            # Prefix to attach to protein ids for decoy peptides");
++namespace MSToolkit {
 +
-    fprintf(fp,
- "#\n\
- # masses\n\
-@@ -2010,7 +2025,7 @@
- 10. Chymotrypsin           1      FWYL        P\n\
- \n");
+ MSReader::MSReader(){
+   fileIn=NULL;
+   rampFileIn=NULL;
+@@ -1976,3 +1978,4 @@
  
--   printf("\n Created:  comet.params.new\n\n");
-+   log("\n Created:  comet.params.new\n\n");
-    fclose(fp);
+ }
  
- } // PrintParams
-@@ -2060,7 +2075,7 @@
++}
+Index: MSToolkit/src/MSToolkit/Spectrum.cpp
+===================================================================
+--- MSToolkit/src/MSToolkit/Spectrum.cpp	(revision 131)
++++ MSToolkit/src/MSToolkit/Spectrum.cpp	(working copy)
+@@ -4,6 +4,7 @@
  
-    if ((fp=fopen(szParamsFile, "r")) == NULL)
-    {
--      fprintf(stderr, "\n Error - cannot open parameter file \"%s\".\n\n", szParamsFile);
-+      logerr("\n Error - cannot open parameter file \"%s\".\n\n", szParamsFile);
-       exit(1);
-    }
+ using namespace std;
  
++namespace MSToolkit {
+ Spectrum::Spectrum(){
+   //cout<<"in Spectrum constructor!"<<endl;
+ 
+@@ -569,3 +570,4 @@
+   else return 0;
+ }
+ 
++}
 Index: Makefile
 ===================================================================
---- Makefile	(revision 110)
+--- Makefile	(revision 131)
 +++ Makefile	(working copy)
-@@ -1,12 +1,20 @@
+@@ -1,7 +1,7 @@
  CXX = g++
  MSTOOLKIT = MSToolkit
--CXXFLAGS = -O3 -static -Wall -Wno-char-subscripts -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -I$(MSTOOLKIT)/include
-+CXXFLAGS = -O3 -Wall -Wno-char-subscripts -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -I$(MSTOOLKIT)/include -DCRUX 
+ COMETSEARCH = CometSearch
+-CXXFLAGS = -O3 -static -Wall -Wno-char-subscripts -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -I$(MSTOOLKIT)/include -I$(COMETSEARCH)
++CXXFLAGS = -O3 -Wall -Wno-char-subscripts -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -I$(MSTOOLKIT)/include -I$(COMETSEARCH)
  EXECNAME = comet.exe
- OBJS = Comet.o Threading.o CometSearch.o CometPreprocess.o CometPostAnalysis.o CometMassSpecUtils.o CometWriteOut.o CometWriteSqt.o CometWritePepXML.o CometWriteTxt.o
- DEPS = Common.h OSSpecificThreading.h CometData.h CometSearch.h CometPreprocess.h ThreadPool.h CometPostAnalysis.h CometMassSpecUtils.h
- LIBS = -lm -lmstoolkitlite -lpthread
- 
-+all: libComet.a ./MSToolkit/mstoolkitlite.a
- 
-+libComet.a: $(OBJS)
-+	ar rcs libComet.a $(OBJS)
-+
-+./MSToolkit/mstoolkitlite.a:
-+	cd MSToolkit ; make
-+
-+
- comet.exe: $(OBJS)
- 	cd MSToolkit ; make
- 	${CXX} $(CXXFLAGS) $(OBJS) -L$(MSTOOLKIT) $(LIBS) -o ${EXECNAME}
-Index: CometSearch.cpp
-===================================================================
---- CometSearch.cpp	(revision 110)
-+++ CometSearch.cpp	(working copy)
-@@ -57,7 +57,7 @@
- 
-    if ((fptr=fopen(g_StaticParams.databaseInfo.szDatabase, "rb")) == NULL)
-    {
--       fprintf(stderr, " Error - cannot read database file \"%s\".\n\n", g_StaticParams.databaseInfo.szDatabase);
-+       logerr(" Error - cannot read database file \"%s\".\n\n", g_StaticParams.databaseInfo.szDatabase);
-        exit(1);
-    }
- 
-@@ -70,7 +70,7 @@
- 
-    if (!g_StaticParams.options.bOutputSqtStream)
-    {
--      printf(" - Search progress: ");
-+      log(" - Search progress: ");
-       fflush(stdout);
-    }
- 
-@@ -86,13 +86,13 @@
-       // Expect a '>' for sequence header line.
-       if (iTmpCh != '>')
-       {
--         fprintf(stderr, "\n\n Error - database file, expecting definition line here.\n");
-+         logerr("\n\n Error - database file, expecting definition line here.\n");
-          fgets(szBuf, SIZE_BUF, fptr);
--         fprintf(stderr, "%c%s", iTmpCh, szBuf);
-+         logerr("%c%s", iTmpCh, szBuf);
-          fgets(szBuf, SIZE_BUF, fptr);
--         fprintf(stderr, "%s", szBuf);
-+         logerr("%s", szBuf);
-          fgets(szBuf, SIZE_BUF, fptr);
--         fprintf(stderr, "%s", szBuf);
-+         logerr("%s", szBuf);
-          exit(1);
-       } 
- 
-@@ -126,9 +126,9 @@
-             && !(g_StaticParams.databaseInfo.iTotalNumProteins%200))
-       {
-          lCurrPos = ftell(fptr);
--         printf("%3d%%", (int)(100.0 * (double)lCurrPos/(double)lEndPos));
-+         log("%3d%%", (int)(100.0 * (double)lCurrPos/(double)lEndPos));
-          fflush(stdout);
--         printf("\b\b\b\b");
-+         log("\b\b\b\b");
-       }
- 
-       // Now search sequence entry; add threading here so that
-@@ -144,7 +144,7 @@
- 
-    if (!g_StaticParams.options.bOutputSqtStream)
-    {
--      printf(" 100%%\n");
-+      log(" 100%%\n");
-    }
- }
- 
-@@ -215,7 +215,7 @@
-          pszTemp=(char *)malloc(seqSize);
-          if (pszTemp == NULL)
-          {
--            fprintf(stderr, " Error - malloc(szTemp[%d])\n",seqSize);
-+            logerr(" Error - malloc(szTemp[%d])\n",seqSize);
-             exit(1);
-          }
- 
-@@ -373,7 +373,7 @@
-                      // Now get the set of binned fragment ions once to compare this peptide against all matching spectra.
-                      if ((pbDuplFragment = (bool*)malloc(g_pvQuery.at(iWhichQuery)->_spectrumInfoInternal.iArraySize * (size_t)sizeof(bool)))==NULL)
-                      {
--                        fprintf(stderr, " Error - malloc pbDuplFragments; iWhichQuery = %d\n\n", iWhichQuery);
-+                        logerr(" Error - malloc pbDuplFragments; iWhichQuery = %d\n\n", iWhichQuery);
-                         exit(1);
-                      }
- 
-@@ -414,10 +414,10 @@
-                      if (g_StaticParams.options.iDecoySearch)
-                      {
- #ifdef _WIN32
--                        _snprintf(szDecoyProteinName, WIDTH_REFERENCE, "DECOY_%s", szProteinName);
-+                        _snprintf(szDecoyProteinName, WIDTH_REFERENCE, "%s%s", g_StaticParams.szDecoyPrefix, szProteinName);
-                         szDecoyProteinName[WIDTH_REFERENCE-1]=0;  // _snprintf does not guarantee null termination
- #else
--                        snprintf(szDecoyProteinName, WIDTH_REFERENCE, "DECOY_%s", szProteinName);
-+                        snprintf(szDecoyProteinName, WIDTH_REFERENCE, "%s%s", g_StaticParams.szDecoyPrefix, szProteinName);
- #endif
-                         // Generate reverse peptide.  Keep prev and next AA in szDecoyPeptide string.
-                         // So actual reverse peptide starts at position 1 and ends at len-2 (as len-1
-@@ -780,7 +780,7 @@
-       }
-       else
-       {
--         fprintf(stderr, " Error - iIsotopeError=%d, should not be here!\n\n", g_StaticParams.tolerances.iIsotopeError);
-+         logerr(" Error - iIsotopeError=%d, should not be here!\n\n", g_StaticParams.tolerances.iIsotopeError);
-          exit(1);
-       }
-    }
-@@ -811,10 +811,10 @@
-             pTmp=(char *)realloc(_proteinInfo.pszProteinSeq, ii+100);
-             if (pTmp == NULL)
-             {
--               fprintf(stderr, " Error realloc(szProteinSeq) ... size=%d\n", ii);
--               fprintf(stderr, " A sequence entry is larger than your system can handle.\n");
--               fprintf(stderr, " Either add more memory or edit the database and divide\n");
--               fprintf(stderr, " the sequence into multiple, overlapping, smaller entries.\n\n");
-+               logerr(" Error realloc(szProteinSeq) ... size=%d\n", ii);
-+               logerr(" A sequence entry is larger than your system can handle.\n");
-+               logerr(" Either add more memory or edit the database and divide\n");
-+               logerr(" the sequence into multiple, overlapping, smaller entries.\n\n");
-                exit(1);
-             }
- 
-@@ -841,10 +841,10 @@
-             pTmp=(char *)realloc(_proteinInfo.pszProteinSeq, ii+100);
-             if (pTmp == NULL)
-             {
--               fprintf(stderr, " Error realloc(szProteinSeq) ... size=%d\n", ii);
--               fprintf(stderr, " A sequence entry is larger than your system can handle.\n");
--               fprintf(stderr, " Either add more memory or edit the database and divide\n");
--               fprintf(stderr, " the sequence into multiple, overlapping, smaller entries.\n\n");
-+               logerr(" Error realloc(szProteinSeq) ... size=%d\n", ii);
-+               logerr(" A sequence entry is larger than your system can handle.\n");
-+               logerr(" Either add more memory or edit the database and divide\n");
-+               logerr(" the sequence into multiple, overlapping, smaller entries.\n\n");
-                exit(1);
-             }
- 
-@@ -2227,7 +2227,7 @@
-             // now get the set of binned fragment ions once for all matching peptides
-             if ((pbDuplFragment = (bool*)malloc(g_pvQuery.at(iWhichQuery)->_spectrumInfoInternal.iArraySize * (size_t)sizeof(bool)))==NULL)
-             {
--               fprintf(stderr, " Error - malloc pbDuplFragments; iWhichQuery = %d\n\n", iWhichQuery);
-+               logerr(" Error - malloc pbDuplFragments; iWhichQuery = %d\n\n", iWhichQuery);
-                exit(1);
-             }
- 
-Index: CometWriteOut.cpp
-===================================================================
---- CometWriteOut.cpp	(revision 110)
-+++ CometWriteOut.cpp	(working copy)
-@@ -139,7 +139,7 @@
- 
-    if ((fpout = fopen(szOutput, "w")) == NULL)
-    {
--      fprintf(stderr, "Error - cannot write to file %s.\n\n", szOutput);
-+      logerr("Error - cannot write to file %s.\n\n", szOutput);
-       exit(1);
-    }
- 
-Index: CometWriteSqt.cpp
-===================================================================
---- CometWriteSqt.cpp	(revision 110)
-+++ CometWriteSqt.cpp	(working copy)
-@@ -94,7 +94,7 @@
-    // write out entire parameters file to SQT header
-    if ((fp=fopen(szParamsFile, "r")) == NULL)
-    {
--      fprintf(stderr, " Error - cannot open parameter file %s.\n\n", szParamsFile);
-+      logerr(" Error - cannot open parameter file %s.\n\n", szParamsFile);
-       exit(1);
-    }
- 
-Index: CometPreprocess.cpp
-===================================================================
---- CometPreprocess.cpp	(revision 110)
-+++ CometPreprocess.cpp	(working copy)
-@@ -235,21 +235,21 @@
-    pdTempRawData = (double *)calloc((size_t)pScoring->_spectrumInfoInternal.iArraySize, (size_t)sizeof(double));
-    if (pdTempRawData == NULL)
-    {
--      fprintf(stderr, " Error - calloc(pdTempRawData[%d]).\n\n", pScoring->_spectrumInfoInternal.iArraySize);
-+      logerr(" Error - calloc(pdTempRawData[%d]).\n\n", pScoring->_spectrumInfoInternal.iArraySize);
-       exit(1);
-    }
- 
-    pdTmpFastXcorrData = (double *)calloc((size_t)pScoring->_spectrumInfoInternal.iArraySize, (size_t)sizeof(double));
-    if (pdTmpFastXcorrData == NULL)
-    {
--      fprintf(stderr, " Error - calloc(pdTmpFastXcorrData[%d]).\n\n", pScoring->_spectrumInfoInternal.iArraySize);
-+      logerr(" Error - calloc(pdTmpFastXcorrData[%d]).\n\n", pScoring->_spectrumInfoInternal.iArraySize);
-       exit(1);
-    }
- 
-    pScoring->pfFastXcorrData = (float *)calloc((size_t)pScoring->_spectrumInfoInternal.iArraySize, (size_t)sizeof(float));
-    if (pScoring->pfFastXcorrData == NULL)
-    {
--      fprintf(stderr, " Error - calloc(pfFastXcorrData[%d]).\n\n", pScoring->_spectrumInfoInternal.iArraySize);
-+      logerr(" Error - calloc(pfFastXcorrData[%d]).\n\n", pScoring->_spectrumInfoInternal.iArraySize);
-       exit(1);
-    }
- 
-@@ -261,7 +261,7 @@
-       pScoring->pfFastXcorrDataNL = (float *)calloc((size_t)pScoring->_spectrumInfoInternal.iArraySize, (size_t)sizeof(float));
-       if (pScoring->pfFastXcorrDataNL == NULL)
-       {
--         fprintf(stderr, " Error - calloc(pfFastXcorrDataNL[%d]).\n", pScoring->_spectrumInfoInternal.iArraySize);
-+         logerr(" Error - calloc(pfFastXcorrDataNL[%d]).\n", pScoring->_spectrumInfoInternal.iArraySize);
-          exit(1);
-       }
-    }
-@@ -350,7 +350,7 @@
-       pScoring->pSparseFastXcorrData = (SparseMatrix *)calloc((size_t)pScoring->iFastXcorrData, (size_t)sizeof(SparseMatrix));
-       if (pScoring->pSparseFastXcorrData == NULL)
-       {
--         fprintf(stderr, " Error - calloc(pScoring->pSparseFastXcorrData[%d]).\n\n", pScoring->iFastXcorrData);
-+         logerr(" Error - calloc(pScoring->pSparseFastXcorrData[%d]).\n\n", pScoring->iFastXcorrData);
-          exit(1);
-       }
-       pScoring->pSparseFastXcorrData[0].bin=0;
-@@ -379,7 +379,7 @@
-          pScoring->pSparseFastXcorrDataNL = (SparseMatrix *)calloc((size_t)pScoring->iFastXcorrDataNL, (size_t)sizeof(SparseMatrix));
-          if (pScoring->pSparseFastXcorrDataNL == NULL)
-          {
--            fprintf(stderr, " Error - calloc(pScoring->pSparseFastXcorrDataNL[%d]).\n\n", pScoring->iFastXcorrDataNL);
-+            logerr(" Error - calloc(pScoring->pSparseFastXcorrDataNL[%d]).\n\n", pScoring->iFastXcorrDataNL);
-             exit(1);
-          }
-          pScoring->pSparseFastXcorrDataNL[0].bin=0;
-@@ -433,7 +433,7 @@
-       pScoring->pSparseSpScoreData = (SparseMatrix *)calloc((size_t)NUM_SP_IONS, (size_t)sizeof(SparseMatrix));
-       if (pScoring->pSparseSpScoreData == NULL)
-       {
--         fprintf(stderr, " Error - calloc(pScoring->pSparseSpScoreData[%d]).\n\n", pScoring->iSpScoreData);
-+         logerr(" Error - calloc(pScoring->pSparseSpScoreData[%d]).\n\n", pScoring->iSpScoreData);
-          exit(1);
-       }
-       pScoring->iSpScoreData=0;
-@@ -452,7 +452,7 @@
-       pScoring->pfSpScoreData = (float *)calloc((size_t)pScoring->_spectrumInfoInternal.iArraySize, (size_t)sizeof(float ));
-       if (pScoring->pfSpScoreData == NULL)
-       {
--         fprintf(stderr, " Error - calloc(pfSpScoreData[%d])\n", pScoring->_spectrumInfoInternal.iArraySize);
-+         logerr(" Error - calloc(pfSpScoreData[%d])\n", pScoring->_spectrumInfoInternal.iArraySize);
-          exit(1);
-       }
- 
-@@ -778,7 +778,7 @@
-    }
-    else  // Should not get here.
-    {
--      printf(" Error - iIsotopeError=%d\n\n", g_StaticParams.tolerances.iIsotopeError);
-+      log(" Error - iIsotopeError=%d\n\n", g_StaticParams.tolerances.iIsotopeError);
-       exit(1);
-    }
- }
-@@ -800,7 +800,7 @@
-    pPre->pdCorrelationData = (double *)calloc((size_t)pScoring->_spectrumInfoInternal.iArraySize, (size_t)sizeof(double));
-    if (pPre->pdCorrelationData == NULL)
-    {
--      fprintf(stderr, " Error - calloc(pdCorrelationData[%d]).\n\n", pScoring->_spectrumInfoInternal.iArraySize);
-+      logerr(" Error - calloc(pdCorrelationData[%d]).\n\n", pScoring->_spectrumInfoInternal.iArraySize);
-       exit(1);
-    }
- 
-@@ -962,7 +962,7 @@
- 
-    if (pdSmoothedSpectrum == NULL)
-    {
--      fprintf(stderr, " Error - calloc(pdSmoothedSpectrum[%d]).\n", iArraySize);
-+      logerr(" Error - calloc(pdSmoothedSpectrum[%d]).\n", iArraySize);
-       exit(1);
-    }
- 
-@@ -993,7 +993,7 @@
-    pdPeakExtracted = (double *)calloc((size_t)iArraySize, (size_t)sizeof(double));
-    if (pdPeakExtracted == NULL)
-    {
--      fprintf(stderr, " Error - calloc(pdPeakExtracted[%d]).\n", iArraySize);
-+      logerr(" Error - calloc(pdPeakExtracted[%d]).\n", iArraySize);
-       exit(1);
-    }
- 
-Index: CometPostAnalysis.cpp
-===================================================================
---- CometPostAnalysis.cpp	(revision 110)
-+++ CometPostAnalysis.cpp	(working copy)
-@@ -34,7 +34,7 @@
-                                      int maxNumThreads)
- {
-    if (!g_StaticParams.options.bOutputSqtStream)
--      printf(" - Perform post-search analysis\n");
-+      log(" - Perform post-search analysis\n");
- 
-    // Create the thread pool containing g_StaticParams.options.iNumThreads,
-    // each hanging around and sleeping until asked to do a post analysis.
-@@ -664,7 +664,7 @@
-                   }
-                   else
-                   {
--                     printf(" Error - XCORR DECOY: dFragMass %f, iFragMass %d, ArraySize %d, InputMass %f, scan %d, z %d\n",
-+                     log(" Error - XCORR DECOY: dFragMass %f, iFragMass %d, ArraySize %d, InputMass %f, scan %d, z %d\n",
-                            dFragmentIonMass, 
-                            iFragmentIonMass,
-                            pQuery->_spectrumInfoInternal.iArraySize, 
-@@ -683,7 +683,7 @@
-                   }
-                   else
-                   {
--                     printf(" Error - XCORR DECOY: dFragMass %f, iFragMass %d, ArraySize %d, InputMass %f, scan %d, z %d\n",
-+                     log(" Error - XCORR DECOY: dFragMass %f, iFragMass %d, ArraySize %d, InputMass %f, scan %d, z %d\n",
-                            dFragmentIonMass,
-                            iFragmentIonMass,
-                            pQuery->_spectrumInfoInternal.iArraySize,
+ OBJS = Comet.o
+ DEPS = 

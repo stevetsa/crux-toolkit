@@ -3328,7 +3328,7 @@ void parse_parameter_file(
     /* Change the newline to a '\0' ignoring trailing whitespace */
     for(idx = MAX_LINE_LENGTH - 1; idx >= 0; idx--){
       if(line[idx] == '\n' || line[idx] == '\r' || 
-         line[idx] == '\f' || line[idx] == ' ' || line[idx] == '\t')
+         line[idx] == '\f' || line[idx] == '\t')
         line[idx] = '\0';
     }
     /* empty lines and those beginning with '#' are ignored */

@@ -3,8 +3,9 @@
  * \brief General-use functions for crux
  */
 
-#include <dirent.h>
 #include <sys/types.h>
+#include <sys/dir.h>
+#include <dirent.h>
 #include <fstream>
 #include <errno.h>
 #include <sys/stat.h>
@@ -1133,7 +1134,7 @@ bool delete_dir(char* dir) {
   }
 
   // collect all files in dir
-  num_file = scandir(".", &namelist, 0, alphasort);
+  num_file = scandir(".", &namelist, NULL, alphasort);
 
   // delete all files in temp dir
   while(num_file--){

@@ -2,12 +2,12 @@
  * \file CometApplication.cpp 
  * \brief Runs hardklor
  *****************************************************************************/
-#include "CometApplication.h"
-#include "DelimitedFileWriter.h"
-#include "DelimitedFile.h"
 #include "Common.h"
 #include "ModifiedPeptidesIterator.h"
 #include "CarpStreamBuf.h"
+#include "CometApplication.h"
+#include "DelimitedFileWriter.h"
+#include "DelimitedFile.h"
 
 using namespace std;
 
@@ -102,7 +102,7 @@ int CometApplication::main(int argc, char** argv) {
 
   /* Call comet_main */
   int retVal = -1;
-  retVal = comet_main(cmt_argc, cmt_argv);
+  //retVal = comet_main(cmt_argc, cmt_argv);
 
   /* Recover stderr */
   std::cerr.rdbuf(old);
