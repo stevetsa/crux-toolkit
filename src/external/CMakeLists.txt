@@ -21,15 +21,6 @@ set(protwiz_args ${protwiz_args} --layout=system)
 set(protwiz_args ${protwiz_args} --prefix=${CMAKE_CURRENT_SOURCE_DIR})
 set(protwiz_args ${protwiz_args} runtime-link=shared)
 set(protwiz_args ${protwiz_args} libraries)
-set(protwiz_args ${protwiz_args} pwiz/data/common//pwiz_data_common)
-set(protwiz_args ${protwiz_args} pwiz/data/identdata//pwiz_data_identdata)
-set(protwiz_args ${protwiz_args} pwiz/data/identdata//pwiz_data_identdata_version)
-set(protwiz_args ${protwiz_args} pwiz/data/msdata//pwiz_data_msdata)
-set(protwiz_args ${protwiz_args} pwiz/data/msdata//pwiz_data_msdata_version)
-set(protwiz_args ${protwiz_args} pwiz/data/proteome//pwiz_data_proteome)
-set(protwiz_args ${protwiz_args} pwiz/utility/chemistry//pwiz_utility_chemistry)
-set(protwiz_args ${protwiz_args} pwiz/utility/minimxml//pwiz_utility_minimxml)
-set(protwiz_args ${protwiz_args} pwiz/utility/misc//pwiz_utility_misc)
 
 add_custom_target(
   deep-clean-external
@@ -37,30 +28,18 @@ add_custom_target(
   COMMENT "Deleting all files for external tools."
 )
 
-# We want to avoid checking out the entire Proteowizard repository
-# because of its massive size. We check out just the top level directory, 
-# and them use 'svn update' to obtain the needed files and directories.
+# Download a partial distribution of pwiz r4837 stored
+# as a tar ball on the Noble Lab server.
 ExternalProject_Add(
   ProteoWizard
-  SVN_REPOSITORY http://proteowizard.svn.sourceforge.net/svnroot/proteowizard/trunk/pwiz/
-  SVN_REVISION -r 3950 --depth empty
+  URL http://noble.gs.washington.edu/proj/crux/download/pwiz-4837.tar.gz
+  URL_MD5 b59e972e193d8d78e89f2a74d2fc94ba
+  DOWNLOAD_DIR downloads
   PREFIX ${CMAKE_CURRENT_SOURCE_DIR}/build
   CONFIGURE_COMMAND ""
   BUILD_COMMAND ${protwiz_args}
   INSTALL_COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/create_links.sh --prefix=${CMAKE_CURRENT_SOURCE_DIR}
   BUILD_IN_SOURCE 1
-)
-
-# Since we're not checking out the entire Proteowizard tree,
-# We need a separate step to use 'svn update' to pick up the files
-# and directories we need.
-ExternalProject_Add_Step(
-  ProteoWizard
-  update_selected_directories
-  DEPENDEES download
-  DEPENDERS configure
-  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/build/src/ProteoWizard
-  COMMAND svn update --force -r 3950 libraries pwiz Jamroot.jam quickbuild.sh clean.sh
 )
 
 ExternalProject_Add(
@@ -137,6 +116,7 @@ ExternalProject_Add(
   CONFIGURE_COMMAND
     ${CMAKE_CURRENT_SOURCE_DIR}/build/src/ProtocolBuffers/configure
     --prefix=${CMAKE_CURRENT_SOURCE_DIR}
+    --enable-shared=no
   BUILD_COMMAND make
   INSTALL_COMMAND make install
   BUILD_IN_SOURCE 1
@@ -151,6 +131,7 @@ ExternalProject_Add(
   CONFIGURE_COMMAND
     ${CMAKE_CURRENT_SOURCE_DIR}/build/src/google-gflags/configure
     --prefix=${CMAKE_CURRENT_SOURCE_DIR}
+   --enable-shared=no
   BUILD_COMMAND make
   INSTALL_COMMAND make install
   BUILD_IN_SOURCE 1

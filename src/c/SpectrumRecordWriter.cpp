@@ -5,6 +5,11 @@
 #include "tide/records.h"
 
 #include "SpectrumRecordWriter.h"
+#include "carp.h"
+
+// For printing uint64_t values
+#define __STDC_FORMAT_MACROS
+#include <inttypes.h>
 
 /**
  * Converts a spectra file to spectrumrecords format for use with tide-search.
@@ -52,7 +57,8 @@ bool SpectrumRecordWriter::convert(
     pwiz::msdata::SpectrumPtr s = sl.spectrum(i, true);
     if (s->cvParam(pwiz::cv::MS_ms_level).valueAs<int>() > 1 &&
         !s->precursors.empty() &&
-        !s->precursors[0].selectedIons.empty()) {
+        !s->precursors[0].selectedIons.empty() &&
+        s->defaultArrayLength > 0) {
       // Get scan number
       pb::Spectrum pb_spectrum;
       string scan_num = pwiz::msdata::id::translateNativeIDToScanNumber(
@@ -71,12 +77,17 @@ bool SpectrumRecordWriter::convert(
       if (!chargeParam.empty()) {
         pb_spectrum.mutable_charge_state()->Add(chargeParam.valueAs<int>());
       } else {
+        bool possibleCharge = false;
         for (vector<pwiz::msdata::CVParam>::const_iterator param = si.cvParams.begin();
              param != si.cvParams.end();
              ++param) {
           if (param->cvid == pwiz::cv::MS_possible_charge_state) {
+            possibleCharge = true;
             pb_spectrum.mutable_charge_state()->Add(param->valueAs<int>());
           }
+        }
+        if (!possibleCharge) {
+          carp(CARP_FATAL, "Scan %s has no charge state", scan_num.c_str());
         }
       }
       // Get each m/z, intensity pair
@@ -86,14 +97,16 @@ bool SpectrumRecordWriter::convert(
       int intensity_denom = getDenom(intensities.data);
       pb_spectrum.set_peak_m_z_denominator(mz_denom);
       pb_spectrum.set_peak_intensity_denominator(intensity_denom);
-      google::protobuf::uint64 last = 0;
+      uint64_t last = 0;
       int last_index = -1;
-      google::protobuf::uint64 intensity_sum = 0;
+      uint64_t intensity_sum = 0;
       for (size_t i = 0; i < s->defaultArrayLength; ++i) {
-        google::protobuf::uint64 mz =
-          google::protobuf::uint64(mzs.data[i] * mz_denom + 0.5);
-        google::protobuf::uint64 intensity =
-          google::protobuf::uint64(intensities.data[i] * intensity_denom + 0.5);
+        uint64_t mz = mzs.data[i] * mz_denom + 0.5;
+        uint64_t intensity = intensities.data[i] * intensity_denom + 0.5;
+        if (mz < last) {
+          carp(CARP_FATAL, "In scan %d, m/z %" PRIu64 " came after %" PRIu64,
+               pb_spectrum.spectrum_number(), mz, last);
+        }
         if (mz == last) {
           intensity_sum += intensity;
           pb_spectrum.set_peak_intensity(last_index, intensity_sum);

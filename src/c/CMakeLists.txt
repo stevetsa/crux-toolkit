@@ -74,6 +74,7 @@ set (
   ExtractColumns.cpp
   ExtractRows.cpp
   FilteredSpectrumChargeIterator.cpp
+  GenerateDecoys.cpp
   GeneratePeptidesIterator.cpp
   GetMs2Spectrum.cpp
   hash.cpp
@@ -335,6 +336,7 @@ else(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     pwiz_utility_minimxml
     pwiz_utility_misc
     pwiz_version
+    SHA1
     boost_system-mt-s
     boost_iostreams-mt-s
     z-mt-s-1_2
@@ -364,6 +366,7 @@ else(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     pwiz_data_identdata
     pwiz_data_identdata_version
     pwiz_data_proteome
+    SHA1
     boost_system-mt-s
     boost_iostreams-mt-s
     z-mt-s-1_2
@@ -391,6 +394,7 @@ else(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     pwiz_data_identdata
     pwiz_data_identdata_version
     pwiz_data_proteome
+    SHA1
     boost_system-mt-s
     boost_iostreams-mt-s
     z-mt-s-1_2
@@ -418,6 +422,7 @@ else(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     pwiz_data_identdata
     pwiz_data_identdata_version
     pwiz_data_proteome
+    SHA1
     boost_system-mt-s
     boost_iostreams-mt-s
     z-mt-s-1_2

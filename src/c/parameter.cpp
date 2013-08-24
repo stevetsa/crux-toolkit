@@ -348,7 +348,8 @@ void initialize_parameters(void){
   /* create_index arguments */
   set_string_parameter("protein fasta file", NULL,
                        "File containing protein sequences in fasta format.",
-                       "Argument for crux-create-index and tide-index.", "false");
+                       "Argument for crux-create-index, tide-index, and "
+                       "generate-decoys.", "false");
   set_string_parameter("index name", NULL,
     "Name to give the new directory containing index files.",
     "Argument for create index.", "false");
@@ -446,33 +447,35 @@ void initialize_parameters(void){
   set_int_parameter("min-length", 6, 1, MAX_PEPTIDE_LENGTH,
       "The minimum length of peptides to consider. Default=6.",
       "Used from the command line or parameter file by "
-      "crux-create-index, crux-generate-peptides, and crux tide-index. "
-      "Parameter file only for crux-search-for-matches.", "true");
+      "crux-create-index, crux-generate-peptides, crux tide-index, and crux "
+      "generate-decoys. Parameter file only for crux-search-for-matches.",
+      "true");
   set_int_parameter("max-length", 50, 1, MAX_PEPTIDE_LENGTH,
       "The maximum length of peptides to consider. Default=50.",
       "Available from command line or parameter file for crux-create-index, "
-      "crux-generate-peptides, and crux tide-index. Parameter file only for "
-      "crux-search-for-matches.", "true");
+      "crux-generate-peptides, crux tide-index, and crux generate-decoys. "
+      "Parameter file only for crux-search-for-matches.", "true");
   set_double_parameter("min-mass", 200, 0, BILLION,
       "The minimum mass of peptides to consider. Default=200.",
       "Available from command line or parameter file for crux-create-index, "
-      "crux-generate-peptides, and crux tide-index. Parameter file only for "
-      "crux-search-for-matches.", "true");
+      "crux-generate-peptides, crux tide-index, and crux generate-decoys. "
+      "Parameter file only for crux-search-for-matches.", "true");
   set_double_parameter("max-mass", 7200, 1, BILLION, 
       "The maximum mass of peptides to consider. Default=7200.",
       "Available from command line or parameter file for crux-create-index, "
-      "crux-generate-peptides, and crux tide-index. Parameter file only for "
-      "crux-search-for-matches.", "true");
+      "crux-generate-peptides, crux tide-index, and crux generate-decoys. "
+      "Parameter file only for crux-search-for-matches.", "true");
   set_mass_type_parameter("isotopic-mass", AVERAGE, 
       "Which isotopes to use in calcuating peptide mass. "
       "<string>=average|mono. Default=average.", 
-      "Used from command line or parameter file by crux-create-index and "
-      "crux-generate-peptides.  Parameter file only for "
-      "crux-search-for-matches.", "true");
+      "Used from command line or parameter file by crux-create-index, "
+      "crux-generate-peptides, and crux generate-decoys.  Parameter file only "
+      "for crux-search-for-matches.", "true");
   set_int_parameter("min-peaks", 20, 0, BILLION,
       "The minimum number of peaks a spectrum must have for it to be searched."
       " Default=20.", 
-      "Parameter file only for search-for-matches and sequest-search.", "true");
+      "Available from command line for tide-search or parameter file for "
+      "search-for-matches and sequest-search.", "true");
   set_digest_type_parameter("digestion", FULL_DIGEST,
       "Degree of digestion used to generate peptides. "
       "<string>=full-digest|partial-digest. Either both ends or one end "
@@ -480,9 +483,9 @@ void initialize_parameters(void){
       "Default=full-digest.",
       "Used in conjunction with enzyme option when enzyme is not set to "
       "to 'no-enzyme'.  Available from command line or parameter file for "
-      "crux-generate-peptides, crux create-index, and crux tide-index. "
-      "Available from parameter file for crux search-for-matches. "
-      "Digestion rules are as "
+      "crux-generate-peptides, crux create-index, crux tide-index, and crux "
+      "generate-decoys. Available from parameter file for crux "
+      "search-for-matches. Digestion rules are as "
       "follows: enzyme name [cuts after one of these residues][but not before "
       "one of these residues].  trypsin [RK][P], elastase [ALIV][P], "
       "chymotrypsin [FWY][P].",
@@ -496,20 +499,21 @@ void initialize_parameters(void){
       "Used in conjunction with the options digestion and missed-cleavages. "
       "Use 'no-enzyme' for non-specific digestion.  Available "
       "from command line or parameter file for crux-generate-peptides, "
-      "crux create-index, and crux tide-index.  Available from parameter file "
-      "for crux search-for-matches.   Digestion rules: enzyme name [cuts after "
-      "one of these residues]|{but not before one of these residues}.  "
-      "trypsin [RK]|{P}, elastase [ALIV]|{P}, chymotrypsin [FWY]|{P}, "
-      "clostripain [R]|[], cyanogen-bromide [M]|[], "
-      "iodosobenzoate [W]|[], proline-endopeptidase [P]|[], staph-protease "
-      "[E]|[], modified-chymotrypsin [FWYL]|{P}, elastase-trypsin-chymotrypsin "
-      "[ALIVKRWFY]|{P},aspn []|[D] (cuts before D).",
-      "true");
+      "crux create-index, crux tide-index, and crux generate-decoys.  "
+      "Available from parameter file for crux search-for-matches. "
+      "Digestion rules: enzyme name [cuts after one of these residues]|{but "
+      "not before one of these residues}. trypsin [RK]|{P}, elastase "
+      "[ALIV]|{P}, chymotrypsin [FWY]|{P}, clostripain [R]|[], "
+      "cyanogen-bromide [M]|[], iodosobenzoate [W]|[], proline-endopeptidase "
+      "[P]|[], staph-protease [E]|[], modified-chymotrypsin [FWYL]|{P}, "
+      "elastase-trypsin-chymotrypsin [ALIVKRWFY]|{P},aspn []|[D] (cuts before "
+      "D).", "true");
 
   set_window_type_parameter("precursor-window-type", WINDOW_MASS,
       "Window type to use for selecting candidate "
       "peptides.  <string>=mass|mz|ppm. Default=mass.",
-      "Available for search-for-matches, search-for-xlinks.",
+      "Available for search-for-matches, search-for-xlinks, "
+      "and tide-search.",
       "true");
 
   set_spectrum_parser_parameter("spectrum-parser", CRUX_SPECTRUM_PARSER,
@@ -536,11 +540,11 @@ void initialize_parameters(void){
   set_int_parameter("missed-cleavages",
                     0, 0, 500,
       "Include peptides with up to n missed cleavage sites. Default=0.",
-      "Available from command line or parameter file for crux-create-index "
-      "and crux-generate-peptides.  Parameter file only for crux-search-"
-      "for-matches.  When used with enzyme=<trypsin|elastase|chymotrpysin> "
-      " includes peptides containing one or more potential cleavage sites.",
-      "true");   
+      "Available from command line or parameter file for crux-create-index, "
+      "crux-generate-peptides, and crux generate-decoys.  Parameter file only "
+      "for crux-search-for-matches.  When used with enzyme=<trypsin|elastase|"
+      "chymotrpysin> includes peptides containing one or more potential "
+      "cleavage sites.", "true");   
 
   set_boolean_parameter("unique-peptides", true,
       "Generate peptides only once, even if they appear in more "
@@ -624,17 +628,17 @@ void initialize_parameters(void){
       "default=F.",
       "Available in the paramter file for all search commands.",
       "true");
-  set_double_parameter("spectrum-min-mass", 0.0, 0, BILLION, 
-      "Minimum mass of spectra to be searched. Default=0.",
-      "Available for crux-search-for-matches.", "true");
-  set_double_parameter("spectrum-max-mass", BILLION, 1, BILLION, 
-      "Maximum mass of spectra to search. Default no maximum.",
-      "Available for crux-search-for-matches.", "true");
+  set_double_parameter("spectrum-min-mz", 0.0, 0, BILLION, 
+      "The lowest spectrum m/z to search. Default=0.0.",
+      "Available for crux-search-for-matches and tide-search.", "true");
+  set_double_parameter("spectrum-max-mz", BILLION, 1, BILLION, 
+      "The highest spectrum m/z to search. Default=no maximum.",
+      "Available for crux-search-for-matches and tide-search.", "true");
   set_string_parameter("spectrum-charge", "all", 
       "Spectrum charge states to search. "
       "<string>=1|2|3|all. Default=all.",
-      "Used by crux-search-for-matches to limit the charge states "
-      "considered in the search.  With 'all' every spectrum will be "
+      "Used by tide-search and crux-search-for-matches to limit the charge "
+      "states considered in the search.  With 'all' every spectrum will be "
       "searched and spectra with multiple charge states will be searched "
       "once at each charge state.  With 1, 2 ,or 3 only spectra with that "
       "that charge will be searched.", "true");
@@ -714,8 +718,8 @@ void initialize_parameters(void){
       "Search peptides within +/- 'precursor-window' "
       "of the spectrum mass.  Definition of precursor window depends "
       "upon precursor-window-type. Default=3.0.",
-      "Available from the parameter file only for crux-search-for-matches, "
-      "crux-create-index, and crux-generate-peptides.",
+      "Available for tide-search and from the parameter file only for "
+      "crux-search-for-matches, crux-create-index, crux-generate-peptides.",
       "true");
   set_mass_type_parameter("fragment-mass", MONO, 
       "Which isotopes to use in calculating fragment ion mass. "
@@ -1079,7 +1083,7 @@ void initialize_parameters(void){
     "true"
   );
 
-  // **** tide arguments ****
+  // **** Tide arguments ****
   set_string_parameter("spectrum records file", NULL,
     "A spectrum records file generated by a previous run of crux tide-search "
     "using the store-spectra parameter.",
@@ -1103,10 +1107,16 @@ void initialize_parameters(void){
     "true"
   );
 
-  // **** tide options ****
+  // **** Tide options ****
+  set_string_parameter("decoy-format", "shuffle",
+    "Include a decoy version of every peptide by shuffling or reversing the "
+    "target sequence. <string>=none|shuffle|reverse. Default=shuffle.",
+    "Available for tide-index",
+    "true"
+  );
   set_boolean_parameter("monoisotopic-precursor", false,
     "Use monoisotopic precursor masses rather than average mass for precursor. "
-    "Default F",
+    "Default=F.",
     "Available for tide-index",
     "true"
   );
@@ -1115,12 +1125,6 @@ void initialize_parameters(void){
     "Specify a comma-separated list of modification sequences of the form: "
     "C+57.02146,2M+15.9949,1STY+79.966331,...",
     "Available for tide-index",
-    "true"
-  );
-  set_double_parameter("mass-window", 3.0, 0, BILLION,
-    "Specify the precursor mass tolerance in Daltons. "
-    "Default 3",
-    "Available for tide-search",
     "true"
   );
   set_string_parameter("store-spectra", "",
@@ -2800,12 +2804,12 @@ void check_parameter_consistency(){
          " must be less than max (%.2f).", min_mass, max_mass);
   }
 
-  double min_spec_mass = get_double_parameter("spectrum-min-mass");
-  double max_spec_mass = get_double_parameter("spectrum-max-mass");
+  double min_spec_mz = get_double_parameter("spectrum-min-mz");
+  double max_spec_mz = get_double_parameter("spectrum-max-mz");
 
-  if( min_spec_mass > max_spec_mass){
-    carp(CARP_FATAL, "Parameter inconsistency. Minimum spectrum mass (%.2f)"
-         " must be less than max (%.2f).", min_spec_mass, max_spec_mass);
+  if( min_spec_mz > max_spec_mz){
+    carp(CARP_FATAL, "Parameter inconsistency. Minimum spectrum mz (%.2f)"
+         " must be less than max (%.2f).", min_spec_mz, max_spec_mz);
   }
 
   /* If no-enzyme, set digestion to non-specific and missed to true */

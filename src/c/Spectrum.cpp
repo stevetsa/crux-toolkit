@@ -600,6 +600,7 @@ bool Spectrum::parseMs2
         file_format = false;
         break; // File format incorrect
       }
+      file_format = true;
     }
     // Reads the 'Z' line 
     else if(new_line[0] == 'Z'){
@@ -626,8 +627,8 @@ bool Spectrum::parseMs2
     }
     
     // Stops, when encounters the start of next spectrum 'S' line
-    else if(new_line[0] == 'S' && start_addPeaks){ // start of next spectrum
-      carp(CARP_DEBUG, "Done parsing spectrum");
+    else if(new_line[0] == 'S'){ // start of next spectrum
+      carp(CARP_DEBUG, "Done parsing spectrum %d", first_scan_);
       break;
     }
 
@@ -680,7 +681,6 @@ bool Spectrum::parseMs2
                 (sscanf(new_line,"%f %f", &location_mz, &intensity) == 2))
         #endif
         {
-          file_format = true;
           start_addPeaks = true;
           this->addPeak(intensity, location_mz);
         }
@@ -1004,8 +1004,7 @@ bool Spectrum::parsePwizSpecInfo(
   vector<double>& mzs = pwiz_spectrum->getMZArray()->data;
   vector<double>& intensities = pwiz_spectrum->getIntensityArray()->data;
   for(int peak_idx = 0; peak_idx < num_peaks; peak_idx++){
-    Peak* peak = new Peak(intensities[peak_idx], mzs[peak_idx]);
-    peaks_.push_back(peak);
+    addPeak(intensities[peak_idx], mzs[peak_idx]);
   }
   has_peaks_ = true;
 

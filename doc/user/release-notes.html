@@ -25,12 +25,33 @@ Previously, the PinXML file produced
 by <code>search-for-matches</code> always contained a single PSM per
 charge/spectrum combination.  Now the <code>top-match</code> parameter
 controls how many PSMs are written to the PinXML file.</li>
-
-<li>
-When reading from tab-delimited text, SQT or PepXML files, Crux
-Percolator now accepts input files that contain a mixture of target
-and decoy PSMs, rather than requiring two separate input files.</li>
-
+<li>Percolator outputs decoy files in addition to target files.</li>
+<li>Percolator tab-delimited peptides output now contains PEP column.</li>
+<li>Percolator tab-delimited peptides output has been corrected to show the PSM
+with the best score.</li>
+<li>Percolator tab-delimited PSMs output "matches/spectrum" value has been
+corrected.</li>
+<li>The hidden <code>make-pin</code> command (automatically invoked by
+Percolator when given a non-PinXML format as input) now marks matches from decoy
+files as decoys.</li>
+<li><code>make-pin</code> command now uses the <code>top-match</code> parameter
+to determine how many PSMs per spectrum will be written, rather than only
+writing the top ranked PSM.</li>
+<li>The <code>spectrum-min-mass</code> and <code>spectrum-max-mass</code>
+options have been renamed to <code>spectrum-min-mz</code> and
+<code>spectrum-max-mz</code>, respectively.</li>
+<li>Added <code>--spectrum-parser</code> option to <code>q-ranker</code> and
+<code>barista</code>.</li>
+<li>Bugfix for <code>q-ranker</code> and <code>barista</code> when reading
+peptides with modifications</li>
+<li>Fixed <code>q-ranker</code> tab delimited output to contain a set of
+flanking amino acids for each protein, rather than always having a single
+set.</li>
+<li>Bugfix for the <code>percolator</code> command, the first and last two
+characters were being truncated from peptide sequences when the input was
+missing flanking amino acids or when the charge state was not indicated in PSM
+IDs.</li>
+<li>The crux MS2 parser now accepts spectra that don't have any peaks.</li>
 </ul>
 
 <hr></hr>

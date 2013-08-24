@@ -648,8 +648,9 @@ void Match::printSqt(
                protein_id = protein->getId();
 
                // only prepend "rand_" if we are doing a fasta search
+               Database* database = protein->getDatabase();
                if( null_peptide_ 
-                   && (protein->getDatabase()->getDecoyType() == NO_DECOYS) ){
+                   && (database != NULL && database->getDecoyType() == NO_DECOYS) ){
                     rand = "rand_";
                   }
     
@@ -1506,6 +1507,15 @@ Spectrum* Match::getSpectrum()
 Peptide* Match::getPeptide()
 {
   return peptide_;
+}
+
+/**
+ * sets whether the match is a null peptide match or not
+ */
+void Match::setNullPeptide(
+  bool null_peptide ///< whether the match is a null peptide match or not
+) {
+  null_peptide_ = null_peptide;
 }
 
 /**
