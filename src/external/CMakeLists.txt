@@ -140,7 +140,7 @@ ExternalProject_Add(
 ExternalProject_Add(
   comet
   SVN_REPOSITORY svn://svn.code.sf.net/p/comet-ms/code/trunk/comet-ms
-  SVN_REVISION -r 131
+  SVN_REVISION -r 145
   PREFIX ${CMAKE_CURRENT_SOURCE_DIR}/build/src/comet
   CONFIGURE_COMMAND ""
   BUILD_COMMAND make 
