@@ -60,7 +60,6 @@ int CometApplication::main(int argc, char** argv) {
   vector<InputFileInfo*> pv_input_files;
   CometSearchManager comet_search_mgr;
   setCometParameters(pv_input_files, comet_search_mgr);
-  
   comet_search_mgr.AddInputFiles(pv_input_files);
   
   /* Run search */
