@@ -1,3 +1,55 @@
+Index: CometSearch/CometPreprocess.h
+===================================================================
+--- CometSearch/CometPreprocess.h	(revision 147)
++++ CometSearch/CometPreprocess.h	(working copy)
+@@ -22,7 +22,7 @@
+ 
+ struct PreprocessThreadData
+ {
+-   Spectrum mstSpectrum;
++   MSToolkit::Spectrum mstSpectrum;
+    int iAnalysisType;
+    int iFileLastScan;
+ 
+@@ -30,7 +30,7 @@
+    {
+    }
+ 
+-   PreprocessThreadData(Spectrum &spec_in,
++   PreprocessThreadData(MSToolkit::Spectrum &spec_in,
+                         int iAnalysisType_in,
+                         int iFileLastScan_in)
+    {
+@@ -60,7 +60,7 @@
+ private:
+    
+    // Private static methods
+-   static void PreprocessSpectrum(Spectrum &spec, 
++   static void PreprocessSpectrum(MSToolkit::Spectrum &spec, 
+                                   int iAnalysisType, 
+                                   int iFileLastScan);
+    static bool CheckExistOutFile(int iCharge,
+@@ -67,7 +67,7 @@
+                                  int iScanNum);
+    static void AdjustMassTol(struct Query *pScoring);
+    static void PreloadIons(MSReader &mstReader,
+-                           Spectrum &spec,
++                           MSToolkit::Spectrum &spec,
+                            bool bNext=false,
+                            int scNum=0);
+    static bool CheckActivationMethodFilter(MSActivation act);
+@@ -78,9 +78,9 @@
+                          int iReaderLastScan,
+                          int iNumSpectraLoaded);
+    static void Preprocess(struct Query *pScoring,
+-                          Spectrum mstSpectrum);
++                          MSToolkit::Spectrum mstSpectrum);
+    static void LoadIons(struct Query *pScoring,
+-                        Spectrum mstSpectrum,
++                        MSToolkit::Spectrum mstSpectrum,
+                         struct PreprocessStruct *pPre);
+    static void MakeCorrData(double *pdTempRawData,
+                             struct Query *pScoring,
 Index: CometSearch/Common.h
 ===================================================================
 --- CometSearch/Common.h	(revision 147)
