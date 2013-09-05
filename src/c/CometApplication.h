@@ -8,7 +8,7 @@
 #define COMETAPPLICATION_H
 
 #include "CruxApplication.h"
-
+#include "CometSearchManager.h"
 #include <string>
 #include <fstream>
 #include <iostream>
@@ -49,6 +49,14 @@ class CometApplication: public CruxApplication {
    */
   virtual bool needsOutputDirectory();
 
+  /**
+   * Sets the parameters programmically
+   */
+  void setCometParameters(
+    std::vector<InputFileInfo*> &pvInputFiles,
+    CometSearchManager& searchMgr
+  );
+  
   /**
    * \write parameters 
    */

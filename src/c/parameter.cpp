@@ -1719,7 +1719,7 @@ void initialize_parameters(void){
      "--use-spec-features option to F. Default T.", 
      "Available for q-ranker and barista.", "true");
 
-  set_string_parameter("decoy-prefix", "rand_",
+  set_string_parameter("decoy_prefix", "rand_",
      "Specifies the prefix of the protein names that indicates a decoy. "
      "Default = rand_.",
      " Available for q-ranker and barista.", "true");
@@ -3226,7 +3226,9 @@ void print_parameter_file(char** filename){
   fprintf(param_file, "10. Chymotrypsin\t\t\t");
   fprintf(param_file, "1");
   fprintf(param_file, "      FWYL         P\n");
-   
+/*
+ TODO: Put these back in after we figure out what to do
+ with enzyme info.
   fprintf(param_file, "11. Elastase \t\t\t\t");
   fprintf(param_file, "1");
   fprintf(param_file, "      ALIV         P\n");
@@ -3256,7 +3258,7 @@ void print_parameter_file(char** filename){
   fprintf(param_file, "1");
   fprintf(param_file, "      ALIVKRWFY    P\n");
 
-
+*/
 
 
   fclose(param_file);
