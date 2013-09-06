@@ -1295,6 +1295,12 @@ void initialize_parameters(void){
 		    "option for Comet only",
 		    "true");
 
+  set_int_parameter("output_pinxmlfile",
+		    1, 0, 1,
+		    "0=no, 1=yes  write pin.xml file",
+		    "option for Comet only",
+		    "true");
+  
   set_int_parameter("output_txtfile",
 		    1, 0, 1,
 		    "0=no, 1=yes  write tab-delimited text file",

@@ -50,18 +50,46 @@ class CometApplication: public CruxApplication {
   virtual bool needsOutputDirectory();
 
   /**
-   * Sets the parameters programmically
+   * Sets the parameters for the Comet application using the crux parameters
    */
   void setCometParameters(
-    std::vector<InputFileInfo*> &pvInputFiles,
-    CometSearchManager& searchMgr
-  );
+    std::vector<InputFileInfo*> &pvInputFiles, ///<vector of input spectra files
+    CometSearchManager& searchMgr ///< SearchManager to set the parameters
+    );
   
   /**
-   * \write parameters 
+   * Extracts the variable modification info from the string
    */
-  void writeParams(std::ofstream &fout);
+  void calcVarMods(
+    const char* var_str, ///< variable modification string
+    VarMods& varmods ///< Variable modification structure to set
+    );
+
+  /**
+   * Sets a double range from a string
+   */
+  void getDoubleRange(
+    const char* str, ///< range string to set -in
+    DoubleRange& doubleRangeParam ///< DoubleRange parameter -out
+    );
+
+  /*
+   * sets the integer range from a string
+   */
+  void getIntRange(
+    const char* str, ///< range string to set -in
+    IntRange& intRangeParam ///< IntRange parameter -out
+    );
   
+  /*
+   * Sets the EnzymeInfo based upon the search_enzyme_number and the sample_enzyme_number
+   * Will be replaced later
+   */
+  void getEnzymeInfo(
+    int search_enzyme_number,
+    int sample_enzyme_number,
+    EnzymeInfo& enzymeInformation
+    );
 };
 
 
