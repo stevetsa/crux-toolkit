@@ -111,10 +111,13 @@ ExternalProject_Add(
   PATCH_COMMAND 
   cp ${CMAKE_CURRENT_SOURCE_DIR}/patches/percolator/fix_xml_write/Caller.h 
   ${CMAKE_CURRENT_SOURCE_DIR}/patches/percolator/fix_var_mods/DataSet.cpp 
-  ${CMAKE_CURRENT_SOURCE_DIR}/patches/percolator/fix_find_boot/CMakeLists.txt 
-  ${CMAKE_CURRENT_SOURCE_DIR}/patches/percolator/eliminate_xsd/*.hxx
-  ${CMAKE_CURRENT_SOURCE_DIR}/patches/percolator/eliminate_xsd/*.cxx
-  ${CMAKE_CURRENT_SOURCE_DIR}/patches/percolator/eliminate_xsd/*.xsd
+  ${CMAKE_CURRENT_SOURCE_DIR}/patches/percolator/fix_find_boost/CMakeLists.txt 
+  ${CMAKE_CURRENT_SOURCE_DIR}/patches/percolator/eliminate_xsd/percolator_in.hxx
+  ${CMAKE_CURRENT_SOURCE_DIR}/patches/percolator/eliminate_xsd/percolator_out.hxx
+  ${CMAKE_CURRENT_SOURCE_DIR}/patches/percolator/eliminate_xsd/percolator_in.cxx
+  ${CMAKE_CURRENT_SOURCE_DIR}/patches/percolator/eliminate_xsd/percolator_out.cxx
+  ${CMAKE_CURRENT_SOURCE_DIR}/patches/percolator/eliminate_xsd/percolator_in.xsd
+  ${CMAKE_CURRENT_SOURCE_DIR}/patches/percolator/eliminate_xsd/percolator_out.xsd
   ${CMAKE_CURRENT_SOURCE_DIR}/build/src/percolator/src
 )
 endif(APPLE)
@@ -172,7 +175,7 @@ ExternalProject_Add(
 endif (UNIX)
 
 #add_dependencies(percolator Proteowizard)
-add_dependencies(ProteoWizard percolator)
-#add_dependencies(percolator XercesC)
+add_dependencies(percolator ProteoWizard)
+add_dependencies(percolator XercesC)
 add_subdirectory(MSToolkit)
 
