@@ -174,7 +174,6 @@ ExternalProject_Add(
 )
 endif (UNIX)
 
-#add_dependencies(percolator Proteowizard)
 add_dependencies(percolator ProteoWizard)
 add_dependencies(percolator XercesC)
 add_subdirectory(MSToolkit)
