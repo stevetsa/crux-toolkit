@@ -43,7 +43,6 @@ if (WIN32 AND NOT CYGWIN)
 ExternalProject_Add(
   ProteoWizard
   URL http://noble.gs.washington.edu/proj/crux/download/pwiz-4837.tar.gz
-  URL_MD5 b59e972e193d8d78e89f2a74d2fc94ba
   DOWNLOAD_DIR downloads
   PREFIX ${CMAKE_CURRENT_SOURCE_DIR}/build
   CONFIGURE_COMMAND ""
@@ -90,7 +89,10 @@ ExternalProject_Add(
   PREFIX ${CMAKE_CURRENT_SOURCE_DIR}/build
   URL http://noble.gs.washington.edu/proj/crux/download/percolator_2_04_full_src.tar.gz
   URL_MD5 5c328688493d57c5b41d413338dfcb66
-  CMAKE_ARGS -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_SOURCE_DIR} -DCMAKE_PREFIX_PATH=${CMAKE_CURRENT_SOURCE_DIR}
+  CMAKE_ARGS -DCMAKE_VERBOSE_MAKEFILE=ON 
+  -DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_SOURCE_DIR} 
+  -DCMAKE_PREFIX_PATH=${CMAKE_CURRENT_SOURCE_DIR}
+  -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
   PATCH_COMMAND cp  ${CMAKE_CURRENT_SOURCE_DIR}/patches/percolator/fix_xml_write/Caller.h 
     ${CMAKE_CURRENT_SOURCE_DIR}/patches/percolator/fix_var_mods/DataSet.cpp 
     ${CMAKE_CURRENT_SOURCE_DIR}/patches/percolator/fix_m_pi_def/EludeModel.cpp 
@@ -107,7 +109,10 @@ ExternalProject_Add(
   PREFIX ${CMAKE_CURRENT_SOURCE_DIR}/build
   URL http://noble.gs.washington.edu/proj/crux/download/percolator_2_04_full_src.tar.gz
   URL_MD5 5c328688493d57c5b41d413338dfcb66
-  CMAKE_ARGS -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_SOURCE_DIR} -DCMAKE_PREFIX_PATH=${CMAKE_CURRENT_SOURCE_DIR}
+  CMAKE_ARGS -DCMAKE_VERBOSE_MAKEFILE=ON
+  -DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_SOURCE_DIR}
+  -DCMAKE_PREFIX_PATH=${CMAKE_CURRENT_SOURCE_DIR}
+  -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
   PATCH_COMMAND 
   cp ${CMAKE_CURRENT_SOURCE_DIR}/patches/percolator/fix_xml_write/Caller.h 
   ${CMAKE_CURRENT_SOURCE_DIR}/patches/percolator/fix_var_mods/DataSet.cpp 
