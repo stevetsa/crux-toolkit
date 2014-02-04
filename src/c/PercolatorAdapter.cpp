@@ -284,7 +284,7 @@ void PercolatorAdapter::addPeptideScores() {
     }
     if (peptide_match == NULL) {
       carp(CARP_FATAL, "Cannot find peptide %s %i",
-                       psm->getPeptide().c_str(), score_itr->isDecoy());
+                       psm->getPeptideSequence().c_str(), score_itr->isDecoy());
     }
     peptide_match->setScore(PERCOLATOR_SCORE, score_itr->score);
     peptide_match->setScore(PERCOLATOR_QVALUE, psm->q);
@@ -417,7 +417,7 @@ MODIFIED_AA_T* PercolatorAdapter::getModifiedAASequence(
   ) {
 
   std::stringstream ss_seq;
-  string perc_seq = psm->getPeptide();
+  string perc_seq = psm->getPeptideSequence();
   size_t perc_seq_len = perc_seq.length();
   if (perc_seq_len >= 5 &&
       perc_seq[1] == '.' && perc_seq[perc_seq_len - 2] == '.') {
