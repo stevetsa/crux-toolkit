@@ -25,12 +25,18 @@ include_directories(${CMAKE_BINARY_DIR}/src/external)
 include_directories(${CMAKE_BINARY_DIR}/src/external/include)
 include_directories(${CMAKE_BINARY_DIR}/src/external/include/CometSearch)
 include_directories(${CMAKE_BINARY_DIR}/src/external/include/MSToolkit)
+include_directories(${CMAKE_BINARY_DIR}/src/external/lib)
 include_directories(${CMAKE_BINARY_DIR}/src/external/build/src/ProteoWizard/libraries/boost_1_54_0)
 include_directories(${CMAKE_BINARY_DIR}/src/external/build/src/ProteoWizard/libraries/boost_aux)
 include_directories(${CMAKE_BINARY_DIR}/src/external/build/src/percolator/src/)
 include_directories(${CMAKE_BINARY_DIR}/src/external/build/src/percolator/src/fido)
 include_directories(${CMAKE_BINARY_DIR}/src/external/build/src/percolator-build/src/)
 include_directories(${CMAKE_BINARY_DIR}/src/external/build/src/percolator-build/src/fido)
+if (WIN32 AND NOT Cygwin)
+  # Needed to put DLL containing type libraries
+  # in include path for Windows
+  include_directories(${CMAKE_BINARY_DIR}/src/external/lib)
+endif (WIN32 AND NOT Cygwin)
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/tide/protoobj)
 
 
@@ -40,7 +46,6 @@ link_directories(./hardklor)
 link_directories(./posterior-error)
 link_directories(./qranker-barista)
 link_directories(./xlink)
-link_directories(${CMAKE_BINARY_DIR}/src/external/lib)
 link_directories(${CMAKE_BINARY_DIR}/src/external/build/src/percolator-build/src) 
 link_directories(${CMAKE_BINARY_DIR}/src/external/build/src/percolator-build/src/fido)
 

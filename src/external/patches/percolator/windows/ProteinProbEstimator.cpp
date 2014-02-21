@@ -20,8 +20,9 @@
 #include "ProteinProbEstimator.h"
 
 #ifdef _MSC_VER
-  // Microsoft complier only allows constant integer types
-  // to be set in class definition
+  // Microsoft complier doesn't allow floating point types
+  // to be set in class definition as const static
+  // so we move them outside the class
   const static double default_gamma = 0.5; //0.01;
   const static double default_alpha = 0.1; //0.01;
   const static double default_beta = 0.01;

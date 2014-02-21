@@ -24,7 +24,7 @@ install(FILES license.txt DESTINATION .)
 
 add_custom_target(
   deep-clean
-  COMMAND ${CMAKE_MAKE_PROGRAM} clean
+  COMMAND ${CMAKE_COMMAND} --build . --target clean
   COMMAND ${CMAKE_COMMAND} -E remove CMakeCache.txt
   COMMAND ${CMAKE_COMMAND} -E remove_directory src/external/build
   COMMAND ${CMAKE_COMMAND} -E remove_directory src/external/downloads

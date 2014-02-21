@@ -1,5 +1,20 @@
 include(ExternalProject)
 
+if (WIN32 AND NOT Cygwin)
+  #add_subdirectory(xdr)
+  ExternalProject_Add(
+    xdr
+    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/xdr
+    INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}/lib
+    PREFIX ${CMAKE_CURRENT_BINARY_DIR}/build
+    CMAKE_ARGS -DCMAKE_VERBOSE_MAKEFILE=ON
+      -DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_BINARY_DIR}
+      -DCMAKE_PREFIX_PATH=${CMAKE_CURRENT_BINARY_DIR}
+      -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+    PATCH_COMMAND ""
+  )
+endif (WIN32 AND NOT Cygwin)
+
 INCLUDE_DIRECTORIES(BEFORE SYSTEM ${CMAKE_CURRENT_BINARY_DIR}/include)
 
 if (UNIX)
@@ -94,7 +109,8 @@ elseif (WIN32 AND NOT CYGWIN)
     DOWNLOAD_DIR downloads
     CONFIGURE_COMMAND ""
     BUILD_COMMAND msbuild 
-      /p:Configuration=Debug 
+      /p:BuildDir=${CMAKE_CURRENT_BINARY_DIR}/lib
+      /p:Configuration=Release 
       /p:Platform=Win32 
       ${CMAKE_CURRENT_BINARY_DIR}/build/src/XercesC/projects/Win32/VC10/xerces-all/xerces-all.sln 
     INSTALL_COMMAND ""
@@ -106,6 +122,9 @@ elseif (WIN32 AND NOT CYGWIN)
     COMMAND ${CMAKE_COMMAND} -E copy_directory
       ${CMAKE_CURRENT_BINARY_DIR}/build/src/XercesC/src/xercesc
       ${CMAKE_CURRENT_BINARY_DIR}/include/xercesc
+    COMMAND ${CMAKE_COMMAND} -E copy
+      ${CMAKE_CURRENT_BINARY_DIR}/build/src/XercesC/Build/Win32/VC10/Release/xerces-c_3.lib
+      ${CMAKE_CURRENT_BINARY_DIR}/lib
   )
 endif (UNIX) 
 
@@ -116,10 +135,10 @@ if (WIN32 AND NOT CYGWIN)
     URL http://noble.gs.washington.edu/proj/crux/download/percolator_2_04_full_src.tar.gz
     URL_MD5 5c328688493d57c5b41d413338dfcb66
     CMAKE_ARGS -DCMAKE_VERBOSE_MAKEFILE=ON
-      -DXERCESC_INCLUDE_DIR=${CMAKE_INCLUDE_PATH}
       -DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_BINARY_DIR}
       -DCMAKE_PREFIX_PATH=${CMAKE_CURRENT_BINARY_DIR}
       -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+      -DRPC_INCLUDE_PATH=${CMAKE_CURRENT_SOURCE_DIR}/xdr
     PATCH_COMMAND ""
   )
   # On Windows we use this to patch percolator
@@ -156,6 +175,36 @@ if (WIN32 AND NOT CYGWIN)
     COMMAND ${CMAKE_COMMAND} -E copy 
       ${CMAKE_CURRENT_SOURCE_DIR}/patches/percolator/eliminate_xsd/percolator_out.xsd
       ${CMAKE_CURRENT_BINARY_DIR}/build/src/percolator/src
+    COMMAND ${CMAKE_COMMAND} -E copy 
+      ${CMAKE_CURRENT_SOURCE_DIR}/patches/percolator/windows/fido/CMakeLists.txt
+      ${CMAKE_CURRENT_BINARY_DIR}/build/src/percolator/src/fido
+    COMMAND ${CMAKE_COMMAND} -E copy 
+      ${CMAKE_CURRENT_SOURCE_DIR}/patches/percolator/windows/fido/GroupPowerBigraph.cpp
+      ${CMAKE_CURRENT_BINARY_DIR}/build/src/percolator/src/fido
+    COMMAND ${CMAKE_COMMAND} -E copy 
+      ${CMAKE_CURRENT_SOURCE_DIR}/patches/percolator/windows/qvality/CMakeLists.txt
+      ${CMAKE_CURRENT_BINARY_DIR}/build/src/percolator/src/qvality
+    COMMAND ${CMAKE_COMMAND} -E copy 
+      ${CMAKE_CURRENT_SOURCE_DIR}/patches/percolator/windows/Caller.cpp
+      ${CMAKE_CURRENT_BINARY_DIR}/build/src/percolator/src/
+    COMMAND ${CMAKE_COMMAND} -E copy 
+      ${CMAKE_CURRENT_SOURCE_DIR}/patches/percolator/windows/EludeModel.cpp
+      ${CMAKE_CURRENT_BINARY_DIR}/build/src/percolator/src/
+    COMMAND ${CMAKE_COMMAND} -E copy 
+      ${CMAKE_CURRENT_SOURCE_DIR}/patches/percolator/windows/Model.h
+      ${CMAKE_CURRENT_BINARY_DIR}/build/src/percolator/src/fido
+    COMMAND ${CMAKE_COMMAND} -E copy 
+      ${CMAKE_CURRENT_SOURCE_DIR}/patches/percolator/windows/Numerical.h
+      ${CMAKE_CURRENT_BINARY_DIR}/build/src/percolator/src/fido
+    COMMAND ${CMAKE_COMMAND} -E copy 
+      ${CMAKE_CURRENT_SOURCE_DIR}/patches/percolator/windows/Numerical.cpp
+      ${CMAKE_CURRENT_BINARY_DIR}/build/src/percolator/src/fido
+    COMMAND ${CMAKE_COMMAND} -E copy 
+      ${CMAKE_CURRENT_SOURCE_DIR}/patches/percolator/windows/ProteinProbEstimator.h
+      ${CMAKE_CURRENT_BINARY_DIR}/build/src/percolator/src/
+    COMMAND ${CMAKE_COMMAND} -E copy 
+      ${CMAKE_CURRENT_SOURCE_DIR}/patches/percolator/windows/ProteinProbEstimator.cpp
+      ${CMAKE_CURRENT_BINARY_DIR}/build/src/percolator/src/
     DEPENDEES patch
     DEPENDERS configure
   )
@@ -269,6 +318,7 @@ elseif (WIN32 AND NOT CYGWIN)
     BUILD_COMMAND msbuild 
       /p:Configuration=Debug 
       /p:Platform=Win32 
+      /p:OutputDir=${CMAKE_CURRENT_BINARY_DIR}/bin
       ${CMAKE_CURRENT_BINARY_DIR}/build/src/ProtocolBuffers/vsprojects/protobuf.sln
     INSTALL_COMMAND ""
     BUILD_IN_SOURCE 1
@@ -384,7 +434,7 @@ elseif (WIN32 AND NOT CYGWIN)
   set(LIBPATH "${CMAKE_CURRENT_BINARY_DIR}/lib;")
   ExternalProject_Add(
     comet
-    SVN_REPOSITORY http://svn.code.sf.net/p/comet-ms/code/tags/release_2013022@232
+    SVN_REPOSITORY http://svn.code.sf.net/p/comet-ms/code/tags/release_2013022
     PREFIX ${CMAKE_CURRENT_BINARY_DIR}/build
     UPDATE_COMMAND ""
     # Copy the Comet and MSToolkit include files and libraries to
@@ -406,3 +456,4 @@ endif (UNIX)
 
 add_dependencies(percolator Proteowizard)
 add_dependencies(percolator XercesC)
+add_dependencies(percolator xdr)

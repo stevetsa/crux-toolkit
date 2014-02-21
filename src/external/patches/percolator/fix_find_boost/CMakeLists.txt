@@ -2,28 +2,29 @@
 # SET COMPILER OPTIONS
 ###############################################################################
 
-set(CMAKE_CXX_FLAGS "-O3")
-set(CMAKE_C_FLAGS "-O3")
-set(CMAKE_CXX_FLAGS_RELEASE "-O3")
-set(CMAKE_C_FLAGS_RELEASE "-O3")
-set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g")
-set(CMAKE_C_FLAGS_DEBUG "-O0 -g")
-IF(APPLE)
+if (WIN32 AND NOT CYGWIN)
+  add_definitions(-DNOMINMAX)
+elseif (APPLE)
   set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -mmacosx-version-min=10.5")
   set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -mmacosx-version-min=10.5")
-  
   set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -mmacosx-version-min=10.5")
   set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -mmacosx-version-min=10.5")
-  
   set(LINK_FLAGS "-mmacosx-version-min=10.5")
-ENDIF(APPLE)
+else (WIN32 AND NOT CYGWIN)
+  set(CMAKE_CXX_FLAGS "-O3")
+  set(CMAKE_C_FLAGS "-O3")
+  set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+  set(CMAKE_C_FLAGS_RELEASE "-O3")
+  set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g")
+  set(CMAKE_C_FLAGS_DEBUG "-O0 -g")
+endif (WIN32 AND NOT CYGWIN)
 
 ###############################################################################
 # FIND EXTERNAL LIBRARIES REQUIRED BY PERCOLATOR
 ###############################################################################
 
-# INCLUDE HEADER FILES IN SRC DIRECTORY
-include_directories(${CMAKE_CURRENT_BINARY_DIR})
+include_directories(
+)
 
 MESSAGE( STATUS "Checking packages:" )
 
@@ -35,23 +36,29 @@ MESSAGE( STATUS "Checking packages:" )
 #endif(XERCESC_FOUND)
 #include_directories(${XERCESC_INCLUDE_DIR})
 
-# Set Boost and Xerces variables
-include_directories(${CMAKE_PREFIX_PATH}/include)
+include_directories(
+  ${CMAKE_PREFIX_PATH}/include
+  ${CMAKE_CURRENT_BINARY_DIR} 
+  ${RPC_INCLUDE_PATH}
+ )
 link_directories(${CMAKE_PREFIX_PATH}/lib)
 if (WIN32 AND NOT CYGWIN)
   set(
     Boost_LIBRARIES 
     ${CMAKE_PREFIX_PATH}/lib/libboost_filesystem-vc100-mt.lib
-    ${CMAKE_PREFIX_PATH}/lib/libboost_system.-vc100-mt.lib
+    ${CMAKE_PREFIX_PATH}/lib/libboost_system-vc100-mt.lib
   )
   set(
     XERCESC_LIBRARIES 
-    ${CMAKE_PREFIX_PATH}/lib/xerces-c_3D.lib 
+    ${CMAKE_PREFIX_PATH}/lib/xerces-c_3.lib 
+  )
+  set(
+    XDR_LIBRARIES 
+    ${CMAKE_PREFIX_PATH}/lib/xdr.lib 
   )
 else (WIN32 AND NOT CYGWIN)
   set(
-    Boost_LIBRARIES 
-    ${CMAKE_PREFIX_PATH}/lib/libboost_filesystem.a 
+    Boost_LIBRARIES ${CMAKE_PREFIX_PATH}/lib/libboost_filesystem.a 
     ${CMAKE_PREFIX_PATH}/lib/libboost_system.a
   )
   set(
@@ -59,9 +66,6 @@ else (WIN32 AND NOT CYGWIN)
     ${CMAKE_PREFIX_PATH}/lib/libxerces-c.a
   )
 endif (WIN32 AND NOT CYGWIN)
-
-set(Boost_LIBRARIES ${CMAKE_PREFIX_PATH}/lib/libboost_filesystem.a ${CMAKE_PREFIX_PATH}/lib/libboost_system.a)
-set(XERCES_LIBRARIES ${CMAKE_PREFIX_PATH}/lib/ ${CMAKE_PREFIX_PATH}/lib/libboost_system.a)
 
 if (UNIX)
   find_package(Pthreads)
@@ -105,13 +109,16 @@ if (CYGWIN)
 		OUTPUT_STRIP_TRAILING_WHITESPACE
 	)
 else(CYGWIN)
-	message(STATUS "Not running on Cygwin")
 	set(XSD_OUT_INPUT_FILE ${CMAKE_CURRENT_SOURCE_DIR}/${percolator_out})
 endif(CYGWIN)
 message(STATUS "XSD_OUT_INPUT_FILE = ${XSD_OUT_INPUT_FILE}")
 message(STATUS "xsdfiles_out = ${xsdfiles_out}")
 
-add_definitions(-D_NO_CEPHES -DOLD_BOOST -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -D_POSIX_SOURCE -D_POSIX_C_SOURCE -D_NOSQLITE)
+if (WIN32 AND NOT CYGWIN)
+  add_definitions(-D_CRT_SECURE_NO_WARNINGS -D_NO_CEPHES -DOLD_BOOST -D_NOSQLITE)
+else (WIN32 AND NOT CYGWIN)
+  add_definitions(-D_NO_CEPHES -DOLD_BOOST -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -D_POSIX_SOURCE -D_POSIX_C_SOURCE -D_NOSQLITE )
+endif (WIN32 AND NOT CYGWIN)
 
 
 ###############################################################################
@@ -141,7 +148,7 @@ IF(MINGW OR WIN32)
   set_property(TARGET percolator PROPERTY LINK_SEARCH_END_STATIC TRUE)
 ENDIF()
 
-if(MINGW OR WIN32)
+if(MINGW)
   set_target_properties(percolator PROPERTIES LINK_FLAGS "-Wl,-Bstatic -static-libgcc")
 endif()
 
@@ -165,6 +172,7 @@ else (UNIX)
     fido 
     ${XERCESC_LIBRARIES} 
     ${Boost_LIBRARIES}
+    ${XDR_LIBRARIES}
   )
 endif (UNIX)
   

@@ -48,7 +48,9 @@
 #include <sys/stat.h>
 #include <errno.h>
 #include <fcntl.h>
+#ifndef _MSC_VER
 #include <unistd.h>
+#endif
 #include <iostream>
 #include <string>
 #include <google/protobuf/message.h>

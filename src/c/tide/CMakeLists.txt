@@ -28,7 +28,8 @@ set(
 add_custom_command(
   OUTPUT ${proto_files_compiled}
   DEPENDS ${proto_files}
-  COMMAND mkdir -p protoobj &&
+  COMMAND ${CMAKE_COMMAND} -E make_directory protoobj
+  COMMAND
     ${CMAKE_BINARY_DIR}/src/external/bin/protoc 
       --proto_path=${CMAKE_CURRENT_SOURCE_DIR}/protobuf/ 
       --cpp_out=${CMAKE_CURRENT_BINARY_DIR}/protoobj
@@ -38,10 +39,20 @@ add_custom_command(
 )
 
 ###### Set up include and link directories  ######
+if (WIN32 AND NOT CYGWIN)
 include_directories(
   ${CMAKE_BINARY_DIR}/src/external/include
+  ${CMAKE_BINARY_DIR}/src/external/build/src/ProtocolBuffers/src
+  ${CMAKE_BINARY_DIR}/src/external/build/src/google-gflags/src/windows
   ${CMAKE_CURRENT_BINARY_DIR}/protoobj
 )
+else (WIN32 AND NOT CYGWIN)
+include_directories(
+  ${CMAKE_BINARY_DIR}/src/external/include
+  ${CMAKE_BINARY_DIR}/src/external/build/src/ProtocolBuffers/src
+  ${CMAKE_CURRENT_BINARY_DIR}/protoobj
+)
+endif (WIN32 AND NOT CYGWIN)
 link_directories(
   ${CMAKE_BINARY_DIR}/src/external/lib
 )
