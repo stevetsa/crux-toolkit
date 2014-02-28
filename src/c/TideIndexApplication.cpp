@@ -8,6 +8,11 @@
 #include "tide/modifications.h"
 #include "tide/records_to_vector-inl.h"
 
+#ifdef _MSC_VER
+#include <io.h>
+#define open _open
+#endif
+
 extern void AddTheoreticalPeaks(const vector<const pb::Protein*>& proteins,
                         				const string& input_filename,
                         				const string& output_filename);

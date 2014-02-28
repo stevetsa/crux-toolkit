@@ -48,7 +48,11 @@
 #include <sys/stat.h>
 #include <errno.h>
 #include <fcntl.h>
-#ifndef _MSC_VER
+#ifdef _MSC_VER
+#include <io.h>
+#define open _open
+#define close _close
+#else
 #include <unistd.h>
 #endif
 #include <iostream>

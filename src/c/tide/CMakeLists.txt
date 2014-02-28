@@ -58,27 +58,52 @@ link_directories(
 )
 
 ########## Set up tide-support library  ##########
-set(tide_lib_files
-  ${proto_files_compiled}
-  abspath.cc
-  active_peptide_queue.cc
-  crux_sp_spectrum.cc
-  fifo_alloc.cc
-  index_settings.cc
-  make_peptides.cc
-  mass_constants.cc
-  max_mz.cc
-  peptide.cc
-  peptide_mods3.cc
-  peptide_peaks.cc
-  read_fasta.cc
-  report.cc
-  results_writer.cc
-  sp_scorer.cc
-  spectrum_collection.cc
-  spectrum_preprocess2.cc
-  weibull.cc
-)
+if (WIN32 AND NOT CYGWIN)
+  set(tide_lib_files
+    ${proto_files_compiled}
+    abspath.cc
+    active_peptide_queue.cc
+    crux_sp_spectrum.cc
+    fifo_alloc.cc
+    index_settings.cc
+    make_peptides.cc
+    mass_constants.cc
+    max_mz.cc
+    mman.c
+    peptide.cc
+    peptide_mods3.cc
+    peptide_peaks.cc
+    read_fasta.cc
+    report.cc
+    results_writer.cc
+    sp_scorer.cc
+    spectrum_collection.cc
+    spectrum_preprocess2.cc
+    weibull.cc
+  )
+else (WIN32 AND NOT CYGWIN)
+  set(tide_lib_files
+    ${proto_files_compiled}
+    abspath.cc
+    active_peptide_queue.cc
+    crux_sp_spectrum.cc
+    fifo_alloc.cc
+    index_settings.cc
+    make_peptides.cc
+    mass_constants.cc
+    max_mz.cc
+    peptide.cc
+    peptide_mods3.cc
+    peptide_peaks.cc
+    read_fasta.cc
+    report.cc
+    results_writer.cc
+    sp_scorer.cc
+    spectrum_collection.cc
+    spectrum_preprocess2.cc
+    weibull.cc
+  )
+endif (WIN32 AND NOT CYGWIN)
 add_library(tide-support STATIC ${tide_lib_files})
 
 ###### Build tide-test-spectrum-preprocess  ######

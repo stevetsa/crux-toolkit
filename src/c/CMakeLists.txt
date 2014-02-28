@@ -28,6 +28,7 @@ include_directories(${CMAKE_BINARY_DIR}/src/external/include/MSToolkit)
 include_directories(${CMAKE_BINARY_DIR}/src/external/lib)
 include_directories(${CMAKE_BINARY_DIR}/src/external/build/src/ProteoWizard/libraries/boost_1_54_0)
 include_directories(${CMAKE_BINARY_DIR}/src/external/build/src/ProteoWizard/libraries/boost_aux)
+include_directories(${CMAKE_BINARY_DIR}/src/external/build/src/comet/)
 include_directories(${CMAKE_BINARY_DIR}/src/external/build/src/percolator/src/)
 include_directories(${CMAKE_BINARY_DIR}/src/external/build/src/percolator/src/fido)
 include_directories(${CMAKE_BINARY_DIR}/src/external/build/src/percolator-build/src/)
@@ -36,6 +37,12 @@ if (WIN32 AND NOT Cygwin)
   # Needed to put DLL containing type libraries
   # in include path for Windows
   include_directories(${CMAKE_BINARY_DIR}/src/external/lib)
+  # Needed to include rpc/types.h on Windows
+  include_directories(${CMAKE_SOURCE_DIR}/src/external/xdr)
+  # Needed to include gflags/gflags.h on Windows
+  include_directories(${CMAKE_BINARY_DIR}/src/external/build/src/google-gflags/src/windows)
+  # Needed to include google/protobuf on Windows
+  include_directories(${CMAKE_BINARY_DIR}/src/external/build/src/ProtocolBuffers/src)
 endif (WIN32 AND NOT Cygwin)
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/tide/protoobj)
 

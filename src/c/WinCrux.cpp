@@ -8,7 +8,6 @@
 #include "utils.h"
 #include "WinCrux.h"
 #include <time.h>
-#include <windows.h>
 #include <iostream>
 #include <vector>
 

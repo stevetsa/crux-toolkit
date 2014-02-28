@@ -1,4 +1,7 @@
-#ifndef _MSC_VER
+#ifdef _MSC_VER
+#include <direct.h>
+#define getcwd _getcwd
+#else
 #include <unistd.h>
 #endif
 #include <stdlib.h>

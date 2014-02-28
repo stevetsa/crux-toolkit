@@ -453,7 +453,7 @@ void PinXMLWriter::printFeatures(
   FLOAT_T ln_num_sp=match->getLnExperimentSize();
   FLOAT_T lnrSp=0.0; 
   if(match->getRank(SP)>0) {  
-    lnrSp=log(match->getRank(SP));
+    lnrSp=log((FLOAT_T) match->getRank(SP));
   }
   FLOAT_T delta_cn = match->getDeltaCn() ; 
   FLOAT_T delta_lcn= match->getDeltaLCn();

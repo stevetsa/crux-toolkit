@@ -4,7 +4,11 @@
 #include<algorithm>
 #include<iostream>
 #include<stdio.h>
+#ifdef _MSC_VER
+#include<unordered_map>
+#else
 #include<tr1/unordered_map>
+#endif
 #include "mod_coder.h"
 
 using namespace std;

@@ -18,6 +18,7 @@
 #include <netinet/in.h>
 #include <inttypes.h>
 #endif
+#include <Winsock2.h>
 #include "WinCrux.h"
 
 using namespace Crux;

@@ -102,10 +102,28 @@ double NaN
  * Return elapsed time in microseconds since the last call.
  ***********************************************************************/
 double wall_clock(){
-  struct timeval tp;
+
+  static int first_call = 1;
   static double first_time;
   double t;
-  static int first_call = 1;
+
+#ifdef _MSC_VER
+  LARGE_INTEGER time;
+  static LARGE_INTEGER freq;
+  if(first_call == 1) {
+    if (!QueryPerformanceFrequency(&freq)){
+       carp(FATAL, "Unable to obtain clock frequency\n");
+    }
+  }
+  else {
+    if (!QueryPerformanceCounter(&time)){
+       carp(FATAL, "Unable to obtain counter ticks\n");
+    }
+  }
+  return (double) time.QuadPart / freq.QuadPart;
+
+#else
+  struct timeval tp;
 
   gettimeofday(&tp, NULL);
   if(first_call == 1){
@@ -119,6 +137,7 @@ double wall_clock(){
     t = t - first_time;
   }
   return (double) t;
+#endif
 
 }
 
