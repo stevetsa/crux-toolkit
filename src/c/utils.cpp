@@ -114,6 +114,9 @@ double wall_clock(){
     if (!QueryPerformanceFrequency(&freq)){
        carp(FATAL, "Unable to obtain clock frequency\n");
     }
+    if (!QueryPerformanceCounter(&time)){
+       carp(FATAL, "Unable to obtain counter ticks\n");
+    }
   }
   else {
     if (!QueryPerformanceCounter(&time)){
