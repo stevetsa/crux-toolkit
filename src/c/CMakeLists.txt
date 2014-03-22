@@ -453,3 +453,12 @@ install (
   DESTINATION
   bin
 )
+
+add_dependencies(crux percolator)
+add_dependencies(crux hardklor)
+add_dependencies(crux bullseye)
+add_dependencies(crux posterior-error)
+add_dependencies(crux qranker-barrista)
+add_dependencies(crux xlink)
+add_dependencies(crux tide-support)
+add_dependencies(crux crux-support)

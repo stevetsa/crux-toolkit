@@ -10,7 +10,9 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
-#ifndef _MSC_VER
+#ifdef _MSC_VER
+#include <Winsock2.h>
+#else
 #include <sys/time.h>
 #include <unistd.h> 
 #endif
@@ -112,15 +114,15 @@ double wall_clock(){
   static LARGE_INTEGER freq;
   if(first_call == 1) {
     if (!QueryPerformanceFrequency(&freq)){
-       carp(FATAL, "Unable to obtain clock frequency\n");
+       carp(CARP_FATAL, "Unable to obtain clock frequency\n");
     }
     if (!QueryPerformanceCounter(&time)){
-       carp(FATAL, "Unable to obtain counter ticks\n");
+       carp(CARP_FATAL, "Unable to obtain counter ticks\n");
     }
   }
   else {
     if (!QueryPerformanceCounter(&time)){
-       carp(FATAL, "Unable to obtain counter ticks\n");
+       carp(CARP_FATAL, "Unable to obtain counter ticks\n");
     }
   }
   return (double) time.QuadPart / freq.QuadPart;

@@ -50,8 +50,6 @@
 #include <fcntl.h>
 #ifdef _MSC_VER
 #include <io.h>
-#define open _open
-#define close _close
 #else
 #include <unistd.h>
 #endif

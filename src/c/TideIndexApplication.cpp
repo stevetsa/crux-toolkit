@@ -10,7 +10,6 @@
 
 #ifdef _MSC_VER
 #include <io.h>
-#define open _open
 #endif
 
 extern void AddTheoreticalPeaks(const vector<const pb::Protein*>& proteins,

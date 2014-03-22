@@ -65,6 +65,17 @@ if (WIN32 AND NOT CYGWIN)
     INSTALL_COMMAND ""
     BUILD_IN_SOURCE 1
   )
+  ExternalProject_Add_Step(
+    ProteoWizard
+    copy_boost_libraries
+    COMMAND ${CMAKE_COMMAND} -E copy 
+      ${CMAKE_CURRENT_BINARY_DIR}/lib/libboost_filesystem-vc100-mt.lib
+      ${CMAKE_CURRENT_BINARY_DIR}/lib/libboost_filesystem-vc100-mt-gd-1_54.lib
+    COMMAND ${CMAKE_COMMAND} -E copy 
+      ${CMAKE_CURRENT_BINARY_DIR}/lib/libboost_system-vc100-mt.lib
+      ${CMAKE_CURRENT_BINARY_DIR}/lib/libboost_system-vc100-mt-gd-1_54.lib
+    DEPENDEES install
+  )
 else (WIN32 AND NOT CYGWIN)
   ExternalProject_Add(
     ProteoWizard
@@ -316,12 +327,20 @@ elseif (WIN32 AND NOT CYGWIN)
       ${CMAKE_CURRENT_BINARY_DIR}/build/src/ProtocolBuffers/vsprojects/
     CONFIGURE_COMMAND ""
     BUILD_COMMAND msbuild 
-      /p:Configuration=Debug 
+      /p:Configuration=Release
       /p:Platform=Win32 
       /p:OutputDir=${CMAKE_CURRENT_BINARY_DIR}/bin
       ${CMAKE_CURRENT_BINARY_DIR}/build/src/ProtocolBuffers/vsprojects/protobuf.sln
     INSTALL_COMMAND ""
     BUILD_IN_SOURCE 1
+  )
+  ExternalProject_Add_Step(
+    ProtocolBuffers
+    copy_executable
+    COMMAND ${CMAKE_COMMAND} -E copy 
+      ${CMAKE_CURRENT_BINARY_DIR}/build/src/ProtocolBuffers/vsprojects/Release/protoc.exe
+      ${CMAKE_CURRENT_BINARY_DIR}/bin/protoc.exe
+    DEPENDEES install
   )
 endif (UNIX)
 
