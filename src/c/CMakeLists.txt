@@ -233,13 +233,25 @@ else (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 endif (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 
 add_executable(crux crux-main.cpp)
-set_property(
-  TARGET
-  crux
-  PROPERTY
-  COMPILE_DEFINITIONS
-  MAIN
-)
+if (WIN32 AND NOT CYGWIN)
+  set_property(
+    TARGET crux 
+    PROPERTY 
+      COMPILE_DEFINITIONS 
+      MAIN
+      GFLAGS_DLL_DECL= 
+      GFLAGS_DLL_DECLARE_FLAG= 
+      GFLAGS_DLL_DEFINE_FLAG=
+  )
+else (WIN32 AND NOT CYGWIN)
+  set_property(
+    TARGET
+    crux
+    PROPERTY
+    COMPILE_DEFINITIONS
+    MAIN
+  )
+endif (WIN32 AND NOT CYGWIN)
 
 add_executable(xlink-predict-peptide-ions xlink/xhhc_predict_peptide_ions.cpp)
 set_property(

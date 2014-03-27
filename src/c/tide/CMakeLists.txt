@@ -105,6 +105,16 @@ else (WIN32 AND NOT CYGWIN)
   )
 endif (WIN32 AND NOT CYGWIN)
 add_library(tide-support STATIC ${tide_lib_files})
+if (WIN32 AND NOT CYGWIN)
+  set_property(
+    TARGET tide-support 
+    PROPERTY 
+      COMPILE_DEFINITIONS 
+      GFLAGS_DLL_DECL= 
+      GFLAGS_DLL_DECLARE_FLAG= 
+      GFLAGS_DLL_DEFINE_FLAG=
+  )
+endif (WIN32 AND NOT CYGWIN)
 
 ###### Build tide-test-spectrum-preprocess  ######
 #add_executable(tide-test-spectrum-preprocess test_spectrum_preprocess.cc)
@@ -138,7 +148,19 @@ add_library(tide-support STATIC ${tide_lib_files})
 
 ############### Build tide-search  ###############
 add_executable(tide-search search.cc)
-set_property(TARGET tide-search PROPERTY COMPILE_DEFINITIONS MAIN)
+if (WIN32 AND NOT CYGWIN)
+  set_property(
+    TARGET tide-search 
+    PROPERTY 
+      COMPILE_DEFINITIONS 
+      MAIN
+      GFLAGS_DLL_DECL= 
+      GFLAGS_DLL_DECLARE_FLAG= 
+      GFLAGS_DLL_DEFINE_FLAG=
+  )
+else (WIN32 AND NOT CYGWIN)
+  set_property(TARGET tide-search PROPERTY COMPILE_DEFINITIONS MAIN)
+endif (WIN32 AND NOT CYGWIN)
 target_link_libraries(tide-search tide-support gflags protobuf)
 
 ############ Build tide-test-read-ms2 ############

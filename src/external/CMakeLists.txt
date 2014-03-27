@@ -109,7 +109,8 @@ elseif (WIN32 AND NOT CYGWIN)
     CONFIGURE_COMMAND ""
     BUILD_COMMAND msbuild 
       /p:BuildDir=${CMAKE_CURRENT_BINARY_DIR}/lib
-      /p:Configuration=Release 
+      /p:Configuration=Release
+      /p:DefineConstants=XERCES_STATIC_LIBRARY
       /p:Platform=Win32 
       ${CMAKE_CURRENT_BINARY_DIR}/build/src/XercesC/projects/Win32/VC10/xerces-all/xerces-all.sln 
     INSTALL_COMMAND ""
