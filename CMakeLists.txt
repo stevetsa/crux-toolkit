@@ -59,6 +59,20 @@ add_custom_target(
   COMMENT "Not building external dependendcies."
 )
 
+add_dependencies(percolator Proteowizard)
+add_dependencies(percolator XercesC)
+add_dependencies(percolator xdr)
+add_dependencies(crux-support percolator)
+add_dependencies(tide-support ProtocolBuffers)
+add_dependencies(crux bullseye)
+add_dependencies(crux comet)
+add_dependencies(crux crux-support)
+add_dependencies(crux hardklor)
+add_dependencies(crux percolator)
+add_dependencies(crux posterior-error)
+add_dependencies(crux tide-support)
+add_dependencies(crux xlink)
+
 # build a CPack driven installer package
 include (InstallRequiredSystemLibraries)
 

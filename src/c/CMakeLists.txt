@@ -25,7 +25,6 @@ include_directories(${CMAKE_BINARY_DIR}/src/external)
 include_directories(${CMAKE_BINARY_DIR}/src/external/include)
 include_directories(${CMAKE_BINARY_DIR}/src/external/include/CometSearch)
 include_directories(${CMAKE_BINARY_DIR}/src/external/include/MSToolkit)
-include_directories(${CMAKE_BINARY_DIR}/src/external/lib)
 include_directories(${CMAKE_BINARY_DIR}/src/external/build/src/ProteoWizard/libraries/boost_1_54_0)
 include_directories(${CMAKE_BINARY_DIR}/src/external/build/src/ProteoWizard/libraries/boost_aux)
 include_directories(${CMAKE_BINARY_DIR}/src/external/build/src/comet/)
@@ -53,6 +52,7 @@ link_directories(./hardklor)
 link_directories(./posterior-error)
 link_directories(./qranker-barista)
 link_directories(./xlink)
+link_directories(${CMAKE_BINARY_DIR}/src/external/lib)
 link_directories(${CMAKE_BINARY_DIR}/src/external/build/src/percolator-build/src) 
 link_directories(${CMAKE_BINARY_DIR}/src/external/build/src/percolator-build/src/fido)
 
@@ -280,20 +280,44 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     crux
     barista
     bullseye
-    crux-support
     hardklor
-    cometsearch
-    mstoolkitlite
-    perclibrary
+    CometSearch
     posterior_error
+    perclibrary
+    fido
     xlink
+    gflags
+    crux-support
+    tide-support
+    mstoolkitlite
+    protobuf
+    libpwiz_data_identdata
+    libpwiz_data_identdata_version
+    libpwiz_data_misc
+    libpwiz_data_msdata
+    libpwiz_data_msdata_version
+    libpwiz_data_proteome
+    libpwiz_data_common
+    libpwiz_utility_chemistry
+    libpwiz_utility_minimxml
+    libpwiz_utility_misc
+    libpwiz_version
+    libSHA1
+    libboost_system-vc100-mt
+    libboost_iostreams-vc100-mt
+    libboost_filesystem-vc100-mt
+    libboost_regex-vc100-mt
+    libboost_thread-vc100-mt
+    libzlib.lib 
+    winxdr
+    xerces-c_3
     ws2_32
   )
   target_link_libraries(
     xlink-predict-peptide-ions
     xlink
     crux-support
-    cometsearch
+    CometSearch
     mstoolkitlite
     ws2_32
   )
@@ -320,7 +344,7 @@ else(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     tide-support
     protobuf
     gflags
-    cometsearch
+    CometSearch
     dl
     hardklor
     m
@@ -352,7 +376,6 @@ else(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     boost_filesystem-mt-s
     boost_regex-mt-s
     boost_thread-mt-s
-
   )
     
   target_link_libraries(
@@ -454,11 +477,3 @@ install (
   bin
 )
 
-add_dependencies(crux percolator)
-add_dependencies(crux hardklor)
-add_dependencies(crux bullseye)
-add_dependencies(crux posterior-error)
-add_dependencies(crux qranker-barrista)
-add_dependencies(crux xlink)
-add_dependencies(crux tide-support)
-add_dependencies(crux crux-support)

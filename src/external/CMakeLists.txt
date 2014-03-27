@@ -1,20 +1,5 @@
 include(ExternalProject)
 
-if (WIN32 AND NOT Cygwin)
-  #add_subdirectory(xdr)
-  ExternalProject_Add(
-    xdr
-    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/xdr
-    INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}/lib
-    PREFIX ${CMAKE_CURRENT_BINARY_DIR}/build
-    CMAKE_ARGS -DCMAKE_VERBOSE_MAKEFILE=ON
-      -DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_BINARY_DIR}
-      -DCMAKE_PREFIX_PATH=${CMAKE_CURRENT_BINARY_DIR}
-      -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-    PATCH_COMMAND ""
-  )
-endif (WIN32 AND NOT Cygwin)
-
 INCLUDE_DIRECTORIES(BEFORE SYSTEM ${CMAKE_CURRENT_BINARY_DIR}/include)
 
 if (UNIX)
@@ -70,10 +55,13 @@ if (WIN32 AND NOT CYGWIN)
     copy_boost_libraries
     COMMAND ${CMAKE_COMMAND} -E copy 
       ${CMAKE_CURRENT_BINARY_DIR}/lib/libboost_filesystem-vc100-mt.lib
-      ${CMAKE_CURRENT_BINARY_DIR}/lib/libboost_filesystem-vc100-mt-gd-1_54.lib
+      ${CMAKE_CURRENT_BINARY_DIR}/lib/libboost_filesystem-vc100-mt-1_54.lib
     COMMAND ${CMAKE_COMMAND} -E copy 
       ${CMAKE_CURRENT_BINARY_DIR}/lib/libboost_system-vc100-mt.lib
-      ${CMAKE_CURRENT_BINARY_DIR}/lib/libboost_system-vc100-mt-gd-1_54.lib
+      ${CMAKE_CURRENT_BINARY_DIR}/lib/libboost_system-vc100-mt-1_54.lib
+    COMMAND ${CMAKE_COMMAND} -E copy 
+      ${CMAKE_CURRENT_BINARY_DIR}/lib/libboost_regex-vc100-mt.lib
+      ${CMAKE_CURRENT_BINARY_DIR}/lib/libboost_regex-vc100-mt-1_54.lib
     DEPENDEES install
   )
 else (WIN32 AND NOT CYGWIN)
@@ -148,7 +136,7 @@ if (WIN32 AND NOT CYGWIN)
     CMAKE_ARGS -DCMAKE_VERBOSE_MAKEFILE=ON
       -DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_BINARY_DIR}
       -DCMAKE_PREFIX_PATH=${CMAKE_CURRENT_BINARY_DIR}
-      -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+      -DCMAKE_BUILD_TYPE=Release
       -DRPC_INCLUDE_PATH=${CMAKE_CURRENT_SOURCE_DIR}/xdr
     PATCH_COMMAND ""
   )
@@ -329,17 +317,19 @@ elseif (WIN32 AND NOT CYGWIN)
     BUILD_COMMAND msbuild 
       /p:Configuration=Release
       /p:Platform=Win32 
-      /p:OutputDir=${CMAKE_CURRENT_BINARY_DIR}/bin
       ${CMAKE_CURRENT_BINARY_DIR}/build/src/ProtocolBuffers/vsprojects/protobuf.sln
     INSTALL_COMMAND ""
     BUILD_IN_SOURCE 1
   )
   ExternalProject_Add_Step(
     ProtocolBuffers
-    copy_executable
+    copy_binaries
     COMMAND ${CMAKE_COMMAND} -E copy 
       ${CMAKE_CURRENT_BINARY_DIR}/build/src/ProtocolBuffers/vsprojects/Release/protoc.exe
       ${CMAKE_CURRENT_BINARY_DIR}/bin/protoc.exe
+    COMMAND ${CMAKE_COMMAND} -E copy 
+      ${CMAKE_CURRENT_BINARY_DIR}/build/src/ProtocolBuffers/vsprojects/Release/libprotobuf.lib
+      ${CMAKE_CURRENT_BINARY_DIR}/lib/protobuf.lib
     DEPENDEES install
   )
 endif (UNIX)
@@ -372,11 +362,19 @@ elseif (WIN32 AND NOT CYGWIN)
       ${CMAKE_CURRENT_BINARY_DIR}/build/src/google-gflags/vsprojects/libgflags/
     CONFIGURE_COMMAND ""
     BUILD_COMMAND msbuild 
-      /p:Configuration=Debug 
+      /p:Configuration=Release 
       /p:Platform=Win32 
       ${CMAKE_CURRENT_BINARY_DIR}/build/src/google-gflags/vsprojects/libgflags/libgflags.vcxproj
     INSTALL_COMMAND ""
     BUILD_IN_SOURCE 1
+  )
+  ExternalProject_Add_Step(
+    google-gflags
+    copy_gflags_library
+    COMMAND ${CMAKE_COMMAND} -E copy 
+      ${CMAKE_CURRENT_BINARY_DIR}/build/src/google-gflags/vsprojects/libgflags/Release/libgflags.lib
+      ${CMAKE_CURRENT_BINARY_DIR}/lib/gflags.lib
+    DEPENDEES install
   )
 endif (UNIX)
 
@@ -471,8 +469,28 @@ elseif (WIN32 AND NOT CYGWIN)
     INSTALL_COMMAND ""
     BUILD_IN_SOURCE 1
   )  
+  ExternalProject_Add_Step(
+    comet
+    copy_comet_library
+    COMMAND ${CMAKE_COMMAND} -E copy 
+      ${CMAKE_CURRENT_BINARY_DIR}/build/src/comet/Win32/Release/CometSearch.lib
+      ${CMAKE_CURRENT_BINARY_DIR}/lib/CometSearch.lib
+    COMMAND ${CMAKE_COMMAND} -E copy 
+      ${CMAKE_CURRENT_BINARY_DIR}/build/src/comet/Win32/Release/MSToolkitLite.lib
+      ${CMAKE_CURRENT_BINARY_DIR}/lib/MSToolkitLite.lib
+    DEPENDEES install
+  )
 endif (UNIX)
 
-add_dependencies(percolator Proteowizard)
-add_dependencies(percolator XercesC)
-add_dependencies(percolator xdr)
+if (WIN32 AND NOT Cygwin)
+  ExternalProject_Add(
+    xdr
+    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/xdr
+    PREFIX ${CMAKE_CURRENT_BINARY_DIR}
+    CMAKE_ARGS 
+      -DCMAKE_VERBOSE_MAKEFILE=ON
+      -DCMAKE_PREFIX_PATH=${CMAKE_CURRENT_BINARY_DIR}
+    PATCH_COMMAND ""
+  )
+endif (WIN32 AND NOT Cygwin)
+

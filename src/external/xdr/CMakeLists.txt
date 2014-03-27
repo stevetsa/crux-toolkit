@@ -5,8 +5,9 @@ cmake_policy(VERSION 2.8.4)
 if (WIN32 AND NOT CYGWIN)
   include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
-  set (
-    xdr_lib_files
+  add_library(
+    winxdr
+    STATIC
     xdr.c
     xdr_array.c
     xdr_float.c
@@ -18,19 +19,14 @@ if (WIN32 AND NOT CYGWIN)
     xdr_stdio.c
   )
 
-add_library(
-  xdr
-  STATIC
-  ${xdr_lib_files}
-)
+  set_property(
+    DIRECTORY
+    APPEND
+    PROPERTY
+    COMPILE_DEFINITIONS
+    _CRT_SECURE_NO_WARNINGS
+  )
 
-set_property(
-  DIRECTORY
-  APPEND
-  PROPERTY
-  COMPILE_DEFINITIONS
-  _CRT_SECURE_NO_WARNINGS
-)
+install(TARGETS winxdr DESTINATION ${CMAKE_PREFIX_PATH}/lib)
 
-install(TARGETS xdr DESTINATION ${CMAKE_PREFIX_PATH}/lib) # Important to use relative path here (used by CPack)!
 endif (WIN32 AND NOT CYGWIN)

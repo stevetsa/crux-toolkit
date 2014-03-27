@@ -54,7 +54,7 @@ if (WIN32 AND NOT CYGWIN)
   )
   set(
     XDR_LIBRARIES 
-    ${CMAKE_PREFIX_PATH}/lib/xdr.lib 
+    ${CMAKE_PREFIX_PATH}/lib/winxdr.lib 
   )
 else (WIN32 AND NOT CYGWIN)
   set(
