@@ -327,24 +327,73 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   )
   target_link_libraries(
     xlink-predict-peptide-ions
-    xlink
     crux-support
-    CometSearch
+    xlink
+    libpwiz_data_common
+    libpwiz_data_identdata
+    libpwiz_data_identdata_version
+    libpwiz_data_misc
+    libpwiz_data_msdata
+    libpwiz_data_proteome
+    libpwiz_utility_chemistry
+    libpwiz_utility_minimxml
+    libpwiz_utility_misc
+    libSHA1
+    libboost_system-vc100-mt
+    libboost_iostreams-vc100-mt
+    libboost_filesystem-vc100-mt
+    libboost_regex-vc100-mt
+    libboost_thread-vc100-mt
+    libzlib.lib 
     mstoolkitlite
     ws2_32
   )
   target_link_libraries(
     xlink-score-spectrum
-    xlink
     crux-support
+    xlink
     mstoolkitlite
+    libpwiz_data_common
+    libpwiz_data_identdata
+    libpwiz_data_identdata_version
+    libpwiz_data_misc
+    libpwiz_data_msdata
+    libpwiz_data_msdata_version
+    libpwiz_data_proteome
+    libpwiz_utility_chemistry
+    libpwiz_utility_minimxml
+    libpwiz_utility_misc
+    libSHA1
+    libboost_system-vc100-mt
+    libboost_iostreams-vc100-mt
+    libboost_filesystem-vc100-mt
+    libboost_regex-vc100-mt
+    libboost_thread-vc100-mt
+    libzlib.lib 
     ws2_32
   )
   target_link_libraries(
     xlink-assign-ions
-    xlink
     crux-support
+    xlink
     mstoolkitlite
+    libpwiz_data_common
+    libpwiz_data_identdata
+    libpwiz_data_identdata_version
+    libpwiz_data_misc
+    libpwiz_data_msdata
+    libpwiz_data_msdata_version
+    libpwiz_data_proteome
+    libpwiz_utility_chemistry
+    libpwiz_utility_minimxml
+    libpwiz_utility_misc
+    libSHA1
+    libboost_system-vc100-mt
+    libboost_iostreams-vc100-mt
+    libboost_filesystem-vc100-mt
+    libboost_regex-vc100-mt
+    libboost_thread-vc100-mt
+    libzlib.lib 
     ws2_32
   )
 else(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
