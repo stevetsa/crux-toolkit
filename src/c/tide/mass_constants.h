@@ -31,7 +31,7 @@ class MassConstants {
   static const double proton;
   static const double bin_width;
 #else
-  static const double proton = 1.007276467;
+  static const double proton = 1.00727646688;
   static const double bin_width = 1.0005079;
 #endif
 

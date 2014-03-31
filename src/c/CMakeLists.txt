@@ -413,7 +413,6 @@ else(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     mstoolkitlite
     posterior_error
     perclibrary
-    pthread
     xlink
     xerces-c
     boost_filesystem
@@ -437,6 +436,7 @@ else(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     boost_filesystem-mt-s
     boost_regex-mt-s
     boost_thread-mt-s
+    pthread
   )
     
   target_link_libraries(
@@ -444,7 +444,6 @@ else(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     dl
     m
     ${RT_LIBRARY}
-    pthread
     xlink
     crux-support
     mstoolkitlite
@@ -467,13 +466,13 @@ else(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     boost_filesystem-mt-s
     boost_regex-mt-s
     boost_thread-mt-s
+    pthread
   )
   target_link_libraries(
     xlink-score-spectrum
     dl
     m
     ${RT_LIBRARY}
-    pthread
     xlink
     crux-support
     mstoolkitlite
@@ -496,13 +495,13 @@ else(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     boost_filesystem-mt-s
     boost_regex-mt-s
     boost_thread-mt-s
+    pthread
   )
   target_link_libraries(
     xlink-assign-ions
     dl
     m
     ${RT_LIBRARY}
-    pthread
     xlink
     crux-support
     mstoolkitlite
@@ -525,6 +524,7 @@ else(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     boost_filesystem-mt-s
     boost_regex-mt-s
     boost_thread-mt-s
+    pthread
   )
 endif(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 

@@ -20,6 +20,11 @@ if (EXISTS "${CMAKE_SOURCE_DIR}/src/c/test/smoke-tests/runall")
   add_subdirectory(src/c/test/smoke-tests)
 endif (EXISTS "${CMAKE_SOURCE_DIR}/src/c/test/smoke-tests/runall")
 
+# Only process performance tests directory if it exiists
+if (EXISTS "${CMAKE_SOURCE_DIR}/src/c/test/performance-tests/runall")
+  add_subdirectory(src/c/test/performance-tests)
+endif (EXISTS "${CMAKE_SOURCE_DIR}/src/c/test/performance-tests/runall")
+
 install(FILES license.txt DESTINATION .)
 
 add_custom_target(
@@ -60,8 +65,8 @@ add_custom_target(
 )
 
 add_dependencies(comet ProteoWizard)
+add_dependencies(crux barista)
 add_dependencies(crux bullseye)
-add_dependencies(crux comet)
 add_dependencies(crux crux-support)
 add_dependencies(crux hardklor)
 add_dependencies(crux percolator)
@@ -69,6 +74,7 @@ add_dependencies(crux posterior-error)
 add_dependencies(crux tide-support)
 add_dependencies(crux xlink)
 add_dependencies(crux-support percolator)
+add_dependencies(hardklor comet)
 add_dependencies(percolator ProteoWizard)
 add_dependencies(percolator XercesC)
 add_dependencies(percolator xdr)
