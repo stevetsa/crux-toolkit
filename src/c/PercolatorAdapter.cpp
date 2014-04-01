@@ -55,7 +55,7 @@ PercolatorAdapter::~PercolatorAdapter() {
   */
 void PercolatorAdapter::writeXML_PSMs() {
   carp(CARP_DEBUG, "PercolatorAdapter::writeXML_PSMs");
-  Caller::writeXML_PSMs();
+  //Caller::writeXML_PSMs();
   addPsmScores();  
 }
 
@@ -65,7 +65,7 @@ void PercolatorAdapter::writeXML_PSMs() {
  */
 void PercolatorAdapter::writeXML_Peptides() {
   carp(CARP_DEBUG, "PercolatorAdapter::writeXML_Peptides");
-  Caller::writeXML_Peptides();
+  //Caller::writeXML_Peptides();
   addPeptideScores();
 }
 
@@ -75,7 +75,7 @@ void PercolatorAdapter::writeXML_Peptides() {
  */  
 void PercolatorAdapter::writeXML_Proteins() {
   carp(CARP_DEBUG, "PercolatorAdapter::writeXML_Proteins");
-  Caller::writeXML_Proteins();
+  //Caller::writeXML_Proteins();
   addProteinScores();
 }
 
@@ -213,25 +213,27 @@ void PercolatorAdapter::addProteinScores() {
 
   vector<ProteinMatch*> matches;
   vector<ProteinMatch*> decoy_matches;
-  map<const string,Protein> protein_scores = protEstimator->getProteins();
+  map<const string,Protein*> protein_scores = protEstimator->getProteins();
   
   for (
-    map<const string,Protein>::iterator score_iter = protein_scores.begin();
+    map<const string,Protein*>::iterator score_iter = protein_scores.begin();
     score_iter != protein_scores.end();
     score_iter++) {
-    
+    if (score_iter->second == NULL) {
+      continue;
+    }
     // Set scores
     ProteinMatch* protein_match;
-    if (!score_iter->second.getIsDecoy()) {
-      protein_match = collection_->getProteinMatch(score_iter->second.getName());
+    if (!score_iter->second->getIsDecoy()) {
+      protein_match = collection_->getProteinMatch(score_iter->second->getName());
       matches.push_back(protein_match);
     } else {
-      protein_match = decoy_collection_->getProteinMatch(score_iter->second.getName());
+      protein_match = decoy_collection_->getProteinMatch(score_iter->second->getName());
       decoy_matches.push_back(protein_match);
     }
-      protein_match->setScore(PERCOLATOR_SCORE, -log(score_iter->second.getP()));
-      protein_match->setScore(PERCOLATOR_QVALUE, score_iter->second.getQ());
-      protein_match->setScore(PERCOLATOR_PEP, score_iter->second.getPEP());
+      protein_match->setScore(PERCOLATOR_SCORE, -log(score_iter->second->getP()));
+      protein_match->setScore(PERCOLATOR_QVALUE, score_iter->second->getQ());
+      protein_match->setScore(PERCOLATOR_PEP, score_iter->second->getPEP());
   }
 
   // set percolator score ranks
@@ -284,7 +286,7 @@ void PercolatorAdapter::addPeptideScores() {
     }
     if (peptide_match == NULL) {
       carp(CARP_FATAL, "Cannot find peptide %s %i",
-                       psm->getPeptide().c_str(), score_itr->isDecoy());
+                       psm->getFullPeptideSequence().c_str(), score_itr->isDecoy());
     }
     peptide_match->setScore(PERCOLATOR_SCORE, score_itr->score);
     peptide_match->setScore(PERCOLATOR_QVALUE, psm->q);
@@ -417,7 +419,7 @@ MODIFIED_AA_T* PercolatorAdapter::getModifiedAASequence(
   ) {
 
   std::stringstream ss_seq;
-  string perc_seq = psm->getPeptide();
+  string perc_seq = psm->getFullPeptideSequence();
   size_t perc_seq_len = perc_seq.length();
   if (perc_seq_len >= 5 &&
       perc_seq[1] == '.' && perc_seq[perc_seq_len - 2] == '.') {

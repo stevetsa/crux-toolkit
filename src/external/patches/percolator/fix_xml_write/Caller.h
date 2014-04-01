@@ -1,5 +1,5 @@
  /*******************************************************************************
- Copyright 2006-2009 Lukas Käll <lukas.kall@cbr.su.se>
+ Copyright 2006-2012 Lukas Käll <lukas.kall@scilifelab.se>
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@
 #include <string>
 #include <memory>
 #ifdef HAVE_CONFIG_H
-#include "config.h"
+  #include "config.h"
 #endif
 #include "Option.h"
 #include "SanityCheck.h"
@@ -44,7 +44,6 @@
 #include "Globals.h"
 #include "MassHandler.h"
 #include "Enzyme.h"
-#include "config.h"
 #include <boost/foreach.hpp>
 #include <boost/lexical_cast.hpp>
 #include "parser.hxx"
@@ -57,24 +56,33 @@
 #include <xercesc/util/PlatformUtils.hpp>
 #include "percolator_in.hxx"
 #include "ProteinProbEstimator.h"
+#include "FidoInterface.h"
+
 
 class Caller {
   public:
     enum SetHandlerType {
       NORMAL = 0, SHUFFLED, SHUFFLED_TEST, SHUFFLED_THRESHOLD
     };
+    
   public:
+    
     Caller();
     Caller(bool uniquePeptides);
     virtual ~Caller();
     void train(vector<vector<double> >& w);
+    int xv_process_one_bin(unsigned int set, vector<vector<double> >& w, 
+                           bool updateDOC, vector<double>& cpos_vec, 
+			   vector<double>& cfrac_vec, double& best_cpos, 
+                           double &best_cfrac, vector_double* pWeights,
+                           options * pOptions);
     int xv_step(vector<vector<double> >& w, bool updateDOC = false);
     static string greeter();
     string extendedGreeter();
     bool parseOptions(int argc, char **argv);
     void printWeights(ostream & weightStream, vector<double>& w);
     void readWeights(istream & weightStream, vector<double>& w);
-    void readFiles();
+    int readFiles();
     void filelessSetup(const unsigned int numFeatures,
                        const unsigned int numSpectra, char** fetureNames,
                        double pi0);
@@ -83,8 +91,11 @@ class Caller {
     Scores* getFullSet() {
       return &fullset;
     }
-    void calculatePSMProb(bool uniquePeptideRun, time_t& procStart,
-        clock_t& procStartClock, vector<vector<double> >& w, double& diff);
+    void calculatePSMProb(bool uniquePeptideRun, Scores *fullset, time_t& procStart,
+        clock_t& procStartClock, vector<vector<double> >& w, double& diff, bool TDC = false);
+    
+    void calculateProteinProbabilitiesFido();
+    
     int run();
     SetHandler* getSetHandler(SetHandlerType sh) {
       switch (sh) {
@@ -105,13 +116,14 @@ class Caller {
     string xmlOutputFN_Peptides;
     string xmlOutputFN_Proteins;
     Scores fullset; //,thresholdset;
+    
   protected:
+    
     virtual void writeXML_PSMs();
     virtual void writeXML_Peptides();
     virtual void writeXML_Proteins();
     void writeXML();
-    void countTargetsAndDecoys( std::string & fname, unsigned int & nrTargets ,
-        unsigned int & nrDecoys );
+    
     Normalizer * pNorm;
     SanityCheck * pCheck;
     AlgIn *svmInput;
@@ -130,11 +142,14 @@ class Caller {
     bool outputAll;
     bool tabInput;
     bool docFeatures;
+    bool quickValidation;
     bool reportPerformanceEachIteration;
     bool reportUniquePeptides;
     bool calculateProteinLevelProb;
     bool schemaValidation;
     bool showExpMass;
+    bool hasProteins;
+    bool target_decoy_competition;
     double test_fdr;
     double selectionfdr;
     double selectedCpos;
@@ -151,8 +166,24 @@ class Caller {
     map<int, double> scan2rt;
     double pi_0_psms;
     double pi_0_peptides;
-    double pi_0_proteins;
     double numberQpsms;
+    /*fido parameters*/
+    double fido_alpha;
+    double fido_beta;
+    double fido_gamma;
+    bool fido_nogrouProteins; 
+    bool fido_trivialGrouping;
+    bool fido_noprune;
+    bool fido_noseparate;
+    bool fido_reduceTree;
+    bool fido_truncate;
+    unsigned fido_depth;
+    double fido_mse_threshold;
+    /* general protein probabilities options */
+    bool tiesAsOneProtein;
+    bool usePi0;
+    bool outputEmpirQVal;
+    std::string decoy_prefix;
 };
 
 #endif /*CALLER_H_*/
