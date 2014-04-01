@@ -321,8 +321,6 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     libboost_regex-vc100-mt
     libboost_thread-vc100-mt
     libzlib.lib 
-    winxdr
-    xerces-c_3
     ws2_32
   )
   target_link_libraries(

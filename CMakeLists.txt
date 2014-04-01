@@ -64,6 +64,7 @@ add_custom_target(
   COMMENT "Not building external dependendcies."
 )
 
+add_dependencies(bullseye comet)
 add_dependencies(comet ProteoWizard)
 add_dependencies(crux barista)
 add_dependencies(crux bullseye)
@@ -76,7 +77,6 @@ add_dependencies(crux xlink)
 add_dependencies(crux-support percolator)
 add_dependencies(hardklor comet)
 add_dependencies(percolator ProteoWizard)
-add_dependencies(percolator xdr)
 add_dependencies(tide-support ProtocolBuffers)
 add_dependencies(tide-support google-gflags)
 add_dependencies(xlink comet)
