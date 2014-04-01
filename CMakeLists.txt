@@ -65,8 +65,8 @@ add_custom_target(
 )
 
 add_dependencies(barista comet)
-add_dependencies(barista ProteoWizard)
 add_dependencies(bullseye hardklor)
+add_dependencies(comet ProteoWizard)
 add_dependencies(crux barista)
 add_dependencies(crux bullseye)
 add_dependencies(crux crux-support)
