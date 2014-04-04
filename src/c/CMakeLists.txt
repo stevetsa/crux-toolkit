@@ -315,11 +315,11 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     libpwiz_utility_misc
     libpwiz_version
     libSHA1
-    libboost_system-vc100-mt
-    libboost_iostreams-vc100-mt
-    libboost_filesystem-vc100-mt
-    libboost_regex-vc100-mt
-    libboost_thread-vc100-mt
+    libboost_system-vc100-mt-gd
+    libboost_iostreams-vc100-mt-gd
+    libboost_filesystem-vc100-mt-gd
+    libboost_regex-vc100-mt-gd
+    libboost_thread-vc100-mt-gd
     libzlib.lib 
     ws2_32
   )
@@ -337,11 +337,11 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     libpwiz_utility_minimxml
     libpwiz_utility_misc
     libSHA1
-    libboost_system-vc100-mt
-    libboost_iostreams-vc100-mt
-    libboost_filesystem-vc100-mt
-    libboost_regex-vc100-mt
-    libboost_thread-vc100-mt
+    libboost_system-vc100-mt-gd
+    libboost_iostreams-vc100-mt-gd
+    libboost_filesystem-vc100-mt-gd
+    libboost_regex-vc100-mt-gd
+    libboost_thread-vc100-mt-gd
     libzlib.lib 
     mstoolkitlite
     ws2_32
@@ -362,11 +362,11 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     libpwiz_utility_minimxml
     libpwiz_utility_misc
     libSHA1
-    libboost_system-vc100-mt
-    libboost_iostreams-vc100-mt
-    libboost_filesystem-vc100-mt
-    libboost_regex-vc100-mt
-    libboost_thread-vc100-mt
+    libboost_system-vc100-mt-gd
+    libboost_iostreams-vc100-mt-gd
+    libboost_filesystem-vc100-mt-gd
+    libboost_regex-vc100-mt-gd
+    libboost_thread-vc100-mt-gd
     libzlib.lib 
     ws2_32
   )

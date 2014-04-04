@@ -53,8 +53,8 @@ link_directories(${CMAKE_PREFIX_PATH}/lib)
 if (WIN32 AND NOT CYGWIN)
   set(
     Boost_LIBRARIES 
-    ${CMAKE_PREFIX_PATH}/lib/libboost_filesystem-vc100-mt.lib
-    ${CMAKE_PREFIX_PATH}/lib/libboost_system-vc100-mt.lib
+    ${CMAKE_PREFIX_PATH}/lib/libboost_filesystem-vc100-mt-gd.lib
+    ${CMAKE_PREFIX_PATH}/lib/libboost_system-vc100-mt-gd.lib
   )
 else (WIN32 AND NOT CYGWIN)
   set(
