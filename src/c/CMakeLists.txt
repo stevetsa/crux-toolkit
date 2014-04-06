@@ -290,6 +290,7 @@ endif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   target_link_libraries(
     crux
+    general
     barista
     bullseye
     hardklor
@@ -315,84 +316,139 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     libpwiz_utility_misc
     libpwiz_version
     libSHA1
-    libboost_system-vc100-mt-gd
-    libboost_iostreams-vc100-mt-gd
-    libboost_filesystem-vc100-mt-gd
-    libboost_regex-vc100-mt-gd
-    libboost_thread-vc100-mt-gd
     libzlib.lib 
     ws2_32
   )
   target_link_libraries(
-    xlink-predict-peptide-ions
-    crux-support
-    xlink
-    libpwiz_data_common
-    libpwiz_data_identdata
-    libpwiz_data_identdata_version
-    libpwiz_data_misc
-    libpwiz_data_msdata
-    libpwiz_data_proteome
-    libpwiz_utility_chemistry
-    libpwiz_utility_minimxml
-    libpwiz_utility_misc
-    libSHA1
-    libboost_system-vc100-mt-gd
-    libboost_iostreams-vc100-mt-gd
-    libboost_filesystem-vc100-mt-gd
-    libboost_regex-vc100-mt-gd
-    libboost_thread-vc100-mt-gd
-    libzlib.lib 
-    mstoolkitlite
-    ws2_32
-  )
-  target_link_libraries(
-    xlink-score-spectrum
-    crux-support
-    xlink
-    mstoolkitlite
-    libpwiz_data_common
-    libpwiz_data_identdata
-    libpwiz_data_identdata_version
-    libpwiz_data_misc
-    libpwiz_data_msdata
-    libpwiz_data_msdata_version
-    libpwiz_data_proteome
-    libpwiz_utility_chemistry
-    libpwiz_utility_minimxml
-    libpwiz_utility_misc
-    libSHA1
-    libboost_system-vc100-mt-gd
-    libboost_iostreams-vc100-mt-gd
-    libboost_filesystem-vc100-mt-gd
-    libboost_regex-vc100-mt-gd
-    libboost_thread-vc100-mt-gd
-    libzlib.lib 
-    ws2_32
-  )
-  target_link_libraries(
-    xlink-assign-ions
-    crux-support
-    xlink
-    mstoolkitlite
-    libpwiz_data_common
-    libpwiz_data_identdata
-    libpwiz_data_identdata_version
-    libpwiz_data_misc
-    libpwiz_data_msdata
-    libpwiz_data_msdata_version
-    libpwiz_data_proteome
-    libpwiz_utility_chemistry
-    libpwiz_utility_minimxml
-    libpwiz_utility_misc
-    libSHA1
+    crux
+    optimized
     libboost_system-vc100-mt
     libboost_iostreams-vc100-mt
     libboost_filesystem-vc100-mt
     libboost_regex-vc100-mt
     libboost_thread-vc100-mt
+  )
+  target_link_libraries(
+    crux
+    debug
+    libboost_system-vc100-mt-gd
+    libboost_iostreams-vc100-mt-gd
+    libboost_filesystem-vc100-mt-gd
+    libboost_regex-vc100-mt-gd
+    libboost_thread-vc100-mt-gd
+  )
+  target_link_libraries(
+    xlink-predict-peptide-ions
+    general
+    crux-support
+    xlink
+    libpwiz_data_common
+    libpwiz_data_identdata
+    libpwiz_data_identdata_version
+    libpwiz_data_misc
+    libpwiz_data_msdata
+    libpwiz_data_proteome
+    libpwiz_utility_chemistry
+    libpwiz_utility_minimxml
+    libpwiz_utility_misc
+    libSHA1
+    libzlib.lib 
+    mstoolkitlite
+    ws2_32
+  )
+  target_link_libraries(
+    xlink-predict-peptide-ions
+    optimized
+    libboost_system-vc100-mt
+    libboost_iostreams-vc100-mt
+    libboost_filesystem-vc100-mt
+    libboost_regex-vc100-mt
+    libboost_thread-vc100-mt
+  )
+  target_link_libraries(
+    xlink-predict-peptide-ions
+    debug
+    libboost_system-vc100-mt-gd
+    libboost_iostreams-vc100-mt-gd
+    libboost_filesystem-vc100-mt-gd
+    libboost_regex-vc100-mt-gd
+    libboost_thread-vc100-mt-gd
+  )
+  target_link_libraries(
+    xlink-score-spectrum
+    general
+    crux-support
+    xlink
+    mstoolkitlite
+    libpwiz_data_common
+    libpwiz_data_identdata
+    libpwiz_data_identdata_version
+    libpwiz_data_misc
+    libpwiz_data_msdata
+    libpwiz_data_msdata_version
+    libpwiz_data_proteome
+    libpwiz_utility_chemistry
+    libpwiz_utility_minimxml
+    libpwiz_utility_misc
+    libSHA1
     libzlib.lib 
     ws2_32
+  )
+  target_link_libraries(
+    xlink-score-spectrum
+    optimized
+    libboost_system-vc100-mt
+    libboost_iostreams-vc100-mt
+    libboost_filesystem-vc100-mt
+    libboost_regex-vc100-mt
+    libboost_thread-vc100-mt
+  )
+  target_link_libraries(
+    xlink-score-spectrum
+    debug
+    libboost_system-vc100-mt-gd
+    libboost_iostreams-vc100-mt-gd
+    libboost_filesystem-vc100-mt-gd
+    libboost_regex-vc100-mt-gd
+    libboost_thread-vc100-mt-gd
+  )
+  target_link_libraries(
+    xlink-assign-ions
+    general
+    crux-support
+    xlink
+    mstoolkitlite
+    libpwiz_data_common
+    libpwiz_data_identdata
+    libpwiz_data_identdata_version
+    libpwiz_data_misc
+    libpwiz_data_msdata
+    libpwiz_data_msdata_version
+    libpwiz_data_proteome
+    libpwiz_utility_chemistry
+    libpwiz_utility_minimxml
+    libpwiz_utility_misc
+    libSHA1
+    libzlib.lib 
+    ws2_32
+  )
+  target_link_libraries(
+    xlink-assign-ions
+    optimized
+    libboost_system-vc100-mt
+    libboost_iostreams-vc100-mt
+    libboost_filesystem-vc100-mt
+    libboost_regex-vc100-mt
+    libboost_thread-vc100-mt
+  )
+  target_link_libraries(
+    xlink-assign-ions
+    debug
+    libboost_system-vc100-mt-gd
+    libboost_iostreams-vc100-mt-gd
+    libboost_filesystem-vc100-mt-gd
+    libboost_regex-vc100-mt-gd
+    libboost_thread-vc100-mt-gd
   )
 else(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   target_link_libraries(

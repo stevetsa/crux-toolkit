@@ -53,6 +53,11 @@ link_directories(${CMAKE_PREFIX_PATH}/lib)
 if (WIN32 AND NOT CYGWIN)
   set(
     Boost_LIBRARIES 
+    ${CMAKE_PREFIX_PATH}/lib/libboost_filesystem-vc100-mt.lib
+    ${CMAKE_PREFIX_PATH}/lib/libboost_system-vc100-mt.lib
+  )
+  set(
+    Boost_DEBUG_LIBRARIES 
     ${CMAKE_PREFIX_PATH}/lib/libboost_filesystem-vc100-mt-gd.lib
     ${CMAKE_PREFIX_PATH}/lib/libboost_system-vc100-mt-gd.lib
   )
@@ -170,7 +175,9 @@ endif()
 
 # SET LIBRARIES FOR PERCOLATOR
 if(MSVC)
-  target_link_libraries(percolator perclibrary fido ${XERCESC_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${Boost_LIBRARIES} ${CURL_LIBRARIES})
+  target_link_libraries(percolator general perclibrary fido ${XERCESC_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${CURL_LIBRARIES})
+  target_link_libraries(percolator optimized ${Boost_LIBRARIES} )
+  target_link_libraries(percolator debug ${Boost_DEBUG_LIBRARIES} )
 else(MSVC)
   target_link_libraries(percolator perclibrary fido ${XERCESC_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${Boost_LIBRARIES} ${CURL_LIBRARIES} stdc++)
 endif()

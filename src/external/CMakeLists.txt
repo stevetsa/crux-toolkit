@@ -19,6 +19,7 @@ SET(CMAKE_INSTALL_PREFIX ${CMAKE_CURRENT_BINARY_DIR})
 # libraries and Proteowizard components..
 if (WIN32 AND NOT CYGWIN)
   set(protwiz_args ./quickbuild.bat)
+  set(protwiz_args ${protwiz_args} --layout=system)
   set(protwiz_args ${protwiz_args} --toolset=msvc-10.0 debug)
   set(protwiz_args ${protwiz_args} --i-agree-to-the-vendor-licenses)
   set(protwiz_args ${protwiz_args} --without-mz5)
@@ -50,20 +51,6 @@ if (WIN32 AND NOT CYGWIN)
     INSTALL_COMMAND ""
     BUILD_IN_SOURCE 1
   )
-  ExternalProject_Add_Step(
-    ProteoWizard
-    copy_boost_libraries
-    COMMAND ${CMAKE_COMMAND} -E copy 
-      ${CMAKE_CURRENT_BINARY_DIR}/lib/libboost_filesystem-vc100-mt.lib
-      ${CMAKE_CURRENT_BINARY_DIR}/lib/libboost_filesystem-vc100-mt-1_54.lib
-    COMMAND ${CMAKE_COMMAND} -E copy 
-      ${CMAKE_CURRENT_BINARY_DIR}/lib/libboost_system-vc100-mt.lib
-      ${CMAKE_CURRENT_BINARY_DIR}/lib/libboost_system-vc100-mt-1_54.lib
-    COMMAND ${CMAKE_COMMAND} -E copy 
-      ${CMAKE_CURRENT_BINARY_DIR}/lib/libboost_regex-vc100-mt.lib
-      ${CMAKE_CURRENT_BINARY_DIR}/lib/libboost_regex-vc100-mt-1_54.lib
-    DEPENDEES install
-  )
 else (WIN32 AND NOT CYGWIN)
   ExternalProject_Add(
     ProteoWizard
@@ -90,7 +77,7 @@ if (WIN32 AND NOT CYGWIN)
     CMAKE_ARGS -DCMAKE_VERBOSE_MAKEFILE=ON
       -DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_BINARY_DIR}
       -DCMAKE_PREFIX_PATH=${CMAKE_CURRENT_BINARY_DIR}
-      -DCMAKE_BUILD_TYPE=Debug
+      -DCMAKE_BUILD_TYPE=${CMAKE_CFG_INTDIR}
     PATCH_COMMAND ""
   )
   # On Windows we use this to patch percolator
@@ -181,7 +168,7 @@ elseif (WIN32 AND NOT CYGWIN)
       ${CMAKE_CURRENT_BINARY_DIR}/build/src/ProtocolBuffers/vsprojects/
     CONFIGURE_COMMAND ""
     BUILD_COMMAND msbuild 
-      /p:Configuration=Debug
+      /p:Configuration=${CMAKE_CFG_INTDIR}
       /p:Platform=Win32 
       ${CMAKE_CURRENT_BINARY_DIR}/build/src/ProtocolBuffers/vsprojects/protobuf.sln
     INSTALL_COMMAND ""
@@ -191,10 +178,10 @@ elseif (WIN32 AND NOT CYGWIN)
     ProtocolBuffers
     copy_binaries
     COMMAND ${CMAKE_COMMAND} -E copy 
-      ${CMAKE_CURRENT_BINARY_DIR}/build/src/ProtocolBuffers/vsprojects/Debug/protoc.exe
+      ${CMAKE_CURRENT_BINARY_DIR}/build/src/ProtocolBuffers/vsprojects/${CMAKE_CFG_INTDIR}/protoc.exe
       ${CMAKE_CURRENT_BINARY_DIR}/bin/protoc.exe
     COMMAND ${CMAKE_COMMAND} -E copy 
-      ${CMAKE_CURRENT_BINARY_DIR}/build/src/ProtocolBuffers/vsprojects/Debug/libprotobuf.lib
+      ${CMAKE_CURRENT_BINARY_DIR}/build/src/ProtocolBuffers/vsprojects/${CMAKE_CFG_INTDIR}/libprotobuf.lib
       ${CMAKE_CURRENT_BINARY_DIR}/lib/protobuf.lib
     DEPENDEES install
   )
@@ -228,7 +215,7 @@ elseif (WIN32 AND NOT CYGWIN)
       ${CMAKE_CURRENT_BINARY_DIR}/build/src/google-gflags/vsprojects/libgflags/
     CONFIGURE_COMMAND ""
     BUILD_COMMAND msbuild 
-      /p:Configuration=Debug 
+      /p:Configuration=${CMAKE_CFG_INTDIR} 
       /p:Platform=Win32 
       ${CMAKE_CURRENT_BINARY_DIR}/build/src/google-gflags/vsprojects/libgflags/libgflags.vcxproj
     INSTALL_COMMAND ""
@@ -238,7 +225,7 @@ elseif (WIN32 AND NOT CYGWIN)
     google-gflags
     copy_gflags_library
     COMMAND ${CMAKE_COMMAND} -E copy 
-      ${CMAKE_CURRENT_BINARY_DIR}/build/src/google-gflags/vsprojects/libgflags/Debug/libgflags.lib
+      ${CMAKE_CURRENT_BINARY_DIR}/build/src/google-gflags/vsprojects/libgflags/${CMAKE_CFG_INTDIR}/libgflags.lib
       ${CMAKE_CURRENT_BINARY_DIR}/lib/gflags.lib
     DEPENDEES install
   )
@@ -329,7 +316,7 @@ elseif (WIN32 AND NOT CYGWIN)
     BUILD_COMMAND 
       ${CMAKE_COMMAND} 
         -DLIBPATH:STRING="${LIBPATH}"
-        -DMSBUILD_ARGS:STRING=/p:Configuration=Debug
+        -DMSBUILD_ARGS:STRING=/p:Configuration=${CMAKE_CFG_INTDIR}
         -DPROJ_FILE:STRING=comet.sln
         -P ${CMAKE_CURRENT_SOURCE_DIR}/build-comet.cmake
     INSTALL_COMMAND ""
@@ -339,10 +326,10 @@ elseif (WIN32 AND NOT CYGWIN)
     comet
     copy_comet_library
     COMMAND ${CMAKE_COMMAND} -E copy 
-      ${CMAKE_CURRENT_BINARY_DIR}/build/src/comet/Win32/Debug/CometSearch.lib
+      ${CMAKE_CURRENT_BINARY_DIR}/build/src/comet/Win32/${CMAKE_CFG_INTDIR}/CometSearch.lib
       ${CMAKE_CURRENT_BINARY_DIR}/lib/CometSearch.lib
     COMMAND ${CMAKE_COMMAND} -E copy 
-      ${CMAKE_CURRENT_BINARY_DIR}/build/src/comet/Win32/Debug/MSToolkitLite.lib
+      ${CMAKE_CURRENT_BINARY_DIR}/build/src/comet/Win32/${CMAKE_CFG_INTDIR}/MSToolkitLite.lib
       ${CMAKE_CURRENT_BINARY_DIR}/lib/MSToolkitLite.lib
     DEPENDEES install
   )
