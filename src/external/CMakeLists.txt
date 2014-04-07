@@ -13,27 +13,6 @@ endif (UNIX)
 SET(ENV{CMAKE_PREFIX_PATH} ${CMAKE_CURRENT_BINARY_DIR})
 SET(CMAKE_INSTALL_PREFIX ${CMAKE_CURRENT_BINARY_DIR})
 
-# Set up quickbuild arguments used by pwiz build.
-# quickbuild.sh is the script provided by proteowizard 
-# to bootstrap bjam and to run bjam for building the external
-# libraries and Proteowizard components..
-if (WIN32 AND NOT CYGWIN)
-  set(protwiz_args ./quickbuild.bat)
-  set(protwiz_args ${protwiz_args} --layout=system)
-  set(protwiz_args ${protwiz_args} --toolset=msvc-10.0 debug)
-  set(protwiz_args ${protwiz_args} --i-agree-to-the-vendor-licenses)
-  set(protwiz_args ${protwiz_args} --without-mz5)
-  set(protwiz_args ${protwiz_args} --prefix=${CMAKE_CURRENT_BINARY_DIR})
-  set(protwiz_args ${protwiz_args} libraries)
-else(WIN32 AND NOT CYGWIN)
-  set(protwiz_args ./quickbuild.sh)
-  set(protwiz_args ${protwiz_args} --without-binary-msdata)
-  set(protwiz_args ${protwiz_args} --layout=system)
-  set(protwiz_args ${protwiz_args} --prefix=${CMAKE_CURRENT_BINARY_DIR})
-  set(protwiz_args ${protwiz_args} runtime-link=shared)
-  set(protwiz_args ${protwiz_args} libraries)
-endif (WIN32 AND NOT CYGWIN)
-
 # Download and build a partial distribution of the pwiz source
 # from the ProteoWizard TeamCity repository.
 if (WIN32 AND NOT CYGWIN)
@@ -41,13 +20,18 @@ if (WIN32 AND NOT CYGWIN)
     ProteoWizard
     DOWNLOAD_COMMAND 
       ${CMAKE_COMMAND} 
-        -DDOWNLOAD_DIR:STRING=${CMAKE_CURRENT_BINARY_DIR}/downloads
-        -DWORKING_DIR:STRING=${CMAKE_CURRENT_BINARY_DIR}/build/src/ProteoWizard
+        -DDOWNLOAD_DIR:PATH=${CMAKE_CURRENT_BINARY_DIR}/downloads
+        -DWORKING_DIR:PATH=${CMAKE_CURRENT_BINARY_DIR}/build/src/ProteoWizard
         -P  ${CMAKE_CURRENT_SOURCE_DIR}/download_pwiz.cmake
     DOWNLOAD_DIR ${CMAKE_CURRENT_BINARY_DIR}/downloads
     PREFIX ${CMAKE_CURRENT_BINARY_DIR}/build
     CONFIGURE_COMMAND ""
-    BUILD_COMMAND ${protwiz_args}
+    BUILD_COMMAND 
+      ${CMAKE_COMMAND} 
+        -DPREFIX:PATH=${CMAKE_CURRENT_BINARY_DIR}
+      	-DCMAKE_BUILD_TYPE:STRING=${CMAKE_CFG_INTDIR}
+        -DWORKING_DIR:PATH=${CMAKE_CURRENT_BINARY_DIR}/build/src/ProteoWizard
+        -P  ${CMAKE_CURRENT_SOURCE_DIR}/build_pwiz.cmake
     INSTALL_COMMAND ""
     BUILD_IN_SOURCE 1
   )
@@ -56,15 +40,21 @@ else (WIN32 AND NOT CYGWIN)
     ProteoWizard
     DOWNLOAD_COMMAND 
       ${CMAKE_COMMAND} 
-        -DDOWNLOAD_DIR:STRING=${CMAKE_CURRENT_BINARY_DIR}/downloads
-        -DWORKING_DIR:STRING=${CMAKE_CURRENT_BINARY_DIR}/build/src/ProteoWizard
+        -DDOWNLOAD_DIR:PATH=${CMAKE_CURRENT_BINARY_DIR}/downloads
+        -DWORKING_DIR:PATH=${CMAKE_CURRENT_BINARY_DIR}/build/src/ProteoWizard
         -P  ${CMAKE_CURRENT_SOURCE_DIR}/download_pwiz.cmake
     DOWNLOAD_DIR ${CMAKE_CURRENT_BINARY_DIR}/downloads
     PREFIX ${CMAKE_CURRENT_BINARY_DIR}/build
     CONFIGURE_COMMAND ""
-    BUILD_COMMAND ${protwiz_args}
+    BUILD_COMMAND 
+      ${CMAKE_COMMAND} 
+        -DPREFIX:PATH=${CMAKE_CURRENT_BINARY_DIR}
+        -DWORKING_DIR:PATH=${CMAKE_CURRENT_BINARY_DIR}/build/src/ProteoWizard
+      	-DCMAKE_BUILD_TYPE:STRING=${CMAKE_CFG_INTDIR}
+        -P  ${CMAKE_CURRENT_SOURCE_DIR}/build_pwiz.cmake
     INSTALL_COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/create_links.sh 
       --prefix=${CMAKE_CURRENT_BINARY_DIR}
+    INSTALL_COMMAND ""
     BUILD_IN_SOURCE 1
   )
 endif (WIN32 AND NOT CYGWIN)
