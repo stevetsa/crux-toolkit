@@ -257,14 +257,14 @@ if (WIN32 AND NOT CYGWIN)
   add_definitions(-DBOOST_ALL_NO_LIB)
 endif (WIN32 AND NOT CYGWIN)
 
-add_executable(xlink-predict-peptide-ions xlink/xhhc_predict_peptide_ions.cpp)
-set_property(
-  TARGET
-  xlink-predict-peptide-ions
-  PROPERTY
-  COMPILE_DEFINITIONS
-  MAIN
-)
+#add_executable(xlink-predict-peptide-ions xlink/xhhc_predict_peptide_ions.cpp)
+#set_property(
+#  TARGET
+#  xlink-predict-peptide-ions
+#  PROPERTY
+#  COMPILE_DEFINITIONS
+#  MAIN
+#)
 
 add_executable(xlink-score-spectrum xlink/xhhc_score_peptide_spectrum.cpp)
 set_property(
@@ -332,40 +332,40 @@ if (WIN32 AND NOT CYGWIN)
     debug libboost_filesystem-vc100-mt-gd
     debug libboost_thread-vc100-mt-gd
   )
-  target_link_libraries(
-    xlink-predict-peptide-ions
-    crux-support
-    xlink
-    libpwiz_data_common
-    libpwiz_data_identdata
-    libpwiz_data_identdata_version
-    libpwiz_data_misc
-    libpwiz_data_msdata
-    libpwiz_data_proteome
-    libpwiz_utility_chemistry
-    libpwiz_utility_minimxml
-    libpwiz_utility_misc
-    libSHA1
-    libzlib.lib 
-    mstoolkitlite
-    ws2_32
-  )
-  target_link_libraries(
-    xlink-predict-peptide-ions
-    optimized libboost_system-vc100-mt
-    optimized libboost_iostreams-vc100-mt
-    optimized libboost_filesystem-vc100-mt
-    optimized libboost_regex-vc100-mt
-    optimized libboost_thread-vc100-mt
-  )
-  target_link_libraries(
-    xlink-predict-peptide-ions
-    debug libboost_system-vc100-mt-gd
-    debug libboost_iostreams-vc100-mt-gd
-    debug libboost_filesystem-vc100-mt-gd
-    debug libboost_regex-vc100-mt-gd
-    debug libboost_thread-vc100-mt-gd
-  )
+#  target_link_libraries(
+#    xlink-predict-peptide-ions
+#    crux-support
+#    xlink
+#    libpwiz_data_common
+#    libpwiz_data_identdata
+#    libpwiz_data_identdata_version
+#    libpwiz_data_misc
+#    libpwiz_data_msdata
+#    libpwiz_data_proteome
+#    libpwiz_utility_chemistry
+#    libpwiz_utility_minimxml
+#    libpwiz_utility_misc
+#    libSHA1
+#    libzlib.lib 
+#    mstoolkitlite
+#    ws2_32
+#  )
+#  target_link_libraries(
+#    xlink-predict-peptide-ions
+#    optimized libboost_system-vc100-mt
+#    optimized libboost_iostreams-vc100-mt
+#    optimized libboost_filesystem-vc100-mt
+#    optimized libboost_regex-vc100-mt
+#    optimized libboost_thread-vc100-mt
+#  )
+#  target_link_libraries(
+#    xlink-predict-peptide-ions
+#    debug libboost_system-vc100-mt-gd
+#    debug libboost_iostreams-vc100-mt-gd
+#    debug libboost_filesystem-vc100-mt-gd
+#    debug libboost_regex-vc100-mt-gd
+#    debug libboost_thread-vc100-mt-gd
+#  )
   target_link_libraries(
     xlink-score-spectrum
     crux-support
@@ -478,35 +478,35 @@ else()
     boost_thread-mt-s
     pthread
   )
-  target_link_libraries(
-    xlink-predict-peptide-ions
-    dl
-    m
-    ${RT_LIBRARY}
-    xlink
-    crux-support
-    mstoolkitlite
-    pwiz_data_msdata
-    pwiz_data_common
-    pwiz_data_identdata
-    pwiz_data_msdata_version
-    pwiz_data_misc
-    pwiz_utility_chemistry
-    pwiz_utility_misc
-    pwiz_utility_minimxml
-    pwiz_data_common
-    pwiz_data_identdata
-    pwiz_data_identdata_version
-    pwiz_data_proteome
-    SHA1
-    boost_system-mt-s
-    boost_iostreams-mt-s
-    z-mt-s-1_2
-    boost_filesystem-mt-s
-    boost_regex-mt-s
-    boost_thread-mt-s
-    pthread
-  )
+#  target_link_libraries(
+#    xlink-predict-peptide-ions
+#    dl
+#    m
+#    ${RT_LIBRARY}
+#    xlink
+#    crux-support
+#    mstoolkitlite
+#    pwiz_data_msdata
+#    pwiz_data_common
+#    pwiz_data_identdata
+#    pwiz_data_msdata_version
+#    pwiz_data_misc
+#    pwiz_utility_chemistry
+#    pwiz_utility_misc
+#    pwiz_utility_minimxml
+#    pwiz_data_common
+#    pwiz_data_identdata
+#    pwiz_data_identdata_version
+#    pwiz_data_proteome
+#    SHA1
+#    boost_system-mt-s
+#    boost_iostreams-mt-s
+#    z-mt-s-1_2
+#    boost_filesystem-mt-s
+#    boost_regex-mt-s
+#    boost_thread-mt-s
+#    pthread
+#  )
   target_link_libraries(
     xlink-score-spectrum
     dl
@@ -570,7 +570,6 @@ endif(WIN32 AND NOT CYGWIN)
 install (
   TARGETS
   crux
-  xlink-predict-peptide-ions
   xlink-score-spectrum
   xlink-assign-ions
   DESTINATION

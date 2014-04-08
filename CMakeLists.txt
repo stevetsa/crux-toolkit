@@ -59,7 +59,7 @@ add_custom_target(
 
 add_custom_target(
   no-externals 
-  COMMAND ${CMAKE_MAKE_PROGRAM} crux xlink-predict-peptide-ions  xlink-score-spectrum xlink-assign-ions xlink-predict-peptide-ions
+  COMMAND ${CMAKE_MAKE_PROGRAM} crux  xlink-score-spectrum xlink-assign-ions 
   WORKING_DIRECTORY src/c
   COMMENT "Not building external dependendcies."
 )
@@ -86,7 +86,6 @@ add_dependencies(xlink comet)
 add_dependencies(xlink percolator)
 add_dependencies(xlink ProteoWizard)
 add_dependencies(xlink-assign-ions crux)
-add_dependencies(xlink-predict-peptide-ions crux)
 add_dependencies(xlink-score-spectrum crux)
 
 # build a CPack driven installer package
