@@ -572,7 +572,7 @@ else()
     boost_thread-mt-s
     pthread
   )
-endif(WIN32 AND NOT MINGW)
+endif(WIN32 AND NOT CYGWIN)
 
 install (
   TARGETS
