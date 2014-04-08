@@ -253,6 +253,10 @@ else (WIN32 AND NOT CYGWIN)
   )
 endif (WIN32 AND NOT CYGWIN)
 
+if (WIN32 AND NOT CYGWIN)
+  add_definitions(-DBOOST_ALL_NO_LIB)
+endif (WIN32 AND NOT CYGWIN)
+
 add_executable(xlink-predict-peptide-ions xlink/xhhc_predict_peptide_ions.cpp)
 set_property(
   TARGET
@@ -287,10 +291,9 @@ else(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   set(RT_LIBRARY "rt")
 endif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 
-if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+if (WIN32 AND NOT CYGWIN)
   target_link_libraries(
     crux
-    general
     barista
     bullseye
     hardklor
@@ -321,25 +324,22 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   )
   target_link_libraries(
     crux
-    optimized
-    libboost_system-vc100-mt
-    libboost_iostreams-vc100-mt
-    libboost_filesystem-vc100-mt
-    libboost_regex-vc100-mt
-    libboost_thread-vc100-mt
+    optimized libboost_system-vc100-mt
+    optimized libboost_iostreams-vc100-mt
+    optimized libboost_filesystem-vc100-mt
+    optimized libboost_regex-vc100-mt
+    optimized libboost_thread-vc100-mt
   )
   target_link_libraries(
     crux
-    debug
-    libboost_system-vc100-mt-gd
-    libboost_iostreams-vc100-mt-gd
-    libboost_filesystem-vc100-mt-gd
-    libboost_regex-vc100-mt-gd
-    libboost_thread-vc100-mt-gd
+    debug libboost_system-vc100-mt-gd
+    debug libboost_iostreams-vc100-mt-gd
+    debug libboost_filesystem-vc100-mt-gd
+    debug libboost_regex-vc100-mt-gd
+    debug libboost_thread-vc100-mt-gd
   )
   target_link_libraries(
     xlink-predict-peptide-ions
-    general
     crux-support
     xlink
     libpwiz_data_common
@@ -358,25 +358,22 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   )
   target_link_libraries(
     xlink-predict-peptide-ions
-    optimized
-    libboost_system-vc100-mt
-    libboost_iostreams-vc100-mt
-    libboost_filesystem-vc100-mt
-    libboost_regex-vc100-mt
-    libboost_thread-vc100-mt
+    optimized libboost_system-vc100-mt
+    optimized libboost_iostreams-vc100-mt
+    optimized libboost_filesystem-vc100-mt
+    optimized libboost_regex-vc100-mt
+    optimized libboost_thread-vc100-mt
   )
   target_link_libraries(
     xlink-predict-peptide-ions
-    debug
-    libboost_system-vc100-mt-gd
-    libboost_iostreams-vc100-mt-gd
-    libboost_filesystem-vc100-mt-gd
-    libboost_regex-vc100-mt-gd
-    libboost_thread-vc100-mt-gd
+    debug libboost_system-vc100-mt-gd
+    debug libboost_iostreams-vc100-mt-gd
+    debug libboost_filesystem-vc100-mt-gd
+    debug libboost_regex-vc100-mt-gd
+    debug libboost_thread-vc100-mt-gd
   )
   target_link_libraries(
     xlink-score-spectrum
-    general
     crux-support
     xlink
     mstoolkitlite
@@ -396,25 +393,22 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   )
   target_link_libraries(
     xlink-score-spectrum
-    optimized
-    libboost_system-vc100-mt
-    libboost_iostreams-vc100-mt
-    libboost_filesystem-vc100-mt
-    libboost_regex-vc100-mt
-    libboost_thread-vc100-mt
+    optimized libboost_system-vc100-mt
+    optimized libboost_iostreams-vc100-mt
+    optimized libboost_filesystem-vc100-mt
+    optimized libboost_regex-vc100-mt
+    optimized libboost_thread-vc100-mt
   )
   target_link_libraries(
     xlink-score-spectrum
-    debug
-    libboost_system-vc100-mt-gd
-    libboost_iostreams-vc100-mt-gd
-    libboost_filesystem-vc100-mt-gd
-    libboost_regex-vc100-mt-gd
-    libboost_thread-vc100-mt-gd
+    debug libboost_system-vc100-mt-gd
+    debug libboost_iostreams-vc100-mt-gd
+    debug libboost_filesystem-vc100-mt-gd
+    debug libboost_regex-vc100-mt-gd
+    debug libboost_thread-vc100-mt-gd
   )
   target_link_libraries(
     xlink-assign-ions
-    general
     crux-support
     xlink
     mstoolkitlite
@@ -434,23 +428,21 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   )
   target_link_libraries(
     xlink-assign-ions
-    optimized
-    libboost_system-vc100-mt
-    libboost_iostreams-vc100-mt
-    libboost_filesystem-vc100-mt
-    libboost_regex-vc100-mt
-    libboost_thread-vc100-mt
+    optimized libboost_system-vc100-mt
+    optimized libboost_iostreams-vc100-mt
+    optimized libboost_filesystem-vc100-mt
+    optimized libboost_regex-vc100-mt
+    optimized libboost_thread-vc100-mt
   )
   target_link_libraries(
     xlink-assign-ions
-    debug
-    libboost_system-vc100-mt-gd
-    libboost_iostreams-vc100-mt-gd
-    libboost_filesystem-vc100-mt-gd
-    libboost_regex-vc100-mt-gd
-    libboost_thread-vc100-mt-gd
+    debug libboost_system-vc100-mt-gd
+    debug libboost_iostreams-vc100-mt-gd
+    debug libboost_filesystem-vc100-mt-gd
+    debug libboost_regex-vc100-mt-gd
+    debug libboost_thread-vc100-mt-gd
   )
-else(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+else()
   target_link_libraries(
     crux
     barista
@@ -580,7 +572,7 @@ else(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     boost_thread-mt-s
     pthread
   )
-endif(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+endif(WIN32 AND NOT MINGW)
 
 install (
   TARGETS
