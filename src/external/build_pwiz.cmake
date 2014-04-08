@@ -26,15 +26,15 @@ endmacro (check_status)
 set(pwiz_build_args ${pwiz_build_args} --prefix=${PREFIX})
 if (WIN32 AND NOT CYGWIN)
   set(pwiz_build quickbuild.bat)
+  set(pwiz_build_args ${pwiz_build_args} --layout=versioned)
   set(pwiz_build_args ${pwiz_build_args} --toolset=msvc-10.0)
-  set(pwiz_build_args ${pwiz_build_args} --layout=system)
   set(pwiz_build_args ${pwiz_build_args} --i-agree-to-the-vendor-licenses)
   set(pwiz_build_args ${pwiz_build_args} --without-mz5)
 else()
   set(pwiz_build_args quickbuild.sh)
   set(pwiz_build_args ${pwiz_build_args} --without-binary-msdata)
   set(pwiz_build_args ${pwiz_build_args} --layout=system)
-  set(pwiz_build_args ${pwiz_build_args} --prefix=${CMAKE_CURRENT_BINARY_DIR})
+  set(pwiz_build_args ${pwiz_build_args} --prefix=${PREFIX})
   set(pwiz_build_args ${pwiz_build_args} runtime-link=shared)
 endif (WIN32 AND NOT CYGWIN)
 
@@ -49,3 +49,21 @@ execute_process(
   RESULT_VARIABLE status
 )
 check_status(status)
+if (WIN32 AND NOT CYGWIN)
+  if (${BUILD_TYPE} MATCHES "Debug")
+    execute_process(
+      COMMAND ${CMAKE_COMMAND} -E copy 
+        ${PREFIX}/lib/libboost_regex-vc100-mt-gd.lib
+        ${PREFIX}/lib/libboost_regex-vc100-mt-gd-1_54.lib
+      RESULT_VARIABLE status
+    )
+  else()
+    execute_process(
+      COMMAND ${CMAKE_COMMAND} -E copy 
+        ${PREFIX}/lib/libboost_regex-vc100-mt.lib
+        ${PREFIX}/lib/libboost_regex-vc100-mt-1_54.lib
+      RESULT_VARIABLE status
+    )
+  endif (${BUILD_TYPE} MATCHES "Debug")
+  check_status(status)
+endif (WIN32 AND NOT CYGWIN)
