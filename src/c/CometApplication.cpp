@@ -168,6 +168,7 @@ void CometApplication::setCometParameters(
   
   searchMgr.SetParam("database_name", get_string_parameter_pointer("database_name"), get_string_parameter_pointer("database_name"));
   searchMgr.SetParam("decoy_prefix", get_string_parameter_pointer("decoy_prefix"), get_string_parameter_pointer("decoy_prefix"));
+  searchMgr.SetParam("output_suffix", get_string_parameter_pointer("output_suffix"), get_string_parameter_pointer("output_suffix"));
   searchMgr.SetParam("nucleotide_reading_frame", get_string_parameter_pointer("nucleotide_reading_frame"), get_int_parameter("nucleotide_reading_frame"));
   searchMgr.SetParam("mass_type_parent", get_string_parameter_pointer("mass_type_parent"), get_int_parameter("mass_type_parent"));
   searchMgr.SetParam("mass_type_fragment", get_string_parameter_pointer("mass_type_fragment"), get_int_parameter("mass_type_fragment"));
@@ -304,7 +305,7 @@ void CometApplication::setCometParameters(
       enzymeInformation.szSearchEnzymeBreakAA, 
       enzymeInformation.szSearchEnzymeNoBreakAA);
   } else {
-    carp(CARP_FATAL, "search_enzyme_number=%d out of range", search_enzyme_number);
+    carp(CARP_FATAL, "search_enzyme_number=%d out of range (%d)", search_enzyme_number, get_comet_enzyme_info_lines().size());
   }
 
   int sample_enzyme_number = get_int_parameter("sample_enzyme_number");
