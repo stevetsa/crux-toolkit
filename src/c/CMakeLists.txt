@@ -42,6 +42,8 @@ if (WIN32 AND NOT Cygwin)
   include_directories(${CMAKE_BINARY_DIR}/src/external/build/src/google-gflags/src/windows)
   # Needed to include google/protobuf on Windows
   include_directories(${CMAKE_BINARY_DIR}/src/external/build/src/ProtocolBuffers/src)
+  SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} /VERBOSE:LIB
+  /NODEFAULTLIB:MSVCRT" )
 endif (WIN32 AND NOT Cygwin)
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/tide/protoobj)
 
