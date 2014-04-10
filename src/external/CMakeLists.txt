@@ -35,6 +35,17 @@ if (WIN32 AND NOT CYGWIN)
     INSTALL_COMMAND ""
     BUILD_IN_SOURCE 1
   )
+  # On Windows we have to do some extra house keeping
+  ExternalProject_Add_Step(
+    ProteoWizard
+    windows_post_install
+    COMMAND
+      ${CMAKE_COMMAND} 
+        -DBUILD_TYPE:STRING=${CMAKE_CFG_INTDIR}
+        -DPREFIX:PATH=${CMAKE_CURRENT_BINARY_DIR}
+        -P  ${CMAKE_CURRENT_SOURCE_DIR}/post_install_pwiz.cmake
+    DEPENDEES install
+  )
 else (WIN32 AND NOT CYGWIN)
   ExternalProject_Add(
     ProteoWizard
