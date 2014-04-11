@@ -25,8 +25,7 @@ include_directories(${CMAKE_BINARY_DIR}/src/external)
 include_directories(${CMAKE_BINARY_DIR}/src/external/include)
 include_directories(${CMAKE_BINARY_DIR}/src/external/include/CometSearch)
 include_directories(${CMAKE_BINARY_DIR}/src/external/include/MSToolkit)
-include_directories(${CMAKE_BINARY_DIR}/src/external/build/src/ProteoWizard/libraries/boost_1_54_0)
-include_directories(${CMAKE_BINARY_DIR}/src/external/build/src/ProteoWizard/libraries/boost_aux)
+include_directories(${CMAKE_BINARY_DIR}/src/external/lib)
 include_directories(${CMAKE_BINARY_DIR}/src/external/build/src/comet/)
 include_directories(${CMAKE_BINARY_DIR}/src/external/build/src/percolator/src/)
 include_directories(${CMAKE_BINARY_DIR}/src/external/build/src/percolator/src/fido)
@@ -42,8 +41,7 @@ if (WIN32 AND NOT Cygwin)
   include_directories(${CMAKE_BINARY_DIR}/src/external/build/src/google-gflags/src/windows)
   # Needed to include google/protobuf on Windows
   include_directories(${CMAKE_BINARY_DIR}/src/external/build/src/ProtocolBuffers/src)
-  SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} /VERBOSE:LIB
-  /NODEFAULTLIB:MSVCRT" )
+  SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} /VERBOSE:LIB /NODEFAULTLIB:MSVCRT" )
 endif (WIN32 AND NOT Cygwin)
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/tide/protoobj)
 
@@ -256,7 +254,12 @@ else (WIN32 AND NOT CYGWIN)
 endif (WIN32 AND NOT CYGWIN)
 
 if (WIN32 AND NOT CYGWIN)
+  # These definititions are needed to set the
+  # the proper calling conventions (static lib)
+  # for Boost and expat. Expat is used in the
+  # MSToolkit library.
   add_definitions(-DBOOST_ALL_NO_LIB)
+  add_definitions(-DXML_STATIC)
 endif (WIN32 AND NOT CYGWIN)
 
 #add_executable(xlink-predict-peptide-ions xlink/xhhc_predict_peptide_ions.cpp)
