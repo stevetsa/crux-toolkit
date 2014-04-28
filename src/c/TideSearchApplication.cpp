@@ -430,7 +430,17 @@ void TideSearchApplication::collectScoresCompiled(
   // included in the clobber list.
 
 #ifdef _MSC_VER
-  // FIXME CEG add in-line assembly for Windows
+  __asm {
+    push ecx
+    push edi
+    mov edx, cache
+    mov eax, prog
+    mov ecx, queue_size
+    mov edi, results
+    call eax
+    pop edi
+    pop ecx
+  }
 #else
   __asm__ __volatile__("cld\n" // stos operations increment edi
 #ifdef __x86_64__
