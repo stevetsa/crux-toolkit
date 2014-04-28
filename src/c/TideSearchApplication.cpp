@@ -431,6 +431,7 @@ void TideSearchApplication::collectScoresCompiled(
 
 #ifdef _MSC_VER
   __asm {
+    cld
     push ecx
     push edi
     mov edx, cache
