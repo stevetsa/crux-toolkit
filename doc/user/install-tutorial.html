@@ -480,6 +480,8 @@ href="http://sjsupport.thermofinnigan.com/public/detail.asp?id=703"><code>Thermo
 32-bit MSFileReader</code></a></li>
 </ul>
 <p/>
+Be sure to install the 32-bit version of the library.
+<p/>
 <li><b>Download the files</b> 
 <p/>
 <span class=prog>Crux</span> is freely
@@ -528,6 +530,10 @@ href="http://sjsupport.thermofinnigan.com/public/detail.asp?id=703"><code>Thermo
 <li><a href="http://getgnuwin32.sourceforge.net"><code>wget</code> (must support SSL)</a></li>
 </ul>
 <p/>
+<b>Other verions of Visual Studio will not be able to build Crux!</b>
+You must have Visual Studio 2010, and you must install Service Pack 1.
+The Express version of Visual Studio 2010 does work.
+<p/>
 <span class=code>wget</span> is available as part of the GnuWin32 package.
 The easiest way to install this is via the 
 <a href="http://getgnuwin32.sourceforge.net"><code>GetGnuWin32</code></a>
@@ -535,6 +541,11 @@ package manager.
 <span class=code>wget</span> must support SSL, so install the optional
 packages provided by
 <a href="http://getgnuwin32.sourceforge.net"><code>GetGnuWin32</code></a> .
+<p/>
+<span class=code>wget</span> and 
+<span class=code>svn</span> must be included in the execution PATH
+for your system.
+See the section <i>Setting the PATH on Windows</i> for more information.
 <p/>
 <li><b>Download the file</b> 
 <p/>
@@ -596,6 +607,24 @@ To complete the process run the command</li>
 <div class=code><code>
 cmake --build . --config Release --target ALL_BUILD
 </code>
+<p/>
+Once you've run the configuration step
+you can also build and debug Crux from within the Visual Studio IDE.
+CMake will generate a file named
+<span class=file>crux.sln</span>. 
+Open this file in Visual Studio.
+You can select the build configuration: Release or Debug
+in the combo box under the menu bar.
+<p/>
+<b>Note</b> The Crux build will not automatically generate
+debugging symbols even if you've selected the Debug configuration.
+Right click on the Crux folder in the "Solution Explorer" and
+select "Properties" from the pop-up menu.
+In the "Properties" page select the "Debugging" item under the "Linker"
+properties. Set "Generate Debug Info" to "Yes".
+<p/>
+Changes made to the Visual Studio solution and project files will be lost
+the next time CMake regenerates the project.
 </div>
 <p/>
 
@@ -617,7 +646,7 @@ C:\ <em>&lt;install directory&gt;</em>\bin\crux search-for-matches</code>
 you can also run any of the programs by just typing its name.  This is
 done with an environment variable called <span
 class=code>PATH</span>.  <span class=code>PATH</span> is a list of
-places that the computer looks for executable programs.  Find out what
+directoires that the computer looks for executable programs.  Find out what
 is in the current list with this command:
 <p/>
 <div class=code><code>
@@ -634,7 +663,7 @@ Visual Studio 10.0\VC\BIN;C:\Program Files\Common Files\Microsoft Shared\
 Windows Live;C:\Windows\System32\Wbem;C:\Windows\S
 ystem32\WindowsPowerShell\v1.0\;c:\Program files\Notepad++;C:\Program Files\Tort
 oiseSVN\bin;C:\Program Files\Windows Live\Shared;C:\Program Files\CMake 2.8\bin;
-C:\Program Files\PuTTY;C:\Program Files\Subversion\bin;
+C:\Program Files\PuTTY;C:\Program Files\Subversion\bin;C:\GnuWin32\bin;
 </code>
 </div>
 <p>The first directory in this semicolon-separated list, <span
