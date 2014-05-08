@@ -329,8 +329,10 @@ if (WIN32 AND NOT CYGWIN)
     optimized libboost_regex-vc100-mt
     optimized libboost_system-vc100-mt
     optimized libboost_iostreams-vc100-mt
+    optimized libboost_nowide-vc100-mt
     optimized libboost_filesystem-vc100-mt
     optimized libboost_thread-vc100-mt
+    debug libboost_nowide-vc100-mt-gd
     debug libboost_regex-vc100-mt-gd
     debug libboost_system-vc100-mt-gd
     debug libboost_iostreams-vc100-mt-gd
@@ -395,6 +397,7 @@ if (WIN32 AND NOT CYGWIN)
     optimized libboost_system-vc100-mt
     optimized libboost_iostreams-vc100-mt
     optimized libboost_filesystem-vc100-mt
+    optimized libboost_nowide-vc100-mt
     optimized libboost_regex-vc100-mt
     optimized libboost_thread-vc100-mt
   )
@@ -403,6 +406,7 @@ if (WIN32 AND NOT CYGWIN)
     debug libboost_system-vc100-mt-gd
     debug libboost_iostreams-vc100-mt-gd
     debug libboost_filesystem-vc100-mt-gd
+    debug libboost_nowide-vc100-mt-gd
     debug libboost_regex-vc100-mt-gd
     debug libboost_thread-vc100-mt-gd
   )
@@ -430,6 +434,7 @@ if (WIN32 AND NOT CYGWIN)
     optimized libboost_system-vc100-mt
     optimized libboost_iostreams-vc100-mt
     optimized libboost_filesystem-vc100-mt
+    optimized libboost_nowide-vc100-mt
     optimized libboost_regex-vc100-mt
     optimized libboost_thread-vc100-mt
   )
@@ -438,6 +443,7 @@ if (WIN32 AND NOT CYGWIN)
     debug libboost_system-vc100-mt-gd
     debug libboost_iostreams-vc100-mt-gd
     debug libboost_filesystem-vc100-mt-gd
+    debug libboost_nowide-vc100-mt-gd
     debug libboost_regex-vc100-mt-gd
     debug libboost_thread-vc100-mt-gd
   )
