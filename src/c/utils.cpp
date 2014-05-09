@@ -104,30 +104,9 @@ double NaN
  * Return elapsed time in microseconds since the last call.
  ***********************************************************************/
 double wall_clock(){
-
   static int first_call = 1;
   static double first_time;
   double t;
-
-#ifdef _MSC_VER
-  LARGE_INTEGER time;
-  static LARGE_INTEGER freq;
-  if(first_call == 1) {
-    if (!QueryPerformanceFrequency(&freq)){
-       carp(CARP_FATAL, "Unable to obtain clock frequency\n");
-    }
-    if (!QueryPerformanceCounter(&time)){
-       carp(CARP_FATAL, "Unable to obtain counter ticks\n");
-    }
-  }
-  else {
-    if (!QueryPerformanceCounter(&time)){
-       carp(CARP_FATAL, "Unable to obtain counter ticks\n");
-    }
-  }
-  return (double) time.QuadPart / freq.QuadPart;
-
-#else
   struct timeval tp;
 
   gettimeofday(&tp, NULL);
@@ -142,8 +121,6 @@ double wall_clock(){
     t = t - first_time;
   }
   return (double) t;
-#endif
-
 }
 
 /************************************************************************
@@ -463,13 +440,17 @@ static const int MAX_HOST_NAME = 100;
 const char* hostname
  ()
 {
-   static char the_hostname[MAX_HOST_NAME];
-   int result = gethostname(the_hostname, MAX_HOST_NAME);
-   if (result != 0) {
-     snprintf(the_hostname, MAX_HOST_NAME, "unknown");
-   }
+  static char the_hostname[MAX_HOST_NAME];
+#ifdef _MSC_VER
+  WSADATA wsaData;
+  WSAStartup(MAKEWORD(2, 2), &wsaData);
+#endif
+  int result = gethostname(the_hostname, MAX_HOST_NAME);
+  if (result != 0) {
+    snprintf(the_hostname, MAX_HOST_NAME, "unknown");
+  }
 
-   return(the_hostname);
+  return(the_hostname);
 }
 
 /************************************************************************//**
