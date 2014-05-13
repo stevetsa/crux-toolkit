@@ -315,6 +315,10 @@ elseif (WIN32 AND NOT CYGWIN)
       ${CMAKE_COMMAND} -E copy_directory 
       ${CMAKE_CURRENT_BINARY_DIR}/build/src/comet/MSToolkit/include
       ${CMAKE_CURRENT_BINARY_DIR}/include/MSToolkit/
+    PATCH_COMMAND 
+      ${CMAKE_COMMAND} -E copy 
+      ${CMAKE_CURRENT_SOURCE_DIR}/patches/comet/Comet.rc
+      ${CMAKE_CURRENT_BINARY_DIR}/build/src/comet/
     BUILD_COMMAND 
       ${CMAKE_COMMAND} 
         -DLIBPATH:STRING="${LIBPATH}"
