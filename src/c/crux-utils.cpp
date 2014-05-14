@@ -166,9 +166,8 @@ char* digest_type_to_string(DIGEST_T type){
 static const char* enzyme_type_strings[NUMBER_ENZYME_TYPES] = 
   {"invalid", "no-enzyme", "trypsin","trypsin/p", "chymotrypsin", 
    "elastase","clostripain", "cyanogen-bromide", "iodosobenzoate", 
-   "proline-endopeptidase", "staph-protease", "aspn", "lys-c",
-   "lys-n" , "arg-c" , "glue-c" ,"pepsin-a",
-   "modified-chymotrypsin", "elastase-trypsin-chymotrypsin",
+   "proline-endopeptidase", "staph-protease", "asp-n", "lys-c",
+   "lys-n" , "arg-c" , "glu-c" ,"pepsin-a", "elastase-trypsin-chymotrypsin",
    "custom-enzyme"};
 
 ENZYME_T string_to_enzyme_type(const char* name){
@@ -1557,7 +1556,7 @@ int get_random_number_interval(
   int high ///< the number for higher bound -in
   )
 {  
-  return (random() % (high - low + 1) + low);
+  return (myrandom_limit(high - low + 1) + low);
 }
 
 /**
@@ -1588,7 +1587,7 @@ void swap_quick(
 }
  
 long Random(int i, int j) {
-  return i + random() % (j-i+1);
+  return i + myrandom_limit(j-i+1);
 }
 
 void quick_sort(FLOAT_T a[], int left, int right) {

@@ -75,6 +75,7 @@ if (WIN32 AND NOT CYGWIN)
     percolator
     PREFIX ${CMAKE_CURRENT_BINARY_DIR}/build
     URL http://noble.gs.washington.edu/proj/crux/download/percolator-2.07.tar.gz
+    URL_MD5 4a02ecc2a05d3294eae4aa44c8cb2c0e
     CMAKE_ARGS -DCMAKE_VERBOSE_MAKEFILE=ON
       -DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_BINARY_DIR}
       -DCMAKE_PREFIX_PATH=${CMAKE_CURRENT_BINARY_DIR}
@@ -114,24 +115,32 @@ elseif (APPLE)
     percolator
     PREFIX ${CMAKE_CURRENT_BINARY_DIR}/build
     URL http://noble.gs.washington.edu/proj/crux/download/percolator-2.07.tar.gz
-    CMAKE_ARGS 
-      -DCMAKE_VERBOSE_MAKEFILE=ON 
+    URL_MD5 4a02ecc2a05d3294eae4aa44c8cb2c0e
+    CMAKE_ARGS -DCMAKE_VERBOSE_MAKEFILE=ON 
       -DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_BINARY_DIR} 
       -DCMAKE_PREFIX_PATH=${CMAKE_CURRENT_BINARY_DIR}
       -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-    PATCH_COMMAND cp  
-      ${CMAKE_CURRENT_SOURCE_DIR}/patches/percolator/fix_enzyme/Enzyme.h
-      ${CMAKE_CURRENT_SOURCE_DIR}/patches/percolator/fix_enzyme/Enzyme.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/patches/percolator/fix_var_mods/DataSet.cpp 
-      ${CMAKE_CURRENT_SOURCE_DIR}/patches/percolator/fix_m_pi_def/EludeModel.cpp 
+    INSTALL_COMMAND ""
+  )
+  # On Apple we use this to patch percolator
+  ExternalProject_Add_Step(
+    percolator
+    apple_patch
+    COMMAND ${CMAKE_COMMAND} -E copy 
+      ${CMAKE_CURRENT_SOURCE_DIR}/patches/percolator/fix_common/CommonCMake.txt 
+      ${CMAKE_CURRENT_BINARY_DIR}/build/src/percolator/
+    COMMAND ${CMAKE_COMMAND} -E copy 
       ${CMAKE_CURRENT_SOURCE_DIR}/patches/percolator/fix_find_boost/CMakeLists.txt 
       ${CMAKE_CURRENT_BINARY_DIR}/build/src/percolator/src
+    DEPENDEES patch
+    DEPENDERS configure
   )
 else(APPLE)
   ExternalProject_Add(
     percolator
     PREFIX ${CMAKE_CURRENT_BINARY_DIR}/build
     URL http://noble.gs.washington.edu/proj/crux/download/percolator-2.07.tar.gz
+    URL_MD5 4a02ecc2a05d3294eae4aa44c8cb2c0e
     CMAKE_ARGS -DCMAKE_VERBOSE_MAKEFILE=ON
       -DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_BINARY_DIR}
       -DCMAKE_PREFIX_PATH=${CMAKE_CURRENT_BINARY_DIR}
@@ -340,3 +349,5 @@ elseif (WIN32 AND NOT CYGWIN)
     DEPENDEES install
   )
 endif (UNIX)
+
+add_dependencies(percolator Proteowizard)

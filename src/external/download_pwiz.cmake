@@ -43,7 +43,7 @@ set(build_type "bt81")
 
 set(
   build_info_url 
-  http://teamcity.labkey.org:/app/rest/buildTypes/id:${build_type}/builds?status=SUCCESS&count=1&guest=1
+  https://teamcity.labkey.org:/app/rest/buildTypes/id:${build_type}/builds?status=SUCCESS&count=1&guest=1
 )
 execute_process(
   COMMAND ${wget} --no-check-certificate -nv -O build.info.txt "${build_info_url}"
@@ -58,7 +58,7 @@ file (STRINGS "build.info.txt" build_info)
 # Using the build id download the version string
 string(REGEX REPLACE "^.*build id=\"([0-9]+)\".*$" "\\1" build_id "${build_info}")
 set(
-  build_info_url http://teamcity.labkey.org/repository/download/${build_type}/${build_id}:id/VERSION?guest=1
+  build_info_url https://teamcity.labkey.org/repository/download/${build_type}/${build_id}:id/VERSION?guest=1
 )
 execute_process(
   COMMAND ${wget} --no-check-certificate -nv -O version.info.txt "${build_info_url}"
@@ -73,7 +73,7 @@ file (STRINGS "version.info.txt" version_info)
 # Use the version string to build the URL
 set(
   base_download_url
-  "http://teamcity.labkey.org:/guestAuth/repository/download/${build_type}/.lastSuccessful/"
+  "https://teamcity.labkey.org:/guestAuth/repository/download/${build_type}/.lastSuccessful/"
 )
 string(REGEX REPLACE "^([0-9]+)\\.([0-9]+)\\.([0-9]+).*$" "\\1_\\2_\\3" version_id ${version_info})
 set(filename pwiz-src-${version_id}.tar.bz2)

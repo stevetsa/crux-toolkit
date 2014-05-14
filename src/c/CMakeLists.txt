@@ -94,8 +94,8 @@ set (
   IonSeries.cpp
   linked_list.cpp
   LineFileReader.cpp
-  MakePinApplication.cpp
   mass.cpp
+  MakePinApplication.cpp
   Match.cpp
   MatchColumns.cpp
   MatchFileReader.cpp
@@ -122,8 +122,8 @@ set (
   PepXMLWriter.cpp
   PercolatorAdapter.cpp
   PercolatorApplication.cpp
+  PinWriter.cpp
   GeneratePeptides.cpp
-  PinXMLWriter.cpp
   PostProcessProtein.cpp
   PredictPeptideIons.cpp
   PrintProcessedSpectra.cpp
@@ -465,7 +465,6 @@ else()
     posterior_error
     perclibrary
     xlink
-    xerces-c
     boost_filesystem
     boost_system
     fido

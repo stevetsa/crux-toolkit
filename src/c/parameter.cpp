@@ -399,12 +399,11 @@ void initialize_parameters(void){
 
   /*Percolator arguments*/
   set_string_parameter(
-    "pin.xml", NULL,
-    "PIN files are XML files for PIN format whose structure is defined by "
-    "the schema percolator_in.xml. <code>crux search-for-matches</code> generates this file. "
+    "pin", NULL,
+    "PIN files are tab-delimited files for PIN format. "
     "Also, this argument can be \"-\" which indicates the pin file will come from standard input. "
     "Alternately, a SQT, PepXML, or tab-delimited file may be given (a corresponding decoy"
-    "file must also exist in the same directory), in which case a pin.xml file will be "
+    "file must also exist in the same directory), in which case a pin file will be "
     "generated in the output directory prior to execution.",
     "Argument, not option for percolator",
     "false"
@@ -420,14 +419,13 @@ void initialize_parameters(void){
   set_string_parameter(
     "decoy input", NULL,
     "make-pin can convert any file format in sqt, tab-delimited and pep.xml file "
-    "to pin.xml file ",
+    "to pin file ",
     "Argument, not option for make-pin",
     "false"
   );
   set_string_parameter(
     "output-file", NULL,
-    "File where pin.xml will be written"
-    "to pin.xml file ",
+    "Path where pin file will be written",
     "It is optional for make-pin",
     "false"
   );
@@ -499,14 +497,14 @@ void initialize_parameters(void){
       "search-for-matches. Digestion rules are as "
       "follows: enzyme name [cuts after one of these residues][but not before "
       "one of these residues].  trypsin [RK][P], elastase [ALIV][P], "
-      "chymotrypsin [FWY][P].",
+      "chymotrypsin [FWYL][P].",
       "true");
   set_enzyme_type_parameter("enzyme", TRYPSIN,
       "Enzyme to use for in silico digestion of proteins. "
       "<string>=no-enzyme|trypsin|trypsin/p|chymotrypsin| " 
       "elastase|clostripain|cyanogen-bromide|iodosobenzoate| " 
-      "proline-endopeptidase|staph-protease|aspn|lys-c "
-      "lys-n|arg-c|glue-c|pepsin-a|modified-chymotrypsin| "
+      "proline-endopeptidase|staph-protease|asp-n|lys-c "
+      "lys-n|arg-c|glu-c|pepsin-a| "
       "|elastase-trypsin-chymotrypsin|custom-enzyme. "
       "Default=trypsin.", 
       "Used in conjunction with the options digestion and missed-cleavages. "
@@ -515,13 +513,13 @@ void initialize_parameters(void){
       "crux create-index, crux tide-index, and crux generate-decoys.  "
       "Available from parameter file for crux search-for-matches. "
       "Digestion rules: enzyme name [cuts after one of these residues]|{but "
-      "not before one of these residues}. trypsin [RK]|{P}, elastase "
-      "[ALIV]|{P}, chymotrypsin [FWY]|{P}, clostripain [R]|[], "
+      "not before one of these residues}. trypsin [RK]|{P}, trypsin/p [RK]|[], "
+      "elastase [ALIV]|{P}, chymotrypsin [FWYL]|{P}, clostripain [R]|[], "
       "cyanogen-bromide [M]|[], iodosobenzoate [W]|[], proline-endopeptidase "
-      "[P]|[], staph-protease [E]|[], modified-chymotrypsin [FWYL]|{P}, "
-      "elastase-trypsin-chymotrypsin [ALIVKRWFY]|{P},aspn []|[D] (cuts before "
-      "D), lys-c [K]|{P}, lys-n []|[K] (cuts before K), arg-c [R]|{P}, glue-c "
-      "[DE]|{P}, pepsin-a [FL]|{P}.", "true");
+      "[P]|[], staph-protease [E]|[], elastase-trypsin-chymotrypsin "
+      "[ALIVKRWFY]|{P},asp-n []|[D] (cuts before D), lys-c [K]|{P}, lys-n "
+      "[]|[K] (cuts before K), arg-c [R]|{P}, glu-c [DE]|{P}, pepsin-a "
+      "[FL]|{P}.", "true");
 
   set_window_type_parameter("precursor-window-type", WINDOW_MASS,
       "Window type to use for selecting candidate "
@@ -586,7 +584,7 @@ void initialize_parameters(void){
   set_boolean_parameter("mzid-output", false,
       "Output MZID in the output directory.  Default=F",
       "Available for search-for-matches, percolator.", "true");
-  set_boolean_parameter("pinxml-output", false,
+  set_boolean_parameter("pin-output", false,
       "Output PIN XML in the output directory.  Default=F",
       "Available for search-for-matches.", "true");
   set_boolean_parameter("pepxml-output", false,
@@ -841,15 +839,6 @@ void initialize_parameters(void){
      "<fileroot>.percolator.features.txt or <fileroot>.qranker.features.txt.",
      "true");
   
-  set_boolean_parameter("feature-in-file", false,
-      "Input files are given as a tab delimited file. In this case the only argument should be a file name "
-      "of the data file. The tab delimited fields should be id <tab> label <tab> feature1 "
-      "<tab> ... <tab> featureN <tab> peptide <tab> proteinId1 <tab> .. <tab> proteinIdM "
-      "Labels are interpreted as 1 -- positive set "
-      "and test set, -1 -- negative set.",
-      "Available for percolator",
-      "true");
-  
   set_boolean_parameter(
     "protein",
     false,
@@ -931,16 +920,6 @@ void initialize_parameters(void){
     "Available for crux percolator ",
     "true"
   );
-/*
-  set_boolean_parameter(
-    "output-feature-file",
-    false,
-    " Output the computed features to the given file in tab-delimited format. " 
-    "A file with the features with the given file name will be created. Default=F",
-    "Available for crux percolator ",
-    "true"
-  );
- */
   set_int_parameter(
     "default-direction",
     0,-BILLION,BILLION,
@@ -1023,7 +1002,7 @@ void initialize_parameters(void){
     "Avilable for crux percolator",
     "true"
   );
- 
+
   set_boolean_parameter(
     "only-psms",
     false,
@@ -1031,7 +1010,7 @@ void initialize_parameters(void){
     "Available for crux percolator",
     "true"
   );
-
+ 
   set_boolean_parameter(
     "allow-protein-group",
     false,
@@ -1075,10 +1054,10 @@ void initialize_parameters(void){
 
   set_int_parameter(
     "deepness",
-    3,0,3,
-    "Setting deepness 0 or 1 or 2 or 3 from high deepness to low deepness(less computational time) "
-    "for the grid search for Alpha,Beta and Gamma estimation(--protein T must be set). "
-    "Default value is 3.",
+    0,0,2,
+    "Setting deepness 0, 1, or 2 from low depth to high depth (less computational time) "
+    "of the grid search for estimation Alpha,Beta and Gamma parameters for fido "
+    "(--protein T must be set). Default value is 0.",
     "Available for crux percolator if --protein T is set.",
     "true"
   );
@@ -1115,9 +1094,9 @@ void initialize_parameters(void){
     "Available for tide-index",
     "true"
   );
-  set_boolean_parameter("monoisotopic-precursor", false,
+  set_boolean_parameter("monoisotopic-precursor", true,
     "Use monoisotopic precursor masses rather than average mass for precursor. "
-    "Default=F.",
+    "Default=T.",
     "Available for tide-index",
     "true"
   );

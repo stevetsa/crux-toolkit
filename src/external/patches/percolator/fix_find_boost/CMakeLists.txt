@@ -7,6 +7,8 @@
 # INCLUDE HEADER FILES IN SRC DIRECTORY
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
+MESSAGE( STATUS "Checking packages:" )
+
 if(XML_SUPPORT)
   find_package(XercesC REQUIRED) # XSD DEPENDS ON ${XERCESC_FOUND}
   if(XERCESC_FOUND)
@@ -18,11 +20,9 @@ if(XML_SUPPORT)
   endif(XERCESC_FOUND)
   include_directories(${XERCESC_INCLUDE_DIR})
 
-
   if(APPLE OR MINGW)
     find_package(CURL REQUIRED) # XERCESC depends on curl
   endif()
-
 
   find_package(Xsd REQUIRED) # CODESYNTHESIS
   if(XSD_FOUND)
@@ -35,21 +35,9 @@ if(XML_SUPPORT)
   FIND_PACKAGE ( Threads REQUIRED )
 endif(XML_SUPPORT)
 
-#find_package(Boost ${BOOST_MIN_VERSION} COMPONENTS filesystem system REQUIRED)
-#if(Boost_FOUND)
-#  message(STATUS "Package Boost found at: ${Boost_INCLUDE_DIRS}")
-#else(Boost_FOUND)
-#  message(FATAL_ERROR "Boost has not been found")
-#endif(Boost_FOUND)
-#include_directories(${Boost_INCLUDE_DIRS})
-
-include_directories(
-  ${CMAKE_PREFIX_PATH}/include
-  ${CMAKE_CURRENT_BINARY_DIR} 
-  ${RPC_INCLUDE_PATH}
- )
+# Set Boost variables
+include_directories(${CMAKE_PREFIX_PATH}/include)
 link_directories(${CMAKE_PREFIX_PATH}/lib)
-
 if (WIN32 AND NOT CYGWIN)
   set(
     Boost_LIBRARIES 
@@ -63,7 +51,8 @@ if (WIN32 AND NOT CYGWIN)
   )
 else (WIN32 AND NOT CYGWIN)
   set(
-    Boost_LIBRARIES ${CMAKE_PREFIX_PATH}/lib/libboost_filesystem.a 
+    Boost_LIBRARIES 
+    ${CMAKE_PREFIX_PATH}/lib/libboost_filesystem.a 
     ${CMAKE_PREFIX_PATH}/lib/libboost_system.a
   )
 endif (WIN32 AND NOT CYGWIN)
@@ -80,7 +69,6 @@ if(XML_SUPPORT)
     set( xdr_flags  --generate-insertion XDR --generate-extraction XDR  )
   endif()
 
-
   # RUN CODESYNTHESIS TO GENERATE xsdfiles for pin (percolator input)
   set(xsdfiles_in ${CMAKE_CURRENT_BINARY_DIR}/percolator_in.cxx ${CMAKE_CURRENT_BINARY_DIR}/percolator_in.hxx )
   set(percolator_in xml/percolator_in.xsd)
@@ -90,7 +78,6 @@ if(XML_SUPPORT)
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${percolator_in}
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   )
-
 
   # RUN CODESYNTHESIS TO GENERATE xsdfiles for pout (percolator output)
   set(xsdfiles_out ${CMAKE_CURRENT_BINARY_DIR}/percolator_out.cxx ${CMAKE_CURRENT_BINARY_DIR}/percolator_out.hxx )
@@ -116,7 +103,6 @@ endif (WIN32 AND NOT CYGWIN)
 # COMPILE PERCOLATOR
 ###############################################################################
 
-
 if(XML_SUPPORT)
   add_library(perclibrary STATIC ${xsdfiles_in} ${xsdfiles_out} parser.cxx serializer.cxx BaseSpline.cpp DescriptionOfCorrect.cpp MassHandler.cpp 
                   PSMDescription.cpp ResultHolder.cpp 
@@ -131,8 +117,8 @@ else(XML_SUPPORT)
 								  ProteinProbEstimator.cpp ProteinFDRestimator.cpp Scores.cpp SqtSanityCheck.cpp ssl.cpp EludeModel.cpp PackedVector.cpp
 								  PackedMatrix.cpp Matrix.cpp Logger.cpp MyException.cpp FidoInterface.cpp Protein.cpp )
 endif(XML_SUPPORT)
-
-
+								  
+								  
 ###############################################################################
 # COMPILE INTERNAL LIBRARIES
 ###############################################################################
@@ -146,9 +132,8 @@ include_directories(.)
 #INCLUDE FIDO HEADERS FOR PERCLIBRARY 
 include_directories(fido)
 
-###############################################################################
-
-
+################################################################################
+								  
 # COMPILE PERCOLATOR
 add_executable(percolator main.cpp)
 
@@ -158,9 +143,8 @@ if(APPLE)
 #  set_property(TARGET percolator PROPERTY MACOSX_BUNDLE ON)
 elseif(MINGW)
 #  set_target_properties(percolator PROPERTIES LINK_FLAGS "-Wl,-Bstatic -static-libgcc -lcurl -liconv")
-  set_target_properties(percolator PROPERTIES LINK_FLAGS "-Wl,-Bdynamic -static-libgcc")
+  set_target_properties(percolator PROPERTIES LINK_FLAGS "-Wl,-Bdynamic")
 endif()
-
 
 if(PROFILING AND UNIX)
   set_target_properties(percolator PROPERTIES COMPILE_FLAGS -pg LINK_FLAGS -pg)
@@ -172,7 +156,6 @@ if(PROFILING AND UNIX)
   set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O0 -g -DNDEBUG -Wno-unused-result -Wno-overflow -Wall -g -pg -fprofile-arcs -ftest-coverage")
 endif()
  
-
 # SET LIBRARIES FOR PERCOLATOR
 if(WIN32 AND NOT CYGWIN)
   target_link_libraries(
@@ -189,14 +172,13 @@ if(WIN32 AND NOT CYGWIN)
   target_link_libraries(percolator debug libboost_system-vc100-mt-gd.lib)
 else()
   target_link_libraries(
-    percolator
-    perclibrary
-    fido
-    libboost_filesystem-vc100-mt.lib
-    libboost_system-vc100-mt.lib
-    ${CMAKE_THREAD_LIBS_INIT}
+    percolator 
+    perclibrary 
+    fido 
+    ${XERCESC_LIBRARIES} 
+    ${CMAKE_THREAD_LIBS_INIT} 
+    ${Boost_LIBRARIES} 
     ${CURL_LIBRARIES}
-    stdc++
   )
 endif()
  
@@ -207,10 +189,8 @@ endif()
   install(TARGETS percolator EXPORT PERCOLATOR DESTINATION bin) # Important to use relative path here (used by CPack)!
 #endif()
 
-
 ###############################################################################
 # COMPILE QVALITY
 ###############################################################################
 
 add_subdirectory(qvality)
- 

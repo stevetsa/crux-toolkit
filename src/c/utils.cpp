@@ -6,8 +6,6 @@
  * COPYRIGHT: 1997-2001 Columbia University
  * DESCRIPTION: Various useful generic utilities.
  ********************************************************************/
-#include <stdio.h>
-#include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
 #ifdef _MSC_VER
@@ -16,9 +14,10 @@
 #include <sys/time.h>
 #include <unistd.h> 
 #endif
-#include <math.h>
 #include <assert.h>
 #include <errno.h>
+#include "boost/random/mersenne_twister.hpp"
+#include "boost/random/uniform_int_distribution.hpp"
 #include "utils.h"
 #include "carp.h"
 #include "WinCrux.h"
@@ -548,6 +547,31 @@ char** parse_file(
   *num_lines = line_idx;
 
   return lines;
+}
+
+boost::mt19937& get_mt19937() {
+  static boost::mt19937 mt19937_;
+  return mt19937_;
+}
+
+/**
+ * Returns an integer in the range between 0 and UNIFORM_INT_DISTRIBUTION_MAX
+ */
+int myrandom() {
+  static boost::random::uniform_int_distribution<>
+    uniform_int_distribution_(0, UNIFORM_INT_DISTRIBUTION_MAX);
+  return uniform_int_distribution_(get_mt19937());
+}
+
+/**
+ * Returns an integer in the range [0, max)
+ */
+int myrandom_limit(int max) {
+  return myrandom() % max;
+}
+
+void mysrandom(unsigned seed) {
+  get_mt19937().seed(seed);
 }
 
 #ifdef MAIN

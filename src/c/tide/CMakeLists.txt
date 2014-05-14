@@ -1,6 +1,26 @@
 cmake_minimum_required(VERSION 2.8.4)
 cmake_policy(VERSION 2.8.4)
 
+###### Set up include and link directories  ######
+if (WIN32 AND NOT CYGWIN)
+include_directories(
+  ${CMAKE_SOURCE_DIR}/src/c
+  ${CMAKE_BINARY_DIR}/src/external/include
+  ${CMAKE_BINARY_DIR}/src/external/build/src/ProtocolBuffers/src
+  ${CMAKE_BINARY_DIR}/src/external/build/src/google-gflags/src/windows
+  ${CMAKE_CURRENT_BINARY_DIR}/protoobj
+)
+else (WIN32 AND NOT CYGWIN)
+include_directories(
+  ${CMAKE_BINARY_DIR}/src/external/include
+  ${CMAKE_BINARY_DIR}/src/external/build/src/ProtocolBuffers/src
+  ${CMAKE_CURRENT_BINARY_DIR}/protoobj
+)
+endif (WIN32 AND NOT CYGWIN)
+link_directories(
+  ${CMAKE_BINARY_DIR}/src/external/lib
+)
+
 set_directory_properties(PROPERTIES
   ADDITIONAL_MAKE_CLEAN_FILES
   protoobj
@@ -36,25 +56,6 @@ add_custom_command(
       --python_out=${CMAKE_CURRENT_BINARY_DIR}/protoobj 
       ${proto_files}
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-)
-
-###### Set up include and link directories  ######
-if (WIN32 AND NOT CYGWIN)
-include_directories(
-  ${CMAKE_BINARY_DIR}/src/external/include
-  ${CMAKE_BINARY_DIR}/src/external/build/src/ProtocolBuffers/src
-  ${CMAKE_BINARY_DIR}/src/external/build/src/google-gflags/src/windows
-  ${CMAKE_CURRENT_BINARY_DIR}/protoobj
-)
-else (WIN32 AND NOT CYGWIN)
-include_directories(
-  ${CMAKE_BINARY_DIR}/src/external/include
-  ${CMAKE_BINARY_DIR}/src/external/build/src/ProtocolBuffers/src
-  ${CMAKE_CURRENT_BINARY_DIR}/protoobj
-)
-endif (WIN32 AND NOT CYGWIN)
-link_directories(
-  ${CMAKE_BINARY_DIR}/src/external/lib
 )
 
 ########## Set up tide-support library  ##########
