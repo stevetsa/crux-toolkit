@@ -12,6 +12,7 @@ include_directories(
 )
 else (WIN32 AND NOT CYGWIN)
 include_directories(
+  ${CMAKE_SOURCE_DIR}/src/c
   ${CMAKE_BINARY_DIR}/src/external/include
   ${CMAKE_BINARY_DIR}/src/external/build/src/ProtocolBuffers/src
   ${CMAKE_CURRENT_BINARY_DIR}/protoobj
