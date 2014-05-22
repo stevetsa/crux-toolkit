@@ -29,9 +29,8 @@ using namespace std;
 PWIZSpectrumCollection::PWIZSpectrumCollection(
   const char* filename   ///< The spectrum collection filename.
  ) : SpectrumCollection(filename){
-
-  pwiz::msdata::DefaultReaderList readerList;
 #ifdef _MSC_VER
+  pwiz::msdata::DefaultReaderList readerList;
   //readerList.push_back(pwiz::msdata::ReaderPtr(new pwiz::msdata::Reader_ABI));
   //readerList.push_back(pwiz::msdata::ReaderPtr(new pwiz::msdata::Reader_ABI_T2D));
   readerList.push_back(pwiz::msdata::ReaderPtr(new pwiz::msdata::Reader_Agilent));
@@ -39,7 +38,7 @@ PWIZSpectrumCollection::PWIZSpectrumCollection(
   readerList.push_back(pwiz::msdata::ReaderPtr(new pwiz::msdata::Reader_Shimadzu));
   readerList.push_back(pwiz::msdata::ReaderPtr(new pwiz::msdata::Reader_Thermo));
   readerList.push_back(pwiz::msdata::ReaderPtr(new pwiz::msdata::Reader_Waters));
-  reader_ = new pwiz::msdata::MSDataFile(filename_, &readerList, false);
+  reader_ = new pwiz::msdata::MSDataFile(filename_, &readerList);
 #else
   reader_ = new pwiz::msdata::MSDataFile(filename_);
 #endif
