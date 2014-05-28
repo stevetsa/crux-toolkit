@@ -56,6 +56,10 @@ link_directories(./xlink)
 link_directories(${CMAKE_BINARY_DIR}/src/external/lib)
 link_directories(${CMAKE_BINARY_DIR}/src/external/build/src/percolator-build/src) 
 link_directories(${CMAKE_BINARY_DIR}/src/external/build/src/percolator-build/src/fido)
+if (WIN32 AND NOT Cygwin)
+ # Needed for 32-bit windows build of vendor libraries
+  link_directories(${CMAKE_BINARY_DIR}/src/external/build/src/ProteoWizard/pwiz_aux/msrc/utility/vendor_api/Waters/vc10_x86_scl-0)
+endif (WIN32 AND NOT Cygwin)
 
 set (
   crux_lib_files
@@ -335,6 +339,8 @@ if (WIN32 AND NOT CYGWIN)
     libpwiz_version
     libSHA1
     libzlib.lib 
+    MassLynxRaw
+    cdt
     ws2_32
     optimized libboost_regex-vc100-mt
     optimized libboost_system-vc100-mt
@@ -409,6 +415,8 @@ if (WIN32 AND NOT CYGWIN)
     libpwiz_utility_misc
     libSHA1
     libzlib.lib 
+    MassLynxRaw
+    cdt
     ws2_32
   )
   target_link_libraries(
@@ -455,6 +463,8 @@ if (WIN32 AND NOT CYGWIN)
     libpwiz_utility_misc
     libSHA1
     libzlib.lib 
+    MassLynxRaw
+    cdt
     ws2_32
   )
   target_link_libraries(
