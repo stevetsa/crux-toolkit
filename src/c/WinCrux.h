@@ -63,8 +63,8 @@ int scandir(
 
 int alphasort(const void *d1, const void *d2);
 
-int isinf(FLOAT_T x);
-float log2(float x);
+int isinf(double x);
+double log2(double x);
 
 #endif
 #endif

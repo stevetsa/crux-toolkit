@@ -145,7 +145,7 @@ int SearchForXLinks::xlinkSearchMain() {
     }
     search_count++;
 
-    FLOAT_T precursor_mz = spectrum->getPrecursorMz();
+    double precursor_mz = spectrum->getPrecursorMz();
 
     carp(CARP_DEBUG, "Getting candidates for scan %d charge %d mass %f", scan_num, zstate.getCharge(), zstate.getNeutralMass());  
 

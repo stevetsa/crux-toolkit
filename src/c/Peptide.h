@@ -49,7 +49,7 @@ class Peptide {
 
   int pointer_count_;
   unsigned char length_; ///< The length of the peptide
-  FLOAT_T peptide_mass_;   ///< The peptide's mass.
+  double peptide_mass_;   ///< The peptide's mass.
   std:: vector<PeptideSrc*> peptide_srcs_; ///< a vector of peptide_srcs_
 
   MODIFIED_AA_T* modified_seq_; ///< peptide sequence with modifications
@@ -75,7 +75,7 @@ class Peptide {
    */
   Peptide(
     unsigned char length,     ///< The length of the peptide -in
-    FLOAT_T peptide_mass,       ///< The neutral mass of the peptide -in
+    double peptide_mass,       ///< The neutral mass of the peptide -in
     Crux::Protein* parent_protein, ///< The parent_protein of this peptide -in
     int start_idx ///< Start index of peptide in the protein sequence -in
     );
@@ -136,25 +136,25 @@ class Peptide {
    * sets the peptide mass
    */
   void setPeptideMass(
-    FLOAT_T peptide_mass  ///< the mass of the peptide - in
+    double peptide_mass  ///< the mass of the peptide - in
     );
 
   /**
    * \returns the peptide mass
    */
-  /*inline*/ FLOAT_T getPeptideMass();
+  /*inline*/ double getPeptideMass();
 
   /** 
    * \returns the mass of the peptide if it had charge "charge"
    */
-  FLOAT_T getChargedMass(
+  double getChargedMass(
     int charge ///< charge of peptide -in
     );
 
   /** 
    * \returns the m/z of the peptide if it had charge "charge"
    */
-  FLOAT_T getMz(
+  double getMz(
     int charge ///< the charge of peptide -in
     );
 
@@ -381,7 +381,7 @@ class Peptide {
   /**
    * \returns The mass of the given peptide.
    */
-  static FLOAT_T calcSequenceMass(
+  static double calcSequenceMass(
     const char* peptide, ///< the query peptide -in
     MASS_TYPE_T mass_type ///< isotopic mass type (AVERAGE, MONO) -in
     );
@@ -389,21 +389,21 @@ class Peptide {
   /**
    * \returns The mass of the given peptide.
    */
-  FLOAT_T calcMass(
+  double calcMass(
     MASS_TYPE_T mass_type ///< isotopic mass type (AVERAGE, MONO) -in
     );
 
   /**
    * \returns the mass of the given peptide, with modifications
    */
-  FLOAT_T calcModifiedMass(
+  double calcModifiedMass(
     MASS_TYPE_T mass_type ///< isotopic mass type (AVERAGE, MONO) -in
   );
 
   /**
    * \returns The hydrophobicity of the given peptide, as in Krokhin (2004).
    */
-  FLOAT_T calcKrokhinHydrophobicity();
+  double calcKrokhinHydrophobicity();
 
   /**
    * Examines the peptide sequence and counts how many tryptic missed

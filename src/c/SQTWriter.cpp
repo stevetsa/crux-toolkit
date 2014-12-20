@@ -198,11 +198,11 @@ void SQTWriter::writeSpectrum(
 
 void SQTWriter::writePSM(
   Peptide* peptide,
-  FLOAT_T xcorr_score,
+  double xcorr_score,
   int xcorr_rank,
-  FLOAT_T sp_score,
+  double sp_score,
   int sp_rank,
-  FLOAT_T delta_cn,
+  double delta_cn,
   int b_y_matched,
   int b_y_total,
   bool is_decoy

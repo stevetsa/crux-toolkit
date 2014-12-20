@@ -276,23 +276,23 @@ double get_concat_score(char* peptideA, char* peptideB, int link_site, int charg
 
       //if it contains the cterm of the 1st peptide, modify by -OH
       if (cterm_1st) {
-	FLOAT_T old_mass = (ion->getMassZ() - MASS_H_MONO) * (FLOAT_T)ion_charge;
-	FLOAT_T new_mass = old_mass + MASS_H2O_MONO - MASS_H_MONO;
-	FLOAT_T new_mz = (new_mass + (FLOAT_T)ion_charge) / (FLOAT_T)ion_charge;
+	double old_mass = (ion->getMassZ() - MASS_H_MONO) * (double)ion_charge;
+	double new_mass = old_mass + MASS_H2O_MONO - MASS_H_MONO;
+	double new_mz = (new_mass + (double)ion_charge) / (double)ion_charge;
 	ion->setMassZ(new_mz);
       }
       //if contains the nterm of 2nd peptide, modify by -H
       if (nterm_2nd) {
-	FLOAT_T old_mass = (ion->getMassZ() - MASS_H_MONO) * (FLOAT_T)ion_charge;
-	FLOAT_T new_mass = old_mass + MASS_H_MONO;
-	FLOAT_T new_mz = (new_mass + (FLOAT_T)ion_charge) / (FLOAT_T)ion_charge;
+	double old_mass = (ion->getMassZ() - MASS_H_MONO) * (double)ion_charge;
+	double new_mass = old_mass + MASS_H_MONO;
+	double new_mz = (new_mass + (double)ion_charge) / (double)ion_charge;
 	ion->setMassZ(new_mz);
       }
       //if contains the link site, modify by link mass.
       if (has_link_site) {
-	FLOAT_T old_mass = (ion->getMassZ() - MASS_H_MONO) * (FLOAT_T)ion_charge;
-	FLOAT_T new_mass = old_mass + LinkedPeptide::getLinkerMass();
-	FLOAT_T new_mz = (new_mass + (FLOAT_T)ion_charge) / (FLOAT_T)ion_charge;
+	double old_mass = (ion->getMassZ() - MASS_H_MONO) * (double)ion_charge;
+	double new_mass = old_mass + LinkedPeptide::getLinkerMass();
+	double new_mz = (new_mass + (double)ion_charge) / (double)ion_charge;
 	ion->setMassZ(new_mz);
       }
     
@@ -306,27 +306,27 @@ double get_concat_score(char* peptideA, char* peptideB, int link_site, int charg
     Scorer* scorer = new Scorer(XCORR); 
 
     // calculate the score
-    FLOAT_T score = scorer->scoreSpectrumVIonSeries(spectrum, ion_series);
+    double score = scorer->scoreSpectrumVIonSeries(spectrum, ion_series);
     return score;
 
 
 
 }
 
-FLOAT_T* get_observed_raw(Spectrum* spectrum, int charge) {
-  FLOAT_T peak_location = 0;
+double* get_observed_raw(Spectrum* spectrum, int charge) {
+  double peak_location = 0;
   int mz = 0;
-  FLOAT_T intensity = 0;
-  FLOAT_T bin_width = bin_width_mono;
-  FLOAT_T precursor_mz = spectrum->getPrecursorMz();
-  FLOAT_T experimental_mass_cut_off = precursor_mz*charge + 50;
+  double intensity = 0;
+  double bin_width = bin_width_mono;
+  double precursor_mz = spectrum->getPrecursorMz();
+  double experimental_mass_cut_off = precursor_mz*charge + 50;
 
   // set max_mz and malloc space for the observed intensity array
-  FLOAT_T sp_max_mz = 512;
+  double sp_max_mz = 512;
 
   if(experimental_mass_cut_off > 512){
     int x = (int)experimental_mass_cut_off / 1024;
-    FLOAT_T y = experimental_mass_cut_off - (1024 * x);
+    double y = experimental_mass_cut_off - (1024 * x);
     sp_max_mz = x * 1024;
 
     if(y > 0){
@@ -336,7 +336,7 @@ FLOAT_T* get_observed_raw(Spectrum* spectrum, int charge) {
 
   // DEBUG
   // carp(CARP_INFO, "experimental_mass_cut_off: %.2f sp_max_mz: %.3f", experimental_mass_cut_off, scorer->sp_max_mz);
-  FLOAT_T* observed = (FLOAT_T*)mycalloc((int)sp_max_mz, sizeof(FLOAT_T));
+  double* observed = (double*)mycalloc((int)sp_max_mz, sizeof(double));
   
   // DEBUG
   // carp(CARP_INFO, "max_peak_mz: %.2f, region size: %d",get_spectrum_max_peak_mz(spectrum), region_selector);
@@ -384,18 +384,18 @@ void print_spectrum(Spectrum* spectrum, LinkedIonSeries& ion_series) {
       Scorer* scorer = new Scorer(XCORR);
       scorer->createIntensityArrayObserved(spectrum, ion_series.getCharge());
 
-      FLOAT_T* observed_raw = get_observed_raw(spectrum, ion_series.getCharge());
-      FLOAT_T* observed_processed = scorer->getIntensityArrayObserved();
+      double* observed_raw = get_observed_raw(spectrum, ion_series.getCharge());
+      double* observed_processed = scorer->getIntensityArrayObserved();
 
 
-      FLOAT_T max_mz = scorer->getSpMaxMz();
+      double max_mz = scorer->getSpMaxMz();
 
         
 
 
       XHHC_Scorer xhhc_scorer(max_mz);
 
-      FLOAT_T* theoretical = (FLOAT_T*)mycalloc((size_t)max_mz, sizeof(FLOAT_T));
+      double* theoretical = (double*)mycalloc((size_t)max_mz, sizeof(double));
       xhhc_scorer.hhcCreateIntensityArrayTheoretical(ion_series, theoretical);
 
 

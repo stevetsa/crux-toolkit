@@ -19,8 +19,6 @@ void carp(int level, const char* format, ...) {
   va_end(ap);
 }
 
-typedef double FLOAT_T;
-
 /**
  * Fits a two-parameter Weibull distribution to the input data. 
  *
@@ -31,22 +29,22 @@ typedef double FLOAT_T;
  * \returns eta, beta and the correlation coefficient.
  */
 void fit_two_parameter_weibull(
-    FLOAT_T* data, ///< the data to be fit. should be in descending order -in
+    double* data, ///< the data to be fit. should be in descending order -in
     int fit_data_points, ///< the number of data points to fit -in
     int total_data_points, ///< the total number of data points -in
-    FLOAT_T shift, ///< the amount by which to shift our data -in
-    FLOAT_T* eta,      ///< the eta parameter of the Weibull dist -out
-    FLOAT_T* beta,      ///< the beta parameter of the Weibull dist -out
-    FLOAT_T* correlation ///< the best correlation -out
+    double shift, ///< the amount by which to shift our data -in
+    double* eta,      ///< the eta parameter of the Weibull dist -out
+    double* beta,      ///< the beta parameter of the Weibull dist -out
+    double* correlation ///< the best correlation -out
     ){
 
-  FLOAT_T* X = (FLOAT_T*)malloc(sizeof(FLOAT_T) * fit_data_points); //hold data here
+  double* X = (double*)malloc(sizeof(double) * fit_data_points); //hold data here
 
   // transform data into an array of values for fitting
   // shift (including only non-neg data values) and take log
   int idx;
   for(idx=0; idx < fit_data_points; idx++){
-    FLOAT_T score = data[idx] + shift; // move right by shift
+    double score = data[idx] + shift; // move right by shift
     if (score <= 0.0){
       carp(CARP_DEBUG, "Reached negative score at idx %i", idx);
       fit_data_points = idx;
@@ -56,19 +54,19 @@ void fit_two_parameter_weibull(
     // carp(CARP_DEBUG, "X[%i]=%.6f=ln(%.6f)", idx, X[idx], score);
   }
 
-  FLOAT_T* Y   = (FLOAT_T*)malloc(sizeof(FLOAT_T) * fit_data_points);
+  double* Y   = (double*)malloc(sizeof(double) * fit_data_points);
   for(idx=0; idx < fit_data_points; idx++){
     int reverse_idx = total_data_points - idx;
-    FLOAT_T F_T_idx = (reverse_idx - 0.3) / (total_data_points + 0.4);
+    double F_T_idx = (reverse_idx - 0.3) / (total_data_points + 0.4);
     Y[idx] = log( -log(1.0 - F_T_idx) );
     //carp(CARP_DEBUG, "Y[%i]=%.6f", idx, Y[idx]);
   }
 
   int N = fit_data_points; // rename for formula's sake
-  FLOAT_T sum_Y  = 0.0;
-  FLOAT_T sum_X  = 0.0;
-  FLOAT_T sum_XY = 0.0;
-  FLOAT_T sum_XX = 0.0;
+  double sum_Y  = 0.0;
+  double sum_X  = 0.0;
+  double sum_XY = 0.0;
+  double sum_XX = 0.0;
   for(idx=0; idx < fit_data_points; idx++){
     sum_Y  += Y[idx];
     sum_X  += X[idx];
@@ -80,29 +78,29 @@ void fit_two_parameter_weibull(
   carp(CARP_DETAILED_DEBUG, "sum_XX=%.6f", sum_XX);
   carp(CARP_DETAILED_DEBUG, "sum_XY=%.6f", sum_XY);
 
-  FLOAT_T b_num    = sum_XY - (sum_X * sum_Y / N);
+  double b_num    = sum_XY - (sum_X * sum_Y / N);
   carp(CARP_DETAILED_DEBUG, "b_num=%.6f", b_num);
-  FLOAT_T b_denom  = sum_XX - sum_X * sum_X / N;
+  double b_denom  = sum_XX - sum_X * sum_X / N;
   carp(CARP_DETAILED_DEBUG, "b_denom=%.6f", b_denom);
-  FLOAT_T b_hat    = b_num / b_denom;
+  double b_hat    = b_num / b_denom;
 
-  FLOAT_T a_hat    = (sum_Y - b_hat * sum_X) / N;
+  double a_hat    = (sum_Y - b_hat * sum_X) / N;
   *beta = b_hat;
   *eta  = exp( - a_hat / *beta );
 
-  FLOAT_T c_num   = 0.0;
-  FLOAT_T c_denom_X = 0.0;
-  FLOAT_T c_denom_Y = 0.0;
-  FLOAT_T mean_X = sum_X / N;
-  FLOAT_T mean_Y = sum_Y / N;
+  double c_num   = 0.0;
+  double c_denom_X = 0.0;
+  double c_denom_Y = 0.0;
+  double mean_X = sum_X / N;
+  double mean_Y = sum_Y / N;
   for (idx=0; idx < N; idx++){
-    FLOAT_T X_delta = X[idx] - mean_X; 
-    FLOAT_T Y_delta = Y[idx] - mean_Y;
+    double X_delta = X[idx] - mean_X; 
+    double Y_delta = Y[idx] - mean_Y;
     c_num += X_delta * Y_delta;
     c_denom_X += X_delta * X_delta;
     c_denom_Y += Y_delta * Y_delta;
   }
-  FLOAT_T c_denom = sqrt(c_denom_X * c_denom_Y);
+  double c_denom = sqrt(c_denom_X * c_denom_Y);
   if (c_denom == 0.0){
     //carp(CARP_FATAL, "Zero denominator in correlation calculation!");
     carp(CARP_DETAILED_DEBUG, "Zero denominator in correlation calculation!");
@@ -129,30 +127,30 @@ void fit_two_parameter_weibull(
  * be shifted by) and the best correlation coefficient
  */
 void fit_three_parameter_weibull(
-    FLOAT_T* data, ///< the data to be fit -in
+    double* data, ///< the data to be fit -in
     int fit_data_points, ///< the number of data points to fit -in
     int total_data_points, ///< the total number of data points to fit -in
-    FLOAT_T min_shift, ///< the minimum shift to allow -in
-    FLOAT_T max_shift, ///< the maximum shift to allow -in
-    FLOAT_T step,      ///< step for shift -in
-    FLOAT_T corr_threshold, ///< minimum correlation, else no fit -in
-    FLOAT_T* eta,      ///< the eta parameter of the Weibull dist -out
-    FLOAT_T* beta,      ///< the beta parameter of the Weibull dist -out
-    FLOAT_T* shift,     ///< the best shift -out
-    FLOAT_T* correlation   ///< the best correlation -out
+    double min_shift, ///< the minimum shift to allow -in
+    double max_shift, ///< the maximum shift to allow -in
+    double step,      ///< step for shift -in
+    double corr_threshold, ///< minimum correlation, else no fit -in
+    double* eta,      ///< the eta parameter of the Weibull dist -out
+    double* beta,      ///< the beta parameter of the Weibull dist -out
+    double* shift,     ///< the best shift -out
+    double* correlation   ///< the best correlation -out
     ){
   
-  FLOAT_T correlation_tolerance = 0.1;
+  double correlation_tolerance = 0.1;
   
-  FLOAT_T best_eta = 0.0;
-  FLOAT_T best_beta = 0.0;
-  FLOAT_T best_shift = 0.0;
-  FLOAT_T best_correlation = 0.0;
+  double best_eta = 0.0;
+  double best_beta = 0.0;
+  double best_shift = 0.0;
+  double best_correlation = 0.0;
 
-  FLOAT_T cur_eta = 0.0;
-  FLOAT_T cur_beta = 0.0;
-  FLOAT_T cur_correlation = 0.0;
-  FLOAT_T cur_shift = 0.0;
+  double cur_eta = 0.0;
+  double cur_beta = 0.0;
+  double cur_correlation = 0.0;
+  double cur_shift = 0.0;
 
   for (cur_shift = max_shift; cur_shift > min_shift ; cur_shift -= step){
 
@@ -187,15 +185,15 @@ void fit_three_parameter_weibull(
  * Compute a p-value for a given score w.r.t. a Weibull with given parameters.
  *\returns the p_value
  */
-FLOAT_T compute_weibull_pvalue(
-  FLOAT_T score, ///< The score for the scoring peptide -in
-  FLOAT_T eta,   ///< The eta parameter of the Weibull -in
-  FLOAT_T beta,  ///< The beta parameter of the Weibull -in
-  FLOAT_T shift  ///< The shift parameter of the Weibull -in
+double compute_weibull_pvalue(
+  double score, ///< The score for the scoring peptide -in
+  double eta,   ///< The eta parameter of the Weibull -in
+  double beta,  ///< The beta parameter of the Weibull -in
+  double shift  ///< The shift parameter of the Weibull -in
   ){
   carp(CARP_DETAILED_DEBUG, "Stat: score = %.6f", score);
 
-  FLOAT_T return_value;
+  double return_value;
 
   // No Weibull parameter, return NaN.
   if (eta == 0.0) {

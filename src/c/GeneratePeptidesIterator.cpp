@@ -13,7 +13,7 @@ GeneratePeptidesIterator::GeneratePeptidesIterator()
 {}
 
 GeneratePeptidesIterator::GeneratePeptidesIterator(
-  pair<FLOAT_T,FLOAT_T> min_max_mass, ///< precursor m/z of spectrum
+  pair<double,double> min_max_mass, ///< precursor m/z of spectrum
   bool is_decoy,  ///< generate target or decoy peptides
   Database* database,///< database to provide peptides
   Index* index ///< index to provide peptides

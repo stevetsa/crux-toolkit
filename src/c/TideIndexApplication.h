@@ -126,8 +126,8 @@ protected:
   struct TargetInfo {
     ProteinInfo proteinInfo;
     int start;
-    FLOAT_T mass;
-    TargetInfo(const ProteinInfo& protein, int startLoc, FLOAT_T pepMass)
+    double mass;
+    TargetInfo(const ProteinInfo& protein, int startLoc, double pepMass)
       : proteinInfo(protein), start(startLoc), mass(pepMass) {}
   };
 
@@ -136,8 +136,8 @@ protected:
     const ENZYME_T enzyme,
     const DIGEST_T digestion,
     int missedCleavages,
-    FLOAT_T minMass,
-    FLOAT_T maxMass,
+    double minMass,
+    double maxMass,
     int minLength,
     int maxLength,
     MASS_TYPE_T massType,
@@ -157,7 +157,7 @@ protected:
     pb::Header& pbHeader
   );
 
-  static FLOAT_T calcPepMassTide(
+  static double calcPepMassTide(
     const std::string& sequence,
     MASS_TYPE_T massType
   );

@@ -99,7 +99,7 @@ int PrintProcessedSpectra::main(int argc, char** argv) {
          cur_spectrum->getFirstScan(), cur_charge);
 
     // change the peak values
-    FLOAT_T* intensities = NULL;
+    double* intensities = NULL;
     int max_mz_bin = 0;
     Scorer::getProcessedPeaks(cur_spectrum, cur_charge, XCORR,
                         &intensities, &max_mz_bin);

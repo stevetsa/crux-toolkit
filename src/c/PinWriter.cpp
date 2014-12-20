@@ -209,8 +209,8 @@ void PinWriter::write(
   }
 }
 
-bool PinWriter::isInfinite(FLOAT_T x) {
-  return x == numeric_limits<FLOAT_T>::infinity();
+bool PinWriter::isInfinite(double x) {
+  return x == numeric_limits<double>::infinity();
 }
 
 void PinWriter::printHeader() {
@@ -255,10 +255,10 @@ void PinWriter::printPSM(
   int charge = match->getCharge();
   bool enzC = false;
   bool enzN = false;
-  FLOAT_T obsMass = match->getZState().getSinglyChargedMass();
-  //FLOAT_T calcMass = peptide->calcMass(isotopic_mass_) + calcMassOfMods(peptide);
-  FLOAT_T calcMass = peptide->getPeptideMass() + MASS_PROTON;
-  FLOAT_T dM = (obsMass - calcMass) / charge;
+  double obsMass = match->getZState().getSinglyChargedMass();
+  //double calcMass = peptide->calcMass(isotopic_mass_) + calcMassOfMods(peptide);
+  double calcMass = peptide->getPeptideMass() + MASS_PROTON;
+  double dM = (obsMass - calcMass) / charge;
 
   char* sequence = peptide->getSequence();
   int missedCleavages = get_num_internal_cleavage(sequence, enzyme_);
@@ -370,8 +370,8 @@ string PinWriter::getId(
   return psm_id.str();   
 }
 
-FLOAT_T PinWriter::calcMassOfMods(Peptide* peptide) {
-  FLOAT_T total_mass_delta = 0;
+double PinWriter::calcMassOfMods(Peptide* peptide) {
+  double total_mass_delta = 0;
   MODIFIED_AA_T* mod_seq = peptide->getModifiedAASequence();
   AA_MOD_T** mod_list = NULL;
   int total_mods = get_all_aa_mod_list(&mod_list);

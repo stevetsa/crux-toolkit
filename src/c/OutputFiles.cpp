@@ -743,11 +743,11 @@ void OutputFiles::writeMatchFeatures(
 void OutputFiles::writeRankedPeptides(PeptideToScore& peptideToScore){
 
   // rearrange pairs to sort by score
-  vector<pair<FLOAT_T, Peptide*> > scoreToPeptide;
+  vector<pair<double, Peptide*> > scoreToPeptide;
   for(PeptideToScore::iterator it = peptideToScore.begin();
        it != peptideToScore.end(); ++it){
     Peptide* peptide = it->first;
-    FLOAT_T score = it->second;
+    double score = it->second;
     scoreToPeptide.push_back(make_pair(score, peptide));
   }
   
@@ -780,10 +780,10 @@ void OutputFiles::writeRankedPeptides(PeptideToScore& peptideToScore){
   }
 
   // print each pair
-  for(vector<pair<FLOAT_T, Peptide*> >::iterator it = scoreToPeptide.begin();
+  for(vector<pair<double, Peptide*> >::iterator it = scoreToPeptide.begin();
       it != scoreToPeptide.end(); ++it){
     Peptide* peptide = it->second;
-    FLOAT_T score = it->first;
+    double score = it->first;
     char* seq = peptide->getSequence();
 
     file->setColumnCurrentRow(SEQUENCE_COL, seq);
@@ -807,11 +807,11 @@ void OutputFiles::writeRankedProteins(ProteinToScore& proteinToScore,
   bool isParsimony = (proteinToMeta.size() != 0);
 
   // reorganize the protein,score pairs to sort by score
-  vector<pair<FLOAT_T, Protein*> > scoreToProtein;
+  vector<pair<double, Protein*> > scoreToProtein;
   for (ProteinToScore::iterator it = proteinToScore.begin(); 
        it != proteinToScore.end(); ++it){
     Protein* protein = it->first;
-    FLOAT_T score = it->second;
+    double score = it->second;
     scoreToProtein.push_back(make_pair(score, protein));
   }
   
@@ -844,9 +844,9 @@ void OutputFiles::writeRankedProteins(ProteinToScore& proteinToScore,
   }
 
   // print each protein
-  for(vector<pair<FLOAT_T, Protein*> >::iterator it = scoreToProtein.begin(); 
+  for(vector<pair<double, Protein*> >::iterator it = scoreToProtein.begin(); 
       it != scoreToProtein.end(); ++it){
-    FLOAT_T score = it->first;
+    double score = it->first;
     Protein* protein = it->second;
 
     file->setColumnCurrentRow(PROTEIN_ID_COL, protein->getId());

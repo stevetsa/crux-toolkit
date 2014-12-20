@@ -57,7 +57,7 @@ class SpectralCounts: public CruxApplication {
    * \typedef MetaToScore
    * \brief Mapping of MetaProtein to the score assigned to it
    */
-  typedef std::map<MetaProtein, FLOAT_T, 
+  typedef std::map<MetaProtein, double, 
               bool(*)(MetaProtein, MetaProtein)> MetaToScore;
   /**
    * \typedef ProteinToMeta
@@ -99,7 +99,7 @@ class SpectralCounts: public CruxApplication {
   void computeEmpai();
   void makeUniqueMapping();
   void getSpectra(std::map<std::pair<int,int>, Crux::Spectrum*>& spectra);
-  FLOAT_T sumMatchIntensity(Crux::Match* match,
+  double sumMatchIntensity(Crux::Match* match,
                           Crux::SpectrumCollection* spectra);
   SCORER_TYPE_T get_qval_type(MatchCollection* match_collection);
 
@@ -136,14 +136,14 @@ class SpectralCounts: public CruxApplication {
   // member variables
   OutputFiles* output_;
   std::string psm_file_;
-  FLOAT_T threshold_;
+  double threshold_;
   std::string database_name_;
   bool unique_mapping_;
   THRESHOLD_T threshold_type_;
   QUANT_LEVEL_TYPE_T quantitation_;
   PARSIMONY_TYPE_T parsimony_;
   MEASURE_TYPE_T measure_;
-  FLOAT_T bin_width_;
+  double bin_width_;
   std::set<Crux::Match*> matches_;
   MatchCollection* match_collection_;
   // For custom thresholding fields

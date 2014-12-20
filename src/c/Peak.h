@@ -27,37 +27,37 @@ public:
      * @param intensity: intensity for the new peak
      * @param location: location for the new peak
      */
-    Peak(FLOAT_T intensity, FLOAT_T location);
+    Peak(double intensity, double location);
     
     /**
      * Return the intensity of this Peak
      */
-    FLOAT_T getIntensity();
+    double getIntensity();
     
     /**
      * Return the intensity rank of this Peak
      */
-    FLOAT_T getIntensityRank();
+    double getIntensityRank();
     
     /**
      * Return the location of this Peak
      */
-    FLOAT_T getLocation();
+    double getLocation();
     
     /**
      * Set the intensity of this Peak
      */
-    void setIntensity(FLOAT_T intensity);
+    void setIntensity(double intensity);
     
     /**
      * Set the intensity rank of this Peak
      */
-    void setIntensityRank(FLOAT_T intensity_rank);
+    void setIntensityRank(double intensity_rank);
     
     /**
      * Set the location of this Peak
      */
-    void setLocation(FLOAT_T location);
+    void setLocation(double location);
     
     /**
      * Print the intensity and location of this peak to stdout
@@ -77,9 +77,9 @@ public:
     bool compareByMZ(Peak other);
     
 private:
-    FLOAT_T intensity_;          // The intensity of this peak
-    FLOAT_T intensity_rank_;     // The rank intensity of this peak
-    FLOAT_T location_;           // The location of this peak
+    double intensity_;          // The intensity of this peak
+    double intensity_rank_;     // The rank intensity of this peak
+    double location_;           // The location of this peak
     
 };
 

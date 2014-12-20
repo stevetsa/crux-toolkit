@@ -17,10 +17,10 @@ class LinkedPeptide {
   int charge_; ///< charge of the LinkedPeptide
   bool decoy_; ///< indicates that this LinkedPeptide is a decoy
   ION_TYPE_T type_; ///<B_ION or Y_ION
-  FLOAT_T mass_[NUMBER_MASS_TYPES]; ///<mass of the LinkedPeptide
-  FLOAT_T mz_[NUMBER_MASS_TYPES]; ///<mz of the LinkedPeptide
+  double mass_[NUMBER_MASS_TYPES]; ///<mass of the LinkedPeptide
+  double mz_[NUMBER_MASS_TYPES]; ///<mz of the LinkedPeptide
   std::vector<XHHC_Peptide> peptides_; ///<Peptides involved in the LinkedPeptide
-  static FLOAT_T linker_mass_; ///<Mass of the linker
+  static double linker_mass_; ///<Mass of the linker
 
  public:
   
@@ -141,7 +141,7 @@ class LinkedPeptide {
   /**
    * \returns the m/z of the LinkedPeptide
    */
-  FLOAT_T getMZ(
+  double getMZ(
     MASS_TYPE_T mass_type ///< MONO or AVERAGE
     );
 
@@ -155,7 +155,7 @@ class LinkedPeptide {
   /**
    * /returns the mass of the LinkedPeptide
    */
-  FLOAT_T getMass(
+  double getMass(
     MASS_TYPE_T mass_type //< Average or Monoisotopic
   );
   
@@ -235,13 +235,13 @@ class LinkedPeptide {
    * Sets the linker_mass_ static variable
    */
   static void setLinkerMass(
-    FLOAT_T linker_mass ///<the linker mass
+    double linker_mass ///<the linker mass
     );
 
   /**
    * \returns the linker_mass_ static variable
    */
-  static FLOAT_T getLinkerMass();
+  static double getLinkerMass();
 
 };
 

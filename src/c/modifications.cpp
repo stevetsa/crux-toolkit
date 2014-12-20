@@ -236,7 +236,7 @@ char* modified_aa_to_string_with_masses(MODIFIED_AA_T aa,
   // at most 11 mods, each at most 7 char "000.00,", total 77
   char* mass_string = (char*)mymalloc(128 * sizeof(char));
   char* mass_string_ptr = mass_string;
-  FLOAT_T summed_masses = 0;
+  double summed_masses = 0;
   if( mass_format == AA_PLUS_MOD ){
     summed_masses = 
       get_mass_mod_amino_acid(aa, get_mass_type_parameter("isotopic-mass"));
@@ -448,7 +448,7 @@ int convert_to_mod_aa_seq(const char* sequence,
 
     if( sequence[seq_idx] == '[' || sequence[seq_idx] == ','){//mod mass
       seq_idx++;
-      FLOAT_T delta_mass = atof(sequence + seq_idx);
+      double delta_mass = atof(sequence + seq_idx);
       if( mass_format == AA_PLUS_MOD ){
         assert(mod_idx > 0);
         delta_mass -= get_mass_mod_amino_acid(new_sequence[mod_idx - 1], 
@@ -773,7 +773,7 @@ const AA_MOD_T* get_aa_mod_from_symbol(const char symbol){
  * symbol.  If the symbol does not represent a modification, returns
  * 0. Requires that parameters have been initialized.
  */
-FLOAT_T get_mod_mass_from_symbol(const char symbol){
+double get_mod_mass_from_symbol(const char symbol){
 
   const AA_MOD_T* mod = get_aa_mod_from_symbol(symbol);
   if( mod == NULL ){
@@ -795,7 +795,7 @@ AA_MOD_T multi_mod;
  * AA_MOD_T's can be found for the mass, returns 0.
  * Requires that parameters have been initialized.
  */
-const AA_MOD_T* get_aa_mod_from_mass(FLOAT_T mass){
+const AA_MOD_T* get_aa_mod_from_mass(double mass){
 
   // find the identifier for this mass shift
   MODIFIED_AA_T id = get_mod_identifier(mass);
@@ -1068,7 +1068,7 @@ int count_modified_aas(MODIFIED_AA_T* seq){
 /**
  * /returns the mass of the modified sequence
  */
-FLOAT_T get_mod_aa_seq_mass(
+double get_mod_aa_seq_mass(
   MODIFIED_AA_T* seq, ///< The modified sequence
   MASS_TYPE_T mass_type ///<  mono or average?
   ) {
@@ -1081,7 +1081,7 @@ FLOAT_T get_mod_aa_seq_mass(
     return 0.0;
   }
   
-  FLOAT_T ans = 0;
+  double ans = 0;
   int aa_idx = 0;
   while(seq[aa_idx] != MOD_SEQ_NULL) {
     ans += get_mass_amino_acid(modified_aa_to_char(seq[aa_idx]), mass_type);

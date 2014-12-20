@@ -71,12 +71,12 @@ bool IndexMap::parse() {
   
   // used to parse within a line
 
-  FLOAT_T start_mass;
-  FLOAT_T range;
+  double start_mass;
+  double range;
   bool start_file = false;
-  FLOAT_T min_mass = 
+  double min_mass = 
     index_->getDiskConstraint()->getMinMass();
-  FLOAT_T max_mass = 
+  double max_mass = 
     index_->getDiskConstraint()->getMaxMass();
 
   // used as buffer for reading in from file
@@ -174,8 +174,8 @@ bool IndexMap::parse() {
  */
 bool IndexMap::addNewIndexFile(
   const char* filename_parsed,  ///< the filename to add -in
-  FLOAT_T start_mass,  ///< the start mass of the index file  -in
-  FLOAT_T range  ///< the mass range of the index file  -in
+  double start_mass,  ///< the start mass of the index file  -in
+  double range  ///< the mass range of the index file  -in
   )
 {
   char* filename = my_copy_string(filename_parsed);
@@ -197,13 +197,13 @@ void IndexMap::getIndexFiles(
 
   constraint_index_files.clear();
 
-  FLOAT_T min_mass = constraint->getMinMass();
-  FLOAT_T max_mass = constraint->getMaxMass();
+  double min_mass = constraint->getMinMass();
+  double max_mass = constraint->getMaxMass();
 
   for (size_t idx = 0; idx < index_files_.size();idx++) {
     IndexFile* index_file = index_files_[idx];  
-    FLOAT_T start_mass = index_file->getStartMass();
-    FLOAT_T range = index_file->getRange();
+    double start_mass = index_file->getStartMass();
+    double range = index_file->getRange();
 
     if ((start_mass - 0.0001) >= max_mass) {
       break;

@@ -70,7 +70,7 @@ void PMCPepXMLWriter::writePSMs(
     Peptide* peptide = pep_match->getPeptide();
     int spec_scan = spectrum->getFirstScan();
     string spec_filename = spectrum->getFilename();
-    FLOAT_T spec_neutral_mass = zstate.getNeutralMass();
+    double spec_neutral_mass = zstate.getNeutralMass();
     int spec_charge = zstate.getCharge();
 
     // get sequence and modified sequence
@@ -90,7 +90,7 @@ void PMCPepXMLWriter::writePSMs(
     string flanking_str(flanking);
     free(flanking);
                                                              
-    FLOAT_T peptide_mass = peptide->getPeptideMass();
+    double peptide_mass = peptide->getPeptideMass();
 
     // write psm
     map<pair<int, int>, int>::const_iterator lookup =

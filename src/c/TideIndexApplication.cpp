@@ -416,8 +416,8 @@ void TideIndexApplication::fastaToPb(
   const ENZYME_T enzyme,
   const DIGEST_T digestion,
   int missedCleavages,
-  FLOAT_T minMass,
-  FLOAT_T maxMass,
+  double minMass,
+  double maxMass,
   int minLength,
   int maxLength,
   MASS_TYPE_T massType,
@@ -474,7 +474,7 @@ void TideIndexApplication::fastaToPb(
     for (vector<PeptideInfo>::iterator i = cleavedPeptides.begin();
          i != cleavedPeptides.end(); ) {
       const string& cleavedSequence = i->first;
-      FLOAT_T pepMass = calcPepMassTide(cleavedSequence, massType);
+      double pepMass = calcPepMassTide(cleavedSequence, massType);
       if (pepMass < 0.0) {
         // Sequence contained some invalid character
         carp(CARP_DEBUG, "Ignoring invalid sequence <%s>",
@@ -533,7 +533,7 @@ void TideIndexApplication::fastaToPb(
            j != cleavedReverse.end();
            ++j) {
         const string& cleavedSequence = j->first;
-        FLOAT_T pepMass = calcPepMassTide(cleavedSequence, massType);
+        double pepMass = calcPepMassTide(cleavedSequence, massType);
         if (pepMass < 0.0) {
           // Sequence contained some invalid character
           carp(CARP_DEBUG, "Ignoring invalid sequence in decoy fasta <%s>",
@@ -602,7 +602,7 @@ void TideIndexApplication::fastaToPb(
                         startLoc, pbProtein);
       proteinWriter.Write(&pbProtein);
       // Add decoy to heap
-      FLOAT_T pepMass = targetLookup->second.mass;
+      double pepMass = targetLookup->second.mass;
       TideIndexPeptide pepDecoy(
         pepMass, i->length(), decoySequence, curProtein, (startLoc > 0) ? 1 : 0, true);
       outPeptideHeap.push_back(pepDecoy);
@@ -746,7 +746,7 @@ void TideIndexApplication::writePeptidesAndAuxLocs(
   }
 }
 
-FLOAT_T TideIndexApplication::calcPepMassTide(
+double TideIndexApplication::calcPepMassTide(
   const string& sequence,
   MASS_TYPE_T massType
 ) {

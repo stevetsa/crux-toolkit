@@ -30,8 +30,8 @@ class PeptideConstraint {
  protected:
   ENZYME_T enzyme_;
   DIGEST_T digestion_;
-  FLOAT_T min_mass_; ///< The minimum mass of the peptide
-  FLOAT_T max_mass_; ///< The maximum mass of the peptide
+  double min_mass_; ///< The minimum mass of the peptide
+  double max_mass_; ///< The maximum mass of the peptide
   int min_length_; ///< The minimum length of the peptide
   int max_length_; ///< The maximum length of the peptide
   int num_mis_cleavage_; ///< The maximum mis cleavage of the peptide
@@ -55,8 +55,8 @@ class PeptideConstraint {
   PeptideConstraint(
     ENZYME_T enzyme, ///< the enzyme to use for digestion
     DIGEST_T digest, ///< the degree of digestion
-    FLOAT_T min_mass, ///< the minimum mass -in
-    FLOAT_T max_mass, ///< the maximum mass -in
+    double min_mass, ///< the minimum mass -in
+    double max_mass, ///< the maximum mass -in
     int min_length, ///< the minimum length of peptide -in
     int max_length, ///< the maximum lenth of peptide -in
     int num_mis_cleavage, ///< The maximum mis cleavage of the peptide -in
@@ -112,25 +112,25 @@ class PeptideConstraint {
    * sets the min mass of the peptide_constraint
    */
   void setMinMass(
-    FLOAT_T min_mass  ///< the min mass of the peptide constraint - in
+    double min_mass  ///< the min mass of the peptide constraint - in
     );
 
   /**
    * \returns the min mass of the peptide_constraint
    */
-  FLOAT_T getMinMass();
+  double getMinMass();
 
   /**
    * sets the max mass of the peptide_constraint
    */
   void setMaxMass(
-    FLOAT_T max_mass  ///< the max mass of the peptide constraint - in
+    double max_mass  ///< the max mass of the peptide constraint - in
     );
 
   /**
    * \returns the max mass of the peptide_constraint
    */
-  FLOAT_T getMaxMass();
+  double getMaxMass();
 
   /**
    * sets the min length of the peptide_constraint

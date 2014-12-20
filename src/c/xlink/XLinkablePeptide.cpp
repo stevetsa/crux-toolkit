@@ -352,7 +352,7 @@ Peptide* XLinkablePeptide::getPeptide() {
 /**
  * \returns the mass of the xlinkable peptide
  */
-FLOAT_T XLinkablePeptide::getMass(
+double XLinkablePeptide::getMass(
   MASS_TYPE_T mass_type
   ) const {
   if (peptide_ == NULL) {

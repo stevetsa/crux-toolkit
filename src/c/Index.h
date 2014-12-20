@@ -70,10 +70,10 @@ class Index {
   PeptideConstraint* disk_constraint_;///< Defines peptides on disk
   PeptideConstraint* search_constraint_;///< Defines peptides being searched
   bool on_disk_; ///< Does this index exist on disk yet?
-  FLOAT_T mass_range_;  ///< the range of masses in each index file -in
+  double mass_range_;  ///< the range of masses in each index file -in
   bool is_unique_; ///< only unique peptides? -in
   DECOY_TYPE_T decoys_; ///< the type of decoys stored
-  FLOAT_T* static_mods_; ///< static mod for each amino acid
+  double* static_mods_; ///< static mod for each amino acid
 
   /* Private Functions */
 
@@ -130,7 +130,7 @@ class Index {
     const char* output_dir,      ///< The name of the new index
     PeptideConstraint* constraint,  
     ///< Constraint which these peptides satisfy -in
-    FLOAT_T mass_range,  
+    double mass_range,  
     ///< the range of mass that each index file should be partitioned into -in
     bool is_unique, ///< only unique peptides? -in
     DECOY_TYPE_T decoys ///< the kind of decoys to store
@@ -204,7 +204,7 @@ class Index {
     const char* fasta_filename,  ///< The fasta file
     const char* output_dir,      ///< The name of the new index
     PeptideConstraint* constraint,///< Constraint which these peptides satisfy
-    FLOAT_T mass_range,  ///< the range of masses contained in each index file
+    double mass_range,  ///< the range of masses contained in each index file
     DECOY_TYPE_T decoys ///< the type of decoys to store
     );         
 

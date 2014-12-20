@@ -35,7 +35,7 @@
 // 5. SpSpectrum::SmoothPeaks() is specific to SP calculations while crux's
 //    "smooth_peaks" function can handle various types of scores represented 
 //    by SCORER_TYPE_T.
-// 6. The "double" data type was used in place of crux's "FLOAT_T".
+// 6. The "double" data type was used in place of crux's "double".
 
 
 #ifndef CRUX_SP_SPECTRUM_H

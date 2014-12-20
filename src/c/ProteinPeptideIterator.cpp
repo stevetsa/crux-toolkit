@@ -12,13 +12,13 @@ using namespace Crux;
  * Takes a cumulative distribution of peptide masses (the mass_array) and
  * the start index and end index and returns a peptide mass
  */
-FLOAT_T ProteinPeptideIterator::calculateSubsequenceMass (
+double ProteinPeptideIterator::calculateSubsequenceMass (
     double* mass_array,
     int start_idx,
     int cur_length
   ){
 
-  FLOAT_T mass_h2o = MASS_H2O_AVERAGE;
+  double mass_h2o = MASS_H2O_AVERAGE;
   if(get_mass_type_parameter("isotopic-mass") == MONO){
     mass_h2o = MASS_H2O_MONO;
   }
@@ -26,7 +26,7 @@ FLOAT_T ProteinPeptideIterator::calculateSubsequenceMass (
   // carp(CARP_DETAILED_DEBUG, "mass start = %i", start_idx);
   int end_idx = start_idx + cur_length;
   // carp(CARP_DETAILED_DEBUG, "mass end = %i", end_idx);
-  FLOAT_T peptide_mass = mass_array[end_idx] - mass_array[start_idx] + mass_h2o;
+  double peptide_mass = mass_array[end_idx] - mass_array[start_idx] + mass_h2o;
 
   return peptide_mass;
 }
@@ -207,7 +207,7 @@ void ProteinPeptideIterator::selectPeptides(
       }
      
       // check our mass constraint
-      FLOAT_T peptide_mass = calculateSubsequenceMass(mass_array_, 
+      double peptide_mass = calculateSubsequenceMass(mass_array_, 
           nterm_allowed_cleavages[nterm_idx], length);
 
       // TODO: if too small, try next cterm (end), if too large, try
@@ -430,7 +430,7 @@ ProteinPeptideIterator::ProteinPeptideIterator(
 
   nterm_cleavage_positions_ = new vector<int>();
   peptide_lengths_ = new vector<int>();
-  peptide_masses_ = new vector<FLOAT_T>();
+  peptide_masses_ = new vector<double>();
   cumulative_cleavages_ = new vector<int>();
 
   // estimate array size and reserve space to avoid resizing vector
@@ -484,7 +484,7 @@ Crux::Peptide* ProteinPeptideIterator::next()
   int cleavage_idx = current_cleavage_idx_;
   int current_start = (*nterm_cleavage_positions_)[cleavage_idx];
   int current_length = (*peptide_lengths_)[cleavage_idx];
-  FLOAT_T peptide_mass = (*peptide_masses_)[cleavage_idx];
+  double peptide_mass = (*peptide_masses_)[cleavage_idx];
 
   // create new peptide
   Peptide* peptide = new Peptide(current_length, peptide_mass, 

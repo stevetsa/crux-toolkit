@@ -29,7 +29,7 @@ class IonSeries {
   // TODO change name to unmodified_char_seq
   char* peptide_; ///< The peptide sequence for this ion series
   MODIFIED_AA_T* modified_aa_seq_; ///< sequence of the peptide
-  FLOAT_T peptide_mass_; ///< The peptide neutral mass. For efficiency. 
+  double peptide_mass_; ///< The peptide neutral mass. For efficiency. 
   int charge_; ///< /<The charge state of the peptide for this ion series
   IonConstraint* constraint_; ///< The constraints which these ions obey
   std::vector<Ion*> ions_; ///< The ions in this series
@@ -49,7 +49,7 @@ class IonSeries {
    * peptide.  
    * \returns an array of ion masses for all sub sequences
    */
-  FLOAT_T* createIonMassMatrix(
+  double* createIonMassMatrix(
     //char* peptide, ///< The peptide for this ion series. -in
     MODIFIED_AA_T* modified_seq, ///< the sequence
     MASS_TYPE_T mass_type, ///< the mass_type to use MONO|AVERAGE
@@ -70,7 +70,7 @@ class IonSeries {
    *\returns TRUE if successfully adds all ions, else FALSE
    */
   bool addIonsByCharge(
-    FLOAT_T mass, ///< the base mass of the ion to add
+    double mass, ///< the base mass of the ion to add
     int cleavage_idx, ///< the absolute cleavage index (A,B,C from left X,Y,Z from right)
     ION_TYPE_T ion_type ///< the ion type of the ions to be added
     );
@@ -193,7 +193,7 @@ class IonSeries {
    *\returns TRUE if successfully generates all the ions, else FALSE
    */
   bool generateIonsNoModification(
-    FLOAT_T* mass_matrix ///< the mass matrix that stores the mass
+    double* mass_matrix ///< the mass matrix that stores the mass
     );
 
   /**

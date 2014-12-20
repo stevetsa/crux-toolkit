@@ -21,10 +21,10 @@ class XHHC_Scorer {
   bool print_spectrums_; ///< Indicator of whether to print the spectrums
   Scorer* scorer_; ///< The crux scorer
   Crux::Spectrum* current_spectrum_; ///< Spectrum that this scorer works on
-  FLOAT_T max_mz_; ///< Maximum mz allocated for scorer
+  double max_mz_; ///< Maximum mz allocated for scorer
   int max_bin_; ///< Maximum bin idx for scorer.
-  FLOAT_T bin_width_; ///< bin width for scorer
-  FLOAT_T bin_offset_; ///<bin offset for scorer
+  double bin_width_; ///< bin width for scorer
+  double bin_offset_; ///<bin offset for scorer
 
   static int ion_counter_; ///< Ion counter
 
@@ -34,7 +34,7 @@ class XHHC_Scorer {
    * theoretical.out, observed.out
    */
   void printSpectrums(
-    FLOAT_T* theoretical, ///< The theoretical spectrum array
+    double* theoretical, ///< The theoretical spectrum array
     Crux::Spectrum* spectrum ///< The spectrum to print
     );
   
@@ -54,7 +54,7 @@ class XHHC_Scorer {
    * \returns an XHHC_Scorer object with the max_mz initialized
    */
   XHHC_Scorer(
-    FLOAT_T max_mz ///< max_mz for the scorer.
+    double max_mz ///< max_mz for the scorer.
     );
 
   /**
@@ -65,12 +65,12 @@ class XHHC_Scorer {
   /**
    * \returns the max_mz
    */
-  FLOAT_T getMaxMz();
+  double getMaxMz();
 
   /**
    * \returns the xcorr score for the spectrum and the ion_series
    */
-  FLOAT_T scoreSpectrumVsSeries(
+  double scoreSpectrumVsSeries(
     Crux::Spectrum* spectrum, ///< Spectrum to score
     LinkedIonSeries& ion_series ///< LinkedIonSeries to score
     );
@@ -88,9 +88,9 @@ class XHHC_Scorer {
    * adds an intensity in the theoretical map at peak idx
    */
   static void addIntensityMap(
-    std::map<int, FLOAT_T>& theoretical, ///< the theoretical map 
+    std::map<int, double>& theoretical, ///< the theoretical map 
     int idx, ///< the idx to add
-    FLOAT_T intensity ///< the corresponding intensity
+    double intensity ///< the corresponding intensity
     );
 
   /**
@@ -99,7 +99,7 @@ class XHHC_Scorer {
    */
   static bool xlinkCreateMapTheoretical(
     LinkedIonSeries& ion_series, ///< LinkedIonSeries to create the map from -in
-    std::map<int, FLOAT_T>& theoretical ///< The theoretical map -out
+    std::map<int, double>& theoretical ///< The theoretical map -out
   );
 
   /**
@@ -107,7 +107,7 @@ class XHHC_Scorer {
    */
   bool hhcCreateIntensityArrayTheoretical(
     LinkedIonSeries& ion_series, /// The linked ion series to use -in
-    FLOAT_T* theoretical       ///< the empty theoretical spectrum -out
+    double* theoretical       ///< the empty theoretical spectrum -out
     );
   
   /*
@@ -120,7 +120,7 @@ class XHHC_Scorer {
   /**
    * Generates the theoretical/observed arrays and scores the spectrum for xcorr
    */
-  FLOAT_T hhcGenScoreXcorr(
+  double hhcGenScoreXcorr(
     Crux::Spectrum* spectrum,    ///< the spectrum to score -in
     LinkedIonSeries& ion_series ///< the ion series to score against the spectrum -in
     );
@@ -129,10 +129,10 @@ class XHHC_Scorer {
    * \returns the sum of the spectrum peak intensities of the by-ions that are matched
    * to the LinkedIonSeries
    */ 
-  FLOAT_T getIonCurrentExplained(
+  double getIonCurrentExplained(
     LinkedIonSeries& ion_series, ///<The LinkedIonSeries to match 
     Crux::Spectrum* spectrum, ///<The spectrum to match
-    FLOAT_T& explained, ///<The ion current explained -out
+    double& explained, ///<The ion current explained -out
     int& by_observed ///<The number of by ions matched
     );
 };

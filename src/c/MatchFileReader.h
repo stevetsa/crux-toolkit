@@ -78,9 +78,9 @@ class MatchFileReader: public DelimitedFileReader {
     );
 
     /**
-     * \returns the FLOAT_T value of a cell, checks for infinity
+     * \returns the double value of a cell, checks for infinity
      */
-    FLOAT_T getFloat(
+    double getFloat(
       MATCH_COLUMNS_T col_type ///<the column type
     );
    

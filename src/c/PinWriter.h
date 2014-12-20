@@ -82,14 +82,14 @@ class PinWriter{
   std::string getPeptide(Crux::Peptide* peptide);
   std::string getProteins(Crux::Peptide* peptide);
   bool isDecoy(Crux::Match* match);
-  bool isInfinite(FLOAT_T x);
+  bool isInfinite(double x);
 
   std::string getId(
     Crux::Match* match,
     int scan_number
   ); 
 
-  FLOAT_T calcMassOfMods(Crux::Peptide* peptide);
+  double calcMassOfMods(Crux::Peptide* peptide);
  
   void calculateDeltaCN(map<pair<int, int>, vector<Crux::Match*> >& scan_charge_to_matches);
   void calculateDeltaCN(vector<Crux::Match*>& collection);

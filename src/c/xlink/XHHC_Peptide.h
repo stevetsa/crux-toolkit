@@ -21,7 +21,7 @@ class XHHC_Peptide {
   std::vector<bool> links_; ///< vector bools for the aa position of the link
   std::string sequence_; ///< sequence of the peptide
   int length_; ///< sequence length
-  FLOAT_T mass_[NUMBER_MASS_TYPES]; ///< mass of the peptide
+  double mass_[NUMBER_MASS_TYPES]; ///< mass of the peptide
 
  public:
   /**
@@ -115,7 +115,7 @@ class XHHC_Peptide {
   /**
    * \returns the mass of the peptide
    */
-  FLOAT_T getMass(
+  double getMass(
     MASS_TYPE_T mass_type ///< MONO or AVERAGE
   );
 

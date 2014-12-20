@@ -16,7 +16,7 @@ int main(int argc, char** argv) {
   char* peptideB = NULL;
   int posA = 0;
   int posB = 0;
-  FLOAT_T linker_mass = 0;
+  double linker_mass = 0;
   int charge = 1; 
   bool print_spectrum = false;
 
@@ -99,14 +99,14 @@ int main(int argc, char** argv) {
 
   if (print_spectrum) {
     carp(CARP_INFO, "Writing XCORR theoretical spectrum to theoretical.out");
-    map<int, FLOAT_T> theoretical;
+    map<int, double> theoretical;
     XHHC_Scorer::xlinkCreateMapTheoretical(ion_series,
 					 theoretical);
 
     ofstream fout("theoretical.out");
     fout <<"> "<< linked_peptide<<"\t"<<linked_peptide.getMZ(MONO)<<endl;
     
-    map<int, FLOAT_T>::iterator iter;
+    map<int, double>::iterator iter;
 
     for (iter = theoretical.begin();
 	 iter != theoretical.end();

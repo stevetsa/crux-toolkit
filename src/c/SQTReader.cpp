@@ -171,7 +171,7 @@ void SQTReader::parseSpectrum(string& line) {
 
   from_string(current_num_matches_, tokens[spectrum_num_matches_idx]);
 
-  current_ln_experiment_size_ = logf((FLOAT_T)current_num_matches_);
+  current_ln_experiment_size_ = logf((double)current_num_matches_);
   
   last_parsed_ = SQT_LINE_SPECTRUM;
 
@@ -274,7 +274,7 @@ void SQTReader::parseMatch(string& line) {
 
   current_match_->setBYIonMatched(matched_ions);
   current_match_->setBYIonPossible(expected_ions);
-  current_match_->setBYIonFractionMatched((FLOAT_T)matched_ions / (FLOAT_T)expected_ions);
+  current_match_->setBYIonFractionMatched((double)matched_ions / (double)expected_ions);
   current_match_->setLnExperimentSize(current_ln_experiment_size_);
 
   last_parsed_ = SQT_LINE_MATCH;
@@ -425,7 +425,7 @@ void SQTReader::readSymbols(const string& file, bool append) {
           idx >= line.length() - 1) {
         continue;
       }
-      FLOAT_T mass;
+      double mass;
       from_string(mass, line.substr(idx + 1));
 
       if (residue < 'A' || residue > 'Z') {

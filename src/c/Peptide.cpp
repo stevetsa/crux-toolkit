@@ -42,7 +42,7 @@ using namespace Crux;
 // the struct to be printed and read; possible fix for adding a field to the peptide
 struct PRINT_PEPTIDE_T {
   unsigned char length; ///< The length of the peptide
-  FLOAT_T peptide_mass;   ///< The peptide's mass.
+  double peptide_mass;   ///< The peptide's mass.
   vector<PeptideSrc*>* peptide_src; ///< a vector of peptide_src  
   MODIFIED_AA_T* modified_seq; ///< peptide sequence with modifications
 };
@@ -120,7 +120,7 @@ int Peptide::getSizeOf(){
  */
   Peptide::Peptide(
   unsigned char length,     ///< The length of the peptide -in
-  FLOAT_T peptide_mass,       ///< The neutral mass of the peptide -in
+  double peptide_mass,       ///< The neutral mass of the peptide -in
   Protein* parent_protein, ///< the parent_protein of this peptide -in
   int start_idx ///< the start index of this peptide in the protein sequence -in
   ) {
@@ -260,7 +260,7 @@ Peptide::~Peptide() {
  * sets the peptide mass
  */
 void Peptide::setPeptideMass(
-  FLOAT_T peptide_mass  ///< the mass of the peptide - in
+  double peptide_mass  ///< the mass of the peptide - in
   )
 {
   peptide_mass_ = peptide_mass;
@@ -270,7 +270,7 @@ void Peptide::setPeptideMass(
  * \returns the peptide mass
  */
 
-/*inline*/ FLOAT_T Peptide::getPeptideMass() {
+/*inline*/ double Peptide::getPeptideMass() {
 
   return peptide_mass_;
 }
@@ -279,7 +279,7 @@ void Peptide::setPeptideMass(
 /** 
  * \returns The mass of the peptide if it had charge "charge"
  */
-FLOAT_T Peptide::getChargedMass(
+double Peptide::getChargedMass(
  int charge ///< charge of peptide -in
  ) {
 
@@ -289,7 +289,7 @@ FLOAT_T Peptide::getChargedMass(
 /** 
  * \returns The m/z of the peptide if it had charge "charge"
  */
-FLOAT_T Peptide::getMz(
+double Peptide::getMz(
     int charge ///< the charge of peptide -in
     ) {
 
@@ -846,12 +846,12 @@ int Peptide::countModifiedAAs(){
 /**
  * \returns The mass of the given peptide as determined by the aa sequence.
  */
-FLOAT_T Peptide::calcSequenceMass(
+double Peptide::calcSequenceMass(
   const char* peptide, ///< the query peptide -in
   MASS_TYPE_T mass_type ///< isotopic mass type (AVERAGE, MONO) -in
   ) {
 
-  FLOAT_T peptide_mass = 0;
+  double peptide_mass = 0;
   int idx = 0;
   char amino;
   while(peptide[idx] != '\0'){
@@ -868,11 +868,11 @@ FLOAT_T Peptide::calcSequenceMass(
  * This appears to be the same as calc_sequence_mass??
  * \returns The mass of the given peptide.
  */
-FLOAT_T Peptide::calcMass(
+double Peptide::calcMass(
   MASS_TYPE_T mass_type ///< isotopic mass type (AVERAGE, MONO) -in
   ) {
 
-  FLOAT_T peptide_mass = 0;
+  double peptide_mass = 0;
   RESIDUE_ITERATOR_T * residue_iterator = new_residue_iterator(this);
   
   while(residue_iterator_has_next(residue_iterator)){
@@ -886,7 +886,7 @@ FLOAT_T Peptide::calcMass(
   return peptide_mass + MASS_H2O_MONO;
 }
 
-FLOAT_T Peptide::calcModifiedMass(
+double Peptide::calcModifiedMass(
   MASS_TYPE_T mass_type ///< isotopic mass type (AVERAGE, MONO) -in
   ) {
 
@@ -898,7 +898,7 @@ FLOAT_T Peptide::calcModifiedMass(
   AA_MOD_T** mod_list = NULL;
   int total_mods = get_all_aa_mod_list(&mod_list);
 
-  FLOAT_T peptide_mass = 0;
+  double peptide_mass = 0;
   for (int idx = 0; idx < length_; idx++) {
     MODIFIED_AA_T modified_aa = modified_seq_[idx];
     char aa = modified_aa_to_char(modified_aa);
@@ -922,7 +922,7 @@ FLOAT_T Peptide::calcModifiedMass(
 
 
 
-static FLOAT_T krokhin_index['Z'-'A'] = {
+static double krokhin_index['Z'-'A'] = {
   0.8, 0.0, -0.8, -0.5, 0.0, 10.5, -0.9, -1.3, 8.4, 0.0, 
   -1.9, 9.6, 5.8, -1.2, 0.0, 0.2, -0.9, -1.3, -0.8, 0.4,
   0.0, 5.0, 11.0, 0.0, 4.0};
@@ -930,9 +930,9 @@ static FLOAT_T krokhin_index['Z'-'A'] = {
 /*
  * Calculates the peptide hydrophobicity, as in Krokhin (2004).
  */
-FLOAT_T Peptide::calcKrokhinHydrophobicity() {
+double Peptide::calcKrokhinHydrophobicity() {
 
-  FLOAT_T krokhin = 0.0;
+  double krokhin = 0.0;
   RESIDUE_ITERATOR_T * residue_iterator = new_residue_iterator(this);
   while(residue_iterator_has_next(residue_iterator)){
     char c = residue_iterator_next(residue_iterator)-'A';

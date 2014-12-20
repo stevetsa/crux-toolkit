@@ -46,8 +46,8 @@ PeptideConstraint::PeptideConstraint(
 
   ENZYME_T enzyme, 
   DIGEST_T digest,
-  FLOAT_T min_mass, ///< the minimum mass -in
-  FLOAT_T max_mass, ///< the maximum mass -in
+  double min_mass, ///< the minimum mass -in
+  double max_mass, ///< the maximum mass -in
   int min_length, ///< the minimum length of peptide -in
   int max_length,  ///< the maximum lenth of peptide(max limit = 255) -in
   int num_mis_cleavage, ///< The maximum mis cleavage of the peptide -in
@@ -184,7 +184,7 @@ DIGEST_T PeptideConstraint::getDigest() {
  * sets the min mass of the peptide_constraint
  */
 void PeptideConstraint::setMinMass(
-  FLOAT_T min_mass  ///< the min mass of the peptide constraint - in
+  double min_mass  ///< the min mass of the peptide constraint - in
   )
 {
   min_mass_ = min_mass;
@@ -193,7 +193,7 @@ void PeptideConstraint::setMinMass(
 /**
  * \returns the min mass of the peptide_constraint
  */
-FLOAT_T PeptideConstraint::getMinMass() {
+double PeptideConstraint::getMinMass() {
 
   return min_mass_;
 }
@@ -202,7 +202,7 @@ FLOAT_T PeptideConstraint::getMinMass() {
  * sets the max mass of the peptide_constraint
  */
 void PeptideConstraint::setMaxMass(
-  FLOAT_T max_mass  ///< the max mass of the peptide constraint - in
+  double max_mass  ///< the max mass of the peptide constraint - in
   ) {
 
   max_mass_ = max_mass;
@@ -211,7 +211,7 @@ void PeptideConstraint::setMaxMass(
 /**
  * \returns the max mass of the peptide_constraint
  */
-FLOAT_T PeptideConstraint::getMaxMass() {
+double PeptideConstraint::getMaxMass() {
 
   return max_mass_;
 }

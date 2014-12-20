@@ -15,7 +15,7 @@
 /**
  * GLOBALS - TODO GET RID OF THESE!
  */
-FLOAT_T* mass_matrix = NULL;
+double* mass_matrix = NULL;
 int mass_matrix_size = -1;
 
 
@@ -174,10 +174,10 @@ void LinkedIonSeries::addIonBin(
   map<int, bool>& observed, ///< the observed bin vector -in/out
   int& ions, ///< the number of ions -in/out
   int& ions_bin, ///< the number of binned ions -in/out
-  FLOAT_T mz, ///< m/z of the ion
-  FLOAT_T bin_width, ///< bin-width
-  FLOAT_T min_mz, ///< max m/z for the range
-  FLOAT_T max_mz, ///< min m/z for the range
+  double mz, ///< m/z of the ion
+  double bin_width, ///< bin-width
+  double min_mz, ///< max m/z for the range
+  double max_mz, ///< min m/z for the range
   bool add_flanks ///< add flanks?
   ) {
 
@@ -191,7 +191,7 @@ void LinkedIonSeries::addIonBin(
     if (add_flanks) {
       
       bin_idx = bin_idx - 1;
-      FLOAT_T flank_mz = bin_idx * bin_width;
+      double flank_mz = bin_idx * bin_width;
       if (flank_mz >= min_mz) {
         ions++;
         if (observed.find(bin_idx) == observed.end()) {
@@ -217,9 +217,9 @@ void LinkedIonSeries::addIonBin(
  * range
  */
 int LinkedIonSeries::getObservableIons(
-  FLOAT_T min_mz, ///< the minimum m/z -in
-  FLOAT_T max_mz, ///< the maximum m/z -in
-  FLOAT_T bin_width, ///< the width of the bins -in
+  double min_mz, ///< the minimum m/z -in
+  double max_mz, ///< the maximum m/z -in
+  double bin_width, ///< the width of the bins -in
   int& ions_observable, ///<number of ions observable -out
   int& ions_observable_bin ///<number of bins observable -out
   ) {
@@ -254,9 +254,9 @@ int LinkedIonSeries::getObservableIons(
  * range
  */  
 int LinkedIonSeries::getObservableBYIons(
-  FLOAT_T min_mz, ///< the minimum m/z -in 
-  FLOAT_T max_mz, ///< the maximum m/z -in
-  FLOAT_T bin_width, ///< the width of the bins -in
+  double min_mz, ///< the minimum m/z -in 
+  double max_mz, ///< the maximum m/z -in
+  double bin_width, ///< the width of the bins -in
   int &by_observable, ///<number of ions observable -out
   int &by_observable_bin ///<number of bins observable -out
   ) {

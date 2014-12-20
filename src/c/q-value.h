@@ -24,18 +24,18 @@
 
 
 
-FLOAT_T* compute_decoy_qvalues(
-  FLOAT_T* target_scores,
+double* compute_decoy_qvalues(
+  double* target_scores,
   int      num_targets,
-  FLOAT_T* decoy_scores,
+  double* decoy_scores,
   int      num_decoys,
   bool     reverse,
-  FLOAT_T  pi_zero);
+  double  pi_zero);
 
-FLOAT_T* compute_qvalues_from_pvalues(
-  FLOAT_T* pvalues, 
+double* compute_qvalues_from_pvalues(
+  double* pvalues, 
   int      num_pvals,
-  FLOAT_T  pi_zero);
+  double  pi_zero);
 
 MatchCollection* run_qvalue(
   const char* psm_result_folder, 

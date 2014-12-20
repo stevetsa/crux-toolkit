@@ -141,14 +141,14 @@ void print_spectrum(Spectrum* spectrum, LinkedIonSeries& ion_series) {
 
       int total_by_ions = ion_series.getTotalBYIons();
       int matched_by_ions = XHHC_Scorer::getMatchedBYIons(spectrum, ion_series);
-      FLOAT_T frac_by_ions = (double)matched_by_ions / (double) total_by_ions;
+      double frac_by_ions = (double)matched_by_ions / (double) total_by_ions;
 
       carp(CARP_INFO, "total theoretical ions:%d",total_by_ions);
       carp(CARP_INFO,"theoretical ions matched:%d",matched_by_ions);
       carp(CARP_INFO,"frac theoretical ions matched:%f",frac_by_ions);
       carp(CARP_INFO,"npeaks:%d",spectrum->getNumPeaks());
 
-      FLOAT_T bin_width = get_double_parameter("mz-bin-width");
+      double bin_width = get_double_parameter("mz-bin-width");
       vector<LinkedPeptide>& ions = ion_series.getIons();
       
       map<Peak*, LinkedPeptide> matched;

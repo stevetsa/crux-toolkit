@@ -45,8 +45,8 @@ using namespace Crux;
 void get_ions_from_window(
   vector<LinkedPeptide>& filtered_ions, ///< filtered ions -out
   vector<LinkedPeptide>& all_ions, ///< all ions in the database -in
-  FLOAT_T precursor_mass, ///<precursor mass -in
-  FLOAT_T window, ///< window value -in
+  double precursor_mass, ///<precursor mass -in
+  double window, ///< window value -in
   WINDOW_TYPE_T window_type ///< window type -in
 );
 
@@ -79,8 +79,8 @@ int SearchForXLinks::xhhcSearchMain() {
   //Get parameters
   const char* ms2_file = get_string_parameter_pointer("ms2 file");
 
-  FLOAT_T precursor_window = get_double_parameter("precursor-window");
-  FLOAT_T precursor_window_weibull = get_double_parameter("precursor-window-weibull");
+  double precursor_window = get_double_parameter("precursor-window");
+  double precursor_window_weibull = get_double_parameter("precursor-window-weibull");
   WINDOW_TYPE_T precursor_window_type = 
     get_window_type_parameter("precursor-window-type");
   WINDOW_TYPE_T window_type_weibull = 
@@ -92,7 +92,7 @@ int SearchForXLinks::xhhcSearchMain() {
     (unsigned int)get_int_parameter("min-weibull-points");
   int max_ion_charge = get_max_ion_charge_parameter("max-ion-charge");
   int top_match = get_int_parameter("top-match");
-  FLOAT_T linker_mass = get_double_parameter("link mass");
+  double linker_mass = get_double_parameter("link mass");
   int scan_num = 0;
   SpectrumZState zstate;
  
@@ -128,7 +128,7 @@ int SearchForXLinks::xhhcSearchMain() {
   FilteredSpectrumChargeIterator* spectrum_iterator =
     new FilteredSpectrumChargeIterator(spectra);
  
-  FLOAT_T score;
+  double score;
  // best pvalues
 
   const char* target_filename = "search-for-xlinks.target.txt";
@@ -201,17 +201,17 @@ int SearchForXLinks::xhhcSearchMain() {
       carp(CARP_INFO,"count %d scan %d charge %d", search_count, scan_num, charge);
     search_count++;
 
-    //vector<pair<FLOAT_T, LinkedPeptide> > linked_scores;
-    //vector<pair<FLOAT_T, LinkedPeptide> > single_scores;
-    vector<pair<FLOAT_T, LinkedPeptide> > scores;
+    //vector<pair<double, LinkedPeptide> > linked_scores;
+    //vector<pair<double, LinkedPeptide> > single_scores;
+    vector<pair<double, LinkedPeptide> > scores;
 
     vector<LinkedPeptide> target_xpeptides;
     vector<LinkedPeptide> target_decoy_xpeptides;
     vector<LinkedPeptide> decoy_train_xpeptides;
     vector<LinkedPeptide> decoy_xpeptides;
 
-    FLOAT_T precursor_mz = spectrum->getPrecursorMz();
-    FLOAT_T precursor_mass = zstate.getNeutralMass(); 
+    double precursor_mz = spectrum->getPrecursorMz();
+    double precursor_mass = zstate.getNeutralMass(); 
  
 
 
@@ -292,7 +292,7 @@ int SearchForXLinks::xhhcSearchMain() {
 
     //use the decoy scores to build the estimator.
     // create arrays to pass to crux's weibull methods
-    FLOAT_T* linked_decoy_scores_array = new FLOAT_T[num_training_points];
+    double* linked_decoy_scores_array = new double[num_training_points];
 
     clock_t decoy_clock = clock();
     carp(CARP_DEBUG, "scoring training decoys...");
@@ -314,10 +314,10 @@ int SearchForXLinks::xhhcSearchMain() {
 
 
    // weibull parameters for candidates
-    FLOAT_T eta_linked = 0.0;
-    FLOAT_T beta_linked  = 0.0;
-    FLOAT_T shift_linked  = 0.0;
-    FLOAT_T correlation_linked  = 0.0;
+    double eta_linked = 0.0;
+    double beta_linked  = 0.0;
+    double shift_linked  = 0.0;
+    double correlation_linked  = 0.0;
 
     // fit weibull to decoys
 
@@ -335,7 +335,7 @@ int SearchForXLinks::xhhcSearchMain() {
     // sort scores
     
     carp(CARP_DEBUG, "sorting %u scores", scores.size());
-    sort(scores.begin(), scores.end(), greater<pair<FLOAT_T, LinkedPeptide> >());
+    sort(scores.begin(), scores.end(), greater<pair<double, LinkedPeptide> >());
     carp(CARP_INFO, "done sorting");
     int ndecoys = 0;
     int ntargets = 0;
@@ -402,8 +402,8 @@ int SearchForXLinks::xhhcSearchMain() {
         LinkedIonSeries ion_series(charge);
         ion_series.addLinkedIons(scores[score_index].second);
 
-        FLOAT_T ion_current_observed;
-        FLOAT_T ion_current_total = spectrum->getTotalEnergy();
+        double ion_current_observed;
+        double ion_current_total = spectrum->getTotalEnergy();
         int by_total = ion_series.getTotalBYIons();
         int by_observable;
         int by_observable2;
@@ -474,8 +474,8 @@ int SearchForXLinks::xhhcSearchMain() {
 void get_ions_from_window(
   vector<LinkedPeptide>& filtered_ions, ///< filtered ions -out
   vector<LinkedPeptide>& all_ions, ///< all ions in the database -in
-  FLOAT_T precursor_mass, ///<precursor mass -in
-  FLOAT_T window, ///< window value -in
+  double precursor_mass, ///<precursor mass -in
+  double window, ///< window value -in
   WINDOW_TYPE_T window_type ///< window type -in
   ) {
 

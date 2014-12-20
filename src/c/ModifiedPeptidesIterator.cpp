@@ -68,7 +68,7 @@ ModifiedPeptidesIterator::ModifiedPeptidesIterator(
 ) {
 
   peptide_source_ = new GeneratePeptidesIterator(
-    pair<FLOAT_T,FLOAT_T>(min_mass, max_mass),
+    pair<double,double>(min_mass, max_mass),
     is_decoy,
     dbase, index);
 
@@ -94,9 +94,9 @@ ModifiedPeptidesIterator::~ModifiedPeptidesIterator(){
  * \returns A pair with the minimum and maximum mass for generating
  * peptides.  
  */
-pair<FLOAT_T,FLOAT_T>ModifiedPeptidesIterator::getMinMaxMass()
+pair<double,double>ModifiedPeptidesIterator::getMinMaxMass()
 {
-  return pair<FLOAT_T,FLOAT_T>(get_double_parameter("min-mass"),
+  return pair<double,double>(get_double_parameter("min-mass"),
                                get_double_parameter("max-mass"));
 }
 
@@ -105,7 +105,7 @@ pair<FLOAT_T,FLOAT_T>ModifiedPeptidesIterator::getMinMaxMass()
  * window around the given m/z or mass.
  * \returns A pair with the minimum and maximum masses to search.
  */
-pair<FLOAT_T,FLOAT_T> ModifiedPeptidesIterator::getMinMaxMass(
+pair<double,double> ModifiedPeptidesIterator::getMinMaxMass(
   double mz, ///< precursor mz for peptide window
   SpectrumZState& zstate, ///< charge/mass pair for peptide window
   PEPTIDE_MOD_T* pmod) ///< peptide mod with the delta mass for peptides
@@ -137,7 +137,7 @@ pair<FLOAT_T,FLOAT_T> ModifiedPeptidesIterator::getMinMaxMass(
   } else {
     carp(CARP_FATAL,"Invalid window type");
   }
-  pair<FLOAT_T,FLOAT_T> min_max(min_mass, max_mass);
+  pair<double,double> min_max(min_mass, max_mass);
   return min_max;
 }
 

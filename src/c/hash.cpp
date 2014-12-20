@@ -23,7 +23,7 @@ static const unsigned int sizes[] = {
 };
 
 static const unsigned int sizes_count = sizeof(sizes) / sizeof(sizes[0]);
-static const FLOAT_T load_factor = 0.65;
+static const double load_factor = 0.65;
 
 /**
  * \struct record
@@ -130,7 +130,7 @@ HASH_T* new_hash(
   HASH_T* h;
   unsigned int i, sind = 0;
   
-  capacity = (unsigned int)((FLOAT_T)capacity / load_factor);
+  capacity = (unsigned int)((double)capacity / load_factor);
   
   for (i=0; i < sizes_count; i++) 
     if (sizes[i] > capacity) { sind = i; break; }

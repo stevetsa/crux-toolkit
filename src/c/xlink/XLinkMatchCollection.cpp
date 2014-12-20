@@ -16,22 +16,22 @@
 #include <iostream>
 
 
-static const FLOAT_T MIN_XCORR_SHIFT = -5.0;
-static const FLOAT_T MAX_XCORR_SHIFT  = 5.0;
+static const double MIN_XCORR_SHIFT = -5.0;
+static const double MAX_XCORR_SHIFT  = 5.0;
 //#define CORR_THRESHOLD 0.995   // Must achieve this correlation, else punt.
-static const FLOAT_T CORR_THRESHOLD = 0.0;       // For now, turn off the threshold.
-static const FLOAT_T XCORR_SHIFT = 0.05;
+static const double CORR_THRESHOLD = 0.0;       // For now, turn off the threshold.
+static const double XCORR_SHIFT = 0.05;
 
 using namespace std;
 
 void get_min_max_mass(
-  FLOAT_T precursor_mz, 
+  double precursor_mz, 
   SpectrumZState& zstate, 
   int isotope,
-  FLOAT_T window,
+  double window,
   WINDOW_TYPE_T precursor_window_type,
-  FLOAT_T& min_mass, 
-  FLOAT_T& max_mass) {
+  double& min_mass, 
+  double& max_mass) {
 
   //cerr <<"mz: "
   //     <<precursor_mz
@@ -60,12 +60,12 @@ void get_min_max_mass(
 }
 
 void get_min_max_mass(
-  FLOAT_T precursor_mz, 
+  double precursor_mz, 
   SpectrumZState& zstate,
   int isotope,
   bool use_decoy_window,
-  FLOAT_T& min_mass, 
-  FLOAT_T& max_mass) {
+  double& min_mass, 
+  double& max_mass) {
   
   if (use_decoy_window) {
     get_min_max_mass(precursor_mz,
@@ -145,8 +145,8 @@ XLinkMatchCollection::XLinkMatchCollection(
   
   carp(CARP_DEBUG, "XLinkMatchCollection(...)");
 
-  FLOAT_T min_mass = get_double_parameter("min-mass");
-  FLOAT_T max_mass = get_double_parameter("max-mass");
+  double min_mass = get_double_parameter("min-mass");
+  double max_mass = get_double_parameter("max-mass");
 
   addCandidates(
     min_mass, 
@@ -163,8 +163,8 @@ XLinkMatchCollection::XLinkMatchCollection(
  * Constructor that finds all candidates within a mass range
  */
 void XLinkMatchCollection::addCandidates(
-  FLOAT_T min_mass, ///< min mass
-  FLOAT_T max_mass, ///< max mass
+  double min_mass, ///< min mass
+  double max_mass, ///< max mass
   XLinkBondMap& bondmap, ///< allowable links
   Index* index, ///< protein index
   Database* database, ///< protein database
@@ -221,7 +221,7 @@ void XLinkMatchCollection::addCandidates(
  * Constructor for finding all candidates within a mass range
  */
 XLinkMatchCollection::XLinkMatchCollection(
-  FLOAT_T precursor_mz,  ///< precursor m/z
+  double precursor_mz,  ///< precursor m/z
   SpectrumZState& zstate, ///< z-state
   XLinkBondMap& bondmap, ///< allowable links
   Index* index,  ///< protein index
@@ -237,8 +237,8 @@ XLinkMatchCollection::XLinkMatchCollection(
   setZState(zstate);  
 
 
-  FLOAT_T min_mass;
-  FLOAT_T max_mass;
+  double min_mass;
+  double max_mass;
   vector<int> isotopes = get_int_vector_parameter("isotope-windows");
   for (int idx = 0; idx < isotopes.size();idx++) {
     get_min_max_mass(precursor_mz, zstate, isotopes[idx], use_decoy_window, min_mass, max_mass);
@@ -341,10 +341,10 @@ void XLinkMatchCollection::fitWeibull() {
   beta_=0;
   correlation_=0;
 
-  FLOAT_T* xcorrs = extractScores(XCORR);
+  double* xcorrs = extractScores(XCORR);
 // reverse sort the scores
 
-  std::sort(xcorrs, xcorrs + getMatchTotal(), greater<FLOAT_T>());
+  std::sort(xcorrs, xcorrs + getMatchTotal(), greater<double>());
 
   double fraction_to_fit = get_double_parameter("fraction-top-scores-to-fit");
   int num_tail_samples = (int)(getMatchTotal() * fraction_to_fit);
@@ -401,14 +401,14 @@ int XLinkMatchCollection::getCharge() {
 /**
  *\returns the precursor m/z
  */
-FLOAT_T XLinkMatchCollection::getPrecursorMZ() {
+double XLinkMatchCollection::getPrecursorMZ() {
   return precursor_mz_;
 }
 
 /**
  * \returns the neutral mass of the collection
  */
-FLOAT_T XLinkMatchCollection::getSpectrumNeutralMass() {
+double XLinkMatchCollection::getSpectrumNeutralMass() {
   return zstate_.getNeutralMass();
 }
 

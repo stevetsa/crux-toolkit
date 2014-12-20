@@ -101,18 +101,18 @@ XLinkScorer::~XLinkScorer() {
 /**
  * \returns the xcorr score for the candidate and sets the sp if requested
  */
-FLOAT_T XLinkScorer::scoreCandidate(
+double XLinkScorer::scoreCandidate(
   XLinkMatch* candidate ///< candidate to score
   ) {
 
   candidate->predictIons(ion_series_xcorr_, charge_);
-  FLOAT_T xcorr = scorer_xcorr_->scoreSpectrumVIonSeries(spectrum_, ion_series_xcorr_);
+  double xcorr = scorer_xcorr_->scoreSpectrumVIonSeries(spectrum_, ion_series_xcorr_);
   candidate->setScore(XCORR, xcorr);
 
   if (compute_sp_) {
 
     candidate->predictIons(ion_series_sp_, charge_);
-    FLOAT_T sp = scorer_sp_->scoreSpectrumVIonSeries(spectrum_, ion_series_sp_);
+    double sp = scorer_sp_->scoreSpectrumVIonSeries(spectrum_, ion_series_sp_);
     
     candidate->setScore(SP, sp);
     candidate->setBYIonInfo(scorer_sp_);
@@ -125,11 +125,11 @@ FLOAT_T XLinkScorer::scoreCandidate(
     carp(CARP_DEBUG, "ions first");
     xlink_match->predictIons(ion_series_xcorr_, charge_, true);
     carp(CARP_DEBUG, "scoring first");
-    FLOAT_T xcorr1 = scorer_xcorr_->scoreSpectrumVIonSeries(spectrum_, ion_series_xcorr_);
+    double xcorr1 = scorer_xcorr_->scoreSpectrumVIonSeries(spectrum_, ion_series_xcorr_);
     carp(CARP_DEBUG, "first:%f", xcorr1);
     xlink_match->predictIons(ion_series_xcorr_, charge_, false);
     carp(CARP_DEBUG, "scoring second");
-    FLOAT_T xcorr2 = scorer_xcorr_->scoreSpectrumVIonSeries(spectrum_, ion_series_xcorr_); 
+    double xcorr2 = scorer_xcorr_->scoreSpectrumVIonSeries(spectrum_, ion_series_xcorr_); 
     carp(CARP_DEBUG, "second:%f", xcorr2); 
     candidate->setScore(XCORR_FIRST, xcorr1);
     candidate->setScore(XCORR_SECOND, xcorr2);

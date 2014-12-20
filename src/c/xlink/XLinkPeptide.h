@@ -20,16 +20,16 @@
 
 class XLinkPeptide : public XLinkMatch {
  protected:
-  static FLOAT_T linker_mass_; ///< contains the link mass
+  static double linker_mass_; ///< contains the link mass
   static std::set<Crux::Peptide*> allocated_peptides_; ///< tracks the peptides that have been allocated during the candidate finding step
   std::vector<XLinkablePeptide> linked_peptides_; ///< contains the two peptides in the match
   std::vector<int> link_pos_idx_; ///< contains the link positions for the two peptides
   
   bool mass_calculated_[NUMBER_MASS_TYPES]; ///< indicator determining whether the mass has been calculated already
-  FLOAT_T mass_[NUMBER_MASS_TYPES]; ///< hold the mass of the xlink peptide
+  double mass_[NUMBER_MASS_TYPES]; ///< hold the mass of the xlink peptide
   
   bool is_decoy_; ///< indicates whether the peptide is a decoy
-  static FLOAT_T pmin_;  ///< contains the minimum mass that a peptide from a crosslink product can take
+  static double pmin_;  ///< contains the minimum mass that a peptide from a crosslink product can take
   static bool pmin_set_; ///< has the pmin been set?
   /**
    * \returns the link position within each peptide
@@ -91,21 +91,21 @@ class XLinkPeptide : public XLinkMatch {
    * sets the static linker mass variable
    */
   static void setLinkerMass(
-    FLOAT_T linker_mass ///< linker mass
+    double linker_mass ///< linker mass
   );
   
   /**
    * \returns the linker mass from the static variable
    */
-  static FLOAT_T getLinkerMass();
+  static double getLinkerMass();
 
   /**
    * adds crosslink candidates to the XLinkMatchCollection using
    * the passed in iterator for the 1st peptide
    */
   static void addCandidates(
-    FLOAT_T min_mass, ///< min mass of crosslinks
-    FLOAT_T max_mass, ///< max mass of crosslinks
+    double min_mass, ///< min mass of crosslinks
+    double max_mass, ///< max mass of crosslinks
     XLinkBondMap& bondmap, ///< valid crosslink map
     Index* index, ///< protein index
     Database* database, ///< protein database
@@ -119,8 +119,8 @@ class XLinkPeptide : public XLinkMatch {
    * adds crosslink candidates by iterating through all possible masses
    */
   static void addCandidates(
-    FLOAT_T min_mass, ///< min mass of crosslinks
-    FLOAT_T max_mass, ///< max mass of crosslinks
+    double min_mass, ///< min mass of crosslinks
+    double max_mass, ///< max mass of crosslinks
     XLinkBondMap& bondmap, ///< valid crosslink map
     Index* index,  ///< protein index
     Database* database, ///< protein database
@@ -156,7 +156,7 @@ class XLinkPeptide : public XLinkMatch {
   /**
    * \returns the mass of the xlink peptide
    */
-  virtual FLOAT_T calcMass(
+  virtual double calcMass(
     MASS_TYPE_T mass_type ///< MONO or AVERAGE
   );
 

@@ -17,9 +17,9 @@
 
 using namespace std;
 
-FLOAT_T XLinkPeptide::linker_mass_ = 0;
+double XLinkPeptide::linker_mass_ = 0;
 set<Crux::Peptide*> XLinkPeptide::allocated_peptides_;
-FLOAT_T XLinkPeptide::pmin_ = 0;
+double XLinkPeptide::pmin_ = 0;
 bool XLinkPeptide::pmin_set_ = false;
 
 XLinkPeptide::XLinkPeptide() : XLinkMatch() {
@@ -109,7 +109,7 @@ void XLinkPeptide::doSort() {
  * sets the static linker mass variable
  */
 void XLinkPeptide::setLinkerMass(
-  FLOAT_T linker_mass ///< linker mass
+  double linker_mass ///< linker mass
   ) {
   linker_mass_=linker_mass;
 }
@@ -117,7 +117,7 @@ void XLinkPeptide::setLinkerMass(
 /**
  * \returns the linker mass
  */
-FLOAT_T XLinkPeptide::getLinkerMass() {
+double XLinkPeptide::getLinkerMass() {
   return linker_mass_;
 }
 
@@ -281,8 +281,8 @@ void XLinkPeptide::addLinkablePeptides(
  * adds crosslink candidates by iterating through all possible masses
  */
 void XLinkPeptide::addCandidates(
-  FLOAT_T min_mass, ///< min mass of crosslink
-  FLOAT_T max_mass, ///< max mass of crosslinks
+  double min_mass, ///< min mass of crosslink
+  double max_mass, ///< max mass of crosslinks
   XLinkBondMap& bondmap, ///< valid crosslink map
   Index* index,  ///< protein index
   Database* database, ///< protein database
@@ -292,14 +292,14 @@ void XLinkPeptide::addCandidates(
   ) {
 
   if (!pmin_set_) {
-    FLOAT_T min_length_mass = get_mass_amino_acid('G', MONO) * 
-      (FLOAT_T)get_int_parameter("min-length") + 
+    double min_length_mass = get_mass_amino_acid('G', MONO) * 
+      (double)get_int_parameter("min-length") + 
       MASS_H2O_MONO;
-    pmin_ = max((FLOAT_T)get_double_parameter("min-mass"), min_length_mass);
+    pmin_ = max((double)get_double_parameter("min-mass"), min_length_mass);
     pmin_set_ = true;
   }
-  FLOAT_T peptide1_min_mass = pmin_;
-  FLOAT_T peptide1_max_mass = max_mass-pmin_-linker_mass_;
+  double peptide1_min_mass = pmin_;
+  double peptide1_max_mass = max_mass-pmin_-linker_mass_;
 
   for (int mod_idx1 = 0; mod_idx1 < num_peptide_mods; mod_idx1++) {
     PEPTIDE_MOD_T* peptide_mod1 = peptide_mods[mod_idx1];
@@ -317,8 +317,8 @@ void XLinkPeptide::addCandidates(
  * the passed in iterator for the 1st peptide
  */
 void XLinkPeptide::addCandidates(
-  FLOAT_T min_mass, ///< min mass of crosslinks
-  FLOAT_T max_mass, ///< max mass of crosslinks
+  double min_mass, ///< min mass of crosslinks
+  double max_mass, ///< max mass of crosslinks
   XLinkBondMap& bondmap, ///< valid crosslink map
   Index* index, ///< protein index
   Database* database, ///< protein database
@@ -339,8 +339,8 @@ void XLinkPeptide::addCandidates(
     string seq1_string(seq1);
     std::free(seq1);
 
-    FLOAT_T peptide2_min_mass = min_mass - pep1.getMass() - linker_mass_;
-    FLOAT_T peptide2_max_mass = max_mass - pep1.getMass() - linker_mass_;
+    double peptide2_min_mass = min_mass - pep1.getMass() - linker_mass_;
+    double peptide2_max_mass = max_mass - pep1.getMass() - linker_mass_;
 
     assert (peptide2_min_mass <= peptide2_max_mass);
   
@@ -350,7 +350,7 @@ void XLinkPeptide::addCandidates(
       while (iter2.hasNext()) {
         XLinkablePeptide pep2 = iter2.next();
         if (visited.find(pep2) == visited.end()) {
-          FLOAT_T mass = pep1.getMass() + pep2.getMass() + linker_mass_;
+          double mass = pep1.getMass() + pep2.getMass() + linker_mass_;
     
           if ((mass >= min_mass) && (mass <= max_mass)) {
     
@@ -432,7 +432,7 @@ string XLinkPeptide::getSequenceString() {
 /**
  * \returns the mass of the xlink peptide
  */
-FLOAT_T XLinkPeptide::calcMass(MASS_TYPE_T mass_type) {
+double XLinkPeptide::calcMass(MASS_TYPE_T mass_type) {
   return linked_peptides_[0].getMass(mass_type) + 
     linked_peptides_[1].getMass(mass_type) + 
     linker_mass_;
@@ -469,7 +469,7 @@ void XLinkPeptide::predictIons(
   char* seq = NULL;
    MODIFIED_AA_T* mod_seq = NULL;
   int link_pos;
-  FLOAT_T mod_mass;
+  double mod_mass;
 
   if (first) {
     carp(CARP_DEBUG, "predicting first peptide");
@@ -503,7 +503,7 @@ void XLinkPeptide::predictIons(
     unsigned int cleavage_idx = ion->getCleavageIdx(); 
     if (ion->isForwardType()) { 
       if (cleavage_idx > (unsigned int)link_pos) {
-        FLOAT_T mass = ion->getMassFromMassZ() + mod_mass;
+        double mass = ion->getMassFromMassZ() + mod_mass;
         ion->setMassZFromMass(mass); 
         if (isnan(ion->getMassZ())) { 
           carp(CARP_FATAL, "NAN3"); 
@@ -511,7 +511,7 @@ void XLinkPeptide::predictIons(
       } 
     } else { 
       if (cleavage_idx >= (strlen(seq)-(unsigned int)link_pos)) { 
-        FLOAT_T mass = ion->getMassFromMassZ() + mod_mass;
+        double mass = ion->getMassFromMassZ() + mod_mass;
         ion->setMassZFromMass(mass); 
         if (isnan(ion->getMassZ())) { 
           carp(CARP_FATAL, "NAN4"); 
@@ -555,7 +555,7 @@ void XLinkPeptide::predictIons(
 
     if (ion->isForwardType()) {
       if (cleavage_idx > (unsigned int)getLinkPos(0)) {
-        FLOAT_T mass = ion->getMassFromMassZ();
+        double mass = ion->getMassFromMassZ();
         mass += linked_peptides_[1].getMass(fragment_mass_type) + linker_mass_;
         ion->setMassZFromMass(mass);
         if (isnan(ion->getMassZ())) {
@@ -564,7 +564,7 @@ void XLinkPeptide::predictIons(
       }
     } else {
       if (cleavage_idx >= (strlen(seq1) - (unsigned int)getLinkPos(0))) {
-        FLOAT_T mass = ion->getMassFromMassZ();
+        double mass = ion->getMassFromMassZ();
         mass += linked_peptides_[1].getMass(fragment_mass_type) + linker_mass_;
         ion->setMassZFromMass(mass);
         if (isnan(ion->getMassZ())) {
@@ -599,7 +599,7 @@ void XLinkPeptide::predictIons(
     unsigned int cleavage_idx = ion->getCleavageIdx();
     if (ion->isForwardType()) {
       if (cleavage_idx > (unsigned int)getLinkPos(1)) {
-       FLOAT_T mass = ion->getMassFromMassZ();
+       double mass = ion->getMassFromMassZ();
        mass += linked_peptides_[0].getMass(fragment_mass_type) + linker_mass_;
        ion->setMassZFromMass(mass);
         if (isnan(ion->getMassZ())) {
@@ -608,7 +608,7 @@ void XLinkPeptide::predictIons(
       }
     } else {
       if (cleavage_idx >= (strlen(seq2)-(unsigned int)getLinkPos(1))) {
-       FLOAT_T mass = ion->getMassFromMassZ();
+       double mass = ion->getMassFromMassZ();
        mass += linked_peptides_[0].getMass(fragment_mass_type) + linker_mass_;
        ion->setMassZFromMass(mass);
         if (isnan(ion->getMassZ())) {

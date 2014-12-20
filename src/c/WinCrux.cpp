@@ -199,10 +199,10 @@ char *mkdtemp(char *temp) {
 
 }
 
-int isinf(FLOAT_T x) {
+int isinf(double x) {
   return !_finite(x);
 }
 
-float log2(FLOAT_T x) {
+double log2(double x) {
   return log(x) / log(2.0);
 }

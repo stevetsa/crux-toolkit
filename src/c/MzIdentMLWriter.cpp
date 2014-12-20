@@ -505,7 +505,7 @@ SpectrumIdentificationItemPtr MzIdentMLWriter::getSpectrumIdentificationItem(
     "SII_"+boost::lexical_cast<string>(sii_idx_++)));
   siip->chargeState = zstate.getCharge();
   siip->experimentalMassToCharge = zstate.getMZ();
-  siip->calculatedMassToCharge = FLOAT_T(crux_peptide->getPeptideMass()+MASS_PROTON)/(double)charge_state;
+  siip->calculatedMassToCharge = double(crux_peptide->getPeptideMass()+MASS_PROTON)/(double)charge_state;
 
   addSpectrumScores(spectrum_match, siip);
   siip->passThreshold = true;
@@ -523,7 +523,7 @@ void MzIdentMLWriter::addSpectrumScores(
        iter != spectrum_match->scoresEnd();
        ++iter) {
     SCORER_TYPE_T score_type = iter->first;
-    FLOAT_T score = iter->second;
+    double score = iter->second;
     CVID cvparam_type = getScoreCVID(score_type);
     if (cvparam_type != CVID_Unknown) {
       CVParam cvparam(cvparam_type, score);
@@ -688,7 +688,7 @@ void MzIdentMLWriter::addMatch(
 
   siip->chargeState = zstate.getCharge();
   siip->experimentalMassToCharge = zstate.getMZ();
-  siip->calculatedMassToCharge = FLOAT_T((peptide->getPeptideMass()+MASS_PROTON)/(double)zstate.getCharge());
+  siip->calculatedMassToCharge = double((peptide->getPeptideMass()+MASS_PROTON)/(double)zstate.getCharge());
 
   if (collection->getScoredType(PERCOLATOR_SCORE)) {
     siip->rank = match->getRank(PERCOLATOR_SCORE);
@@ -726,7 +726,7 @@ void MzIdentMLWriter::addProteinScores(
         score_type == BY_IONS_MATCHED || score_type == BY_IONS_TOTAL) {
       continue;
     }
-    FLOAT_T score = iter->second;
+    double score = iter->second;
     CVID cvparam_type = getScoreCVID(score_type);
     if (cvparam_type != CVID_Unknown) {
       CVParam cvparam(cvparam_type, score);
@@ -761,7 +761,7 @@ void MzIdentMLWriter::addPeptideScores(
         score_type == BY_IONS_MATCHED || score_type == BY_IONS_TOTAL) {
       continue;
     }
-    FLOAT_T score = iter->second;
+    double score = iter->second;
     CVID cvparam_type = getScoreCVID(score_type);
     if (cvparam_type != CVID_Unknown) {
       CVParam cvparam(cvparam_type, score);

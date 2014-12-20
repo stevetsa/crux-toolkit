@@ -123,7 +123,7 @@ void PercolatorAdapter::psmScoresToMatchCollection(
     }
     Crux::Peptide* peptide = extractPeptide(psm, charge_state, is_decoy);
 
-    FLOAT_T obsMass = (massIndex < 0) ?
+    double obsMass = (massIndex < 0) ?
       0 : psm->getFeatures()[massIndex] * normDiv[massIndex] + normSub[massIndex];
     SpectrumZState zState;
     zState.setSinglyChargedMass(obsMass, charge_state);
@@ -249,7 +249,7 @@ void PercolatorAdapter::addPeptideScores() {
 
     PSMDescription* psm = score_itr->pPSM;
     string sequence;
-    FLOAT_T peptide_mass;
+    double peptide_mass;
     MODIFIED_AA_T* mod_seq = getModifiedAASequence(psm, sequence, peptide_mass);
 
     // Set scores
@@ -351,7 +351,7 @@ Crux::Peptide* PercolatorAdapter::extractPeptide(
   ) {
 
   string seq;
-  FLOAT_T peptide_mass;
+  double peptide_mass;
   
   MODIFIED_AA_T* mod_seq = getModifiedAASequence(psm, seq, peptide_mass);
 
@@ -408,7 +408,7 @@ Crux::Peptide* PercolatorAdapter::extractPeptide(
 MODIFIED_AA_T* PercolatorAdapter::getModifiedAASequence(
   PSMDescription* psm, ///< psm -in
   string& seq, ///< sequence -out
-  FLOAT_T& peptide_mass ///< calculated mass of peptide with modifications -out
+  double& peptide_mass ///< calculated mass of peptide with modifications -out
   ) {
 
   std::stringstream ss_seq;

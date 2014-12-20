@@ -64,7 +64,7 @@ class XLinkScorer {
   /**
    * \returns the xcorr score and sets the xcorr and sp scores to the match
    */
-  FLOAT_T scoreCandidate(XLinkMatch* candidate);
+  double scoreCandidate(XLinkMatch* candidate);
 
 
 };

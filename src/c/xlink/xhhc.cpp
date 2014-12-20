@@ -232,12 +232,12 @@ void find_all_precursor_ions(
 
 // modified version of crux's estimate_weibull_parameters_from_xcorrs
 bool hhc_estimate_weibull_parameters_from_xcorrs(
-  FLOAT_T* scores,
+  double* scores,
   int num_scores,
-  FLOAT_T* eta,
-  FLOAT_T* beta,
-  FLOAT_T* shift,
-  FLOAT_T* correlation,
+  double* eta,
+  double* beta,
+  double* shift,
+  double* correlation,
   Spectrum* spectrum,
   int charge
   ){
@@ -252,7 +252,7 @@ bool hhc_estimate_weibull_parameters_from_xcorrs(
   }
 
   // reverse sort the first num_samples of them
-  sort(scores, scores + num_scores, greater<FLOAT_T>());
+  sort(scores, scores + num_scores, greater<double>());
 
   // use only a fraction of the samples, the high-scoring tail
   // this parameter is hidden from the user

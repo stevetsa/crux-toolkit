@@ -21,7 +21,7 @@ using namespace std;
 /**
  * Starting location for zeroth m/z bin.
  */
-static const FLOAT_T SMART_MZ_OFFSET = 0.40;
+static const double SMART_MZ_OFFSET = 0.40;
 
 /*
  * Global variables
@@ -4786,7 +4786,7 @@ int get_num_fixed_mods(){
  * \brief Set the mass_change field in an AA_MOD based on a line from
  * a parameter file.
  *
- * Assumes that the line points to a FLOAT_T followed by separator.
+ * Assumes that the line points to a double followed by separator.
  * Converts the number and sets the appropriate field in the mod.
  * Dies with error if line does not point to a number.  Returns a
  * pointer to the character after the first instance of separator or
@@ -5014,7 +5014,7 @@ int read_mods(
       return cur_index;
     }
 
-    // get the FLOAT_T and check for ok-ness
+    // get the double and check for ok-ness
     token = read_mass_change(cur_mod, token, ':', max_precision);
 
     // fill in values for standard mods

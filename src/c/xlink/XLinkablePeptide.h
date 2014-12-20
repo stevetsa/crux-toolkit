@@ -186,7 +186,7 @@ class XLinkablePeptide {
   /**
    * \returns the mass of the xlinkable peptide
    */
-  FLOAT_T getMass(
+  double getMass(
     MASS_TYPE_T mass_type=MONO ///< MONO or AVERAGE
   ) const;
 

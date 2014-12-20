@@ -399,7 +399,7 @@ void TideSearchApplication::search(
 
   // cycle through spectrum-charge pairs, sorted by neutral mass
   unsigned sc_index = 0;
-  FLOAT_T sc_total = (FLOAT_T)spec_charges->size();
+  double sc_total = (double)spec_charges->size();
   int print_interval = get_int_parameter("print-search-progress");
   for (vector<SpectrumCollection::SpecCharge>::const_iterator sc = spec_charges->begin();
        sc != spec_charges->end();

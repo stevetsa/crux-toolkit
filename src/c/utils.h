@@ -16,13 +16,6 @@
 #include <ieeefp.h>
 #endif*/
 
-// Macro allowing us to build using floats or double
-#ifdef USE_DOUBLES
-typedef double FLOAT_T;
-#else
-typedef float FLOAT_T;
-#endif
-
 typedef int VERBOSE_T;
 static const int INVALID_VERBOSE = 0;
 static const int QUIET_VERBOSE = 1;

@@ -17,7 +17,7 @@
 
 int SpectrumRecordWriter::scanCounter_ = 0;
 int SpectrumRecordWriter::removePrecursorPeak_ = 0;
-FLOAT_T SpectrumRecordWriter::removePrecursorTolerance_ = 0;
+double SpectrumRecordWriter::removePrecursorTolerance_ = 0;
 
 /**
  * Converts a spectra file to spectrumrecords format for use with tide-search.
@@ -133,7 +133,7 @@ void SpectrumRecordWriter::addPeaks(
   uint64_t intensity_sum = 0;
 
   for (PeakIterator i = s->begin(); i != s->end(); ++i) {
-    FLOAT_T peakMz = (*i)->getLocation();
+    double peakMz = (*i)->getLocation();
     if (removePrecursorPeak(*spectrum, peakMz)) {
       continue;
     }

@@ -353,29 +353,29 @@ TValue DelimitedFileReader::getValue(
 }
 
 /**
- * \returns the FLOAT_T value of a cell, checks for infinity
+ * \returns the double value of a cell, checks for infinity
  */
-FLOAT_T DelimitedFileReader::getFloat(
+double DelimitedFileReader::getFloat(
   unsigned int col_idx ///< the column index
   ) {
   
   const string& string_ans = getString(col_idx);
   if (string_ans == "Inf") {
 
-    return numeric_limits<FLOAT_T>::infinity();
+    return numeric_limits<double>::infinity();
   } else if (string_ans == "-Inf") {
 
-    return -numeric_limits<FLOAT_T>::infinity();
+    return -numeric_limits<double>::infinity();
   }
   else {
-    return getValue<FLOAT_T>(col_idx);
+    return getValue<double>(col_idx);
   }
 }
 
 /** 
- * \returns the FLOAT_T value of a cell, checks for infinity.
+ * \returns the double value of a cell, checks for infinity.
  */
-FLOAT_T DelimitedFileReader::getFloat(
+double DelimitedFileReader::getFloat(
     const char* column_name ///<the column name
 ) {
 

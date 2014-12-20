@@ -63,8 +63,8 @@ class SelfLoopPeptide : public XLinkMatch {
    * Adds Self-loop candidates to the collection
    */
   static void addCandidates(
-    FLOAT_T min_mass, ///< min mass
-    FLOAT_T max_mass, ///< max mass
+    double min_mass, ///< min mass
+    double max_mass, ///< max mass
     XLinkBondMap& bondmap,  ///< valid link sites
     Index* index, ///< protein index
     Database* database, ///< protein database
@@ -86,7 +86,7 @@ class SelfLoopPeptide : public XLinkMatch {
   /**
    * \returns the mass of the self-loop peptide
    */
-  virtual FLOAT_T calcMass(
+  virtual double calcMass(
     MASS_TYPE_T mass_type ///< AVERAGE or MONO
   );
 

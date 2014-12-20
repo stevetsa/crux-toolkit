@@ -25,15 +25,15 @@ class XLinkMatchCollection : public MatchCollection {
   bool include_linear_peptides_; ///< Include linear peptides 
   bool include_self_loops_; ///< include self loops
   int scan_; ///< scan number of the collection
-  FLOAT_T precursor_mz_; ///< precursor m/z
+  double precursor_mz_; ///< precursor m/z
   Crux::Spectrum* spectrum_; ///< spectrum object
 
   /**
    * Adds all of the possible candidates given the mass range
    */
   void addCandidates(
-    FLOAT_T min_mass, ///< minimum mass
-    FLOAT_T max_mass, ///< maximum mass
+    double min_mass, ///< minimum mass
+    double max_mass, ///< maximum mass
     XLinkBondMap& bondmap, ///< map of valid links
     Index* index, ///< protein index
     Database* database, ///< protein database
@@ -70,7 +70,7 @@ class XLinkMatchCollection : public MatchCollection {
    * Constructor for finding all candidates within a mass range
    */
   XLinkMatchCollection(
-    FLOAT_T precursor_mz, ///< precursor m/z
+    double precursor_mz, ///< precursor m/z
     SpectrumZState& zstate, ///< z-state
     XLinkBondMap& bondmap, ///< allowable links
     Index* index, ///< protein index
@@ -155,12 +155,12 @@ class XLinkMatchCollection : public MatchCollection {
   /**
    * \returns the precursor m/z
    */
-  FLOAT_T getPrecursorMZ();
+  double getPrecursorMZ();
   
   /**
    * \returns the neutral mass of the collection
    */
-  FLOAT_T getSpectrumNeutralMass();
+  double getSpectrumNeutralMass();
 
 };
 

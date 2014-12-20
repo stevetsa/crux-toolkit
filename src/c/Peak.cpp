@@ -18,7 +18,7 @@
  * @param intensity: intensity for the new peak
  * @param location: location for the new peak
  */
-Peak::Peak(FLOAT_T intensity, FLOAT_T location) {
+Peak::Peak(double intensity, double location) {
     this->intensity_ = intensity;
     this->intensity_rank_ = 0.0;
     this->location_ = location;
@@ -27,42 +27,42 @@ Peak::Peak(FLOAT_T intensity, FLOAT_T location) {
 /**
  * Return the intensity of this Peak
  */
-FLOAT_T Peak::getIntensity() {
+double Peak::getIntensity() {
     return this->intensity_;
 }
 
  /**
   * Return the intensity rank of this Peak
   */
-FLOAT_T Peak::getIntensityRank() {
+double Peak::getIntensityRank() {
     return this->intensity_rank_;
 }
 
 /**
  * Return the location of this Peak
  */
-FLOAT_T Peak::getLocation() {
+double Peak::getLocation() {
     return this->location_;
 }
 
 /**
  * Set the intensity of this Peak
  */
-void Peak::setIntensity(FLOAT_T intensity) {
+void Peak::setIntensity(double intensity) {
     this->intensity_ = intensity;
 }
 
 /**
  * Set the intensity rank of this peak
  */
-void Peak::setIntensityRank(FLOAT_T intensity_rank) {
+void Peak::setIntensityRank(double intensity_rank) {
     this->intensity_rank_ = intensity_rank;
 }
 
 /**
  * Set the location of this Peak
  */
-void Peak::setLocation(FLOAT_T location) {
+void Peak::setLocation(double location) {
     this->location_ = location;
 }
 

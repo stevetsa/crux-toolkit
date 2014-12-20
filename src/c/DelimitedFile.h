@@ -312,7 +312,7 @@ class DelimitedFile {
   /**
    * gets a double type from cell, checks for infinity. 
    */
-  FLOAT_T getFloat(
+  double getFloat(
     unsigned int col_idx, ///< the column index
     unsigned int row_idx ///< the row index
   );
@@ -320,7 +320,7 @@ class DelimitedFile {
   /** 
    * gets a double type from cell, checks for infinity.
    */
-  FLOAT_T getFloat(
+  double getFloat(
     const char* column_name, ///<the column name
     unsigned int row_idx ///< the row index
   );
@@ -329,7 +329,7 @@ class DelimitedFile {
    * gets a double value from cell, checks for infinity
    * uses the current_row_ as the row index
    */
-  FLOAT_T getFloat(
+  double getFloat(
     const char* column_name ///<the column name
   );
 

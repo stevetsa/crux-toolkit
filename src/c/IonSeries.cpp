@@ -384,7 +384,7 @@ void IonSeries::scanForAAForNeutralLoss()
  * peptide.  
  * \returns an array of ion masses for all sub sequences
  */
-FLOAT_T* IonSeries::createIonMassMatrix(
+double* IonSeries::createIonMassMatrix(
   //char* peptide, ///< The peptide for this ion series. -in
   MODIFIED_AA_T* modified_seq, ///< the sequence
   MASS_TYPE_T mass_type, ///< the mass_type to use MONO|AVERAGE
@@ -397,7 +397,7 @@ FLOAT_T* IonSeries::createIonMassMatrix(
     return NULL;
   }
 
-  FLOAT_T* mass_matrix = (FLOAT_T*)mymalloc(sizeof(FLOAT_T)*(peptide_length+1));
+  double* mass_matrix = (double*)mymalloc(sizeof(double)*(peptide_length+1));
   
   // at index 0, the length of the peptide is stored
   mass_matrix[0] = peptide_length;
@@ -457,7 +457,7 @@ void IonSeries::addIon(
  *\returns true if successfully adds all ions, else false
  */
 bool IonSeries::addIonsByCharge(
-  FLOAT_T mass, ///< the base mass of the ion to add
+  double mass, ///< the base mass of the ion to add
   int cleavage_idx, ///< the absolute cleavage index (A,B,C from left X,Y,Z from right)
   ION_TYPE_T ion_type ///< the ion type of the ions to be added
   )
@@ -497,7 +497,7 @@ bool IonSeries::addIonsByCharge(
  *\returns true if successfully generates all the ions, else false
  */
 bool IonSeries::generateIonsNoModification(
-  FLOAT_T* mass_matrix ///< the mass matrix that stores the mass
+  double* mass_matrix ///< the mass matrix that stores the mass
   )
 {
   if( mass_matrix == NULL ){
@@ -507,7 +507,7 @@ bool IonSeries::generateIonsNoModification(
   }
   int cleavage_idx = 1;
   IonConstraint* constraint = constraint_;
-  FLOAT_T mass = 0;
+  double mass = 0;
 
   // get peptide length
   int peptide_length = (int)mass_matrix[0];
@@ -893,7 +893,7 @@ void IonSeries::predictIons()
   IonConstraint* constraint = constraint_;
   
   // create a mass matrix
-  FLOAT_T* mass_matrix = 
+  double* mass_matrix = 
     createIonMassMatrix(modified_aa_seq_, constraint->getMassType(), peptide_length_);  
   /*
   printf("cumulative mass sum is:\n");

@@ -567,9 +567,9 @@ bool MatchCollection::populateMatchRank(
   // set match rank for all match objects that have been scored for
   // this type
   int cur_rank = 0;
-  FLOAT_T cur_score = NOT_SCORED;
+  double cur_score = NOT_SCORED;
   for (vector<Crux::Match*>::iterator i = match_.begin(); i != match_.end(); i++) {
-    FLOAT_T this_score = (*i)->getScore(score_type);
+    double this_score = (*i)->getScore(score_type);
     
     if( NOT_SCORED == (*i)->getScore(score_type) ){
       char* seq = (*i)->getModSequenceStrWithMasses(MOD_MASS_ONLY);
@@ -633,15 +633,15 @@ void MatchCollection::saveTopSpMatch(){
  * For the #top_count ranked peptides, calculate the Weibull parameters
  *\returns true, if successfully calculates the Weibull parameters
  */
-static const FLOAT_T MIN_WEIBULL_MATCHES = 40;
-static const FLOAT_T MIN_XCORR_SHIFT = -5.0;
-static const FLOAT_T MAX_XCORR_SHIFT  = 5.0;
+static const double MIN_WEIBULL_MATCHES = 40;
+static const double MIN_XCORR_SHIFT = -5.0;
+static const double MAX_XCORR_SHIFT  = 5.0;
 //#define CORR_THRESHOLD 0.995   // Must achieve this correlation, else punt.
-static const FLOAT_T CORR_THRESHOLD = 0.0;       // For now, turn off the threshold.
-static const FLOAT_T XCORR_SHIFT = 0.05;
-static const FLOAT_T MIN_SP_SHIFT = -100.0;
-static const FLOAT_T MAX_SP_SHIFT = 300.0;
-static const FLOAT_T SP_SHIFT = 5.0;
+static const double CORR_THRESHOLD = 0.0;       // For now, turn off the threshold.
+static const double XCORR_SHIFT = 0.05;
+static const double MIN_SP_SHIFT = -100.0;
+static const double MAX_SP_SHIFT = 300.0;
+static const double SP_SHIFT = 5.0;
 
 /**
  * \brief Check that a match collection has a sufficient number of
@@ -674,7 +674,7 @@ bool MatchCollection::estimateWeibullParametersFromXcorrs(
   }
 
   // check that we have the minimum number of matches
-  FLOAT_T* scores = &xcorrs_[0];
+  double* scores = &xcorrs_[0];
   int num_scores = xcorrs_.size();
   if( num_scores < MIN_WEIBULL_MATCHES ){
     carp(CARP_DETAILED_DEBUG, "Too few psms (%i) to estimate "
@@ -685,7 +685,7 @@ bool MatchCollection::estimateWeibullParametersFromXcorrs(
   }
 
   // reverse sort the scores
-  std::sort(scores, scores + num_scores, greater<FLOAT_T>());
+  std::sort(scores, scores + num_scores, greater<double>());
 
   // use only a fraction of the samples, the high-scoring tail
   // this parameter is hidden from the user
@@ -743,7 +743,7 @@ int MatchCollection::addUnscoredPeptides(
   experiment_size_ += matches_added;
 
   // Set ln experiment size for matches
-  FLOAT_T ln_experiment_size = logf((FLOAT_T)getTargetExperimentSize());
+  double ln_experiment_size = logf((double)getTargetExperimentSize());
   for (int i = 0; i < match_.size(); i++) {
     match_[i]->setLnExperimentSize(ln_experiment_size);  
   }
@@ -806,7 +806,7 @@ bool MatchCollection::scoreMatchesOneSpectrum(
     ion_series->predictIons();
 
     // get the score
-    FLOAT_T score = scorer->scoreSpectrumVIonSeries(spectrum, ion_series);
+    double score = scorer->scoreSpectrumVIonSeries(spectrum, ion_series);
 
     // set score in match
     (*i)->setScore(score_type, score);
@@ -937,15 +937,15 @@ bool MatchCollection::computeDecoyQValues(){
 
   // compute FDR from a running total of number targets/decoys
   // FDR = #decoys / #targets
-  FLOAT_T num_targets = 0;
-  FLOAT_T num_decoys = 0;
+  double num_targets = 0;
+  double num_decoys = 0;
   for (vector<Crux::Match*>::iterator i = match_.begin(); i != match_.end(); i++) {
     if ( (*i)->getNullPeptide() ){
       num_decoys += 1;
     }else{
       num_targets += 1;
     }
-    FLOAT_T score = num_decoys/num_targets;
+    double score = num_decoys/num_targets;
     if( num_targets == 0 ){ score = 1.0; }
 
     /*
@@ -967,11 +967,11 @@ bool MatchCollection::computeDecoyQValues(){
   }
 
   // compute q-value: go through list in reverse and use min FDR seen
-  FLOAT_T min_fdr = 1.0;
+  double min_fdr = 1.0;
   for (vector<Crux::Match*>::reverse_iterator i = match_.rbegin();
        i != match_.rend();
        i++) {
-    FLOAT_T cur_fdr = (*i)->getScore(DECOY_XCORR_QVALUE);
+    double cur_fdr = (*i)->getScore(DECOY_XCORR_QVALUE);
     if( cur_fdr == P_VALUE_NA ){ continue; }
 
     if( cur_fdr < min_fdr ){
@@ -1128,7 +1128,7 @@ int MatchCollection::getCharge()
  * Must have been scored by Xcorr, returns error if not scored by Xcorr
  *\returns the delta cn value(difference in top and second ranked Xcorr values)
  */
-FLOAT_T MatchCollection::getDeltaCn()
+double MatchCollection::getDeltaCn()
 {
   // Check if xcorr value has been scored, thus delta cn value is valid
   if(scored_type_[XCORR]){
@@ -1328,13 +1328,13 @@ void MatchCollection::printXmlHeader(
   AA_MOD_T** mod_list = NULL;
   int num_mods = get_aa_mod_list(&mod_list);
   for (int mod_idx = 0; mod_idx < num_mods; mod_idx++){
-    FLOAT_T mod_mass = aa_mod_get_mass_change(mod_list[mod_idx]);
+    double mod_mass = aa_mod_get_mass_change(mod_list[mod_idx]);
     
     bool* aas_modified = aa_mod_get_aa_list(mod_list[mod_idx]);
     for (int aa_idx = 0; aa_idx < AA_LIST_LENGTH; aa_idx++){
       if (aas_modified[aa_idx] == true ){
         int aa = (aa_idx+'A');
-        FLOAT_T aa_mass = get_mass_amino_acid(aa , isotopic_type);
+        double aa_mass = get_mass_amino_acid(aa , isotopic_type);
         fprintf(output, "<aminoacid_modification aminoacid=\"%c\" mass=\"%f\" "
                 "massdiff=\"%f\" variable=\"%s\" />\n",
                 aa,
@@ -1351,7 +1351,7 @@ void MatchCollection::printXmlHeader(
   // variable
   num_mods = get_c_mod_list(&mod_list); // variable c mods
   for(int mod_idx = 0; mod_idx < num_mods; mod_idx++){
-    FLOAT_T mod_mass = aa_mod_get_mass_change(mod_list[mod_idx]);
+    double mod_mass = aa_mod_get_mass_change(mod_list[mod_idx]);
     fprintf(output, "<terminal_modification terminus=\"c\" "
             "mass=\"%f\" massdiff=\"%f\" variable=\"Y\" />\n",
             MASS_OH + mod_mass,
@@ -1360,7 +1360,7 @@ void MatchCollection::printXmlHeader(
   }
   num_mods = get_n_mod_list(&mod_list); // variable n mods
   for(int mod_idx = 0; mod_idx < num_mods; mod_idx++){
-    FLOAT_T mod_mass = aa_mod_get_mass_change(mod_list[mod_idx]);
+    double mod_mass = aa_mod_get_mass_change(mod_list[mod_idx]);
     fprintf(output, "<terminal_modification terminus=\"n\" "
             "mass=\"%f\" massdiff=\"%f\" variable=\"Y\" />\n",
             MASS_H_MONO + mod_mass,
@@ -1867,7 +1867,7 @@ bool MatchCollection::printTabDelimited(
   int num_target_matches = getTargetExperimentSize();
   int num_decoy_matches = getExperimentSize();
   int scan_num = spectrum->getFirstScan();
-  FLOAT_T spectrum_precursor_mz = spectrum->getPrecursorMz();
+  double spectrum_precursor_mz = spectrum->getPrecursorMz();
 
   Match* match = NULL;
   
@@ -1909,7 +1909,7 @@ bool MatchCollection::printTabDelimited(
 /**
  * Retrieve the calibration parameter eta.
  */
-FLOAT_T MatchCollection::getCalibrationEta()
+double MatchCollection::getCalibrationEta()
 {
   return eta_;
 }
@@ -1917,7 +1917,7 @@ FLOAT_T MatchCollection::getCalibrationEta()
 /**
  * Retrieve the calibration parameter beta.
  */
-FLOAT_T MatchCollection::getCalibrationBeta()
+double MatchCollection::getCalibrationBeta()
 {
   return beta_;
 }
@@ -1925,7 +1925,7 @@ FLOAT_T MatchCollection::getCalibrationBeta()
 /**
  * Retrieve the calibration parameter shift.
  */
-FLOAT_T MatchCollection::getCalibrationShift()
+double MatchCollection::getCalibrationShift()
 {
   return shift_;
 }
@@ -1933,7 +1933,7 @@ FLOAT_T MatchCollection::getCalibrationShift()
 /**
  * Retrieve the calibration correlation.
  */
-FLOAT_T MatchCollection::getCalibrationCorr()
+double MatchCollection::getCalibrationCorr()
 {
   return correlation_;
 }
@@ -1964,8 +1964,8 @@ void MatchCollection::printMultiSpectra(
     bool is_decoy = cur_match->getNullPeptide();
     Spectrum* spectrum = cur_match->getSpectrum();
     int scan_num = spectrum->getFirstScan();
-    FLOAT_T mz = spectrum->getPrecursorMz();
-    FLOAT_T num_psm_per_spec = cur_match->getLnExperimentSize();
+    double mz = spectrum->getPrecursorMz();
+    double num_psm_per_spec = cur_match->getLnExperimentSize();
     num_psm_per_spec = expf(num_psm_per_spec) + 0.5; // round to nearest int
     int num_target_psm_per_spec = cur_match->getTargetExperimentSize();
 
@@ -2102,9 +2102,9 @@ bool MatchCollection::extendTabDelimited(
 {
   Match* match = NULL;
 
-  FLOAT_T delta_cn = 0;
-  FLOAT_T ln_delta_cn = 0;
-  FLOAT_T ln_experiment_size = 0;
+  double delta_cn = 0;
+  double ln_delta_cn = 0;
+  double ln_experiment_size = 0;
 
   // only for post_process_collections
   if(!post_process_collection_){
@@ -2336,24 +2336,24 @@ bool MatchCollection::calculateDeltaCn(){
     return true;
   }
 
-  FLOAT_T last_xcorr=0.0;
-  FLOAT_T delta_cn = 0.0;
-  FLOAT_T delta_lcn = 0.0;
-  FLOAT_T next_xcorr=0.0;
-  FLOAT_T current_xcorr = 0 ; 
+  double last_xcorr=0.0;
+  double delta_cn = 0.0;
+  double delta_lcn = 0.0;
+  double next_xcorr=0.0;
+  double current_xcorr = 0 ; 
   last_xcorr = match_.back()->getScore(XCORR);
   for (size_t idx = 0 ;idx < match_.size();idx++) { 
     current_xcorr = match_[idx]->getScore(XCORR);
     if (idx+1<=match_.size()-1)
       next_xcorr=match_[idx+1]->getScore(XCORR);
-    delta_cn = (current_xcorr - next_xcorr) / max(current_xcorr, (FLOAT_T)1.0);
-    delta_lcn = (current_xcorr - last_xcorr) / max(current_xcorr, (FLOAT_T)1.0);
+    delta_cn = (current_xcorr - next_xcorr) / max(current_xcorr, (double)1.0);
+    delta_lcn = (current_xcorr - last_xcorr) / max(current_xcorr, (double)1.0);
   
-    if(fabs(delta_cn)== numeric_limits<FLOAT_T>::infinity()){
+    if(fabs(delta_cn)== numeric_limits<double>::infinity()){
       carp(CARP_DEBUG, "delta_cn was %f and set to zero. XCorr score is %f", delta_cn, current_xcorr);
       delta_cn = 0.0;
     }   
-    if(fabs(delta_lcn) == numeric_limits<FLOAT_T>::infinity()){
+    if(fabs(delta_lcn) == numeric_limits<double>::infinity()){
       carp(CARP_DEBUG, "delta_lcn was %f and set to zero. XCorr score is %f", delta_lcn, current_xcorr);
       delta_lcn = 0.0;
     }   
@@ -2434,7 +2434,7 @@ void MatchCollection::addDecoyScores(
     ion_series->predictIons();
 
     // get the score
-    FLOAT_T score = scorer->scoreSpectrumVIonSeries(spectrum, ion_series);
+    double score = scorer->scoreSpectrumVIonSeries(spectrum, ion_series);
 
     // add to collection's list of xcorrs
     xcorrs_.push_back(score);
@@ -2461,12 +2461,12 @@ void MatchCollection::forceScoredBy(SCORER_TYPE_T type){
  * Extract a given type of score into an array.  The array is
  * allocated here and must be freed by the caller.
  */
-FLOAT_T* MatchCollection::extractScores(
+double* MatchCollection::extractScores(
   SCORER_TYPE_T       score_type ///< Type of score to extract.
 )
 {
-  FLOAT_T* return_value = (FLOAT_T*)mycalloc(match_.size(),
-                                             sizeof(FLOAT_T));
+  double* return_value = (double*)mycalloc(match_.size(),
+                                             sizeof(double));
 
   MatchIterator* match_iterator =
     new MatchIterator(this, XCORR, false);
@@ -2486,7 +2486,7 @@ FLOAT_T* MatchCollection::extractScores(
  * q-values to all of the matches in a given collection.
  */
 void MatchCollection::assignQValues(
-  const map<FLOAT_T, FLOAT_T>* score_to_qvalue_hash,
+  const map<double, double>* score_to_qvalue_hash,
   SCORER_TYPE_T score_type
 ){
 
@@ -2496,17 +2496,17 @@ void MatchCollection::assignQValues(
 
   while(match_iterator->hasNext()){
     Match* match = match_iterator->next();
-    FLOAT_T score = match->getScore(score_type);
+    double score = match->getScore(score_type);
 
     // Retrieve the corresponding q-value.
-    map<FLOAT_T, FLOAT_T>::const_iterator map_position 
+    map<double, double>::const_iterator map_position 
       = score_to_qvalue_hash->find(score);
     if (map_position == score_to_qvalue_hash->end()) {
       carp(CARP_FATAL,
            "Cannot find q-value corresponding to score of %g.",
            score);
     }
-    FLOAT_T qvalue = map_position->second;
+    double qvalue = map_position->second;
 
     /* If we're given a base score, then store the q-value.  If we're
        given a q-value, then store the peptide-level q-value. */
@@ -2578,7 +2578,7 @@ void MatchCollection::assignQValues(
  * PEPs to all of the matches in a given collection.
  */
 void MatchCollection::assignPEPs(
-    const map<FLOAT_T, FLOAT_T>* score_to_pep_hash,
+    const map<double, double>* score_to_pep_hash,
     SCORER_TYPE_T score_type )
 {
   // Iterate over the matches filling in the q-values
@@ -2587,17 +2587,17 @@ void MatchCollection::assignPEPs(
 
   while(match_iterator->hasNext()){
     Match* match = match_iterator->next();
-    FLOAT_T score = match->getScore(score_type);
+    double score = match->getScore(score_type);
 
     // Retrieve the corresponding PEP.
-    map<FLOAT_T, FLOAT_T>::const_iterator map_position 
+    map<double, double>::const_iterator map_position 
       = score_to_pep_hash->find(score);
     if (map_position == score_to_pep_hash->end()) {
       carp(CARP_FATAL,
            "Cannot find q-value corresponding to score of %g.",
            score);
     }
-    FLOAT_T qvalue = map_position->second;
+    double qvalue = map_position->second;
 
     /* If we're given a base score, then store the q-value.  If we're
        given a q-value, then store the peptide-level q-value. */

@@ -156,7 +156,7 @@ bool IndexPeptideIterator::findPeptideInCurrentIndexFile()
     }
 
     // check our peptide to see if it fits the constraint
-    FLOAT_T peptide_mass = peptide->getPeptideMass();
+    double peptide_mass = peptide->getPeptideMass();
     int peptide_length = peptide->getLength();
 
     // if peptide mass larger than constraint, no more peptides to return

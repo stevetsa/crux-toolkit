@@ -60,7 +60,7 @@
 /**
  * \returns The mass of the given amino acid.
  */
-FLOAT_T get_mass_amino_acid(
+double get_mass_amino_acid(
   char amino_acid, ///< the query amino acid -in
   MASS_TYPE_T mass_type ///< the isotopic mass type (AVERAGE, MONO) -in
   );
@@ -68,7 +68,7 @@ FLOAT_T get_mass_amino_acid(
 /**
  * \returns The mass of the given amino acid.
  */
-FLOAT_T get_mass_mod_amino_acid(
+double get_mass_mod_amino_acid(
   MODIFIED_AA_T amino_acid, ///< the query amino acid -in
   MASS_TYPE_T mass_type ///< the isotopic mass type (AVERAGE, MONO) -in
   );
@@ -77,28 +77,28 @@ FLOAT_T get_mass_mod_amino_acid(
 /**
  * \returns The average mass of the given amino acid.
  */
-FLOAT_T get_mass_amino_acid_average(
+double get_mass_amino_acid_average(
   char amino_acid ///< the query amino acid -in
   );
 
 /**
  * \returns The average mass of the given amino acid.
  */
-FLOAT_T get_mass_mod_amino_acid_average(
+double get_mass_mod_amino_acid_average(
   MODIFIED_AA_T amino_acid ///< the query amino acid -in
   );
 
 /**
  * \returns The monoisotopic mass of the given amino acid.
  */
-FLOAT_T get_mass_amino_acid_monoisotopic(
+double get_mass_amino_acid_monoisotopic(
   char amino_acid ///< the query amino acid -in
   );
 
 /**
  * \returns The monoisotopic mass of the given amino acid.
  */
-FLOAT_T get_mass_mod_amino_acid_monoisotopic(
+double get_mass_mod_amino_acid_monoisotopic(
   MODIFIED_AA_T amino_acid ///< the query amino acid -in
   );
 
@@ -109,14 +109,14 @@ FLOAT_T get_mass_mod_amino_acid_monoisotopic(
  * identifier can be used to modify a MODIFIED_AA_T so that it has the
  * given mass shift. 
  */
-MODIFIED_AA_T get_mod_identifier(FLOAT_T mass_shift);
+MODIFIED_AA_T get_mod_identifier(double mass_shift);
 
 /**
  * increase the amino acid mass for both mono and average
  */
 void increase_amino_acid_mass(
   char amino_acid, ///< the query amino acid -in
-  FLOAT_T update_mass ///< the mass amount to update for the amino acid -in
+  double update_mass ///< the mass amount to update for the amino acid -in
   );
 
 /**

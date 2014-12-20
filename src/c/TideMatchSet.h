@@ -118,7 +118,7 @@ protected:
     const ActivePeptideQueue* peptides,
     const ProteinVec& proteins,
     const vector<const pb::AuxLocation*>& locations,
-    const map<Arr::iterator, FLOAT_T>& delta_cn_map,
+    const map<Arr::iterator, double>& delta_cn_map,
     const map<Arr::iterator, pair<const SpScorer::SpScoreData, int> >* sp_map
   );
 
@@ -137,7 +137,7 @@ protected:
     const vector<const pb::AuxLocation*>& locations,
     SpectrumZState& z_state,
     SpScorer* sp_scorer,
-    FLOAT_T* lowest_sp_out
+    double* lowest_sp_out
   );
 
   /**
@@ -197,7 +197,7 @@ protected:
 
   static void computeDeltaCns(
     const vector<Arr::iterator>& vec, // xcorr*100000000.0, high to low
-    map<Arr::iterator, FLOAT_T>* delta_cn_map, // map to add delta cn scores to
+    map<Arr::iterator, double>* delta_cn_map, // map to add delta cn scores to
     int top_n // number of top matches we will be reporting
   );
 

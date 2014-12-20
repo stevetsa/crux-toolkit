@@ -217,7 +217,7 @@ int get_aa_mod_sizeof();
 /*
 struct peptide{
   unsigned char length; ///< The length of the peptide
-  FLOAT_T peptide_mass;   ///< The peptide's mass with any modifications
+  double peptide_mass;   ///< The peptide's mass with any modifications
   PEPTIDE_SRC_T* peptide_src; ///< a linklist of peptide_src
   bool is_modified;   ///< if true sequence != NULL
   MODIFIED_AA_T* sequence; ///< sequence with modifications
@@ -261,7 +261,7 @@ const AA_MOD_T* get_aa_mod_from_symbol(const char symbol);
  * symbol.  If the symbol does not represent a modification, returns
  * 0. Requires that parameters have been initialized.
  */
-FLOAT_T get_mod_mass_from_symbol(const char symbol);
+double get_mod_mass_from_symbol(const char symbol);
 
 /**
  * \brief Return the AA_MOD_T associated with the given mass shift.
@@ -270,7 +270,7 @@ FLOAT_T get_mod_mass_from_symbol(const char symbol);
  * found for the mass, returns null.
  * Requires that parameters have been initialized.
  */
-const AA_MOD_T* get_aa_mod_from_mass(FLOAT_T mass);
+const AA_MOD_T* get_aa_mod_from_mass(double mass);
 
 /**
  * \brief Check that the list of peptide_modifications from the file of
@@ -427,7 +427,7 @@ int count_modified_aas(MODIFIED_AA_T* seq);
 /**
  * /returns the mass of the modified sequence
  */
-FLOAT_T get_mod_aa_seq_mass(
+double get_mod_aa_seq_mass(
   MODIFIED_AA_T* seq, ///< The modified sequence
   MASS_TYPE_T mass_type ///<  mono or average?
   );

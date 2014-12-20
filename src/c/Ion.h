@@ -29,9 +29,9 @@ class Ion {
   // from the N-term
   int charge_; ///< the ion charge
   char* peptide_sequence_; ///< the peptide sequence that fragments to form this ion
-  FLOAT_T peptide_mass_; ///< the mass of the peptide. For efficiency
+  double peptide_mass_; ///< the mass of the peptide. For efficiency
   int modification_counts_[MAX_MODIFICATIONS]; ///< an array of the number of different ion modifications
-  FLOAT_T ion_mass_z_;   ///< The mass/z of the ion. 
+  double ion_mass_z_;   ///< The mass/z of the ion. 
   Peak * peak_;  ///< The assigned peak. NULL if no peak // TODO add ptr count
   int pointer_count_; ///< count of number of references to this ion.
 
@@ -66,8 +66,8 @@ class Ion {
  /**
   *\return the modified mass_z accodring to the modification type
   */
-  FLOAT_T modifyMassZ(
-    FLOAT_T mass_z, ///< the pre-modified ion mass_z -in
+  double modifyMassZ(
+    double mass_z, ///< the pre-modified ion mass_z -in
     int modification_count, ///< number of times more the modification occurs -in
     ION_MODIFICATION_T ion_modification, ///< the type of modification -in
     int charge, ///< charge of the ion
@@ -77,8 +77,8 @@ class Ion {
   /**
    *\return the modified mass accodring to the modification type
    */
-  FLOAT_T modifyMass(
-    FLOAT_T mass, ///< the pre-modified ion mass -in
+  double modifyMass(
+    double mass, ///< the pre-modified ion mass -in
     int modification_count, ///< number of times more the modification occurs -in
     ION_MODIFICATION_T ion_modification, ///< the type of modification -in
     MASS_TYPE_T mass_type ///< mass type (average, mono) -in
@@ -87,7 +87,7 @@ class Ion {
   /**
    *\returns the ion's AA mass added all up
    */
-  FLOAT_T getMass(
+  double getMass(
     MASS_TYPE_T mass_type ///< mass type (average, mono) -in
     );    
 
@@ -144,7 +144,7 @@ class Ion {
     int charge, ///< charge of the ion
     char* peptide, ///< location for the new ion -in
     MASS_TYPE_T mass_type, ///< mass type (average, mono) -in
-    FLOAT_T base_mass, ///< the base mass of the ion -in
+    double base_mass, ///< the base mass of the ion -in
     int* modification_counts ///< an array of modification counts for each modification -in
     );
 
@@ -159,7 +159,7 @@ class Ion {
     int charge, ///< charge of the ion
     char* peptide, ///< location for the new ion -in
     MASS_TYPE_T mass_type, ///< mass type (average, mono) -in
-    FLOAT_T base_mass ///< the base mass of the ion -in
+    double base_mass ///< the base mass of the ion -in
     );
 
   /**
@@ -281,8 +281,8 @@ class Ion {
    *
    * floats
    *
-   * 1. m/z ratio FLOAT_T (from N-term)
-   * 2. m/z ratio FLOAT_T (from C-term)
+   * 1. m/z ratio double (from N-term)
+   * 2. m/z ratio double (from C-term)
    * 3. first raw
    * 4. second raw
    * 5. first rank
@@ -341,7 +341,7 @@ class Ion {
   /**
    * \returns the location of ION_T object
    */
-  FLOAT_T getMassZ();
+  double getMassZ();
 
   /**
    * sets the mass/z of the ION_T object
@@ -350,13 +350,13 @@ class Ion {
    * instead
    */
   void setMassZ(
-    FLOAT_T mass_z ///< the m/z location -in
+    double mass_z ///< the m/z location -in
   );
 
-  FLOAT_T getMassFromMassZ();
+  double getMassFromMassZ();
 
   void setMassZFromMass(
-    FLOAT_T mass
+    double mass
   );
 
 
@@ -443,7 +443,7 @@ class Ion {
    */
   bool calcMassZWithMass(
     MASS_TYPE_T mass_type, ///< mass type (average, mono) -in
-    FLOAT_T mass, ///< the basic mass of the ion -in
+    double mass, ///< the basic mass of the ion -in
     bool is_modified ///< are there any modifications for this ion? -in
     );
 

@@ -61,12 +61,12 @@ void free_peptides();
 
 
 bool hhc_estimate_weibull_parameters_from_xcorrs(
-  FLOAT_T* scores,
+  double* scores,
   int num_scores,
-  FLOAT_T* eta,
-  FLOAT_T* beta,
-  FLOAT_T* shift,
-  FLOAT_T* correlation,
+  double* eta,
+  double* beta,
+  double* shift,
+  double* correlation,
   Crux::Spectrum* spectrum,
   int charge
   );

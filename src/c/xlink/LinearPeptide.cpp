@@ -40,8 +40,8 @@ LinearPeptide::LinearPeptide(
  *Add candidates to the XLinkMatchCollection that are linear
  */
 void LinearPeptide::addCandidates(
-  FLOAT_T min_mass,  ///< min mass
-  FLOAT_T max_mass,  ///< max mass
+  double min_mass,  ///< min mass
+  double max_mass,  ///< max mass
   Index* index,  ///< protein index
   Database* database, ///< protein database
   PEPTIDE_MOD_T** peptide_mods, ///< modifications peptide can take
@@ -131,7 +131,7 @@ string LinearPeptide::getSequenceString() {
 /**
  * \returns the mass of the peptide
  */
-FLOAT_T LinearPeptide::calcMass(
+double LinearPeptide::calcMass(
   MASS_TYPE_T mass_type ///< MONO or AVERAGE
   ) {
   

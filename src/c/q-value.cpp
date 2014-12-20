@@ -41,7 +41,7 @@ static void identify_best_psm_per_peptide
 {
   /* Instantiate a hash table.  key = peptide; value = maximal xcorr
      for that peptide. */
-  map<string, FLOAT_T> best_score_per_peptide;
+  map<string, double> best_score_per_peptide;
 
   // Store in the hash the best score per peptide.
   MatchIterator* match_iterator 
@@ -52,9 +52,9 @@ static void identify_best_psm_per_peptide
     // Skip matches that are not top-ranked.
     if (match->getRank(score_type) == 1) {
       char *peptide = match->getModSequenceStrWithSymbols();
-      FLOAT_T this_score = match->getScore(score_type);
+      double this_score = match->getScore(score_type);
 
-      map<string, FLOAT_T>::iterator map_position 
+      map<string, double>::iterator map_position 
         = best_score_per_peptide.find(peptide);
 
       if (map_position == best_score_per_peptide.end()) {
@@ -79,9 +79,9 @@ static void identify_best_psm_per_peptide
      // Skip matches that are not top-ranked.
     if (match->getRank(score_type) == 1) {
       char* peptide = match->getModSequenceStrWithSymbols();
-      FLOAT_T this_score = match->getScore(score_type);
+      double this_score = match->getScore(score_type);
 
-      map<string, FLOAT_T>::iterator map_position 
+      map<string, double>::iterator map_position 
         = best_score_per_peptide.find(peptide);
 
       if (map_position->second == this_score) {
@@ -105,14 +105,14 @@ static void identify_best_psm_per_peptide
  * lowest to highest, sorted according to the underlying score.
  */
 static void convert_fdr_to_qvalue 
-  (FLOAT_T* qvalues,     ///< Come in as FDRs, go out as q-values.
+  (double* qvalues,     ///< Come in as FDRs, go out as q-values.
    int      num_values)
 {
-  FLOAT_T prev_fdr = qvalues[num_values - 1];
+  double prev_fdr = qvalues[num_values - 1];
   int idx;
   for (idx=num_values - 2; idx >= 0; idx--){
     carp(CARP_DETAILED_DEBUG, "fdr[%i] = %.10f", idx, qvalues[idx]);
-    FLOAT_T this_fdr = qvalues[idx];
+    double this_fdr = qvalues[idx];
     if (prev_fdr < this_fdr) {
       qvalues[idx] = prev_fdr;
     }
@@ -126,13 +126,13 @@ static void convert_fdr_to_qvalue
  *
  * The new hash table must be freed by the caller.
  */
-map<FLOAT_T, FLOAT_T>* store_arrays_as_hash
-  (FLOAT_T* keys, 
-   FLOAT_T* values,
+map<double, double>* store_arrays_as_hash
+  (double* keys, 
+   double* values,
    int      num_values
 ){
 
-  map<FLOAT_T, FLOAT_T>* return_value = new map<FLOAT_T, FLOAT_T>();
+  map<double, double>* return_value = new map<double, double>();
 
   int idx;
   for (idx=0; idx < num_values; idx++){
@@ -151,22 +151,22 @@ map<FLOAT_T, FLOAT_T>* store_arrays_as_hash
  *
  * This function uses the command line parameter "pi-zero".
  */
-FLOAT_T* compute_qvalues_from_pvalues(
-  FLOAT_T* pvalues, 
+double* compute_qvalues_from_pvalues(
+  double* pvalues, 
   int      num_pvals,
-  FLOAT_T  pi_zero
+  double  pi_zero
 ){
 
   // sort the - log p-values in descending order
-  sort(pvalues, pvalues + num_pvals, greater<FLOAT_T>());
+  sort(pvalues, pvalues + num_pvals, greater<double>());
 
   // convert the p-values into FDRs using Benjamini-Hochberg
-  FLOAT_T* qvalues = (FLOAT_T*)mycalloc(num_pvals, sizeof(FLOAT_T));
+  double* qvalues = (double*)mycalloc(num_pvals, sizeof(double));
   int idx;
   for (idx=0; idx < num_pvals; idx++){
     carp(CARP_DETAILED_DEBUG, "pvalue[%i] = %.10f", idx, exp(-pvalues[idx]));
     double fdr = (exp(-pvalues[idx]) / (idx + 1)) 
-      * (FLOAT_T)num_pvals * pi_zero;
+      * (double)num_pvals * pi_zero;
     qvalues[idx] = fdr;
     carp(CARP_DETAILED_DEBUG, "FDR[%i] = %.10f", idx, qvalues[idx]);
   }
@@ -184,13 +184,13 @@ FLOAT_T* compute_qvalues_from_pvalues(
  *
  * This function is only exported to allow unit testing.
  */
-FLOAT_T* compute_decoy_qvalues(
-  FLOAT_T* target_scores,
+double* compute_decoy_qvalues(
+  double* target_scores,
   int      num_targets,
-  FLOAT_T* decoy_scores,
+  double* decoy_scores,
   int      num_decoys,
   bool     forward,
-  FLOAT_T  pi_zero
+  double  pi_zero
 ){
   if ((num_targets == 0) || (num_decoys == 0)) {
     carp(CARP_FATAL, "Cannot compute q-values (%d targets, %d nulls).",
@@ -210,8 +210,8 @@ FLOAT_T* compute_decoy_qvalues(
     sort(target_scores, target_scores + num_targets);
     sort(decoy_scores, decoy_scores + num_decoys);    
   } else {
-    sort(target_scores, target_scores + num_targets, greater<FLOAT_T>());
-    sort(decoy_scores, decoy_scores + num_decoys, greater<FLOAT_T>());
+    sort(target_scores, target_scores + num_targets, greater<double>());
+    sort(decoy_scores, decoy_scores + num_decoys, greater<double>());
   }
   for (target_idx = 0; target_idx < num_targets; target_idx++) {
     carp(CARP_DEBUG, "target_scores[%d]=%g decoy_scores[%d]=%g",
@@ -220,13 +220,13 @@ FLOAT_T* compute_decoy_qvalues(
   }
 
   // Precompute the ratio of targets to decoys.
-  FLOAT_T targets_to_decoys = (FLOAT_T)num_targets / (FLOAT_T)num_decoys;
+  double targets_to_decoys = (double)num_targets / (double)num_decoys;
 
   // Compute false discovery rate for each target score.
-  FLOAT_T* qvalues = (FLOAT_T*)mycalloc(num_targets, sizeof(FLOAT_T));
+  double* qvalues = (double*)mycalloc(num_targets, sizeof(double));
   int decoy_idx = 0;
   for (target_idx = 0; target_idx < num_targets; target_idx++) {
-    FLOAT_T target_score = target_scores[target_idx];
+    double target_score = target_scores[target_idx];
 
     // Find the index of the first decoy score greater than this target score.
     if (forward) {
@@ -242,8 +242,8 @@ FLOAT_T* compute_decoy_qvalues(
     }
 
     // FDR = #decoys / #targets
-    FLOAT_T fdr = pi_zero * targets_to_decoys * 
-      ((FLOAT_T)decoy_idx / (FLOAT_T)(target_idx + 1));
+    double fdr = pi_zero * targets_to_decoys * 
+      ((double)decoy_idx / (double)(target_idx + 1));
     carp(CARP_DEBUG, "target_idx=%d target_score=%g decoy_idx=%d fdr=%g",
          target_idx, target_score, decoy_idx, fdr);
     
@@ -261,14 +261,14 @@ FLOAT_T* compute_decoy_qvalues(
 }
 
 /**
- * A wrapper to take care of the FLOAT_T to double conversion.  Calls
+ * A wrapper to take care of the double to double conversion.  Calls
  * compute_PEP in analyse_psms.
  * \returns A newly allocated array of PEP values sorted in the same
  * order as the targets.
  */
-FLOAT_T* compute_PEP_local(FLOAT_T* targets,
+double* compute_PEP_local(double* targets,
                           int num_targets, 
-                          FLOAT_T* decoys, 
+                          double* decoys, 
                           int num_decoys,
                           bool forward){
 
@@ -284,7 +284,7 @@ FLOAT_T* compute_PEP_local(FLOAT_T* targets,
 
   double* PEPs_d = compute_PEP(targets_d, num_targets, decoys_d, num_decoys);
 
-  FLOAT_T* PEPs = new FLOAT_T[num_targets];
+  double* PEPs = new double[num_targets];
   for(int val_idx = 0; val_idx < num_targets; val_idx++){
     PEPs[val_idx] = PEPs_d[val_idx];
   }
@@ -300,7 +300,7 @@ FLOAT_T* compute_PEP_local(FLOAT_T* targets,
  * PosteriorEstimator.
  * \returns A newly allocated array of PEP values.
  */
-FLOAT_T* compute_PEP_from_pvalues(FLOAT_T* pvalues, int num_pvals){
+double* compute_PEP_from_pvalues(double* pvalues, int num_pvals){
 
   // convert the -ln(pval) to pval
   vector<double> pvalues_vector(pvalues, pvalues + num_pvals);
@@ -349,7 +349,7 @@ FLOAT_T* compute_PEP_from_pvalues(FLOAT_T* pvalues, int num_pvals){
   PosteriorEstimator::estimatePEP(score_label, pi0, PEP_vector );
 
   // return values
-  FLOAT_T* PEPs = new FLOAT_T[PEP_vector.size()];
+  double* PEPs = new double[PEP_vector.size()];
   for(size_t pep_idx = 0; pep_idx < PEP_vector.size(); pep_idx++){
     PEPs[pep_idx] = PEP_vector[pep_idx];
     carp(CARP_DEBUG, "pep[%i]=%f", pep_idx, PEPs[pep_idx]);
@@ -489,10 +489,10 @@ MatchCollection* run_qvalue(
   output.writeHeaders(cols_to_print);
 
   // Compute q-values from p-values.
-  FLOAT_T* pvalues = NULL; // N.B. Misnamed for decoy calculation.
+  double* pvalues = NULL; // N.B. Misnamed for decoy calculation.
   int num_pvals = target_matches->getMatchTotal();
-  FLOAT_T* qvalues = NULL;
-  FLOAT_T* PEPs = NULL;
+  double* qvalues = NULL;
+  double* PEPs = NULL;
   SCORER_TYPE_T score_type = INVALID_SCORER_TYPE;
   if (have_pvalues == true) {
     carp(CARP_DEBUG, "There are %d PSMs for q-value computation.", num_pvals);
@@ -511,7 +511,7 @@ MatchCollection* run_qvalue(
     carp(CARP_INFO,
          "There are %d target and %d decoy PSMs for q-value computation.",
          num_pvals, num_decoys);
-    FLOAT_T* decoy_scores = NULL;
+    double* decoy_scores = NULL;
 
     pvalues = target_matches->extractScores(XCORR);
     decoy_scores = decoy_matches->extractScores(XCORR);
@@ -534,13 +534,13 @@ MatchCollection* run_qvalue(
   
   
   // Store p-values to q-values as a hash, and then assign them.
-  map<FLOAT_T, FLOAT_T>* qvalue_hash 
+  map<double, double>* qvalue_hash 
     = store_arrays_as_hash(pvalues, qvalues, num_pvals);
 
   target_matches->assignQValues(qvalue_hash, score_type);
 
   // Store p-values to PEP as a has and then assign them
-  map<FLOAT_T, FLOAT_T>* PEP_hash 
+  map<double, double>* PEP_hash 
         = store_arrays_as_hash(pvalues, PEPs, num_pvals);
   target_matches->assignPEPs(PEP_hash, score_type);
 
@@ -552,7 +552,7 @@ MatchCollection* run_qvalue(
 
   if (have_evalues) {
     pvalues = target_matches->extractScores(EVALUE);
-    FLOAT_T* decoy_scores = decoy_matches->extractScores(EVALUE);
+    double* decoy_scores = decoy_matches->extractScores(EVALUE);
     int num_decoys = decoy_matches->getMatchTotal();
     
     score_type = EVALUE;

@@ -86,7 +86,7 @@ int GenerateDecoys::main(int argc, char** argv) {
     const string& targetSeq = *i;
     // Don't need to check peptide length, it is done in cleaveProtein
     // Check peptide mass
-    FLOAT_T pepMass = Crux::Peptide::calcSequenceMass(i->c_str(), massType_);
+    double pepMass = Crux::Peptide::calcSequenceMass(i->c_str(), massType_);
     if (pepMass < minMass || pepMass > maxMass) {
       carp(CARP_DETAILED_DEBUG, "Skipping peptide with mass %f", pepMass);
       continue;
@@ -112,7 +112,7 @@ int GenerateDecoys::main(int argc, char** argv) {
     for (set<string>::const_iterator i = decoySeqs.begin();
          i != decoySeqs.end();
          ++i) {
-      FLOAT_T pepMass = Crux::Peptide::calcSequenceMass(i->c_str(), massType_);
+      double pepMass = Crux::Peptide::calcSequenceMass(i->c_str(), massType_);
       if (pepMass < minMass || pepMass > maxMass) {
         carp(CARP_DETAILED_DEBUG, "Skipping peptide with mass %f", pepMass);
         continue;

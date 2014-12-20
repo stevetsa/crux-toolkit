@@ -7,8 +7,8 @@ class IndexFile {
   
  protected:
   char* filename_;  ///< The file name that contain the peptides
-  FLOAT_T start_mass_; ///< the start mass limit in this file
-  FLOAT_T interval_;   ///< the interval of the peptides in this file
+  double start_mass_; ///< the start mass limit in this file
+  double interval_;   ///< the interval of the peptides in this file
  public:
   
   /**
@@ -16,8 +16,8 @@ class IndexFile {
    */
   IndexFile(
     char* filename,  ///< the filename to add -in
-    FLOAT_T start_mass,  ///< the start mass of the index file  -in
-    FLOAT_T range  ///< the mass range of the index file  -in
+    double start_mass,  ///< the start mass of the index file  -in
+    double range  ///< the mass range of the index file  -in
     );
 
   /**
@@ -27,8 +27,8 @@ class IndexFile {
 
   
   char* getFilename();
-  FLOAT_T getStartMass();
-  FLOAT_T getRange();
+  double getStartMass();
+  double getRange();
 
 };
 

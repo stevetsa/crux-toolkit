@@ -60,7 +60,7 @@ char* copy_string_part(const char* src, int length);
  * to the range of the numbers, allowing a single epsilon to be used for many, 
  * or perhaps all compares.
  */
-int compare_float(FLOAT_T float_a, FLOAT_T float_b);
+int compare_float(double float_a, double float_b);
 
 /**
  * Compares two numbers and returns TRUE if they are within the given
@@ -68,7 +68,7 @@ int compare_float(FLOAT_T float_a, FLOAT_T float_b);
  * precision is 2, a and b must be equal when rounded to two decimal
  * places.
  */
-bool is_equal(FLOAT_T a, FLOAT_T b, int precision);
+bool is_equal(double a, double b, int precision);
 
 /**
  * \returns whether the file exists
@@ -166,7 +166,7 @@ char* get_full_filename(const char* path, const char* filename);
 /**
  *\returns TRUE if float_a is between the interaval of min and max, else FALSE
  */
-inline bool compare_float_three(FLOAT_T float_a, FLOAT_T min, FLOAT_T max);
+inline bool compare_float_three(double float_a, double min, double max);
 
 /**
  * returns the file size of the given filename
@@ -292,9 +292,9 @@ bool suffix_compare(
 bool valid_peptide_sequence(const char* sequence);
 
 /**
- * quickSort for FLOAT_Ts
+ * quickSort for doubles
  */
-void quicksort(FLOAT_T numbers[], int array_size);
+void quicksort(double numbers[], int array_size);
 
 /**
  * User define our upper and our lower bounds.
@@ -309,10 +309,10 @@ int get_random_number_interval(
   );
 
 /**
- * \brief Shuffle an array of FLOAT_Ts.  Uses the Knuth algorithm.  Uses
+ * \brief Shuffle an array of doubles.  Uses the Knuth algorithm.  Uses
  * get_random_number_interval() to generate random numbers. 
  */
-void shuffle_floats(FLOAT_T* array, int size);
+void shuffle_floats(double* array, int size);
 
 /**
  * \brief Shuffles an array of elements.  Uses the Knuth algorithm.  Uses
@@ -355,17 +355,17 @@ int get_number_digits(
  */
 
 void fit_three_parameter_weibull(
-    FLOAT_T* data, ///< the data to be fit. should be in descending order -in
+    double* data, ///< the data to be fit. should be in descending order -in
     int fit_data_points, ///< the number of data points to fit -in
     int total_data_points, ///< the total number of data points -in
-    FLOAT_T min_shift, ///< the minimum shift to allow -in
-    FLOAT_T max_shift, ///< the maximum shift to allow -in
-    FLOAT_T step, ///< the step for shift modification -in
-    FLOAT_T corr_threshold, ///< minimum correlation, else no fit -in
-    FLOAT_T* eta,      ///< the eta parameter of the Weibull dist -out
-    FLOAT_T* beta,      ///< the beta parameter of the Weibull dist -out
-    FLOAT_T* shift,     ///< the best shift -out
-    FLOAT_T* correlation   ///< the best correlation -out
+    double min_shift, ///< the minimum shift to allow -in
+    double max_shift, ///< the maximum shift to allow -in
+    double step, ///< the step for shift modification -in
+    double corr_threshold, ///< minimum correlation, else no fit -in
+    double* eta,      ///< the eta parameter of the Weibull dist -out
+    double* beta,      ///< the beta parameter of the Weibull dist -out
+    double* shift,     ///< the best shift -out
+    double* correlation   ///< the best correlation -out
     );
 
 /**
@@ -373,13 +373,13 @@ void fit_three_parameter_weibull(
  * \returns eta, beta and the correlation coefficient
  */
 void fit_two_parameter_weibull(
-    FLOAT_T* data, ///< the data to be fit -in
+    double* data, ///< the data to be fit -in
     int fit_data_points, ///< the number of data points to fit -in
     int total_data_points, ///< the total number of data points -in
-    FLOAT_T shift, ///< the amount by which to shift our data -in
-    FLOAT_T* eta,      ///< the eta parameter of the Weibull dist -out
-    FLOAT_T* beta,      ///< the beta parameter of the Weibull dist -out
-    FLOAT_T* correlation ///< the best correlation -out
+    double shift, ///< the amount by which to shift our data -in
+    double* eta,      ///< the eta parameter of the Weibull dist -out
+    double* beta,      ///< the beta parameter of the Weibull dist -out
+    double* correlation ///< the best correlation -out
     );
 
 bool string_to_mass_type(char*, MASS_TYPE_T*);
@@ -561,7 +561,7 @@ static inline std::string &trim(
  * \returns SINGLE_STATE_CHARGE if spectrum precursor is singly charged or
  * MULTIPLE_CHARGE_STATE if multiply charged.
  */
-CHARGE_STATE_T choose_charge(FLOAT_T precursor_mz,         ///< m/z of spectrum precursor ion
+CHARGE_STATE_T choose_charge(double precursor_mz,         ///< m/z of spectrum precursor ion
   std::vector<Peak*>& peaks); ///< array of spectrum peaks
 
 /**

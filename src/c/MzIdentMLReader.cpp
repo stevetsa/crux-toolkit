@@ -109,7 +109,7 @@ void MzIdentMLReader::addScores(
 ) {
   vector<CVParam>::const_iterator iter = item.cvParams.begin();
   
-  FLOAT_T fvalue;
+  double fvalue;
   int ivalue;
 
   for (; iter != item.cvParams.end(); ++iter) {
@@ -283,7 +283,7 @@ void MzIdentMLReader::parsePSMs() {
         SpectrumIdentificationItem& item = **sii_iter;
         if (!use_pass_threshold_ || item.passThreshold) {
           int charge = item.chargeState;
-          FLOAT_T obs_mz = item.experimentalMassToCharge;
+          double obs_mz = item.experimentalMassToCharge;
           
           SpectrumZState zstate;
           zstate.setMZ(obs_mz, charge);
@@ -294,8 +294,8 @@ void MzIdentMLReader::parsePSMs() {
           Spectrum* spectrum = 
             new Spectrum(first_scan,last_scan,obs_mz, charge_vec, "");
 
-          FLOAT_T calc_mz = item.calculatedMassToCharge;
-          FLOAT_T calc_mass = (calc_mz - MASS_PROTON ) * (FLOAT_T)charge;
+          double calc_mz = item.calculatedMassToCharge;
+          double calc_mass = (calc_mz - MASS_PROTON ) * (double)charge;
           int rank = item.rank;
 
 

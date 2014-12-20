@@ -203,11 +203,11 @@ class DelimitedFileReader {
    * \returns the double value of the cell, checks for infinity
    * uses the current row
    */
-  FLOAT_T getFloat(
+  double getFloat(
     const char* column_name ///<the column name
   );
 
-  FLOAT_T getFloat(
+  double getFloat(
     unsigned int col_idx ///<the col index
   );
 

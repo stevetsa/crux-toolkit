@@ -163,7 +163,7 @@ void Index::init() {
   mass_range_ = 0.0;
   is_unique_ = false;
   decoys_ = NO_DECOYS;
-  static_mods_ = new FLOAT_T[Alphabet::numAminoAcids];
+  static_mods_ = new double[Alphabet::numAminoAcids];
   for(int aa_idx = 0; aa_idx < Alphabet::numAminoAcids; aa_idx++){
     static_mods_[aa_idx] = 0;
   }
@@ -372,7 +372,7 @@ bool Index::setFieldsFromDisk() {
   // check that the static mods in the index are the same as the parameters
   for(int aa_idx = 0; aa_idx < Alphabet::numAminoAcids; aa_idx++){
     const char* amino_acid = Alphabet::aminoAcids[aa_idx];
-    FLOAT_T param_mod = get_double_parameter(amino_acid);
+    double param_mod = get_double_parameter(amino_acid);
     if( static_mods_[aa_idx] != param_mod ){
       carp(CARP_FATAL, "Index cannot be searched with static mod "
            "%s=%f.  The index's static mod for %s is %f.",
@@ -394,7 +394,7 @@ void Index::setFieldFromMap(
   // parse the line
   char sharp[2] = "";
   char trait_name[64] = "";
-  FLOAT_T value = 0;
+  double value = 0;
   #ifdef USE_DOUBLES
   sscanf(line, "%s %s %lf", sharp, trait_name, &value);
   #else
@@ -530,7 +530,7 @@ void Index::setFields(
   const char* output_dir,      ///< The name of the new index
   PeptideConstraint* constraint,  
   ///< Constraint which these peptides satisfy -in
-  FLOAT_T mass_range,  
+  double mass_range,  
   ///< the range of mass that each index file should be partitioned into -in
   bool is_unique, ///< only unique peptides? -in
   DECOY_TYPE_T decoys ///< the type of decoys to store
@@ -581,7 +581,7 @@ Index::Index(
   const char* output_dir,     ///< The name of the new index
   PeptideConstraint* constraint,  
     ///< Constraint which these peptides will satisfy
-  FLOAT_T mass_range,  
+  double mass_range,  
     ///< the range of mass that each index file should be partitioned into
   DECOY_TYPE_T decoys ///< what kind of decoys to produce, if any
   ) {
@@ -768,7 +768,7 @@ bool Index::writeHeader(
   
   for(int aa_idx = 0; aa_idx < Alphabet::numAminoAcids; aa_idx++){
     const char* amino_acid = Alphabet::aminoAcids[aa_idx];
-    FLOAT_T mod =  get_double_parameter(amino_acid);
+    double mod =  get_double_parameter(amino_acid);
     if( mod != 0 ){
       fprintf(file, "#\tstatic_mod_%s: %+.6f\n", amino_acid, mod);
     }
@@ -865,10 +865,10 @@ long Index::getNumBinsNeeded(
 {
   int min_length = disk_constraint_->getMinLength();
   int max_length = disk_constraint_->getMaxLength();
-  FLOAT_T min_mass = disk_constraint_->getMinMass();
-  FLOAT_T max_mass = disk_constraint_->getMaxMass();
-  FLOAT_T min_mass_limit = min_mass;
-  FLOAT_T max_mass_limit = max_mass;
+  double min_mass = disk_constraint_->getMinMass();
+  double max_mass = disk_constraint_->getMaxMass();
+  double min_mass_limit = min_mass;
+  double max_mass_limit = max_mass;
   long num_bins = 0;
 
   // reset minimum mass limit
@@ -1255,7 +1255,7 @@ void Index::index_database(
     }
 
     Peptide* working_peptide = peptide_iterator->next();
-    FLOAT_T working_mass = working_peptide->getPeptideMass();
+    double working_mass = working_peptide->getPeptideMass();
     file_idx = (long int)((working_mass - low_mass) / mass_range_);
 
     // check if first time using this bin, if so create new file handle

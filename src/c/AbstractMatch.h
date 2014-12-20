@@ -29,7 +29,7 @@ class AbstractMatch {
   /**
    * \returns the match score for a particular score type
    */
-  virtual FLOAT_T getScore(
+  virtual double getScore(
     SCORER_TYPE_T type ///<score type desired
     ) const;
 
@@ -45,7 +45,7 @@ class AbstractMatch {
    */
   virtual void setScore(
     SCORER_TYPE_T type, ///< score to set
-    FLOAT_T score ///< score value
+    double score ///< score value
   );
 
   /**

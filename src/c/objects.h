@@ -823,13 +823,13 @@ enum SPLITTYPE_T{
  * \typedef peptideToScore
  * \brief Mapping of peptide object to scores
  */
-typedef std::map<Crux::Peptide*, FLOAT_T, bool(*)(Crux::Peptide*, Crux::Peptide*) > PeptideToScore;
+typedef std::map<Crux::Peptide*, double, bool(*)(Crux::Peptide*, Crux::Peptide*) > PeptideToScore;
 
 /**
  * \typedef ProteinToScore
  * \brief Mapping of protein object to scores
  */
-typedef std::map<Crux::Protein*, FLOAT_T, bool(*)(Crux::Protein*, Crux::Protein*) > ProteinToScore;
+typedef std::map<Crux::Protein*, double, bool(*)(Crux::Protein*, Crux::Protein*) > ProteinToScore;
 
 /**
  * \typedef MetaProtein

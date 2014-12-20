@@ -82,9 +82,9 @@ void MatchFileReader::parseHeader() {
 
 
 /**
- * \returns the FLOAT_T value of a cell, checks for infinity
+ * \returns the double value of a cell, checks for infinity
  */
-FLOAT_T MatchFileReader::getFloat(
+double MatchFileReader::getFloat(
   MATCH_COLUMNS_T col_type ///<the column type
 ) {
 

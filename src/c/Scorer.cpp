@@ -43,7 +43,7 @@ static const int MAX_XCORR_OFFSET = 75;
 /**
 * Constant for EVD p_value calculation
 */
-static const FLOAT_T DBL_EPSILON_ = 2.2204460492503131e-16;
+static const double DBL_EPSILON_ = 2.2204460492503131e-16;
 /**
 * Constant for EVD p_value calculation
 */
@@ -52,11 +52,11 @@ static const int DBL_MAX_10_EXP_ = 308;
 /**
  * Cut-off below which the simple Bonferroni calculation can be used.
  */
-static const FLOAT_T BONFERRONI_CUT_OFF_P = 0.0001;
+static const double BONFERRONI_CUT_OFF_P = 0.0001;
 /**
  * Cut-off below which the simple Bonferroni calculation can be used.
  */
-static const FLOAT_T BONFERRONI_CUT_OFF_NP = 0.01;
+static const double BONFERRONI_CUT_OFF_NP = 0.01;
 
 static const int GMTK_MAX_ION_FILES = 50;
 static const int GMTK_NUM_CHARGES = 2;
@@ -143,7 +143,7 @@ Scorer::Scorer(
     sp_beta_ = get_double_parameter("beta");
     sp_max_mz_ = get_double_parameter("max-mz");
     // allocate the intensity array
-    intensity_array_ = (FLOAT_T*)mycalloc(getMaxBin(), sizeof(FLOAT_T));
+    intensity_array_ = (double*)mycalloc(getMaxBin(), sizeof(double));
     max_intensity_ = 0;
     last_idx_ = 0;
     // the scorer as not been initialized yet.
@@ -151,7 +151,7 @@ Scorer::Scorer(
   }
   else if(type == XCORR){
     // scorer->sp_max_mz = get_double_parameter("max-mz");
-    // scorer->observed = (FLOAT_T*)mycalloc((int)scorer->sp_max_mz, sizeof(FLOAT_T));
+    // scorer->observed = (double*)mycalloc((int)scorer->sp_max_mz, sizeof(double));
     last_idx_ = 0;
     // the scorer as not been initialized yet.
     initialized_ = false;
@@ -184,10 +184,10 @@ Scorer::~Scorer() {
  * normalize array so that maximum peak equals threshold
  */
 void nomalize_intensity_array(
-  FLOAT_T* intensity_array, ///< the array to normalize -in/out
+  double* intensity_array, ///< the array to normalize -in/out
   int array_size, ///< size of array -in
-  FLOAT_T max_intensity, ///< the maximum intensity in array -in
-  FLOAT_T threshold   ///< the threshold to which the peaks should be normalized -in
+  double max_intensity, ///< the maximum intensity in array -in
+  double threshold   ///< the threshold to which the peaks should be normalized -in
   )
 {
   int mz_idx = 0;
@@ -211,10 +211,10 @@ void nomalize_intensity_array(
 void Scorer::smoothPeaks() {
 
   int idx = 2;
-  FLOAT_T* array = intensity_array_;
+  double* array = intensity_array_;
 
   // create a new array, which will replace the original intensity array
-  FLOAT_T* new_array = (FLOAT_T*)mycalloc(getMaxBin(), sizeof(FLOAT_T));
+  double* new_array = (double*)mycalloc(getMaxBin(), sizeof(double));
 
   if (type_ == SP){
     // iterate over all peaks
@@ -240,14 +240,14 @@ void Scorer::smoothPeaks() {
  * get the mean of intensity in array within +/- 50 mz of the working peak
  * \returns the mean +/- 50mz region
  */
-FLOAT_T get_mean_from_array(
-  FLOAT_T* original_array, ///< the array to normalize -in
+double get_mean_from_array(
+  double* original_array, ///< the array to normalize -in
   int array_size, ///< the size of array -in
   int peak_idx,  ///< the peak indx in array -in
   int* peak_count ///< pointer to peak count, store peak count here -out
   )
 {
-  FLOAT_T total_intensity = 0;
+  double total_intensity = 0;
   int start_idx = peak_idx - 50;
   int end_idx = peak_idx + 50;
 
@@ -276,18 +276,18 @@ FLOAT_T get_mean_from_array(
  * get the stdev of intensity in array within +/- 50 mz of the working peak
  * \returns the stdev +/- 50mz region
  */
-FLOAT_T get_stdev_from_array(
-  FLOAT_T* original_array, ///< the array to normalize -in
+double get_stdev_from_array(
+  double* original_array, ///< the array to normalize -in
   int array_size, ///< the size of array -in
   int peak_idx,  ///< the peak indx in array -ina
-  FLOAT_T mean,     ///< the mean in the +/- 50 interval -in
+  double mean,     ///< the mean in the +/- 50 interval -in
   int peak_count ///<  peak count -in
   )
 {
-  FLOAT_T variance = 0;
+  double variance = 0;
   int start_idx = peak_idx - 50;
   int end_idx = peak_idx + 50;
-  FLOAT_T dev = 0;
+  double dev = 0;
 
   // set upper bound
   if(peak_idx + 50 >= array_size){
@@ -316,16 +316,16 @@ FLOAT_T get_stdev_from_array(
  * yes, the facter that a peak has removed will effect the fallowing peaks
  */
 void Scorer::zeroPeakMeanStdev(
-  FLOAT_T* original_array, ///< the array to normalize -in/out
-  FLOAT_T* new_array, ///< the array to normalize -in/out                          
+  double* original_array, ///< the array to normalize -in/out
+  double* new_array, ///< the array to normalize -in/out                          
   int step                ///< is this 1 or 2 step -in
   )
 {
   int peak_count = 0;
   int idx = 0;
   int array_size = getMaxBin();
-  FLOAT_T mean = 0;
-  FLOAT_T stdev = 0;
+  double mean = 0;
+  double stdev = 0;
 
   // iterate over all peaks
   for(; idx < array_size; ++idx){
@@ -369,7 +369,7 @@ void Scorer::zeroPeakMeanStdev(
 void Scorer::zeroPeaks()
 {
   // create a new array, which will replace the original intensity array
-  FLOAT_T* new_array = (FLOAT_T*)mycalloc(getMaxBin(), sizeof(FLOAT_T));
+  double* new_array = (double*)mycalloc(getMaxBin(), sizeof(double));
   
   // step 1,
   zeroPeakMeanStdev(intensity_array_, new_array, 1);
@@ -399,12 +399,12 @@ void Scorer::extractPeaks(
   ) {
 
   // create a new array, which will replace the original intensity array
-  FLOAT_T* temp_array = (FLOAT_T*)mycalloc(getMaxBin(), sizeof(FLOAT_T));
-  FLOAT_T* original_array = intensity_array_;
+  double* temp_array = (double*)mycalloc(getMaxBin(), sizeof(double));
+  double* original_array = intensity_array_;
   int idx = 0;
   int temp_idx = 0;
-  FLOAT_T cut_off = 0;
-  FLOAT_T max_intensity;
+  double cut_off = 0;
+  double max_intensity;
 
   // copy all peaks to temp_array
   for(; idx < getMaxBin(); ++idx){
@@ -458,7 +458,7 @@ void Scorer::equalizePeaks() {
   int idx;
   // int array_size = (int)scorer->sp_max_mz-2;
   
-  FLOAT_T max_intensity = 0;
+  double max_intensity = 0;
   int end_idx = 0;
   int last_idx = last_idx_;
 
@@ -501,14 +501,14 @@ bool Scorer::createIntensityArraySp(
   )
 {
   Peak * peak = NULL;
-  FLOAT_T peak_location = 0;
-  FLOAT_T max_intensity = 0;
+  double peak_location = 0;
+  double max_intensity = 0;
   int mz = 0;
-  FLOAT_T intensity = 0;
-  FLOAT_T bin_width = bin_width_;
-  FLOAT_T bin_offset = bin_offset_;
-  FLOAT_T precursor_mz = spectrum->getPrecursorMz();
-  FLOAT_T experimental_mass_cut_off = precursor_mz*charge + 50;
+  double intensity = 0;
+  double bin_width = bin_width_;
+  double bin_offset = bin_offset_;
+  double precursor_mz = spectrum->getPrecursorMz();
+  double experimental_mass_cut_off = precursor_mz*charge + 50;
   int top_bins = 200;
 
   // if score type equals SP
@@ -628,22 +628,22 @@ bool Scorer::createIntensityArraySp(
  */
 int Scorer::calculateIonTypeSp(
   IonSeries* ion_series, ///< the ion series to score against the spectrum -in
-  FLOAT_T* intensity_sum,     ///< the total intensity sum of all matches so far -out
+  double* intensity_sum,     ///< the total intensity sum of all matches so far -out
   ION_TYPE_T ion_type,      ///< the ion type to check -in
   int* repeat_count         ///< the repeated count of ions (ex. consecutive b ions) -out
   )
 {
   int cleavage_idx = 0;
   Ion* ion = NULL;
-  FLOAT_T one_intensity = 0;
+  double one_intensity = 0;
   int ion_match = 0;
   int ion_charge = 0;
   int intensity_array_idx = 0;
   int* before_cleavage 
     = (int*)mymalloc(ion_series->getCharge()*sizeof(int));
   int cleavage_array_idx = 0;
-  FLOAT_T bin_width = bin_width_;
-  FLOAT_T bin_offset = bin_offset_;
+  double bin_width = bin_width_;
+  double bin_offset = bin_offset_;
 
   // initialize before cleavage indecies
   for(; cleavage_array_idx < ion_series->getCharge(); ++cleavage_array_idx){
@@ -707,13 +707,13 @@ int Scorer::calculateIonTypeSp(
  * given a spectrum and ion series calculates the Sp score
  *\returns the sp score 
  */
-FLOAT_T Scorer::genScoreSp(
+double Scorer::genScoreSp(
   Spectrum* spectrum,    ///< the spectrum to score -in
   IonSeries* ion_series ///< the ion series to score against the spectrum -in
   ) {
 
-  FLOAT_T final_score = 0;
-  FLOAT_T intensity_sum = 0;
+  double final_score = 0;
+  double intensity_sum = 0;
   int ion_match = 0;
   int repeat_count = 0;
   
@@ -733,7 +733,7 @@ FLOAT_T Scorer::genScoreSp(
   // set the fraction of  b,y ions matched for this ion_series
   sp_b_y_ion_matched_  = ion_match;
   sp_b_y_ion_possible_ = ion_series->getNumIons();
-  sp_b_y_ion_fraction_matched_ = (FLOAT_T)ion_match / ion_series->getNumIons();
+  sp_b_y_ion_fraction_matched_ = (double)ion_match / ion_series->getNumIons();
 
   //// DEBUG!!!!
   /*
@@ -766,15 +766,15 @@ FLOAT_T Scorer::genScoreSp(
  * .
  */
 void Scorer::normalizeEachRegion(
-  FLOAT_T* observed,  ///< intensities to normalize
-  FLOAT_T max_intensity_overall, /// the max intensity over entire spectrum
-  FLOAT_T* max_intensity_per_region, ///< the max intensity in each 10 regions -in
+  double* observed,  ///< intensities to normalize
+  double max_intensity_overall, /// the max intensity over entire spectrum
+  double* max_intensity_per_region, ///< the max intensity in each 10 regions -in
   int region_selector ///< the size of each regions -in
   )
 {
   int bin_idx = 0;
   int region_idx = 0;
-  FLOAT_T max_intensity = max_intensity_per_region[region_idx];
+  double max_intensity = max_intensity_per_region[region_idx];
 
   // normalize each region
   for(; bin_idx < getMaxBin(); ++bin_idx){
@@ -802,7 +802,7 @@ void Scorer::normalizeEachRegion(
   }
 }
 
-FLOAT_T* Scorer::getIntensityArrayObserved() {
+double* Scorer::getIntensityArrayObserved() {
   return observed_;
 }
 
@@ -817,20 +817,20 @@ bool Scorer::createIntensityArrayObserved(
   ) {
   
   Peak * peak = NULL;
-  FLOAT_T peak_location = 0;
+  double peak_location = 0;
   int mz = 0;
-  FLOAT_T intensity = 0;
-  FLOAT_T bin_width = bin_width_;
-  FLOAT_T bin_offset = bin_offset_;
-  FLOAT_T precursor_mz = spectrum->getPrecursorMz();
-  FLOAT_T experimental_mass_cut_off = precursor_mz*charge + 50;
+  double intensity = 0;
+  double bin_width = bin_width_;
+  double bin_offset = bin_offset_;
+  double precursor_mz = spectrum->getPrecursorMz();
+  double experimental_mass_cut_off = precursor_mz*charge + 50;
 
   // set max_mz and malloc space for the observed intensity array
-  FLOAT_T sp_max_mz = 512;
+  double sp_max_mz = 512;
 
   if(experimental_mass_cut_off > 512){
     int x = (int)experimental_mass_cut_off / 1024;
-    FLOAT_T y = experimental_mass_cut_off - (1024 * x);
+    double y = experimental_mass_cut_off - (1024 * x);
     sp_max_mz = x * 1024;
 
     if(y > 0){
@@ -842,13 +842,13 @@ bool Scorer::createIntensityArrayObserved(
 
   // DEBUG
   // carp(CARP_INFO, "experimental_mass_cut_off: %.2f sp_max_mz: %.3f", experimental_mass_cut_off, sp_max_mz);
-  FLOAT_T* observed = (FLOAT_T*)mycalloc(getMaxBin(), sizeof(FLOAT_T));
+  double* observed = (double*)mycalloc(getMaxBin(), sizeof(double));
 
   // Store the max intensity in entire spectrum
-  FLOAT_T max_intensity_overall = 0.0;
+  double max_intensity_overall = 0.0;
   // store the max intensity in each 10 regions to later normalize
-  FLOAT_T* max_intensity_per_region 
-    = (FLOAT_T*)mycalloc(NUM_REGIONS, sizeof(FLOAT_T));
+  double* max_intensity_per_region 
+    = (double*)mycalloc(NUM_REGIONS, sizeof(double));
   int region_selector = 0;
 
   // while there are more peaks to iterate over..
@@ -947,7 +947,7 @@ bool Scorer::createIntensityArrayObserved(
   } */
 
   // TODO maybe replace with a faster implementation that uses cum distribution
-  FLOAT_T* new_observed = (FLOAT_T*)mycalloc(getMaxBin(), sizeof(FLOAT_T));
+  double* new_observed = (double*)mycalloc(getMaxBin(), sizeof(double));
   int idx;
   for(idx = 0; idx < getMaxBin(); idx++){
     new_observed[idx] = observed[idx];
@@ -983,7 +983,7 @@ void Scorer::getProcessedPeaks(
   Spectrum* spectrum, 
   int charge,
   SCORER_TYPE_T score_type,  // SP, XCORR
-  FLOAT_T** intensities, ///< pointer to array of intensities
+  double** intensities, ///< pointer to array of intensities
   int* max_mz_bin){
 
   // create a scorer
@@ -1006,15 +1006,15 @@ void Scorer::getProcessedPeaks(
  */
 bool Scorer::createIntensityArrayTheoretical(
   IonSeries* ion_series, ///< the ion series to score against the spectrum (theoretical) -in
-  FLOAT_T*      theoretical ///< the empty theoretical spectrum -out
+  double*      theoretical ///< the empty theoretical spectrum -out
   ) {
 
   Ion* ion = NULL;
   int intensity_array_idx = 0;
   int ion_charge = 0;
   ION_TYPE_T ion_type;
-  FLOAT_T bin_width = bin_width_;
-  FLOAT_T bin_offset = bin_offset_;
+  double bin_width = bin_width_;
+  double bin_offset = bin_offset_;
   // create the ion iterator that will iterate through the ions
 
   // while there are ion's in ion iterator, add matched observed peak intensity
@@ -1139,13 +1139,13 @@ bool Scorer::createIntensityArrayXcorr(
  *\return the final cross correlation score between the observed and the
  *theoretical spectra
  */
-FLOAT_T Scorer::crossCorrelation(
-  FLOAT_T* theoretical ///< the theoretical spectrum to score against the observed spectrum -in
+double Scorer::crossCorrelation(
+  double* theoretical ///< the theoretical spectrum to score against the observed spectrum -in
   )
 {
 
   int size = getMaxBin();
-  FLOAT_T score_at_zero = 0;
+  double score_at_zero = 0;
   
   // compare each location in theoretical spectrum
   int idx;
@@ -1160,13 +1160,13 @@ FLOAT_T Scorer::crossCorrelation(
  * given a spectrum and ion series calculates the xcorr score
  *\returns the xcorr score 
  */
-FLOAT_T Scorer::genScoreXcorr(
+double Scorer::genScoreXcorr(
   Spectrum* spectrum,    ///< the spectrum to score -in
   IonSeries* ion_series ///< the ion series to score against the spectrum -in
   )
 {
-  FLOAT_T final_score = 0;
-  FLOAT_T* theoretical = NULL;
+  double final_score = 0;
+  double* theoretical = NULL;
 
   // initialize the scorer before scoring if necessary
   // preprocess the observed spectrum in scorer
@@ -1178,7 +1178,7 @@ FLOAT_T Scorer::genScoreXcorr(
   }
   
   // create theoretical array
-  theoretical = (FLOAT_T*)mycalloc(getMaxBin(), sizeof(FLOAT_T));
+  theoretical = (double*)mycalloc(getMaxBin(), sizeof(double));
   
   // create intensity array for theoretical spectrum 
   if(!createIntensityArrayTheoretical(ion_series, theoretical)){
@@ -1209,12 +1209,12 @@ FLOAT_T Scorer::genScoreXcorr(
 /**
  * Score a spectrum vs. an ion series
  */
-FLOAT_T Scorer::scoreSpectrumVIonSeries(
+double Scorer::scoreSpectrumVIonSeries(
   Spectrum* spectrum,      ///< the spectrum to score -in
   IonSeries* ion_series ///< the ion series to score against the spectrum -in
   ) {
 
-  FLOAT_T final_score = 0;
+  double final_score = 0;
 
   if(type_ == SP){
     final_score = genScoreSp(spectrum, ion_series);
@@ -1233,7 +1233,7 @@ FLOAT_T Scorer::scoreSpectrumVIonSeries(
  * Score a spectrum vs. another spectrum
  */
 
-FLOAT_T Scorer::scoreSpectrumVSpectrum(
+double Scorer::scoreSpectrumVSpectrum(
   Spectrum* first_spectrum, ///< the first spectrum to score 
   Spectrum* second_spectrum ///<  the second spectrum to score
 ) {
@@ -1416,7 +1416,7 @@ void Scorer::setType(
 /**
  *\returns the beta value of the scorer
  */
-FLOAT_T Scorer::getSpBeta() {
+double Scorer::getSpBeta() {
 
   return sp_beta_;
 }
@@ -1425,7 +1425,7 @@ FLOAT_T Scorer::getSpBeta() {
  *sets the scorer beta value
  */
 void Scorer::setSpBeta(
-  FLOAT_T sp_beta ///< used for Sp: the beta variable -in
+  double sp_beta ///< used for Sp: the beta variable -in
   ) {
 
   sp_beta_ = sp_beta;
@@ -1434,7 +1434,7 @@ void Scorer::setSpBeta(
 /**
  *\returns the max_mz value of the scorer
  */
-FLOAT_T Scorer::getSpMaxMz() {
+double Scorer::getSpMaxMz() {
 
   return sp_max_mz_;
 }
@@ -1443,7 +1443,7 @@ FLOAT_T Scorer::getSpMaxMz() {
  *set the scorer max_mz value
  */
 void Scorer::setSpMaxMz(
-  FLOAT_T sp_max_mz ///< used for Sp: the max_mz variable -in
+  double sp_max_mz ///< used for Sp: the max_mz variable -in
   ) {
 
   sp_max_mz_ = sp_max_mz;
@@ -1462,9 +1462,9 @@ int Scorer::getMaxBin() {
  * intensity is larger than the existing peak.
  */
 void Scorer::addIntensity(
-  FLOAT_T* intensity_array, ///< the intensity array to add intensity at index add_idx -out
+  double* intensity_array, ///< the intensity array to add intensity at index add_idx -out
   int add_idx,            ///< the idex to add the intensity -in
-  FLOAT_T intensity         ///< the intensity to add -in
+  double intensity         ///< the intensity to add -in
   ) {
 
   assert(add_idx >= 0);
@@ -1478,7 +1478,7 @@ void Scorer::addIntensity(
  *\returns the fraction of b,y ions matched for scoring SP, 
  * the values is valid for the last ion series scored with this scorer object
  */
-FLOAT_T Scorer::getSpBYIonFractionMatched() {
+double Scorer::getSpBYIonFractionMatched() {
 
   return sp_b_y_ion_fraction_matched_;
 }
@@ -1511,9 +1511,9 @@ int Scorer::getSpBYIonPossible() {
  * given parameters.
  * \returns the -log(p_value) of the exponential distribution
  */
-FLOAT_T score_logp_exp_sp(
-  FLOAT_T sp_score, ///< The sp score for the scoring peptide -in
-  FLOAT_T mean      ///< The overall mean of the sp scored peptides -in
+double score_logp_exp_sp(
+  double sp_score, ///< The sp score for the scoring peptide -in
+  double mean      ///< The overall mean of the sp scored peptides -in
   )
 {
   return -log( exp(-(1/mean) * sp_score) );
@@ -1525,9 +1525,9 @@ FLOAT_T score_logp_exp_sp(
  * \returns the -log(p_value) of the exponential distribution with
  * Bonferroni correction
  */
-FLOAT_T score_logp_bonf_exp_sp(
-  FLOAT_T sp_score, ///< The sp score for the scoring peptide -in
-  FLOAT_T mean,      ///< The overall mean of the sp scored peptides -in
+double score_logp_bonf_exp_sp(
+  double sp_score, ///< The sp score for the scoring peptide -in
+  double mean,      ///< The overall mean of the sp scored peptides -in
   int num_peptide  ///< The number of peptides scored for sp
   )
 {
@@ -1549,12 +1549,12 @@ FLOAT_T score_logp_bonf_exp_sp(
  * Apply a Bonferroni correction to a given p-value.
  * \returns the corrected p_value.
  */
-FLOAT_T bonferroni_correction(
-  FLOAT_T p_value, ///< The uncorrected p-value.
+double bonferroni_correction(
+  double p_value, ///< The uncorrected p-value.
   int num_tests ///< The number of tests performed.
   )
 {
-  FLOAT_T return_value;
+  double return_value;
 
   // use original equation 1-(1-p_value)^n when p is not too small
   if(p_value > BONFERRONI_CUT_OFF_P ||
@@ -1575,15 +1575,15 @@ FLOAT_T bonferroni_correction(
  * Compute a p-value for a given score w.r.t. a Weibull with given parameters.
  *\returns the p_value
  */
-FLOAT_T compute_weibull_pvalue(
-  FLOAT_T score, ///< The score for the scoring peptide -in
-  FLOAT_T eta,   ///< The eta parameter of the Weibull -in
-  FLOAT_T beta,  ///< The beta parameter of the Weibull -in
-  FLOAT_T shift  ///< The shift parameter of the Weibull -in
+double compute_weibull_pvalue(
+  double score, ///< The score for the scoring peptide -in
+  double eta,   ///< The eta parameter of the Weibull -in
+  double beta,  ///< The beta parameter of the Weibull -in
+  double shift  ///< The shift parameter of the Weibull -in
   ){
   carp(CARP_DETAILED_DEBUG, "Stat: score = %.6f", score);
 
-  FLOAT_T return_value;
+  double return_value;
 
   // No Weibull parameter, return NaN.
   if (eta == 0.0) {
@@ -1607,10 +1607,10 @@ FLOAT_T compute_weibull_pvalue(
  *\returns the -log(p_value)
  */
 double score_logp_bonf_weibull(
-  FLOAT_T score, ///< The score for the scoring peptide -in
-  FLOAT_T eta,  ///< The eta parameter of the Weibull
-  FLOAT_T beta, ///< The beta parameter of the Weibull
-  FLOAT_T shift, ///< The shift parameter of the Weibull
+  double score, ///< The score for the scoring peptide -in
+  double eta,  ///< The eta parameter of the Weibull
+  double beta, ///< The beta parameter of the Weibull
+  double shift, ///< The shift parameter of the Weibull
   int num_peptide ///< The number of peptides
   ){
   carp(CARP_DETAILED_DEBUG, "Stat: score = %.6f", score);
@@ -1663,9 +1663,9 @@ double score_logp_bonf_weibull(
  *\returns P(S>x)
  */
 double compute_evd_pvalue(
-  FLOAT_T score, ///< The xcorr score for the scoring peptide -in
-  FLOAT_T evd_mu, ///<  EVD parameter Xcorr(characteristic value of extreme value distribution) -in
-  FLOAT_T evd_lambda ///< EVD parameter Xcorr(decay constant of extreme value distribution) -in
+  double score, ///< The xcorr score for the scoring peptide -in
+  double evd_mu, ///<  EVD parameter Xcorr(characteristic value of extreme value distribution) -in
+  double evd_lambda ///< EVD parameter Xcorr(decay constant of extreme value distribution) -in
   )
 {
   // These constants are hardware dependent.
@@ -1700,10 +1700,10 @@ double compute_evd_pvalue(
  * Compute a p-value for a given score w.r.t. an EVD with the given parameters.
  *\returns the -log(p_value) of the EVD distribution 
  */
-FLOAT_T score_logp_evd_xcorr(
-  FLOAT_T xcorr_score, ///< The xcorr score for the scoring peptide -in
-  FLOAT_T mu, ///<  EVD parameter Xcorr(characteristic value of extreme value distribution) -in
-  FLOAT_T l_value ///< EVD parameter Xcorr(decay constant of extreme value distribution) -in
+double score_logp_evd_xcorr(
+  double xcorr_score, ///< The xcorr score for the scoring peptide -in
+  double mu, ///<  EVD parameter Xcorr(characteristic value of extreme value distribution) -in
+  double l_value ///< EVD parameter Xcorr(decay constant of extreme value distribution) -in
   )
 {
   return -log(compute_evd_pvalue(xcorr_score, mu, l_value));
@@ -1713,10 +1713,10 @@ FLOAT_T score_logp_evd_xcorr(
  * Compute a p-value for a given score w.r.t. an EVD with the given parameters.
  *\returns the -log(p_value) of the EVD distribution with Bonferroni correction
  */
-FLOAT_T score_logp_bonf_evd_xcorr(
-  FLOAT_T xcorr_score, ///< The xcorr score for the scoring peptide -in
-  FLOAT_T mu, ///<  EVD parameter Xcorr(characteristic value of extreme value distribution) -in
-  FLOAT_T l_value, ///< EVD parameter Xcorr(decay constant of extreme value distribution) -in
+double score_logp_bonf_evd_xcorr(
+  double xcorr_score, ///< The xcorr score for the scoring peptide -in
+  double mu, ///<  EVD parameter Xcorr(characteristic value of extreme value distribution) -in
+  double l_value, ///< EVD parameter Xcorr(decay constant of extreme value distribution) -in
   int num_peptide  ///< The number of peptides scored for sp -in
   )
 {

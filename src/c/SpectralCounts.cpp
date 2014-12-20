@@ -226,7 +226,7 @@ void SpectralCounts::getProteinScoresDNSAF() {
     ++pep_it) {
 
     Peptide* peptide = pep_it->first;
-    FLOAT_T pep_score = pep_it->second;
+    double pep_score = pep_it->second;
     for(PeptideSrcIterator iter=peptide->getPeptideSrcBegin();
         iter!=peptide->getPeptideSrcEnd();
         ++iter) {
@@ -254,7 +254,7 @@ void SpectralCounts::getProteinScoresDNSAF() {
     pep_it != peptide_scores_shared_.end();
     ++pep_it) {
     Peptide* peptide = pep_it->first;
-    FLOAT_T shared_pep_score = pep_it->second;
+    double shared_pep_score = pep_it->second;
 
     double unique_sum = 0.0;
    
@@ -282,7 +282,7 @@ void SpectralCounts::getProteinScoresDNSAF() {
         if (protein_scores_unique_.find(protein) != protein_scores_unique_.end()) {
           
     
-          FLOAT_T d_factor = protein_scores_unique_[protein] / unique_sum;
+          double d_factor = protein_scores_unique_[protein] / unique_sum;
           protein_scores_shared_[protein] += d_factor * shared_pep_score;
         }
       }
@@ -294,7 +294,7 @@ void SpectralCounts::getProteinScoresDNSAF() {
     prot_iter != protein_scores_unique_.end();
     ++prot_iter) {
     Protein* protein = prot_iter->first;
-    FLOAT_T unique_score = prot_iter->second;
+    double unique_score = prot_iter->second;
     protein_scores_[protein] = unique_score;
   }
 
@@ -302,7 +302,7 @@ void SpectralCounts::getProteinScoresDNSAF() {
     prot_iter != protein_scores_shared_.end();
     ++prot_iter) {
     Protein *protein = prot_iter->first;
-    FLOAT_T shared_score = prot_iter->second;
+    double shared_score = prot_iter->second;
     protein_scores_[protein] += shared_score;
   }
 }
@@ -321,7 +321,7 @@ void SpectralCounts::getProteinScores(){
     for (PeptideToScore::iterator pep_it = peptide_scores_.begin();
          pep_it != peptide_scores_.end(); ++pep_it){
       Peptide* peptide = pep_it->first;
-      FLOAT_T pep_score = pep_it->second;
+      double pep_score = pep_it->second;
       for (PeptideSrcIterator iter=peptide->getPeptideSrcBegin();
            iter!=peptide->getPeptideSrcEnd();
            ++iter) {
@@ -344,21 +344,21 @@ void SpectralCounts::getProteinScores(){
  */
 void SpectralCounts::normalizePeptideScores() {
   carp(CARP_DEBUG, "Normalizing peptide scores");
-  FLOAT_T total = 0.0;
+  double total = 0.0;
 
   // calculate sum of all scores
   for (PeptideToScore::iterator it = peptide_scores_.begin();
        it != peptide_scores_.end(); ++it){
-    FLOAT_T score = it->second;
+    double score = it->second;
     total += score;
   }
 
   // normalize by sum of scores and length
   for (PeptideToScore::iterator it = peptide_scores_.begin();
        it != peptide_scores_.end(); ++it){
-    FLOAT_T score = it->second;
+    double score = it->second;
     Peptide* peptide = it->first;
-    it->second = score / total / (FLOAT_T)peptide->getLength();
+    it->second = score / total / (double)peptide->getLength();
 
   }
 
@@ -376,16 +376,16 @@ void SpectralCounts::normalizeProteinScores(){
   } 
 
   carp(CARP_DEBUG, "Normalizing protein scores");
-  FLOAT_T total = 0.0;
+  double total = 0.0;
     
   // calculate sum of all scores
   for (ProteinToScore::iterator it = protein_scores_.begin();
        it != protein_scores_.end(); ++it){
 
-    FLOAT_T score = it->second;
+    double score = it->second;
     Protein* protein = it->first;
     if ( (measure_ == MEASURE_NSAF) || (measure_ == MEASURE_DNSAF)) {
-      score = score / (FLOAT_T)protein->getLength();
+      score = score / (double)protein->getLength();
     }
     total += score;
   }
@@ -394,14 +394,14 @@ void SpectralCounts::normalizeProteinScores(){
   for (ProteinToScore::iterator it = protein_scores_.begin();
        it != protein_scores_.end(); ++it){
 
-    FLOAT_T score = it->second;
+    double score = it->second;
     Protein* protein = it->first;
     score = score / total;
     // normalize by length
     if (measure_ == MEASURE_NSAF || 
         measure_ == MEASURE_DNSAF || 
         measure_ == MEASURE_SIN ) {
-      score = score / (FLOAT_T)protein->getLength();
+      score = score / (double)protein->getLength();
     }
     it->second = score;
   }
@@ -412,18 +412,18 @@ void SpectralCounts::normalizeProteinScores(){
  */
 void SpectralCounts::checkProteinNormalization() {
 
-  FLOAT_T sum = 0;
+  double sum = 0;
 
   for (ProteinToScore::iterator iter = protein_scores_.begin();
     iter != protein_scores_.end();
     ++iter) {
 
-    FLOAT_T score = iter->second;
+    double score = iter->second;
     if (measure_ == MEASURE_SIN) {
       //The normalized values of sin do not add up to 1, but they
       //should if you multiply the length back in...
       Protein* protein = iter->first;
-      score = score * (FLOAT_T)protein->getLength();
+      score = score * (double)protein->getLength();
     }
 
     sum += score;
@@ -450,11 +450,11 @@ void SpectralCounts::computeEmpai(){
 
   ProteinToScore::iterator it = protein_scores_.begin();;
   for (; it != protein_scores_.end(); ++it){
-    FLOAT_T observed_peptides = it->second;
+    double observed_peptides = it->second;
     Protein* protein = it->first;
     ProteinPeptideIterator* iter = new ProteinPeptideIterator(protein, 
                                                               constraint);
-    FLOAT_T possible_peptides = iter->getTotalPeptides();
+    double possible_peptides = iter->getTotalPeptides();
 
     it->second = pow(10, (observed_peptides / possible_peptides)) - 1.0;
 
@@ -468,10 +468,10 @@ void SpectralCounts::computeEmpai(){
  * all b and y ions that are not modified.
  * \return The sum of unmodified b and y ions.
  */
-FLOAT_T SpectralCounts::sumMatchIntensity(Match* match,
+double SpectralCounts::sumMatchIntensity(Match* match,
                                         Crux::SpectrumCollection* spectra)
 {
-  FLOAT_T match_intensity = 0;
+  double match_intensity = 0;
   char* peptide_seq = match->getSequence();
   MODIFIED_AA_T* modified_sequence = match->getModSequence();
   int charge = match->getCharge();
@@ -536,7 +536,7 @@ void SpectralCounts::getPeptideScores()
   for(set<Match*>::iterator match_it = matches_.begin();
       match_it != matches_.end(); ++match_it){
 
-    FLOAT_T match_intensity = 1; // for NSAF just count each for the peptide/
+    double match_intensity = 1; // for NSAF just count each for the peptide/
 
     Match* match = (*match_it);
     // for sin, calculate total ion intensity for match by
@@ -712,7 +712,7 @@ void SpectralCounts::filterMatchesCustomScore() {
   while(match_iterator.hasNext()) {
     Match* match = match_iterator.next();
     if (!match->isDecoy()) {
-      FLOAT_T score;
+      double score;
       bool success = match->getCustomScore(custom_threshold_name_, score);
   
       if (!success) {
@@ -827,11 +827,11 @@ void SpectralCounts::getMetaScores(){
   for (MetaMapping::iterator meta_it = meta_mapping_.begin();
        meta_it != meta_mapping_.end(); ++meta_it ){
     MetaProtein proteins = (*meta_it).second;
-    FLOAT_T top_score = -1.0;
+    double top_score = -1.0;
     for (MetaProtein::iterator protein_it = proteins.begin();
          protein_it != proteins.end(); ++protein_it){
       Protein* protein = (*protein_it);
-      FLOAT_T score = protein_scores_[protein];
+      double score = protein_scores_[protein];
       top_score = max(score, top_score);
     }
     meta_protein_scores_.insert(make_pair(proteins, top_score));
@@ -846,18 +846,18 @@ void SpectralCounts::getMetaScores(){
  */
 void SpectralCounts::getMetaRanks(){
   carp(CARP_DEBUG, "Finding ranks of meta proteins");
-  vector< pair<FLOAT_T, MetaProtein> > metaVector;
+  vector< pair<double, MetaProtein> > metaVector;
   for (MetaToScore::iterator meta_it = meta_protein_scores_.begin();
        meta_it != meta_protein_scores_.end(); ++meta_it){
     MetaProtein proteins = (*meta_it).first;
-    FLOAT_T score = (*meta_it).second;
+    double score = (*meta_it).second;
     metaVector.push_back(make_pair(score, proteins));
   }
   sort(metaVector.begin(), metaVector.end());
   reverse(metaVector.begin(), metaVector.end());
 
   int cur_rank = 1;
-  for (vector< pair<FLOAT_T, MetaProtein> >::iterator
+  for (vector< pair<double, MetaProtein> >::iterator
          vector_it = metaVector.begin();
        vector_it != metaVector.end(); ++vector_it){
     MetaProtein proteins = (*vector_it).second;

@@ -14,7 +14,7 @@ using namespace Crux;
 /**
  * mass of the linker
  */
-FLOAT_T LinkedPeptide::linker_mass_;
+double LinkedPeptide::linker_mass_;
 
 /**
  * Initializes the object
@@ -103,7 +103,7 @@ LinkedPeptide::~LinkedPeptide() {
  * Sets the linker_mass_ static variable
  */
 void LinkedPeptide::setLinkerMass(
-  FLOAT_T linker_mass ///< the linker mass
+  double linker_mass ///< the linker mass
   ) {
 
   linker_mass_ = linker_mass;
@@ -112,7 +112,7 @@ void LinkedPeptide::setLinkerMass(
 /**
  * \returns the linker_mass_ static variable
  */
-FLOAT_T LinkedPeptide::getLinkerMass() {
+double LinkedPeptide::getLinkerMass() {
   return linker_mass_;
 }
 
@@ -228,7 +228,7 @@ bool LinkedPeptide::isSelfLoop() {
 /**
  * /returns the mass of the LinkedPeptide
  */
-FLOAT_T LinkedPeptide::getMass(
+double LinkedPeptide::getMass(
   MASS_TYPE_T mass_type ///< MONO or AVERAGE
   ) {
 
@@ -271,7 +271,7 @@ void LinkedPeptide::calculateMass(
 /**
  * \returns the m/z of the LinkedPeptide
  */
-FLOAT_T LinkedPeptide::getMZ (
+double LinkedPeptide::getMZ (
   MASS_TYPE_T mass_type ///< MONO or AVERAGE
   )  {
 

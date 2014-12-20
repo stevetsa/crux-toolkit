@@ -46,14 +46,14 @@ class Spectrum{
   // member variables
   int              first_scan_;    ///< The number of the first scan
   int              last_scan_;     ///< The number of the last scan
-  FLOAT_T          precursor_mz_;  ///< The m/z of precursor (MS-MS spectra)
+  double          precursor_mz_;  ///< The m/z of precursor (MS-MS spectra)
   std::vector<SpectrumZState> zstates_;
   std::vector<SpectrumZState> ezstates_;
   std::vector<Peak*>  peaks_;         ///< The spectrum peaks
-  FLOAT_T          min_peak_mz_;   ///< The minimum m/z of all peaks
-  FLOAT_T          max_peak_mz_;   ///< The maximum m/z of all peaks
+  double          min_peak_mz_;   ///< The minimum m/z of all peaks
+  double          max_peak_mz_;   ///< The maximum m/z of all peaks
   double           total_energy_;  ///< The sum of intensities in all peaks
-  FLOAT_T          lowest_sp_;  ///< The lowest Sp score (for writing SQT)
+  double          lowest_sp_;  ///< The lowest Sp score (for writing SQT)
   std::string           filename_;      ///< Optional filename
   std::string           stripped_filename_; ///< filename, no path or extension
   std::vector<std::string> i_lines_v_;  ///< store i lines
@@ -77,8 +77,8 @@ class Spectrum{
    * Updates num_peaks, min_peak_mz, max_peak_mz, total_energy fields.
    */
   void updateFields
-    (FLOAT_T intensity,///< the intensity of the peak that has been added -in
-     FLOAT_T location  ///< the location of the peak that has been added -in
+    (double intensity,///< the intensity of the peak that has been added -in
+     double location  ///< the location of the peak that has been added -in
      );
 
  public:
@@ -93,7 +93,7 @@ class Spectrum{
   Spectrum
     (int               first_scan,         ///< number of the first scan -in
      int               last_scan,          ///< number of the last scan -in
-     FLOAT_T           precursor_mz,       ///< m/z of the precursor
+     double           precursor_mz,       ///< m/z of the precursor
      const std::vector<int>& possible_z,   ///< possible charge states
      const char*       filename
      );
@@ -135,7 +135,7 @@ class Spectrum{
    */
   void printProcessedPeaks
     (SpectrumZState& zstate,       ///< print at this charge state
-     FLOAT_T* intensities, ///< intensities of new peaks
+     double* intensities, ///< intensities of new peaks
      int max_mz_bin,       ///< num_bins in intensities
      FILE* file);          ///< print to this file
 
@@ -198,7 +198,7 @@ class Spectrum{
   /**
    * \returns The m/z of the precursor.
    */
-  FLOAT_T getPrecursorMz() const;
+  double getPrecursorMz() const;
 
   /**
    * \returns The a const reference to a vector of the possible charge
@@ -230,12 +230,12 @@ class Spectrum{
   /**
    * \returns The minimum m/z of all peaks.
    */
-  FLOAT_T getMinPeakMz();
+  double getMinPeakMz();
   
   /**
    * \returns The maximum m/z of all peaks.
    */
-  FLOAT_T getMaxPeakMz();
+  double getMaxPeakMz();
   
   /**
    * \returns The number of peaks.
@@ -249,8 +249,8 @@ class Spectrum{
    * spectrum object that it needs.
    */
   Peak * getNearestPeak
-    (FLOAT_T mz, ///< the mz of the peak around which to sum intensities -in
-     FLOAT_T max ///< the maximum distance to get intensity -in
+    (double mz, ///< the mz of the peak around which to sum intensities -in
+     double max ///< the maximum distance to get intensity -in
      );
   
   /**
@@ -261,8 +261,8 @@ class Spectrum{
    * spectrum object that it needs.
    */
   Peak* getMaxIntensityPeak(
-    FLOAT_T mz, ///< the mz of the peak to find
-    FLOAT_T max ///< the maximum distance to get intensity -in
+    double mz, ///< the mz of the peak to find
+    double max ///< the maximum distance to get intensity -in
   );
 
 
@@ -275,26 +275,26 @@ class Spectrum{
    * Sets the total ion current.
    */
   void setTotalEnergy(
-    FLOAT_T tic ///< the total ion current
+    double tic ///< the total ion current
   );
 
   /**
    * Sets the lowest Sp score.
    */
   void setLowestSp(
-    FLOAT_T sp ///< the lowest Sp score for this spectrum
+    double sp ///< the lowest Sp score for this spectrum
   );
 
   /**
    * \returns The intensity of the peak with the maximum intensity.
    */
-  FLOAT_T getMaxPeakIntensity();
+  double getMaxPeakIntensity();
 
   /**
    * \returns The mass of the singly charged precursor ion, according
    * to the formula mass = m/z * charge - (mass_H * (charge - 1))
    */
-  //FLOAT_T getSinglyChargedMass(int charge); ///< the charge of the precursor ion -in
+  //double getSinglyChargedMass(int charge); ///< the charge of the precursor ion -in
 
   /**
    * Adds a possible charge(z) to the spectrum.
@@ -307,8 +307,8 @@ class Spectrum{
    * \returns TRUE if successfully added.
    */
   bool addPeak
-    (FLOAT_T intensity,  ///< the intensity of peak to add -in
-     FLOAT_T location_mz ///< the location of peak to add -in
+    (double intensity,  ///< the intensity of peak to add -in
+     double location_mz ///< the location of peak to add -in
      );
 
   /**

@@ -124,7 +124,7 @@ int XHHC_Peptide::linkSite() {
 /**
  * \returns the mass of the peptide
  */
-FLOAT_T XHHC_Peptide::getMass(
+double XHHC_Peptide::getMass(
   MASS_TYPE_T mass_type ///< MONO or AVERAGE
   ) {
 

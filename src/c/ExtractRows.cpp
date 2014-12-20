@@ -121,7 +121,7 @@ int ExtractRows::main(int argc, char** argv) {
   int column_value_int = 0;
   from_string(column_value_int, column_value_str);
 
-  FLOAT_T column_value_real = 0;
+  double column_value_real = 0;
   from_string(column_value_real, column_value_str);
 
 

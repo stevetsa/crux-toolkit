@@ -26,7 +26,7 @@ class ProteinPeptideIterator {
   std::vector<int>* nterm_cleavage_positions_; ///< nterm cleavages that satisfy 
                                         ///< constraint. 1st aa is 1.
   std::vector<int>* peptide_lengths_; ///< all the lengths of valid peptides
-  std::vector<FLOAT_T>* peptide_masses_; ///< all the masses of valid peptides
+  std::vector<double>* peptide_masses_; ///< all the masses of valid peptides
   std::vector<int>* cumulative_cleavages_; ///< cumulative number of cleavages so far
   int current_cleavage_idx_; /// where are we in the cleavage positions?
   int num_cleavages_; /// how many cleavage positions?
@@ -38,7 +38,7 @@ class ProteinPeptideIterator {
    * Takes a cumulative distribution of peptide masses (the mass_array) and
    * the start index and end index and returns a peptide mass
    */
-  FLOAT_T calculateSubsequenceMass(
+  double calculateSubsequenceMass(
     double* mass_array,
     int start_idx,
     int cur_length

@@ -516,7 +516,7 @@ TValue DelimitedFile::getValue(
 /**
  * gets a double type from cell, checks for infinity. 
  */
-FLOAT_T DelimitedFile::getFloat(
+double DelimitedFile::getFloat(
     unsigned int col_idx, ///< the column index
     unsigned int row_idx ///< the row index
 ) {
@@ -524,21 +524,21 @@ FLOAT_T DelimitedFile::getFloat(
   string& string_ans = getString(col_idx,row_idx);
   if (string_ans == "Inf") {
 
-    return numeric_limits<FLOAT_T>::infinity();
+    return numeric_limits<double>::infinity();
   } else if (string_ans == "-Inf") {
 
-    return -numeric_limits<FLOAT_T>::infinity();
+    return -numeric_limits<double>::infinity();
   }
   else {
 
-    return getValue<FLOAT_T>(col_idx, row_idx);
+    return getValue<double>(col_idx, row_idx);
   }
 }
 
 /** 
  * gets a double type from cell, checks for infinity.
  */
-FLOAT_T DelimitedFile::getFloat(
+double DelimitedFile::getFloat(
     const char* column_name, ///<the column name
     unsigned int row_idx ///< the row index
 ) {
@@ -559,7 +559,7 @@ FLOAT_T DelimitedFile::getFloat(
  * gets a double value from cell, checks for infinity
  * uses the current_row_ as the row index
  */
-FLOAT_T DelimitedFile::getFloat(
+double DelimitedFile::getFloat(
   const char* column_name ///<the column name
 ) {
   
@@ -773,7 +773,7 @@ void DelimitedFile::sortByFloatColumn(
   bool ascending ///<sort in ascending order?
   ) {
 
-  multimap<FLOAT_T, unsigned int> sort_indices;
+  multimap<double, unsigned int> sort_indices;
   int sort_col_idx = findColumn(column_name); 
   
   if (sort_col_idx == -1) {
@@ -781,7 +781,7 @@ void DelimitedFile::sortByFloatColumn(
   }
 
   for (unsigned int row_idx=0;row_idx<numRows();row_idx++) {
-    sort_indices.insert(pair<FLOAT_T, unsigned int>(getFloat(sort_col_idx, row_idx), row_idx));
+    sort_indices.insert(pair<double, unsigned int>(getFloat(sort_col_idx, row_idx), row_idx));
   }
 
   reorderRows(sort_indices, ascending);

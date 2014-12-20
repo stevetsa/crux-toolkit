@@ -18,9 +18,9 @@ class XLinkMatch : public Crux::Match {
 
  protected:
   XLinkMatchCollection* parent_; ///< Owner of this match
-  FLOAT_T pvalue_; ///< p-value of the match
+  double pvalue_; ///< p-value of the match
   bool mass_calculated_[NUMBER_MASS_TYPES]; ///< is mass calculated?
-  FLOAT_T mass_[NUMBER_MASS_TYPES]; ///<calculated mass
+  double mass_[NUMBER_MASS_TYPES]; ///<calculated mass
 
  public:
   
@@ -38,7 +38,7 @@ class XLinkMatch : public Crux::Match {
   virtual int getNumMissedCleavages() = 0;
   virtual bool isModified() = 0;
   virtual std::string getSequenceString() = 0;
-  virtual FLOAT_T calcMass(MASS_TYPE_T mass_type) = 0;
+  virtual double calcMass(MASS_TYPE_T mass_type) = 0;
   virtual XLinkMatch* shuffle() = 0;
   virtual void predictIons(IonSeries* ion_series, int charge)=0;
   virtual std::string getIonSequence(Ion* ion)=0;
@@ -47,7 +47,7 @@ class XLinkMatch : public Crux::Match {
   /**
    * \returns the mass of the match
    */
-  FLOAT_T getMass(
+  double getMass(
     MASS_TYPE_T mass_type /// MONO or AVERAGE?
   );
 
@@ -60,15 +60,15 @@ class XLinkMatch : public Crux::Match {
    * computes the pvalue for this match using the provided weibull paramters
    */
   void computeWeibullPvalue(
-    FLOAT_T shift, ///< shift parameter for weibull
-    FLOAT_T eta, ///< eta parameter for weibull
-    FLOAT_T beta ///< beta parameter for weibull
+    double shift, ///< shift parameter for weibull
+    double eta, ///< eta parameter for weibull
+    double beta ///< beta parameter for weibull
     );
 
   /**
    * \returns the mass error in part-per-million (ppm)
    */
-  FLOAT_T getPPMError();
+  double getPPMError();
 
   /**
    * sets the XLinkMatchCollection owner of the match
@@ -101,7 +101,7 @@ class XLinkMatch : public Crux::Match {
     MatchCollection* collection,  ///< collection holding this match -in 
     MatchFileWriter*    output_file,            ///< output stream -out
     int      scan_num,               ///< starting scan number -in
-    FLOAT_T  spectrum_precursor_mz,  ///< m/z of spectrum precursor -in
+    double  spectrum_precursor_mz,  ///< m/z of spectrum precursor -in
     int      num_target_matches,            ///< target matches in spectrum -in
     int      num_decoy_matches,      ///< decoy matches (if any) for this spectrum -in
     int      b_y_total,              ///< total b/y ions -in

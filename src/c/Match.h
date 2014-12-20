@@ -35,8 +35,8 @@
 
 
 /* Global variables */
-static const FLOAT_T NOT_SCORED = FLT_MIN;
-static const FLOAT_T P_VALUE_NA = -1.0;
+static const double NOT_SCORED = FLT_MIN;
+static const double P_VALUE_NA = -1.0;
 
 namespace Crux{
 
@@ -68,14 +68,14 @@ class Match {
    */
   Crux::Spectrum* spectrum_; ///< the spectrum we are scoring with
   Crux::Peptide* peptide_;  ///< the peptide we are scoring
-  FLOAT_T match_scores_[NUMBER_SCORER_TYPES];
-  std::map<string,FLOAT_T> match_custom_scores_;
+  double match_scores_[NUMBER_SCORER_TYPES];
+  std::map<string,double> match_custom_scores_;
     ///< array of scores, one for each type (index with SCORER_TYPE_T) 
   int match_rank_[NUMBER_SCORER_TYPES];  
     ///< rank of this match for each type scored (index with SCORER_TYPE_T)
   int pointer_count_; 
     ///< number of pointers to this match object (when reach 0, free memory)
-  FLOAT_T b_y_ion_fraction_matched_; 
+  double b_y_ion_fraction_matched_; 
     ///< the fraction of the b, y ion matched while scoring for SP
   int b_y_ion_matched_; ///< number of b, y ion matched while scoring SP
   int b_y_ion_possible_; ///< number of possible b, y ion while scoring SP
@@ -87,9 +87,9 @@ class Match {
   // post_process match object features
   // only valid when post_process_match is true
   bool post_process_match_; ///< Is this a post process match object?
-  FLOAT_T delta_cn_; ///< the difference in top and second Xcorr scores
-  FLOAT_T delta_lcn_; ///< the natural log of delta_cn
-  FLOAT_T ln_experiment_size_; 
+  double delta_cn_; ///< the difference in top and second Xcorr scores
+  double delta_lcn_; ///< the natural log of delta_cn
+  double ln_experiment_size_; 
      ///< natural log of total number of candidate peptides evaluated
   int num_target_matches_; ///< total target candidates for this spectrum
   int num_decoy_matches_;///< decoy candidates for this spectrum if decoy match
@@ -104,7 +104,7 @@ class Match {
     MatchCollection* collection,  ///< collection holding this match -in 
     MatchFileWriter*    output_file,            ///< output stream -out
     int     scan_num,               ///< starting scan number -in
-    FLOAT_T spectrum_precursor_mz,  ///< m/z of spectrum precursor -in
+    double spectrum_precursor_mz,  ///< m/z of spectrum precursor -in
     int     num_target_matches,     ///< target matches for this spectrum -in
     int     num_decoy_matches, ///< decoy matches (if any) for this spectrum -in
     int     b_y_total,              ///< total b/y ions -in
@@ -177,7 +177,7 @@ class Match {
     MatchCollection* collection,  ///< collection holding this match -in 
     MatchFileWriter*    file,                   ///< output stream -out
     int      scan_num,               ///< starting scan number -in
-    FLOAT_T  spectrum_precursor_mz,  ///< m/z of spectrum precursor -in
+    double  spectrum_precursor_mz,  ///< m/z of spectrum precursor -in
     int      num_targetmatches,      ///< target matches for this spectrum -in
     int      num_decoy_matches ///< decoy matches (if any) for this spectrum -in
     );
@@ -187,7 +187,7 @@ class Match {
    ******************************************/
   /**
    * Constructs the 20 feature array that pass over to percolator registration
-   *\returns the feature FLOAT_T array
+   *\returns the feature double array
    */
   double* getPercolatorFeatures(
     MatchCollection* match_collection ///< the match collection to iterate -in
@@ -262,7 +262,7 @@ class Match {
    * Must ask for score that has been computed
    *\returns the match_mode score in the match object
    */
-  FLOAT_T getScore(
+  double getScore(
     SCORER_TYPE_T match_mode ///< the working mode (SP, XCORR) -in
     );
 
@@ -271,14 +271,14 @@ class Match {
    */
   void setScore(
     SCORER_TYPE_T match_mode, ///< the working mode (SP, XCORR) -in
-    FLOAT_T match_score ///< the score of the match -in
+    double match_score ///< the score of the match -in
     );
 
   /**
    * get the custom score
    * \retuns the custom score if it exists
    */
-  FLOAT_T getScore(
+  double getScore(
     std::string& match_score_name ///< the name of the score -in
     );
 
@@ -290,7 +290,7 @@ class Match {
    */
   void setCustomScore(
     const std::string& match_score_name, ///< the name of the score -in
-    FLOAT_T match_score ///< the score of the match -in
+    double match_score ///< the score of the match -in
     );
 
   /**
@@ -298,7 +298,7 @@ class Match {
    */
   bool getCustomScore(
     const std::string& match_score_name, ///< the name of the score -in
-    FLOAT_T& score ///< the value of the score -out
+    double& score ///< the value of the score -out
     );
 
   void getCustomScoreNames(
@@ -382,43 +382,43 @@ class Match {
   /**
    * gets the spectrum neutral mass
    */
-  FLOAT_T getNeutralMass();
+  double getNeutralMass();
 
   /**
    * sets the match delta_cn
    */
   void setDeltaCn(
-    FLOAT_T delta_cn  ///< the delta cn value of PSM -in
+    double delta_cn  ///< the delta cn value of PSM -in
     );
 
   /**
    * gets the match delta_cn
    */
-  FLOAT_T getDeltaCn();
+  double getDeltaCn();
 
   /**
    * sets the match ln_delta_cn
    */
   void setDeltaLCn(
-    FLOAT_T delta_lcn  ///< the ln delta cn value of PSM -in
+    double delta_lcn  ///< the ln delta cn value of PSM -in
     );
 
   /**
    * gets the match ln_delta_cn
    */
-  FLOAT_T getDeltaLCn();
+  double getDeltaLCn();
 
   /**
    * sets the match ln_experiment_size
    */
   void setLnExperimentSize(
-    FLOAT_T ln_experiment_size ///< the ln_experiment_size value of PSM -in
+    double ln_experiment_size ///< the ln_experiment_size value of PSM -in
     );
 
   /**
    * gets the match ln_experiment_size
    */
-  FLOAT_T getLnExperimentSize();
+  double getLnExperimentSize();
 
   /**
    * \returns The total number of target matches searched for this spectrum.
@@ -469,13 +469,13 @@ class Match {
    * sets the match b_y_ion_matched
    */
   void setBYIonFractionMatched(
-    FLOAT_T frac_matched ///< the fraction of ions matched
+    double frac_matched ///< the fraction of ions matched
     );
 
   /**
    * gets the match b_y_ion_match
    */
-  FLOAT_T getBYIonFractionMatched();
+  double getBYIonFractionMatched();
 
   /**
    * sets the match b_y_ion_matched

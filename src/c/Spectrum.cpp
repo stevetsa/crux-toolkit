@@ -53,7 +53,7 @@ Spectrum::Spectrum() :
 Spectrum::Spectrum
 (int               first_scan,   ///< The number of the first scan -in
  int               last_scan,    ///< The number of the last scan -in
- FLOAT_T           precursor_mz, ///< The m/z of the precursor 
+ double           precursor_mz, ///< The m/z of the precursor 
  const vector<int>& possible_z,  ///< The possible charge states 
  const char*       filename      ///< Optional filename
  ) : 
@@ -167,7 +167,7 @@ void Spectrum::print(FILE* file) ///< output file to print at -out
  */
 void Spectrum::printProcessedPeaks(
   SpectrumZState& zstate,           ///< print at this charge state
-  FLOAT_T* intensities, ///< intensities of new peaks
+  double* intensities, ///< intensities of new peaks
   int max_mz_bin,       ///< num_bins in intensities
   FILE* file){          ///< print to this file
 
@@ -427,15 +427,15 @@ bool Spectrum::parsePwizSpecInfo(
       carp(CARP_DEBUG, "Charge:%d", charge);
       if (ions[ion_idx].hasCVParam(pzd::MS_accurate_mass)) {
         //bullseye-determined charge states
-        FLOAT_T accurate_mass = 
-          ions[ion_idx].cvParam(pzd::MS_accurate_mass).valueAs<FLOAT_T>();
+        double accurate_mass = 
+          ions[ion_idx].cvParam(pzd::MS_accurate_mass).valueAs<double>();
         carp(CARP_DEBUG, "accurate mass:%f charge:%i",accurate_mass, charge);
         SpectrumZState zstate;
         zstate.setSinglyChargedMass(accurate_mass, charge);
         ezstates_.push_back(zstate);
       } else if (ions[ion_idx].hasCVParam(pzd::MS_selected_ion_m_z)) {
-        FLOAT_T mz =
-          ions[ion_idx].cvParam(pzd::MS_selected_ion_m_z).valueAs<FLOAT_T>();
+        double mz =
+          ions[ion_idx].cvParam(pzd::MS_selected_ion_m_z).valueAs<double>();
         carp(CARP_DEBUG, "mz:%g", mz);
         //if we don't have a precursor set yet, set it now.
         if (!have_precursor_mz) {
@@ -492,8 +492,8 @@ bool Spectrum::parsePwizSpecInfo(
  * calls update_spectrum_fields to update num_peaks, min_peak ...
  */
 bool Spectrum::addPeak
-( FLOAT_T intensity, ///< the intensity of peak to add -in
-  FLOAT_T location_mz ///< the location of peak to add -in
+( double intensity, ///< the intensity of peak to add -in
+  double location_mz ///< the location of peak to add -in
   )
 {
 
@@ -530,7 +530,7 @@ void Spectrum::populateMzPeakArray()
   }
   for(int peak_idx = 0; peak_idx < (int)peaks_.size(); peak_idx++){
     Peak * peak = peaks_[peak_idx];
-    FLOAT_T peak_mz = peak->getLocation();
+    double peak_mz = peak->getLocation();
     int mz_idx = (int) (peak_mz * MZ_TO_PEAK_ARRAY_RESOLUTION);
     if (mz_peak_array_[mz_idx] != NULL){
       carp(CARP_INFO, "Peak collision at mz %.3f = %i", peak_mz, mz_idx);
@@ -552,13 +552,13 @@ void Spectrum::populateMzPeakArray()
  * TODO: reimplement with faster peak lookup
  */
 Peak * Spectrum::getNearestPeak(
-  FLOAT_T mz, ///< the mz of the peak around which to sum intensities -in
-  FLOAT_T max ///< the maximum distance to get intensity -in
+  double mz, ///< the mz of the peak around which to sum intensities -in
+  double max ///< the maximum distance to get intensity -in
   )
 {
   this->populateMzPeakArray(); // for rapid peak lookup by mz
 
-  FLOAT_T min_distance = BILLION;
+  double min_distance = BILLION;
   int min_mz_idx = (int)((mz - max) * MZ_TO_PEAK_ARRAY_RESOLUTION + 0.5);
   min_mz_idx = min_mz_idx < 0 ? 0 : min_mz_idx;
   int max_mz_idx = (int)((mz + max) * MZ_TO_PEAK_ARRAY_RESOLUTION + 0.5);
@@ -572,8 +572,8 @@ Peak * Spectrum::getNearestPeak(
     if ((peak = mz_peak_array_[peak_idx]) == NULL){
       continue;
     }
-    FLOAT_T peak_mz = peak->getLocation();
-    FLOAT_T distance = fabs(mz - peak_mz);
+    double peak_mz = peak->getLocation();
+    double distance = fabs(mz - peak_mz);
     if (distance > max){
       continue;
     }
@@ -593,11 +593,11 @@ Peak * Spectrum::getNearestPeak(
  * spectrum object that it needs.
  */
 Peak* Spectrum::getMaxIntensityPeak(
-  FLOAT_T mz, ///< the mz of the peak to find
-  FLOAT_T max ///< the maximum distance to get intensity -in
+  double mz, ///< the mz of the peak to find
+  double max ///< the maximum distance to get intensity -in
   ) {
 
-  FLOAT_T max_intensity = -BILLION;
+  double max_intensity = -BILLION;
   Peak* max_intensity_peak = NULL;
 
   for (PeakIterator peak_iter = begin();
@@ -605,9 +605,9 @@ Peak* Spectrum::getMaxIntensityPeak(
     ++peak_iter) {
 
     Peak* peak = *peak_iter;
-    FLOAT_T peak_mz = peak->getLocation();
-    FLOAT_T distance = fabs(mz - peak_mz);
-    FLOAT_T intensity = peak->getIntensity();
+    double peak_mz = peak->getLocation();
+    double distance = fabs(mz - peak_mz);
+    double intensity = peak->getIntensity();
     if ((distance <= max) && (intensity > max_intensity)){
       max_intensity_peak = peak;
       max_intensity = intensity;
@@ -626,8 +626,8 @@ Peak* Spectrum::getMaxIntensityPeak(
  * Updates num_peaks, min_peak_mz, max_peak_mz, total_energy.
  */
 void Spectrum::updateFields(
-  FLOAT_T intensity, ///< the intensity of the peak that has been added -in
-  FLOAT_T location ///< the location of the peak that has been added -in
+  double intensity, ///< the intensity of the peak that has been added -in
+  double location ///< the location of the peak that has been added -in
   )
 {
  
@@ -662,7 +662,7 @@ int Spectrum::getLastScan() const
 /**
  * \returns The m/z of the precursor.
  */
-FLOAT_T Spectrum::getPrecursorMz() const
+double Spectrum::getPrecursorMz() const
 {
   return precursor_mz_;
 }
@@ -670,7 +670,7 @@ FLOAT_T Spectrum::getPrecursorMz() const
 /**
  * \returns The minimum m/z of all peaks.
  */
-FLOAT_T Spectrum::getMinPeakMz()
+double Spectrum::getMinPeakMz()
 {
   return min_peak_mz_;
 }
@@ -678,7 +678,7 @@ FLOAT_T Spectrum::getMinPeakMz()
 /**
  * \returns The maximum m/z of all peaks.
  */
-FLOAT_T Spectrum::getMaxPeakMz()
+double Spectrum::getMaxPeakMz()
 {
   return max_peak_mz_;
 }
@@ -703,7 +703,7 @@ double Spectrum::getTotalEnergy()
 /**
  * Sets the total ion current.
  */
-void Spectrum::setTotalEnergy(FLOAT_T tic)
+void Spectrum::setTotalEnergy(double tic)
 {
   total_energy_ = tic;
 }
@@ -711,7 +711,7 @@ void Spectrum::setTotalEnergy(FLOAT_T tic)
 /**
  * Sets the lowest Sp score.
  */
-void Spectrum::setLowestSp(FLOAT_T sp)
+void Spectrum::setLowestSp(double sp)
 {
   lowest_sp_ = sp;
 }
@@ -783,9 +783,9 @@ unsigned int Spectrum::getNumZStates() const {
 /**
  * \returns The intensity of the peak with the maximum intensity.
  */
-FLOAT_T Spectrum::getMaxPeakIntensity()
+double Spectrum::getMaxPeakIntensity()
 {
-  FLOAT_T max_intensity = -1;
+  double max_intensity = -1;
 
   for(int peak_idx = 0; peak_idx < (int)peaks_.size(); ++peak_idx){
     if (max_intensity <= peaks_[peak_idx]->getIntensity()) {
@@ -814,7 +814,7 @@ Spectrum* Spectrum::parseTabDelimited(
 
   int charge = file.getInteger(CHARGE_COL);
 
-  FLOAT_T neutral_mass = file.getFloat(SPECTRUM_NEUTRAL_MASS_COL);
+  double neutral_mass = file.getFloat(SPECTRUM_NEUTRAL_MASS_COL);
   
   SpectrumZState zstate;
 
@@ -843,7 +843,7 @@ void Spectrum::sumNormalize()
 {
   for(int peak_idx = 0; peak_idx < (int)peaks_.size(); peak_idx++){
     Peak * peak = peaks_[peak_idx];
-    FLOAT_T new_intensity = peak->getIntensity() / total_energy_;
+    double new_intensity = peak->getIntensity() / total_energy_;
     peak->setIntensity(new_intensity);
   }
 }
@@ -873,7 +873,7 @@ void Spectrum::rankPeaks()
   int rank = (int)peaks_.size();
   for(int peak_idx = 0; peak_idx < (int) peaks_.size(); peak_idx++){
     Peak * peak = peaks_[peak_idx];
-    FLOAT_T new_rank = rank/(float)peaks_.size();
+    double new_rank = rank/(double)peaks_.size();
     rank--;
     peak->setIntensityRank(new_rank);
   }

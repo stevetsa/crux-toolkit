@@ -63,8 +63,8 @@ SelfLoopPeptide::SelfLoopPeptide(
  * Adds Self-loop candidates to the collection
  */
 void SelfLoopPeptide::addCandidates(
-  FLOAT_T min_mass, ///< min mass
-  FLOAT_T max_mass, ///< max mass
+  double min_mass, ///< min mass
+  double max_mass, ///< max mass
   XLinkBondMap& bondmap,  ///< valid link sites
   Index* index, ///< protein index
   Database* database, ///< protein database
@@ -84,7 +84,7 @@ void SelfLoopPeptide::addCandidates(
       cur_aa_mods = this_aa_mods;
     }
 
-    FLOAT_T delta_mass = peptide_mod_get_mass_change(peptide_mod);
+    double delta_mass = peptide_mod_get_mass_change(peptide_mod);
 
     XLinkPeptide::addLinkablePeptides(
       min_mass - XLinkPeptide::getLinkerMass() - delta_mass,
@@ -155,7 +155,7 @@ string SelfLoopPeptide::getSequenceString() {
 /**
  * \returns the mass of the self-loop peptide
  */
-FLOAT_T SelfLoopPeptide::calcMass(
+double SelfLoopPeptide::calcMass(
   MASS_TYPE_T mass_type ///< AVERAGE or MONO
   ) {
   
@@ -240,7 +240,7 @@ void SelfLoopPeptide::predictIons(
 
     if (keep_ion) {
       if (modify_ion) {
-        FLOAT_T mass_z = ion->getMassZ();
+        double mass_z = ion->getMassZ();
         int charge = ion->getCharge();
         double mass = (mass_z -MASS_PROTON) * (double)charge;
         mass += XLinkPeptide::getLinkerMass();

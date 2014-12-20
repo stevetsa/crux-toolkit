@@ -57,7 +57,7 @@ void TideMatchSet::report(
   vector<Arr::iterator> targets, decoys;
   gatherTargetsAndDecoys(peptides, proteins, targets, decoys, top_n, highScoreBest);
 
-  map<Arr::iterator, FLOAT_T> delta_cn_map;
+  map<Arr::iterator, double> delta_cn_map;
   computeDeltaCns(targets, &delta_cn_map, top_n);
   computeDeltaCns(decoys, &delta_cn_map, top_n);
 
@@ -86,7 +86,7 @@ void TideMatchSet::writeToFile(
   const ActivePeptideQueue* peptides,
   const ProteinVec& proteins,
   const vector<const pb::AuxLocation*>& locations,
-  const map<Arr::iterator, FLOAT_T>& delta_cn_map,
+  const map<Arr::iterator, double>& delta_cn_map,
   const map<Arr::iterator, pair<const SpScorer::SpScoreData, int> >* sp_map
 ) {
   if (!file) {
@@ -224,7 +224,7 @@ void TideMatchSet::report(
   vector<PostProcessProtein*> proteins_made;
 
   // For Sp scoring
-  FLOAT_T lowest_sp = BILLION;
+  double lowest_sp = BILLION;
   SpScorer* sp_scorer = (compute_sp) ?
     new SpScorer(proteins, *spectrum, charge, max_mz_) : NULL;
 
@@ -281,15 +281,15 @@ void TideMatchSet::addCruxMatches(
   const vector<const pb::AuxLocation*>& locations,
   SpectrumZState& z_state,
   SpScorer* sp_scorer,
-  FLOAT_T* lowest_sp_out
+  double* lowest_sp_out
 ) {
 
-  FLOAT_T lnNumSp;
+  double lnNumSp;
 
   if (OutputFiles::isConcat) {
-    lnNumSp = log((FLOAT_T) (peptides->ActiveTargets() + peptides->ActiveDecoys()));
+    lnNumSp = log((double) (peptides->ActiveTargets() + peptides->ActiveDecoys()));
   } else {
-    lnNumSp = log((FLOAT_T) (!decoys ? peptides->ActiveTargets()
+    lnNumSp = log((double) (!decoys ? peptides->ActiveTargets()
                                 : peptides->ActiveDecoys()));
   }
   
@@ -323,7 +323,7 @@ void TideMatchSet::addCruxMatches(
       sp_scorer->Score(*pb_peptide, sp_score_data);
       delete pb_peptide;
 
-      FLOAT_T sp = sp_score_data.sp_score;
+      double sp = sp_score_data.sp_score;
       if (sp < *lowest_sp_out) {
         *lowest_sp_out = sp;
       }
@@ -599,16 +599,16 @@ void TideMatchSet::getFlankingAAs(
 
 void TideMatchSet::computeDeltaCns(
   const vector<Arr::iterator>& vec, // xcorr*100000000.0, high to low
-  map<Arr::iterator, FLOAT_T>* delta_cn_map, // map to add delta cn scores to
+  map<Arr::iterator, double>* delta_cn_map, // map to add delta cn scores to
   int top_n // number of top matches we will be reporting
 ) {
-  FLOAT_T lastXcorr = BILLION;
+  double lastXcorr = BILLION;
   vector<Arr::iterator>::const_reverse_iterator i = (vec.size() > top_n) ?
     vec.rend() - (top_n + 1) : vec.rbegin();
   for (; i != vec.rend(); ++i) {
-    const FLOAT_T xcorr = (*i)->first.first;
+    const double xcorr = (*i)->first.first;
     delta_cn_map->insert(make_pair(*i, (lastXcorr == BILLION) ?
-      0 : (xcorr - lastXcorr) / max(xcorr, FLOAT_T(1))));
+      0 : (xcorr - lastXcorr) / max(xcorr, double(1))));
     lastXcorr = xcorr;
   }
 }

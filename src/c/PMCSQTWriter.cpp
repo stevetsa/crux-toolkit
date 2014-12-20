@@ -49,13 +49,13 @@ void PMCSQTWriter::writePSMs(
     writeSpectrum(spectrum, z_state, (lookup != spectrum_counts.end()) ?
                   lookup->second : 0);
 
-    FLOAT_T xcorr_score = -1.0;
+    double xcorr_score = -1.0;
     int xcorr_rank = -1;
-    FLOAT_T sp_score = -1.0;
+    double sp_score = -1.0;
     int sp_rank = -1;
-    FLOAT_T delta_cn = -1.0;
-    FLOAT_T by_ions_matched = -1;
-    FLOAT_T by_ions_total = -1;
+    double delta_cn = -1.0;
+    double by_ions_matched = -1;
+    double by_ions_total = -1;
 
     // xcorr
     if (spec_match->hasScore(XCORR)) {

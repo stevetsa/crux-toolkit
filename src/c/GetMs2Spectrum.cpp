@@ -127,7 +127,7 @@ int GetMs2Spectrum :: main(int argc, char** argv){
             ++charge_state_index){
 
           SpectrumZState& zstate = zstates_array[charge_state_index];
-          FLOAT_T charged_mass = spectrum->getPrecursorMz() * (FLOAT_T)zstate.getCharge();
+          double charged_mass = spectrum->getPrecursorMz() * (double)zstate.getCharge();
 
           printf("Charge state:%d\n", zstate.getCharge());
           printf("Neutral mass:%.2f\n", zstate.getNeutralMass());

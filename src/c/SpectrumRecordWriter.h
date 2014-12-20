@@ -27,7 +27,7 @@ protected:
 
   static int scanCounter_;
   static int removePrecursorPeak_;
-  static FLOAT_T removePrecursorTolerance_;
+  static double removePrecursorTolerance_;
 
   /**
    * Return a pb::Spectrum from a Crux::Spectrum

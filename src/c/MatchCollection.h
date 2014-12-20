@@ -69,27 +69,27 @@ class MatchCollection {
 
   // values used for various scoring functions.
   // TODO this should be moved to match
-  FLOAT_T delta_cn_; ///< the difference in top and second Xcorr scores
-  FLOAT_T sp_scores_sum_; ///< for getting mean, backward compatible
-  FLOAT_T sp_scores_mean_;  ///< the mean value of the scored peptides sp score
-  FLOAT_T mu_;// obsolete 
+  double delta_cn_; ///< the difference in top and second Xcorr scores
+  double sp_scores_sum_; ///< for getting mean, backward compatible
+  double sp_scores_mean_;  ///< the mean value of the scored peptides sp score
+  double mu_;// obsolete 
   ///< EVD parameter Xcorr(characteristic value of extreme value distribution)
-  FLOAT_T l_value_; // obsolete
+  double l_value_; // obsolete
   ///< EVD parameter Xcorr(decay constant of extreme value distribution)
   int top_fit_sp_; // obsolete
   ///< The top ranked sp scored peptides to use as EXP_SP parameter estimation
-  FLOAT_T base_score_sp_; // obsolete
+  double base_score_sp_; // obsolete
  ///< The lowest sp score within top_fit_sp, used as the base to rescale sp
   // Values for fitting the Weibull distribution
-  FLOAT_T eta_;  ///< The eta parameter for the Weibull distribution.
-  FLOAT_T beta_; ///< The beta parameter for the Weibull distribution.
-  FLOAT_T shift_; ///< The location parameter for the Weibull distribution.
-  FLOAT_T correlation_; ///< The correlation parameter for the Weibull distribution.
+  double eta_;  ///< The eta parameter for the Weibull distribution.
+  double beta_; ///< The beta parameter for the Weibull distribution.
+  double shift_; ///< The location parameter for the Weibull distribution.
+  double correlation_; ///< The correlation parameter for the Weibull distribution.
   // replace this ...
   Crux::Match* sample_matches_[_PSM_SAMPLE_SIZE];
   int num_samples_;  // the number of items in the above array
   // ...with this
-  vector<FLOAT_T> xcorrs_; ///< xcorrs to be used for weibull
+  vector<double> xcorrs_; ///< xcorrs to be used for weibull
 
   // The following features (post_*) are only valid when
   // post_process_collection boolean is true 
@@ -319,7 +319,7 @@ class MatchCollection {
    * Must have been scored by Xcorr, returns error if not scored by Xcorr
    *\returns the delta cn value(difference in top and second ranked Xcorr values)
    */
-  FLOAT_T getDeltaCn();
+  double getDeltaCn();
 
   /**
    * \brief Transfer the Weibull distribution parameters, including the
@@ -462,22 +462,22 @@ class MatchCollection {
   /**
    * Retrieve the calibration parameter eta.
    */
-  FLOAT_T getCalibrationEta();
+  double getCalibrationEta();
 
   /**
    * Retrieve the calibration parameter beta.
    */
-  FLOAT_T getCalibrationBeta();
+  double getCalibrationBeta();
 
   /**
    * Retrieve the calibration parameter shift.
    */
-  FLOAT_T getCalibrationShift();
+  double getCalibrationShift();
 
   /**
    * Retrieve the calibration parameter correlation.
    */
-  FLOAT_T getCalibrationCorr();
+  double getCalibrationCorr();
 
   bool getHasDistinctMatches();
   void setHasDistinctMatches(bool distinct_matches);
@@ -549,7 +549,7 @@ class MatchCollection {
    * Extract a given type of score into an array.  The array is
    * allocated here and must be freed by the caller.
    */
-  FLOAT_T* extractScores(
+  double* extractScores(
     SCORER_TYPE_T       score_type ///< Type of score to extract.
   );
 
@@ -558,7 +558,7 @@ class MatchCollection {
    * q-values to all of the matches in a given collection.
    */
   void assignQValues(
-    const map<FLOAT_T, FLOAT_T>* score_to_qvalue_hash,
+    const map<double, double>* score_to_qvalue_hash,
     SCORER_TYPE_T score_type
     );
 
@@ -567,7 +567,7 @@ class MatchCollection {
    * PEPs to all of the matches in a given collection.
    */
   void assignPEPs(
-    const map<FLOAT_T, FLOAT_T>* score_to_qvalue_hash,
+    const map<double, double>* score_to_qvalue_hash,
     SCORER_TYPE_T score_type
     );
 
@@ -575,7 +575,7 @@ class MatchCollection {
    * match_collection post_process extension
    ******************************************/
   /**
-   * Fill the match objects score with the given the FLOAT_T array. 
+   * Fill the match objects score with the given the double array. 
    * The match object order must not have been altered since scoring.
    * The result array size must match the match_total count.
    * Match ranks are also populated to preserve the original order of the

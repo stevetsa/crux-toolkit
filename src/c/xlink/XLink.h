@@ -19,11 +19,11 @@ class XLinkMatchCollection;
 
 
 void get_min_max_mass(
-  FLOAT_T precursor_mz, 
+  double precursor_mz, 
   int charge, 
   bool use_decoy_window,
-  FLOAT_T& min_mass, 
-  FLOAT_T& max_mass);
+  double& min_mass, 
+  double& max_mass);
 
 
 

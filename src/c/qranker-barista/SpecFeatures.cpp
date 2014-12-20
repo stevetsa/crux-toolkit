@@ -43,7 +43,7 @@ void SpecFeaturesGenerator :: read_spectrum()
 
   for (PeakIterator i = spectrum_->begin(); i != spectrum_->end(); ++i) {
     Peak* peak = *i;
-    FLOAT_T mz = peak->getLocation();
+    double mz = peak->getLocation();
     mz_values_.push_back(mz);
     intens_values_.push_back(peak->getIntensity());
     /*int mz_bin = (int)(mz / bin_width_mono + 0.5);

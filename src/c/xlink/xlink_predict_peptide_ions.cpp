@@ -32,7 +32,7 @@ int main(int argc, char** argv) {
   char* peptideB = NULL;
   int posA = 0;
   int posB = 0;
-  FLOAT_T linker_mass = 0;
+  double linker_mass = 0;
   int charge = 1; 
   bool print_spectrum = false;
 
@@ -154,8 +154,8 @@ int main(int argc, char** argv) {
     ++ion_iter) {
 
     Ion* ion = *ion_iter;
-    FLOAT_T mz = ion->getMassZ();
-    FLOAT_T mass = ion->getMassFromMassZ();
+    double mz = ion->getMassZ();
+    double mass = ion->getMassFromMassZ();
     int charge = ion->getCharge();
     string sequence = linked_peptide->getIonSequence(ion);
     int cleavage_idx = ion->getCleavageIdx();
@@ -222,7 +222,7 @@ int main(int argc, char** argv) {
   char* peptideB = NULL;
   int posA = 0;
   int posB = 0;
-  FLOAT_T linker_mass = 0;
+  double linker_mass = 0;
   int charge = 1; 
   bool print_spectrum = false;
 
@@ -344,8 +344,8 @@ int main(int argc, char** argv) {
     ++ion_iter) {
 
     Ion* ion = *ion_iter;
-    FLOAT_T mz = ion->getMassZ();
-    FLOAT_T mass = ion->getMassFromMassZ();
+    double mz = ion->getMassZ();
+    double mass = ion->getMassFromMassZ();
     int charge = ion->getCharge();
     string sequence = linked_peptide->getIonSequence(ion);
     int cleavage_idx = ion->getCleavageIdx();
@@ -412,7 +412,7 @@ int main(int argc, char** argv) {
   char* peptideB = NULL;
   int posA = 0;
   int posB = 0;
-  FLOAT_T linker_mass = 0;
+  double linker_mass = 0;
   int charge = 1; 
   bool print_spectrum = false;
 
@@ -534,8 +534,8 @@ int main(int argc, char** argv) {
     ++ion_iter) {
 
     Ion* ion = *ion_iter;
-    FLOAT_T mz = ion->getMassZ();
-    FLOAT_T mass = ion->getMassFromMassZ();
+    double mz = ion->getMassZ();
+    double mass = ion->getMassFromMassZ();
     int charge = ion->getCharge();
     string sequence = linked_peptide->getIonSequence(ion);
     int cleavage_idx = ion->getCleavageIdx();

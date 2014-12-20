@@ -26,7 +26,7 @@ using namespace std;
  * PRECISION, determines the precision of the compare float, users
  * should lower the number if need more precision
  */
-static const FLOAT_T PRECISION = 0.000000005; 
+static const double PRECISION = 0.000000005; 
 
 /**
  * the maximum error in terms of Units in the Last Place. 
@@ -616,9 +616,9 @@ char* copy_string_part(const char* src, int length){
  * to the range of the numbers, allowing a single epsilon to be used for many, 
  * or perhaps all compares.
  */
-/*inline*/ int compare_float(FLOAT_T float_a, FLOAT_T float_b){
-  FLOAT_T EPSILON = PRECISION;
-  FLOAT_T sum = float_a + float_b;
+/*inline*/ int compare_float(double float_a, double float_b){
+  double EPSILON = PRECISION;
+  double sum = float_a + float_b;
   // a == b
   if( fabsf(float_a - float_b) <= fabsf(sum)* EPSILON ){
     return 0;
@@ -638,9 +638,9 @@ char* copy_string_part(const char* src, int length){
  * precision they are equal.  Otherwise, returns false.  
  * E.g. is_equal(0.10, 0.14, 1) -> true. is_equal(0.10, 0.15, 1) -> false
  */
-bool is_equal(FLOAT_T a, FLOAT_T b, int precision){
-  a = (a * pow((FLOAT_T) 10.0, (FLOAT_T) precision)) + 0.5;
-  b = (b * pow((FLOAT_T) 10.0, (FLOAT_T) precision)) + 0.5;
+bool is_equal(double a, double b, int precision){
+  a = (a * pow((double) 10.0, (double) precision)) + 0.5;
+  b = (b * pow((double) 10.0, (double) precision)) + 0.5;
 
   if( (int)a == (int)b ){
     return true;
@@ -652,7 +652,7 @@ bool is_equal(FLOAT_T a, FLOAT_T b, int precision){
 /**
  *\returns true if float_a is between the interaval of min and max, else false
  */
-inline bool compare_float_three(FLOAT_T float_a, FLOAT_T min, FLOAT_T max){
+inline bool compare_float_three(double float_a, double min, double max){
   if(compare_float(float_a, min) == -1 ||
      compare_float(float_a, max) ==  1){
     return false;
@@ -1570,12 +1570,12 @@ int get_number_digits(
 }
 
 void swap_quick(
-  FLOAT_T* a,
+  double* a,
   int idx,
   int jdx
   )
 {
-  FLOAT_T temp = 0;
+  double temp = 0;
   temp = a[idx];
   a[idx] = a[jdx];
   a[jdx] = temp;
@@ -1585,7 +1585,7 @@ long Random(int i, int j) {
   return i + myrandom_limit(j-i+1);
 }
 
-void quick_sort(FLOAT_T a[], int left, int right) {
+void quick_sort(double a[], int left, int right) {
   int last = left, i;
 
   if (left >= right) return;
@@ -1599,7 +1599,7 @@ void quick_sort(FLOAT_T a[], int left, int right) {
   quick_sort(a,last+1,right);
 }
 
-void quicksort(FLOAT_T a[], int array_size){
+void quicksort(double a[], int array_size){
   quick_sort(a, 0, array_size-1);
 }
 
@@ -1607,7 +1607,7 @@ void quicksort(FLOAT_T a[], int array_size){
  * \brief Shuffle an array of floats.  Uses the Knuth algorithm.  Uses
  * get_random_number_interval() to generate random numbers. 
  */
-void shuffle_floats(FLOAT_T* array, int size){
+void shuffle_floats(double* array, int size){
   if( array == NULL ){
     carp(CARP_ERROR, "Cannot shuffle NULL array.");
     return;
@@ -1615,7 +1615,7 @@ void shuffle_floats(FLOAT_T* array, int size){
 
   int idx, switch_idx;
   int last_element_idx = size - 1;
-  FLOAT_T temp_value;
+  double temp_value;
   for(idx=0; idx < size; idx++){
     switch_idx = get_random_number_interval(idx, last_element_idx);
     temp_value = array[idx];
@@ -1632,30 +1632,30 @@ void shuffle_floats(FLOAT_T* array, int size){
  * be shifted by) and the best correlation coefficient
  */
 void fit_three_parameter_weibull(
-    FLOAT_T* data, ///< the data to be fit -in
+    double* data, ///< the data to be fit -in
     int fit_data_points, ///< the number of data points to fit -in
     int total_data_points, ///< the total number of data points to fit -in
-    FLOAT_T min_shift, ///< the minimum shift to allow -in
-    FLOAT_T max_shift, ///< the maximum shift to allow -in
-    FLOAT_T step,      ///< step for shift -in
-    FLOAT_T corr_threshold, ///< minimum correlation, else no fit -in
-    FLOAT_T* eta,      ///< the eta parameter of the Weibull dist -out
-    FLOAT_T* beta,      ///< the beta parameter of the Weibull dist -out
-    FLOAT_T* shift,     ///< the best shift -out
-    FLOAT_T* correlation   ///< the best correlation -out
+    double min_shift, ///< the minimum shift to allow -in
+    double max_shift, ///< the maximum shift to allow -in
+    double step,      ///< step for shift -in
+    double corr_threshold, ///< minimum correlation, else no fit -in
+    double* eta,      ///< the eta parameter of the Weibull dist -out
+    double* beta,      ///< the beta parameter of the Weibull dist -out
+    double* shift,     ///< the best shift -out
+    double* correlation   ///< the best correlation -out
     ){
   
-  FLOAT_T correlation_tolerance = 0.1;
+  double correlation_tolerance = 0.1;
   
-  FLOAT_T best_eta = 0.0;
-  FLOAT_T best_beta = 0.0;
-  FLOAT_T best_shift = 0.0;
-  FLOAT_T best_correlation = 0.0;
+  double best_eta = 0.0;
+  double best_beta = 0.0;
+  double best_shift = 0.0;
+  double best_correlation = 0.0;
 
-  FLOAT_T cur_eta = 0.0;
-  FLOAT_T cur_beta = 0.0;
-  FLOAT_T cur_correlation = 0.0;
-  FLOAT_T cur_shift = 0.0;
+  double cur_eta = 0.0;
+  double cur_beta = 0.0;
+  double cur_correlation = 0.0;
+  double cur_shift = 0.0;
 
   for (cur_shift = max_shift; cur_shift > min_shift ; cur_shift -= step){
 
@@ -1695,22 +1695,22 @@ void fit_three_parameter_weibull(
  * \returns eta, beta and the correlation coefficient.
  */
 void fit_two_parameter_weibull(
-    FLOAT_T* data, ///< the data to be fit. should be in descending order -in
+    double* data, ///< the data to be fit. should be in descending order -in
     int fit_data_points, ///< the number of data points to fit -in
     int total_data_points, ///< the total number of data points -in
-    FLOAT_T shift, ///< the amount by which to shift our data -in
-    FLOAT_T* eta,      ///< the eta parameter of the Weibull dist -out
-    FLOAT_T* beta,      ///< the beta parameter of the Weibull dist -out
-    FLOAT_T* correlation ///< the best correlation -out
+    double shift, ///< the amount by which to shift our data -in
+    double* eta,      ///< the eta parameter of the Weibull dist -out
+    double* beta,      ///< the beta parameter of the Weibull dist -out
+    double* correlation ///< the best correlation -out
     ){
 
-  FLOAT_T* X = (FLOAT_T*)mymalloc(sizeof(FLOAT_T) * fit_data_points); //hold data here
+  double* X = (double*)mymalloc(sizeof(double) * fit_data_points); //hold data here
 
   // transform data into an array of values for fitting
   // shift (including only non-neg data values) and take log
   int idx;
   for(idx=0; idx < fit_data_points; idx++){
-    FLOAT_T score = data[idx] + shift; // move right by shift
+    double score = data[idx] + shift; // move right by shift
     if (score <= 0.0){
       carp(CARP_DEBUG, "Reached negative score at idx %i", idx);
       fit_data_points = idx;
@@ -1720,19 +1720,19 @@ void fit_two_parameter_weibull(
     // carp(CARP_DEBUG, "X[%i]=%.6f=ln(%.6f)", idx, X[idx], score);
   }
 
-  FLOAT_T* Y   = (FLOAT_T*)mymalloc(sizeof(FLOAT_T) * fit_data_points);
+  double* Y   = (double*)mymalloc(sizeof(double) * fit_data_points);
   for(idx=0; idx < fit_data_points; idx++){
     int reverse_idx = total_data_points - idx;
-    FLOAT_T F_T_idx = (reverse_idx - 0.3) / (total_data_points + 0.4);
+    double F_T_idx = (reverse_idx - 0.3) / (total_data_points + 0.4);
     Y[idx] = log( -log(1.0 - F_T_idx) );
     //carp(CARP_DEBUG, "Y[%i]=%.6f", idx, Y[idx]);
   }
 
   int N = fit_data_points; // rename for formula's sake
-  FLOAT_T sum_Y  = 0.0;
-  FLOAT_T sum_X  = 0.0;
-  FLOAT_T sum_XY = 0.0;
-  FLOAT_T sum_XX = 0.0;
+  double sum_Y  = 0.0;
+  double sum_X  = 0.0;
+  double sum_XY = 0.0;
+  double sum_XX = 0.0;
   for(idx=0; idx < fit_data_points; idx++){
     sum_Y  += Y[idx];
     sum_X  += X[idx];
@@ -1744,29 +1744,29 @@ void fit_two_parameter_weibull(
   carp(CARP_DETAILED_DEBUG, "sum_XX=%.6f", sum_XX);
   carp(CARP_DETAILED_DEBUG, "sum_XY=%.6f", sum_XY);
 
-  FLOAT_T b_num    = sum_XY - (sum_X * sum_Y / N);
+  double b_num    = sum_XY - (sum_X * sum_Y / N);
   carp(CARP_DETAILED_DEBUG, "b_num=%.6f", b_num);
-  FLOAT_T b_denom  = sum_XX - sum_X * sum_X / N;
+  double b_denom  = sum_XX - sum_X * sum_X / N;
   carp(CARP_DETAILED_DEBUG, "b_denom=%.6f", b_denom);
-  FLOAT_T b_hat    = b_num / b_denom;
+  double b_hat    = b_num / b_denom;
 
-  FLOAT_T a_hat    = (sum_Y - b_hat * sum_X) / N;
+  double a_hat    = (sum_Y - b_hat * sum_X) / N;
   *beta = b_hat;
   *eta  = exp( - a_hat / *beta );
 
-  FLOAT_T c_num   = 0.0;
-  FLOAT_T c_denom_X = 0.0;
-  FLOAT_T c_denom_Y = 0.0;
-  FLOAT_T mean_X = sum_X / N;
-  FLOAT_T mean_Y = sum_Y / N;
+  double c_num   = 0.0;
+  double c_denom_X = 0.0;
+  double c_denom_Y = 0.0;
+  double mean_X = sum_X / N;
+  double mean_Y = sum_Y / N;
   for (idx=0; idx < N; idx++){
-    FLOAT_T X_delta = X[idx] - mean_X; 
-    FLOAT_T Y_delta = Y[idx] - mean_Y;
+    double X_delta = X[idx] - mean_X; 
+    double Y_delta = Y[idx] - mean_Y;
     c_num += X_delta * Y_delta;
     c_denom_X += X_delta * X_delta;
     c_denom_Y += Y_delta * Y_delta;
   }
-  FLOAT_T c_denom = sqrt(c_denom_X * c_denom_Y);
+  double c_denom = sqrt(c_denom_X * c_denom_Y);
   if (c_denom == 0.0){
     //carp(CARP_FATAL, "Zero denominator in correlation calculation!");
     carp(CARP_DETAILED_DEBUG, "Zero denominator in correlation calculation!");
@@ -1840,7 +1840,7 @@ int prepare_protein_input(
  * \returns SINGLE_STATE_CHARGE if spectrum precursor is singly or charged MULTIPLE_CHARGE_STATE if multiply
  * charged or INVALID_CHARGE_STATE on error.
  */
-CHARGE_STATE_T choose_charge(FLOAT_T precursor_mz,    ///< m/z of spectrum precursor ion
+CHARGE_STATE_T choose_charge(double precursor_mz,    ///< m/z of spectrum precursor ion
                   vector<Peak*>& peaks)  ///< array of spectrum peaks
 {
   if(peaks.empty()){
@@ -1848,11 +1848,11 @@ CHARGE_STATE_T choose_charge(FLOAT_T precursor_mz,    ///< m/z of spectrum precu
     return  INVALID_CHARGE_STATE;
   }
 
-  FLOAT_T max_peak_mz = peaks.back()->getLocation();
+  double max_peak_mz = peaks.back()->getLocation();
   
   // sum peaks below and above the precursor m/z window separately
-  FLOAT_T left_sum = 0.00001;
-  FLOAT_T right_sum= 0.00001;
+  double left_sum = 0.00001;
+  double right_sum= 0.00001;
   for(unsigned int peak_idx = 0; peak_idx < peaks.size(); peak_idx++){
     if (peaks[peak_idx]->getLocation() < precursor_mz - 20) {
       left_sum += peaks[peak_idx]->getIntensity();
@@ -1863,8 +1863,8 @@ CHARGE_STATE_T choose_charge(FLOAT_T precursor_mz,    ///< m/z of spectrum precu
   }
 
   // What is the justification for this? Ask Mike MacCoss
-  FLOAT_T FractionWindow = 0;
-  FLOAT_T CorrectionFactor;
+  double FractionWindow = 0;
+  double CorrectionFactor;
   if( (precursor_mz * 2) < max_peak_mz){
     CorrectionFactor = 1;
   } else {

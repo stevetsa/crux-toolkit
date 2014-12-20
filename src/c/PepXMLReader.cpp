@@ -354,7 +354,7 @@ void PepXMLReader::searchHitOpen(
   if(by_ions_total>0){
     current_match_->setBYIonMatched(by_ions_matched);
     current_match_->setBYIonPossible(by_ions_total);
-    current_match_-> setBYIonFractionMatched((FLOAT_T)by_ions_matched/(FLOAT_T)by_ions_total); 
+    current_match_-> setBYIonFractionMatched((double)by_ions_matched/(double)by_ions_total); 
   }else 
     current_match_->setBYIonFractionMatched(0);
   if(current_num_matches>0)
@@ -385,7 +385,7 @@ void PepXMLReader::modificationInfoOpen(
   for (int idx = 0; attr[idx]; idx += 2) {
     if (strcmp(attr[idx], "mod_nterm_mass") == 0) {
 
-      FLOAT_T mod_nterm_mass = atof(attr[idx+1]);
+      double mod_nterm_mass = atof(attr[idx+1]);
       //set nterm mod mass
       const AA_MOD_T* aa_mod = get_aa_mod_from_mass(mod_nterm_mass);
       MODIFIED_AA_T* mod_seq = current_match_->getPeptide()->getModifiedAASequence();
@@ -412,7 +412,7 @@ void PepXMLReader::modAminoAcidMassOpen(
   
   mod_aminoacid_mass_open_ = true;
   int position = -1;
-  FLOAT_T mod_mass = 0;
+  double mod_mass = 0;
   bool have_mod_mass = false;
   
   for (int idx = 0; attr[idx]; idx += 2) {
@@ -570,7 +570,7 @@ void PepXMLReader::peptideProphetResultOpen(
   peptideprophet_result_open_ = true;
 
 
-  FLOAT_T probability = 0;
+  double probability = 0;
   bool probability_parsed = false;
    for (int idx = 0; attr[idx]; idx += 2) {
     if (strcmp(attr[idx], "probability") == 0) {

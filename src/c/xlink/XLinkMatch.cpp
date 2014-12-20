@@ -44,9 +44,9 @@ void XLinkMatch::decrementPointerCount() {
  * computes the pvalue for this match using the provided weibull paramters
  */
 void XLinkMatch::computeWeibullPvalue(
-  FLOAT_T shift, ///< shift parameter for weibull
-  FLOAT_T eta, ///< eta parameter for weibull
-  FLOAT_T beta ///< beta parameter for weibull
+  double shift, ///< shift parameter for weibull
+  double eta, ///< eta parameter for weibull
+  double beta ///< beta parameter for weibull
   ) {
 
   pvalue_ = compute_weibull_pvalue(getScore(XCORR), eta, beta, shift);
@@ -166,7 +166,7 @@ string XLinkMatch::getCandidateTypeString(
 /**
  * \returns the mass of the match
  */
-FLOAT_T XLinkMatch::getMass(
+double XLinkMatch::getMass(
   MASS_TYPE_T mass_type /// MONO or AVERAGE?
   ) {
 
@@ -180,10 +180,10 @@ FLOAT_T XLinkMatch::getMass(
 /**
  * \returns the mass error in part-per-million (ppm)
  */
-FLOAT_T XLinkMatch::getPPMError() {
-  FLOAT_T mono_mass = getMass(MONO);
-  FLOAT_T obs_mass = parent_->getSpectrumNeutralMass();
-  FLOAT_T isotope;
+double XLinkMatch::getPPMError() {
+  double mono_mass = getMass(MONO);
+  double obs_mass = parent_->getSpectrumNeutralMass();
+  double isotope;
   
   if (mono_mass > obs_mass) {
     isotope = floor((mono_mass - obs_mass) / MASS_NEUTRON + 0.5);
@@ -194,7 +194,7 @@ FLOAT_T XLinkMatch::getPPMError() {
 
   obs_mass = obs_mass + isotope * MASS_NEUTRON;
 
-  FLOAT_T ppm = (mono_mass - obs_mass) / obs_mass * 1e6;
+  double ppm = (mono_mass - obs_mass) / obs_mass * 1e6;
   return ppm;
   
 }
@@ -214,7 +214,7 @@ void XLinkMatch::printOneMatchField(
   MatchCollection* collection,  ///< collection holding this match -in 
   MatchFileWriter*    output_file,            ///< output stream -out
   int      scan_num,               ///< starting scan number -in
-  FLOAT_T  spectrum_precursor_mz,  ///< m/z of spectrum precursor -in
+  double  spectrum_precursor_mz,  ///< m/z of spectrum precursor -in
   int      num_target_matches,            ///< target matches for this spectrum -in
   int      num_decoy_matches, ///< decoy matches for this spectrum -in
   int      b_y_total,              ///< total b/y ions -in

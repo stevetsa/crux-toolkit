@@ -23,7 +23,7 @@ AbstractMatch::~AbstractMatch() {
 /**
  * \returns the match score for a particular score type
  */
-FLOAT_T AbstractMatch::getScore(
+double AbstractMatch::getScore(
   SCORER_TYPE_T type ///< score type desired
   ) const {
 
@@ -59,7 +59,7 @@ int AbstractMatch::getRank(
  */
 void AbstractMatch::setScore(
   SCORER_TYPE_T type, ///< score to set
-  FLOAT_T score ///< score value
+  double score ///< score value
   ) {
 
   scores_[type] = score;  
