@@ -1,0 +1,5 @@
+enzyme=chymotrypsin
+digestion=full-digest
+overwrite=T
+decoys=none
+precision=2

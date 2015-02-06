@@ -1,0 +1,21 @@
+# PEPTIDE: IAMASEQ
+# AVERAGE: 748.849304 MONO:748.342590
+# CHARGE: 2
+# MAX-ION-CHARGE: peptide
+# NH3 modification: 0
+# H2O modification: 0
+# ISOTOPE modification: 0
+# FLANK modification: 0
+m/z	mass	charge	ion-series	peptide-bond-index	nh3	h2o	isotope	flank
+114.09	114.09	1	b	1	0	0	0	0
+147.08	147.08	1	y	1	0	0	0	0
+185.13	185.13	1	b	2	0	0	0	0
+276.12	276.12	1	y	2	0	0	0	0
+316.17	316.17	1	b	3	0	0	0	0
+363.15	363.15	1	y	3	0	0	0	0
+387.21	387.21	1	b	4	0	0	0	0
+434.19	434.19	1	y	4	0	0	0	0
+474.24	474.24	1	b	5	0	0	0	0
+565.23	565.23	1	y	5	0	0	0	0
+603.28	603.28	1	b	6	0	0	0	0
+636.27	636.27	1	y	6	0	0	0	0

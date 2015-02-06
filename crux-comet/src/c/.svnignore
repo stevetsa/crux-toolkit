@@ -1,0 +1,12 @@
+*.cmake
+*.gz
+*.swp
+crux
+cscope.out
+xlink-assign-ions
+xlink-predict-peptide-ions
+xlink-score-spectrum
+CruxConfig.h
+CMakeCache.txt
+CMakeFiles
+Makefile

@@ -1,0 +1,84 @@
+/*************************************************************************//**
+ * \file MatchColumns.cpp
+ * \brief Just keeps track of column names for match files.
+ ****************************************************************************/
+
+#include "MatchColumns.h"
+#include "carp.h"
+
+static const char* match_column_strings[NUMBER_MATCH_COLUMNS] = {
+  "file",
+  "scan",
+  "charge",
+  "spectrum precursor m/z",
+  "spectrum neutral mass",
+  "peptide mass",
+  "delta_cn",
+  "sp score",
+  "sp rank",
+  "xcorr score",
+  "xcorr rank",
+  "e-value",
+  "p-value",
+#ifdef NEW_COLUMNS
+  "Weibull PSM q-value",
+  "Weibull peptide q-value",    // NEW
+  "decoy PSM q-value",
+  "decoy peptide q-value",      // NEW
+  "percolator score",
+  "percolator rank",
+  "percolator PSM q-value",
+  "percolator peptide q-value", // NEW
+  "q-ranker score",
+  "q-ranker PSM q-value",
+  "q-ranker peptide q-value",   // NEW
+#else
+  "Weibull est. q-value",
+  "Weibull est. PEP",
+  "decoy q-value (xcorr)",
+  "decoy PEP (xcorr)",
+  "decoy q-value (e-value)",
+  "decoy PEP (e-value)",
+  "percolator score",
+  "percolator rank",
+  "percolator q-value",
+  "percolator PEP",
+  "q-ranker score",
+  "q-ranker q-value",
+  "q-ranker PEP",
+  "barista score",
+  "barista q-value",
+#endif
+  "b/y ions matched",
+  "b/y ions total",
+  "distinct matches/spectrum",
+  "sequence",
+  "cleavage type",
+  "protein id",
+  "peptides",
+  "flanking aa",
+  "original target sequence",
+  "eta",
+  "beta",
+  "shift",
+  "corr",
+  "RAW",
+  "SIN",
+  "NSAF",
+  "dNSAF",
+  "EMPAI",
+  "parsimony rank",
+  "decoy matches/spectrum"
+};
+
+/**
+ * Get the name of a given column, by index.
+ */
+const char* get_column_header(
+  int columnIndex
+) {
+  if ((columnIndex < 0) || (columnIndex >= NUMBER_MATCH_COLUMNS)) {
+    carp(CARP_FATAL, "Cannot access output column %d.\n", columnIndex);
+  }
+  return(match_column_strings[columnIndex]);
+}

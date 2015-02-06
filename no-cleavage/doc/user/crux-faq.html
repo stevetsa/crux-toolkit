@@ -1,0 +1,282 @@
+<html>
+<head>
+<title>Crux Frequently Asked Questions</title>
+<link href="./crux.css" rel="styleSheet" type="text/css">
+</head>
+<body>
+<blockquote>
+
+<h1 align=center>Crux Frequently Asked Questions</h1>
+
+<ol>
+
+<li>
+<b>How does Crux compute the masses of peptides and peptide
+  fragments?</b></li>
+
+<p>
+<ul>
+
+<li>
+Each amino acid can be characterized either by its monoisotopic mass,
+which is the mass of the most common isotopic form of that amino acid,
+or the average mass, which is a weighted average of the masses of all
+the isotopic forms.  By default, Crux uses average mass to calculate
+peptide masses, though this can be controlled by the
+<code>--isotopic-mass</code> option to <code>crux create-index</code>.
+For fragments, Crux always uses the monoisotopic mass.</li>
+
+<li>
+The neutral mass of a peptide is not the sum of the masses of its
+amino acids.  The C-terminus (i.e., the suffix, or y-ion) of the
+peptide has an additional water group, whose mass is either
+18.010564684 Da (monoisotopic) or 18.0153 Da (average).  Note that,
+for cleavage ions, this additional mass should be added to the mass of
+a y-ion, but not to a b-ion.</li>
+
+<li>
+By default, Crux adds a static modification of 57.021464 Da to all
+cysteines.  This is because in most protein preparation protocols
+the peptides are alkylated with iodoacetamise, resulting in 
+carbidomethylation of cysteine. The alkylation step prevents the 
+reformation of disulfide bonds.  Other alykylation reagents may be
+used, in which case the appropriate mass shift can be specified with the
+<code>C=[mass]</code> option.  Set <code>C=0</code> for no
+modification.
+</li>
+
+<li>
+A charged peptide has an additional approximately 1 Da mass for each
+charge, corresponding to the mass of a hydrogen atom.  The exact mass
+to be added depend on whether we are using the monoisotopic mass
+(1.0078246) or average mass (1.00794).</li>
+
+</ul>
+</p>
+
+<li>
+<b>How does Crux estimate the possible charge states of the peptides when the
+   information is not provided within the spectra file?</b>
+</li>
+
+<p>
+Crux calculates the ratio of two values: (1) the sum of the
+intensities from the peaks in the fragmentation spectrum whose m/z is
+greater than the precursor m/z versus (2) the sum of the peaks whose
+m/z is smaller than the precursor.  If this ratio is greater or equal
+to a calculated threshold based upon the location of the precursor m/z
+and the max m/z in the spectrum, Crux then assigns both +2 and +3 as
+possible charge states to the spectrum.  Otherwise, Crux assigns +1 as
+the charge state.  The algorithm is based upon the observation that
+fragmentation spectra collected from peptides with charge greater than
++1 should have many more peaks that are greater than the precursor
+m/z.
+</p>
+
+<li>
+<b>What operating systems does Crux work with?</b></li>
+
+<p>
+Crux is written in C++, so in principle it should work on virtually
+any modern operating system.  We provide pre-compiled binaries for
+Linux, MacOS and Windows.  The latter requires that you have Cygwin
+installed.</p>
+
+<li>
+<b>I thought Crux was supposed to be fast, but I am seeing very slow
+  search speeds.  What's going on?</b></li>
+
+<p>
+Crux is not particularly optimized to run quickly on a FASTA file.  To
+get Crux to go fast, you must do the <code>crux create-index</code>
+step first, and then run your searches using the resulting index.  If,
+after doing this, you are still getting slow search speeds, it may be
+because you are using the Network File System (NFS).  Crux uses a
+memory mapping mechanism that often works poorly over a system like
+NFS.  The solution is to copy your index to a local disk.  Then Crux
+should run much more quickly.</p>
+
+<li>
+<b>How does Crux select candidate peptides from the database?</b></li>
+
+<p>
+Crux selects candidate peptides for each spectrum based on its
+precursor singly charged mass (m+h) or the mass-to-charge (m/z) and an 
+assumed charge state (specified in the input file).  If the m+h and charge is 
+provided in the input file (from the Z lines), then the precursor mass 
+is calculated from the m+h minus the mass of a proton. Otherwise, the 
+precursor mass is calculated from the precursor m/z and an assumed charge. 
+A mass window is defined in one of three ways based on the 
+<code>precursor-window-type</code> and <code>precursor-window</code> options.
+<ul>
+<li>  
+If the <code>precursor-window-type</code> is set to <code>mz</code>,
+then the window is calculated as spectrum precursor m/z &plusmn;
+<code>precursor-window</code> and the resulting range is converted
+to mass using the charge state with the formula:<br>  
+Mass=m/z * charge - MASS_PROTON * charge, where MASS_PROTON=1.00727646677
+</li>
+
+<li>
+If the <code>precursor-window-type</code> is set to <code>mass</code>, then
+the window is defined as the precursor mass &plusmn; 
+<code>precursor-window</code>.
+</li>
+
+<li>
+If the <code>precursor-window-type</code> is set to <code>ppm</code>
+(parts per million), then the window spans from the 
+precursor mass / (1.0 + window * 1e-6) to precursor mass / (1.0 - window * 1e-6).</li>
+</ul>
+Candidate peptides are those whose mass falls within the defined
+window.  The peptide mass is computed as the sum of the average amino
+acid masses plus 18 Da for the terminal OH group.  Candidate peptides can also be constrained by minimum and
+maximum allowed length. </p>
+
+<p>
+Peptides are selected from protein sequence given either in a fasta
+file or a fasta file that has been indexed by <a href="crux-create-index.html">
+<code>crux create-index</code></a>.  The options <code>enzyme</code>, 
+<code>digestion</code> and <code>missed-cleavages</code> define how
+the proteins are broken up into peptides.  When <code>enzyme</code> is
+set to <code>no-enzyme</code> then any subsequence of a protein may be
+considered as a candidate peptide, and the options <code>digestion</code>
+and <code>missed-cleavages</code> are not used.  For other values of
+<code>enzyme</code>, the residues at the termini of the protein
+subsequence must follow specific rules.  For example, trypsin requires
+that the preceeding residue must be an R or K and the following
+residue may not be a P.  When <code>digestion</code> is set
+to <code>full-digest</code>, then these rules must be true at both ends of the
+peptide.  When it is <code>partial-digest</code>, then the rules must be true
+at at least one of the ends.  If <code>missed-cleavages</code> is set
+to false, then no cleavage site may lie within the peptide sequence;
+alternatively, if true then any number of sites may lie within the
+peptide sequence. </p>
+
+<li>
+<b>How can I search my ITRAQ data?</b></li>
+
+<p>
+ITRAQ and other tagged seaches can be done by using terninal
+modifications.  For example, if your tag has a mass of 304.199040, add
+these lines to your parameter file:
+<pre>
+nmod=304.199040:-1
+cmod=304.199040:-1
+</pre>
+<p>
+Crux will then generate peptides with this modification (+304.199904)
+on the n-terminus, the c-terminus and on both termini.  The -1 in the
+option means to add the modification regardless of where the peptide
+terminus lies relative to the rest of the protein.
+
+<li>
+<b>How does Crux differ from SEQUEST<sup>&reg;</sup>?</b></li>
+
+<p>
+SEQUEST<sup>&reg;</sup> has split into at least four different development threads:
+(1) the version developed in the Yates lab, initially at the
+University of Washington and later at Scripps, (2) the version maintained
+by Thermo Scientific, (3) the version mainted by Sage-N, and (4) the
+version maintained in the MacCoss lab at the University of Washington.
+Crux is based on the Yates lab development thread, SEQUEST<sup>&reg;</sup> version 28,
+whose last documented modification is dated 8/16/99.</p>
+
+<p>
+The original Crux search code was an imperfect reimplementation of
+SEQUEST<sup>&reg;</sup> 28.  The imperfection arose because, to avoid
+copyright infringement, Crux was reverse engineered from the
+SEQUEST<sup>&reg;</sup> binary; i.e., the Crux developers did not have
+access to the SEQUEST<sup>&reg;</sup> source code.  The reverse
+engineering continued until the developers deemed the remaining
+differences to be of negligible importance.  A quantitative comparison
+of the scores computed by Crux and SEQUEST<sup>&reg;</sup> can be seen
+in
+the <a href="http://noble.gs.washington.edu/papers/park2008rapid.html">original
+Crux paper</a>.  The differences between Crux and
+SEQUEST<sup>&reg;</sup> v28 are comparable in magnitude to the
+differences between different versions of SEQUEST<sup>&reg;</sup>.</p>
+
+<p>
+Currently, the default behavior for
+the <code>search-for-matches</code> command differs in two systematic
+ways from the original behavior of SEQUEST.<p>
+<ul>
+<li>
+Originally, SEQUEST ranked candidate peptides (i.e., peptides that lie
+within the user-specified precursor window) initially according to a
+preliminary score called "Sp."  Subsequently, the top 500 matches were
+re-scored using XCorr.  Crux can compute the Sp score, but does not
+use it as an initial filter.</li>
+<li>
+The SEQUEST theoretical spectrum used to compute XCorr includes two
+flanking peaks on either side of each b- and y-ion. Crux does not
+include these peaks by default, though they can be turned on using the
+"use-flanking-peaks" parameter.</li>
+</ul>
+<p></p>
+
+<!--
+<li>
+<b>How is the theoretical spectrum for a peptide generated?</b></li>
+
+<li>
+<b>In the calculation of XCorr, what preprocessing steps does the
+observed spectrum undergo prior to comparison with the theoretical
+spectrum?</b></li>
+-->
+
+<li>
+<b>What enhancements to Crux are planned?</b></li>
+
+<p>
+<ul>
+
+<li>
+Speeding up variable modification search by storing modified peptides
+in the index.</li>
+
+<li>
+Support for searching for post-translational modifications in 
+<code>search-for-xlinks</code>.</li>
+
+<li>
+Allow users to specify variable modifications of specific N-term or
+C-term residues.</li>
+
+<li>
+Add support for multiple cores.</li>
+
+</ul>
+</p>
+
+<li>
+<b>How can I contribute to Crux?</b></li>
+
+<p>
+Please email crux-support@uw.edu to obtain read-only access to our
+Subversion repository, along with access to our development team web
+pages.  Patches implementing new features can then be emailed to the
+development team for review and inclusion in subsequent releases of
+Crux.</p>
+
+<li>
+<b>Where does the name "Crux" come from?</b></li>
+
+<p>
+Thin air.  The name is not an acronym or a reference to anything in
+particular.</p>
+
+</ol>
+
+<hr></hr>
+
+<p>
+<a href="crux.html">Crux home</a></p>
+
+
+</blockquote>
+</body>
+</html>
+
+

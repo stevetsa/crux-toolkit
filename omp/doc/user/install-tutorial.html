@@ -1,0 +1,211 @@
+<html>
+<head>
+<title>Crux installation instructions</title>
+
+<link rel="stylesheet" href="crux.css" type="text/css">
+
+</head>
+
+<body>
+<blockquote>
+
+<div id="main">
+
+<h1>Crux Installation Instructions</h1>
+
+<p>This page will walk you through the steps of installing <span
+class=prog>crux</span> on your computer.  It assumes you are working
+in a command-line shell (readily available for Linux and Mac systems,
+<a href="http://www.cygwin.com/">cygwin</a> is the preferred choice for
+Windows).  The installation requires that you have <span
+class=prog>gcc</span> and <span class=prog>make</span> on your
+computer. <!-- precompiled binaries may be  available?-->
+All commands (words that you should type) are enclosed in
+boxes.  (Do not type the leading <code>$</code>, it indicates the
+prompt). These instructions will refer to your home directory as
+<code>$HOME</code>.  You can type <code>$HOME</code>  in the commands
+or you can use the fully qualified path to your home directory which
+may be something like <code>/home/yourname/</code>.  
+
+<div class=note><em>NOTE:</em> You can find out the location of your
+home directory by logging in and typing <code>pwd</code> or <code>echo
+$HOME</code>
+</div> 
+
+
+<a name=install></a>
+<h2>Installation</h2>
+
+<ol>
+<li><b>Download the files</b>  <span class=prog>Crux</span> is freely
+available for download under an academic use license.  Once you have
+submitted a license request, you will be sent a web address and login
+information.  On the download page you will be offered two types of files.
+One is a set of compiled binaries (programs that are ready to run) and 
+documentation zipped together and the other is a tarball containing
+the source code and documentation.  If you are working on a Linux i686
+or x86_64 system, the compiled binaries offer the easiest installation option.
+Click on the link "Linux [architecture] Build (zipped)" to download
+them to your computer.  If a window pops up, select the "Save" button.
+If you are on any other system or if the binaries do not work on your
+computer, you will need to download the source files.  Click on the
+link "Source (tarred, gzipped)", again choosing to save to disk if
+prompted. To check that the files were transfered correctly, run this
+command
+
+<div class=code><code>
+$ md5sum <i>[downloaded file]</i></code>
+</div>
+
+and compare the output to the "MD5 checksum" link next to the file you
+downloaded.  
+
+<li><b>Unpack the files</b>
+<ol>
+<li><b>Option 1: pre-compiled binaries.</b>  The file you downloaded
+should be named something like 
+<span class=file>crux_1.0x-i686-GNU-Linux.zip</span>.  Move it
+to a convenient location and unpack the file with this command.
+
+<div class=code><code>
+$ unzip crux_1.0x-i686-GNU-Linux.zip</code>
+</div>
+You should now have a new directory, <span class=file>bdist</span>,
+with two subdirectories <span class=file>bin</span>, and <span
+class=file>doc</span>.  The <span class=prog>crux</span> programs are
+in the <span class=file>bin</span> directory. You may want to move 
+these files somewhere
+more convenient for you, but otherwise, that completes the
+installation!  Skip ahead to 
+<a href="#path">Changing $PATH</a> for notes on how to run the executables.
+
+<li><b>Option 2: source files.</b> 
+
+The file you downloaded should be named something like <span
+class=file>crux_1.0x.tar.gz</span>, where <span class=file>1.0x</span>
+is replaced with the most current release version, such as 1.01. Move it to a
+convenient location and unpack the file with this command.</li>
+
+<div class=code><code>
+$ tar -zxvf crux_1.0x.tar.gz
+</div>
+You should now have a new directory, <span class=file>bdist</span>,
+with two subdirectories <span class=file>bin</span>, and <span
+class=file>doc</span>.  The <span class=prog>crux</span> programs are
+in the <span class=file>bin</span> directory. You may want to move 
+these files somewhere
+more convenient for you, but otherwise, that completes the
+installation!  Skip ahead to <a
+href="#path">Changing $PATH</a> for notes on how to run the executables.
+
+A new directory named <span class=file>crux_1.0x</span> will be
+created and a long list of files will stream by as they are being put
+into the new directory.
+</ol>
+
+<li><b>Configure</b>  Move into the <span class=file>crux_1.0x</span>
+directory from step 1 and confirm that there is a file called <span
+class=file>configure</span>.  This is a script you will run with one
+additional pieces of information, 
+the location where you wish to install the <span class=prog>crux</span>
+programs, lets call it <code>install-dir</code>.  If you want <span
+class=prog>crux</span> to go in <span class=file>$HOME/bin</span>,
+then <code>install-dir</code> would be <span class=file>$HOME</span>.
+Configure will automatically put the programs in a directory called
+<span class=file>bin</span>.  Run one of these two commands.
+
+<div class=code><code>
+$ ./configure --prefix install-dir
+</code></div>
+Crux defaults to single precision floating point arithmetic.
+It can be configured to use double precision floating point 
+by specifying the <code>--enable-doubles</code> configure option.
+<div class=code><code>
+$ ./configure --prefix install-dir --enable-doubles <br>
+</code></div>
+
+<div class=note><em>NOTE: <code>configure</code> will not accept
+relative paths, such as <span class=file>../../install-dir</span>.
+Use fully qualified paths beginning with <span
+class=file>/</span>.</em> 
+</div>
+
+<li><b>Make</b> To complete the process, run these two commands.</li>
+<div class=code><code>
+$ make<br>
+$ make install
+</code>
+</div>
+
+</ol>
+
+You should now see a number of executable files in <span
+class=file>install-dir/bin</span> beginning with <span
+class=prog>crux-</span>.  You will also find documentation and example
+files in <span class=file>install-dir/doc</span>.  
+
+<a name="path">
+<h2>Changing $PATH</h2>
+</a>
+<p>You can always run any of the programs by specifying its full
+path.  For example,</p>
+
+<div class=code><code>
+$ <em>install-dir</em>/bin/crux search-for-matches</code>
+</div>
+
+<p>In this final step of the installation, we'll set things up so that
+you can also run any of the programs by just typing its name.  This is
+done with an environment variable called <span
+class=code>$PATH</span>.  <span class=code>$PATH</span> is a list of
+places that the computer looks for executable programs.  Find out what
+is in the current list with this command.</p>
+
+<div class=code><code>
+$ echo $PATH</code><br>
+</div>
+<p>The value returned might look something like this
+<code>
+/usr/local/bin:/usr/bin:/bin:/usr/bin/X11:/usr/games
+</code>
+<p>The first directory in this colon-separated list, <span
+class=out>/usr/local/bin</span>, is the first place the computer looks
+for a program.  If it doesn't find the program there it tries <span
+class=out>/usr/bin</span> and so on down the list.  You can either
+move the crux executable files into one of these directories already
+in your PATH, or you can add <span
+class=code><em>install-dir</em></span> to PATH with this
+command.  (Remember to replace the word <em>install-dir</em> with the
+actual location of your installation)</p> 
+
+<div class=code><code>
+$ export PATH=$PATH:install-dir/bin</code>
+</div>
+
+<p>Try '<span class=code>echo $PATH</span>' again to see that the
+change was made.  <em>install-dir/bin</em> should be at the end of the
+list.  Now you can 
+run the <span class=prog>crux</span> programs by just typing their
+names.  Try this.</p>
+
+<div class=code><code>
+$ crux search-for-matches</code>
+</div>
+
+<p>The change to <span class=code>$PATH</span> is only temporary.  As
+soon as you close the window, the change will disappear.  In order to
+make the change every time you log on, add the line <span
+class=code>export PATH=$PATH:install-dir</span> to the file <span
+class=out>.bashrc</span> located in your home directory.  You will
+have to log on again for the change to take effect.
+
+</div><!--end main-->
+
+<hr></hr>
+
+<a href="crux.html">Crux home</a>
+<p align="right"> <a href="start-tutorial.html">Next: Getting Started</a>
+
+</blockquote>
+</body>
+</html>

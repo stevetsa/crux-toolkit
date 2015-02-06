@@ -1,0 +1,166 @@
+<html>
+<title>Crux tests</title>
+<body>
+
+<h1>Crux tests</h1>
+
+<p>
+A collection of four types of tests resides under src/c/test, each in
+their own appropriately named subdirectory.  The makefile offers
+targets for compiling or running various tests.</p>
+
+<h3>Smoke tests</h3>
+
+<p>
+These tests should be run before any update is committed to SVN.  Note
+that you do have to run them on a 64-bit machine using 64-bit versions
+of crux. This is because the existing index files were built on a
+64-bit machine. You can also update the known good files to match the
+current output by using the command 
+<code>./crux-test.pl -up /path/to/crux/src/c/ crux-test.cmds</code>
+in the <code>src/c/test/smoke-tests</code> directory. This will
+replace all of the known good files with the current output, so it
+should be used with caution.</p> 
+
+<p>
+The testing is by no means complete, but there are some tests for each
+executable.  First are tests for <code>crux-generate-peptides</code>,
+<code>crux-get-ms2-spectrum</code>, and <code>crux-predict-ion
+series</code>.  Next are tests for <code>crux
+search-for-matches</code> and for <code>crux sequest-search</code>
+with fasta files and searches with an existing index.  Percolator is
+also tested with existing files.  Finally, the whole process is tested
+from creating an index, to searching, and running percolator and
+q-ranker.  Another search is done to test the Weibull p-values and
+q-values by running compute-q-values.  There are tests for
+modifications and enzymes other than trypsin.  At the end is 
+a large-ish test on spectra that exactly matched SEQUEST results.</p>
+
+<p>
+The file structure of the smoke directory is as follows.  The test
+driver is a perl script called <code>crux-test.pl</code>.  The
+contents of the tests are in <code>crux-test.cmds</code>.  Each test
+consists of one line in the form</p>
+
+<pre>
+&lt;1|0 for do or do not run on MacOS&gt; = &lt;test name&gt; = &lt;compare file&gt; = &lt;command&gt; = [words to ignore in the diff]
+</pre>
+
+<p>
+For each test, the command is run and stdout is diffed with 'compare
+file'.  Any words in the last field are ignored in the diff with the
+option -I.  If diff finds no differences the test passes; otherwise,
+the test fails and the output from diff is put in the
+file <code>out</code>.  In addition, the output is saved as
+&lt;compare file&gt;.observed.  All stderr from the command is put in
+the file <code>error</code>.  The test name is used in <code>out</code>
+and <code>error</code> to identify output from each test.</p>
+
+<p>
+Sometimes the output from &lt;command&gt; is really a file, in which case I
+put <code>cat file</code> at the end of the command.  The compare
+files are all in <code>good_results/</code> and parameter files are in
+<code>params/</code>.  Input files (ms2s and fastas) are in the smoke
+directory.  There is also a script called <code>clean.sh</code> for
+removing intermediate files before a test.</p>
+
+<p>
+In order to add a test, add a line to <code>crux-test.cmds</code> as
+described above. To update a test when the output changes, change the
+file in good_results.</p>
+
+<h3>
+Unit Tests</h3>
+
+<p>
+Unit tests for individual components of <code>crux</code> are
+in <code>crux/src/c/test/unit-tests</code>
+and <code>crux/src/c/test/cppunit-tests</code>.  We are in the process
+of a transition from C to C++ so new unit tests should be added to the
+cppunit-tests directory.  A good time to add new unit tests is when a
+new class is created or new method is added to an existing class.  
+These tests must be compiled any time there are changes made to the
+code.  Run <code>make check-unit-tests</code> and 
+<code>make check-cpp-unit-tests</code> from the test directory or
+run <code>make</code> from each sub-directory.  As the tests run,
+the results will be printed to stdout.</p>
+
+<p>
+Tests are arranged by source file with
+<code>check-&lt;filename&gt;.c</code> or 
+<code>Test&lt;Filename&gt;.cpp</code> containing tests for 
+methods in <code>crux/src/c/&lt;filename&gt;.cpp</code>.  The main
+drivers are <code>crux-unit-tests.c</code> and <code>main.cpp</code>.
+</p>
+
+<p>
+Information about the <code>check</code> package
+is <a href="http://check.sourceforge.net/">here</a> and a very basic
+tutorial starts
+<a href="http://check.sourceforge.net/doc/check.html/check_5.html#SEC5">here</a>.  
+Information about the <code>cppunit</code> package is <a 
+href="http://sourceforge.net/apps/mediawiki/cppunit/index.php?title=Main_Page">
+here</a> and from that main page are links to the <a href=
+"http://cppunit.sourceforge.net/doc/lastest/index.html">documentation</a>
+that includes a nice step-by-step tutorial.
+</p>
+
+<p>
+The unit testing is not complete.  Chris set up many tests as he was
+starting out, but eventually abandoned them.  By the time Barbara
+encountered the code, very few of the tests still worked.  Those she
+could fix quickly were kept and the rest were commented out
+of <code>crux-unit-tests.c</code>.  A number of new tests were added
+as the dynamic modifications were being implemented.  As structs are
+converted to classes, more tests are being added to cppunit-tests.</p>
+
+<p>
+To see the basic structure of the <code>check-</code> files look
+at <code>check-template.c</code>.  There are a series of short tests,
+each with a name.  Before each test, a setup routine is run to create
+data structures.  A teardown routine is run after each test to clean up
+any memory allocated in the setup.  Tests can be performed on those
+objects created in setup or on locally created values.  The basic form
+of the test is to call a method and check the value it returned
+with <code>fail_unless(condition, message)</code>.  As soon as one of
+these statements fails, the message is printed, the test ends, the
+teardown routine is called, and the next test is started.  
+</p>
+
+<p>
+To add a new test to an existing file, insert a new <code>
+START_TEST(name){}END_TEST</code> block into the file and add the test to the
+test suite using <code>tcase_add_test()</code>.  To create a new test
+suite, make a copy of <code>check-template.c</code> and fill in the
+body of the tests, changing &lt;&lt;class&gt;&gt; to the name of
+crux/src/c/ file. Make a copy of <code>check-template.h</code> and
+change the names accordingly.  Look for &lt;&lt;class&gt;&gt;
+in <code>crux-unit-tests.c</code> and add a line of that form with the
+correct name.  Finally, add the name of the file to <code>Makefile</code>. 
+</p>
+
+<p>
+The basic structure of the cppunit tests is very similar and the 
+<code>TestTemplate.cpp</code> file can be used as a starting point for
+additional tests.</p>
+
+<h3>Performance tests</h3>
+
+<p>
+These tests measure, for a given data set, how well the various Crux
+search tools work.  The measurement uses decoy PSMs as an empirical
+null distribution.  A full description is
+available <a href="../../src/c/test/performance-tests/performance.html">here</a>.</p>
+
+<h3>Calibration tests</h3>
+
+<p>
+These tests measure, for a given data set, the extent to which the
+p-value produced by <code>crux search-for-matches</code> are uniformly
+distributed when the input database is shuffled.  A full description
+is
+available <a href="../../src/c/test/calibration/calibration.html">here</a>.</p>
+
+</body>
+</html>
+

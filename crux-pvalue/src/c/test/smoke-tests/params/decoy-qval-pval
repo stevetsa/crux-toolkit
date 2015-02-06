@@ -1,0 +1,7 @@
+digestion=partial-digest
+overwrite=T
+output-dir=decoy-qval-pval
+top-match=1
+num-decoys-per-target=1
+seed=5
+print-search-progress=100

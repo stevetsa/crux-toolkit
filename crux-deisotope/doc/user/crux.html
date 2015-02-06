@@ -1,0 +1,328 @@
+<html>
+<head>
+<title>Crux tandem mass spectrometry analysis software</title>
+<link href="./crux.css" rel="styleSheet" type="text/css">
+</head>
+<body>
+<blockquote>
+
+<H1 ALIGN=CENTER>Crux tandem mass spectrometry analysis software</H1>
+
+<center>
+<img src="schematic.png">
+</center>
+
+<p>
+Crux is a software toolkit for tandem mass spectrometry analysis, with
+a focus on peptide identification.  If you use Crux in your research,
+please cite</p>
+
+<blockquote>
+Christopher Y. Park, Aaron A. Klammer, Lukas K&auml;ll, Michael
+J. MacCoss and William Stafford
+Noble.  <a href="http://noble.gs.washington.edu/papers/park2008rapid.html">"Rapid
+and accurate peptide identification from tandem mass spectra."</a>
+<i>Journal of Proteome Research.</i> 7(7):3022--3027, 2008.</li>
+</blockquote>
+
+<p>
+Crux is provided as a single executable that supports the following
+commands:</p>
+
+<table>
+
+<tr>
+<td colspan="2"><b>Primary commands</b></td>
+</tr>
+
+<tr>
+<td>
+<a href="crux-create-index.html">create-index</a></td>
+<td>
+Speed up subsequent searches by creating an index for all peptides in
+a fasta file.</td>
+</tr>
+
+<tr>
+<td>
+<a href="crux-search-for-matches.html">search-for-matches</a></td>
+<td>
+Search a collection of spectra against a sequence database, returning
+a collection of peptide-spectrum matches (PSMs).</td>
+</tr>
+
+<tr>
+<td>
+<a href="crux-sequest-search.html">sequest-search</a></td>
+<td>
+Search a collection of spectra against a sequence database, similar to
+search-for-matches, but more closely mimicking the SEQUEST
+algorithm.</td>
+</tr>
+
+<tr>
+<td>
+<a href="calibrate-scores.html">calibrate-scores</a></td>
+<td>
+Assign two types of statistical confidence measures (q-values and
+posterior error probabilities) to each PSM in a given set.</td></tr>
+
+<tr>
+<td>
+<a href="percolator.html">percolator</a></td>
+<td>
+Re-rank a collection of PSMs using the Percolator algorithm.</td></tr>
+
+<tr>
+<td>
+<a href="q-ranker.html">q-ranker</a></td>
+<td>
+Re-rank a collection of PSMs using the Q-ranker algorithm.</td></tr>
+
+<tr>
+<td>
+<a href="barista.html">barista</a></td>
+<td>
+Rank proteins and assign a q-value, confidence measure, to each
+protein identification .</td></tr> 
+
+
+<tr>
+<td>
+<a href="crux-search-for-xlinks.html">search-for-xlinks</a></td>
+<td>
+Search a collection of spectra against a sequence database, finding
+cross-linked peptide matches</td></tr>
+
+<tr>
+<td>
+<a href="spectral-counts.html">spectral-counts</a></td>
+<td>
+Score peptides or proteins by one of three quantification methods.</td></tr>
+
+<tr>
+<td colspan="2"><b>Utilities</b></td>
+</tr>
+
+<tr>
+<td>
+<a href="crux-predict-peptide-ions.html">predict-peptide-ions</a></td>
+<td>
+Given a peptide and a charge state, predict the ions according to the
+provided options.</td>
+</tr>
+
+<tr>
+<td>
+<a href="crux-print-processed-spectra.html">print-processed-spectra</a></td>
+<td>
+Process spectra as for scoring xcorr and print results to file.</td></tr>
+
+<tr>
+<td>
+<a href="crux-generate-peptides.html">generate-peptides</a></td>
+<td>
+Given protein sequencs in a fasta file return a list of peptides
+fitting the specified criteria.</td>
+</tr>
+
+<tr>
+<td>
+<a href="crux-get-ms2-spectrum.html">get-ms2-spectrum</a></td>
+<td>
+Extract one or more MS-MS spectra, specified by scan number, from
+a <code>.ms2</code> file.</td>
+</tr>
+
+<tr>
+<td>
+version</td>
+<td>
+Print the Crux version number to standard output, then exit.</td>
+</tr>
+
+<tr>
+<td colspan="1"><b>Utilities for pre-processing spectral files</b>
+</tr>
+
+<tr>
+<td><a href="hardklor.html">hardklör</a></td>
+<td>Identify isotopic distributions from high-resolution mass spectra</td>
+</tr>
+
+<tr>
+<td><a href="bullseye.html">bullseye</a></td>
+<td>Assign high resolution precursor m/z values to MS/MS data using the Hardklör algorithm
+</tr>
+
+<tr>
+<td colspan="2"><b>Utilities for processing tab-delimited text files</b>
+</tr>
+
+<tr>
+<td>
+<a href="extract-columns.html">extract-columns</a></td>
+<td>Print specified columns from a tab-delimited file</td>
+</tr>
+
+<tr>
+<td>
+<a href="extract-rows.html">extract-rows</a></td>
+<td>Print specified rows from a tab-delimited file</td>
+</tr>
+
+<tr>
+<td>
+<a href="stat-column.html">stat-column</a></td>
+<td>Collect summary statistics from a column in a tab-delimited file</td>
+</tr>
+
+<tr>
+<td>
+<a href="sort-by-column.html">sort-by-column</a></td>
+<td>Sort a tab-delimited file by a column</td>
+</tr>
+
+
+</table>
+
+<p>
+<b><a href="crux-faq.html">Crux frequently asked questions</a></b></p>
+
+<p>
+<b>Tide</b></p>
+
+<p>
+This version of Crux is released with a demo version of a new search
+engine, <a href="../tide/index.html">Tide</a>.  Tide is an independent
+reimplementation of the SEQUEST algorithm. The immediate ancestor of
+Tide is the Crux <code>search-for-matches</code> command, but Tide has
+been completely re-engineered to achieve a thousandfold improvement in
+speed while exactly replicating Crux XCorr scores.  Currently, Tide is
+not fully integrated with Crux, and is available only in binary
+executable format.</p>
+
+<b>File formats</b>
+
+<ul>
+
+<li>
+<a href="ms2-format.html">MS2 spectrum files</a> (<a href="data/demo.ms2">sample</a>)</li>
+
+<li>
+<a href="fasta-format.html">FASTA sequence files</a>
+(<a href="sample.fasta">sample</a>)</li>
+
+<li>
+Peptide database index files (binary)</li>
+
+<li>
+<a href="sqt-format.html">Text SQT files for representing PSMs.</a>
+(<a href="data/target.sqt">sample</a>)</li>
+
+<li>
+<a href="txt-format.html">Text feature files for representing PSMs.</a>
+(<a href="data/search.target.txt">sample</a>)</li>
+
+<li>
+<a href="parameter-file.html">Crux parameter files</a>
+(<a href="default.params">sample</a>)</li>
+
+</ul>
+
+<p>
+<b>Tutorials</b>
+
+<ul>
+
+<li>
+<a href="install-tutorial.html">Installation</a></li>
+
+<li>
+<a href="start-tutorial.html">Getting started with Crux</a></li>
+
+<li>
+<a href="search-tutorial.html">Searching a protein database</a></li>
+
+<li>
+<a href="index-tutorial.html">Creating a peptide index</a></li>
+
+<li>
+<a href="customize-tutorial.html">Customizing a search</a></li>
+
+</ul>
+
+
+<p>
+<b>Download</b>
+
+<p>
+Two versions of Crux are available:</p>
+
+<ul>
+
+<li>
+You can download a fully functional version of
+Crux <a href="download/index.html">here</a> once you agree to the
+license agreement and obtain a
+password <a href="http://depts.washington.edu/ventures/UW_Technology/Express_Licenses/crux.php">here</a>.
+The Crux source code is freely available for academic use and can be
+licensed for commercial use.  Currently, a single-user license costs
+US $50.</li>
+
+<li>
+An open source version of Crux can be downloaded <a href="open_source_download">here</a>.
+This version of Crux is covered by an <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache
+license</a>.  Due to intellectual property issues, this version of
+Crux has the search capability disabled, but all of the other Crux
+tools can be used in conjunction with a separate search engine.</li>
+
+</ul>
+
+<p>
+To receive announcements of new versions, sign up for the Crux users 
+<a href="https://mailman1.u.washington.edu/mailman/listinfo/crux-users">mailing list.</a></p>
+<p>For support, and to discuss Crux with other users and the developers, 
+sign up for the Crux users 
+<a href="http://groups.google.com/group/crux-users">Google group.</a></p>
+</p>
+
+<p>
+<a href="release-notes.html">Release notes.</a></p>
+
+<hr></hr>
+
+<center>
+<p>
+The original version of Crux was written by Chris Park and Aaron Klammer
+under the supervision
+of <a href="http://www.gs.washington.edu/faculty/maccoss.htm">Prof. Michael
+MacCoss</a>
+and <a href="http://noble.gs.washington.edu/~noble">Prof. William
+Stafford Noble</a> in the Department of Genome Sciences at the
+University of Washington, Seattle.  The complete list of contributors
+can be found <a href="contributors.html">here</a>.</p>
+
+<table>
+<tr>
+<td><img src="nibib.gif"></td>
+<td><img src="ncrr.gif"></td>
+<td>
+<p>
+Maintenance and development of Crux is funded by the National
+Institute of Biomedical Imaging and Bioengineering grant NIH/NIBIB R01
+EB007057 and by the National Center for Research Resources grant
+NIH/NCRR P41 RR0011823.</p></td>
+<td><img src="UWlogo150p.gif"></td>
+</tr>
+</table>
+</center>
+
+<hr></hr>
+
+<p>
+Please send comments and questions to cegrant@u.washington.edu.</p>
+
+</blockquote>
+</body>
+</html>

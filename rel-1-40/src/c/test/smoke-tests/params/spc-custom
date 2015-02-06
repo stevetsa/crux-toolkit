@@ -1,0 +1,11 @@
+overwrite=T
+unique-mapping=F
+quant-level=protein
+input-ms2=test.ms2
+parsimony=greedy
+measure=NSAF
+threshold-type=custom
+custom-threshold-name=xcorr_score
+custom-threshold-min=F
+threshold=2
+

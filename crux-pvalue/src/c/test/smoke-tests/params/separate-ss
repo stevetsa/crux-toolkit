@@ -1,0 +1,9 @@
+print-search-progress=100
+overwrite=F
+seed=5
+output-dir=ss
+fileroot=separate
+decoys=peptide-shuffle
+# defaults are
+#decoy-location=separate-files
+num-decoys-per-target=2

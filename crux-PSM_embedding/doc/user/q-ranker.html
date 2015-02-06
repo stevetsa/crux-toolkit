@@ -1,0 +1,165 @@
+<html>
+<title>crux q-ranker</title>
+<link href="./crux.css" rel="styleSheet" type="text/css">
+</head>
+<body>
+<blockquote>
+
+<H1 ALIGN=CENTER>crux q-ranker</H1>
+
+<p>
+<b>Usage:</b></p>
+
+<blockquote>
+<code>crux q-ranker [options] &lt;protein&nbsp;database&gt; 
+   &lt;search results directory&gt;</code>
+</blockquote>
+
+<p>
+<b>Description:</b></p>
+
+<p>
+Q-ranker dynamically learns to separate target from decoy PSMs.  The
+algorithm is described in this article:</p>
+
+<blockquote>
+Marina Spivak, Jason Weston, Leon Bottou and William Stafford Noble.
+<a href="http://noble.gs.washington.edu/papers/spivak2009improvements.html">"Direct <i>q</i>&nbsp;value
+optimization methods for peptide identification from shotgun
+proteomics data sets."</a>  <i>Journal of Proteome Research.</i>
+8(7):3737-3745, 2009.
+</blockquote>
+
+<!--
+<p>
+FIXME: Insert description of algorithm here.</p>
+-->
+
+<p>
+The features used by q-ranker to represent each PSM are summarized
+<a href="features.html">here</a>.</p>
+
+<p>
+<b>Input:</b></p>
+
+<ul>
+
+<LI>
+&lt;protein input &gt; &ndash; 
+The name of the file in fasta format or the directory containing the
+protein index from which to retrieve proteins and peptides.</li>
+
+<li>
+&lt;search results directory&gt; &ndash; A folder in which all the PSM
+result files are located.  The program looks for files produced by 
+<code>crux search-for-matches</code> (ending in
+'<code>.search.target.txt</code>' or '<code>.search.decoy.txt</code>')
+or by <code>crux sequest-search</code> (ending in
+'<code>.sequest.target.txt</code>' or
+'<code>.sequest.decoy.txt</code>').  All such files in the given
+directory are analyzed jointly.  Note that the directory should not
+contain results from both types of search algorithms.</li>
+
+</ul>
+<b>Output:</b>
+<ul>
+  The program writes files to the folder <code>crux-output</code> by default.
+The name of the output folder can be set by the user using the <code>--output-dir</code> option.
+The following files will be created:</p>
+
+<li>
+<b>qranker.params.txt</b>:
+a file containing the name and value of all parameters/options for the current operation.  
+Not all parameters in the file may have been used in the operation.  
+The resulting file can be used with the <code>--parameter-file</code>
+option for other crux programs.
+</li>
+
+<li>
+<b>qranker.target.txt</b>: a tab-delimited text file containing the PSMs.
+See <a href="txt-format.html">txt file format</a> for a list of the
+fields.</li>
+
+<li>
+<b>qranker.target.pep.xml</b>: a file containing the PSMs in pepxml format. See
+<a href="http://tools.proteomecenter.org/wiki/index.php?title=Formats:pepXML">
+pep xml file format</a> for further reference. This file can be used as input 
+to some of the tools in the 
+<a href="http://tools.proteomecenter.org/wiki/index.php?title=Software:TPP">
+Transproteomic Pipeline</a>.
+</li>
+
+<li>
+<b>qranker.log.txt</b>: a log file containing a copy of all messages that were
+printed to stderr.
+</li>
+</ul>
+
+
+<b>Options:</b>
+
+<ul>
+
+<li>
+<code>-pi-zero &lt;value&gt;</code> &ndash;
+The estimated proportion of target scores that are drawn according to
+the null distribution.  Default=1.0.</li>
+
+<li>
+<code>--fileroot &lt;string&gt;</code> &ndash; 
+The <code>fileroot</code> string will be added as a prefix to all
+output file names. Default = none.</li>
+
+<li>
+<code>--output-dir &lt;filename&gt;</code> &ndash; 
+The name of the directory where output files will be created.
+Default = crux-output.</li>
+
+<li>
+<code>--overwrite &lt;T|F&gt;</code> &ndash;
+Replace existing files if true (T) or fail when trying to overwrite a
+file if false (F). Default =  F.
+
+<LI>
+<code>--parameter-file &lt;filename&gt;</code> &ndash;
+A file containing command-line or additional parameters.  See the <a
+href=parameter-file.html>parameter documentation</a> page for
+details.</li>
+
+<li>
+<code>--no-xval</code> &ndash; By default, q-ranker selects two
+training parameters, the learning rate and the weight decay, via
+cross-validation within the training set.  This option turns off the
+cross-validation, leaving the parameters at their default values.</li>
+
+<LI> 
+<code>--feature-file &lt;string&gt;</code> &ndash; 
+Optional file in which to write the features. The features appear in
+the following order: xcorr, deltaCn, lnDeltaCn, Sp, logSp, deltaMass,
+abs(deltaMass), neutral mass, percent b/y ions matched, log(#
+candidates), UNUSED, UNUSED, missed cleavages, peptide length, charge
+= +1, charge = +2, charge = +3.  Default = none.</li>
+
+<LI>
+<code>--verbosity &lt;0-100&gt;</code> &ndash; 
+Specify the verbosity of the current processes. Each level prints the
+following messages, including all those at lower verbosity levels:
+0-fatal errors, 10-non-fatal errors, 20-warnings, 30-information on
+the progress of execution, 40-more progress information, 50-debug
+info, 60-detailed debug info. Default = 30.
+
+<li>
+<code>--version T</code> &ndash;
+Print the version number and quit.  Please note that you must include
+the 'T' after --version.
+
+</ul>
+
+
+<hr></hr>
+
+<a href="crux.html">Crux home</a>
+
+</blockquote>
+</body>
+</html>

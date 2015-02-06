@@ -1,0 +1,135 @@
+<HTML>
+<HEAD>
+<TITLE>crux-predict-peptide-ions</TITLE>
+</HEAD>
+<BODY LANG="en-US" BGCOLOR="#ffffff" DIR="LTR">
+<blockquote>
+<H1 ALIGN=CENTER>crux predict-peptide-ions</H1>
+
+
+<B>Usage:</B>
+
+<blockquote>
+<code>crux-predict-peptide-ions [options]
+  &lt;peptide&nbsp;sequence&gt; 
+  &lt;charge&nbsp;state&gt; 
+</code>
+</blockquote>
+
+<B>Description:</B>
+
+<p>
+Given a peptide and a charge state, predict the ions according to the 
+provided options.  These are the ions used in <a
+href="crux-search-for-matches.html">crux-search-for-matches</a>.</p>
+
+<p>
+<B>Input:</B>
+
+<UL>
+<LI>&lt;peptide sequence&gt; &ndash; The literal peptide sequence (e.g.
+EAMAPK) that is used to predict the ions.
+<LI>&lt;charge state&gt; &ndash; The charge state of the peptide used to
+predict the ions.
+</UL>
+<B>Output:</B>
+
+<UL>
+
+  <p>
+  The program prints to standard output a series of header lines,
+  describing how the ions were predicted.</p>
+
+  <pre>
+  # PEPTIDE: &lt;peptide sequence&gt;
+  # CHARGE: &lt;peptide charge&gt;</pre>
+  And then the predicted ions, in the following format:
+  <pre>
+  &lt;m/z&gt; &lt;mass&gt; &lt;charge&gt; &lt;ion-series&gt; &lt;bond-index&gt; &lt;NH3&gt; &lt;H2O&gt; &lt;ISOTOPE&gt; &lt;FLANK&gt;</pre>
+  where
+  <pre>
+  &lt;m/z&gt; is the ion's mass-to-charge
+  &lt;mass&gt; is the ion's (charged) mass
+  &lt;charge&gt; is the ion's charge e.g. 1,2,3
+  &lt;ion-type&gt; is an integer representing the series where 0=a, 1=b, 2=c, 3=x, 4=y, 5=z, 6=p
+  &lt;bond-index&gt; is in [1...n), where n is peptide length. Consistent with standard mass spec terminology, where a y-1 and b-1 ions result from cleavage of
+  completely different bonds
+  &lt;NH3&gt; is the number of NH3 modifications (lost neutral molecules)
+  &lt;H2O&gt; is the number of H2O modifications (lost neutral molecules)
+  &lt;ISOTOPE&gt;  is the number of adjacent isotopic peaks
+  &lt;FLANK&gt; is number of SEQEUST-style flanking ions
+</pre>
+
+
+
+</UL>
+<B>Options:</B>
+
+<UL>
+<LI>
+<code>--primary-ions &lt;b|y|by&gt;</code> &ndash; 
+Predict the specified primary ion series. 'b' indicates b-ions only, 'y' indicates y-ions only, 'by' indicates both. Default by.
+
+<LI>
+<code>--precursor-ion &lt;T|F&gt;</code> &ndash; 
+Predict the precursor ions, and all associated ions (neutral-losses,
+multiple charge states) consistent with the other specified
+options.  Default = F.  
+
+<LI>
+<code>--neutral-losses &lt;none|h2o|nh3|all&gt;</code> &ndash; 
+Predict the the specified neutral loss peaks. 'none' indicates no
+neutral losses, 'h2o' indicates water loss only, 'nh3' indicates
+ammonia losses only, 'all' indicates all three kinds of
+losses. Default = all. 
+
+<LI>
+<code>--isotope &lt;0|1|2&gt;</code> &ndash;
+Predict the given number of isotope peaks. Default = 0.
+
+<LI>
+<code>--flanking &lt;T|F&gt;</code> &ndash; 
+Predict flanking peaks for b- and y-ions. Default = F.
+
+<LI>
+<code>--max-ion-charge &lt;1|2|3|peptide&gt;</code> &ndash; 
+Predict ions up to this charge-state. The integer options ('1', '2' and
+'3') specify a fixed maximum charge-state. The 'peptide' option
+indicates that the ions should range up to the maximum charge-state of
+the peptide itself (thus, a +2 charge state peptide would have ions of
++1 and +2). Default = peptide.
+
+<LI>
+<code>--nh3 &lt;int&gt;</code> &ndash; 
+Include among the predicted peaks b/y ions with up to n losses of nh3.  For
+example, for <code>--nh3 2</code>, predict a peak for each b- and y-ion 
+with the loss of one nh3 group and predict a second peak for each b-
+and y-ion with the loss of two nh3 groups.  These peaks will have 1 and 2,
+respectively, in the NH3 column of the output. Default = 1.
+
+<LI>
+<code>--h2o &lt;int&gt;</code> &ndash; 
+Include in the predicted peaks, b/y ions with the loss of 1 to n water
+molecules.  See <code>--nh3</code> for an example.  Default = 0.
+
+<LI>
+<code>--fragment-mass &lt;average|mono&gt;</code>
+Which isotopes to use in calculating the fragment ion masses.  Default = mono.
+
+<LI>
+<code>--verbosity &lt;0-100&gt;</code> &ndash; Specify the verbosity of the
+current processes. Each level prints the following messages, including
+all those at lower verbosity levels: 0-fatal errors, 10-non-fatal
+errors, 20-warnings, 30-information on the progress of execution,
+40-more progress information, 50-debug info, 60-detailed debug info.
+Default = 30.
+
+</UL>
+
+<hr></hr>
+
+<P><A HREF="crux.html">Crux home</A> 
+</P>
+</blockquote>
+</BODY>
+</HTML>
