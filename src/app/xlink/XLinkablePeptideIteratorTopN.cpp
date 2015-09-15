@@ -115,7 +115,7 @@ XLinkablePeptide XLinkablePeptideIteratorTopN::next() {
   }
 
   XLinkablePeptide ans = current_;
-  //carp(CARP_DEBUG, "next peptide:%s %g", ans.getSequence(), ans.getXCorr());
+  //carp(CARP_INFO, "next peptide:%s %g", ans.getSequence(), ans.getXCorr());
   queueNextPeptide();
   return ans;
 }
