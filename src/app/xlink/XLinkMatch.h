@@ -51,6 +51,11 @@ class XLinkMatch : public Crux::Match {
     MASS_TYPE_T mass_type /// MONO or AVERAGE?
   );
 
+  FLOAT_T getMassConst(
+    MASS_TYPE_T mass_type
+  ) const;
+
+
   std::string getCandidateTypeString();
 
   

@@ -38,6 +38,10 @@ class XLinkPeptide : public XLinkMatch {
     int peptide_idx ///< 0 - first peptide, 1 - second peptide
   );
  
+  int getLinkIdx(
+		 int peptide_idx ///< 0 - first peptide, 1 -second peptide
+		 );
+
   /*
    * Iterates through all linkable sites and adds valid xlink peptide candidates
    */
@@ -125,10 +129,7 @@ class XLinkPeptide : public XLinkMatch {
     FLOAT_T min_mass, ///< min mass of crosslinks
     FLOAT_T max_mass, ///< max mass of crosslinks
     XLinkBondMap& bondmap, ///< valid crosslink map
-    Database* database, ///< protein database
-    PEPTIDE_MOD_T* peptide_mod2, ///< modifications for the second peptide
-    bool decoy2, ///< is the second peptide a decoy?
-    XLinkablePeptideIterator& iter1, ///< 1st peptide iterator
+    XLinkablePeptideIterator* iter1, ///< 1st peptide iterator
     XLinkMatchCollection& candidates ///< candidates in/out
     );
 
@@ -136,6 +137,9 @@ class XLinkPeptide : public XLinkMatch {
    * adds crosslink candidates by iterating through all possible masses
    */
   static void addCandidates(
+			    Crux::Spectrum* spectrum,
+			    FLOAT_T precursor_mass,
+			    int precursor_charge,
     FLOAT_T min_mass, ///< min mass of crosslinks
     FLOAT_T max_mass, ///< max mass of crosslinks
     XLinkBondMap& bondmap, ///< valid crosslink map
@@ -143,19 +147,6 @@ class XLinkPeptide : public XLinkMatch {
     PEPTIDE_MOD_T** peptide_mods, ///< available variable mods
     int num_peptide_mods, ///< number of available modifications
     XLinkMatchCollection& candidates ///< candidates -in/out
-    );
-
-  /**
-   * Gets all peptides that are linkable, i.e. have link sites
-   */
-  static void addLinkablePeptides(
-    double min_mass, ///< min mass of peptides
-    double max_mass, ///< max mass of peptides
-    Database* database, ///< protein database 
-    PEPTIDE_MOD_T* peptide_mod, ///< modifications
-    bool is_decoy, ///< are the peptides decoys
-    XLinkBondMap& bondmap, ///<valid crosslink map
-    std::vector<XLinkablePeptide>& linkable_peptides ///< list of linkable peptides -out
     );
 
   /**

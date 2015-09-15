@@ -11,6 +11,7 @@
 #include "util/ArgParser.h"
 #include "util/FileUtils.h"
 #include "util/Params.h"
+#include "util/GlobalParams.h"
 #include "util/WinCrux.h"
 
 #include <iostream>
@@ -67,7 +68,7 @@ void CruxApplication::initialize(int argc, char** argv) {
   initializeParams(getName(), getArgs(), getOptions(), argc, argv);
   processParams();
   Params::Finalize();
-
+  GlobalParams::set();
   set_verbosity_level(Params::GetInt("verbosity"));
 
   carp(CARP_INFO, "Beginning %s.", getName().c_str());

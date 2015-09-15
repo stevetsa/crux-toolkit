@@ -4,6 +4,7 @@
  */
 #include "ModifiedPeptidesIterator.h"
 #include "SpectrumZState.h"
+#include "util/GlobalParams.h"
 
 using namespace std;
 using namespace Crux;
@@ -26,7 +27,7 @@ ModifiedPeptidesIterator::ModifiedPeptidesIterator(
                                                  is_decoy, dbase);
   peptide_modification_ = pmod;
   temp_peptide_list_ = new_empty_list();
-  max_aas_modified_ = get_int_parameter("max-aas-modified");
+  max_aas_modified_ = GlobalParams::getMaxAasModified();
 
   initialize();
   carp(CARP_DETAILED_DEBUG, 
@@ -48,7 +49,7 @@ ModifiedPeptidesIterator::ModifiedPeptidesIterator(
 
   peptide_modification_ = pmod;
   temp_peptide_list_ = new_empty_list();
-  max_aas_modified_ = get_int_parameter("max-aas-modified");
+  max_aas_modified_ = GlobalParams::getMaxAasModified();
   initialize();
 }
 
@@ -61,17 +62,19 @@ ModifiedPeptidesIterator::ModifiedPeptidesIterator(
   double max_mass,    ///< max-mass of peptides
   PEPTIDE_MOD_T* pmod, ///< Peptide mod to apply
   bool is_decoy, ///< generate decoy peptides
-  Database* dbase   ///< Database from which to draw peptides
+  Database* dbase,   ///< Database from which to draw peptides
+  int additional_missed_cleavages
 ) {
 
   peptide_source_ = new GeneratePeptidesIterator(
     pair<FLOAT_T,FLOAT_T>(min_mass, max_mass),
     is_decoy,
-    dbase);
+    dbase,
+    additional_missed_cleavages);
 
   peptide_modification_ = pmod;
   temp_peptide_list_ = new_empty_list();
-  max_aas_modified_ = get_int_parameter("max-aas-modified");
+  max_aas_modified_ = GlobalParams::getMaxAasModified();
   initialize();
 }
 
@@ -93,8 +96,8 @@ ModifiedPeptidesIterator::~ModifiedPeptidesIterator(){
  */
 pair<FLOAT_T,FLOAT_T>ModifiedPeptidesIterator::getMinMaxMass()
 {
-  return pair<FLOAT_T,FLOAT_T>(get_double_parameter("min-mass"),
-                               get_double_parameter("max-mass"));
+  return pair<FLOAT_T,FLOAT_T>(GlobalParams::getMinMass(),
+                               GlobalParams::getMaxMass());
 }
 
 /**
@@ -107,9 +110,9 @@ pair<FLOAT_T,FLOAT_T> ModifiedPeptidesIterator::getMinMaxMass(
   SpectrumZState& zstate, ///< charge/mass pair for peptide window
   PEPTIDE_MOD_T* pmod) ///< peptide mod with the delta mass for peptides
 {
-  WINDOW_TYPE_T precursor_window_type = 
-    string_to_window_type(get_string_parameter("precursor-window-type"));
-  double window = get_double_parameter("precursor-window");
+  WINDOW_TYPE_T precursor_window_type = GlobalParams::getPrecursorWindowType();
+
+  double window = GlobalParams::getPrecursorWindow();
   double min_mass = 0;
   double max_mass = 0;
 
@@ -132,7 +135,7 @@ pair<FLOAT_T,FLOAT_T> ModifiedPeptidesIterator::getMinMaxMass(
     carp(CARP_DEBUG,"mass:%f charge:%i min_mass:%f max_mass:%f",
          mass, zstate.getCharge(), min_mass, max_mass);
   } else {
-    carp(CARP_FATAL,"Invalid window type");
+    carp(CARP_FATAL, "Invalid window type");
   }
   pair<FLOAT_T,FLOAT_T> min_max(min_mass, max_mass);
   return min_max;

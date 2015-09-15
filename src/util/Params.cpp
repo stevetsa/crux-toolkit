@@ -378,7 +378,7 @@ void Params::Initialize() {
   InitStringParam("fragment-mass", "mono", "average|mono",
     "Specify which isotopes to use in calculating fragment ion mass.",
     "Used by crux-predict-peptide-ions.", true);
-  InitStringParam("isotopic-mass", "average", "average|mono",
+  InitStringParam("isotopic-mass", "mono", "average|mono",
     "Specify the type of isotopic masses to use when calculating the peptide mass.",
     "Used from command line or parameter file by "
     "crux-generate-peptides and crux generate-decoys.", true);
@@ -1265,6 +1265,12 @@ void Params::Initialize() {
     "from the precursor-window and precursor-window-type parameters. This option is only "
     "available when use-old-xlink=F.",
     "Used for crux search-for-xlinks", true);
+
+  InitIntParam("xlink-top-n", 250, 0, BILLION,
+               "Top-n open-mod peptides to consider in the second pass, value of 0 will search all candiates.",
+               "Available for crux search-for-xlinks",
+               true);
+
   InitBoolParam("xlink-print-db", false,
     "Prints out the generated database of xlink products to the file xlink_peptides.txt in "
     "the output directory.",

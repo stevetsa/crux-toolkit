@@ -50,6 +50,7 @@ add_library(
   XLinkBondMap.cpp
   XLinkablePeptide.cpp
   XLinkablePeptideIterator.cpp
+  XLinkablePeptideIteratorTopN.cpp
   XLinkMatch.cpp
   XLinkMatchCollection.cpp
   XLinkPeptide.cpp

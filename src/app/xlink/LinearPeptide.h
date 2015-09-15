@@ -19,6 +19,16 @@
 class LinearPeptide : public XLinkMatch {
  protected:
 
+  static std::vector<LinearPeptide> target_linear_peptides_;
+  static std::vector<LinearPeptide> decoy_linear_peptides_;
+  static void generateAllLinearPeptides(
+    std::vector<LinearPeptide>& linear_peptides,
+    Database* database,
+    PEPTIDE_MOD_T** peptide_mods,
+    int num_peptide_mods,
+    bool decoy
+    );
+
   Crux::Peptide* peptide_; ///< Peptide this linear peptide referes to
   char* sequence_; ///< sequence of the peptide
   bool is_decoy_; ///< indicator of whether the peptide is a decoy or not
@@ -56,6 +66,7 @@ class LinearPeptide : public XLinkMatch {
     Database* database, ///< protein database
     PEPTIDE_MOD_T** peptide_mods, ///< modifications peptide can take
     int num_peptide_mods, ///< Number of possible peptide mods
+    bool is_decoy,
     XLinkMatchCollection& candidates ///< Vector of possible candidate -inout
     );
 
@@ -113,7 +124,25 @@ class LinearPeptide : public XLinkMatch {
    */
   virtual bool isModified();
 
+  static std::vector<LinearPeptide>::iterator getLinearPeptidesBegin(
+								     Database* database,
+								     PEPTIDE_MOD_T** peptide_mods,
+								     int num_peptide_mods,
+								     bool decoy
+								     );
+  static std::vector<LinearPeptide>::iterator getLinearPeptidesEnd(
+								   Database* database,
+								   PEPTIDE_MOD_T** peptide_mods,
+								   int num_peptide_mods,
+								   bool decoy);
+
+
+
 };
+
+bool compareLinearPeptideMass(const LinearPeptide& xpep1, const LinearPeptide& xpep2);
+bool compareLinearPeptideMassToFLOAT(const LinearPeptide& xpep1, FLOAT_T mass);
+
 
 #endif
 

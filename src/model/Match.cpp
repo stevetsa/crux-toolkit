@@ -25,6 +25,7 @@
 #include "objects.h"
 #include "io/OutputFiles.h"
 #include "parameter.h"
+#include "util/GlobalParams.h"
 #include "Scorer.h" 
 #include "Match.h" 
 #include "MatchCollection.h" 
@@ -457,9 +458,9 @@ void Match::printOneMatchField(
     break;
   case CLEAVAGE_TYPE_COL:
     {
-      ENZYME_T enzyme = get_enzyme_type_parameter("enzyme");
+      ENZYME_T enzyme = GlobalParams::getEnzyme();
       char* enzyme_string = enzyme_type_to_string(enzyme);
-      DIGEST_T digestion = get_digest_type_parameter("digestion");
+      DIGEST_T digestion = GlobalParams::getDigestion();
       char* digestion_string = digest_type_to_string(digestion);
       string cleavage_str = enzyme_string;
       cleavage_str += "-";
@@ -1364,7 +1365,7 @@ void find_static_modifications(
 ){
   const char* seq_iter = peptide_sequence;
   
-  MASS_TYPE_T isotopic_type = get_mass_type_parameter("isotopic-mass");
+  MASS_TYPE_T isotopic_type = GlobalParams::getIsotopicMass();
   
   char aa[2];
   aa[1] = '\0';

@@ -304,6 +304,18 @@ enum CHARGE_STATE_T{
  */
 typedef enum _window_type WINDOW_TYPE_T;
 
+enum OBSERVED_PREPROCESS_STEP_T {
+  INVALID_STEP,
+  DISCRETIZE_STEP,
+  REMOVE_PRECURSOR_STEP,
+  SQUARE_ROOT_STEP,
+  REMOVE_GRASS_STEP,
+  TEN_BIN_STEP,
+  XCORR_STEP,
+  NUMBER_PREPROCESS_STEPS
+};
+
+
 /**
  * \class PeptideSrc
  * \brief object for mapping a peptide to it's parent protein.

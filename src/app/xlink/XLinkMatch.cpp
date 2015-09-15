@@ -8,6 +8,7 @@
 
 #include "parameter.h"
 #include "model/Scorer.h"
+#include "util/GlobalParams.h"
 #include <sstream>
 #include <ios>
 #include <iomanip>
@@ -163,6 +164,18 @@ string XLinkMatch::getCandidateTypeString(
 
 }
 
+FLOAT_T XLinkMatch::getMassConst(
+  MASS_TYPE_T mass_type
+  ) const {
+
+  if (!mass_calculated_[mass_type]) {
+    carp(CARP_FATAL, "mass not calculated yet!");
+  }
+  return (mass_[mass_type]);
+
+}
+
+
 /**
  * \returns the mass of the match
  */
@@ -225,7 +238,7 @@ void XLinkMatch::printOneMatchField(
   switch ((MATCH_COLUMNS_T)column_idx) {
 
   case PEPTIDE_MASS_COL:
-    output_file->setColumnCurrentRow((MATCH_COLUMNS_T)column_idx, getMass(MONO));
+    output_file->setColumnCurrentRow((MATCH_COLUMNS_T)column_idx, getMass(GlobalParams::getIsotopicMass()));
     break;
   case PVALUE_COL:
     output_file->setColumnCurrentRow((MATCH_COLUMNS_T)column_idx, pvalue_);
@@ -269,7 +282,11 @@ void XLinkMatch::printOneMatchField(
       (MATCH_COLUMNS_T)column_idx,
       getProteinIdXString());
     break;
-
+  case XLINK_TYPE_COL:
+    output_file->setColumnCurrentRow(
+      (MATCH_COLUMNS_T)column_idx,
+      getCandidateTypeString());
+    break;
   default:
     Match::printOneMatchField(column_idx,
       collection,

@@ -229,6 +229,7 @@ void MatchFileWriter::addColumnNames(CruxApplication* application,
       addColumnName(SHIFT_COL);
       addColumnName(CORR_COL);
     }
+    addColumnName(XLINK_TYPE_COL);
     break;
 
   case SPECTRAL_COUNTS_COMMAND:

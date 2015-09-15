@@ -5,73 +5,65 @@
  * \brief Iterator for xlinkable peptides
  *****************************************************************************/
 
-#ifndef XLINKABLEPEPTIDEITERATOR_H
-#define XLINKABLEPEPTIDEITERATOR_H
+#ifndef XLINKABLEPEPTIDEITERATORTOPN_H
+#define XLINKABLEPEPTIDEITERATORTOPN_H
 
-#include "model/ModifiedPeptidesIterator.h"
+#include "XLinkablePeptideIterator.h"
 #include "XLinkablePeptide.h"
 #include "XLinkBondMap.h"
 
-class XLinkablePeptideIterator {
+#include <vector>
+
+class XLinkablePeptideIteratorTopN: public XLinkablePeptideIterator {
 
  protected:
-  static std::vector<XLinkablePeptide> linkable_peptides_vec_;
-  static std::vector<XLinkablePeptide> decoy_linkable_peptides_vec_;
-  ModifiedPeptidesIterator* peptide_iterator_; ///< peptide iterator to generate peptides
-  XLinkablePeptide current_; ///< current xlinkable peptide
-  XLinkBondMap bondmap_; ///< map of valid links
-  FLOAT_T min_mass_;
-  FLOAT_T max_mass_;
+
+
+  std::vector<XLinkablePeptide> scored_xlp_; ///< sorted by highest XCorr score.
+  int current_idx_; 
+  int current_rank_;
+  FLOAT_T current_xcorr_;
+  int top_n_; ///<set by kojak-top-n
   bool has_next_; ///< is there a next candidate
   bool is_decoy_; ///< are we getting decoys
-  std::vector<int> link_sites_; ///< list of links sites
-  std::vector<XLinkablePeptide>::iterator iter_;
-
 
   /**
    * queues the next linkable peptide
    */
   void queueNextPeptide(); 
 
-  void generateAllLinkablePeptides(
-    std::vector<XLinkablePeptide>&xlp,
-    Database* database,
-    PEPTIDE_MOD_T** peptide_mods,
-    int num_peptide_mods, 
-    bool decoy);
-
-
  public:
 
   /**
    * constructor that sets up the iterator
    */
-  XLinkablePeptideIterator(
-    double min_mass, ///< min mass of candidates
-    double max_mass, ///< max mass of candidates
+  XLinkablePeptideIteratorTopN(
+    Crux::Spectrum* spectrum,
+    FLOAT_T precursor_mass,
+    FLOAT_T min_mass, ///< min mass of candidates
+    FLOAT_T max_mass, ///< max mass of candidates
+    int precursor_charge, ///< Charge of precursor
     Database* database, ///<peptide index
     PEPTIDE_MOD_T** peptide_mods, ///< current peptide mod
-    int num_peptide_mods,
+    int num_peptide_mods, 
     bool is_decoy, ///< generate decoy candidates
     XLinkBondMap& bondmap ///< map of valid links
     );
 
-  XLinkablePeptideIterator() {peptide_iterator_=NULL;}
-
   /**
    * Destructor
    */
-  virtual ~XLinkablePeptideIterator();
+  virtual ~XLinkablePeptideIteratorTopN();
 
   /**
    * \returns whether there is another linkable peptide
    */
-  virtual bool hasNext();
+  bool hasNext();
 
   /**
    *\returns the next linkable peptide
    */
-  virtual XLinkablePeptide next();
+  XLinkablePeptide next();
 
 };
 

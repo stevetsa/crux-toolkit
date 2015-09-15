@@ -15,6 +15,7 @@
 #include "io/MatchFileReader.h"
 #include "io/SQTReader.h"
 #include "util/Params.h"
+#include "util/GlobalParams.h"
 #include "util/WinCrux.h"
 
 using namespace std;
@@ -454,21 +455,21 @@ void MatchCollection::printXmlHeader(
     return;
   }
   time_t hold_time;
-  ENZYME_T enzyme = get_enzyme_type_parameter("enzyme");
+  ENZYME_T enzyme = GlobalParams::getEnzyme();
   char* enz_str = enzyme_type_to_string(enzyme);
   string database = get_string_parameter("protein-database");
 
-  MASS_TYPE_T isotopic_mass_type = get_mass_type_parameter("isotopic-mass");
-  MASS_TYPE_T fragment_mass_type = get_mass_type_parameter("fragment-mass");
+  MASS_TYPE_T isotopic_mass_type = GlobalParams::getIsotopicMass();
+  MASS_TYPE_T fragment_mass_type = GlobalParams::getFragmentMass();
 
   const char* isotopic_mass;
   const char* fragment_mass;
-  DIGEST_T digest = get_digest_type_parameter("digestion");
+  DIGEST_T digest = GlobalParams::getDigestion();
   int max_num_internal_cleavages;
   int min_number_termini;
-  int missed_cleavage = get_int_parameter("missed-cleavages");
+  int missed_cleavage = GlobalParams::getMissedCleavages();
   if (missed_cleavage){
-    max_num_internal_cleavages = get_int_parameter("max-length");
+    max_num_internal_cleavages = GlobalParams::getMaxLength();
   } else {
     max_num_internal_cleavages = 0;
   }
@@ -565,7 +566,7 @@ void MatchCollection::printXmlHeader(
   char aa_str[2];
   aa_str[1] = '\0';
   int alphabet_size = (int)'A'+ ((int)'Z'-(int)'A');
-  MASS_TYPE_T isotopic_type = get_mass_type_parameter("isotopic-mass");
+  MASS_TYPE_T isotopic_type = GlobalParams::getIsotopicMass();
   int aa = 0;
 
   // static amino acid modifications
@@ -699,7 +700,7 @@ void MatchCollection::printSqtHeader(
   fprintf(output, "H\tDBSeqLength\t?\n");
   fprintf(output, "H\tDBLocusCount\t%d\n", num_proteins);
 
-  MASS_TYPE_T mass_type = get_mass_type_parameter("isotopic-mass");
+  MASS_TYPE_T mass_type = GlobalParams::getIsotopicMass();
   char temp_str[64];
   mass_type_to_string(mass_type, temp_str);
   fprintf(output, "H\tPrecursorMasses\t%s\n", temp_str);
@@ -724,7 +725,7 @@ void MatchCollection::printSqtHeader(
   char aa_str[2];
   aa_str[1] = '\0';
   int alphabet_size = (int)'A' + ((int)'Z'-(int)'A');
-  MASS_TYPE_T isotopic_type = get_mass_type_parameter("isotopic-mass");
+  MASS_TYPE_T isotopic_type = GlobalParams::getIsotopicMass();
 
   for(aa = (int)'A'; aa < alphabet_size -1; aa++){
     aa_str[0] = (char)aa;

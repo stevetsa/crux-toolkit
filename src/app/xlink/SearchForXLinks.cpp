@@ -96,6 +96,7 @@ vector<string> SearchForXLinks::getOptions() const {
     "xlink-include-intra",
     "xlink-include-inter-intra",
     "xlink-prevents-cleavage",
+    "xlink-top-n",
     "max-xlink-mods",
     "min-mass",
     "max-mass",

@@ -8,6 +8,9 @@
 
 #include "objects.h"
 #include "util/modifications.h"
+#include "util/GlobalParams.h"
+#include "model/Ion.h"
+#include "model/IonSeries.h"
 
 #include <iostream>
 
@@ -24,7 +27,7 @@ void XLinkablePeptide::init() {
   sequence_ = NULL;
   is_decoy_ = false;
   link_sites_.clear();
-  
+  xcorr_link_idx_ = -1;
 }
 
 /**
@@ -53,6 +56,8 @@ XLinkablePeptide::XLinkablePeptide(
   peptide_ = xlinkablepeptide.peptide_->copyPtr();
   is_decoy_ = xlinkablepeptide.is_decoy_;
   link_sites_ = xlinkablepeptide.link_sites_;
+  xcorr_link_idx_ = xlinkablepeptide.xcorr_link_idx_;
+  xcorr_ = xlinkablepeptide.xcorr_;
 }
 
 XLinkablePeptide::XLinkablePeptide(
@@ -62,6 +67,8 @@ XLinkablePeptide::XLinkablePeptide(
   peptide_ = xlinkablepeptide.peptide_->copyPtr();
   is_decoy_ = xlinkablepeptide.is_decoy_;
   link_sites_ = xlinkablepeptide.link_sites_;
+  xcorr_link_idx_ = xlinkablepeptide.xcorr_link_idx_;
+  xcorr_ = xlinkablepeptide.xcorr_;
 }
 
 /**
@@ -115,7 +122,8 @@ bool XLinkablePeptide::linkSeqPreventsCleavage(
 
       char aa = peptide->getSequencePointer()[seq_idx];
 
-      string xlink_prevents_cleavage = get_string_parameter("xlink-prevents-cleavage");
+      const string& xlink_prevents_cleavage = GlobalParams::getXLinkPreventsCleavage();
+      //get_string_parameter("xlink-prevents-cleavage");
       for (string::const_iterator i = xlink_prevents_cleavage.begin();
            i != xlink_prevents_cleavage.end();
            i++) {
@@ -192,7 +200,7 @@ void XLinkablePeptide::findLinkSites(
   ) {
 
   int missed_cleavages = getMissedCleavageSites(peptide);
-  int max_missed_cleavages = get_int_parameter("missed-cleavages")+
+  int max_missed_cleavages = GlobalParams::getMissedCleavages() +
     2; // +2 because a self loop can prevent two cleavages from happening
 
   link_sites.clear();
@@ -268,7 +276,8 @@ void XLinkablePeptide::findLinkSites(
  * \returns the number of link sites on this peptide
  */
 size_t XLinkablePeptide::numLinkSites() {
-  return link_sites_.size();
+ return link_sites_.size();
+
 }
 
 /**
@@ -327,8 +336,8 @@ int XLinkablePeptide::getMissedCleavageSites(
 int XLinkablePeptide::getLinkSite(
   int link_site_idx ///< the index of the link site
   ) {
-
   return link_sites_.at(link_site_idx);
+  
 }
 
 /**
@@ -341,6 +350,12 @@ int XLinkablePeptide::addLinkSite(
   link_sites_.push_back(seq_idx);
   return link_sites_.size()-1;
 }
+
+
+void XLinkablePeptide::clearSites() {
+  link_sites_.clear();
+}
+
 
 /**
  * \returns the peptide object associated with this XLinkablePeptide
@@ -540,6 +555,29 @@ bool XLinkablePeptide::isModified() {
   return peptide_->isModified();
 }
 
+void XLinkablePeptide::setXCorr(size_t link_idx, FLOAT_T xcorr) {
+
+  xcorr_link_idx_ = link_idx;
+  xcorr_ = xcorr;
+
+}
+
+FLOAT_T XLinkablePeptide::getXCorr() const {
+  if (xcorr_link_idx_ != -1) {
+    return xcorr_;
+  }
+  carp(CARP_FATAL, "Xcorr not set!");
+  return 0;
+
+}
+
+
+bool compareXLinkableXCorr(
+  const XLinkablePeptide& xpep1,
+  const XLinkablePeptide& xpep2
+  ) {
+  return xpep1.getXCorr() > xpep2.getXCorr();
+}
 
 bool compareXLinkablePeptideMass(
   const XLinkablePeptide& xpep1,
@@ -548,6 +586,13 @@ bool compareXLinkablePeptideMass(
 
   return xpep1.getMass() < xpep2.getMass();
 }
+
+bool compareXLinkablePeptideMassToFLOAT(
+					const XLinkablePeptide& xpep1,
+					FLOAT_T mass) {
+  return xpep1.getMass() < mass;
+}
+
 /**
  * \returns whether the peptide is less than (by lexical modified sequence)
  */
@@ -559,6 +604,95 @@ bool XLinkablePeptide::operator < (
   return xlinkable.getModifiedSequenceString() < other.getModifiedSequenceString();
 
 }
+
+//vector<vector<IonSeries> > //idx 1 charge, idx 2 link_idx
+/*
+const IonSeries& XLinkablePeptide::getCachedIons(
+				 IonConstraint* contraint,
+				 int charge
+				 ) {
+  
+  while(ion_series_cache_.size() < charge) {
+    ion_series_cache_.push_back(NULL);
+  }
+
+  vector<IonSeries>& ion_series_cache_charge = ion_series_cache_[charge-1];
+
+
+  if (ion_series_cache_charge[link_idx_] == NULL) {
+    char* seq = getSequence();
+    MODIFIED_AA_T* mod_seq = getModifiedSequence();
+    int link_pos = link_sites_[link_idx];
+
+    carp(CARP_DEBUG, "XLinkablePeptide::predictIons() - predicting ions");
+    //predict the ion series of the peptide
+    
+    ion_series->setCharge(charge);
+    ion_series->update(seq, mod_seq);
+    ion_series->predictIons();
+    ion_series->incrementPointerCount();
+    ion_series_cache_charge[link_idx_-1] = ion_series;
+  }
+  return(ion_series_cache_charge[link_idx_]);
+
+}
+*/
+void XLinkablePeptide::predictIons(
+  IonSeries* ion_series,
+  int charge,
+  int link_idx,
+  FLOAT_T mod_mass
+  ) {
+
+  //IonSeries& cached = getCachedIons(ion_series->getConstraint(), charge, link_idx);
+
+
+    
+  char* seq = getSequence();
+  MODIFIED_AA_T* mod_seq = getModifiedSequence();
+  int link_pos = link_sites_[link_idx];
+
+  carp(CARP_DEBUG, "XLinkablePeptide::predictIons() - predicting ions");
+  //predict the ion series of the peptide
+  ion_series->setCharge(charge);
+  ion_series->update(seq, mod_seq);
+  ion_series->predictIons();
+
+  carp(CARP_DEBUG, "XLinkablePeptide::predictIons() - modifying ions");
+  
+  //modify the necessary ions and add to the ion_series   
+  for (IonIterator ion_iter = ion_series->begin(); 
+    ion_iter != ion_series->end(); 
+    ++ion_iter) { 
+ 
+    Ion* ion = *ion_iter; 
+ 
+    unsigned int cleavage_idx = ion->getCleavageIdx(); 
+    if (ion->isForwardType()) { 
+      if (cleavage_idx > (unsigned int)link_pos) {
+        FLOAT_T mass = ion->getMassFromMassZ() + mod_mass;
+        ion->setMassZFromMass(mass); 
+        if (isnan(ion->getMassZ())) { 
+          carp(CARP_FATAL, "NAN3"); 
+        } 
+      } 
+    } else { 
+      if (cleavage_idx >= (strlen(seq)-(unsigned int)link_pos)) { 
+        FLOAT_T mass = ion->getMassFromMassZ() + mod_mass;
+        ion->setMassZFromMass(mass); 
+        if (isnan(ion->getMassZ())) { 
+          carp(CARP_FATAL, "NAN4"); 
+        } 
+      } 
+    }
+    //    ion_series->addIon(ion);
+  }
+
+  free(seq); 
+  free(mod_seq);
+}
+
+
 
 /*
  * Local Variables:

@@ -43,6 +43,8 @@ class IonSeries {
 
   // ??? what is the difference between peptide_length and num_ions
 
+  int pointer_count_;
+
   /**
    * \brief Creates an array in which element i is the sum of the masses
    * of amino acids 0 to (i-1).  At i=0 is stored the length of the
@@ -63,6 +65,8 @@ class IonSeries {
   void addIon(
     Ion* ion ///< ion to add -in
   );
+
+  int incrementPointerCount();
 
   /**
    * helper function: add_ions
@@ -143,6 +147,8 @@ class IonSeries {
    * Frees an allocated ion_series object.
    */
   virtual ~IonSeries();
+
+  static void freeIonSeries(IonSeries* ions);
 
   /**
    *Iterator access

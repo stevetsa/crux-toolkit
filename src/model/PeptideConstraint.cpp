@@ -10,6 +10,7 @@
 #include "util/crux-utils.h"
 #include "objects.h"
 #include "util/mass.h"
+#include "util/GlobalParams.h"
 #include "Peptide.h"
 #include "Protein.h"
 #include "io/carp.h"
@@ -80,16 +81,16 @@ PeptideConstraint* PeptideConstraint::newFromParameters() {
 
   PeptideConstraint* new_constraint = new PeptideConstraint();
 
-  new_constraint->setEnzyme(get_enzyme_type_parameter("enzyme"));
-  new_constraint->setDigest(get_digest_type_parameter("digestion"));
-  new_constraint->setMinMass(get_double_parameter("min-mass"));
-  new_constraint->setMaxMass(get_double_parameter("max-mass"));
-  new_constraint->setMinLength(get_int_parameter("min-length"));
-  new_constraint->setMaxLength(get_int_parameter("max-length"));
+  new_constraint->setEnzyme(GlobalParams::getEnzyme());
+  new_constraint->setDigest(GlobalParams::getDigestion());
+  new_constraint->setMinMass(GlobalParams::getMinMass());
+  new_constraint->setMaxMass(GlobalParams::getMaxMass());
+  new_constraint->setMinLength(GlobalParams::getMinLength());
+  new_constraint->setMaxLength(GlobalParams::getMaxLength());
   // TODO : change this after missed cleavage is an integer parameter
   // rather than boolean.
-  new_constraint->setNumMisCleavage(get_int_parameter("missed-cleavages"));
-  new_constraint->setMassType(get_mass_type_parameter("isotopic-mass"));
+  new_constraint->setNumMisCleavage(GlobalParams::getMissedCleavages());
+  new_constraint->setMassType(GlobalParams::getIsotopicMass());
 
   return new_constraint;
 }

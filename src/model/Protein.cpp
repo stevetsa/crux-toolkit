@@ -11,6 +11,7 @@
 #include "util/utils.h"
 #include "util/crux-utils.h"
 #include "parameter.h"
+#include "util/GlobalParams.h"
 #include "objects.h"
 #include "Peptide.h"
 #include "Protein.h"
@@ -893,10 +894,10 @@ void Protein::peptideShuffleSequence(){
   }
  
   // get the digest rule
-  ENZYME_T enzyme = get_enzyme_type_parameter("enzyme");
+  ENZYME_T enzyme = GlobalParams::getEnzyme();
   // cases where peptide-shuffle is really protein shuffle
   if( enzyme == NO_ENZYME 
-      || get_digest_type_parameter("digestion") == NON_SPECIFIC_DIGEST){
+      || GlobalParams::getDigestion() == NON_SPECIFIC_DIGEST){
     this->shuffle(PROTEIN_SHUFFLE_DECOYS);
     return;
   }

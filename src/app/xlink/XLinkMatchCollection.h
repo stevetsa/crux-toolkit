@@ -11,6 +11,7 @@
 #include "objects.h"
 #include "model/MatchCollection.h"
 #include "model/Database.h"
+#include "model/Spectrum.h"
 #include "util/modifications.h"
 #include "model/SpectrumZState.h"
 
@@ -31,6 +32,9 @@ class XLinkMatchCollection : public MatchCollection {
    * Adds all of the possible candidates given the mass range
    */
   void addCandidates(
+		     Crux::Spectrum *spectrum, ///<spectrum
+		     FLOAT_T precursor_mass, ///< precursor mass
+		     int precursor_charge,
     FLOAT_T min_mass, ///< minimum mass
     FLOAT_T max_mass, ///< maximum mass
     XLinkBondMap& bondmap, ///< map of valid links
@@ -67,7 +71,7 @@ class XLinkMatchCollection : public MatchCollection {
    * Constructor for finding all candidates within a mass range
    */
   XLinkMatchCollection(
-    FLOAT_T precursor_mz, ///< precursor m/z
+    Crux::Spectrum* spectrum, ///< Spectrum
     SpectrumZState& zstate, ///< z-state
     XLinkBondMap& bondmap, ///< allowable links
     Database* database, ///protein database

@@ -21,6 +21,7 @@
 
 #include "modifications.h"
 #include "mass.h"
+#include "GlobalParams.h"
 /* Private constants */
 //enum { MAX_PROTEIN_SEQ_LENGTH = 40000 };
 
@@ -239,7 +240,7 @@ char* modified_aa_to_string_with_masses(MODIFIED_AA_T aa,
   FLOAT_T summed_masses = 0;
   if( mass_format == AA_PLUS_MOD ){
     summed_masses = 
-      get_mass_mod_amino_acid(aa, get_mass_type_parameter("isotopic-mass"));
+      get_mass_mod_amino_acid(aa, GlobalParams::getIsotopicMass());
   } else {
 
     for(int mod_idx = 0; mod_idx < total_mods; mod_idx++){
@@ -426,7 +427,7 @@ int convert_to_mod_aa_seq(const char* sequence,
     return 0;
   }
 
-  MASS_TYPE_T mass_type = get_mass_type_parameter("isotopic-mass");
+  MASS_TYPE_T mass_type = GlobalParams::getIsotopicMass();
 
   int seq_len = strlen(sequence);
   MODIFIED_AA_T* new_sequence = 

@@ -18,7 +18,7 @@
 #include "parameter.h"
 #include "Peptide.h"
 #include "util/mass.h"
-
+#include "util/GlobalParams.h"
 #include "IonFilteredIterator.h"
 #include "Spectrum.h"
 
@@ -56,7 +56,7 @@ void IonSeries::init() {
   charge_ = 0;
   constraint_ = NULL;
   is_predicted_ = false;
-  
+  pointer_count_ = 1;
   loss_limit_ = NULL;
   peptide_length_ = 0;
 }
@@ -118,7 +118,7 @@ IonSeries::IonSeries(
   charge_ = charge;
   // use max peptide len so loss_limit array can be used for any peptide
   loss_limit_ = 
-    (LOSS_LIMIT_T*)mycalloc(get_int_parameter("max-length"), 
+    (LOSS_LIMIT_T*)mycalloc(GlobalParams::getMaxLength(), 
                             sizeof(LOSS_LIMIT_T));
 }
 
@@ -179,6 +179,20 @@ void IonSeries::update(
     loss_limit_->nh3 = 0;
     // add more initialize count if more added
   }
+}
+
+int IonSeries::incrementPointerCount() {
+  pointer_count_++;
+  return (pointer_count_);
+}
+
+void IonSeries::freeIonSeries(IonSeries* ions) {
+
+  ions->pointer_count_--;
+  if (ions->pointer_count_ <= 0) {
+    delete ions;
+  }
+
 }
 
 

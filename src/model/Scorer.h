@@ -165,6 +165,11 @@ class Scorer {
     IonSeries* ion_series, ///< the ion series to score against the spectrum (theoretical) -in
     FLOAT_T*      theoretical ///< the empty theoretical spectrum -out
     );
+  bool createIntensityVectorTheoretical(
+    IonSeries* ion_series, 
+    std::vector<std::pair<int, float> >& theoretical
+    );
+
 
   /*****************************************************
    * General purpose functions
@@ -368,7 +373,7 @@ class Scorer {
     SCORER_TYPE_T score_type,
     FLOAT_T** intensities, ///< pointer to array of intensities
     int* mz_bins,
-    const std::string& stop_after);
+    OBSERVED_PREPROCESS_STEP_T stop_after);
 
   /**
    * create the intensity arrays for both observed and theoretical spectrum
@@ -390,12 +395,18 @@ class Scorer {
     FLOAT_T* theoretical ///< the theoretical spectrum to score against the observed spectrum -in
     );
 
+
+
+  FLOAT_T crossCorrelation(
+			   std::vector<std::pair<int, FLOAT_T> >& theoretical
+			   );
+
   FLOAT_T* getIntensityArrayObserved();
 
   bool createIntensityArrayObserved(
     Crux::Spectrum* spectrum,    ///< the spectrum to score(observed) -in
     int charge,              ///< the peptide charge -in 
-    const std::string& stop_after = "xcorr" ///< the preprocessing step to stop after -in
+    OBSERVED_PREPROCESS_STEP_T stop_after = XCORR_STEP ///< the preprocessing step to stop after -in
     );
 
   /**
@@ -408,6 +419,14 @@ class Scorer {
     int add_idx,            ///< the idex to add the intensity -in
     FLOAT_T intensity         ///< the intensity to add -in
     );
+
+  static void addIntensity(
+			   std::vector<std::pair<int, FLOAT_T> >& intensity_vector,
+			   int add_idx,
+			   FLOAT_T intensity
+);
+ 
+
 };
 
 

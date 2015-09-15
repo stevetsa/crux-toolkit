@@ -25,6 +25,8 @@ class XLinkablePeptide {
   char* sequence_; ///< the sequence 
   std::vector<int> link_sites_; ///< the sequence indices where linking is possible
   bool is_decoy_; //Is this from the decoy database?
+  size_t xcorr_link_idx_;
+  FLOAT_T xcorr_;
 
   /**
    * Initialize object
@@ -84,6 +86,8 @@ class XLinkablePeptide {
     XLinkBondMap& bondmap,  ///< the bond map -in 
     std::vector<int>& link_sites ///< the found link sites -out
   );
+
+  void clearSites();
 
   /**
    * \returns whether a link at this index in the sequence
@@ -205,7 +209,20 @@ class XLinkablePeptide {
    */
   std::string getModifiedSequenceString();
 
-  
+
+  void predictIons(
+    IonSeries* ion_series,
+    int charge,
+    int link_idx,
+    FLOAT_T mod_mass
+    );
+
+  FLOAT_T getXCorr() const;  
+  void setXCorr( 
+    size_t link_idx,
+    FLOAT_T xcorr
+  );
+
   /**
    * Is the linkable peptide modified?
    */
@@ -220,7 +237,11 @@ class XLinkablePeptide {
 };
 
 bool compareXLinkablePeptideMass(const XLinkablePeptide& xpep1, const XLinkablePeptide& xpep2);
-
+bool compareXLinkablePeptideMassToFLOAT(const XLinkablePeptide& xpep1, FLOAT_T mass);
+bool compareXLinkableXCorr(
+  const XLinkablePeptide& xpep1,
+  const XLinkablePeptide& xpep2
+  );
 
 
 #endif

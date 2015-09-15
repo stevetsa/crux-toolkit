@@ -8,8 +8,10 @@
 #include "model/ModifiedPeptidesIterator.h"
 #include "model/IonSeries.h"
 #include "model/Ion.h"
+#include "util/GlobalParams.h"
 
 #include "XLinkablePeptideIterator.h"
+#include "XLinkablePeptideIteratorTopN.h"
 
 #include <iostream>
 #include <sstream>
@@ -130,6 +132,13 @@ int XLinkPeptide::getLinkPos(
   return linked_peptides_[peptide_idx].getLinkSite(link_pos_idx_[peptide_idx]);
 }
 
+int XLinkPeptide::getLinkIdx(
+			     int peptide_idx ///< 0 - first peptide, 1 -second peptide
+			     ) {
+  return link_pos_idx_[peptide_idx];
+}
+
+
 /**
  * \returns whether the cross-link is from peptides from two different
  * proteins
@@ -153,56 +162,14 @@ bool XLinkPeptide::isInterIntra() {
 }
 
 
-/**
- * Gets all peptides that are linkable, i.e. have link sites
- */
-void XLinkPeptide::addLinkablePeptides(
-  double min_mass, ///< min mass of peptides
-  double max_mass, ///< max mass of peptides
-  Database* database, ///< protein database
-  PEPTIDE_MOD_T* peptide_mod, ///< modifications
-  bool is_decoy,  ///< are the peptides decoys
-  XLinkBondMap& bondmap, ///< valid crosslink map
-  vector<XLinkablePeptide>& linkable_peptides ///< list of linkable peptides -out
-  ) {
-
-  ModifiedPeptidesIterator* peptide_iterator =
-    new ModifiedPeptidesIterator(
-      min_mass, 
-      max_mass,
-      peptide_mod, 
-      is_decoy,
-      database);
-
-  int max_mod_xlink = get_int_parameter("max-xlink-mods");
-
-  while (peptide_iterator->hasNext()) {
-    Crux::Peptide* peptide = peptide_iterator->next();
-    vector<int> link_sites;
-
-    if (peptide->countModifiedAAs() > max_mod_xlink) {
-      delete peptide;
-    } else {
-      XLinkablePeptide::findLinkSites(peptide, bondmap, link_sites);
-
-      if (link_sites.size() > 0) {
-        XLinkablePeptide xlinkable_peptide(peptide, link_sites);
-        xlinkable_peptide.setDecoy(is_decoy);
-        linkable_peptides.push_back(xlinkable_peptide);
-        XLink::addAllocatedPeptide(peptide);
-      } else {
-        delete peptide;
-      }
-    }
-  }
-  
-  delete peptide_iterator;
-}
 
 /***
  * adds crosslink candidates by iterating through all possible masses
  */
 void XLinkPeptide::addCandidates(
+				 Crux::Spectrum* spectrum,
+				 FLOAT_T precursor_mass,
+				 int precursor_charge,
   FLOAT_T min_mass, ///< min mass of crosslink
   FLOAT_T max_mass, ///< max mass of crosslinks
   XLinkBondMap& bondmap, ///< valid crosslink map
@@ -212,25 +179,50 @@ void XLinkPeptide::addCandidates(
   XLinkMatchCollection& candidates ///< candidates in/out
   ) {
 
+  carp(CARP_DEBUG, "XLinkPeptide::addCandidates - precursor:%g", precursor_mass);
+  carp(CARP_DEBUG, "XLinkPeptide::addCandidates - min:%g", min_mass);
+  carp(CARP_DEBUG, "XLinkPeptide::addCandidates - max:%g", max_mass);
+
   if (!pmin_set_) {
     FLOAT_T min_length_mass = get_mass_amino_acid('G', MONO) * 
-      (FLOAT_T)get_int_parameter("min-length") + 
+      (FLOAT_T)GlobalParams::getMinLength() + 
       MASS_H2O_MONO;
-    pmin_ = max((FLOAT_T)get_double_parameter("min-mass"), min_length_mass);
+    pmin_ = max((FLOAT_T)GlobalParams::getMinMass(), min_length_mass);
     pmin_set_ = true;
   }
   FLOAT_T peptide1_min_mass = pmin_;
   FLOAT_T peptide1_max_mass = max_mass-pmin_-linker_mass_;
 
-  for (int mod_idx1 = 0; mod_idx1 < num_peptide_mods; mod_idx1++) {
-    PEPTIDE_MOD_T* peptide_mod1 = peptide_mods[mod_idx1];
-    XLinkablePeptideIterator iter1_target(peptide1_min_mass, peptide1_max_mass, database, peptide_mod1, false, bondmap);
-    for (int mod_idx2 = 0; mod_idx2 < num_peptide_mods; mod_idx2++) {
-      PEPTIDE_MOD_T* peptide_mod2 = peptide_mods[mod_idx2];
-      addCandidates(min_mass, max_mass, bondmap, database, peptide_mod2, false, iter1_target, candidates);
-    }
-  } 
+  carp(CARP_DEBUG, "peptide1_min:%g", peptide1_min_mass);
+  carp(CARP_DEBUG, "peptide1_max:%g", peptide1_max_mass);
 
+
+  XLinkablePeptideIterator* xlp_iter = NULL;
+  if (get_int_parameter("xlink-top-n") > 0) {
+    xlp_iter = new XLinkablePeptideIteratorTopN(
+      spectrum, 
+      precursor_mass,
+      peptide1_min_mass, 
+      peptide1_max_mass, 
+      precursor_charge,
+      database, 
+      peptide_mods,
+      num_peptide_mods, 
+      false, 
+      bondmap);
+  } else {
+    xlp_iter = new XLinkablePeptideIterator(
+      peptide1_min_mass, 
+      peptide1_max_mass, 
+      database, 
+      peptide_mods, 
+      num_peptide_mods,
+      false, 
+      bondmap);
+  }
+
+    addCandidates(min_mass, max_mass, bondmap, xlp_iter, candidates);
+    delete xlp_iter;
 }
 
 void XLinkPeptide::addXLinkPeptides(
@@ -261,24 +253,21 @@ void XLinkPeptide::addCandidates(
   FLOAT_T min_mass, ///< min mass of crosslinks
   FLOAT_T max_mass, ///< max mass of crosslinks
   XLinkBondMap& bondmap, ///< valid crosslink map
-  Database* database, ///< protein database
-  PEPTIDE_MOD_T* peptide_mod2, ///<modification of the modified peptides
-  bool decoy2, ///< are these going to be decoys?
-  XLinkablePeptideIterator& iter1, ///< 1st peptide iterator
+  XLinkablePeptideIterator* iter1, ///< 1st peptide iterator
   XLinkMatchCollection& candidates ///< candidates -in/out
   ) {
 
-  bool include_inter = get_boolean_parameter("xlink-include-inter");
-  bool include_intra = get_boolean_parameter("xlink-include-intra");
-  bool include_inter_intra = get_boolean_parameter("xlink-include-inter-intra");
+  bool include_inter = GlobalParams::getXlinkIncludeInter();
+  bool include_intra = GlobalParams::getXLinkIncludeIntra();
+  bool include_inter_intra = GlobalParams::getXLinkIncludeInterIntra();
 
-  int max_mod_xlink = get_int_parameter("max-xlink-mods");
+  int max_mod_xlink = GlobalParams::getMaxXLinkMods();
   
   size_t xpeptide_count = 0;
   vector<vector<XLinkablePeptide> > protein_idx_to_xpeptides;
   
-  while(iter1.hasNext()) {
-    XLinkablePeptide pep1 = iter1.next();
+  while(iter1->hasNext()) {
+    XLinkablePeptide pep1 = iter1->next();
     for (PeptideSrcIterator src_iterator1 = pep1.getPeptide()->getPeptideSrcBegin();
       src_iterator1 != pep1.getPeptide()->getPeptideSrcEnd();
       ++src_iterator1) {
@@ -305,8 +294,8 @@ void XLinkPeptide::addCandidates(
       protein_indices.push_back(protein_idx);
     }
   }
-  carp(CARP_INFO, "there are %i linkable peptides", xpeptide_count);
-  carp(CARP_INFO, "have peptides for %i proteins", protein_indices.size());
+  carp(CARP_DEBUG, "there are %i linkable peptides", xpeptide_count);
+  carp(CARP_DEBUG, "have peptides for %i proteins", protein_indices.size());
 
   if (include_intra  || include_inter_intra) {
     for (size_t protein_idx_idx=0;protein_idx_idx<protein_indices.size();protein_idx_idx++) {
@@ -440,7 +429,7 @@ FLOAT_T XLinkPeptide::calcMass(MASS_TYPE_T mass_type) {
  * \returns a shuffled xlink peptide
  */
 XLinkMatch* XLinkPeptide::shuffle() {
-  //carp(CARP_INFO, "XLinkPeptide::shuffle");
+  //carp(CARP_DEBUG, "XLinkPeptide::shuffle");
   XLinkPeptide* decoy = new XLinkPeptide();
   decoy->setZState(getZState());
   decoy->linked_peptides_.push_back(linked_peptides_[0].shuffle());
@@ -461,65 +450,19 @@ void XLinkPeptide::predictIons(
   int charge, ///< charge state of candidate
   bool first ///< is this the first peptide?
   ) {
-  carp(CARP_DEBUG, "predictIons:start");
-  MASS_TYPE_T fragment_mass_type = get_mass_type_parameter("fragment-mass");
+  carp(CARP_DEBUG, "predictIons:start %i %i", charge, first?1:0);
 
-  char* seq = NULL;
-   MODIFIED_AA_T* mod_seq = NULL;
-  int link_pos;
-  FLOAT_T mod_mass;
+  MASS_TYPE_T fragment_mass_type = GlobalParams::getFragmentMass();
 
   if (first) {
-    carp(CARP_DEBUG, "predicting first peptide");
-    //predict the ion series from the first peptide
-    seq = linked_peptides_[0].getSequence();
-    mod_seq = linked_peptides_[0].getModifiedSequence(); 
-    link_pos = getLinkPos(0);
-    mod_mass = linked_peptides_[1].getMass(fragment_mass_type) + linker_mass_;
+    linked_peptides_[0].predictIons(
+      ion_series, charge, getLinkIdx(0), 
+      linker_mass_ + linked_peptides_[0].getMass(fragment_mass_type)); 
   } else {
-    carp(CARP_DEBUG, "predicting second peptide"); 
-    //predict the ion series for the second peptide 
-    seq = linked_peptides_[1].getSequence();
-    mod_seq = linked_peptides_[1].getModifiedSequence();
-    link_pos = getLinkPos(1);
-    mod_mass = linked_peptides_[0].getMass(fragment_mass_type) + linker_mass_;
+    linked_peptides_[1].predictIons(
+      ion_series, charge, getLinkIdx(1),
+      linker_mass_ + linked_peptides_[1].getMass(fragment_mass_type));
   }
-  carp(CARP_DEBUG, "predicting ions");
-  //predict the ion series of the peptide
-  ion_series->setCharge(charge); 
-  ion_series->update(seq, mod_seq); 
-  ion_series->predictIons(); 
- 
-  carp(CARP_DEBUG, "modifying ions");
-  //modify the necessary ions and add to the ion_series   
-  for (IonIterator ion_iter = ion_series->begin(); 
-    ion_iter != ion_series->end(); 
-    ++ion_iter) { 
- 
-    Ion* ion = *ion_iter; 
- 
-    unsigned int cleavage_idx = ion->getCleavageIdx(); 
-    if (ion->isForwardType()) { 
-      if (cleavage_idx > (unsigned int)link_pos) {
-        FLOAT_T mass = ion->getMassFromMassZ() + mod_mass;
-        ion->setMassZFromMass(mass); 
-        if (isnan(ion->getMassZ())) { 
-          carp(CARP_FATAL, "NAN3"); 
-        } 
-      } 
-    } else { 
-      if (cleavage_idx >= (strlen(seq)-(unsigned int)link_pos)) { 
-        FLOAT_T mass = ion->getMassFromMassZ() + mod_mass;
-        ion->setMassZFromMass(mass); 
-        if (isnan(ion->getMassZ())) { 
-          carp(CARP_FATAL, "NAN4"); 
-        } 
-      } 
-    } 
-  } 
-
-  free(seq); 
-  free(mod_seq);
 } 
 
 /**
@@ -530,7 +473,7 @@ void XLinkPeptide::predictIons(
   int charge ///< charge state of the peptide
   ) {
 
-  MASS_TYPE_T fragment_mass_type = get_mass_type_parameter("fragment-mass"); 
+  MASS_TYPE_T fragment_mass_type = GlobalParams::getFragmentMass();
 
   //predict the ion_series of the first peptide.
   char* seq1 = linked_peptides_[0].getSequence();

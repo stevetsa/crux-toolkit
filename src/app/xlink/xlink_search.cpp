@@ -1,4 +1,3 @@
-
 /**
  * \file xlink_search.cpp
  * \brief Object for running search-for-xlinks (new code)
@@ -143,30 +142,36 @@ int SearchForXLinks::xlinkSearchMain() {
 
     FLOAT_T precursor_mz = spectrum->getPrecursorMz();
 
-    carp(CARP_INFO, "Getting candidates for scan %d charge %d mass %f", scan_num, zstate.getCharge(), zstate.getNeutralMass());  
-
-    XLinkMatchCollection* target_candidates = new XLinkMatchCollection(precursor_mz,
+    XLinkMatchCollection* target_candidates = new XLinkMatchCollection(
+		       spectrum,
                        zstate,
                        bondmap,
                        database,
                        peptide_mods,
                        num_peptide_mods,
                        false);
-   
-    carp(CARP_DEBUG, "Done getting candidates:%d", target_candidates->getMatchTotal());
 
-    if (target_candidates->getMatchTotal() < 1) {
-      carp(CARP_INFO, "not enough precursors found, skipping scan %d charge %d", scan_num, zstate.getCharge());
+    carp(CARP_DEBUG, "Scan=%d charge=%d mass=%lg candidates=%d", 
+      scan_num, 
+      zstate.getCharge(), 
+      zstate.getNeutralMass(), 
+      target_candidates->getMatchTotal());   
+
+    if (target_candidates->getMatchTotal() <= 0) {
+      carp(CARP_INFO, "Skipping scan %d charge %d mass %lg", 
+        scan_num, 
+	zstate.getCharge(),
+	zstate.getNeutralMass()
+      );
       delete target_candidates;
-      XLink::deleteAllocatedPeptides();
+      //XLink::deleteAllocatedPeptides();
       continue;
     }
 
     //score targets
-    carp(CARP_INFO, "scoring candidates:%d", target_candidates->getMatchTotal());
     target_candidates->scoreSpectrum(spectrum);
     
-    carp(CARP_INFO, "Getting decoy candidates");
+    carp(CARP_DEBUG, "Getting decoy candidates");
 
     XLinkMatchCollection* decoy_candidates = new XLinkMatchCollection();
     target_candidates->shuffle(*decoy_candidates);
@@ -188,7 +193,8 @@ int SearchForXLinks::xlinkSearchMain() {
     
         carp(CARP_DEBUG, "Getting weibull training candidates");
         XLinkMatchCollection* train_target_candidates =
-          new XLinkMatchCollection(precursor_mz,
+          new XLinkMatchCollection(
+	    spectrum,
             zstate,
             bondmap,
             database,
@@ -281,7 +287,7 @@ int SearchForXLinks::xlinkSearchMain() {
     /* Clean up */
     delete decoy_candidates;
     delete target_candidates;
-    XLink::deleteAllocatedPeptides();
+    //XLink::deleteAllocatedPeptides();
     
     //free_spectrum(spectrum);
 
@@ -296,6 +302,7 @@ int SearchForXLinks::xlinkSearchMain() {
 
   delete spectrum_iterator;
   delete spectra;
+  XLink::deleteAllocatedPeptides();
   for(int mod_idx = 0; mod_idx < num_peptide_mods; mod_idx++){
     free_peptide_mod(peptide_mods[mod_idx]);
   }

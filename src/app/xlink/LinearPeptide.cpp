@@ -3,10 +3,17 @@
 #include "XLink.h"
 #include "model/ModifiedPeptidesIterator.h"
 #include "model/IonSeries.h"
+#include "util/GlobalParams.h"
+
 
 #include <iostream>
 
 using namespace std;
+
+
+vector<LinearPeptide> LinearPeptide::target_linear_peptides_;
+vector<LinearPeptide> LinearPeptide::decoy_linear_peptides_;
+
 
 /**
  * Default constructor
@@ -36,6 +43,100 @@ LinearPeptide::LinearPeptide(
   sequence_ = NULL;
 }
 
+
+vector<LinearPeptide>::iterator LinearPeptide::getLinearPeptidesBegin(
+  Database* database,
+  PEPTIDE_MOD_T** peptide_mods,
+  int num_peptide_mods,
+  bool is_decoy
+  ) {
+
+  if (is_decoy) {
+    if (decoy_linear_peptides_.empty()) {
+      generateAllLinearPeptides(decoy_linear_peptides_, database, peptide_mods, num_peptide_mods, is_decoy);
+    }
+    return(decoy_linear_peptides_.begin());
+  } else {
+    if (target_linear_peptides_.empty()) {
+      generateAllLinearPeptides(target_linear_peptides_, database, peptide_mods, num_peptide_mods, is_decoy);
+    }
+    return(target_linear_peptides_.begin());
+  }
+}
+
+vector<LinearPeptide>::iterator LinearPeptide::getLinearPeptidesEnd(
+  Database* database, 
+  PEPTIDE_MOD_T** peptide_mods,
+  int num_peptide_mods,
+  bool is_decoy
+  ){
+
+  if (is_decoy) {
+    if (decoy_linear_peptides_.empty()) {
+      generateAllLinearPeptides(decoy_linear_peptides_, database, peptide_mods, num_peptide_mods, is_decoy);
+    }
+    return(decoy_linear_peptides_.end());
+  } else {
+    if (target_linear_peptides_.empty()) {
+      generateAllLinearPeptides(target_linear_peptides_, database, peptide_mods, num_peptide_mods, is_decoy);
+    }
+    return(target_linear_peptides_.end());
+  }
+
+}
+
+void LinearPeptide::generateAllLinearPeptides(
+  vector<LinearPeptide>& linear_peptides,
+  Database* database,
+  PEPTIDE_MOD_T** peptide_mods,
+  int num_peptide_mods,
+  bool decoy
+  ) {
+
+  linear_peptides.empty();
+  int max_missed_cleavages = GlobalParams::getMissedCleavages();
+  for (int mod_idx=0;mod_idx<num_peptide_mods; mod_idx++) {
+    PEPTIDE_MOD_T* peptide_mod = peptide_mods[mod_idx];
+    double delta_mass = peptide_mod_get_mass_change(peptide_mod);
+    //
+    ModifiedPeptidesIterator* peptide_iterator =
+      new ModifiedPeptidesIterator(
+        GlobalParams::getMinMass(), 
+        GlobalParams::getMaxMass(), 
+        peptide_mod, 
+        false, 
+        database,
+        0);
+
+    //add the targets
+    while (peptide_iterator->hasNext()) {
+      
+      Crux::Peptide* peptide = peptide_iterator->next();
+      LinearPeptide linear_peptide(peptide);
+      linear_peptide.getMass(GlobalParams::getIsotopicMass());
+      if (linear_peptide.getNumMissedCleavages() <= max_missed_cleavages) {
+        linear_peptides.push_back(linear_peptide);
+	//XLink::addAllocatedPeptide(peptide);
+	} else {
+        delete peptide;
+       }
+      }
+    delete peptide_iterator;
+  }
+  //carp(CARP_INFO, "sorting");
+  sort(linear_peptides.begin(), linear_peptides.end(), compareLinearPeptideMass);
+
+  
+  //carp(CARP_INFO, "printing");
+  //for (size_t idx=0;idx < linear_peptides.size();idx++) {
+  //  string sequence = linear_peptides[idx].getSequenceString();
+  //  carp(CARP_INFO, "%d %f %s", idx, linear_peptides[idx].getMassConst(MONO), sequence.c_str());
+  //}
+  //carp(CARP_FATAL, "stopping here");
+  //  carp(CARP_FATAL, "Stopping here");
+
+}
+
 /**
  *Add candidates to the XLinkMatchCollection that are linear
  */
@@ -45,56 +146,32 @@ void LinearPeptide::addCandidates(
   Database* database, ///< protein database
   PEPTIDE_MOD_T** peptide_mods, ///< modifications peptide can take
   int num_peptide_mods, ///< Number of possible peptide mods
+  bool is_decoy, ///< generate decoy canidates
   XLinkMatchCollection& candidates ///< Vector of candidate -inout
   ) {
 
-  int max_missed_cleavages = get_int_parameter("missed-cleavages");
-
-  for (int mod_idx=0;mod_idx<num_peptide_mods; mod_idx++) {
-    PEPTIDE_MOD_T* peptide_mod = peptide_mods[mod_idx];
-    double delta_mass = peptide_mod_get_mass_change(peptide_mod);
-    //
-    ModifiedPeptidesIterator* peptide_iterator =
-      new ModifiedPeptidesIterator(min_mass - delta_mass, max_mass - delta_mass, peptide_mod, 
-        false, database);
-
-    //add the targets
-    while (peptide_iterator->hasNext()) {
-      Crux::Peptide* peptide = peptide_iterator->next();
-      XLinkMatch* new_candidate = new LinearPeptide(peptide);
-      if (new_candidate->getNumMissedCleavages() <= max_missed_cleavages) {
-        //cerr <<"Adding Linear Peptide:"<<new_candidate -> getSequenceString()<<" "<<new_candidate->getMass(MONO)<<endl;
-        candidates.add(new_candidate);
-        XLink::addAllocatedPeptide(peptide);
-      } else {
-        delete new_candidate;
-        delete peptide;
-      }
+  if (is_decoy) {
+    if (decoy_linear_peptides_.empty()) {
+      generateAllLinearPeptides(decoy_linear_peptides_, database, peptide_mods, num_peptide_mods, is_decoy);
     }
-    delete peptide_iterator;
-
-
-    //add the decoys
-    /*
-    peptide_iterator = new
-      ModifiedPeptidesIterator(min_mass - delta_mass, max_mass - delta_mass, peptide_mod,
-        true, database);
-
-    while (peptide_iterator->hasNext()) {
-      Crux::Peptide* peptide = peptide_iterator->next();
-      XLinkMatch* new_candidate = new LinearPeptide(peptide);
-      if (new_candidate->getNumMissedCleavages() <= max_missed_cleavages) {
-        candidates.add(new_candidate);
-        XLink::addAllocatedPeptide(peptide);
-      } else {
-        delete new_candidate;
-        delete peptide;
-      }
+    vector<LinearPeptide>::iterator iter = 
+      lower_bound(decoy_linear_peptides_.begin(), decoy_linear_peptides_.end(), min_mass, compareLinearPeptideMassToFLOAT);
+    while (iter != decoy_linear_peptides_.end() && iter -> getMass(GlobalParams::getIsotopicMass()) <= max_mass) {
+      iter->incrementPointerCount();
+      candidates.add(&(*iter));
     }
-
-    delete peptide_iterator;
-    */
-
+  } else {
+    if (target_linear_peptides_.empty()) {
+      generateAllLinearPeptides(target_linear_peptides_, database, peptide_mods, num_peptide_mods, is_decoy);
+    }
+    vector<LinearPeptide>::iterator iter = 
+      lower_bound(target_linear_peptides_.begin(), target_linear_peptides_.end(), min_mass, compareLinearPeptideMassToFLOAT); 
+    while(iter != target_linear_peptides_.end() && iter -> getMass(GlobalParams::getIsotopicMass()) <= max_mass) {
+     
+      iter->incrementPointerCount(); 
+      candidates.add(&(*iter));
+      ++iter;
+    }
   }
 }
 
@@ -227,6 +304,20 @@ bool LinearPeptide::isModified() {
 
   return peptide_->isModified();
 }
+
+bool compareLinearPeptideMass(
+  const LinearPeptide& pep1, 
+  const LinearPeptide& pep2) {
+
+  return pep1.getMassConst(MONO) < pep2.getMassConst(MONO);
+
+}
+bool compareLinearPeptideMassToFLOAT(const LinearPeptide& pep1, FLOAT_T mass) {
+
+  return pep1.getMassConst(MONO) < mass;
+}
+
+
 
 /*
  * Local Variables:

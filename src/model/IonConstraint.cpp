@@ -1,6 +1,7 @@
 #include "IonConstraint.h"
 #include <string>
 
+#include "util/GlobalParams.h"
 
 using namespace std;
 /*************************
@@ -59,8 +60,9 @@ IonConstraint::IonConstraint(
   // set all fields of constraint
   mass_type_ = mass_type;
 
-  string charge_str = get_string_parameter("max-ion-charge");
-
+  const string& charge_str = GlobalParams::getMaxIonCharge();
+  //string charge_str = get_string_parameter("max-ion-charge");
+  
   max_charge_ = max(1, max_charge - 1);
 
   if (charge_str != "peptide") {
@@ -104,11 +106,14 @@ IonConstraint* IonConstraint::newIonConstraintSmart(
     break;
   default:
     // use default type for others
-    ION_TYPE_T ion_type;
-    string_to_ion_type(get_string_parameter("primary-ions"), &ion_type);
+    ION_TYPE_T ion_type = GlobalParams::getPrimaryIons();
+    //string_to_ion_type(get_string_parameter("primary-ions"), &ion_type);
     new_constraint = new IonConstraint(
-      get_mass_type_parameter("fragment-mass"),
-      charge, ion_type, get_boolean_parameter("precursor-ions")); 
+      GlobalParams::getFragmentMass(),
+      //get_mass_type_parameter("fragment-mass"),
+      charge, ion_type, 
+      GlobalParams::getPrecursorIons());
+      //get_boolean_parameter("precursor-ions")); 
     break;
   }
   return new_constraint;

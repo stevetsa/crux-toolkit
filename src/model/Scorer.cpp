@@ -25,6 +25,7 @@
 #include "model/IonFilteredIterator.h"
 #include "model/IonSeries.h"
 #include "util/crux-utils.h"
+#include "util/GlobalParams.h"
 #include "model/Spectrum.h"
 #include "Scorer.h"
 #include "parameter.h"
@@ -140,7 +141,8 @@ Scorer::Scorer(
 
   // set fields needed for each score type
   if(type == SP){
-    sp_beta_ = get_double_parameter("beta");
+    //sp_beta_ = get_double_parameter("beta"); TODO - What is this? SJM 2015_08_30
+    sp_beta_ = 0.0;
     sp_max_mz_ = get_double_parameter("max-mz");
     // allocate the intensity array
     intensity_array_ = (FLOAT_T*)mycalloc(getMaxBin(), sizeof(FLOAT_T));
@@ -802,8 +804,10 @@ FLOAT_T* Scorer::getIntensityArrayObserved() {
 bool Scorer::createIntensityArrayObserved(
   Spectrum* spectrum,    ///< the spectrum to score(observed) -in
   int charge,              ///< the peptide charge -in 
-  const string& stop_after ///< the preprocessing step to stop after -in
+  //const string& stop_after ///< the preprocessing step to stop after -in
+  OBSERVED_PREPROCESS_STEP_T stop_after
   ) {
+  /*
   const int STEP_DISCRETIZE = 1;
   const int STEP_REMOVE_PRECURSOR = 2;
   const int STEP_SQUARE_ROOT = 3;
@@ -826,7 +830,7 @@ bool Scorer::createIntensityArrayObserved(
   } else {
     carp(CARP_FATAL, "Invalid stop-after value '%s'.", stop_after.c_str());
   }
-  
+  */
   FLOAT_T precursor_mz = spectrum->getPrecursorMz();
   FLOAT_T experimental_mass_cut_off = precursor_mz*charge + 50;
 
@@ -868,7 +872,7 @@ bool Scorer::createIntensityArrayObserved(
   }
   int region_selector = INTEGERIZE(max_peak, bin_width_, bin_offset_) / NUM_REGIONS + 1;
 
-  FLOAT_T tolerance = get_double_parameter("remove-precursor-tolerance");
+  FLOAT_T tolerance = GlobalParams::getRemovePrecursorTolerance();
 
   // while there are more peaks to iterate over..
   // bin peaks, adjust intensties, find max for each region
@@ -881,7 +885,7 @@ bool Scorer::createIntensityArrayObserved(
     // skip all peaks larger than experimental mass
     // skip all peaks within precursor ion mz +/- 15
     if (peak_location > experimental_mass_cut_off ||
-        (stop_step >= STEP_REMOVE_PRECURSOR &&
+        (stop_after >= REMOVE_PRECURSOR_STEP &&
          peak_location < precursor_mz + tolerance &&
          peak_location > precursor_mz - tolerance)) {
       continue;
@@ -902,7 +906,7 @@ bool Scorer::createIntensityArrayObserved(
 
     // get intensity
     // sqrt the original intensity
-    FLOAT_T intensity = (stop_step >= STEP_SQUARE_ROOT)
+    FLOAT_T intensity = (stop_after >= SQUARE_ROOT_STEP)
       ? sqrt(peak->getIntensity()) : peak->getIntensity();
 
     // Record the max intensity in the full spectrum
@@ -922,7 +926,7 @@ bool Scorer::createIntensityArrayObserved(
 
   // For compatibility with SEQUEST drop peaks with intensity less than 1/20 of
   // the overall max intensity.
-  if (stop_step >= STEP_REMOVE_GRASS) {
+  if (stop_after >= REMOVE_GRASS_STEP) {
     for (vector<FLOAT_T>::iterator i = observed.begin(); i != observed.end(); i++) {
       if (*i <= 0.05 * max_intensity_overall) {
         *i = 0.0;
@@ -931,24 +935,45 @@ bool Scorer::createIntensityArrayObserved(
   }
 
   // normalize each 10 regions to max intensity of 50
-  if (stop_step >= STEP_TEN_BIN) {
+  if (stop_after >= TEN_BIN_STEP) {
     normalizeEachRegion(observed, max_intensity_per_region, region_selector);
   }
 
   observed_ = (FLOAT_T*)mycalloc(observed.size(), sizeof(FLOAT_T));
   copy(observed.begin(), observed.end(), observed_);
 
-  if (stop_step == STEP_XCORR) {
+  if (stop_after == XCORR_STEP) {
     // TODO maybe replace with a faster implementation that uses cum distribution
-    for (int i = 0; i < observed.size(); i++) {
-      for (int j = i - MAX_XCORR_OFFSET; j <= i + MAX_XCORR_OFFSET; j++) {
-        if (j > 0 && j < observed.size()) {
-          observed_[i] -= (observed[j] / (MAX_XCORR_OFFSET * 2.0 + 1));
+    if (true) {
+      // operation is as follows: new_observed = observed -
+      // average_within_window but average is computed as if the array
+      // extended infinitely: denominator is same throughout array, even
+      // near edges (where fewer elements have been summed)
+      static const FLOAT_T multiplier = 1.0 / (MAX_XCORR_OFFSET * 2.0 + 1);
+      int end = observed.size();
+      FLOAT_T total = 0;
+      vector<FLOAT_T> partial_sums(end+1);
+      for (int i = 0; i < end; ++i)
+        partial_sums[i] = (total += observed_[i]);
+      partial_sums[end] = total;
+
+      for (int i = 0; i < end; ++i) {
+        int right_index = min(end, i + MAX_XCORR_OFFSET);
+        int left_index = max(0, i - MAX_XCORR_OFFSET - 1);
+        observed_[i] -= multiplier * (partial_sums[right_index] - 
+          partial_sums[left_index] - observed_[i]);
+      }
+    } else {
+
+      for (int i = 0; i < observed.size(); i++) {
+        for (int j = i - MAX_XCORR_OFFSET; j <= i + MAX_XCORR_OFFSET; j++) {
+          if (j > 0 && j < observed.size()) {
+            observed_[i] -= (observed[j] / (MAX_XCORR_OFFSET * 2.0 + 1));
+          }
         }
       }
     }
   }
-
   return true;
 }
 
@@ -964,7 +989,8 @@ void Scorer::getProcessedPeaks(
   SCORER_TYPE_T score_type,  // SP, XCORR
   FLOAT_T** intensities, ///< pointer to array of intensities
   int* max_mz_bin,
-  const string& stop_after){
+  OBSERVED_PREPROCESS_STEP_T stop_after){
+  //  const string& stop_after){
 
   // create a scorer
   Scorer scorer(score_type);
@@ -1080,6 +1106,113 @@ bool Scorer::createIntensityArrayTheoretical(
   return true;
 }
 
+bool compareTheoreticalPairs(
+  const pair<int, FLOAT_T>& pair1,
+  const pair<int, FLOAT_T>& pair2
+  ) {
+
+  if (pair1.first != pair2.first) {
+    return(pair1.first < pair2.first);
+  } else {
+    return(pair1.second > pair2.second);
+  }
+
+}
+
+/**
+ * Create the intensity arrays for theoretical spectrum.
+ * SCORER must have been created for XCORR type.
+ * \returns true if successful, else FLASE
+ */
+bool Scorer::createIntensityVectorTheoretical(
+  IonSeries* ion_series, ///< the ion series to score against the spectrum (theoretical) -in
+  vector<pair<int, FLOAT_T> >& theoretical ///< the empty theoretical spectrum -out
+  ) {
+
+
+  theoretical.clear();
+  Ion* ion = NULL;
+  int intensity_array_idx = 0;
+  int ion_charge = 0;
+  ION_TYPE_T ion_type;
+  FLOAT_T bin_width = bin_width_;
+  FLOAT_T bin_offset = bin_offset_;
+  // create the ion iterator that will iterate through the ions
+
+  // while there are ion's in ion iterator, add matched observed peak intensity
+  for (IonIterator ion_iterator = ion_series->begin();
+    ion_iterator != ion_series->end();
+    ++ion_iterator) {
+
+    ion = *ion_iterator;
+    intensity_array_idx 
+      = INTEGERIZE(ion->getMassZ(), bin_width, bin_offset);
+    ion_type = ion->getType();
+    ion_charge = ion->getCharge();
+
+    // skip ions that are located beyond max mz limit
+    if(intensity_array_idx >= getMaxBin()){
+      continue;
+    }
+
+    // is it B, Y ion?
+    if(ion_type == B_ION || 
+       ion_type == Y_ION){
+      if (!ion->isModified()){
+        // Add peaks of intensity 50.0 for B, Y type ions. 
+        // In addition, add peaks of intensity of 25.0 to +/- 1 m/z flanking each B, Y ion if requested.
+        // Skip ions that are located beyond max mz limit
+        if((intensity_array_idx)< getMaxBin()){
+          addIntensity(theoretical, intensity_array_idx, B_Y_HEIGHT);
+          if (use_flanks_) {
+            addIntensity(theoretical, intensity_array_idx - 1, FLANK_HEIGHT);
+          }
+        }
+        
+        if (use_flanks_ && (intensity_array_idx + 1)< getMaxBin()){
+          addIntensity(theoretical, intensity_array_idx + 1, FLANK_HEIGHT);
+        }
+        
+        // add neutral loss of water and NH3
+
+        if(ion_type == B_ION){
+          int h2o_array_idx = 
+            INTEGERIZE((ion->getMassZ() - (MASS_H2O_MONO/ion_charge)),
+                       bin_width, bin_offset);
+          addIntensity(theoretical, h2o_array_idx, LOSS_HEIGHT);
+        }
+
+        int nh3_array_idx 
+          = INTEGERIZE((ion->getMassZ() -  (MASS_NH3_MONO/ion_charge)),
+                       bin_width, bin_offset);
+        addIntensity(theoretical, nh3_array_idx, LOSS_HEIGHT);
+      }
+
+    }// is it A ion?
+    else if(ion_type == A_ION){
+      // Add peaks of intensity 10.0 for A type ions. 
+      addIntensity(theoretical, intensity_array_idx, LOSS_HEIGHT);
+    }
+    else{// ERROR!, only should create B, Y, A type ions for xcorr theoreical 
+      carp(CARP_ERROR, "only should create B, Y, A type ions for xcorr theoretical spectrum");
+      return false;
+    }
+  }
+
+  //sort(theoretical.begin(), theoretical.end(), compareTheoreticalPairs);
+
+  /*  for (size_t idx=0;idx<theoretical.size();idx++) {
+
+    carp(CARP_INFO, "idx:%d intens:%g", theoretical[idx].first, theoretical[idx].second);
+
+  }
+  */
+
+  return true;
+}
+
+
+
 /**
  * create the intensity arrays for both observed and theoretical spectrum
  * SCORER must have been created for XCORR type
@@ -1134,6 +1267,27 @@ FLOAT_T Scorer::crossCorrelation(
   return score_at_zero / 10000.0;
 }
 
+FLOAT_T Scorer::crossCorrelation(
+  vector<pair<int, FLOAT_T> >& theoretical //< sorted vector of intensities
+  ) {
+
+  //size_t last_idx = -1;
+  FLOAT_T score_at_zero = 0;
+
+  for (vector<pair<int, FLOAT_T> >::iterator iter = theoretical.begin();
+  iter != theoretical.end();
+       ++iter) {
+
+    //if (iter->first != last_idx) {
+      score_at_zero += observed_[iter->first] * iter->second;
+      //  last_idx = iter->first;
+    //}
+  }
+  return score_at_zero / 10000.0;
+
+
+}
+
 /**
  * given a spectrum and ion series calculates the xcorr score
  *\returns the xcorr score 
@@ -1144,8 +1298,6 @@ FLOAT_T Scorer::genScoreXcorr(
   )
 {
   FLOAT_T final_score = 0;
-  FLOAT_T* theoretical = NULL;
-
   // initialize the scorer before scoring if necessary
   // preprocess the observed spectrum in scorer
   if(!initialized_){
@@ -1154,26 +1306,32 @@ FLOAT_T Scorer::genScoreXcorr(
       carp(CARP_FATAL, "failed to produce XCORR");
     }
   }
-  
-  // create theoretical array
-  theoretical = (FLOAT_T*)mycalloc(getMaxBin(), sizeof(FLOAT_T));
-  
-  // create intensity array for theoretical spectrum 
-  if(!createIntensityArrayTheoretical(ion_series, theoretical)){
-    carp(CARP_ERROR, "failed to create theoretical spectrum for Xcorr");
-    return false;
+  /*   
+  bool use_old_xcorr_ = false;
+
+  if (use_old_xcorr_) {
+    FLOAT_T* theoretical = NULL;
+    //create theoretical array
+    theoretical = (FLOAT_T*)mycalloc(getMaxBin(), sizeof(FLOAT_T));
+    if (!createIntensityArrayTheoretical(ion_series, theoretical)) {
+      carp(CARP_ERROR, "failed to create theoretical spectrum for Xcorr");
+      return false;
+    }
+    final_score = crossCorrelation(theoretical);
+    free(theoretical);
+  } else {
+  */
+    vector<pair<int, FLOAT_T> > theoretical;
+    if (!createIntensityVectorTheoretical(ion_series, theoretical)) {
+      carp(CARP_ERROR, "failed to create theoretical spectrum for Xcorr");
+      return false;
+    }
+    final_score = crossCorrelation(theoretical);
+    /*
   }
-  
-  // do cross correlation between observed spectrum(in scorer) and theoretical spectrum.
-  // use the two intensity arrays that were created
-  final_score = crossCorrelation(theoretical);
-
-  // free theoretical spectrum
-  free(theoretical);
-
+    */
   // debug
   // carp(CARP_INFO, "xcorr: %.2f", final_score);
-
   
   // return score
   return final_score;
@@ -1250,7 +1408,7 @@ IonConstraint** Scorer::singleIonConstraints() {
   ION_TYPE_T ion_types[GMTK_NUM_BASE_IONS] = { B_ION, Y_ION, A_ION }; 
   int charges[GMTK_NUM_CHARGES] = { 1, 2 }; 
 
-  MASS_TYPE_T mass_type = get_mass_type_parameter("fragment-mass");
+  MASS_TYPE_T mass_type = GlobalParams::getFragmentMass();//get_mass_type_parameter("fragment-mass");
 
   int ion_constraint_idx = 0;
 
@@ -1451,6 +1609,20 @@ void Scorer::addIntensity(
     intensity_array[add_idx] = intensity;
   }
 }
+
+void Scorer::addIntensity(
+  std::vector<std::pair<int, FLOAT_T> >& intensity_vector,
+  int add_idx,
+  FLOAT_T intensity
+  ) {
+
+  assert(add_idx >= 0);
+  ion_counter++;
+  intensity_vector.push_back(make_pair<int, FLOAT_T>(add_idx, intensity));
+
+}
+ 
+
 
 /**
  *\returns the fraction of b,y ions matched for scoring SP, 

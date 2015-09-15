@@ -143,6 +143,18 @@ FLOAT_T XLinkScorer::scoreCandidate(
 
 }
 
+FLOAT_T XLinkScorer::scoreXLinkablePeptide(
+  XLinkablePeptide& xlpeptide,
+  int link_idx,
+  FLOAT_T mod_mass) {
+
+  xlpeptide.predictIons(ion_series_xcorr_, charge_, link_idx, mod_mass);
+  FLOAT_T xcorr = scorer_xcorr_->scoreSpectrumVIonSeries(spectrum_, ion_series_xcorr_);
+
+  return xcorr;
+}
+
+
 /*                                                                                                                                                                                                                          
  * Local Variables:                                                                                                                                                                                                         
  * mode: c                                                                                                                                                                                                                  

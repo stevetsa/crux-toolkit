@@ -6,6 +6,7 @@
  *****************************************************************************/
 #include "SelfLoopPeptide.h"
 #include "XLinkablePeptide.h"
+#include "XLinkablePeptideIterator.h"
 #include "XLinkPeptide.h"
 #include "XLink.h"
 
@@ -33,9 +34,10 @@ SelfLoopPeptide::SelfLoopPeptide(
   int posA, ///< 1st link position on peptide
   int posB  ///< 2nd link position on peptide
   ) {
-  
+
   is_decoy_ = false;
   linked_peptide_ = XLinkablePeptide(peptide);
+  linked_peptide_.clearSites();
   linked_peptide_.addLinkSite(posA);
   linked_peptide_.addLinkSite(posB);
 
@@ -71,50 +73,28 @@ void SelfLoopPeptide::addCandidates(
   int num_peptide_mods, ///< number of allowable modifications
   XLinkMatchCollection& candidates ///< collection to add candidates
   ) {
-  
-  vector<XLinkablePeptide> linkable_peptides;
-  int cur_aa_mods = 0;
-  //loop over modifications.
-  for (int mod_idx=0;mod_idx<num_peptide_mods;mod_idx++) {
-  
-    PEPTIDE_MOD_T* peptide_mod = peptide_mods[mod_idx];
-    int this_aa_mods = peptide_mod_get_num_aa_mods(peptide_mod);
-    if (this_aa_mods > cur_aa_mods) {
-      cur_aa_mods = this_aa_mods;
-    }
 
-    FLOAT_T delta_mass = peptide_mod_get_mass_change(peptide_mod);
+  XLinkablePeptideIterator xpep_iter(min_mass - XLinkPeptide::getLinkerMass(),
+				     max_mass - XLinkPeptide::getLinkerMass(),
+                                     database,
+				     peptide_mods,
+				     num_peptide_mods,
+				     false,
+				     bondmap
+				     );  
 
-    XLinkPeptide::addLinkablePeptides(
-      min_mass - XLinkPeptide::getLinkerMass() - delta_mass,
-      max_mass - XLinkPeptide::getLinkerMass() - delta_mass,
-      database,
-      peptide_mod,
-      false,
-      bondmap,
-      linkable_peptides);
-    XLinkPeptide::addLinkablePeptides(
-      min_mass - XLinkPeptide::getLinkerMass() - delta_mass,
-      max_mass - XLinkPeptide::getLinkerMass() - delta_mass,
-      database,
-      peptide_mod,
-      true,
-      bondmap,
-      linkable_peptides);
-  }
-
-  //find linkable peptides that can have links to themselves.
-  for (unsigned int idx =0;idx < linkable_peptides.size();idx++) {
-    XLinkablePeptide &pep = linkable_peptides[idx];
-
-    for (unsigned int link1_idx=0;link1_idx<pep.numLinkSites()-1;link1_idx++) {
-      for (unsigned int link2_idx=link1_idx+1;link2_idx<pep.numLinkSites();link2_idx++) {
-        if (bondmap.canLink(pep, link1_idx, link2_idx)) {
-          //create the candidate.
-          XLinkMatch* new_candidate = 
-            new SelfLoopPeptide(pep, link1_idx, link2_idx);
-          candidates.add(new_candidate);
-        }
+  while (xpep_iter.hasNext()) {
+    XLinkablePeptide xpep = xpep_iter.next();
+    if (xpep.numLinkSites() > 1) {
+      for (size_t link1_idx = 0; link1_idx<xpep.numLinkSites()-1;link1_idx++) {
+	for (size_t link2_idx = link1_idx+1; link2_idx < xpep.numLinkSites();link2_idx++) {
+          if (bondmap.canLink(xpep, link1_idx, link2_idx)) {
+            //create the candidate.
+            XLinkMatch* new_candidate = 
+              new SelfLoopPeptide(xpep, xpep.getLinkSite(link1_idx), xpep.getLinkSite(link2_idx));
+            candidates.add(new_candidate);
+          }
+	}
       }
     }
   }
