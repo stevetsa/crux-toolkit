@@ -44,6 +44,7 @@ add_library(
   xlink_compute_qvalues.cpp
   LinearPeptide.cpp
   SelfLoopPeptide.cpp
+  XLinkDatabase.cpp
   XLink.cpp
   XLinkScorer.cpp
   XLinkSite.cpp

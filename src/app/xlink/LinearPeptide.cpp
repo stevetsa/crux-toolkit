@@ -4,7 +4,7 @@
 #include "model/ModifiedPeptidesIterator.h"
 #include "model/IonSeries.h"
 #include "util/GlobalParams.h"
-
+#include "XLinkDatabase.h"
 
 #include <iostream>
 
@@ -44,99 +44,6 @@ LinearPeptide::LinearPeptide(
 }
 
 
-vector<LinearPeptide>::iterator LinearPeptide::getLinearPeptidesBegin(
-  Database* database,
-  PEPTIDE_MOD_T** peptide_mods,
-  int num_peptide_mods,
-  bool is_decoy
-  ) {
-
-  if (is_decoy) {
-    if (decoy_linear_peptides_.empty()) {
-      generateAllLinearPeptides(decoy_linear_peptides_, database, peptide_mods, num_peptide_mods, is_decoy);
-    }
-    return(decoy_linear_peptides_.begin());
-  } else {
-    if (target_linear_peptides_.empty()) {
-      generateAllLinearPeptides(target_linear_peptides_, database, peptide_mods, num_peptide_mods, is_decoy);
-    }
-    return(target_linear_peptides_.begin());
-  }
-}
-
-vector<LinearPeptide>::iterator LinearPeptide::getLinearPeptidesEnd(
-  Database* database, 
-  PEPTIDE_MOD_T** peptide_mods,
-  int num_peptide_mods,
-  bool is_decoy
-  ){
-
-  if (is_decoy) {
-    if (decoy_linear_peptides_.empty()) {
-      generateAllLinearPeptides(decoy_linear_peptides_, database, peptide_mods, num_peptide_mods, is_decoy);
-    }
-    return(decoy_linear_peptides_.end());
-  } else {
-    if (target_linear_peptides_.empty()) {
-      generateAllLinearPeptides(target_linear_peptides_, database, peptide_mods, num_peptide_mods, is_decoy);
-    }
-    return(target_linear_peptides_.end());
-  }
-
-}
-
-void LinearPeptide::generateAllLinearPeptides(
-  vector<LinearPeptide>& linear_peptides,
-  Database* database,
-  PEPTIDE_MOD_T** peptide_mods,
-  int num_peptide_mods,
-  bool decoy
-  ) {
-
-  linear_peptides.empty();
-  int max_missed_cleavages = GlobalParams::getMissedCleavages();
-  for (int mod_idx=0;mod_idx<num_peptide_mods; mod_idx++) {
-    PEPTIDE_MOD_T* peptide_mod = peptide_mods[mod_idx];
-    double delta_mass = peptide_mod_get_mass_change(peptide_mod);
-    //
-    ModifiedPeptidesIterator* peptide_iterator =
-      new ModifiedPeptidesIterator(
-        GlobalParams::getMinMass(), 
-        GlobalParams::getMaxMass(), 
-        peptide_mod, 
-        false, 
-        database,
-        0);
-
-    //add the targets
-    while (peptide_iterator->hasNext()) {
-      
-      Crux::Peptide* peptide = peptide_iterator->next();
-      LinearPeptide linear_peptide(peptide);
-      linear_peptide.getMass(GlobalParams::getIsotopicMass());
-      if (linear_peptide.getNumMissedCleavages() <= max_missed_cleavages) {
-        linear_peptides.push_back(linear_peptide);
-	//XLink::addAllocatedPeptide(peptide);
-	} else {
-        delete peptide;
-       }
-      }
-    delete peptide_iterator;
-  }
-  //carp(CARP_INFO, "sorting");
-  sort(linear_peptides.begin(), linear_peptides.end(), compareLinearPeptideMass);
-
-  
-  //carp(CARP_INFO, "printing");
-  //for (size_t idx=0;idx < linear_peptides.size();idx++) {
-  //  string sequence = linear_peptides[idx].getSequenceString();
-  //  carp(CARP_INFO, "%d %f %s", idx, linear_peptides[idx].getMassConst(MONO), sequence.c_str());
-  //}
-  //carp(CARP_FATAL, "stopping here");
-  //  carp(CARP_FATAL, "Stopping here");
-
-}
-
 /**
  *Add candidates to the XLinkMatchCollection that are linear
  */
@@ -151,27 +58,16 @@ void LinearPeptide::addCandidates(
   ) {
 
   if (is_decoy) {
-    if (decoy_linear_peptides_.empty()) {
-      generateAllLinearPeptides(decoy_linear_peptides_, database, peptide_mods, num_peptide_mods, is_decoy);
-    }
-    vector<LinearPeptide>::iterator iter = 
-      lower_bound(decoy_linear_peptides_.begin(), decoy_linear_peptides_.end(), min_mass, compareLinearPeptideMassToFLOAT);
-    while (iter != decoy_linear_peptides_.end() && iter -> getMass(GlobalParams::getIsotopicMass()) <= max_mass) {
-      iter->incrementPointerCount();
-      candidates.add(&(*iter));
-    }
-  } else {
-    if (target_linear_peptides_.empty()) {
-      generateAllLinearPeptides(target_linear_peptides_, database, peptide_mods, num_peptide_mods, is_decoy);
-    }
-    vector<LinearPeptide>::iterator iter = 
-      lower_bound(target_linear_peptides_.begin(), target_linear_peptides_.end(), min_mass, compareLinearPeptideMassToFLOAT); 
-    while(iter != target_linear_peptides_.end() && iter -> getMass(GlobalParams::getIsotopicMass()) <= max_mass) {
-     
-      iter->incrementPointerCount(); 
-      candidates.add(&(*iter));
-      ++iter;
-    }
+    carp(CARP_FATAL, "decoys not implemented!");
+  }
+
+  vector<LinearPeptide>::iterator siter = XLinkDatabase::getLinearBegin(min_mass);
+  vector<LinearPeptide>::iterator eiter = XLinkDatabase::getLinearEnd();
+
+  while (siter != eiter && siter->getMass(GlobalParams::getIsotopicMass()) <= max_mass) {
+    siter->incrementPointerCount();
+    candidates.add(&(*siter));
+    ++siter;
   }
 }
 

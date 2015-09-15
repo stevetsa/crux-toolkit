@@ -9,6 +9,8 @@
 #include "XLinkablePeptideIterator.h"
 #include "XLinkPeptide.h"
 #include "XLink.h"
+#include "XLinkDatabase.h"
+#include "util/GlobalParams.h"
 
 #include "model/IonSeries.h"
 #include "model/Ion.h"
@@ -74,29 +76,14 @@ void SelfLoopPeptide::addCandidates(
   XLinkMatchCollection& candidates ///< collection to add candidates
   ) {
 
-  XLinkablePeptideIterator xpep_iter(min_mass - XLinkPeptide::getLinkerMass(),
-				     max_mass - XLinkPeptide::getLinkerMass(),
-                                     database,
-				     peptide_mods,
-				     num_peptide_mods,
-				     false,
-				     bondmap
-				     );  
 
-  while (xpep_iter.hasNext()) {
-    XLinkablePeptide xpep = xpep_iter.next();
-    if (xpep.numLinkSites() > 1) {
-      for (size_t link1_idx = 0; link1_idx<xpep.numLinkSites()-1;link1_idx++) {
-	for (size_t link2_idx = link1_idx+1; link2_idx < xpep.numLinkSites();link2_idx++) {
-          if (bondmap.canLink(xpep, link1_idx, link2_idx)) {
-            //create the candidate.
-            XLinkMatch* new_candidate = 
-              new SelfLoopPeptide(xpep, xpep.getLinkSite(link1_idx), xpep.getLinkSite(link2_idx));
-            candidates.add(new_candidate);
-          }
-	}
-      }
-    }
+  vector<SelfLoopPeptide>::iterator biter = XLinkDatabase::getSelfLoopBegin(min_mass);
+  vector<SelfLoopPeptide>::iterator eiter = XLinkDatabase::getSelfLoopEnd();
+
+  while (biter != eiter && biter->getMass(GlobalParams::getIsotopicMass()) <= max_mass) {
+    biter->incrementPointerCount();
+    candidates.add(&(*biter));
+    ++biter;
   }
 }
 
@@ -325,6 +312,23 @@ bool SelfLoopPeptide::isModified() {
 
   return linked_peptide_.isModified();
 }
+
+
+bool compareSelfLoopPeptideMass(
+				const SelfLoopPeptide& spep1,
+				const SelfLoopPeptide& spep2) {
+
+  return spep1.getMassConst(MONO) < spep2.getMassConst(MONO);
+
+}
+
+bool compareSelfLoopPeptideMassToFLOAT(
+				       const SelfLoopPeptide& spep1,
+				       FLOAT_T mass) {
+
+  return spep1.getMassConst(MONO) < mass;
+}
+
 
 /*                                                                                                                                                                                                                          
  * Local Variables:                                                                                                                                                                                                         

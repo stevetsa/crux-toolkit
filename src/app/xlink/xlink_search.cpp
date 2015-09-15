@@ -14,6 +14,8 @@
 #include "model/FilteredSpectrumChargeIterator.h"
 #include "io/OutputFiles.h"
 #include "io/SpectrumCollectionFactory.h"
+#include "XLinkDatabase.h"
+
 
 //C++ Includes
 #include <algorithm>
@@ -67,39 +69,22 @@ int SearchForXLinks::xlinkSearchMain() {
   XLinkBondMap bondmap;
 
   /* Prepare input fasta  */
+
+
   carp(CARP_DEBUG, "Preparing database");
+  XLinkDatabase::initialize();
   Database* database = NULL;
   int num_proteins = prepare_protein_input(input_file, &database);
-  carp(CARP_DEBUG, "Number of proteins:%d",num_proteins);
+  //carp(CARP_DEBUG, "Number of proteins:%d",num_proteins);
   PEPTIDE_MOD_T** peptide_mods = NULL;
   int num_peptide_mods = generate_peptide_mod_list( &peptide_mods );
 
   /* Usually for debugging purposes, print out the database of canddiates */
   if (get_boolean_parameter("xlink-print-db"))
   {
+
     carp(CARP_INFO, "generating and printing xlink database");
-    ostringstream oss;
-    oss << output_directory << "/" << "xlink_peptides.txt";
-    string temp = oss.str();
-    ofstream peptides_file(temp.c_str());
-
-    peptides_file << setprecision(8);
-
-    XLinkMatchCollection* all_candidates = 
-      new XLinkMatchCollection(bondmap, peptide_mods, num_peptide_mods, database);
-
-    
-    peptides_file << "mass\tsequence\tprotein id"<<endl;
-
-    for (int idx=0;idx < all_candidates->getMatchTotal();idx++) {
-      XLinkMatch* candidate = all_candidates->at(idx);
-      peptides_file << candidate->getMass(MONO) << "\t";
-      peptides_file << candidate->getSequenceString() << "\t";
-      peptides_file << candidate->getProteinIdString() << endl;
-    }
-    peptides_file.flush();
-    delete all_candidates;
-    XLink::deleteAllocatedPeptides();
+    XLinkDatabase::print();
     return 0;
   }
 

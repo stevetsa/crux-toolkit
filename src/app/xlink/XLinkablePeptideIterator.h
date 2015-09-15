@@ -26,7 +26,7 @@ class XLinkablePeptideIterator {
   bool is_decoy_; ///< are we getting decoys
   std::vector<int> link_sites_; ///< list of links sites
   std::vector<XLinkablePeptide>::iterator iter_;
-
+  std::vector<XLinkablePeptide>::iterator eiter_;
 
   /**
    * queues the next linkable peptide

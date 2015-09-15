@@ -15,8 +15,8 @@ using namespace Crux;
  * Default constructor.
  */
 XLinkBondMap::XLinkBondMap() {
-  string links_string(get_string_parameter("link sites"));
-  init(links_string);
+  //string links_string(get_string_parameter("link sites"));
+  //init(links_string);
 }
 
 /**

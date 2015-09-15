@@ -84,7 +84,8 @@ class XLinkablePeptide {
   static void findLinkSites(
     Crux::Peptide* peptide,  ///< the peptide object -in
     XLinkBondMap& bondmap,  ///< the bond map -in 
-    std::vector<int>& link_sites ///< the found link sites -out
+    std::vector<int>& link_sites, ///< the found link sites -out
+    int additional_cleavages=0 ///< 0 for xlinks, 1 for selfloops
   );
 
   void clearSites();

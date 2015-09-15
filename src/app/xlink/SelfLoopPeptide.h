@@ -128,6 +128,12 @@ class SelfLoopPeptide : public XLinkMatch {
 
 };
 
+bool compareSelfLoopPeptideMass(
+				const SelfLoopPeptide& spep1,
+				const SelfLoopPeptide& spep2);
+bool compareSelfLoopPeptideMassToFLOAT(const SelfLoopPeptide& spep1, FLOAT_T mass);
+
+
 #endif
 
 /*                                                                                                                                                                                                                          

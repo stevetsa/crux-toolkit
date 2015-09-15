@@ -10,6 +10,7 @@
 #include "LinearPeptide.h"
 #include "util/GlobalParams.h"
 #include <iostream>
+#include "XLinkDatabase.h"
 
 using namespace std;
 
@@ -72,26 +73,12 @@ XLinkablePeptideIterator::XLinkablePeptideIterator(
 
   is_decoy_ = is_decoy;
 
-  bondmap_ = bondmap;
+  iter_ = XLinkDatabase::getXLinkableBegin(min_mass);
+  eiter_ = XLinkDatabase::getXLinkableEnd();
+
   min_mass_ = min_mass;
   max_mass_ = max_mass;
-  if (is_decoy_) {
-    if (decoy_linkable_peptides_vec_.empty()) {
-      generateAllLinkablePeptides(decoy_linkable_peptides_vec_, database, 
-        peptide_mods, num_peptide_mods, is_decoy_);
-    }
-    iter_ = lower_bound(decoy_linkable_peptides_vec_.begin(), decoy_linkable_peptides_vec_.end(), 
-      min_mass_, compareXLinkablePeptideMassToFLOAT);
-    has_next_ = iter_ != decoy_linkable_peptides_vec_.end() &&
-      iter_->getMass() <= max_mass_;
-  } else {
-    if (linkable_peptides_vec_.empty()) {
-      generateAllLinkablePeptides(linkable_peptides_vec_, database, peptide_mods, num_peptide_mods, is_decoy_);
-    }
-    iter_ = lower_bound(linkable_peptides_vec_.begin(), linkable_peptides_vec_.end(), 
-      min_mass_, compareXLinkablePeptideMassToFLOAT);
-    has_next_ = iter_ != linkable_peptides_vec_.end() && iter_->getMass() <= max_mass_;
-  }
+  has_next_ = iter_ != eiter_ && iter_->getMass() <= max_mass_;
 }
 
 /**
@@ -107,11 +94,7 @@ XLinkablePeptideIterator::~XLinkablePeptideIterator() {
 void XLinkablePeptideIterator::queueNextPeptide() {
   
   iter_++;
-  if (is_decoy_) {
-    has_next_ = iter_ != decoy_linkable_peptides_vec_.end() && iter_->getMass() <= max_mass_;
-  } else {
-    has_next_ = iter_ != linkable_peptides_vec_.end() && iter_->getMass() <= max_mass_;
-  }
+  has_next_ = iter_ != eiter_ && iter_->getMass() <= max_mass_;
 }
 
 /**

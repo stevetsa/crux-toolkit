@@ -196,12 +196,13 @@ bool XLinkablePeptide::isCleavageSite(
 void XLinkablePeptide::findLinkSites(
   Peptide* peptide,  ///< the peptide object -in
   XLinkBondMap& bondmap,  ///< the bond map -in 
-  vector<int>& link_sites ///< the found link sites -out
+  vector<int>& link_sites, ///< the found link sites -out
+  int additional_cleavages ///< 0 for xlink, 1 for self-loops
   ) {
 
   int missed_cleavages = getMissedCleavageSites(peptide);
   int max_missed_cleavages = GlobalParams::getMissedCleavages() +
-    2; // +2 because a self loop can prevent two cleavages from happening
+    additional_cleavages; // +1 because a self loop can prevent two cleavages from happening
 
   link_sites.clear();
 

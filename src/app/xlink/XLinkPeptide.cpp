@@ -9,7 +9,7 @@
 #include "model/IonSeries.h"
 #include "model/Ion.h"
 #include "util/GlobalParams.h"
-
+#include "XLinkDatabase.h"
 #include "XLinkablePeptideIterator.h"
 #include "XLinkablePeptideIteratorTopN.h"
 
@@ -232,10 +232,12 @@ void XLinkPeptide::addXLinkPeptides(
   XLinkMatchCollection& candidates
   ) {
 
+  XLinkBondMap& bondmap_ = XLinkDatabase::getXLinkBondMap();
+
   //for every linkable site, generate the candidate if it is legal.
   for (unsigned int link1_idx=0;link1_idx < pep1.numLinkSites(); link1_idx++) {
     for (unsigned int link2_idx=0;link2_idx < pep2.numLinkSites();link2_idx++) {
-      if (bondmap.canLink(pep1, pep2, link1_idx, link2_idx)) {
+      if (bondmap_.canLink(pep1, pep2, link1_idx, link2_idx)) {
         //create the candidate
         XLinkMatch* newCandidate = 
           new XLinkPeptide(pep1, pep2, link1_idx, link2_idx);
