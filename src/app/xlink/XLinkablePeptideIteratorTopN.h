@@ -11,18 +11,22 @@
 #include "XLinkablePeptideIterator.h"
 #include "XLinkablePeptide.h"
 #include "XLinkBondMap.h"
-
+#include <queue>
 #include <vector>
 
+class CompareXCorr {
+ public:
+  bool operator()(XLinkablePeptide& xpep1, XLinkablePeptide& xpep2) {
+    return (xpep1.getXCorr() > xpep2.getXCorr());
+  }
+};
 class XLinkablePeptideIteratorTopN: public XLinkablePeptideIterator {
 
  protected:
 
-
-  std::vector<XLinkablePeptide> scored_xlp_; ///< sorted by highest XCorr score.
-  int current_idx_; 
-  int current_rank_;
-  FLOAT_T current_xcorr_;
+  std::priority_queue<XLinkablePeptide, std::vector<XLinkablePeptide>, CompareXCorr> scored_xlp_;  
+  //std::vector<XLinkablePeptide> scored_xlp_; ///< sorted by highest XCorr score.
+  int current_count_;
   int top_n_; ///<set by kojak-top-n
   bool has_next_; ///< is there a next candidate
   bool is_decoy_; ///< are we getting decoys
