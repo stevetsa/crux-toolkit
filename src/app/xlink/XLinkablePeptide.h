@@ -28,6 +28,7 @@ class XLinkablePeptide {
   size_t xcorr_link_idx_;
   FLOAT_T xcorr_;
 
+  int predict_ions_call_count_;
   /**
    * Initialize object
    */

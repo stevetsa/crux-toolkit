@@ -269,7 +269,7 @@ void XLinkPeptide::addCandidates(
   vector<vector<XLinkablePeptide> > protein_idx_to_xpeptides;
   
   while(iter1->hasNext()) {
-    XLinkablePeptide pep1 = iter1->next();
+    XLinkablePeptide& pep1 = iter1->next();
     for (PeptideSrcIterator src_iterator1 = pep1.getPeptide()->getPeptideSrcBegin();
       src_iterator1 != pep1.getPeptide()->getPeptideSrcEnd();
       ++src_iterator1) {

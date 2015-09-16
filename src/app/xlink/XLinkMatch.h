@@ -22,6 +22,16 @@ class XLinkMatch : public Crux::Match {
   bool mass_calculated_[NUMBER_MASS_TYPES]; ///< is mass calculated?
   FLOAT_T mass_[NUMBER_MASS_TYPES]; ///<calculated mass
 
+  std::vector<IonSeries*> ion_series_xcorr_;
+  std::vector<IonSeries*> ion_series_sp_;
+
+  static std::vector<IonConstraint*> ion_constraint_xcorr_;
+  static IonConstraint* getIonConstraintXCORR(int charge); 
+  /*
+  vector<int> peak_50_;
+  vector<int> peak_25_;
+  vector<int> peak_10_;
+  */
  public:
   
   /**
@@ -43,6 +53,10 @@ class XLinkMatch : public Crux::Match {
   virtual void predictIons(IonSeries* ion_series, int charge)=0;
   virtual std::string getIonSequence(Ion* ion)=0;
   virtual Crux::Peptide* getPeptide(int peptide_idx)=0;
+
+  
+
+  virtual IonSeries* getIonSeriesXCORR(int charge);
 
   /**
    * \returns the mass of the match

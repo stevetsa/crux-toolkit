@@ -28,6 +28,7 @@ void XLinkablePeptide::init() {
   is_decoy_ = false;
   link_sites_.clear();
   xcorr_link_idx_ = -1;
+  predict_ions_call_count_ = 0;
 }
 
 /**
@@ -647,19 +648,23 @@ void XLinkablePeptide::predictIons(
 
   //IonSeries& cached = getCachedIons(ion_series->getConstraint(), charge, link_idx);
 
-
+  //predict_ions_call_count_++;
+  //if (predict_ions_call_count_ > 1) {
+  //  string seq = getModifiedSequenceString();
+  //  carp(CARP_INFO, "Predict ions called on this linkable peptide:%d times %s link: %d charge:%d", predict_ions_call_count_, seq.c_str(), link_idx, charge);
+  //}
     
   char* seq = getSequence();
   MODIFIED_AA_T* mod_seq = getModifiedSequence();
   int link_pos = link_sites_[link_idx];
 
-  carp(CARP_DEBUG, "XLinkablePeptide::predictIons() - predicting ions");
+  //carp(CARP_DEBUG, "XLinkablePeptide::predictIons() - predicting ions");
   //predict the ion series of the peptide
   ion_series->setCharge(charge);
   ion_series->update(seq, mod_seq);
   ion_series->predictIons();
 
-  carp(CARP_DEBUG, "XLinkablePeptide::predictIons() - modifying ions");
+  //carp(CARP_DEBUG, "XLinkablePeptide::predictIons() - modifying ions");
   
   //modify the necessary ions and add to the ion_series   
   for (IonIterator ion_iter = ion_series->begin(); 

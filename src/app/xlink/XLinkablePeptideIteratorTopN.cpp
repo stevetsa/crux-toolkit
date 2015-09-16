@@ -10,6 +10,7 @@
 #include "XLink.h"
 #include "XLinkPeptide.h"
 #include "XLinkScorer.h"
+#include "XLinkDatabase.h"
 #include <iostream>
 
 
@@ -41,29 +42,23 @@ XLinkablePeptideIteratorTopN::XLinkablePeptideIteratorTopN(
   carp(CARP_DEBUG, "precursor:%g", precursor_mass); 
   carp(CARP_DEBUG, "min:%g", min_mass);
   carp(CARP_DEBUG, "max:%g", max_mass);
-  XLinkablePeptideIterator xlp_iterator(min_mass, max_mass, 
-    database, peptide_mods, num_peptide_mods, is_decoy, bondmap);
 
-  while(xlp_iterator.hasNext()) {
-    XLinkablePeptide pep1 = xlp_iterator.next();
+  vector<XLinkablePeptide>::iterator biter = XLinkDatabase::getXLinkableFlattenBegin(min_mass);
+  vector<XLinkablePeptide>::iterator eiter = XLinkDatabase::getXLinkableFlattenEnd();
+
+  while(biter != eiter && biter->getMass(MONO) <= max_mass) {
+    XLinkablePeptide& pep1 = *biter;
     FLOAT_T delta_mass = precursor_mass - pep1.getMass(MONO) - XLinkPeptide::getLinkerMass();
-    for (unsigned int link1_idx=0;link1_idx < pep1.numLinkSites(); link1_idx++) {
-
-      FLOAT_T xcorr = scorer.scoreXLinkablePeptide(pep1, link1_idx, delta_mass);
-      XLinkablePeptide onelink(pep1);
-      onelink.clearSites();
-      onelink.addLinkSite(pep1.getLinkSite(link1_idx));
-      onelink.setXCorr(0, xcorr);
-      //carp(CARP_DEBUG, "%s %g", onelink.getSequence(), xcorr);
-      //onelink.getXCorr();
-      scored_xlp_.push_back(onelink);
-      
-    }
+    FLOAT_T xcorr = scorer.scoreXLinkablePeptide(pep1, 0, delta_mass);
+    pep1.setXCorr(0, xcorr);
+    scored_xlp_.push_back(pep1);
+    biter++;
   }
-  carp(CARP_DEBUG, "number of xlinkable peptides scored:%d", scored_xlp_.size());
-
-  sort(scored_xlp_.begin(), scored_xlp_.end(), compareXLinkableXCorr);
-  
+  //carp(CARP_INFO, "number of xlinkable peptides scored:%d", scored_xlp_.size());
+  if (scored_xlp_.size() > top_n_) {
+    //dont sort if we are getting all of the candidates
+    sort(scored_xlp_.begin(), scored_xlp_.end(), compareXLinkableXCorr);
+  }
   //for (size_t idx=0;idx < scored_xlp_.size() ;idx++) {
     //carp(CARP_DEBUG, "%i:%s xcorr:%g", idx, scored_xlp_[idx].getSequence(), scored_xlp_[idx].getXCorr());
   //}
@@ -84,10 +79,10 @@ XLinkablePeptideIteratorTopN::~XLinkablePeptideIteratorTopN() {
  * queues the next linkable peptide
  */
 void XLinkablePeptideIteratorTopN::queueNextPeptide() {
-  carp(CARP_DEBUG, "queueNextPeptide()::start");
+  //carp(CARP_DEBUG, "queueNextPeptide()::start");
 
   if (current_count_ < scored_xlp_.size() && current_count_ < top_n_) {
-    current_ = scored_xlp_[current_count_];
+    //current_ = scored_xlp_[current_count_];
     current_count_++;
     has_next_ = true;
   } else {
@@ -107,15 +102,16 @@ bool XLinkablePeptideIteratorTopN::hasNext() {
 /**
  *\returns the next peptide
  */
-XLinkablePeptide XLinkablePeptideIteratorTopN::next() {
-  carp(CARP_DEBUG, "XLinkablePeptideIteratorTopN::next()");
+XLinkablePeptide& XLinkablePeptideIteratorTopN::next() {
+  //carp(CARP_INFO, "XLinkablePeptideIteratorTopN::next()");
   if (!has_next_) {
     carp(CARP_FATAL, "next called on empty iterator!");
   }
 
-  XLinkablePeptide ans = current_;
+  XLinkablePeptide& ans = scored_xlp_[current_count_-1];
   //carp(CARP_INFO, "next peptide:%s %g", ans.getSequence(), ans.getXCorr());
   queueNextPeptide();
+  //carp(CARP_INFO, "XLinkablePeptideIteratorTopN: returning reference");
   return ans;
 }
 

@@ -26,6 +26,7 @@ class XLinkDatabase {
   static std::vector<SelfLoopPeptide> decoy_selfloop_peptides_;
 
   static std::vector<XLinkablePeptide> target_xlinkable_peptides_;
+  static std::vector<XLinkablePeptide> target_xlinkable_peptides_flatten_;
   static std::vector<XLinkablePeptide> decoy_xlinkable_peptides_;
   static std::vector<XLinkablePeptide> target_xlinkable_peptides2_; //Peptides that could be selfloops.
 
@@ -39,7 +40,11 @@ class XLinkDatabase {
 			    std::vector<SelfLoopPeptide>& ans);
 
   static void generateAllSelfLoops(bool decoy);
-
+  static void flattenLinkablePeptides(
+   std::vector<XLinkablePeptide>& xpeptides,
+   std::vector<XLinkablePeptide>& flattened
+   );
+  
 
  public:
   XLinkDatabase() {;}
@@ -54,6 +59,10 @@ class XLinkDatabase {
   static std::vector<XLinkablePeptide>::iterator getXLinkableBegin(FLOAT_T min_mass);
   static std::vector<XLinkablePeptide>::iterator getXLinkableEnd();
 
+  static std::vector<XLinkablePeptide>::iterator getXLinkableFlattenBegin();
+  static std::vector<XLinkablePeptide>::iterator getXLinkableFlattenBegin(FLOAT_T min_mass);
+  static std::vector<XLinkablePeptide>::iterator getXLinkableFlattenEnd();
+
   static std::vector<SelfLoopPeptide>::iterator getSelfLoopBegin();
   static std::vector<SelfLoopPeptide>::iterator getSelfLoopEnd();
   static std::vector<SelfLoopPeptide>::iterator getSelfLoopBegin(FLOAT_T min_mass);
@@ -61,6 +70,8 @@ class XLinkDatabase {
   static std::vector<LinearPeptide>::iterator getLinearBegin();
   static std::vector<LinearPeptide>::iterator getLinearBegin(FLOAT_T min_mass);
   static std::vector<LinearPeptide>::iterator getLinearEnd();
+
+
 
   static void print();
 

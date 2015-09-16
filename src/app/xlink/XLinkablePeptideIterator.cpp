@@ -108,14 +108,15 @@ bool XLinkablePeptideIterator::hasNext() {
 /**
  *\returns the next peptide
  */
-XLinkablePeptide XLinkablePeptideIterator::next() {
+XLinkablePeptide& XLinkablePeptideIterator::next() {
 
   if (!has_next_) {
     carp(CARP_WARNING, "next called on empty iterator!");
   }
   
-  XLinkablePeptide ans = *iter_;
+  XLinkablePeptide& ans = *iter_;
   queueNextPeptide();
+  //carp(CARP_INFO, "XLinkablePeptide:: returning reference");
   return ans;
 }
 

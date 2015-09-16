@@ -33,7 +33,7 @@ XLinkMatch::XLinkMatch() {
  * Default destrcutor for XLinkMatch
  */
 XLinkMatch::~XLinkMatch() {
-
+  //TODO deleted cached ions
 }
 
 void XLinkMatch::decrementPointerCount() {
@@ -161,6 +161,41 @@ string XLinkMatch::getCandidateTypeString(
 
   return ans;
 
+
+}
+
+vector<IonConstraint*> XLinkMatch::ion_constraint_xcorr_;
+
+IonConstraint* XLinkMatch::getIonConstraintXCORR(int charge) {
+  int idx = charge-1;
+  while(ion_constraint_xcorr_.size() < charge) {
+    ion_constraint_xcorr_.push_back(NULL);
+  }
+  if (ion_constraint_xcorr_[idx] == NULL) {
+    ion_constraint_xcorr_[idx] = 
+      IonConstraint::newIonConstraintSmart(XCORR, charge);
+  } else {
+    //    carp(CARP_INFO, "IonConstraint cache hit!");
+  }
+  return(ion_constraint_xcorr_[idx]);
+}
+
+IonSeries* XLinkMatch::getIonSeriesXCORR(int charge) {
+
+  int idx = charge-1;
+  while(ion_series_xcorr_.size() < charge) {
+    ion_series_xcorr_.push_back(NULL);
+  }
+
+  if (ion_series_xcorr_[idx] == NULL) {
+    IonSeries* ion_series_xcorr = new IonSeries(getIonConstraintXCORR(charge), charge); 
+    predictIons(ion_series_xcorr, charge);
+    ion_series_xcorr_[idx] = ion_series_xcorr;
+  } else {
+    carp(CARP_INFO, "Cache hit!");
+  }
+  
+  return(ion_series_xcorr_[idx]);
 
 }
 

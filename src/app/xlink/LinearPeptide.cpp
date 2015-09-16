@@ -19,6 +19,7 @@ vector<LinearPeptide> LinearPeptide::decoy_linear_peptides_;
  * Default constructor
  */
 LinearPeptide::LinearPeptide() {
+  //carp(CARP_INFO, "LinearPeptide::LinearPeptide()");
   peptide_ = NULL;
   sequence_ = NULL;
 }
@@ -29,6 +30,7 @@ LinearPeptide::LinearPeptide() {
 LinearPeptide::LinearPeptide(
   char* sequence ///< sequence string
   ) {
+  //carp(CARP_INFO, "LinearPeptide::LinearPeptide(seq)");
   peptide_ = NULL;
   sequence_ = sequence;
 }
@@ -39,6 +41,7 @@ LinearPeptide::LinearPeptide(
 LinearPeptide::LinearPeptide(
   Crux::Peptide* peptide ///< peptide object
   ) {
+  //carp(CARP_INFO, "LinearPeptide::LinearPeptide(peptide)");
   peptide_ = peptide;
   sequence_ = NULL;
 }
@@ -66,6 +69,7 @@ void LinearPeptide::addCandidates(
 
   while (siter != eiter && siter->getMass(GlobalParams::getIsotopicMass()) <= max_mass) {
     siter->incrementPointerCount();
+    //carp(CARP_INFO, "Add linear candidate");
     candidates.add(&(*siter));
     ++siter;
   }

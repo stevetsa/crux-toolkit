@@ -71,7 +71,7 @@ class XLinkablePeptideIterator {
   /**
    *\returns the next linkable peptide
    */
-  virtual XLinkablePeptide next();
+  virtual XLinkablePeptide& next();
 
 };
 

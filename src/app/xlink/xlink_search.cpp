@@ -160,7 +160,17 @@ int SearchForXLinks::xlinkSearchMain() {
 
     XLinkMatchCollection* decoy_candidates = new XLinkMatchCollection();
     target_candidates->shuffle(*decoy_candidates);
+    /*
+    XLinkMatchCollection* decoy_candidates = new XLinkMatchCollection(
+								      spectrum,
+								      zstate,
+								      bondmap,
+								      database,
+								      peptide_mods,
+								      num_peptide_mods,
+								      false);
 
+    */
     carp(CARP_DEBUG, "scoring decoys");
     decoy_candidates->scoreSpectrum(spectrum);
     

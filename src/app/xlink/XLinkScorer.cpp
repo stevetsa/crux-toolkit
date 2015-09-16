@@ -106,6 +106,8 @@ FLOAT_T XLinkScorer::scoreCandidate(
   ) {
 
   candidate->predictIons(ion_series_xcorr_, charge_);
+  //IonSeries* ions = candidate->getIonSeriesXCORR(charge_);
+
   FLOAT_T xcorr = scorer_xcorr_->scoreSpectrumVIonSeries(spectrum_, ion_series_xcorr_);
   candidate->setScore(XCORR, xcorr);
 

@@ -27,6 +27,7 @@ std::vector<XLinkablePeptide> XLinkDatabase::target_xlinkable_peptides_;
 std::vector<XLinkablePeptide> XLinkDatabase::decoy_xlinkable_peptides_;
 std::vector<XLinkablePeptide> XLinkDatabase::target_xlinkable_peptides2_; //Peptides that could be selfloops.
 
+std::vector<XLinkablePeptide> XLinkDatabase::target_xlinkable_peptides_flatten_;
 
 
 
@@ -96,6 +97,8 @@ void XLinkDatabase::initialize() {
   }
   sort(target_xlinkable_peptides_.begin(), target_xlinkable_peptides_.end(), compareXLinkablePeptideMass);
   carp(CARP_INFO, "There are %d xlinkable peptides", target_xlinkable_peptides_.size());
+
+  flattenLinkablePeptides(target_xlinkable_peptides_, target_xlinkable_peptides_flatten_);
 
   //TODO, generate all mono/dead link peptides
 
@@ -170,8 +173,23 @@ void XLinkDatabase::generateAllLinears(bool decoy) {
 }
 
 
+void XLinkDatabase::flattenLinkablePeptides(vector<XLinkablePeptide>& xpeptides,
+					    vector<XLinkablePeptide>& flattened) {
 
-void XLinkDatabase::generateAllLinkablePeptides(vector<Crux::Peptide*>& peptides, vector<XLinkablePeptide>& xpeptides) {
+  for (size_t idx=0;idx < xpeptides.size();idx++) {
+    XLinkablePeptide& current = xpeptides[idx];
+    for (size_t link1_idx=0;link1_idx < current.numLinkSites(); link1_idx++) {
+      XLinkablePeptide onelink(current);
+      onelink.clearSites();
+      onelink.addLinkSite(current.getLinkSite(link1_idx));
+      flattened.push_back(onelink);
+    }
+  }
+
+}
+
+void XLinkDatabase::generateAllLinkablePeptides(vector<Crux::Peptide*>& peptides, 
+  vector<XLinkablePeptide>& xpeptides) {
   //Loop through peptides
   vector<int> link_sites;
   for (vector<Crux::Peptide*>::iterator iter = peptides.begin(); 
@@ -181,7 +199,7 @@ void XLinkDatabase::generateAllLinkablePeptides(vector<Crux::Peptide*>& peptides
     if (peptide->countModifiedAAs() <= GlobalParams::getMaxXLinkMods()) {
       XLinkablePeptide::findLinkSites(peptide, bondmap_, link_sites); 
       if (!link_sites.empty()) {
-        xpeptides.push_back(XLinkablePeptide(peptide, link_sites));	
+        xpeptides.push_back(XLinkablePeptide(peptide, link_sites));
       }
     }
   }
@@ -288,4 +306,17 @@ vector<XLinkablePeptide>::iterator XLinkDatabase::getXLinkableEnd() {
 
 XLinkBondMap& XLinkDatabase::getXLinkBondMap() {
   return bondmap_;
+}
+
+vector<XLinkablePeptide>::iterator XLinkDatabase::getXLinkableFlattenBegin() {
+  return(target_xlinkable_peptides_flatten_.begin());
+}
+
+vector<XLinkablePeptide>::iterator XLinkDatabase::getXLinkableFlattenBegin(FLOAT_T min_mass) {
+  return(lower_bound(target_xlinkable_peptides_flatten_.begin(), target_xlinkable_peptides_flatten_.end(),
+		     min_mass, compareXLinkablePeptideMassToFLOAT));
+}
+
+vector<XLinkablePeptide>::iterator XLinkDatabase::getXLinkableFlattenEnd() {
+  return(target_xlinkable_peptides_flatten_.end());
 }

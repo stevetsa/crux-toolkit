@@ -55,7 +55,7 @@ class LinearPeptide : public XLinkMatch {
   /**
    * Default destructor
    */
-  virtual ~LinearPeptide() {};
+  virtual ~LinearPeptide() {/*carp(CARP_INFO, "~LinearPeptide");*/};
   
   /**
    *Add candidates to the XLinkMatchCollection that are linear

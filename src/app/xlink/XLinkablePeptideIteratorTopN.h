@@ -67,7 +67,7 @@ class XLinkablePeptideIteratorTopN: public XLinkablePeptideIterator {
   /**
    *\returns the next linkable peptide
    */
-  XLinkablePeptide next();
+  XLinkablePeptide& next();
 
 };
 
