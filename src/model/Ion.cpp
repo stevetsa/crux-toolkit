@@ -901,15 +901,21 @@ bool Ion::isForwardType()
  */
 bool Ion::isModified()
 {
+
+  //TODO- I don't know what modified ions did in the past, but
+  //I'm going to noop this code. SJM -2015_09_15
+  return false;
+  /*
   int by_modification = 0;
 
   // only add ions with no modifications
   for(; by_modification < MAX_MODIFICATIONS; ++by_modification){
     if(modification_counts_[by_modification] != 0){
+      carp(CARP_INFO, "Ion modified!");
       return true;
     }
   }
-  
+  */
   return false;
 }
 

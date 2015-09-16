@@ -1022,21 +1022,23 @@ bool Scorer::createIntensityArrayTheoretical(
   // create the ion iterator that will iterate through the ions
 
   // while there are ion's in ion iterator, add matched observed peak intensity
-  for (IonIterator ion_iterator = ion_series->begin();
-    ion_iterator != ion_series->end();
+  IonIterator begin_iter = ion_series->begin();
+  IonIterator end_iter = ion_series->end();
+  for (IonIterator ion_iterator = begin_iter;
+    ion_iterator != end_iter;
     ++ion_iterator) {
 
     ion = *ion_iterator;
     intensity_array_idx 
       = INTEGERIZE(ion->getMassZ(), bin_width, bin_offset);
-    ion_type = ion->getType();
-    ion_charge = ion->getCharge();
 
     // skip ions that are located beyond max mz limit
     if(intensity_array_idx >= getMaxBin()){
       continue;
     }
 
+    ion_type = ion->getType();
+    ion_charge = ion->getCharge();
     // DEBUG
     /*
     if(ion_type == B_ION){
@@ -1135,6 +1137,7 @@ bool Scorer::createIntensityVectorTheoretical(
   int intensity_array_idx = 0;
   int ion_charge = 0;
   ION_TYPE_T ion_type;
+  FLOAT_T ion_mass_z = 0;
   FLOAT_T bin_width = bin_width_;
   FLOAT_T bin_offset = bin_offset_;
   // create the ion iterator that will iterate through the ions
@@ -1143,22 +1146,24 @@ bool Scorer::createIntensityVectorTheoretical(
   for (IonIterator ion_iterator = ion_series->begin();
     ion_iterator != ion_series->end();
     ++ion_iterator) {
-
+    
     ion = *ion_iterator;
+    
+    ion_mass_z = ion->getMassZ();
     intensity_array_idx 
-      = INTEGERIZE(ion->getMassZ(), bin_width, bin_offset);
-    ion_type = ion->getType();
-    ion_charge = ion->getCharge();
+      = INTEGERIZE(ion_mass_z, bin_width, bin_offset);
 
     // skip ions that are located beyond max mz limit
     if(intensity_array_idx >= getMaxBin()){
       continue;
     }
+    ion_type = ion->getType();
+    ion_charge = ion->getCharge();
 
     // is it B, Y ion?
     if(ion_type == B_ION || 
        ion_type == Y_ION){
-      if (!ion->isModified()){
+      //      if (!ion->isModified()){
         // Add peaks of intensity 50.0 for B, Y type ions. 
         // In addition, add peaks of intensity of 25.0 to +/- 1 m/z flanking each B, Y ion if requested.
         // Skip ions that are located beyond max mz limit
@@ -1166,27 +1171,26 @@ bool Scorer::createIntensityVectorTheoretical(
           addIntensity(theoretical, intensity_array_idx, B_Y_HEIGHT);
           if (use_flanks_) {
             addIntensity(theoretical, intensity_array_idx - 1, FLANK_HEIGHT);
+            if ((intensity_array_idx + 1) < getMaxBin()) {
+	      addIntensity(theoretical, intensity_array_idx + 1, FLANK_HEIGHT);
+	    }
           }
-        }
-        
-        if (use_flanks_ && (intensity_array_idx + 1)< getMaxBin()){
-          addIntensity(theoretical, intensity_array_idx + 1, FLANK_HEIGHT);
         }
         
         // add neutral loss of water and NH3
 
         if(ion_type == B_ION){
           int h2o_array_idx = 
-            INTEGERIZE((ion->getMassZ() - (MASS_H2O_MONO/ion_charge)),
+            INTEGERIZE((ion_mass_z - (MASS_H2O_MONO/ion_charge)),
                        bin_width, bin_offset);
           addIntensity(theoretical, h2o_array_idx, LOSS_HEIGHT);
         }
 
         int nh3_array_idx 
-          = INTEGERIZE((ion->getMassZ() -  (MASS_NH3_MONO/ion_charge)),
+          = INTEGERIZE((ion_mass_z -  (MASS_NH3_MONO/ion_charge)),
                        bin_width, bin_offset);
         addIntensity(theoretical, nh3_array_idx, LOSS_HEIGHT);
-      }
+	//} //if (ion->isModified());
 
     }// is it A ion?
     else if(ion_type == A_ION){
@@ -1616,8 +1620,8 @@ void Scorer::addIntensity(
   FLOAT_T intensity
   ) {
 
-  assert(add_idx >= 0);
-  ion_counter++;
+  //assert(add_idx >= 0);
+  //ion_counter++;
   intensity_vector.push_back(make_pair<int, FLOAT_T>(add_idx, intensity));
 
 }

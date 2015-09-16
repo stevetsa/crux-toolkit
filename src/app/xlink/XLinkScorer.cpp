@@ -118,7 +118,7 @@ FLOAT_T XLinkScorer::scoreCandidate(
     candidate->setBYIonInfo(scorer_sp_);
 
   }
-
+  /*
   if (candidate->getCandidateType() == XLINK_INTER_CANDIDATE || candidate->getCandidateType() == XLINK_INTRA_CANDIDATE) {
     carp(CARP_DEBUG, "Scoring xlink peptides individually");
     XLinkPeptide* xlink_match = (XLinkPeptide*)candidate;
@@ -138,7 +138,7 @@ FLOAT_T XLinkScorer::scoreCandidate(
     candidate->setScore(XCORR_FIRST, xcorr);
     candidate->setScore(XCORR_SECOND, xcorr);
   }
-
+  */
   return xcorr;
 
 }

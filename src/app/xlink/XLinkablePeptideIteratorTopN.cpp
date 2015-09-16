@@ -56,13 +56,13 @@ XLinkablePeptideIteratorTopN::XLinkablePeptideIteratorTopN(
       onelink.setXCorr(0, xcorr);
       //carp(CARP_DEBUG, "%s %g", onelink.getSequence(), xcorr);
       //onelink.getXCorr();
-      scored_xlp_.push(onelink);
+      scored_xlp_.push_back(onelink);
       
     }
   }
   carp(CARP_DEBUG, "number of xlinkable peptides scored:%d", scored_xlp_.size());
 
-  //sort(scored_xlp_.begin(), scored_xlp_.end(), compareXLinkableXCorr);
+  sort(scored_xlp_.begin(), scored_xlp_.end(), compareXLinkableXCorr);
   
   //for (size_t idx=0;idx < scored_xlp_.size() ;idx++) {
     //carp(CARP_DEBUG, "%i:%s xcorr:%g", idx, scored_xlp_[idx].getSequence(), scored_xlp_[idx].getXCorr());
@@ -86,10 +86,9 @@ XLinkablePeptideIteratorTopN::~XLinkablePeptideIteratorTopN() {
 void XLinkablePeptideIteratorTopN::queueNextPeptide() {
   carp(CARP_DEBUG, "queueNextPeptide()::start");
 
-  if (!scored_xlp_.empty() && current_count_ <= top_n_) {
+  if (current_count_ < scored_xlp_.size() && current_count_ < top_n_) {
+    current_ = scored_xlp_[current_count_];
     current_count_++;
-    current_ = scored_xlp_.top();
-    scored_xlp_.pop();
     has_next_ = true;
   } else {
     has_next_ = false;
