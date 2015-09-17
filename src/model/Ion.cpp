@@ -23,6 +23,7 @@
 #endif
 
 using namespace Crux;
+using namespace std;
 
 // At one point I need to reverse the endianness for pfile_create to work
   // Apparently that is no longer true. Hence 0 below.
@@ -73,7 +74,7 @@ void Ion::init() {
   type_ = (ION_TYPE_T)0;
   cleavage_idx_ = 0;
   charge_ = 0;
-  peptide_sequence_ = NULL;
+  peptide_sequence_.clear();
   peptide_mass_ = 0;
   memset(modification_counts_,0,sizeof(int)*MAX_MODIFICATIONS);
   ion_mass_z_ = 0;
@@ -98,7 +99,7 @@ void Ion::initBasicIon(
   ION_TYPE_T type,   ///< intensity for the new ion -in 
   int cleavage_idx, ///< index into the peptide amide bonds of this ion
   int charge, ///< charge of the ion
-  char* peptide ///< location for the new ion -in
+  const string& peptide ///< location for the new ion -in
   ) 
 {
   // init ion
@@ -121,7 +122,7 @@ Ion::Ion(
   ION_TYPE_T type,   ///< intensity for the new ion -in 
   int cleavage_idx, ///< index into the peptide amide bonds of this ion
   int charge, ///< charge of the ion
-  char* peptide, ///< location for the new ion -in
+  const string& peptide, ///< location for the new ion -in
   MASS_TYPE_T mass_type ///< mass type (average, mono) -in
   )
 {
@@ -143,7 +144,7 @@ Ion::Ion(
   ION_TYPE_T type,   ///< intensity for the new ion -in 
   int cleavage_idx, ///< index into the peptide amide bonds of this ion
   int charge, ///< charge of the ion
-  char* peptide, ///< location for the new ion -in
+  const string& peptide, ///< location for the new ion -in
   MASS_TYPE_T mass_type, ///< mass type (average, mono) -in
   int* modification_counts ///< an array of modification counts for each modification -in
   )
@@ -173,7 +174,7 @@ Ion::Ion(
   ION_TYPE_T type,   ///< intensity for the new ion -in 
   int cleavage_idx, ///< index into the peptide amide bonds of this ion
   int charge, ///< charge of the ion
-  char* peptide, ///< location for the new ion -in
+  const string& peptide, ///< location for the new ion -in
   MASS_TYPE_T mass_type, ///< mass type (average, mono) -in
   FLOAT_T base_mass, ///< the base mass of the ion -in
   int* modification_counts ///< an array of modification counts for each modification -in
@@ -203,7 +204,7 @@ Ion::Ion(
   ION_TYPE_T type,   ///< intensity for the new ion -in 
   int cleavage_idx, ///< index into the peptide amide bonds of this ion
   int charge, ///< charge of the ion
-  char* peptide, ///< location for the new ion -in
+  const string& peptide, ///< location for the new ion -in
   MASS_TYPE_T mass_type, ///< mass type (average, mono) -in
   FLOAT_T base_mass ///< the base mass of the ion -in
   )
@@ -345,7 +346,7 @@ void Ion::printGmtkSingle(
       has_mobile_proton,                                        // 4 
       mz_int,                                                   // 5 
       cleavage_idx_,                                            // 6
-      strlen(peptide_sequence_) - cleavage_idx_ + 1,            // 7
+      peptide_sequence_.length() - cleavage_idx_ + 1,            // 7
       Alphabet::aminoToInt(peptide_sequence_[cleavage_idx_-1]),// 8 
       Alphabet::aminoToInt(peptide_sequence_[cleavage_idx_]), // 9 
       is_possible,                                              // 10 
@@ -405,7 +406,7 @@ void Ion::printGmtkSingleBinary(
   }
 
   int mz_int = (int)(mz_ratio * (MZ_INT_MAX - MZ_INT_MIN) + MZ_INT_MIN);
-  int cterm_idx = strlen(peptide_sequence_) - cleavage_idx_; 
+  int cterm_idx = peptide_sequence_.length() - cleavage_idx_; 
   int left_amino = Alphabet::aminoToInt(peptide_sequence_[cleavage_idx_-1]);
   int right_amino = Alphabet::aminoToInt(peptide_sequence_[cleavage_idx_]);
   int is_detectable = 0;
@@ -596,7 +597,7 @@ void Ion::printGmtkPairedBinary(
   // next do the ints
   int n_mz_int = (int)(n_mz_ratio * (MZ_INT_MAX - MZ_INT_MIN) + MZ_INT_MIN);
   int c_mz_int = (int)(c_mz_ratio * (MZ_INT_MAX - MZ_INT_MIN) + MZ_INT_MIN);
-  int cterm_idx = strlen(first_ion->peptide_sequence_) 
+  int cterm_idx = first_ion->peptide_sequence_.length() 
     - first_ion->cleavage_idx_; 
   int left_amino = Alphabet::aminoToInt(
       first_ion->peptide_sequence_[first_ion->cleavage_idx_-1]);
@@ -710,6 +711,7 @@ void Ion::addModification(
   MASS_TYPE_T mass_type ///< mass type (average, mono) -in
   )
 {
+  //carp(CARP_FATAL, "addModficiation");
   // update modification count
   modification_counts_[(int)modification] += modification_count;  
   // reset ion mass_z
@@ -718,6 +720,7 @@ void Ion::addModification(
                                    modification, 
                                    charge_, 
                                    mass_type);
+
 }
 
 /**
@@ -736,38 +739,26 @@ FLOAT_T Ion::getMass(
   MASS_TYPE_T mass_type ///< mass type (average, mono) -in
   )                   
 {
-  char* ion_sequence = NULL;
-  ION_TYPE_T ion_type = type_;
-  int ion_length = 0;
-  bool memory_used = false;
   FLOAT_T mass = 0;
   bool reverse = false;
 
+  size_t start_idx = 0;
+  size_t end_idx = 0;
+
   // get sequence for x,y,z ion
-  if(ion_type == X_ION ||ion_type == Y_ION || ion_type == Z_ION){
+  if(type_ == X_ION || type_ == Y_ION || type_ == Z_ION){
     // convert the cleavage index into the actually index that start from the left.
-    int real_cleavage_idx = strlen(peptide_sequence_) - cleavage_idx_;
-    ion_sequence = &(peptide_sequence_[real_cleavage_idx]);
-    ion_length = strlen(ion_sequence);
+    end_idx = peptide_sequence_.length();
+    start_idx = end_idx - cleavage_idx_;
     reverse = true;
   }
   // get sequence for a,b,c ion
   else{
-    ion_length = cleavage_idx_;
-    ion_sequence = (char*)mycalloc(ion_length+1, sizeof(char));
-    strncpy(ion_sequence, peptide_sequence_, ion_length);
-    memory_used = true;
+    end_idx = cleavage_idx_;
   }
-
   // add up all AA mass
-  int ion_idx = 0;
-  for(; ion_idx < ion_length; ++ion_idx){
-    mass += get_mass_amino_acid(ion_sequence[ion_idx], mass_type);
-  }
-  
-  // free ion sequence, only if memory allocated (a,b,c ions);
-  if(memory_used){
-    free(ion_sequence);
+  for(int ion_idx = start_idx; ion_idx < end_idx; ++ion_idx){
+    mass += get_mass_amino_acid(peptide_sequence_[ion_idx], mass_type);
   }
 
   // if X,Y,Z ion add H2O
@@ -815,6 +806,7 @@ bool Ion::calcMassZWithMass(
 
   // alter mass according to the modification
   if(is_modified){
+    //carp(CARP_FATAL, "modified!");
     // iterate over all type of modifications for ion
     int modification_idx = 0;
     for(; modification_idx < MAX_MODIFICATIONS; ++modification_idx){
@@ -859,7 +851,7 @@ bool Ion::calcMassZ(
 void Ion::copy(
   Ion* src,///< ion to copy from -in
   Ion* dest,///< ion to copy to -out
-  char* peptide_sequence ///< the peptide sequence that the dest should refer to -in
+  const string& peptide_sequence ///< the peptide sequence that the dest should refer to -in
   )
 {
   dest->type_ = src->type_;
@@ -902,20 +894,16 @@ bool Ion::isForwardType()
 bool Ion::isModified()
 {
 
-  //TODO- I don't know what modified ions did in the past, but
-  //I'm going to noop this code. SJM -2015_09_15
-  return false;
-  /*
   int by_modification = 0;
 
   // only add ions with no modifications
   for(; by_modification < MAX_MODIFICATIONS; ++by_modification){
     if(modification_counts_[by_modification] != 0){
-      carp(CARP_INFO, "Ion modified!");
+      carp(CARP_FATAL, "Ion modified!");
       return true;
     }
   }
-  */
+  
   return false;
 }
 
@@ -1018,7 +1006,7 @@ void Ion::setType(
  * return the parent peptide sequence of the ion object
  * returns a pointer to the sequence, should not free
  */
-char* Ion::getPeptideSequence()
+const string& Ion::getPeptideSequence()
 {
   return peptide_sequence_;
 }

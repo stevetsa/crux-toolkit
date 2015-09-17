@@ -22,6 +22,9 @@
 #include "modifications.h"
 #include "mass.h"
 #include "GlobalParams.h"
+
+using namespace std;
+
 /* Private constants */
 //enum { MAX_PROTEIN_SEQ_LENGTH = 40000 };
 
@@ -418,28 +421,29 @@ char* modified_aa_to_unmodified_string(MODIFIED_AA_T* aa_string, int length){
  *
  * \returns The length of the mod_sequence array.
  */
-int convert_to_mod_aa_seq(const char* sequence, 
+int convert_to_mod_aa_seq(const string& sequence, 
                           MODIFIED_AA_T** mod_sequence,
                           MASS_FORMAT_T mass_format){
 
-  if( sequence == NULL ){
+  if( sequence.empty() ){
     carp(CARP_ERROR, "Cannot convert NULL sequence to modifiable characters"); 
     return 0;
   }
 
   MASS_TYPE_T mass_type = GlobalParams::getIsotopicMass();
+  const char* csequence = sequence.c_str();
 
-  int seq_len = strlen(sequence);
+  int seq_len = sequence.length();
   MODIFIED_AA_T* new_sequence = 
     (MODIFIED_AA_T*)mycalloc( seq_len + 1, sizeof(MODIFIED_AA_T) );
 
   unsigned int seq_idx = 0;  // current position in given sequence
   unsigned int mod_idx = 0;  // current position in the new_sequence
-  for(seq_idx = 0; seq_idx < strlen(sequence); seq_idx++){
+  for(seq_idx = 0; seq_idx < seq_len; seq_idx++){
     // is the character a residue?
-    if( sequence[seq_idx] >= 'A' && sequence[seq_idx] <= 'Z' ){ 
+    if( csequence[seq_idx] >= 'A' && csequence[seq_idx] <= 'Z' ){ 
       // add to the new sequence
-      new_sequence[mod_idx] = char_aa_to_modified( sequence[seq_idx] );
+      new_sequence[mod_idx] = char_aa_to_modified( csequence[seq_idx] );
       mod_idx++;
       continue;
     } 
@@ -449,7 +453,7 @@ int convert_to_mod_aa_seq(const char* sequence,
 
     if( sequence[seq_idx] == '[' || sequence[seq_idx] == ','){//mod mass
       seq_idx++;
-      FLOAT_T delta_mass = atof(sequence + seq_idx);
+      FLOAT_T delta_mass = atof(csequence + seq_idx);
       if( mass_format == AA_PLUS_MOD ){
         assert(mod_idx > 0);
         delta_mass -= get_mass_mod_amino_acid(new_sequence[mod_idx - 1], 
@@ -473,11 +477,11 @@ int convert_to_mod_aa_seq(const char* sequence,
     if (mod_idx == 0) {
       //This can happen with nterminal modifications from comet.
       seq_idx++;
-      if (seq_idx < strlen(sequence) && sequence[seq_idx] >= 'A'  && sequence[seq_idx] <= 'Z') {
+      if (seq_idx < seq_len && sequence[seq_idx] >= 'A'  && sequence[seq_idx] <= 'Z') {
         new_sequence[mod_idx] = char_aa_to_modified( sequence[seq_idx] );
         mod_idx++;
       } else {
-        carp(CARP_FATAL, "Cannot parse sequence %s", sequence);
+        carp(CARP_FATAL, "Cannot parse sequence %s", csequence);
       }
       
       
@@ -485,7 +489,7 @@ int convert_to_mod_aa_seq(const char* sequence,
     // apply the modification
     if( aa_mod == NULL ){
       carp(CARP_WARNING, "There is an unidentifiable modification in sequence "
-           "<%s> at position %d.", sequence, seq_idx - 1);
+           "<%s> at position %d.", csequence, seq_idx - 1);
     } else {
       // apply modification
       modify_aa(&new_sequence[mod_idx-1], aa_mod);

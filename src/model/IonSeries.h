@@ -27,7 +27,8 @@ class IonSeries {
   friend class XLinkPeptide;
  protected:
   // TODO change name to unmodified_char_seq
-  char* peptide_; ///< The peptide sequence for this ion series
+  //char* peptide_; ///< The peptide sequence for this ion series
+  std::string peptide_;
   MODIFIED_AA_T* modified_aa_seq_; ///< sequence of the peptide
   FLOAT_T peptide_mass_; ///< The peptide neutral mass. For efficiency. 
   int charge_; ///< /<The charge state of the peptide for this ion series
@@ -260,7 +261,7 @@ class IonSeries {
    * User should not free the peptide sequence seperate from the ion_series
    *\returns a pointer to the original parent peptide sequence of the ion_series object
    */
-  char* getPeptide();
+  std::string& getPeptide();
 
   /**
    *\returns the peptide length of which the ions are made

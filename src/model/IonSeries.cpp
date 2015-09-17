@@ -50,7 +50,7 @@ struct loss_limit{
  */
 void IonSeries::init() {
 
-  peptide_ = NULL;
+  peptide_.clear();
   modified_aa_seq_ = NULL;
   peptide_mass_ = 0;
   charge_ = 0;
@@ -95,7 +95,7 @@ IonSeries::IonSeries(
   peptide_mass_ = Peptide::calcSequenceMass(peptide_, MONO);
   charge_ = charge;
   constraint_ = constraint;
-  peptide_length_ = strlen(peptide_);
+  peptide_length_ = peptide_.length();
   
   // create the loss limit array
   loss_limit_ = 
@@ -139,9 +139,6 @@ void IonSeries::update(
   // Initialize the ion_series object for the new peptide sequence
   
   // free old peptide sequence
-  if(peptide_){
-    free(peptide_);
-  }
   if(modified_aa_seq_){
     free(modified_aa_seq_);
   }
@@ -167,8 +164,8 @@ void IonSeries::update(
   // set ion_series for new instance of peptide
   
   // copy the peptide sequence
-  peptide_ = my_copy_string(peptide);
-  peptide_length_ = strlen(peptide);
+  peptide_ = peptide;
+  peptide_length_ = peptide_.length();
   modified_aa_seq_ = copy_mod_aa_seq(mod_seq, peptide_length_);
   
   // Initialize the loss limit array for the new peptide
@@ -201,9 +198,6 @@ void IonSeries::freeIonSeries(IonSeries* ions) {
  */
 IonSeries::~IonSeries()
 {
-  if(peptide_){
-    free(peptide_);
-  }
   if(modified_aa_seq_){
     free(modified_aa_seq_);
   }
@@ -348,10 +342,10 @@ void IonSeries::printPairedGmtk(
 void IonSeries::scanForAAForNeutralLoss()
 {
   int peptide_length = peptide_length_;
-  char* sequence = peptide_;
+  string sequence = peptide_;
 
   // make sure loss_limit array is the right size
-  if (peptide_length_ != strlen(sequence)){
+  if (peptide_length_ != sequence.length()){
     if (loss_limit_){
       free(loss_limit_);
     }
@@ -982,7 +976,7 @@ void IonSeries::copy(
   Ion* src_ion = NULL;
   Ion* dest_ion = NULL;
   
-  dest->peptide_ = my_copy_string(src->peptide_);
+  dest->peptide_ = src->peptide_;
   dest->charge_ = src->charge_;
   dest->peptide_length_ = src->peptide_length_;
   //mod seq???
@@ -1071,7 +1065,7 @@ int IonSeries::getPeptideLength()
  * User should not free the peptide sequence seperate from the ion_series
  *\returns a pointer to the original parent peptide sequence of the ion_series object
  */
-char* IonSeries::getPeptide()
+string& IonSeries::getPeptide()
 {
   return peptide_;
 }
@@ -1084,11 +1078,7 @@ void IonSeries::setPeptide(
   char* peptide///< the peptide sequence to set -in
   )
 {
-  // free previous sequence
-  if(peptide_ != NULL){
-    free(peptide_);
-  }
-  peptide_ = my_copy_string(peptide);
+  peptide_ = peptide;
 }
 
 /**

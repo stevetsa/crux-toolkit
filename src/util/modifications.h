@@ -154,7 +154,7 @@ char* modified_aa_to_unmodified_string(MODIFIED_AA_T* aa_string, int length);
  *
  * \returns The length of the mod_sequence array.
  */
-int convert_to_mod_aa_seq(const char* sequence, MODIFIED_AA_T** mod_sequence,
+int convert_to_mod_aa_seq(const std::string& sequence, MODIFIED_AA_T** mod_sequence,
                           MASS_FORMAT_T mass_format = MOD_MASS_ONLY);
 
 /**
