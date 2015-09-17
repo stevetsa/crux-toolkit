@@ -43,7 +43,7 @@ void PMCPepXMLWriter::writePSMs(
       ProteinMatch* prot_match = *prot_iter;
       Protein* protein = prot_match->getProtein();
       const char* tmp;
-      tmp = protein->getIdPointer();
+      tmp = protein->getIdPointer().c_str();
       protein_names.push_back((tmp != NULL) ? tmp : "");
       tmp = protein->getAnnotationPointer();
       protein_descriptions.push_back((tmp != NULL) ? tmp : "");

@@ -247,9 +247,7 @@ void SQTWriter::writePSM(
        ++iter) {
     PeptideSrc* peptide_src = *iter;
     Protein* protein = peptide_src->getParentProtein();
-    char* protein_id = protein->getId();
-    string protein_id_str(protein_id);
-    free(protein_id);
+    string protein_id_str = protein->getId();
     if (is_decoy && protein->getDatabase()->getDecoyType() == NO_DECOYS) {
       protein_id_str = get_string_parameter("decoy-prefix") + protein_id_str;
     }

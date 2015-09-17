@@ -406,7 +406,7 @@ void SpectralCounts::checkProteinNormalization() {
       iter != protein_scores_.end();
       ++iter) {
 
-      carp(CARP_DEBUG, "%s %f",iter->first->getIdPointer(), iter->second);
+      carp(CARP_DEBUG, "%s %f",iter->first->getIdPointer().c_str(), iter->second);
     }
   }
 }
@@ -814,7 +814,7 @@ bool SpectralCounts::sortRankedProteins(
   if (xRank != yRank) {
     return xRank <= yRank;
   }
-  return strcmp(y.get<1>()->getIdPointer(), x.get<1>()->getIdPointer()) > 0;
+  return strcmp(y.get<1>()->getIdPointer().c_str(), x.get<1>()->getIdPointer().c_str()) > 0;
 }
 
 /**

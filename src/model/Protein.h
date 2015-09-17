@@ -23,7 +23,7 @@ class Protein {
   unsigned int protein_idx_; ///< The index of the protein in it's database.
   bool    is_light_; ///< is the protein a light protein?
   bool    is_memmap_; ///< is the protein produced from memory mapped file
-  char*              id_; ///< The protein sequence id.
+  std::string id_; ///< The protein sequence id.
   char*        sequence_; ///< The protein sequence.
   unsigned int   length_; ///< The length of the protein sequence.
   char*      annotation_; ///< Optional protein annotation.
@@ -185,19 +185,19 @@ class Protein {
    * returns a heap allocated new copy of the id
    * user must free the return id
    */
-  char* getId();
+  std::string getId();
 
   /**
    *\returns a pointer to the id of the protein
    */
-  char* getIdPointer();
+  std::string& getIdPointer();
 
   /**
    * sets the id of the protein
    */
   void setId(
-    const char* id ///< the sequence to add -in
-    );
+    const std::string& id ///< the sequence to add -in
+  );
 
   /**
    *\returns the sequence of the protein

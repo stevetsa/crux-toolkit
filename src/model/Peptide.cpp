@@ -1537,7 +1537,6 @@ void Peptide::printInFormat(
   ) {
 
   Protein* parent = NULL;
-  char* id = NULL;
   int start_idx = 0;
   char* sequence = NULL;
 
@@ -1561,9 +1560,9 @@ void Peptide::printInFormat(
       ){
     PeptideSrc* next_src= *iter; 
     parent=next_src->getParentProtein();
-     id = parent->getIdPointer();
+    string& id = parent->getIdPointer();
     start_idx = next_src->getStartIdx();
-    fprintf(file, "\t%s\t%d\t%d", id, start_idx, length_);
+    fprintf(file, "\t%s\t%d\t%d", id.c_str(), start_idx, length_);
     // print peptide sequence?
     if(flag_out){
       fprintf(file, "\t%s\n", sequence);
@@ -2076,7 +2075,7 @@ string Peptide::getProteinIdsLocations() {
       
       PeptideSrc* peptide_src =*iter;
       Protein* protein = peptide_src->getParentProtein();
-      char* protein_id = protein->getId();
+      string& protein_id = protein->getIdPointer();
       std::ostringstream protein_loc_stream;
       protein_loc_stream << protein_id;
 
@@ -2087,7 +2086,6 @@ string Peptide::getProteinIdsLocations() {
         protein_loc_stream << "(" << peptide_src->getStartIdxOriginal() << ")";
       }
 
-      std::free(protein_id);
       protein_ids_locations.insert(protein_loc_stream.str());
     }
   }

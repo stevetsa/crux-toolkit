@@ -533,7 +533,7 @@ void get_protein_ids_locations(
 
     PeptideSrc* peptide_src = *iter;
     Protein* protein = peptide_src->getParentProtein();
-    char* protein_id = protein->getIdPointer();
+    string& protein_id = protein->getIdPointer();
     int peptide_loc = peptide_src->getStartIdx();
     std::ostringstream protein_loc_stream;
     protein_loc_stream << protein_id << "(" << peptide_loc << ")";

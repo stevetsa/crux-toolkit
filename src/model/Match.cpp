@@ -195,7 +195,7 @@ void Match::printSqt(
   free(sequence);
   
   PeptideSrc* peptide_src = NULL;
-  char* protein_id = NULL;
+  string protein_id;
   Protein* protein = NULL;
   
   for(PeptideSrcIterator iter = peptide->getPeptideSrcBegin();
@@ -214,8 +214,7 @@ void Match::printSqt(
     }
 
     // print match info (locus line), add "decoy-prefix" to locus name for decoys
-    fprintf(file, "L\t%s%s\n", rand.c_str(), protein_id);      
-    free(protein_id);
+    fprintf(file, "L\t%s%s\n", rand.c_str(), protein_id.c_str());      
   }
   
   return;

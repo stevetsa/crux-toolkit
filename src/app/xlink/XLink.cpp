@@ -166,11 +166,10 @@ void get_protein_ids_locations(
     
     PeptideSrc* peptide_src = *peptide_src_iterator;
     Crux::Protein* protein = peptide_src->getParentProtein();
-    char* protein_id = protein->getId();
+    string& protein_id = protein->getIdPointer();
     int peptide_loc = peptide_src->getStartIdx();
     std::ostringstream protein_loc_stream;
     protein_loc_stream << protein_id << "(" << peptide_loc << ")";
-    free(protein_id);
     protein_ids_locations.insert(protein_loc_stream.str());
   }
 
