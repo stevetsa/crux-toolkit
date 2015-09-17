@@ -489,9 +489,8 @@ void Match::printOneMatchField(
     break;
   case ORIGINAL_TARGET_SEQUENCE_COL:
     if (null_peptide_ == true || OutputFiles::isConcat()) {
-      char* seq = peptide_->getUnshuffledSequence();
+      string seq = peptide_->getUnshuffledSequence();
       output_file->setColumnCurrentRow((MATCH_COLUMNS_T)column_idx, seq);
-      free(seq);
     }
     break;
   case ETA_COL:

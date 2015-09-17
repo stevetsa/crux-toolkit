@@ -448,7 +448,8 @@ char* Peptide::getSequence() {
     seq_copy = modified_aa_to_unmodified_string(decoy_modified_seq_, 
                                                 length_);
   } else {
-    seq_copy = getUnshuffledSequence();
+    //TODO optimize SJM 2015_09_17
+    seq_copy = my_copy_string(getUnshuffledSequence().c_str());
   }
  
   return seq_copy; 
@@ -460,7 +461,12 @@ char* Peptide::getSequence() {
  * For target peptides, returns the same as get_peptide_sequence.
  * \returns The newly-allocated sequence of peptide
  */
-char* Peptide::getUnshuffledSequence() {
+string Peptide::getUnshuffledSequence() {
+
+  if (unshuffled_sequence_.length() == length_) {
+    //carp(CARP_INFO, "Returning cached seqeunce");
+    return unshuffled_sequence_;
+  }
 
   //check  parent(s) protein of the peptide not be empty 
   if(peptide_srcs_.empty()){
@@ -468,14 +474,16 @@ char* Peptide::getUnshuffledSequence() {
     return NULL;
   }
   int start_idx = getPeptideSrc()->getStartIdx();
-  char* parent_sequence = 
+  //TODO optimize this after we get protein sequences into std::string (SJM 2015_09_17)
+  string parent_sequence = 
     getPeptideSrc()->getParentProtein()->getSequencePointer(start_idx-1);
   
-
-  char* copy_sequence = copy_string_part(parent_sequence,
-                                         length_);
+  unshuffled_sequence_ = parent_sequence.substr(0, length_);
+  if (unshuffled_sequence_.length() != length_) {
+    carp(CARP_FATAL, "Error getting seqeuence!");
+  }
  
-  return copy_sequence; 
+  return unshuffled_sequence_; 
 }
 
 /**
@@ -870,17 +878,11 @@ FLOAT_T Peptide::calcMass(
   ) {
 
   FLOAT_T peptide_mass = 0;
-  RESIDUE_ITERATOR_T * residue_iterator = new_residue_iterator(this);
+  char* seq = getSequence();
+  peptide_mass = calcSequenceMass(seq, mass_type);
+  std::free(seq);
   
-  while(residue_iterator_has_next(residue_iterator)){
-    peptide_mass += get_mass_amino_acid(residue_iterator_next(residue_iterator), mass_type);
-  }
-  free_residue_iterator(residue_iterator);
-
-  if(mass_type == AVERAGE){
-    return peptide_mass + MASS_H2O_AVERAGE;
-  }
-  return peptide_mass + MASS_H2O_MONO;
+  return peptide_mass;
 }
 
 FLOAT_T Peptide::calcModifiedMass(

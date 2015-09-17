@@ -51,6 +51,7 @@ class Peptide {
   FLOAT_T peptide_mass_;   ///< The peptide's mass.
   std:: vector<PeptideSrc*> peptide_srcs_; ///< a vector of peptide_srcs_
 
+  std::string unshuffled_sequence_;
   MODIFIED_AA_T* modified_seq_; ///< peptide sequence with modifications
   MODIFIED_AA_T* decoy_modified_seq_; ///< randomized peptide sequence
 
@@ -243,7 +244,7 @@ class Peptide {
    * For target peptides, returns the same as get_peptide_sequence.
    * \returns The newly-allocated sequence of peptide
    */
-  char* getUnshuffledSequence();
+  std::string getUnshuffledSequence();
 
   /**
    * \returns a pointer to the start of peptide sequence with in it's protein parent sequence, 
