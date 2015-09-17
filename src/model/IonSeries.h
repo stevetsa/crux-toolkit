@@ -26,11 +26,11 @@ static const int MAX_NUM_ION_TYPE = 8; // number of different ion_types
 class IonSeries {
   friend class XLinkPeptide;
  protected:
+
+  static FLOAT_T* mass_matrix_; /// < Pre-allocated mass matrix
   // TODO change name to unmodified_char_seq
-  //char* peptide_; ///< The peptide sequence for this ion series
-  std::string peptide_;
+  std::string peptide_; ///< The peptide sequence for this ion series
   MODIFIED_AA_T* modified_aa_seq_; ///< sequence of the peptide
-  FLOAT_T peptide_mass_; ///< The peptide neutral mass. For efficiency. 
   int charge_; ///< /<The charge state of the peptide for this ion series
   IonConstraint* constraint_; ///< The constraints which these ions obey
   std::vector<Ion*> ions_; ///< The ions in this series
