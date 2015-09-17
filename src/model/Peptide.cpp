@@ -1986,8 +1986,8 @@ int Peptide::getProteinInfo(vector<string>& protein_ids,
     protein_ids.push_back(protein->getIdPointer());
 
     string description = "";
-    const char* annotation_pointer = protein->getAnnotationPointer();
-    if (annotation_pointer != NULL) {
+    const string& annotation_pointer = protein->getAnnotationPointer();
+    if (!annotation_pointer.empty()) {
       description = protein->getAnnotationPointer();
       // replace double quotes with single quotes
       replace(description.begin(), description.end(), '"', '\'');

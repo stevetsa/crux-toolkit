@@ -26,7 +26,7 @@ class Protein {
   std::string id_; ///< The protein sequence id.
   char*        sequence_; ///< The protein sequence.
   unsigned int   length_; ///< The length of the protein sequence.
-  char*      annotation_; ///< Optional protein annotation.
+  std::string      annotation_; ///< Optional protein annotation.
 
   /**
    * Find the beginning of the next sequence, and read the sequence ID
@@ -239,18 +239,18 @@ class Protein {
    * returns a heap allocated new copy of the annotation
    * user must free the return annotation
    */
-  char* getAnnotation();
+  std::string getAnnotation();
 
   /**
    *\returns A const pointer to the annotation of the protein.
    */
-  const char* getAnnotationPointer();
+  const std::string& getAnnotationPointer();
 
    /**
    * sets the annotation of the protein
    */
   void setAnnotation(
-    const char* annotation ///< the sequence to add -in
+    const std::string& annotation ///< the sequence to add -in
   );
 
 
