@@ -22,8 +22,57 @@
 #include "modifications.h"
 #include "mass.h"
 #include "GlobalParams.h"
+#include <stack>
 
 using namespace std;
+
+
+class MODIFIED_AA_T_Cache {
+ protected:
+  stack<MODIFIED_AA_T*> cache_;
+  int check_in_count;
+  int check_out_count;
+ public:
+  MODIFIED_AA_T_Cache() {
+    check_in_count = 0;
+    check_out_count = 0;
+  }
+
+  ~MODIFIED_AA_T_Cache() {
+    while(!cache_.empty()) {
+      MODIFIED_AA_T *element = cache_.top();
+      cache_.pop();
+      delete []element;
+    }
+    //carp(CARP_INFO, "modified_aa_cache: checkout %d checkin %d", check_out_count, check_in_count);
+  }
+
+  MODIFIED_AA_T* checkout(bool clear=false) {
+    MODIFIED_AA_T* new_element;
+    if (cache_.empty()) {
+      new_element = new MODIFIED_AA_T[GlobalParams::getMaxLength()+1];
+    } else {
+      new_element = cache_.top();
+      cache_.pop();
+    }
+    if (clear) {
+      memset(new_element, 0, sizeof(MODIFIED_AA_T)*GlobalParams::getMaxLength()+1);
+    }
+    check_out_count++;
+    return (new_element);
+  }
+  void checkin(MODIFIED_AA_T* array) {
+    cache_.push(array);
+    check_in_count++;
+  }
+};
+
+MODIFIED_AA_T_Cache modified_aa_cache;
+
+void freeModSeq(MODIFIED_AA_T* seq) {
+  modified_aa_cache.checkin(seq);
+}
+
 
 /* Private constants */
 //enum { MAX_PROTEIN_SEQ_LENGTH = 40000 };
@@ -434,8 +483,8 @@ int convert_to_mod_aa_seq(const string& sequence,
   const char* csequence = sequence.c_str();
 
   int seq_len = sequence.length();
-  MODIFIED_AA_T* new_sequence = 
-    (MODIFIED_AA_T*)mycalloc( seq_len + 1, sizeof(MODIFIED_AA_T) );
+  MODIFIED_AA_T* new_sequence = modified_aa_cache.checkout(); 
+  //    (MODIFIED_AA_T*)mycalloc( seq_len + 1, sizeof(MODIFIED_AA_T) );
 
   unsigned int seq_idx = 0;  // current position in given sequence
   unsigned int mod_idx = 0;  // current position in the new_sequence
@@ -513,7 +562,7 @@ MODIFIED_AA_T* copy_mod_aa_seq(MODIFIED_AA_T* source, int length){
     return NULL;
   }
 
-  MODIFIED_AA_T* new_seq = (MODIFIED_AA_T*)mycalloc( length + 1, sizeof(MODIFIED_AA_T) );
+  MODIFIED_AA_T* new_seq = modified_aa_cache.checkout();//(MODIFIED_AA_T*)mycalloc( length + 1, sizeof(MODIFIED_AA_T) );
   memcpy( new_seq, source, length * sizeof(MODIFIED_AA_T));
   new_seq[length] = MOD_SEQ_NULL;
 

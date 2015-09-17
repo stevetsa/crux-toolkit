@@ -271,7 +271,7 @@ void XLinkablePeptide::findLinkSites(
       }
     }
   }
-  free(mod_seq);
+  freeModSeq(mod_seq);
 }
 
 /**
@@ -695,7 +695,7 @@ void XLinkablePeptide::predictIons(
   }
 
   free(seq); 
-  free(mod_seq);
+  freeModSeq(mod_seq);
 }
 
 

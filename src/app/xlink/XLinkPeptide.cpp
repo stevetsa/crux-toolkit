@@ -563,8 +563,8 @@ void XLinkPeptide::predictIons(
   }
   free(seq1);
   free(seq2);
-  free(mod_seq1);
-  free(mod_seq2);
+  freeModSeq(mod_seq1);
+  freeModSeq(mod_seq2);
   
   delete ion_series2;
 }

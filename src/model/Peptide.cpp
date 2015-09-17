@@ -245,10 +245,10 @@ Peptide::~Peptide() {
    PeptideSrc::free(peptide_srcs_);
    
   if(modified_seq_){
-    std::free(modified_seq_);
+    freeModSeq(modified_seq_);
   }
   if(decoy_modified_seq_){
-    std::free(decoy_modified_seq_);
+    freeModSeq(decoy_modified_seq_);
   }
 }
 
@@ -714,13 +714,13 @@ void Peptide::setModifiedAASequence(
   ) {
   
   if (modified_seq_) {
-    std::free(modified_seq_);
+    freeModSeq(modified_seq_);
   }
   modified_seq_ = copy_mod_aa_seq(mod_seq);
 
   if (decoy) {
     if (decoy_modified_seq_) {
-      std::free(decoy_modified_seq_);
+      freeModSeq(decoy_modified_seq_);
     }
     decoy_modified_seq_ = copy_mod_aa_seq(mod_seq);
   }
@@ -1126,7 +1126,7 @@ void Peptide::transformToDecoy(){
 
   // delete any existing decoy sequence
   if(decoy_modified_seq_){ 
-    std::free(decoy_modified_seq_); 
+    freeModSeq(decoy_modified_seq_); 
   }
   // if the peptide is already modified, shuffle the modified sequence
   if(modified_seq_){

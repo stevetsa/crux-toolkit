@@ -177,7 +177,7 @@ void IonSeries::update(
   
   // free old peptide sequence
   if(modified_aa_seq_){
-    free(modified_aa_seq_);
+    freeModSeq(modified_aa_seq_);
   }
   
   // iterate over all ions, and free them
@@ -228,7 +228,8 @@ void IonSeries::freeIonSeries(IonSeries* ions) {
 IonSeries::~IonSeries()
 {
   if(modified_aa_seq_){
-    free(modified_aa_seq_);
+    freeModSeq(modified_aa_seq_);
+    //    free(modified_aa_seq_);
   }
 
   if(loss_limit_){
