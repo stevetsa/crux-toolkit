@@ -44,7 +44,11 @@ class XLinkDatabase {
    std::vector<XLinkablePeptide>& xpeptides,
    std::vector<XLinkablePeptide>& flattened
    );
-  
+
+  static void filterLinkablePeptides(
+    std::vector<XLinkablePeptide>& xpeptides,
+    std::vector<XLinkablePeptide>& filtered_xpeptides
+    );  
 
  public:
   XLinkDatabase() {;}

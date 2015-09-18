@@ -97,7 +97,8 @@ void XLinkDatabase::initialize() {
     generateAllLinkablePeptides(target_peptides_[cleavage_idx], target_xlinkable_peptides_);
   }
   sort(target_xlinkable_peptides_.begin(), target_xlinkable_peptides_.end(), compareXLinkablePeptideMass);
-  //carp(CARP_INFO, "There are %d xlinkable peptides", target_xlinkable_peptides_.size());
+  carp(CARP_INFO, "There are %d xlinkable peptides", target_xlinkable_peptides_.size());
+
   //for (size_t idx = 0;idx < target_xlinkable_peptides_.size();idx++) {
     //carp(CARP_INFO, "%d %s", idx, target_xlinkable_peptides_[idx].getPeptide()->getUnshuffledSequence().c_str());
   //}
@@ -111,6 +112,16 @@ void XLinkDatabase::initialize() {
     generateAllSelfLoops(true);
     carp(CARP_INFO, "There are %d self loop peptides", target_selfloop_peptides_.size());
   }
+
+  //filter linkable peptides based upon user parameters
+  if (!get_boolean_parameter("xlink-include-inter-intra") ||
+      (!get_boolean_parameter("xlink-include-inter") && !get_boolean_parameter("xlink-include-intra"))) {
+    carp(CARP_INFO, "Filtering out linkable peptides");
+    vector<XLinkablePeptide> filtered;
+    filterLinkablePeptides(target_xlinkable_peptides_, filtered);
+    target_xlinkable_peptides_=filtered;
+  }
+
 }
 
 void XLinkDatabase::findSelfLoops(
@@ -193,14 +204,42 @@ void XLinkDatabase::flattenLinkablePeptides(vector<XLinkablePeptide>& xpeptides,
 
 }
 
-void XLinkDatabase::generateAllLinkablePeptides(vector<Crux::Peptide*>& peptides, 
+void XLinkDatabase::filterLinkablePeptides(
+  vector<XLinkablePeptide>& xpeptides,
+  vector<XLinkablePeptide>& filtered_xpeptides
+  ) {
+  bool filter1 = !get_boolean_parameter("xlink-include-inter-intra");
+  bool filter2 = !get_boolean_parameter("xlink-include-inter") && !get_boolean_parameter("xlink-include-intra");
+  
+  for (size_t idx = 0 ;idx < xpeptides.size();idx++) {
+  //quick check to see if peptide can come from multiple protein sources.
+  //if true, then this should return XLINK_INTER_INTRA_CANDIDATE
+    XLINKMATCH_TYPE_T ctype = 
+      XLink::getCrossLinkCandidateType(xpeptides[idx].getPeptide(), 
+				xpeptides[idx].getPeptide());
+    
+    if ((filter1 && ctype == XLINK_INTER_INTRA_CANDIDATE) ||
+      (filter2 && ctype != XLINK_INTER_INTRA_CANDIDATE)) {
+    } else {
+      filtered_xpeptides.push_back(xpeptides[idx]);
+    }
+  }
+
+  carp(CARP_INFO, "kept %d out of %d", filtered_xpeptides.size(), xpeptides.size());
+
+}
+
+void XLinkDatabase::generateAllLinkablePeptides(
+  vector<Crux::Peptide*>& peptides, 
   vector<XLinkablePeptide>& xpeptides) {
+
   //Loop through peptides
   vector<int> link_sites;
   for (vector<Crux::Peptide*>::iterator iter = peptides.begin(); 
     iter != peptides.end(); 
        ++iter) {
     Crux::Peptide* peptide = *iter;
+
     if (peptide->countModifiedAAs() <= GlobalParams::getMaxXLinkMods()) {
       XLinkablePeptide::findLinkSites(peptide, bondmap_, link_sites); 
       if (!link_sites.empty()) {
