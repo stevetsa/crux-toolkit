@@ -74,7 +74,7 @@ int SearchForXLinks::xlinkSearchMain() {
   carp(CARP_DEBUG, "Preparing database");
   XLinkDatabase::initialize();
   Database* database = NULL;
-  int num_proteins = prepare_protein_input(input_file, &database);
+  int num_proteins = 0;//prepare_protein_input(input_file, &database);
   //carp(CARP_DEBUG, "Number of proteins:%d",num_proteins);
   PEPTIDE_MOD_T** peptide_mods = NULL;
   int num_peptide_mods = generate_peptide_mod_list( &peptide_mods );

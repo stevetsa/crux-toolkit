@@ -32,6 +32,7 @@ std::vector<XLinkablePeptide> XLinkDatabase::target_xlinkable_peptides_flatten_;
 
 
 void XLinkDatabase::initialize() {
+  carp(CARP_INFO, "Initializing database");
   //Step one, load the database
   string input_file = get_string_parameter("protein fasta file");
   string link_string = get_string_parameter("link sites");
