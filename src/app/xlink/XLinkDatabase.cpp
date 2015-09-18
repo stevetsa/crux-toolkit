@@ -67,6 +67,7 @@ void XLinkDatabase::initialize() {
     while (peptide_iterator->hasNext()) {
       
       Crux::Peptide* peptide = peptide_iterator->next();
+//      carp(CARP_INFO, "Current peptide:%s", peptide->getUnshuffledSequence().c_str());
       int missed_cleavages = peptide->getMissedCleavageSites();
       while(target_peptides_.size() <= missed_cleavages) {
 	target_peptides_.push_back(vector<Crux::Peptide*>());
@@ -75,7 +76,7 @@ void XLinkDatabase::initialize() {
     }
     delete peptide_iterator;
   }
-
+  //carp(CARP_FATAL, "stop!");
   
 
   //Sort by mass
@@ -96,7 +97,11 @@ void XLinkDatabase::initialize() {
     generateAllLinkablePeptides(target_peptides_[cleavage_idx], target_xlinkable_peptides_);
   }
   sort(target_xlinkable_peptides_.begin(), target_xlinkable_peptides_.end(), compareXLinkablePeptideMass);
-  carp(CARP_INFO, "There are %d xlinkable peptides", target_xlinkable_peptides_.size());
+  //carp(CARP_INFO, "There are %d xlinkable peptides", target_xlinkable_peptides_.size());
+  //for (size_t idx = 0;idx < target_xlinkable_peptides_.size();idx++) {
+    //carp(CARP_INFO, "%d %s", idx, target_xlinkable_peptides_[idx].getPeptide()->getUnshuffledSequence().c_str());
+  //}
+  //carp(CARP_FATAL, "stop");
 
   flattenLinkablePeptides(target_xlinkable_peptides_, target_xlinkable_peptides_flatten_);
 

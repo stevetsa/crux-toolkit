@@ -331,13 +331,17 @@ void XLinkPeptide::addCandidates(
           } else if (current_mass >= peptide2_min_mass) {
 	    included[bidx] = true;
 	    included[bidx2] = true;
+            //TODO find a better way to handle this...
+            if (pep1.getPeptide()->getUnshuffledSequence() == pep2.getPeptide()->getUnshuffledSequence()) {
+              continue;
+            }
 	    XLINKMATCH_TYPE_T ctype = XLink::getCrossLinkCandidateType(pep1.getPeptide(), pep2.getPeptide());
             
 	    //if (is_inter) {carp(CARP_INFO, "INTER!");}
             if ((include_intra && ctype == XLINK_INTRA_CANDIDATE) || (include_inter_intra && ctype == XLINK_INTER_INTRA_CANDIDATE)) {
               int mods = pep1.getPeptide()->countModifiedAAs() + pep2.getPeptide()->countModifiedAAs();
               if (mods <= max_mod_xlink) {
-		//carp(CARP_INFO, "considering %s %s %i", pep1.getModifiedSequenceString().c_str(), pep2.getModifiedSequenceString().c_str(), is_inter);
+		//carp(CARP_INFO, "considering %s %s", pep1.getModifiedSequenceString().c_str(), pep2.getModifiedSequenceString().c_str());
                 addXLinkPeptides(pep1, pep2, bondmap, candidates);
               } // if (mods <= max_mod_xlink .. 
             }
