@@ -27,6 +27,7 @@ class XLinkablePeptide {
   bool is_decoy_; //Is this from the decoy database?
   size_t xcorr_link_idx_;
   FLOAT_T xcorr_;
+  int index_;
 
   int predict_ions_call_count_;
   /**
@@ -235,6 +236,10 @@ class XLinkablePeptide {
   bool operator < (
     XLinkablePeptide other ///< the other XLinkablePeptide to compare to.
   ) const;
+
+  void setIndex(int idx) {index_ = idx;}
+  int getIndex() {return index_;}
+
   
 };
 

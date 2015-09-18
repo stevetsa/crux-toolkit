@@ -28,7 +28,7 @@ std::vector<XLinkablePeptide> XLinkDatabase::decoy_xlinkable_peptides_;
 std::vector<XLinkablePeptide> XLinkDatabase::target_xlinkable_peptides2_; //Peptides that could be selfloops.
 
 std::vector<XLinkablePeptide> XLinkDatabase::target_xlinkable_peptides_flatten_;
-
+vector<pair<int, vector<XLinkablePeptide> > > XLinkDatabase::protein_idx_to_xpeptides_;
 
 
 void XLinkDatabase::initialize() {
@@ -115,6 +115,7 @@ void XLinkDatabase::initialize() {
   }
 
   //filter linkable peptides based upon user parameters
+  /*
   if (!get_boolean_parameter("xlink-include-inter-intra") ||
       (!get_boolean_parameter("xlink-include-inter") && !get_boolean_parameter("xlink-include-intra"))) {
     carp(CARP_INFO, "Filtering out linkable peptides");
@@ -122,6 +123,38 @@ void XLinkDatabase::initialize() {
     filterLinkablePeptides(target_xlinkable_peptides_, filtered);
     target_xlinkable_peptides_=filtered;
   }
+  */
+
+  //Build the protein_idx_to_xpeptides_;
+  /*
+  vector<vector<XLinkablePeptide> > protein_idx_to_xpeptides;
+
+  for (size_t idx=0;idx < target_xlinkable_peptides_.size();idx++) {
+    XLinkablePeptide& pep1 = target_xlinkable_peptides_[idx];
+    pep1.setIndex(idx);
+    carp(CARP_INFO, "%d %d", idx, pep1.getIndex());
+    for (PeptideSrcIterator src_iterator1 = pep1.getPeptide()->getPeptideSrcBegin();
+      src_iterator1 != pep1.getPeptide()->getPeptideSrcEnd();
+      ++src_iterator1) {
+      PeptideSrc* src1 = *src_iterator1;
+      size_t id1 = src1->getParentProtein()->getProteinIdx();
+      while(protein_idx_to_xpeptides.size() <= id1) {
+        protein_idx_to_xpeptides.push_back(vector<XLinkablePeptide>());
+      }
+      protein_idx_to_xpeptides.at(id1).push_back(pep1);
+      carp(CARP_INFO, "%d %d %d", idx, id1, protein_idx_to_xpeptides[id1].back().getIndex());
+    }
+   
+  }
+  //carp(CARP_FATAL, "stop!");
+  for (size_t idx = 0;idx < protein_idx_to_xpeptides.size();idx++) {
+    if (protein_idx_to_xpeptides[idx].size() > 0) {
+      protein_idx_to_xpeptides_.push_back(make_pair(idx, protein_idx_to_xpeptides[idx]));
+    }
+  }
+  */
+  
+
 
 }
 
@@ -349,6 +382,12 @@ vector<XLinkablePeptide>::iterator XLinkDatabase::getXLinkableEnd() {
     return(target_xlinkable_peptides_.end());
 }
 
+vector<XLinkablePeptide>& XLinkDatabase::getXLinkablePeptides() {
+  return(target_xlinkable_peptides_);
+}
+
+
+
 XLinkBondMap& XLinkDatabase::getXLinkBondMap() {
   return bondmap_;
 }
@@ -364,4 +403,14 @@ vector<XLinkablePeptide>::iterator XLinkDatabase::getXLinkableFlattenBegin(FLOAT
 
 vector<XLinkablePeptide>::iterator XLinkDatabase::getXLinkableFlattenEnd() {
   return(target_xlinkable_peptides_flatten_.end());
+}
+
+
+vector<pair<int, vector<XLinkablePeptide> > >& XLinkDatabase::getTargetProteinIdxToXPeptides() {
+  return protein_idx_to_xpeptides_;
+
+}
+
+int XLinkDatabase::getNLinkable() {
+  return(target_xlinkable_peptides_.size());
 }

@@ -29,6 +29,7 @@ void XLinkablePeptide::init() {
   link_sites_.clear();
   xcorr_link_idx_ = -1;
   predict_ions_call_count_ = 0;
+  index_ = -1;
 }
 
 /**
@@ -59,6 +60,7 @@ XLinkablePeptide::XLinkablePeptide(
   link_sites_ = xlinkablepeptide.link_sites_;
   xcorr_link_idx_ = xlinkablepeptide.xcorr_link_idx_;
   xcorr_ = xlinkablepeptide.xcorr_;
+  index_ = xlinkablepeptide.index_;
 }
 
 XLinkablePeptide::XLinkablePeptide(
@@ -70,6 +72,8 @@ XLinkablePeptide::XLinkablePeptide(
   link_sites_ = xlinkablepeptide.link_sites_;
   xcorr_link_idx_ = xlinkablepeptide.xcorr_link_idx_;
   xcorr_ = xlinkablepeptide.xcorr_;
+  index_ = xlinkablepeptide.index_;
+
 }
 
 /**

@@ -12,6 +12,9 @@ class XLinkDatabase {
  protected:
   static Database* protein_database_;
   static XLinkBondMap bondmap_;
+  static vector<pair<int, vector<XLinkablePeptide> > > protein_idx_to_xpeptides_;
+
+
 
   static std::vector<std::vector<Crux::Peptide*> > target_peptides_; ///< all peptides generated, indexed by missed cleavages
 
@@ -62,6 +65,8 @@ class XLinkDatabase {
   static std::vector<XLinkablePeptide>::iterator getXLinkableBegin();
   static std::vector<XLinkablePeptide>::iterator getXLinkableBegin(FLOAT_T min_mass);
   static std::vector<XLinkablePeptide>::iterator getXLinkableEnd();
+  static int getNLinkable();
+  static std::vector<XLinkablePeptide>& getXLinkablePeptides();
 
   static std::vector<XLinkablePeptide>::iterator getXLinkableFlattenBegin();
   static std::vector<XLinkablePeptide>::iterator getXLinkableFlattenBegin(FLOAT_T min_mass);
@@ -74,7 +79,7 @@ class XLinkDatabase {
   static std::vector<LinearPeptide>::iterator getLinearBegin();
   static std::vector<LinearPeptide>::iterator getLinearBegin(FLOAT_T min_mass);
   static std::vector<LinearPeptide>::iterator getLinearEnd();
-
+  static std::vector<std::pair<int, vector<XLinkablePeptide> > >& getTargetProteinIdxToXPeptides();
 
 
   static void print();

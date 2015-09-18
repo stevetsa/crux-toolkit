@@ -129,7 +129,7 @@ class XLinkPeptide : public XLinkMatch {
     FLOAT_T min_mass, ///< min mass of crosslinks
     FLOAT_T max_mass, ///< max mass of crosslinks
     XLinkBondMap& bondmap, ///< valid crosslink map
-    XLinkablePeptideIterator* iter1, ///< 1st peptide iterator
+    vector<XLinkablePeptide>&, ///< 1st peptide iterator
     XLinkMatchCollection& candidates ///< candidates in/out
     );
 
