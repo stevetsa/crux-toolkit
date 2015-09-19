@@ -77,7 +77,7 @@ int SearchForXLinks::xlinkSearchMain() {
   int num_proteins = 0;//prepare_protein_input(input_file, &database);
   //carp(CARP_DEBUG, "Number of proteins:%d",num_proteins);
   PEPTIDE_MOD_T** peptide_mods = NULL;
-  int num_peptide_mods = generate_peptide_mod_list( &peptide_mods );
+  int num_peptide_mods = 0;
 
   /* Usually for debugging purposes, print out the database of canddiates */
   if (get_boolean_parameter("xlink-print-db"))

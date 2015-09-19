@@ -211,6 +211,7 @@ void XLinkPeptide::addCandidates(
     while(xlp_iter.hasNext()) {
       xlinkable_peptides.push_back(xlp_iter.next());
     }
+    sort(xlinkable_peptides.begin(), xlinkable_peptides.end(), compareXLinkablePeptideMass);
     addCandidates(min_mass, max_mass, bondmap, xlinkable_peptides, candidates);
   } else {
     addCandidates(min_mass, max_mass, bondmap, XLinkDatabase::getXLinkablePeptides(), candidates);
@@ -258,25 +259,32 @@ void XLinkPeptide::addCandidates(
   int max_mod_xlink = GlobalParams::getMaxXLinkMods();
   
   size_t xpeptide_count = linkable_peptides.size();
-
-  bool* tested = new bool[xpeptide_count*xpeptide_count];
-  memset(tested, 0, sizeof(bool)*xpeptide_count*xpeptide_count);
+  if (xpeptide_count <= 0) { return;}
+//  bool* tested = new bool[xpeptide_count*xpeptide_count];
+//  memset(tested, 0, sizeof(bool)*xpeptide_count*xpeptide_count);
   bool done = false;
+  
+  carp(CARP_INFO, "Searching for candidates");
   for (size_t pep_idx1=0;pep_idx1 < xpeptide_count-1;pep_idx1++) {
+    //carp(CARP_INFO, "pep_idx1:%d %d %f", pep_idx1, xpeptide_count-1, linkable_peptides[pep_idx1].getMass(MONO));
     XLinkablePeptide& pep1 = linkable_peptides[pep_idx1];
     FLOAT_T pep1_mass = pep1.getMass();
     FLOAT_T pep2_min_mass = min_mass - pep1_mass - linker_mass_;
     FLOAT_T pep2_max_mass = max_mass - pep1_mass - linker_mass_;
-    int start_idx2 = pep_idx1;
-    for (size_t pep_idx2=start_idx2+1;pep_idx2 < xpeptide_count;pep_idx2++) {
-      int bidx = pep_idx1 * xpeptide_count + pep_idx2;
-      int bidx2 = pep_idx2 * xpeptide_count + pep_idx1;
-
-      if (tested[bidx] || tested[bidx2]) {
-	continue;
-      }
-      tested[bidx] = true;
-      tested[bidx2] = true;
+    int start_idx2 = pep_idx1+1;
+    if (pep1_mass + linker_mass_ + linkable_peptides[start_idx2].getMass() > max_mass) {
+      break;
+    }
+    for (size_t pep_idx2=start_idx2;pep_idx2 < xpeptide_count;pep_idx2++) {
+//      int bidx = pep_idx1 * xpeptide_count + pep_idx2;
+//      int bidx2 = pep_idx2 * xpeptide_count + pep_idx1;
+     
+//      if (tested[bidx] || tested[bidx2]) {
+//        carp(CARP_FATAL, "This shouldn't happen");
+//	continue;
+//      }
+//      tested[bidx] = true;
+//      tested[bidx2] = true;
       XLinkablePeptide& pep2 = linkable_peptides[pep_idx2];
       FLOAT_T current_mass = pep2.getMass();
       if (current_mass > pep2_max_mass) {
@@ -287,139 +295,29 @@ void XLinkPeptide::addCandidates(
       }
       if (current_mass >= pep2_min_mass) {
         XLINKMATCH_TYPE_T ctype = XLink::getCrossLinkCandidateType(pep1.getPeptide(), pep2.getPeptide());
-        /*    
+            
         if ((include_intra && ctype == XLINK_INTRA_CANDIDATE) || 
             (include_inter_intra && ctype == XLINK_INTER_INTRA_CANDIDATE) ||
             (include_inter && ctype == XLINK_INTER_CANDIDATE)) {
-	*/
+	
               int mods = pep1.getPeptide()->countModifiedAAs() + pep2.getPeptide()->countModifiedAAs();
               if (mods <= max_mod_xlink) {
 		//carp(CARP_INFO, "considering %s %s", pep1.getModifiedSequenceString().c_str(), pep2.getModifiedSequenceString().c_str());
                 addXLinkPeptides(pep1, pep2, bondmap, candidates);
               } // if (mods <= max_mod_xlink .. 
-	      /*
-	}
-	      */
-      }
-    }
-    if (done) {
-      break;
-    }
-    
-  }
-
-  /*
-  
-  if (include_intra  || include_inter_intra) {
-    for (size_t protein_idx_idx=0;protein_idx_idx<num_proteins;protein_idx_idx++) {
-       vector<XLinkablePeptide>& xlinkable_peptides = 
-        protein_idx_to_xpeptides[protein_idx_idx].second;
-
-      bool done=false;
-      for (size_t pep1_idx_idx = 0;pep1_idx_idx < xlinkable_peptides.size()-1;pep1_idx_idx++) {
-        XLinkablePeptide& pep1 = xlinkable_peptides.at(pep1_idx_idx);
-	size_t pep1_idx = pep1.getIndex();
-        FLOAT_T pep1_mass = pep1.getMass();
-        FLOAT_T peptide2_min_mass = min_mass - pep1_mass - linker_mass_;
-        FLOAT_T peptide2_max_mass = max_mass - pep1_mass - linker_mass_;
-        for (size_t pep2_idx_idx = pep1_idx_idx+1; pep2_idx_idx < xlinkable_peptides.size(); pep2_idx_idx++) {
-          XLinkablePeptide& pep2 = xlinkable_peptides.at(pep2_idx_idx); 
-          size_t pep2_idx = pep2.getIndex();
-
-         
-	  int bidx = pep1_idx * xpeptide_count + pep2_idx;
-	  int bidx2 = pep2_idx * xpeptide_count + pep1_idx;
-          if (included[bidx] || included[bidx2]) {
-	    carp(CARP_DEBUG, "%d %d already tested", pep1.getIndex(), pep2.getIndex());
-	    continue;
-	  }
-          included[bidx] = true;
-	  included[bidx2] = true;
-          
-          FLOAT_T current_mass = pep2.getMass();
-          if (current_mass > peptide2_max_mass) {
-            if (pep2_idx_idx == pep1_idx_idx) {
-              done = true;
-            }
-            break;
-          } else if (current_mass >= peptide2_min_mass) {
-            //TODO find a better way to handle this...
-            if (pep1.getPeptide()->getUnshuffledSequence() == pep2.getPeptide()->getUnshuffledSequence()) {
-              continue;
-            }
-	    XLINKMATCH_TYPE_T ctype = XLink::getCrossLinkCandidateType(pep1.getPeptide(), pep2.getPeptide());
-            
-	    //if (is_inter) {carp(CARP_INFO, "INTER!");}
-            if ((include_intra && ctype == XLINK_INTRA_CANDIDATE) || (include_inter_intra && ctype == XLINK_INTER_INTRA_CANDIDATE)) {
-              int mods = pep1.getPeptide()->countModifiedAAs() + pep2.getPeptide()->countModifiedAAs();
-              if (mods <= max_mod_xlink) {
-		//carp(CARP_INFO, "considering %s %s", pep1.getModifiedSequenceString().c_str(), pep2.getModifiedSequenceString().c_str());
-                addXLinkPeptides(pep1, pep2, bondmap, candidates);
-              } // if (mods <= max_mod_xlink .. 
-            }
+	      
           }
-        }
-        if (done) {
-          break;
+	      
         }
       }
-    }
-    //carp(CARP_FATAL, "stopping here");
-  }
-  if (include_inter || include_inter_intra) {
-    //cerr <<"include_inter"<<endl;
+      if (done) {
+        break;
+      }
     
-    for (size_t protein_idx_idx1=0;protein_idx_idx1 < (num_proteins-1); protein_idx_idx1++) {
-      vector<XLinkablePeptide>& peptides1 = 
-        protein_idx_to_xpeptides[protein_idx_idx1].second;
-      for (size_t protein_idx_idx2=protein_idx_idx1+1;protein_idx_idx2 < num_proteins; protein_idx_idx2++) {
-        vector<XLinkablePeptide>& peptides2 = 
-          protein_idx_to_xpeptides[protein_idx_idx2].second;
-        bool done=false;
-        size_t pep2_idx = 0;
-        for (size_t pep1_idx_idx = 0;pep1_idx_idx < peptides1.size();pep1_idx_idx++) {
-          XLinkablePeptide& pep1 = peptides1.at(pep1_idx_idx);
-	  size_t pep1_idx = pep1.getIndex();
-          FLOAT_T pep1_mass = pep1.getMass();
-          FLOAT_T peptide2_min_mass = min_mass - pep1_mass - linker_mass_;
-          FLOAT_T peptide2_max_mass = max_mass - pep1_mass - linker_mass_;
-          for (size_t pep2_idx_idx =0; pep2_idx_idx < peptides2.size(); pep2_idx_idx++) {
-            XLinkablePeptide& pep2 = peptides2.at(pep2_idx_idx);
-	    size_t pep2_idx = pep2.getIndex();
-	    int bidx = pep1_idx * xpeptide_count + pep2_idx;
-	    int bidx2 = pep2_idx * xpeptide_count + pep1_idx;
-            if (included[bidx] || included[bidx2]) {
-	      carp(CARP_INFO, "%d %d already tested", pep1.getIndex(), pep2.getIndex());
-	      continue;
-	    }
-            included[bidx] = true;
-	    included[bidx2] = true;
-            FLOAT_T current_mass = pep2.getMass();
-            if (current_mass > peptide2_max_mass) {
-              if (pep2_idx_idx == pep1_idx_idx) {
-                done = true;
-              }
-              break;
-            } else if (current_mass >= peptide2_min_mass) {
-              //Only include it if it is just inter only, because if its inter-intra, and the user asked for it
-              //it should have been included in the above if
-              if (!XLink::isCrossLinkIntra(pep1.getPeptide(), pep2.getPeptide())) {
-                int mods = pep1.getPeptide()->countModifiedAAs() + pep2.getPeptide()->countModifiedAAs();
-                if (mods <= max_mod_xlink) {
-                  addXLinkPeptides(pep1, pep2, bondmap, candidates);
-                }
-              }
-            }
-          } // for (pep2_idx)
-          if (done) {
-            break;
-          }
-        } // for (pep1_idx)
-      } //for (protein_idx2
-    } // for (protein_idx1)
-  } // if include inter
-  */
-  delete []tested;
+  }
+   
+  carp(CARP_INFO, "Done searching");
+//  delete []tested;
 }
   
 
