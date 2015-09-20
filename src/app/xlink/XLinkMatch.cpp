@@ -199,32 +199,6 @@ IonSeries* XLinkMatch::getIonSeriesXCORR(int charge) {
 
 }
 
-FLOAT_T XLinkMatch::getMassConst(
-  MASS_TYPE_T mass_type
-  ) const {
-
-  if (!mass_calculated_[mass_type]) {
-    carp(CARP_FATAL, "mass not calculated yet!");
-  }
-  return (mass_[mass_type]);
-
-}
-
-
-/**
- * \returns the mass of the match
- */
-FLOAT_T XLinkMatch::getMass(
-  MASS_TYPE_T mass_type /// MONO or AVERAGE?
-  ) {
-
-  if (!mass_calculated_[mass_type]) {
-    mass_[mass_type] = calcMass(mass_type);
-    mass_calculated_[mass_type] = true;
-  }
-  return mass_[mass_type];
-}
-
 /**
  * \returns the mass error in part-per-million (ppm)
  */

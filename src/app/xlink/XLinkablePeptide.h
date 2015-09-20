@@ -8,7 +8,7 @@
 
 #include "objects.h"
 #include "model/Peptide.h"
-
+#include "CacheableMass.h"
 #include <vector>
 #include <string>
 
@@ -18,7 +18,7 @@
  * \class XLinkablePeptide
  * \brief object for finding and defining the link sites on a peptide
  */
-class XLinkablePeptide {
+class XLinkablePeptide : public CacheableMass {
 
  protected:
   Crux::Peptide* peptide_; ///< the peptide object of this XLinkablePeptide (can be null)
@@ -193,9 +193,9 @@ class XLinkablePeptide {
   /**
    * \returns the mass of the xlinkable peptide
    */
-  FLOAT_T getMass(
+  virtual FLOAT_T calcMass(
     MASS_TYPE_T mass_type=MONO ///< MONO or AVERAGE
-  ) const;
+  );
 
   /**
    * \returns an allocated sequence c-string.  Must be freed

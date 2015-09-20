@@ -12,15 +12,15 @@
 #include "XLinkMatchCollection.h"
 #include <string>
 #include "model/Match.h"
+#include "CacheableMass.h"
 
-
-class XLinkMatch : public Crux::Match {
+class XLinkMatch : public Crux::Match, public CacheableMass {
 
  protected:
   XLinkMatchCollection* parent_; ///< Owner of this match
   FLOAT_T pvalue_; ///< p-value of the match
-  bool mass_calculated_[NUMBER_MASS_TYPES]; ///< is mass calculated?
-  FLOAT_T mass_[NUMBER_MASS_TYPES]; ///<calculated mass
+    //bool mass_calculated_[NUMBER_MASS_TYPES]; ///< is mass calculated?
+    //FLOAT_T mass_[NUMBER_MASS_TYPES]; ///<calculated mass
 
   std::vector<IonSeries*> ion_series_xcorr_;
   std::vector<IonSeries*> ion_series_sp_;
@@ -48,7 +48,7 @@ class XLinkMatch : public Crux::Match {
   virtual int getNumMissedCleavages() = 0;
   virtual bool isModified() = 0;
   virtual std::string getSequenceString() = 0;
-  virtual FLOAT_T calcMass(MASS_TYPE_T mass_type) = 0;
+  //virtual FLOAT_T calcMass(MASS_TYPE_T mass_type) = 0;
   virtual XLinkMatch* shuffle() = 0;
   virtual void predictIons(IonSeries* ion_series, int charge)=0;
   virtual std::string getIonSequence(Ion* ion)=0;
@@ -61,6 +61,7 @@ class XLinkMatch : public Crux::Match {
   /**
    * \returns the mass of the match
    */
+  /*
   FLOAT_T getMass(
     MASS_TYPE_T mass_type /// MONO or AVERAGE?
   );
@@ -68,7 +69,7 @@ class XLinkMatch : public Crux::Match {
   FLOAT_T getMassConst(
     MASS_TYPE_T mass_type
   ) const;
-
+  */
 
   std::string getCandidateTypeString();
 

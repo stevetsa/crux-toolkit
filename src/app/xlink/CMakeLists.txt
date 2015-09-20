@@ -30,6 +30,7 @@ endif (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 add_library(
   xlink
   STATIC
+  CacheableMass.cpp
   XHHC_Peptide.cpp
   LinkedPeptide.cpp
   xhhc.cpp

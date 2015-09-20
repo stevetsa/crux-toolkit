@@ -78,7 +78,7 @@ XLinkablePeptideIterator::XLinkablePeptideIterator(
 
   min_mass_ = min_mass;
   max_mass_ = max_mass;
-  has_next_ = iter_ != eiter_ && iter_->getMass() <= max_mass_;
+  has_next_ = iter_ != eiter_ && iter_->getMass(GlobalParams::getIsotopicMass()) <= max_mass_;
 }
 
 /**
@@ -94,7 +94,7 @@ XLinkablePeptideIterator::~XLinkablePeptideIterator() {
 void XLinkablePeptideIterator::queueNextPeptide() {
   
   iter_++;
-  has_next_ = iter_ != eiter_ && iter_->getMass() <= max_mass_;
+  has_next_ = iter_ != eiter_ && iter_->getMass(GlobalParams::getIsotopicMass()) <= max_mass_;
 }
 
 /**

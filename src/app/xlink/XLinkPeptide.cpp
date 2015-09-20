@@ -45,6 +45,7 @@ XLinkPeptide::XLinkPeptide(
   
   linked_peptides_.push_back(peptideA);
   linked_peptides_.push_back(peptideB);
+
   link_pos_idx_.push_back(posA);
   link_pos_idx_.push_back(posB);
 
@@ -266,13 +267,13 @@ void XLinkPeptide::addCandidates(
   
   carp(CARP_INFO, "Searching for candidates");
   for (size_t pep_idx1=0;pep_idx1 < xpeptide_count-1;pep_idx1++) {
-    //carp(CARP_INFO, "pep_idx1:%d %d %f", pep_idx1, xpeptide_count-1, linkable_peptides[pep_idx1].getMass(MONO));
+    //carp(CARP_INFO, "pep_idx1:%d %d %f", pep_idx1, xpeptide_count-1, linkable_peptides[pep_idx1].getMassConst(MONO));
     XLinkablePeptide& pep1 = linkable_peptides[pep_idx1];
-    FLOAT_T pep1_mass = pep1.getMass();
+    FLOAT_T pep1_mass = pep1.getMassConst(MONO);
     FLOAT_T pep2_min_mass = min_mass - pep1_mass - linker_mass_;
     FLOAT_T pep2_max_mass = max_mass - pep1_mass - linker_mass_;
     int start_idx2 = pep_idx1+1;
-    if (pep1_mass + linker_mass_ + linkable_peptides[start_idx2].getMass() > max_mass) {
+    if (pep1_mass + linker_mass_ + linkable_peptides[start_idx2].getMassConst(MONO) > max_mass) {
       break;
     }
     for (size_t pep_idx2=start_idx2;pep_idx2 < xpeptide_count;pep_idx2++) {
@@ -286,7 +287,7 @@ void XLinkPeptide::addCandidates(
 //      tested[bidx] = true;
 //      tested[bidx2] = true;
       XLinkablePeptide& pep2 = linkable_peptides[pep_idx2];
-      FLOAT_T current_mass = pep2.getMass();
+      FLOAT_T current_mass = pep2.getMassConst(MONO);
       if (current_mass > pep2_max_mass) {
 	if (pep_idx2 = start_idx2) {
 	  //done = true;
@@ -363,8 +364,8 @@ string XLinkPeptide::getSequenceString() {
  * \returns the mass of the xlink peptide
  */
 FLOAT_T XLinkPeptide::calcMass(MASS_TYPE_T mass_type) {
-  return linked_peptides_[0].getMass(mass_type) + 
-    linked_peptides_[1].getMass(mass_type) + 
+  return linked_peptides_[0].getMassConst(mass_type) + 
+    linked_peptides_[1].getMassConst(mass_type) + 
     linker_mass_;
 }
 
@@ -372,7 +373,7 @@ FLOAT_T XLinkPeptide::calcMass(MASS_TYPE_T mass_type) {
  * \returns a shuffled xlink peptide
  */
 XLinkMatch* XLinkPeptide::shuffle() {
-  //carp(CARP_DEBUG, "XLinkPeptide::shuffle");
+
   XLinkPeptide* decoy = new XLinkPeptide();
   decoy->setZState(getZState());
   decoy->linked_peptides_.push_back(linked_peptides_[0].shuffle());
@@ -400,11 +401,11 @@ void XLinkPeptide::predictIons(
   if (first) {
     linked_peptides_[0].predictIons(
       ion_series, charge, getLinkIdx(0), 
-      linker_mass_ + linked_peptides_[0].getMass(fragment_mass_type)); 
+      linker_mass_ + linked_peptides_[0].getMassConst(fragment_mass_type)); 
   } else {
     linked_peptides_[1].predictIons(
       ion_series, charge, getLinkIdx(1),
-      linker_mass_ + linked_peptides_[1].getMass(fragment_mass_type));
+      linker_mass_ + linked_peptides_[1].getMassConst(fragment_mass_type));
   }
 } 
 
@@ -440,7 +441,7 @@ void XLinkPeptide::predictIons(
     if (ion->isForwardType()) {
       if (cleavage_idx > (unsigned int)getLinkPos(0)) {
         FLOAT_T mass = ion->getMassFromMassZ();
-        mass += linked_peptides_[1].getMass(fragment_mass_type) + linker_mass_;
+        mass += linked_peptides_[1].getMassConst(fragment_mass_type) + linker_mass_;
         ion->setMassZFromMass(mass);
         if (isnan(ion->getMassZ())) {
           carp(CARP_FATAL, "NAN1");
@@ -449,7 +450,7 @@ void XLinkPeptide::predictIons(
     } else {
       if (cleavage_idx >= (strlen(seq1) - (unsigned int)getLinkPos(0))) {
         FLOAT_T mass = ion->getMassFromMassZ();
-        mass += linked_peptides_[1].getMass(fragment_mass_type) + linker_mass_;
+        mass += linked_peptides_[1].getMassConst(fragment_mass_type) + linker_mass_;
         ion->setMassZFromMass(mass);
         if (isnan(ion->getMassZ())) {
           carp(CARP_FATAL, "NAN2");
@@ -484,7 +485,7 @@ void XLinkPeptide::predictIons(
     if (ion->isForwardType()) {
       if (cleavage_idx > (unsigned int)getLinkPos(1)) {
        FLOAT_T mass = ion->getMassFromMassZ();
-       mass += linked_peptides_[0].getMass(fragment_mass_type) + linker_mass_;
+       mass += linked_peptides_[0].getMassConst(fragment_mass_type) + linker_mass_;
        ion->setMassZFromMass(mass);
         if (isnan(ion->getMassZ())) {
           carp(CARP_FATAL, "NAN3");
@@ -493,7 +494,7 @@ void XLinkPeptide::predictIons(
     } else {
       if (cleavage_idx >= (strlen(seq2)-(unsigned int)getLinkPos(1))) {
        FLOAT_T mass = ion->getMassFromMassZ();
-       mass += linked_peptides_[0].getMass(fragment_mass_type) + linker_mass_;
+       mass += linked_peptides_[0].getMassConst(fragment_mass_type) + linker_mass_;
        ion->setMassZFromMass(mass);
         if (isnan(ion->getMassZ())) {
           carp(CARP_FATAL, "NAN4");

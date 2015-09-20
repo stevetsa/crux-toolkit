@@ -61,6 +61,14 @@ XLinkablePeptide::XLinkablePeptide(
   xcorr_link_idx_ = xlinkablepeptide.xcorr_link_idx_;
   xcorr_ = xlinkablepeptide.xcorr_;
   index_ = xlinkablepeptide.index_;
+  for (size_t idx=0;idx<NUMBER_MASS_TYPES;idx++) {
+    if (xlinkablepeptide.mass_calculated_[idx]) {
+      mass_[idx] = xlinkablepeptide.mass_[idx];
+      mass_calculated_[idx] = true;
+    } else {
+      mass_calculated_[idx] = false;
+    }
+  }
 }
 
 XLinkablePeptide::XLinkablePeptide(
@@ -73,6 +81,15 @@ XLinkablePeptide::XLinkablePeptide(
   xcorr_link_idx_ = xlinkablepeptide.xcorr_link_idx_;
   xcorr_ = xlinkablepeptide.xcorr_;
   index_ = xlinkablepeptide.index_;
+    for (size_t idx=0;idx<NUMBER_MASS_TYPES;idx++) {
+    if (xlinkablepeptide.mass_calculated_[idx]) {
+      mass_[idx] = xlinkablepeptide.mass_[idx];
+      mass_calculated_[idx] = true;
+    } else {
+      mass_calculated_[idx] = false;
+    }
+  }  
+
 
 }
 
@@ -373,9 +390,9 @@ Peptide* XLinkablePeptide::getPeptide() {
 /**
  * \returns the mass of the xlinkable peptide
  */
-FLOAT_T XLinkablePeptide::getMass(
+FLOAT_T XLinkablePeptide::calcMass(
   MASS_TYPE_T mass_type
-  ) const {
+  ) {
   if (peptide_ == NULL) {
     return Peptide::calcSequenceMass(sequence_, mass_type);
   } else {
@@ -529,7 +546,13 @@ XLinkablePeptide XLinkablePeptide::shuffle() {
   }
   //cerr<<"Creating new linkable peptide"<<endl;
   XLinkablePeptide ans(peptide, link_sites);
-  //cerr <<"XLinkablePeptide::shufle():done."<<endl;
+  for (size_t idx=0;idx<NUMBER_MASS_TYPES;idx++) {
+    if (mass_calculated_[idx]) {
+      ans.mass_calculated_[idx] = true;
+      ans.mass_[idx] = mass_[idx];
+    }
+  }
+
   return ans;
 } 
 
@@ -590,13 +613,13 @@ bool compareXLinkablePeptideMass(
   const XLinkablePeptide& xpep2
 ) {
 
-  return xpep1.getMass() < xpep2.getMass();
+  return xpep1.getMassConst(MONO) < xpep2.getMassConst(MONO);
 }
 
 bool compareXLinkablePeptideMassToFLOAT(
 					const XLinkablePeptide& xpep1,
 					FLOAT_T mass) {
-  return xpep1.getMass() < mass;
+  return xpep1.getMassConst(MONO) < mass;
 }
 
 /**
