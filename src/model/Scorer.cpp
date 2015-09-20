@@ -32,6 +32,10 @@
 
 using namespace Crux;
 
+FLOAT_T* Scorer::observed_ = NULL;
+size_t Scorer::current_observed_size_ = 0;
+
+
 /**
  * Maximum range for cross correlation offset.
  */
@@ -108,7 +112,7 @@ void Scorer::init() {
   last_idx_ = 0;
   bin_width_ = 0;
   bin_offset_ = 0;
-  observed_ = NULL;
+  //observed_ = NULL;
   theoretical_ = NULL;
 }
 
@@ -175,9 +179,6 @@ Scorer::~Scorer() {
   // score type SP?
   if (intensity_array_ != NULL) {
     free(intensity_array_);
-  }
-  if (observed_ != NULL) {
-    free(observed_);
   }
 }
 
@@ -939,7 +940,10 @@ bool Scorer::createIntensityArrayObserved(
     normalizeEachRegion(observed, max_intensity_per_region, region_selector);
   }
 
-  observed_ = (FLOAT_T*)mycalloc(observed.size(), sizeof(FLOAT_T));
+  if (observed.size() > current_observed_size_) {
+    delete []observed_;
+    observed_ = new FLOAT_T[observed.size()];
+  }
   copy(observed.begin(), observed.end(), observed_);
 
   if (stop_after == XCORR_STEP) {

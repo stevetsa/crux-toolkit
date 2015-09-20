@@ -52,7 +52,8 @@ class Scorer {
   bool use_flanks_; ///< use flanking peaks in calculation of XCorr theoretical
 
   /// used for xcorr
-  FLOAT_T* observed_; ///< used for Xcorr: observed spectrum intensity array
+  static FLOAT_T* observed_; ///< used for Xcorr: observed spectrum intensity array
+  static size_t current_observed_size_;  
   FLOAT_T* theoretical_; ///< used for Xcorr: theoretical spectrum intensity array
 
   /**
