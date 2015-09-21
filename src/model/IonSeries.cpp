@@ -182,7 +182,7 @@ void IonSeries::update(
   
   // iterate over all ions, and free them
   for (unsigned int idx=0;idx<ions_.size();idx++) {
-    delete ions_[idx];
+    Ion::freeIon(ions_[idx]);
   }
   ions_.clear();
   

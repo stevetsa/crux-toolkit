@@ -31,8 +31,16 @@ using namespace std;
 class IonCache {
  protected:
   stack<Ion*> cache_;
+  #ifdef DEBUG
+  int ncheckin;
+  int ncheckout;
+  #endif
  public:
   IonCache() {
+    #ifdef DEBUG
+    ncheckin = 0;
+    ncheckout = 0;
+    #endif
   }
 
   ~IonCache() {
@@ -41,9 +49,15 @@ class IonCache {
       cache_.pop();
       delete ion;
     }
+    #ifdef DEBUG
+    carp(CARP_INFO, "Ion cache check in: %d check out:%d", ncheckin, ncheckout);
+    #endif
   }
 
   Ion* checkout() {
+    #ifdef DEBUG
+    ncheckout++;
+    #endif
     if (cache_.empty()) {
       return (new Ion());
     } else {
@@ -53,6 +67,9 @@ class IonCache {
     }
   }
   void checkin(Ion* ion) {
+    #ifdef DEBUG
+    ncheckin++;
+    #endif
     cache_.push(ion);
   }
 };
