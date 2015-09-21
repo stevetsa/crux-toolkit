@@ -34,34 +34,43 @@ XLinkablePeptideIteratorTopN::XLinkablePeptideIteratorTopN(
 
   carp(CARP_DEBUG, "XLinkablePeptideIteratorTopN: start()");
 
-  //scored_xlp_ = priority_queue<XLinkablePeptide,compareXLinkableXCorr>();
+  scored_xlp_.clear();
 
   XLinkScorer scorer(spectrum, precursor_charge);
   top_n_ = get_int_parameter("xlink-top-n");
-  carp(CARP_DEBUG, "top_in:%i", top_n_);
-  carp(CARP_DEBUG, "precursor:%g", precursor_mass); 
-  carp(CARP_DEBUG, "min:%g", min_mass);
-  carp(CARP_DEBUG, "max:%g", max_mass);
-
+  //carp(CARP_DEBUG, "top_in:%i", top_n_);
+  //carp(CARP_DEBUG, "precursor:%g", precursor_mass); 
+  //carp(CARP_INFO, "min:%g", min_mass);
+  //carp(CARP_INFO, "max:%g", max_mass);
+  
+  //find the begin and end iterators for the given mass range.
   vector<XLinkablePeptide>::iterator biter = XLinkDatabase::getXLinkableFlattenBegin(min_mass);
-  vector<XLinkablePeptide>::iterator eiter = XLinkDatabase::getXLinkableFlattenEnd();
+  vector<XLinkablePeptide>::iterator eiter = XLinkDatabase::getXLinkableFlattenEnd(max_mass);
 
-  while(biter != eiter && biter->getMass(MONO) <= max_mass) {
-    XLinkablePeptide& pep1 = *biter;
-    FLOAT_T delta_mass = precursor_mass - pep1.getMass(MONO) - XLinkPeptide::getLinkerMass();
-    FLOAT_T xcorr = scorer.scoreXLinkablePeptide(pep1, 0, delta_mass);
-    pep1.setXCorr(0, xcorr);
-    scored_xlp_.push_back(pep1);
-    biter++;
-  }
-  //carp(CARP_INFO, "number of xlinkable peptides scored:%d", scored_xlp_.size());
-  if (scored_xlp_.size() > top_n_) {
-    //dont sort if we are getting all of the candidates
+  //carp(CARP_INFO, "biter:%d", biter-XLinkDatabase::getXLinkableFlattenBegin());
+  //carp(CARP_INFO, "eiter:%d", eiter-XLinkDatabase::getXLinkableFlattenBegin());
+  //carp(CARP_INFO, "eiter:%f", eiter->getMass(MONO));
+
+  //check the range to see if we need to score.
+  int range = eiter - biter;
+  //carp(CARP_INFO, "range:%d", range);
+
+  if (range > top_n_) {
+
+    while(biter != eiter) {
+      XLinkablePeptide& pep1 = *biter;
+      FLOAT_T delta_mass = precursor_mass - pep1.getMass(MONO) - XLinkPeptide::getLinkerMass();
+      FLOAT_T xcorr = scorer.scoreXLinkablePeptide(pep1, 0, delta_mass);
+      pep1.setXCorr(0, xcorr);
+      scored_xlp_.push_back(pep1);
+      biter++;
+    }
+    carp(CARP_INFO, "number of xlinkable peptides scored:%d", scored_xlp_.size());
     sort(scored_xlp_.begin(), scored_xlp_.end(), compareXLinkableXCorr);
+  } else {
+    //carp(CARP_INFO, "No scoring needed!");
+    scored_xlp_.insert(scored_xlp_.begin(), biter, eiter);
   }
-  //for (size_t idx=0;idx < scored_xlp_.size() ;idx++) {
-    //carp(CARP_DEBUG, "%i:%s xcorr:%g", idx, scored_xlp_[idx].getSequence(), scored_xlp_[idx].getXCorr());
-  //}
   current_count_ = 0;
   queueNextPeptide();
   

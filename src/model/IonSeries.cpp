@@ -229,12 +229,10 @@ IonSeries::~IonSeries()
 {
   if(modified_aa_seq_){
     freeModSeq(modified_aa_seq_);
-    //    free(modified_aa_seq_);
   }
 
   if(loss_limit_){
     loss_limit_cache.checkin(loss_limit_);
-    //delete []loss_limit_;
   }
   // free constraint?
 
@@ -519,12 +517,13 @@ bool IonSeries::addIonsByCharge(
   // iterate over all different charge
   for(; charge_idx <= max_charge; ++charge_idx){
     // create ion
-    ion = new Ion(ion_type, 
-                  cleavage_idx, 
-                  charge_idx, 
-                  peptide_, 
-                  constraint->getMassType(), 
-                  mass); 
+    ion = Ion::newIon();
+    ion->init(ion_type, 
+              cleavage_idx, 
+              charge_idx, 
+              peptide_, 
+              constraint->getMassType(), 
+              mass); 
     // add ion to ion series
     this->addIon(ion);
   }
@@ -845,7 +844,7 @@ bool IonSeries::generateIons(
     // add/sub thorugh all mod_type modifications!!!
     for(type_idx = type_increment; abs(type_idx) <= abs(modifications[mod_type]); ){
       // copy the src ion, into new ion
-      new_ion = new Ion();
+      new_ion = Ion::newIon();
       Ion::copy(working_ion, new_ion, working_ion->getPeptideSequence());
       
       // add the modification to the new ion
@@ -902,8 +901,8 @@ bool IonSeries::generateIonsFlank()
     // add/sub thorugh all mod_type modifications!!!
     for(type_idx = type_increment; type_idx <= modifications[FLANK]; type_idx += type_increment){
       // copy the src ion, into new ion
-      new_ion = new Ion();
-      new_ion2 = new Ion();
+      new_ion = Ion::newIon();
+      new_ion2 = Ion::newIon();
       Ion::copy(working_ion, new_ion, working_ion->getPeptideSequence());
       Ion::copy(working_ion, new_ion2, working_ion->getPeptideSequence());
       
@@ -1025,7 +1024,7 @@ void IonSeries::copy(
 
     src_ion = *iterator;
     // add ion
-    dest_ion = new Ion();
+    dest_ion = Ion::newIon();
     Ion::copy(src_ion, dest_ion, dest->peptide_);
     dest->addIon(dest_ion);
   }

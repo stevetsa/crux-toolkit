@@ -22,8 +22,44 @@
 #include "util/WinCrux.h"
 #endif
 
+#include <stack>
+
 using namespace Crux;
 using namespace std;
+
+
+class IonCache {
+ protected:
+  stack<Ion*> cache_;
+ public:
+  IonCache() {
+  }
+
+  ~IonCache() {
+    while(!cache_.empty()) {
+      Ion* ion = cache_.top();
+      cache_.pop();
+      delete ion;
+    }
+  }
+
+  Ion* checkout() {
+    if (cache_.empty()) {
+      return (new Ion());
+    } else {
+      Ion* ion = cache_.top();
+      cache_.pop();
+      return(ion);
+    }
+  }
+  void checkin(Ion* ion) {
+    cache_.push(ion);
+  }
+};
+
+
+IonCache ion_cache_;
+
 
 // At one point I need to reverse the endianness for pfile_create to work
   // Apparently that is no longer true. Hence 0 below.
@@ -207,6 +243,17 @@ Ion::Ion(
   const string& peptide, ///< location for the new ion -in
   MASS_TYPE_T mass_type, ///< mass type (average, mono) -in
   FLOAT_T base_mass ///< the base mass of the ion -in
+  ) {
+  init(type, cleavage_idx, charge, peptide, mass_type, base_mass);
+}
+
+void Ion::init(
+  ION_TYPE_T type,   ///< intensity for the new ion -in 
+  int cleavage_idx, ///< index into the peptide amide bonds of this ion
+  int charge, ///< charge of the ion
+  const string& peptide, ///< location for the new ion -in
+  MASS_TYPE_T mass_type, ///< mass type (average, mono) -in
+  FLOAT_T base_mass ///< the base mass of the ion -in
   )
 {
   // get new basic ion
@@ -241,8 +288,14 @@ void Ion::freeIon(
   ion->pointer_count_--;
 
   if (ion->pointer_count_ <= 0) {
-    delete ion;
+    ion_cache_.checkin(ion);//delete ion;
   }
+}
+
+Ion* Ion::newIon() {
+  Ion* ion = ion_cache_.checkout();
+  ion->init();
+  return(ion);
 }
 
 /**

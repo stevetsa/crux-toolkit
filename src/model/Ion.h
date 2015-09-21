@@ -97,7 +97,14 @@ class Ion {
    * initializes an Ion object.
    */
   void init();
-
+  void init(
+    ION_TYPE_T type,   ///< intensity for the new ion -in 
+    int cleavage_idx, ///< index into the peptide amide bonds of this ion
+    int charge, ///< charge of the ion
+    const std::string& peptide, ///< location for the new ion -in
+    MASS_TYPE_T mass_type, ///< mass type (average, mono) -in
+    FLOAT_T base_mass ///< the base mass of the ion -in
+  );
 
   /**
    * \returns An (empty) ion object.
@@ -166,6 +173,8 @@ class Ion {
    * frees A ION_T object
    */
   ~Ion();
+
+  static Ion* newIon();
 
   /**
    * decrements the pointer and free the ion

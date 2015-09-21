@@ -20,6 +20,8 @@ class CompareXCorr {
     return (xpep1.getXCorr() < xpep2.getXCorr());
   }
 };
+
+
 class XLinkablePeptideIteratorTopN: public XLinkablePeptideIterator {
 
  protected:

@@ -618,8 +618,14 @@ bool compareXLinkablePeptideMass(
 
 bool compareXLinkablePeptideMassToFLOAT(
 					const XLinkablePeptide& xpep1,
-					FLOAT_T mass) {
+					const FLOAT_T& mass) {
   return xpep1.getMassConst(MONO) < mass;
+}
+
+bool compareXLinkablePeptideMassToFLOAT2(
+					 const FLOAT_T& mass,
+					 const XLinkablePeptide& xpep1) {
+  return xpep1.getMassConst(MONO) > mass;
 }
 
 /**

@@ -5,6 +5,7 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <algorithm>
 
 using namespace std;
 
@@ -400,13 +401,25 @@ vector<XLinkablePeptide>::iterator XLinkDatabase::getXLinkableFlattenBegin() {
   return(target_xlinkable_peptides_flatten_.begin());
 }
 
-vector<XLinkablePeptide>::iterator XLinkDatabase::getXLinkableFlattenBegin(FLOAT_T min_mass) {
-  return(lower_bound(target_xlinkable_peptides_flatten_.begin(), target_xlinkable_peptides_flatten_.end(),
+vector<XLinkablePeptide>::iterator XLinkDatabase::getXLinkableFlattenBegin(
+  FLOAT_T min_mass) {
+  
+  return(lower_bound(target_xlinkable_peptides_flatten_.begin(), 
+                     target_xlinkable_peptides_flatten_.end(),
 		     min_mass, compareXLinkablePeptideMassToFLOAT));
 }
 
 vector<XLinkablePeptide>::iterator XLinkDatabase::getXLinkableFlattenEnd() {
   return(target_xlinkable_peptides_flatten_.end());
+}
+
+vector<XLinkablePeptide>::iterator XLinkDatabase::getXLinkableFlattenEnd(
+  FLOAT_T max_mass
+  ) {
+  return(std::upper_bound(target_xlinkable_peptides_flatten_.begin(),
+		     target_xlinkable_peptides_flatten_.end(),
+		     max_mass,
+		     compareXLinkablePeptideMassToFLOAT2));
 }
 
 

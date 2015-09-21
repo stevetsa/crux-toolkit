@@ -157,7 +157,7 @@ void LinearPeptide::predictIons(
   ion_series->update(seq, mod_seq);
   ion_series->predictIons();
   free(seq);
-  free(mod_seq);
+  freeModSeq(mod_seq);
 
 }
 

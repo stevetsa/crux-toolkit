@@ -71,6 +71,9 @@ class XLinkDatabase {
   static std::vector<XLinkablePeptide>::iterator getXLinkableFlattenBegin();
   static std::vector<XLinkablePeptide>::iterator getXLinkableFlattenBegin(FLOAT_T min_mass);
   static std::vector<XLinkablePeptide>::iterator getXLinkableFlattenEnd();
+  static std::vector<XLinkablePeptide>::iterator getXLinkableFlattenEnd(
+    FLOAT_T max_mass
+  );
 
   static std::vector<SelfLoopPeptide>::iterator getSelfLoopBegin();
   static std::vector<SelfLoopPeptide>::iterator getSelfLoopEnd();

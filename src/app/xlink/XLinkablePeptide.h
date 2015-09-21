@@ -243,8 +243,18 @@ class XLinkablePeptide : public CacheableMass {
   
 };
 
+
+
 bool compareXLinkablePeptideMass(const XLinkablePeptide& xpep1, const XLinkablePeptide& xpep2);
-bool compareXLinkablePeptideMassToFLOAT(const XLinkablePeptide& xpep1, FLOAT_T mass);
+bool compareXLinkablePeptideMassToFLOAT(
+  const XLinkablePeptide& xpep1, 
+  const FLOAT_T& mass);
+
+bool compareXLinkablePeptideMassToFLOAT2(
+					 const FLOAT_T& mass,
+					 const XLinkablePeptide& xpep1);
+
+
 bool compareXLinkableXCorr(
   const XLinkablePeptide& xpep1,
   const XLinkablePeptide& xpep2
