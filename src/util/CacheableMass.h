@@ -27,6 +27,8 @@ class CacheableMass {
     MASS_TYPE_T mass_type
   ) const;
 
+  static void copy(CacheableMass* src, CacheableMass* dest);
+ 
 };
 
 #endif

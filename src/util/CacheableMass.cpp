@@ -39,5 +39,18 @@ FLOAT_T CacheableMass::getMassConst(
   return (mass_[mass_type]);
 }
 
+void CacheableMass::copy(
+  CacheableMass* src,
+  CacheableMass* dest) {
 
+  for (size_t idx=0;idx < NUMBER_MASS_TYPES;idx++) {
+    if (src->mass_calculated_[idx]) {
+      dest->mass_calculated_[idx] = true;
+      dest->mass_[idx] = src->mass_[idx];
+    } else {
+      dest->mass_calculated_[idx] = false;
+    }
+  }
+
+}
 

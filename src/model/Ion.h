@@ -17,10 +17,11 @@
 #include "util/mass.h"
 #include "objects.h"
 #include "Peak.h"
+#include "util/CacheableMass.h"
 
 static const int MAX_MODIFICATIONS = 4; ///< maximum modifications allowed per ion
 
-class Ion {
+class Ion : public CacheableMass {
 
  protected:
   ION_TYPE_T type_;  ///< type of the ion 
@@ -29,7 +30,7 @@ class Ion {
   // from the N-term
   int charge_; ///< the ion charge
   std::string peptide_sequence_;
-  FLOAT_T peptide_mass_; ///< the mass of the peptide. For efficiency
+  //FLOAT_T peptide_mass_; ///< the mass of the peptide. For efficiency
   int modification_counts_[MAX_MODIFICATIONS]; ///< an array of the number of different ion modifications
   FLOAT_T ion_mass_z_;   ///< The mass/z of the ion. 
   Peak * peak_;  ///< The assigned peak. NULL if no peak // TODO add ptr count
@@ -56,6 +57,10 @@ class Ion {
     ); 
 
   
+  // Override calcMass
+  virtual FLOAT_T calcMass(MASS_TYPE_T mass_type);
+
+
   /**
    * initializes the mass array
    */

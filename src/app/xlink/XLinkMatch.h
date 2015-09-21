@@ -12,7 +12,7 @@
 #include "XLinkMatchCollection.h"
 #include <string>
 #include "model/Match.h"
-#include "CacheableMass.h"
+#include "util/CacheableMass.h"
 
 class XLinkMatch : public Crux::Match, public CacheableMass {
 

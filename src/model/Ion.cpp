@@ -111,11 +111,11 @@ void Ion::init() {
   cleavage_idx_ = 0;
   charge_ = 0;
   peptide_sequence_.clear();
-  peptide_mass_ = 0;
   memset(modification_counts_,0,sizeof(int)*MAX_MODIFICATIONS);
   ion_mass_z_ = 0;
   peak_ = NULL;
   pointer_count_ = 0;
+  CacheableMass::init();
 }
 
 /**
@@ -144,8 +144,6 @@ void Ion::initBasicIon(
   cleavage_idx_ = cleavage_idx;
   charge_ = charge;
   peptide_sequence_ = peptide;
-  // TODO get mass type from param file
-  peptide_mass_ = Peptide::calcSequenceMass(peptide, MONO); 
   peak_ = NULL;
 }
 
@@ -388,7 +386,7 @@ void Ion::printGmtkSingle(
     is_detectable = 1;
   }
 
-  FLOAT_T mz_ratio = (ion_mass_z_)/(peptide_mass_);
+  FLOAT_T mz_ratio = (ion_mass_z_)/(getMass(MONO));
   int mz_int = (int)(mz_ratio * (MZ_INT_MAX - MZ_INT_MIN) + MZ_INT_MIN);
 
   const char* format = "%.6f\t%.6f\t%.6f\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\n";
@@ -439,7 +437,7 @@ void Ion::printGmtkSingleBinary(
   FLOAT_T* float_array = (FLOAT_T*)mycalloc(sizeof(FLOAT_T), SINGLE_ION_FLOATS);
   int* int_array = (int*)mycalloc(sizeof(int), SINGLE_ION_INTS);
 
-  FLOAT_T mz_ratio = (ion_mass_z_)/(peptide_mass_);
+  FLOAT_T mz_ratio = (ion_mass_z_)/getMass(MONO);
   float_array[0] = mz_ratio;                              // 0
   float_array[1] = 0.0;                                   // 1
   float_array[2] = 0.0;                                   // 2
@@ -624,7 +622,7 @@ void Ion::printGmtkPairedBinary(
   int* int_array = (int*)mycalloc(sizeof(int), PAIRED_ION_INTS);
 
   // start with the floats
-  FLOAT_T n_mz_ratio = (first_ion->ion_mass_z_)/(first_ion->peptide_mass_);
+  FLOAT_T n_mz_ratio = (first_ion->ion_mass_z_)/(first_ion->getMass(MONO));
   float_array[0] = n_mz_ratio;                                    // 0
   // TODO 
   // subtract from 1.0?
@@ -919,7 +917,16 @@ void Ion::copy(
   
   dest->ion_mass_z_ = src->ion_mass_z_;
   dest->peptide_sequence_ = peptide_sequence;
-  dest->peptide_mass_ = src->peptide_mass_;
+  CacheableMass::copy(src, dest);
+
+
+}
+
+/*
+ * Overriden function in CacheableMass
+ */
+FLOAT_T Ion::calcMass(MASS_TYPE_T mass_type) {
+  return Peptide::calcSequenceMass(peptide_sequence_, MONO); 
 }
 
 

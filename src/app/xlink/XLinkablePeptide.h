@@ -8,7 +8,7 @@
 
 #include "objects.h"
 #include "model/Peptide.h"
-#include "CacheableMass.h"
+#include "util/CacheableMass.h"
 #include <vector>
 #include <string>
 

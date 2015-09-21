@@ -185,10 +185,7 @@ void XLinkPeptide::addCandidates(
   carp(CARP_DEBUG, "XLinkPeptide::addCandidates - max:%g", max_mass);
 
   if (!pmin_set_) {
-    FLOAT_T min_length_mass = get_mass_amino_acid('G', MONO) * 
-      (FLOAT_T)GlobalParams::getMinLength() + 
-      MASS_H2O_MONO;
-    pmin_ = max((FLOAT_T)GlobalParams::getMinMass(), min_length_mass);
+    pmin_ = XLinkDatabase::getXLinkableBegin()->getMass(GlobalParams::getIsotopicMass());
     pmin_set_ = true;
   }
   FLOAT_T peptide1_min_mass = pmin_;
