@@ -89,6 +89,7 @@ int SearchForXLinks::xlinkSearchMain() {
   }
 
   int scan_num = 0;
+  int skipped_no_candidates = 0;
 
   SpectrumZState zstate;
 
@@ -107,8 +108,9 @@ int SearchForXLinks::xlinkSearchMain() {
 
   // main loop over spectra in ms2 file
 
-
   int search_count = 0;
+  FLOAT_T num_spectra = (FLOAT_T)spectra->getNumSpectra();
+
   // for every observed spectrum 
   carp(CARP_DEBUG, "Searching Spectra");
 
@@ -119,9 +121,10 @@ int SearchForXLinks::xlinkSearchMain() {
     scan_num = spectrum->getFirstScan();
 
     carp(CARP_DEBUG,"count %d scan %d charge %d", search_count, scan_num, zstate.getCharge());
-
-    if (search_count % 10 == 0) {
-      carp(CARP_INFO,"count %d scan %d charge %d", search_count, scan_num, zstate.getCharge());
+    if (search_count > 0 && search_count % 1000 == 0) {
+      carp(CARP_INFO, 
+	   "%d spectrum-charge combinations searched, %5.2f%% complete",
+	   search_count, search_count / num_spectra * 100);
     }
     search_count++;
 
@@ -142,8 +145,12 @@ int SearchForXLinks::xlinkSearchMain() {
       zstate.getNeutralMass(), 
       target_candidates->getMatchTotal());   
 
-    if (target_candidates->getMatchTotal() <= 0) {
-      carp(CARP_INFO, "Skipping scan %d charge %d mass %lg", 
+    if (target_candidates->getMatchTotal() < 0) {
+      carp(CARP_ERROR, "Scan %d has %d candidates.", scan_num, 
+	   target_candidates->getMatchTotal());
+    } else if (target_candidates->getMatchTotal() == 0) {
+      skipped_no_candidates++;
+      carp(CARP_DEBUG, "Skipping scan %d charge %d mass %lg", 
         scan_num, 
 	zstate.getCharge(),
 	zstate.getNeutralMass()
@@ -173,7 +180,6 @@ int SearchForXLinks::xlinkSearchMain() {
     */
     carp(CARP_DEBUG, "scoring decoys");
     decoy_candidates->scoreSpectrum(spectrum);
-    
 
     if (compute_pvalues) {
 
@@ -197,11 +203,11 @@ int SearchForXLinks::xlinkSearchMain() {
             num_peptide_mods,
             true);
         
-  if (train_target_candidates->getMatchTotal() == 0) {
-    carp(CARP_WARNING, "No candidates found in decoy window?  Getting target");
-    delete train_target_candidates;
-    train_target_candidates = new XLinkMatchCollection(*target_candidates);
-  }
+	if (train_target_candidates->getMatchTotal() == 0) {
+	  carp(CARP_WARNING, "No candidates found in decoy window?  Getting target");
+	  delete train_target_candidates;
+	  train_target_candidates = new XLinkMatchCollection(*target_candidates);
+	}
         XLinkMatchCollection* train_candidates = new XLinkMatchCollection(*train_target_candidates);
         //get enough weibull training candidates by shuffling.
         carp(CARP_DEBUG, "Shuffling %d:%d", 
@@ -249,8 +255,6 @@ int SearchForXLinks::xlinkSearchMain() {
 
     } // if (compute_p_values)
 
-
-
     //print out
 
     vector<MatchCollection*> decoy_vec;
@@ -289,6 +293,13 @@ int SearchForXLinks::xlinkSearchMain() {
     carp(CARP_DEBUG, "Done with spectrum %d", scan_num);
     carp(CARP_DEBUG, "=====================================");
   } // get next spectrum
+
+  carp(CARP_INFO, "Skipped %d (%g%%) spectra with 0 candidates.", 
+       skipped_no_candidates, skipped_no_candidates / num_spectra * 100);
+
+  carp(CARP_INFO, "Skipped %d (%g%%) spectra with too few peaks.", 
+       spectrum_iterator->numSkipped(), 
+       spectrum_iterator->numSkipped() / num_spectra * 100);
 
   output_files.writeFooters();
 

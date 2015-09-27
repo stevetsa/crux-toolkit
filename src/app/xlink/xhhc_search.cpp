@@ -183,6 +183,7 @@ int SearchForXLinks::xhhcSearchMain() {
   // main loop over spectra in ms2 file
  
   int search_count = 0;
+  FLOAT_T num_spectra = (FLOAT_T)spectra->getNumSpectra();
 
   // for every observed spectrum 
   while (spectrum_iterator->hasNext()) {
@@ -194,8 +195,11 @@ int SearchForXLinks::xhhcSearchMain() {
     //SCORER_T* scorer = new_scorer(XCORR);
     scan_num = spectrum->getFirstScan();
 
-    if (search_count % 100 == 0)
-      carp(CARP_INFO,"count %d scan %d charge %d", search_count, scan_num, charge);
+    carp(CARP_DEBUG, "count %d scan %d charge %d", search_count, scan_num, charge);
+    if (search_count % 1000 == 0)
+      carp(CARP_INFO, 
+	   "%d spectrum-charge combinations search, %5.2f%% complete",
+	   search_count, search_count / num_spectra * 100);
     search_count++;
 
     //vector<pair<FLOAT_T, LinkedPeptide> > linked_scores;
@@ -215,7 +219,7 @@ int SearchForXLinks::xhhcSearchMain() {
     clock_t start_clock = clock();
 
     
-    carp(CARP_DEBUG, "finding target xpeptides in mass window...%g", precursor_window);
+    carp(CARP_DETAILED_DEBUG, "finding target xpeptides in mass window...%g", precursor_window);
     get_ions_from_window(
       target_xpeptides,
       all_ions,
@@ -225,12 +229,12 @@ int SearchForXLinks::xhhcSearchMain() {
       );
 
     if (target_xpeptides.size() < 1) {
-      carp(CARP_INFO, "not enough precursors found in range, skipping scan %d charge %d", scan_num, charge);
+      carp(CARP_DEBUG, "not enough precursors found in range, skipping scan %d charge %d", scan_num, charge);
       continue;
     }
     
 
-    carp(CARP_DEBUG, "finding training xpeptides in decoy precursor window..%g", precursor_window_weibull);
+    carp(CARP_DETAILED_DEBUG, "finding training xpeptides in decoy precursor window..%g", precursor_window_weibull);
     get_ions_from_window(
   target_decoy_xpeptides,
   all_ions,

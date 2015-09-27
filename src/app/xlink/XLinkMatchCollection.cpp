@@ -259,7 +259,7 @@ XLinkMatchCollection::XLinkMatchCollection(
   for (int idx = 0; idx < isotopes.size();idx++) {
     FLOAT_T precursor_mass;
     get_min_max_mass(precursor_mz_, zstate, isotopes[idx], use_decoy_window, min_mass, max_mass, precursor_mass);
-    carp(CARP_INFO, "isotope %i precursor: %g min:%g max:%g", isotopes[idx], precursor_mass, min_mass, max_mass);
+    carp(CARP_DEBUG, "isotope %i precursor: %g min:%g max:%g", isotopes[idx], precursor_mass, min_mass, max_mass);
     addCandidates(spectrum, precursor_mass, zstate.getCharge(), min_mass, max_mass, bondmap, database, peptide_mods, num_peptide_mods);
   }
 }

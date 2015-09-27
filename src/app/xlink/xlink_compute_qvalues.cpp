@@ -196,13 +196,11 @@ int xlink_compute_qvalues(){
     double rank_pvalue = (double)(idx + 1) / (double) decoy_matches_bonf.numRows();
 
     if ((calc_pvalue > 2 * rank_pvalue) || (calc_pvalue < 0.5 * rank_pvalue)) {
-      carp(CARP_WARNING, "inaccurate p-values!");
-      carp(CARP_WARNING, "scan:%d charge:%d mass: %g rank:%g calc:%g", 
-        decoy_matches_bonf.getInteger("scan", idx),
-        decoy_matches_bonf.getInteger("charge", idx),
-        decoy_matches_bonf.getDouble("spectrum neutral mass"),
-        rank_pvalue,
-        calc_pvalue);
+      carp(CARP_WARNING, "Decoy p-values for scan %d charge %d are non-uniform.",
+	   decoy_matches_bonf.getInteger("scan", idx),
+	   decoy_matches_bonf.getInteger("charge", idx));
+      carp(CARP_WARNING, "Calculated p-value=%g; rank p-value %g; ratio=%g",
+	   calc_pvalue, rank_pvalue, calc_pvalue / rank_pvalue);
     } 
   }
   

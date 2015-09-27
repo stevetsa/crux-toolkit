@@ -65,7 +65,7 @@ XLinkablePeptideIteratorTopN::XLinkablePeptideIteratorTopN(
       scored_xlp_.push_back(pep1);
       biter++;
     }
-    carp(CARP_INFO, "number of xlinkable peptides scored:%d", scored_xlp_.size());
+    carp(CARP_DEBUG, "number of xlinkable peptides scored:%d", scored_xlp_.size());
     sort(scored_xlp_.begin(), scored_xlp_.end(), compareXLinkableXCorr);
   } else {
     //carp(CARP_INFO, "No scoring needed!");

@@ -51,8 +51,6 @@ void XLinkMatch::computeWeibullPvalue(
   ) {
 
   pvalue_ = compute_weibull_pvalue(getScore(XCORR), eta, beta, shift);
-  cerr <<"eta:"<<eta<<" beta:"<<beta<<" shift:"<<shift<<endl;
-  cerr <<"xcorr:"<<getScore(XCORR)<<" pvalue:"<<pvalue_<<endl;
 }
 
 /**

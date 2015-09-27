@@ -262,7 +262,7 @@ void XLinkPeptide::addCandidates(
 //  memset(tested, 0, sizeof(bool)*xpeptide_count*xpeptide_count);
   bool done = false;
   
-  carp(CARP_INFO, "Searching for candidates");
+  carp(CARP_DEBUG, "Searching for candidates");
   for (size_t pep_idx1=0;pep_idx1 < xpeptide_count-1;pep_idx1++) {
     //carp(CARP_INFO, "pep_idx1:%d %d %f", pep_idx1, xpeptide_count-1, linkable_peptides[pep_idx1].getMassConst(MONO));
     XLinkablePeptide& pep1 = linkable_peptides[pep_idx1];
@@ -314,13 +314,10 @@ void XLinkPeptide::addCandidates(
     
   }
    
-  carp(CARP_INFO, "Done searching");
+  carp(CARP_DEBUG, "Done searching");
 //  delete []tested;
 }
   
-
-
-
 /**
  * \returns the candidate type
  */
