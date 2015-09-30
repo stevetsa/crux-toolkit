@@ -20,16 +20,12 @@ using namespace std;
  * constructor that sets up the iterator
  */
 XLinkablePeptideIteratorTopN::XLinkablePeptideIteratorTopN(
-							     Crux::Spectrum* spectrum, ///<spectrum
-							     FLOAT_T precursor_mass, ///< Mass of precursor
+  Crux::Spectrum* spectrum, ///<spectrum
+  FLOAT_T precursor_mass, ///< Mass of precursor
   FLOAT_T min_mass, ///< min mass of candidates
   FLOAT_T max_mass, ///< max mass of candidates
   int precursor_charge, ///< Charge of precursor  
-  Database* database, ///< protein database
-  PEPTIDE_MOD_T** peptide_mods, ///<current peptide mod
-  int num_peptide_mods,
-  bool is_decoy, ///< generate decoy candidates
-  XLinkBondMap& bondmap ///< map of valid links
+  bool is_decoy ///< generate decoy candidates
   ) {
 
   carp(CARP_DEBUG, "XLinkablePeptideIteratorTopN: start()");
@@ -44,8 +40,8 @@ XLinkablePeptideIteratorTopN::XLinkablePeptideIteratorTopN(
   //carp(CARP_INFO, "max:%g", max_mass);
   
   //find the begin and end iterators for the given mass range.
-  vector<XLinkablePeptide>::iterator biter = XLinkDatabase::getXLinkableFlattenBegin(min_mass);
-  vector<XLinkablePeptide>::iterator eiter = XLinkDatabase::getXLinkableFlattenEnd(max_mass);
+  vector<XLinkablePeptide>::iterator biter = XLinkDatabase::getXLinkableFlattenBegin(is_decoy,min_mass);
+  vector<XLinkablePeptide>::iterator eiter = XLinkDatabase::getXLinkableFlattenEnd(is_decoy, max_mass);
 
   //carp(CARP_INFO, "biter:%d", biter-XLinkDatabase::getXLinkableFlattenBegin());
   //carp(CARP_INFO, "eiter:%d", eiter-XLinkDatabase::getXLinkableFlattenBegin());

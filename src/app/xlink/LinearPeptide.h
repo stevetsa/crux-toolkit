@@ -63,9 +63,6 @@ class LinearPeptide : public XLinkMatch {
   static void addCandidates(
     FLOAT_T min_mass, ///< min mass
     FLOAT_T max_mass, ///< max mass
-    Database* database, ///< protein database
-    PEPTIDE_MOD_T** peptide_mods, ///< modifications peptide can take
-    int num_peptide_mods, ///< Number of possible peptide mods
     bool is_decoy,
     XLinkMatchCollection& candidates ///< Vector of possible candidate -inout
     );

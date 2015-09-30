@@ -146,12 +146,8 @@ XLinkMatchCollection::XLinkMatchCollection(
 /**
  * Constructor that finds all possible candidates
  */
-XLinkMatchCollection::XLinkMatchCollection(
-  XLinkBondMap& bondmap, ///< allowable links
-  PEPTIDE_MOD_T** peptide_mods, ///< list of possible modifications
-  int num_peptide_mods, ///< number of possible modifications
-  Database* database ///< protein database
-  ) {
+/*
+XLinkMatchCollection::XLinkMatchCollection() {
   
   carp(CARP_DEBUG, "XLinkMatchCollection(...)");
 
@@ -162,14 +158,12 @@ XLinkMatchCollection::XLinkMatchCollection(
 		NULL,
 		0,
 		1,
-    min_mass, 
-    max_mass, 
-    bondmap, 
-    database, 
-    peptide_mods, 
-    num_peptide_mods);
-  
+		min_mass, 
+		max_mass,
+		false);
+
 }
+*/
 
 /**
  * Constructor that finds all candidates within a mass range
@@ -180,10 +174,7 @@ void XLinkMatchCollection::addCandidates(
   int precursor_charge,
   FLOAT_T min_mass, ///< min mass
   FLOAT_T max_mass, ///< max mass
-  XLinkBondMap& bondmap, ///< allowable links
-  Database* database, ///< protein database
-  PEPTIDE_MOD_T** peptide_mods, ///< list of possible modifications
-  int num_peptide_mods ///< number of possible modifications
+  bool decoy
   ) {
 
   carp(CARP_DEBUG, "XLinkMatchCollection.addCandidates() start");
@@ -196,15 +187,12 @@ void XLinkMatchCollection::addCandidates(
   carp(CARP_DEBUG, "min:%g", min_mass);
   carp(CARP_DEBUG, "max:%g", max_mass);
   XLinkPeptide::addCandidates(
-			      spectrum,
-			      precursor_mass,
-			      precursor_charge,
+    spectrum,
+    precursor_mass,
+    precursor_charge,
     min_mass, 
     max_mass,
-    bondmap,
-    database,
-    peptide_mods,
-    num_peptide_mods,
+    decoy,
     *this);
 
   if (include_linear_peptides_) {
@@ -212,10 +200,7 @@ void XLinkMatchCollection::addCandidates(
     LinearPeptide::addCandidates(
       min_mass,
       max_mass,
-      database,
-      peptide_mods,
-      num_peptide_mods,
-      false,
+      decoy,
       *this);
 
   }
@@ -225,10 +210,7 @@ void XLinkMatchCollection::addCandidates(
     SelfLoopPeptide::addCandidates(
       min_mass,
       max_mass,
-      bondmap,
-      database,
-      peptide_mods,
-      num_peptide_mods,
+      decoy,
       *this);
   }
 }
@@ -240,10 +222,7 @@ void XLinkMatchCollection::addCandidates(
 XLinkMatchCollection::XLinkMatchCollection(
   Crux::Spectrum *spectrum, ///< spectrum
   SpectrumZState& zstate, ///< z-state
-  XLinkBondMap& bondmap, ///< allowable links
-  Database* database,  ///< protein database
-  PEPTIDE_MOD_T** peptide_mods,  ///< list of allowable peptide mods
-  int num_peptide_mods,  ///< number of allowable peptides
+  bool decoy,
   bool use_decoy_window  
   ) {
 
@@ -260,7 +239,8 @@ XLinkMatchCollection::XLinkMatchCollection(
     FLOAT_T precursor_mass;
     get_min_max_mass(precursor_mz_, zstate, isotopes[idx], use_decoy_window, min_mass, max_mass, precursor_mass);
     carp(CARP_DEBUG, "isotope %i precursor: %g min:%g max:%g", isotopes[idx], precursor_mass, min_mass, max_mass);
-    addCandidates(spectrum, precursor_mass, zstate.getCharge(), min_mass, max_mass, bondmap, database, peptide_mods, num_peptide_mods);
+    addCandidates(spectrum, precursor_mass, zstate.getCharge(), 
+		  min_mass, max_mass, decoy);
   }
 }
 

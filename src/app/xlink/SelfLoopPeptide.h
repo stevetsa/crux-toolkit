@@ -65,10 +65,7 @@ class SelfLoopPeptide : public XLinkMatch {
   static void addCandidates(
     FLOAT_T min_mass, ///< min mass
     FLOAT_T max_mass, ///< max mass
-    XLinkBondMap& bondmap,  ///< valid link sites
-    Database* database, ///< protein database
-    PEPTIDE_MOD_T** peptide_mods, ///< allowable modifications
-    int num_peptide_mods, ///< number of allowable modifications
+    bool is_decoy,
     XLinkMatchCollection& candidates ///< collection to add candidates
     );
 

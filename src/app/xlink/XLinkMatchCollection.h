@@ -32,15 +32,12 @@ class XLinkMatchCollection : public MatchCollection {
    * Adds all of the possible candidates given the mass range
    */
   void addCandidates(
-		     Crux::Spectrum *spectrum, ///<spectrum
-		     FLOAT_T precursor_mass, ///< precursor mass
-		     int precursor_charge,
+    Crux::Spectrum *spectrum, ///<spectrum
+    FLOAT_T precursor_mass, ///< precursor mass
+    int precursor_charge,
     FLOAT_T min_mass, ///< minimum mass
-    FLOAT_T max_mass, ///< maximum mass
-    XLinkBondMap& bondmap, ///< map of valid links
-    Database* database, ///< protein database
-    PEPTIDE_MOD_T** peptide_mods, ///< list of possible mods
-    int num_peptide_mods ///< number of possible mods
+    FLOAT_T max_mass,  ///< maximum mass
+    bool decoy ///< decoys?
     );
 
  public:
@@ -58,25 +55,12 @@ class XLinkMatchCollection : public MatchCollection {
   );
 
   /**
-   * Constructor that finds all possible candidates
-   */
-  XLinkMatchCollection(
-    XLinkBondMap& bondmap, ///< allowable links
-    PEPTIDE_MOD_T** peptide_mods, ///< list of allowable peptide mods
-    int num_peptide_mods, ///< number of allowable peptide mods
-    Database* database ///< protein database
-    );
-
-  /**
    * Constructor for finding all candidates within a mass range
    */
   XLinkMatchCollection(
     Crux::Spectrum* spectrum, ///< Spectrum
     SpectrumZState& zstate, ///< z-state
-    XLinkBondMap& bondmap, ///< allowable links
-    Database* database, ///protein database
-    PEPTIDE_MOD_T** peptide_mods, ///< list of allowable peptide mods
-    int num_peptide_mods, ///< number of allowable peptides
+    bool decoy,
     bool use_decoy_window=false ///< decoys?
   );
 

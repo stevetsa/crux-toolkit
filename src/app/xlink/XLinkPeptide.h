@@ -45,7 +45,6 @@ class XLinkPeptide : public XLinkMatch {
   static void addXLinkPeptides(
     XLinkablePeptide& pep1, ///< First linkable peptide
     XLinkablePeptide& pep2, ///< Second linkable peptide
-    XLinkBondMap& bondmap, ///< bondmap describing valid linkages
     XLinkMatchCollection& candidates ///< XLinkable Candidates -out
   );
 
@@ -125,7 +124,6 @@ class XLinkPeptide : public XLinkMatch {
   static void addCandidates(
     FLOAT_T min_mass, ///< min mass of crosslinks
     FLOAT_T max_mass, ///< max mass of crosslinks
-    XLinkBondMap& bondmap, ///< valid crosslink map
     vector<XLinkablePeptide>&, ///< 1st peptide iterator
     XLinkMatchCollection& candidates ///< candidates in/out
     );
@@ -139,10 +137,7 @@ class XLinkPeptide : public XLinkMatch {
 			    int precursor_charge,
     FLOAT_T min_mass, ///< min mass of crosslinks
     FLOAT_T max_mass, ///< max mass of crosslinks
-    XLinkBondMap& bondmap, ///< valid crosslink map
-    Database* database, ///< protein database
-    PEPTIDE_MOD_T** peptide_mods, ///< available variable mods
-    int num_peptide_mods, ///< number of available modifications
+			    bool decoy,
     XLinkMatchCollection& candidates ///< candidates -in/out
     );
 

@@ -14,9 +14,7 @@ XLinkBondMap XLinkDatabase::bondmap_;
 
 vector<vector<Crux::Peptide*> > XLinkDatabase::target_peptides_; ///< all peptides generated with no additional missed cleavage;
 
-std::vector<Crux::Peptide*> XLinkDatabase::decoy_peptides0_;
-std::vector<Crux::Peptide*> XLinkDatabase::decoy_peptides1_;
-std::vector<Crux::Peptide*> XLinkDatabase::decoy_peptides2_;
+vector<vector<Crux::Peptide*> > XLinkDatabase::decoy_peptides_;
 
 std::vector<LinearPeptide> XLinkDatabase::target_linear_peptides_;
 std::vector<LinearPeptide> XLinkDatabase::decoy_linear_peptides_;
@@ -27,9 +25,11 @@ std::vector<SelfLoopPeptide> XLinkDatabase::decoy_selfloop_peptides_;
 std::vector<XLinkablePeptide> XLinkDatabase::target_xlinkable_peptides_;
 std::vector<XLinkablePeptide> XLinkDatabase::decoy_xlinkable_peptides_;
 std::vector<XLinkablePeptide> XLinkDatabase::target_xlinkable_peptides2_; //Peptides that could be selfloops.
+std::vector<XLinkablePeptide> XLinkDatabase::decoy_xlinkable_peptides2_;
 
 std::vector<XLinkablePeptide> XLinkDatabase::target_xlinkable_peptides_flatten_;
-vector<pair<int, vector<XLinkablePeptide> > > XLinkDatabase::protein_idx_to_xpeptides_;
+std::vector<XLinkablePeptide> XLinkDatabase::decoy_xlinkable_peptides_flatten_;
+//vector<pair<int, vector<XLinkablePeptide> > > XLinkDatabase::protein_idx_to_xpeptides_;
 
 
 void XLinkDatabase::initialize() {
@@ -77,6 +77,28 @@ void XLinkDatabase::initialize() {
       target_peptides_[missed_cleavages].push_back(peptide);
     }
     delete peptide_iterator;
+
+    peptide_iterator =
+      new ModifiedPeptidesIterator(
+        GlobalParams::getMinMass(), 
+        GlobalParams::getMaxMass(), 
+        peptide_mod, 
+        true, 
+        protein_database_,
+        additional_cleavages);
+
+    //add the decoys
+    while (peptide_iterator->hasNext()) {
+      
+      Crux::Peptide* peptide = peptide_iterator->next();
+//      carp(CARP_INFO, "Current peptide:%s", peptide->getUnshuffledSequence().c_str());
+      int missed_cleavages = peptide->getMissedCleavageSites();
+      while(decoy_peptides_.size() <= missed_cleavages) {
+	decoy_peptides_.push_back(vector<Crux::Peptide*>());
+      }
+      decoy_peptides_[missed_cleavages].push_back(peptide);
+    }
+    delete peptide_iterator;
   }
   //carp(CARP_FATAL, "stop!");
   
@@ -89,31 +111,47 @@ void XLinkDatabase::initialize() {
   // If linear peptides were asked for, then generate them from the target_peptides0 list.
   if (get_boolean_parameter("xlink-include-linears")) {
     generateAllLinears(false);
-    sort(target_linear_peptides_.begin(), target_linear_peptides_.end(), compareLinearPeptideMass);
-    carp(CARP_INFO, "There are %d linear peptides", target_linear_peptides_.size());
+    sort(target_linear_peptides_.begin(), 
+      target_linear_peptides_.end(), 
+      compareLinearPeptideMass);
+    generateAllLinears(true);
+    sort(decoy_linear_peptides_.begin(), 
+      decoy_linear_peptides_.end(), 
+      compareLinearPeptideMass);
+    carp(CARP_INFO, "There are %d target linear peptides", target_linear_peptides_.size());
+    carp(CARP_INFO, "There are %d decoy linear peptides", decoy_linear_peptides_.size());
   }
 
   //Generate all linkable peptides, allowing for suppressed cleavages
   int max_cleavages = GlobalParams::getMissedCleavages()+1;
   for (size_t cleavage_idx=0;cleavage_idx<=max_cleavages;cleavage_idx++) {
     generateAllLinkablePeptides(target_peptides_[cleavage_idx], target_xlinkable_peptides_);
+    generateAllLinkablePeptides(decoy_peptides_[cleavage_idx], decoy_xlinkable_peptides_);
   }
-  carp(CARP_INFO, "Sorting %d linkable peptides", target_xlinkable_peptides_.size());
-  sort(target_xlinkable_peptides_.begin(), target_xlinkable_peptides_.end(), compareXLinkablePeptideMass);
-  carp(CARP_INFO, "There are %d xlinkable peptides", target_xlinkable_peptides_.size());
 
-  //for (size_t idx = 0;idx < target_xlinkable_peptides_.size();idx++) {
-    //carp(CARP_INFO, "%d %s", idx, target_xlinkable_peptides_[idx].getPeptide()->getUnshuffledSequence().c_str());
-  //}
-  //carp(CARP_FATAL, "stop");
+  sort(
+    target_xlinkable_peptides_.begin(), 
+    target_xlinkable_peptides_.end(), 
+    compareXLinkablePeptideMass);
+
+  sort(
+    decoy_xlinkable_peptides_.begin(), 
+    decoy_xlinkable_peptides_.end(), 
+    compareXLinkablePeptideMass);
+
+  carp(CARP_INFO, "There are %d xlinkable target peptides", target_xlinkable_peptides_.size());
+  carp(CARP_INFO, "There are %d xlinkable decoy peptides", decoy_xlinkable_peptides_.size());
 
   flattenLinkablePeptides(target_xlinkable_peptides_, target_xlinkable_peptides_flatten_);
+  flattenLinkablePeptides(decoy_xlinkable_peptides_, decoy_xlinkable_peptides_flatten_);
 
   //TODO, generate all mono/dead link peptides
 
   if (get_boolean_parameter("xlink-include-selfloops")) {
     generateAllSelfLoops(true);
-    carp(CARP_INFO, "There are %d self loop peptides", target_selfloop_peptides_.size());
+    generateAllSelfLoops(false);
+    carp(CARP_INFO, "There are %d target self loop peptides", target_selfloop_peptides_.size());
+    carp(CARP_INFO, "There are %d decoy self loop peptides", decoy_selfloop_peptides_.size());
   }
 
   //filter linkable peptides based upon user parameters
@@ -189,15 +227,24 @@ void XLinkDatabase::findSelfLoops(
 
 void XLinkDatabase::generateAllSelfLoops(bool decoy) {
 
-  findSelfLoops(target_xlinkable_peptides_, target_selfloop_peptides_);
-  
-  
   int mc = GlobalParams::getMissedCleavages()+2;
-  generateAllLinkablePeptides(target_peptides_[mc], target_xlinkable_peptides2_);
-  findSelfLoops(target_xlinkable_peptides2_, target_selfloop_peptides_);
-
-  sort(target_selfloop_peptides_.begin(), target_selfloop_peptides_.end(), compareSelfLoopPeptideMass);
-
+  if (decoy) {
+    findSelfLoops(decoy_xlinkable_peptides_, decoy_selfloop_peptides_);
+    int mc = GlobalParams::getMissedCleavages()+2;
+    generateAllLinkablePeptides(decoy_peptides_[mc], decoy_xlinkable_peptides2_);
+    findSelfLoops(decoy_xlinkable_peptides2_, decoy_selfloop_peptides_);
+    sort(decoy_selfloop_peptides_.begin(), 
+      decoy_selfloop_peptides_.end(), 
+      compareSelfLoopPeptideMass);
+  } else {
+    findSelfLoops(target_xlinkable_peptides_, target_selfloop_peptides_);
+    generateAllLinkablePeptides(target_peptides_[mc], target_xlinkable_peptides2_);
+    findSelfLoops(target_xlinkable_peptides2_, target_selfloop_peptides_);
+    sort(
+      target_selfloop_peptides_.begin(), 
+      target_selfloop_peptides_.end(), 
+      compareSelfLoopPeptideMass);
+  }
 }
 
 void XLinkDatabase::findLinearPeptides(vector<Crux::Peptide*> &peptides, vector<LinearPeptide>& linear_peptides) {
@@ -214,13 +261,15 @@ void XLinkDatabase::findLinearPeptides(vector<Crux::Peptide*> &peptides, vector<
 
 void XLinkDatabase::generateAllLinears(bool decoy) {
 
-  if (!decoy) {
+  for (size_t cleavage_idx = 0; 
+       cleavage_idx <= GlobalParams::getMissedCleavages(); 
+       cleavage_idx++) {
 
-    for (size_t cleavage_idx = 0; cleavage_idx <= GlobalParams::getMissedCleavages(); cleavage_idx++) {
+    if (decoy) {
+      findLinearPeptides(decoy_peptides_[cleavage_idx], decoy_linear_peptides_);
+    } else {
       findLinearPeptides(target_peptides_[cleavage_idx], target_linear_peptides_);
     }
-  } else {
-    carp(CARP_FATAL, "XLinkDatabase::generateAllLinears(true) not implemented yet!");
   }
 }
 
@@ -238,7 +287,6 @@ void XLinkDatabase::flattenLinkablePeptides(vector<XLinkablePeptide>& xpeptides,
       flattened.push_back(onelink);
     }
   }
-
 }
 
 void XLinkDatabase::filterLinkablePeptides(
@@ -350,28 +398,73 @@ void XLinkDatabase::print() {
     peptides_file.flush();
 }
 
-vector<LinearPeptide>::iterator XLinkDatabase::getLinearBegin() {
+vector<LinearPeptide>::iterator XLinkDatabase::getLinearBegin(
+  bool decoy
+  ) {
 
-  return (target_linear_peptides_.begin());
-
+  if (decoy) {
+    return (decoy_linear_peptides_.begin());
+  } else {
+    return (target_linear_peptides_.begin());
+  }
 }
-vector<LinearPeptide>::iterator XLinkDatabase::getLinearBegin(FLOAT_T min_mass) {
-  return (lower_bound(target_linear_peptides_.begin(), target_linear_peptides_.end(), min_mass, compareLinearPeptideMassToFLOAT)); 
+vector<LinearPeptide>::iterator XLinkDatabase::getLinearBegin(
+  bool decoy,
+  FLOAT_T min_mass
+  ) {
+
+  if (decoy) {
+    return (lower_bound(decoy_linear_peptides_.begin(),
+		        decoy_linear_peptides_.end(),
+                        min_mass,
+                        compareLinearPeptideMassToFLOAT));
+  } else {
+    return (lower_bound(target_linear_peptides_.begin(), 
+                        target_linear_peptides_.end(), 
+                        min_mass, 
+                        compareLinearPeptideMassToFLOAT)); 
+  }
 }
 
-vector<LinearPeptide>::iterator XLinkDatabase::getLinearEnd() {
-  return (target_linear_peptides_.end());
+vector<LinearPeptide>::iterator XLinkDatabase::getLinearEnd(
+  bool decoy
+) {
+
+  if (decoy) {
+    return (decoy_linear_peptides_.end());
+  } else {
+    return (target_linear_peptides_.end());
+  }
 }
 
-vector<SelfLoopPeptide>::iterator XLinkDatabase::getSelfLoopBegin(FLOAT_T min_mass) {
-  return (lower_bound(target_selfloop_peptides_.begin(), 
-                      target_selfloop_peptides_.end(), 
-                      min_mass, 
-                      compareSelfLoopPeptideMassToFLOAT));
+vector<SelfLoopPeptide>::iterator XLinkDatabase::getSelfLoopBegin(
+  bool decoy,
+  FLOAT_T min_mass
+  ) {
+
+  if (decoy) {
+    return (lower_bound(decoy_selfloop_peptides_.begin(), 
+                        decoy_selfloop_peptides_.end(), 
+                        min_mass, 
+                        compareSelfLoopPeptideMassToFLOAT));
+  } else {
+
+    return (lower_bound(target_selfloop_peptides_.begin(), 
+                        target_selfloop_peptides_.end(), 
+                        min_mass, 
+                        compareSelfLoopPeptideMassToFLOAT));
+  }
 }
 
-vector<SelfLoopPeptide>::iterator XLinkDatabase::getSelfLoopEnd() {
-  return(target_selfloop_peptides_.end());
+vector<SelfLoopPeptide>::iterator XLinkDatabase::getSelfLoopEnd(
+  bool decoy
+) {
+
+  if (decoy) {
+    return(decoy_selfloop_peptides_.end());
+  } else {
+    return(target_selfloop_peptides_.end());
+  }
 }
 
 vector<XLinkablePeptide>::iterator XLinkDatabase::getXLinkableBegin() {
@@ -387,8 +480,14 @@ vector<XLinkablePeptide>::iterator XLinkDatabase::getXLinkableEnd() {
     return(target_xlinkable_peptides_.end());
 }
 
-vector<XLinkablePeptide>& XLinkDatabase::getXLinkablePeptides() {
-  return(target_xlinkable_peptides_);
+vector<XLinkablePeptide>& XLinkDatabase::getXLinkablePeptides(
+  bool decoy
+) {
+  if (decoy) {
+    return (decoy_xlinkable_peptides_);
+  } else {
+    return(target_xlinkable_peptides_);
+  }
 }
 
 
@@ -402,11 +501,18 @@ vector<XLinkablePeptide>::iterator XLinkDatabase::getXLinkableFlattenBegin() {
 }
 
 vector<XLinkablePeptide>::iterator XLinkDatabase::getXLinkableFlattenBegin(
-  FLOAT_T min_mass) {
-  
-  return(lower_bound(target_xlinkable_peptides_flatten_.begin(), 
-                     target_xlinkable_peptides_flatten_.end(),
-		     min_mass, compareXLinkablePeptideMassToFLOAT));
+  bool decoy,
+  FLOAT_T min_mass
+  ) {
+  if (decoy) {
+    return(lower_bound(decoy_xlinkable_peptides_flatten_.begin(), 
+                       decoy_xlinkable_peptides_flatten_.end(),
+	  	     min_mass, compareXLinkablePeptideMassToFLOAT));
+  } else {
+    return(lower_bound(target_xlinkable_peptides_flatten_.begin(), 
+                       target_xlinkable_peptides_flatten_.end(),
+	  	     min_mass, compareXLinkablePeptideMassToFLOAT));
+  }
 }
 
 vector<XLinkablePeptide>::iterator XLinkDatabase::getXLinkableFlattenEnd() {
@@ -414,19 +520,30 @@ vector<XLinkablePeptide>::iterator XLinkDatabase::getXLinkableFlattenEnd() {
 }
 
 vector<XLinkablePeptide>::iterator XLinkDatabase::getXLinkableFlattenEnd(
+									 bool decoy,
   FLOAT_T max_mass
   ) {
-  return(std::upper_bound(target_xlinkable_peptides_flatten_.begin(),
-		     target_xlinkable_peptides_flatten_.end(),
+
+  if (decoy) {
+    return(std::upper_bound(decoy_xlinkable_peptides_flatten_.begin(),
+	  	     decoy_xlinkable_peptides_flatten_.end(),
 		     max_mass,
 		     compareXLinkablePeptideMassToFLOAT2));
+  } else {
+
+    return(std::upper_bound(target_xlinkable_peptides_flatten_.begin(),
+	  	     target_xlinkable_peptides_flatten_.end(),
+		     max_mass,
+		     compareXLinkablePeptideMassToFLOAT2));
+  }
 }
 
-
+/*
 vector<pair<int, vector<XLinkablePeptide> > >& XLinkDatabase::getTargetProteinIdxToXPeptides() {
   return protein_idx_to_xpeptides_;
 
 }
+*/
 
 int XLinkDatabase::getNLinkable() {
   return(target_xlinkable_peptides_.size());

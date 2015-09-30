@@ -69,16 +69,13 @@ SelfLoopPeptide::SelfLoopPeptide(
 void SelfLoopPeptide::addCandidates(
   FLOAT_T min_mass, ///< min mass
   FLOAT_T max_mass, ///< max mass
-  XLinkBondMap& bondmap,  ///< valid link sites
-  Database* database, ///< protein database
-  PEPTIDE_MOD_T** peptide_mods, ///< allowable modifications
-  int num_peptide_mods, ///< number of allowable modifications
+  bool is_decoy, ///< is decoy.
   XLinkMatchCollection& candidates ///< collection to add candidates
   ) {
 
 
-  vector<SelfLoopPeptide>::iterator biter = XLinkDatabase::getSelfLoopBegin(min_mass);
-  vector<SelfLoopPeptide>::iterator eiter = XLinkDatabase::getSelfLoopEnd();
+  vector<SelfLoopPeptide>::iterator biter = XLinkDatabase::getSelfLoopBegin(is_decoy, min_mass);
+  vector<SelfLoopPeptide>::iterator eiter = XLinkDatabase::getSelfLoopEnd(is_decoy);
 
   while (biter != eiter && biter->getMass(GlobalParams::getIsotopicMass()) <= max_mass) {
     biter->incrementPointerCount();

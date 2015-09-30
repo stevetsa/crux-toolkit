@@ -284,7 +284,7 @@ void MatchFileWriter::addColumnNames(CruxApplication* application,
   addColumnName(XCORR_RANK_COL);
   addColumnName(DISTINCT_MATCHES_SPECTRUM_COL);
   addColumnName(SEQUENCE_COL);
-  addColumnName(CLEAVAGE_TYPE_COL);
+  //addColumnName(CLEAVAGE_TYPE_COL);
   addColumnName(PROTEIN_ID_COL);
   addColumnName(FLANKING_AA_COL);
   if ((has_decoys || OutputFiles::isConcat()) &&

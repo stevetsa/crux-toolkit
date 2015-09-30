@@ -53,19 +53,12 @@ LinearPeptide::LinearPeptide(
 void LinearPeptide::addCandidates(
   FLOAT_T min_mass,  ///< min mass
   FLOAT_T max_mass,  ///< max mass
-  Database* database, ///< protein database
-  PEPTIDE_MOD_T** peptide_mods, ///< modifications peptide can take
-  int num_peptide_mods, ///< Number of possible peptide mods
   bool is_decoy, ///< generate decoy canidates
   XLinkMatchCollection& candidates ///< Vector of candidate -inout
   ) {
 
-  if (is_decoy) {
-    carp(CARP_FATAL, "decoys not implemented!");
-  }
-
-  vector<LinearPeptide>::iterator siter = XLinkDatabase::getLinearBegin(min_mass);
-  vector<LinearPeptide>::iterator eiter = XLinkDatabase::getLinearEnd();
+  vector<LinearPeptide>::iterator siter = XLinkDatabase::getLinearBegin(is_decoy, min_mass);
+  vector<LinearPeptide>::iterator eiter = XLinkDatabase::getLinearEnd(is_decoy);
 
   while (siter != eiter && siter->getMass(GlobalParams::getIsotopicMass()) <= max_mass) {
     siter->incrementPointerCount();
