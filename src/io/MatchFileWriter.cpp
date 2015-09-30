@@ -222,6 +222,9 @@ void MatchFileWriter::addColumnNames(CruxApplication* application,
     break;
 
   case XLINK_SEARCH_COMMAND:
+    if (Params::GetBool("file-column")) {
+      addColumnName(FILE_COL);
+    }
     if (get_boolean_parameter("compute-p-values")) {
       addColumnName(PVALUE_COL);
       addColumnName(ETA_COL);
