@@ -11,6 +11,7 @@
 #include "XLinkPeptide.h"
 #include "XLinkScorer.h"
 #include "XLinkDatabase.h"
+#include "util/GlobalParams.h"
 #include <iostream>
 
 
@@ -33,7 +34,7 @@ XLinkablePeptideIteratorTopN::XLinkablePeptideIteratorTopN(
   scored_xlp_.clear();
 
   XLinkScorer scorer(spectrum, precursor_charge);
-  top_n_ = get_int_parameter("xlink-top-n");
+  top_n_ = GlobalParams::getXLinkTopN();
   //carp(CARP_DEBUG, "top_in:%i", top_n_);
   //carp(CARP_DEBUG, "precursor:%g", precursor_mass); 
   //carp(CARP_INFO, "min:%g", min_mass);

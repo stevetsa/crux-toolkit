@@ -27,7 +27,8 @@ class GlobalParams {
   static bool xlink_include_intra_;
   static bool xlink_include_inter_intra_;
   static int max_xlink_mods_;
-
+  static int mod_precision_;
+  static int xlink_top_n_;
  public:
   static void set();
   
@@ -53,4 +54,6 @@ class GlobalParams {
   static const bool& getXLinkIncludeIntra();
   static const bool& getXLinkIncludeInterIntra();
   static const int& getMaxXLinkMods();
+  static const int& getModPrecision();
+  static const int& getXLinkTopN();
 };

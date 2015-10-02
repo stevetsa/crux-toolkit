@@ -456,7 +456,7 @@ void MatchCollection::printXmlHeader(
   }
   time_t hold_time;
   ENZYME_T enzyme = GlobalParams::getEnzyme();
-  char* enz_str = enzyme_type_to_string(enzyme);
+  const char* enz_str = enzyme_type_to_string(enzyme);
   string database = get_string_parameter("protein-database");
 
   MASS_TYPE_T isotopic_mass_type = GlobalParams::getIsotopicMass();
@@ -560,7 +560,6 @@ void MatchCollection::printXmlHeader(
 #ifndef DARWIN
   free(absolute_database_path);
 #endif
-  free(enz_str);
 
 
   char aa_str[2];
@@ -785,8 +784,8 @@ void MatchCollection::printSqtHeader(
 
   ENZYME_T enzyme = get_enzyme_type_parameter("enzyme");
   DIGEST_T digestion = get_digest_type_parameter("digestion");
-  char* enz_str = enzyme_type_to_string(enzyme);
-  char* dig_str = digest_type_to_string(digestion);
+  const char* enz_str = enzyme_type_to_string(enzyme);
+  const char* dig_str = digest_type_to_string(digestion);
   char custom_str[SMALL_BUFFER];
   if( enzyme == CUSTOM_ENZYME){
     string rule = get_string_parameter("custom-enzyme");
@@ -795,8 +794,6 @@ void MatchCollection::printSqtHeader(
     custom_str[0] = 0;
   }
   fprintf(output, "H\tEnzymeSpec\t%s-%s%s\n", enz_str, dig_str, custom_str);
-  free(enz_str);
-  free(dig_str);
   // write a comment that says what the scores are
   fprintf(output, "H\tLine fields: S, scan number, scan number, "
           "charge, 0, server, experimental mass, total ion intensity, "

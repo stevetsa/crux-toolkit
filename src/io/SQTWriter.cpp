@@ -148,16 +148,14 @@ void SQTWriter::writeHeader(
 
   ENZYME_T enzyme = get_enzyme_type_parameter("enzyme");
   DIGEST_T digestion = get_digest_type_parameter("digestion");
-  char* enz_str = enzyme_type_to_string(enzyme);
-  char* dig_str = digest_type_to_string(digestion);
+  const char* enz_str = enzyme_type_to_string(enzyme);
+  const char* dig_str = digest_type_to_string(digestion);
   string custom_str;
   if( enzyme == CUSTOM_ENZYME){
     string rule = get_string_parameter("custom-enzyme");
     custom_str = ", custom pattern: " + rule;
   }
   *file_ << "H\tEnzymeSpec\t" << enz_str << "-" << dig_str << custom_str << endl;
-  free(enz_str);
-  free(dig_str);
 
   // write a comment that says what the scores are
   *file_ << "H\tLine fields: S, scan number, scan number,"

@@ -458,16 +458,14 @@ void Match::printOneMatchField(
   case CLEAVAGE_TYPE_COL:
     {
       ENZYME_T enzyme = GlobalParams::getEnzyme();
-      char* enzyme_string = enzyme_type_to_string(enzyme);
+      const char* enzyme_string = enzyme_type_to_string(enzyme);
       DIGEST_T digestion = GlobalParams::getDigestion();
-      char* digestion_string = digest_type_to_string(digestion);
+      const char* digestion_string = digest_type_to_string(digestion);
       string cleavage_str = enzyme_string;
       cleavage_str += "-";
       cleavage_str += digestion_string;
       output_file->setColumnCurrentRow((MATCH_COLUMNS_T)column_idx, 
                                        cleavage_str.c_str() );
-      free(enzyme_string);
-      free(digestion_string);
     }
     break;
   case PROTEIN_ID_COL:

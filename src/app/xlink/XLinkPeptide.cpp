@@ -192,7 +192,7 @@ void XLinkPeptide::addCandidates(
   carp(CARP_DEBUG, "peptide1_min:%g", peptide1_min_mass);
   carp(CARP_DEBUG, "peptide1_max:%g", peptide1_max_mass);
 
-  if (get_int_parameter("xlink-top-n") > 0) {
+  if (GlobalParams::getXLinkTopN() > 0) {
     vector<XLinkablePeptide> xlinkable_peptides;
     XLinkablePeptideIteratorTopN xlp_iter(spectrum, 
 					  precursor_mass, 

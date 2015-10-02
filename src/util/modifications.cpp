@@ -364,7 +364,7 @@ char* modified_aa_string_to_string_with_masses(
     }
   }
 
-  int precision = get_int_parameter("mod-precision");
+  int precision = GlobalParams::getModPrecision();//get_int_parameter("mod-precision");
   // max total length = #aas + ( #mods * (strlen("[000.,]")+precision) ) + '/0'
   int buffer_size = length + (count * (9 + precision)) + 1;
   char* return_string = (char*)mymalloc(buffer_size * sizeof(char));

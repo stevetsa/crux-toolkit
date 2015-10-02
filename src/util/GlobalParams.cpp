@@ -26,6 +26,8 @@ bool GlobalParams::xlink_include_inter_;
 bool GlobalParams::xlink_include_intra_;
 bool GlobalParams::xlink_include_inter_intra_;
 int GlobalParams::max_xlink_mods_;
+int GlobalParams::mod_precision_;
+int GlobalParams::xlink_top_n_;
 
 void GlobalParams::set() {
   isotopic_mass_ = get_mass_type_parameter("isotopic-mass");
@@ -50,6 +52,8 @@ void GlobalParams::set() {
   xlink_include_intra_ = get_boolean_parameter("xlink-include-intra");
   xlink_include_inter_intra_ = get_boolean_parameter("xlink-include-inter-intra");
   max_xlink_mods_ = get_int_parameter("max-xlink-mods");
+  mod_precision_ = get_int_parameter("mod-precision");
+  xlink_top_n_ = get_int_parameter("xlink-top-n");
 }
 
 const MASS_TYPE_T& GlobalParams::getIsotopicMass() {
@@ -138,4 +142,12 @@ const bool& GlobalParams::getXLinkIncludeInterIntra() {
   
 const int& GlobalParams::getMaxXLinkMods() {
   return max_xlink_mods_;
+}
+
+const int& GlobalParams::getModPrecision() {
+  return mod_precision_;
+}
+
+const int& GlobalParams::getXLinkTopN() {
+  return xlink_top_n_;
 }

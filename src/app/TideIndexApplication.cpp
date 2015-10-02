@@ -77,9 +77,8 @@ int TideIndexApplication::main(
   int missed_cleavages = get_int_parameter("missed-cleavages");
   DIGEST_T digestion = get_digest_type_parameter("digestion");
   ENZYME_T enzyme_t = get_enzyme_type_parameter("enzyme");
-  char* enzymePtr = enzyme_type_to_string(enzyme_t);
+  const char* enzymePtr = enzyme_type_to_string(enzyme_t);
   string enzyme(enzymePtr);
-  free(enzymePtr);
   if (enzyme == "no-enzyme") {
     enzyme = "none";
   } else if (digestion != FULL_DIGEST && digestion != PARTIAL_DIGEST) {
