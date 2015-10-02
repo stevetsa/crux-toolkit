@@ -79,7 +79,7 @@ class Match {
   int b_y_ion_matched_; ///< number of b, y ion matched while scoring SP
   int b_y_ion_possible_; ///< number of possible b, y ion while scoring SP
   bool null_peptide_; ///< Is the match a null (decoy) peptide match?
-  char* peptide_sequence_; ///< peptide sequence is that of peptide or shuffled
+  const char* peptide_sequence_; ///< peptide sequence is that of peptide or shuffled
   MODIFIED_AA_T* mod_sequence_; ///< seq of peptide or shuffled if null peptide
   DIGEST_T digest_;
   SpectrumZState zstate_;

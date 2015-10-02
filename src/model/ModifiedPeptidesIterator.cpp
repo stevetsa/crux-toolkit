@@ -179,9 +179,8 @@ bool ModifiedPeptidesIterator::queueNextPeptide(){
   Peptide* unmod_peptide = peptide_source_->next();
   
   IF_CARP_DETAILED_DEBUG(
-    char* debugseq = unmod_peptide->getSequence();
+    const char* debugseq = unmod_peptide->getSequence();
     carp(CARP_DETAILED_DEBUG, "Next peptide in pep_gen is %s", debugseq);
-    free(debugseq);
   )
 
   // apply modifications, discard peptides that can't be modified
@@ -202,10 +201,9 @@ bool ModifiedPeptidesIterator::queueNextPeptide(){
   }
 
   IF_CARP_DETAILED_DEBUG(
-    char* umodseq = unmod_peptide->getSequence();
+    const char* umodseq = unmod_peptide->getSequence();
     carp(CARP_DETAILED_DEBUG, "Iterator is modifying peptide %s",
          umodseq);
-    free(umodseq);
   )
   modify_peptide(unmod_peptide, 
                  peptide_modification_, 

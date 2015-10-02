@@ -80,6 +80,7 @@ void Peptide::init() {
   peptide_srcs_.clear();
   modified_seq_ = NULL;
   decoy_modified_seq_ = NULL;
+  sequence_ = NULL;
 }
 
 /* Public functions--Allocators/Deallocators */
@@ -250,6 +251,10 @@ Peptide::~Peptide() {
   if(decoy_modified_seq_){
     freeModSeq(decoy_modified_seq_);
   }
+  if (sequence_) {
+    std::free(sequence_);
+  }
+
 }
 
 // Public functions--Getters and Setters 
@@ -434,7 +439,7 @@ static bool equal_peptides(
  * Returns decoy sequence for decoy peptides.
  * \returns The newly-allocated sequence of peptide
  */
-char* Peptide::getSequence() {
+const char* Peptide::getSequence() {
 
   //Check that the peptide has parent(s)
   if(peptide_srcs_.empty()   ){
@@ -442,17 +447,17 @@ char* Peptide::getSequence() {
     return NULL;
   }
 
-  char* seq_copy = NULL;
-
-  if(decoy_modified_seq_ != NULL){
-    seq_copy = modified_aa_to_unmodified_string(decoy_modified_seq_, 
-                                                length_);
+  if (sequence_ == NULL) {
+    if(decoy_modified_seq_ != NULL){
+      sequence_ = modified_aa_to_unmodified_string(decoy_modified_seq_, 
+                                              length_);
+    } else {
+      sequence_ = my_copy_string(getUnshuffledSequence().c_str());
+    }
   } else {
-    //TODO optimize SJM 2015_09_17
-    seq_copy = my_copy_string(getUnshuffledSequence().c_str());
+    //carp(CARP_INFO, "returning cached sequence!");
   }
- 
-  return seq_copy; 
+  return sequence_; 
 }
 
 /**
@@ -705,9 +710,8 @@ MODIFIED_AA_T* Peptide::getModifiedAASequence(){
 
   } else {// create one from char seq
     carp(CARP_DETAILED_DEBUG, "mod seq NOT cached");
-    char* seq = getSequence();
+    const char* seq = getSequence();
     convert_to_mod_aa_seq(seq, &seq_copy);
-    std::free(seq);
   }
   
   return seq_copy;
@@ -732,11 +736,21 @@ void Peptide::setModifiedAASequence(
     }
     decoy_modified_seq_ = copy_mod_aa_seq(mod_seq);
   }
+
+  if (sequence_) {
+    std::free(sequence_);
+    sequence_ = NULL;
+  }
+
 }
 
 
 void Peptide::setDecoyModifiedSeq(MODIFIED_AA_T* decoy_modified_seq) {
   decoy_modified_seq_ = decoy_modified_seq;
+  if (sequence_) {
+    std::free(sequence_);
+    sequence_ = NULL;
+  }
 }
 
 
@@ -756,7 +770,7 @@ char* Peptide::getModifiedSequenceWithSymbols() {
     seq_string = 
       modified_aa_string_to_string_with_symbols(decoy_modified_seq_, length_); 
   } else if( modified_seq_ == NULL ){
-    seq_string = getSequence();
+    seq_string = my_copy_string(getSequence());
   }else{
     seq_string = 
       modified_aa_string_to_string_with_symbols(modified_seq_, length_);
@@ -788,7 +802,7 @@ char* Peptide::getModifiedSequenceWithMasses(
                                                length_,
                                                mass_format); 
   } else if( modified_seq_ == NULL ){
-    seq_string = getSequence();
+    seq_string = my_copy_string(getSequence());
   }else{
     seq_string = 
       modified_aa_string_to_string_with_masses(modified_seq_,
@@ -814,7 +828,7 @@ char* Peptide::getUnshuffledModifiedSequence() {
 
   char* seq_string = NULL;
   if( modified_seq_ == NULL ){
-    seq_string = getSequence();
+    seq_string = my_copy_string(getSequence());
   }else{
     seq_string = 
       modified_aa_string_to_string_with_symbols(modified_seq_,
@@ -878,9 +892,8 @@ FLOAT_T Peptide::calcMass(
   ) {
 
   FLOAT_T peptide_mass = 0;
-  char* seq = getSequence();
+  const char* seq = getSequence();
   peptide_mass = calcSequenceMass(seq, mass_type);
-  std::free(seq);
   
   return peptide_mass;
 }
@@ -1130,6 +1143,10 @@ void Peptide::transformToDecoy(){
   if(decoy_modified_seq_){ 
     freeModSeq(decoy_modified_seq_); 
   }
+  if (sequence_) {
+    std::free(sequence_);
+    sequence_ = NULL;
+  }
   // if the peptide is already modified, shuffle the modified sequence
   if(modified_seq_){
     MODIFIED_AA_T* new_seq = NULL;
@@ -1163,7 +1180,7 @@ static const int MAX_SHUFFLES = 5; // Don't bother trying to shuffle more than t
 char* Peptide::generateShuffledSequence() {
 
   // Allocate a copy of the peptide.
-  char* sequence = getSequence();
+  char* sequence = my_copy_string(getSequence());
   int length = length_;
 
   // Shuffle from left to right, using the Knuth algorithm for shuffling.
@@ -1197,7 +1214,7 @@ char* Peptide::generateShuffledSequence() {
  */
 char* Peptide::generateReversedSequence() {
 
-  char* sequence = getSequence();
+  char* sequence = my_copy_string(getSequence());
   int length = length_;
   int start_idx = 1;       // leave first ...
   int end_idx = length -2; // ...and last residue in place
@@ -1540,7 +1557,7 @@ void Peptide::printInFormat(
 
   Protein* parent = NULL;
   int start_idx = 0;
-  char* sequence = NULL;
+  const char* sequence = NULL;
 
   // print mass of the peptide
     fprintf(file, "%.2f", peptide_mass_);
@@ -1575,9 +1592,9 @@ void Peptide::printInFormat(
  }
 
   // free sequence if allocated
-  if(flag_out){
-    std::free(sequence);
-  }
+  //  if(flag_out){
+  //  std::free(sequence);
+  //}
 }
 
 // TODO: this should be merged with other print, flags for optional
@@ -1595,7 +1612,7 @@ void Peptide::printFilteredInFormat(
   FILE* file  ///< the out put stream -out
   ) {
 
-  char* sequence = NULL;
+  const char* sequence = NULL;
   // bool light = false;
 
   // print mass of the peptide
@@ -1662,9 +1679,9 @@ void Peptide::printFilteredInFormat(
 */
 
   // free sequence if allocated
-  if(flag_out){
-    std::free(sequence);
-  }
+  //  if(flag_out){
+  //  std::free(sequence);
+  // }
 }
 
 
@@ -1695,7 +1712,7 @@ bool Peptide::serialize(
   PeptideSrc* peptide_src = NULL;
   int num_src = 0;
   
-  char* seq = getSequence();
+  const char* seq = getSequence();
   carp(CARP_DETAILED_DEBUG, "Serializing peptide %s, len %i, mass %.2f src:%i", 
        seq, length_, peptide_mass_, peptide_srcs_.size());
   
@@ -1746,7 +1763,7 @@ bool Peptide::serialize(
   fwrite(modified_seq_, sizeof(MODIFIED_AA_T), mod_seq_length, file);
 
 
-  std::free(seq);
+  //std::free(seq);
   
   // If a text file was given, print the peptide in ASCII.
   if (text_file != NULL) {
@@ -2021,7 +2038,7 @@ RESIDUE_ITERATOR_T* new_residue_iterator(
   
   residue_iterator->peptide =  peptide;
   residue_iterator->residue_idx = 0;
-  residue_iterator->sequence = peptide->getSequence();
+  residue_iterator->sequence = my_copy_string(peptide->getSequence());
   return residue_iterator;
 }        
 

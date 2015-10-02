@@ -403,12 +403,11 @@ FLOAT_T XLinkablePeptide::calcMass(
 /**
  * \returns an allocated sequence c-string.  Must be freed
  */
-char* XLinkablePeptide::getSequence() {
+const char* XLinkablePeptide::getSequence() {
   if (peptide_ == NULL) {
-    return my_copy_string(sequence_);
+    return(sequence_);
   } else {
-    char* seq = peptide_->getSequence();
-    return seq;
+    return(peptide_->getSequence());
   }
 }
 
@@ -459,7 +458,7 @@ char* generateShuffledSequence(
   vector<int>& link_sites
   ) {
 
-  char* sequence = peptide->getSequence();
+  char* sequence = my_copy_string(peptide->getSequence());
 
   int length = peptide->getLength();
 
@@ -687,7 +686,7 @@ void XLinkablePeptide::predictIons(
   //  carp(CARP_INFO, "Predict ions called on this linkable peptide:%d times %s link: %d charge:%d", predict_ions_call_count_, seq.c_str(), link_idx, charge);
   //}
     
-  char* seq = getSequence();
+  const char* seq = getSequence();
   MODIFIED_AA_T* mod_seq = getModifiedSequence();
   int link_pos = link_sites_[link_idx];
 
@@ -727,7 +726,6 @@ void XLinkablePeptide::predictIons(
     //    ion_series->addIon(ion);
   }
 
-  free(seq); 
   freeModSeq(mod_seq);
 }
 

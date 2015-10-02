@@ -76,17 +76,16 @@ void PMCPepXMLWriter::writePSMs(
     int spec_charge = zstate.getCharge();
 
     // get sequence and modified sequence
-    char* seq;
+    const char* seq;
     seq = peptide->getSequence();
     string seq_str(seq);
-    free(seq);
     MODIFIED_AA_T* mod_seq = peptide->getModifiedAASequence();
-    seq =
+    char* seq2 =
       modified_aa_string_to_string_with_masses(mod_seq, peptide->getLength(),
       get_mass_format_type_parameter("mod-mass-format"));
-    string mod_seq_str(seq);
-    free(seq);
-    free(mod_seq);
+    string mod_seq_str(seq2);
+    free(seq2);
+    freeModSeq(mod_seq);
     // get flanking aas
     char* flanking = peptide->getFlankingAAs();
     string flanking_str(flanking);

@@ -167,7 +167,7 @@ IonSeries::IonSeries(
  * peptide sequence. 
  */
 void IonSeries::update(
-  char* peptide, ///< The peptide sequence with no mod characters. -in
+  const char* peptide, ///< The peptide sequence with no mod characters. -in
   MODIFIED_AA_T* mod_seq ///< modified version of char* sequence -in
   ) 
 {

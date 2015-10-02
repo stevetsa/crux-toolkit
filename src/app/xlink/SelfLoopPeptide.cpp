@@ -147,7 +147,7 @@ void SelfLoopPeptide::predictIons(
   int charge ///< charge state
   ) {
   
-  char* seq = linked_peptide_.getSequence();
+  const char* seq = linked_peptide_.getSequence();
   MODIFIED_AA_T* mod_seq = linked_peptide_.getModifiedSequence();
   ion_series->setCharge(charge);
   ion_series->update(seq, mod_seq);
@@ -158,7 +158,7 @@ void SelfLoopPeptide::predictIons(
   unsigned int first_site = min(getLinkPos(0), getLinkPos(1));
   unsigned int second_site = max(getLinkPos(0), getLinkPos(1));
   unsigned int N = strlen(seq);
-  free(seq);
+
 
   //iterate through the ions and modify the ones that have the linker 
   //attached.

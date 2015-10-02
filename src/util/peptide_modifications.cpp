@@ -352,7 +352,7 @@ bool is_peptide_modifiable
     return true;
   }
 
-  char* sequence = peptide->getSequence();
+  char* sequence = my_copy_string(peptide->getSequence());
 
   // for each aa_mod (skip those not in peptide_mod)
   
@@ -477,7 +477,7 @@ int modify_peptide(
   }
 
   // get the peptide sequence and convert to MODIFIED_AA_T*
-  char* sequence = peptide->getSequence();
+  char* sequence = my_copy_string(peptide->getSequence());
   MODIFIED_AA_T* pre_modified_seq = NULL;
   convert_to_mod_aa_seq(sequence, &pre_modified_seq);
 

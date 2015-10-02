@@ -122,9 +122,11 @@ Match::~Match() {
   if(post_process_match_ && spectrum_ !=NULL){
     delete spectrum_;
   }
+  /*
   if (peptide_sequence_ != NULL){
     free(peptide_sequence_);
   }
+  */
   if (mod_sequence_ != NULL){
     free(mod_sequence_);
   }

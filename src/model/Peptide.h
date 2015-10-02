@@ -50,7 +50,7 @@ class Peptide {
   unsigned char length_; ///< The length of the peptide
   FLOAT_T peptide_mass_;   ///< The peptide's mass.
   std:: vector<PeptideSrc*> peptide_srcs_; ///< a vector of peptide_srcs_
-
+  char* sequence_; ///< cached sequence result
   std::string unshuffled_sequence_;
   MODIFIED_AA_T* modified_seq_; ///< peptide sequence with modifications
   MODIFIED_AA_T* decoy_modified_seq_; ///< randomized peptide sequence
@@ -236,7 +236,7 @@ class Peptide {
    * least one peptide src 
    * \returns A newly allocated copy of the sequence.
    */
-  char* getSequence();
+  const char* getSequence();
 
   /**
    * \brief Get a string representation of the target (unshuffled)

@@ -77,9 +77,8 @@ PeptidePtr MzIdentMLWriter::getPeptide(
   Crux::Peptide* peptide ///< Peptide -in
   ) {
  
-  char* sequence = peptide->getSequence();
+  const char* sequence = peptide->getSequence();
   string sequence_str = sequence;
-  free(sequence);
 
   int mod_count = peptide->countModifiedAAs();
 
@@ -201,9 +200,8 @@ DBSequencePtr MzIdentMLWriter::getDBSequence(
  
   string sequence_str;
   if (is_post_process) {
-    char* seq = peptide->getSequence();
+    const char* seq = peptide->getSequence();
     sequence_str = seq;
-    free(seq);
   }
 
   for (dbs_iter = mzid_->sequenceCollection.dbSequences.begin();
@@ -244,9 +242,8 @@ PeptideEvidencePtr MzIdentMLWriter::getPeptideEvidence(
   bool is_decoy,
   string& protein_id) {
 
-  char* seq = peptide->getSequence();
+  const char* seq = peptide->getSequence();
   string sequence_str = seq;
-  free(seq);
 
   //Is there already a peptide evidence ptr?
   vector<PeptideEvidencePtr>::iterator pe_iter;
@@ -277,9 +274,9 @@ PeptideEvidencePtr MzIdentMLWriter::getPeptideEvidence(
   PeptideSrc* src ///< where to peptide comes from -in
   ) {
 
-  char* seq = peptide->getSequence();
+  const char* seq = peptide->getSequence();
   string sequence_str = seq;
-  free(seq);
+
 
   string protein_id = src->getParentProtein()->getId();
 

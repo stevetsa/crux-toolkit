@@ -395,7 +395,7 @@ void XLinkPeptide::predictIons(
   MASS_TYPE_T fragment_mass_type = GlobalParams::getFragmentMass();
 
   //predict the ion_series of the first peptide.
-  char* seq1 = linked_peptides_[0].getSequence();
+  const char* seq1 = linked_peptides_[0].getSequence();
   MODIFIED_AA_T* mod_seq1 = linked_peptides_[0].getModifiedSequence();
 
   ion_series->setCharge(charge);
@@ -440,7 +440,7 @@ void XLinkPeptide::predictIons(
   IonSeries* ion_series2 = 
       new IonSeries(ion_constraint, charge);
   
-  char* seq2 = linked_peptides_[1].getSequence();
+  const char* seq2 = linked_peptides_[1].getSequence();
 
 
   MODIFIED_AA_T* mod_seq2 = 
@@ -478,8 +478,6 @@ void XLinkPeptide::predictIons(
     }
     ion_series->addIon(ion);
   }
-  free(seq1);
-  free(seq2);
   freeModSeq(mod_seq1);
   freeModSeq(mod_seq2);
   
@@ -525,13 +523,11 @@ string XLinkPeptide::getIonSequence(
   } else {
     string ans;
     if (peptide_idx == 0) {
-      char* seq2 = linked_peptides_[1].getSequence();
+      const char* seq2 = linked_peptides_[1].getSequence();
       ans = subseq + string(",") + string(seq2);
-      free(seq2);
     } else {
-      char* seq1 = linked_peptides_[0].getSequence();
+      const char* seq1 = linked_peptides_[0].getSequence();
       ans = string(seq1) + string(",") + subseq;
-      free(seq1);
     }
     return ans;
   }

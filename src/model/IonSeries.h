@@ -139,7 +139,7 @@ class IonSeries {
  * and re-initialize for the new peptide sequence.
  */
  void update(
-   char* peptide, ///< The peptide sequence for this ion series. -in
+  const char* peptide, ///< The peptide sequence for this ion series. -in
   MODIFIED_AA_T* mod_seq ///< modified version of seq -in
   );
 

@@ -200,7 +200,7 @@ class XLinkablePeptide : public CacheableMass {
   /**
    * \returns an allocated sequence c-string.  Must be freed
    */
-  char* getSequence();
+  const char* getSequence();
 
   /**
    * \returns the allocated modified sequence. Must be freed.

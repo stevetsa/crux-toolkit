@@ -45,9 +45,8 @@ void get_linear_peptides(
     while (peptide_iterator->hasNext()) {
       //peptide = database_peptide_iterator_next(peptide_iterator);
       peptide = peptide_iterator->next();
-      char* seq = peptide->getSequence();
+      const char* seq = peptide->getSequence();
       sequence = seq; 
-      free(seq);
 
       if (peptide->getMissedCleavageSites() <= max_missed_cleavages) {
         carp(CARP_DEBUG, "Adding linear peptide:%s",peptide->getSequence());
@@ -119,9 +118,8 @@ void get_linkable_peptides(
     while (peptide_iterator->hasNext()) {
       //peptide = database_peptide_iterator_next(peptide_iterator);
       peptide = peptide_iterator->next();
-      char* seq = peptide->getSequence();
+      const char* seq = peptide->getSequence();
       sequence = seq;
-      free(seq);
  
       map<string, vector<Peptide*> >::iterator find_iter;
 

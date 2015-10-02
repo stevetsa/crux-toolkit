@@ -137,10 +137,10 @@ void LinearPeptide::predictIons(
   int charge ///< charge state of the peptide
   ) {
 
-  char* seq = NULL;
+  const char* seq = NULL;
   MODIFIED_AA_T* mod_seq = NULL;
   if (peptide_ == NULL) {
-    seq = my_copy_string(sequence_);
+    seq = sequence_;
     convert_to_mod_aa_seq(seq, &mod_seq); 
   } else {
     seq = peptide_->getSequence();
@@ -149,7 +149,7 @@ void LinearPeptide::predictIons(
   ion_series->setCharge(charge);
   ion_series->update(seq, mod_seq);
   ion_series->predictIons();
-  free(seq);
+
   freeModSeq(mod_seq);
 
 }

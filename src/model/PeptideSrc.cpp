@@ -453,9 +453,8 @@ void PeptideSrc::fillPeptides(
   while (iterator->hasNext()) {
 
     Peptide* peptide = iterator->next();
-    char* sequence = peptide->getSequence();
+    const char* sequence = peptide->getSequence();
     string sequence_string = string(sequence);
-    std::free(sequence);
 
     if (sequence_to_peptide_.find(sequence_string) == sequence_to_peptide_.end()) {
       sequence_to_peptide_[sequence_string] = peptide;
