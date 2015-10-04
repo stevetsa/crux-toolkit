@@ -29,6 +29,8 @@ class XLinkablePeptide : public CacheableMass {
   FLOAT_T xcorr_;
   int index_;
 
+  MODIFIED_AA_T* mod_seq_;
+
   int predict_ions_call_count_;
   /**
    * Initialize object
@@ -77,7 +79,7 @@ class XLinkablePeptide : public CacheableMass {
   /**
    * Default destructor
    */
-  virtual ~XLinkablePeptide() {};
+  virtual ~XLinkablePeptide();
  
   /**
    * given a peptide and a XLinkBondMap object,
@@ -206,6 +208,8 @@ class XLinkablePeptide : public CacheableMass {
    * \returns the allocated modified sequence. Must be freed.
    */
   MODIFIED_AA_T* getModifiedSequence();
+
+  const MODIFIED_AA_T* getModifiedSequencePtr();
 
   /**
    * \returns the modified sequence string of the xlinkable peptide

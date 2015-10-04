@@ -556,13 +556,13 @@ int convert_to_mod_aa_seq(const string& sequence,
 /**
  * \brief Allocate a new MODIFIED_AA_T array and copy values into it.
  */
-MODIFIED_AA_T* copy_mod_aa_seq(MODIFIED_AA_T* source, int length){
+MODIFIED_AA_T* copy_mod_aa_seq(const MODIFIED_AA_T* source, int length){
   if( source == NULL ){
     carp(CARP_ERROR, "Cannot copy NULL sequence of modified_aa's.");
     return NULL;
   }
 
-  MODIFIED_AA_T* new_seq = modified_aa_cache.checkout();//(MODIFIED_AA_T*)mycalloc( length + 1, sizeof(MODIFIED_AA_T) );
+  MODIFIED_AA_T* new_seq = modified_aa_cache.checkout();
   memcpy( new_seq, source, length * sizeof(MODIFIED_AA_T));
   new_seq[length] = MOD_SEQ_NULL;
 
@@ -573,18 +573,21 @@ MODIFIED_AA_T* copy_mod_aa_seq(MODIFIED_AA_T* source, int length){
  * \brief Allocate a new MODIFIED_AA_T array and copy values into it.
  */
 MODIFIED_AA_T* copy_mod_aa_seq(
-  MODIFIED_AA_T* source ///< Sequence to copy
+  const MODIFIED_AA_T* source ///< Sequence to copy
   ) {
   if (source == NULL) {
     carp(CARP_ERROR, "Cannot copy NULL sequence of modified_aa's.");
     return NULL;
   }
-
+  
+  MODIFIED_AA_T* new_seq = modified_aa_cache.checkout();
   size_t length = 0;
   while (source[length] != MOD_SEQ_NULL) {
+    new_seq[length] = source[length];
     length++;
   }
-  return copy_mod_aa_seq(source, length);
+  new_seq[length] = MOD_SEQ_NULL;
+  return(new_seq);
 
 }
 

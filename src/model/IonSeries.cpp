@@ -92,6 +92,7 @@ void IonSeries::init() {
 
   peptide_.clear();
   modified_aa_seq_ = NULL;
+  modified_aa_seq_owner_ = false;
   charge_ = 0;
   constraint_ = NULL;
   is_predicted_ = false;
@@ -131,6 +132,7 @@ IonSeries::IonSeries(
   // copy the peptide sequence
   peptide_ = peptide;
   convert_to_mod_aa_seq(peptide_, &(modified_aa_seq_));
+  modified_aa_seq_owner_ = true;
   charge_ = charge;
   constraint_ = constraint;
   peptide_length_ = peptide_.length();
@@ -168,7 +170,7 @@ IonSeries::IonSeries(
  */
 void IonSeries::update(
   const char* peptide, ///< The peptide sequence with no mod characters. -in
-  MODIFIED_AA_T* mod_seq ///< modified version of char* sequence -in
+  const MODIFIED_AA_T* mod_seq ///< modified version of char* sequence -in
   ) 
 {
   int ion_type_idx = 0;
@@ -176,8 +178,10 @@ void IonSeries::update(
   // Initialize the ion_series object for the new peptide sequence
   
   // free old peptide sequence
-  if(modified_aa_seq_){
+  
+  if(modified_aa_seq_owner_ && modified_aa_seq_){
     freeModSeq(modified_aa_seq_);
+    modified_aa_seq_owner_ = false;
   }
   
   // iterate over all ions, and free them
@@ -200,8 +204,9 @@ void IonSeries::update(
   // copy the peptide sequence
   peptide_ = peptide;
   peptide_length_ = peptide_.length();
-  modified_aa_seq_ = copy_mod_aa_seq(mod_seq, peptide_length_);
-  
+
+  modified_aa_seq_ = (MODIFIED_AA_T*)mod_seq;
+
   // Initialize the loss limit array for the new peptide
   //carp(CARP_INFO, "loss_limit_:%d peptide_length:%d", loss_limit_, peptide_length_);
   memset(loss_limit_, 0, sizeof(LOSS_LIMIT_T) * peptide_length_);
@@ -227,7 +232,7 @@ void IonSeries::freeIonSeries(IonSeries* ions) {
  */
 IonSeries::~IonSeries()
 {
-  if(modified_aa_seq_){
+  if(modified_aa_seq_owner_ && modified_aa_seq_){
     freeModSeq(modified_aa_seq_);
   }
 

@@ -30,6 +30,7 @@ void XLinkablePeptide::init() {
   xcorr_link_idx_ = -1;
   predict_ions_call_count_ = 0;
   index_ = -1;
+  mod_seq_ = NULL;
 }
 
 /**
@@ -120,6 +121,12 @@ XLinkablePeptide::XLinkablePeptide(
   init();
   peptide_=peptide->copyPtr();
   findLinkSites(peptide_, bondmap, link_sites_);
+}
+
+XLinkablePeptide::~XLinkablePeptide() {
+  if (mod_seq_ != NULL) {
+    freeModSeq(mod_seq_);
+  }
 }
 
 
@@ -426,6 +433,17 @@ MODIFIED_AA_T* XLinkablePeptide::getModifiedSequence() {
   return mod_seq;
 }
 
+const MODIFIED_AA_T* XLinkablePeptide::getModifiedSequencePtr() {
+
+  if (mod_seq_ == NULL) {
+    mod_seq_ = getModifiedSequence();
+  } else {
+    //carp(CARP_INFO, "modseq cached");
+  }
+  return(mod_seq_);
+}
+
+
 int findLink(vector<int>& link_sites, int link_site) {
   
   for (unsigned int idx=0;idx<link_sites.size();idx++) {
@@ -655,7 +673,7 @@ const IonSeries& XLinkablePeptide::getCachedIons(
 
   if (ion_series_cache_charge[link_idx_] == NULL) {
     char* seq = getSequence();
-    MODIFIED_AA_T* mod_seq = getModifiedSequence();
+    const MODIFIED_AA_T* mod_seq = getModifiedSequencePtr();
     int link_pos = link_sites_[link_idx];
 
     carp(CARP_DEBUG, "XLinkablePeptide::predictIons() - predicting ions");
@@ -687,7 +705,7 @@ void XLinkablePeptide::predictIons(
   //}
     
   const char* seq = getSequence();
-  MODIFIED_AA_T* mod_seq = getModifiedSequence();
+  const MODIFIED_AA_T* mod_seq = getModifiedSequencePtr();
   int link_pos = link_sites_[link_idx];
 
   //carp(CARP_DEBUG, "XLinkablePeptide::predictIons() - predicting ions");
@@ -726,7 +744,6 @@ void XLinkablePeptide::predictIons(
     //    ion_series->addIon(ion);
   }
 
-  freeModSeq(mod_seq);
 }
 
 

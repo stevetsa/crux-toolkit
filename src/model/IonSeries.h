@@ -31,9 +31,11 @@ class IonSeries {
   // TODO change name to unmodified_char_seq
   std::string peptide_; ///< The peptide sequence for this ion series
   MODIFIED_AA_T* modified_aa_seq_; ///< sequence of the peptide
+  bool modified_aa_seq_owner_;
   int charge_; ///< /<The charge state of the peptide for this ion series
   IonConstraint* constraint_; ///< The constraints which these ions obey
   std::vector<Ion*> ions_; ///< The ions in this series
+    //int num_ions_; ///< number of ions
   bool is_predicted_; ///< has this ion_series been predicted already?
   std::vector<Ion*> specific_ions_[MAX_NUM_ION_TYPE]; 
     ///< specific ions in the series, reference to master array of ions
@@ -140,7 +142,7 @@ class IonSeries {
  */
  void update(
   const char* peptide, ///< The peptide sequence for this ion series. -in
-  MODIFIED_AA_T* mod_seq ///< modified version of seq -in
+  const MODIFIED_AA_T* mod_seq ///< modified version of seq -in
   );
 
 
