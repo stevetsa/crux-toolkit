@@ -115,6 +115,7 @@ vector<string> SearchForXLinks::getOptions() const {
     "precursor-window",
     "precursor-window-type",
     "precursor-window-weibull",
+    "precursor-window-type-weibull",
     "min-weibull-points",
     "max-ion-charge",
     "scan-number",
