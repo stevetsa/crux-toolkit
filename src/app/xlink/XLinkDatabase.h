@@ -77,7 +77,7 @@ class XLinkDatabase {
     bool decoy
   );
 
-  static XLinkablePeptide getXLinkablePeptide(
+  static XLinkablePeptide& getXLinkablePeptide(
     bool decoy, 
     int idx
   );
