@@ -668,9 +668,19 @@ void XLinkablePeptide::predictIons(
   ) {
 
   IonSeries* cached_ions = XLinkIonSeriesCache::getXLinkablePeptideIonSeries(*this, charge);
-
+  bool cached = cached_ions != NULL;
+  
+  if (!cached) {
+    cached_ions = new IonSeries(ion_series->getIonConstraint(), charge);
+    cached_ions->update(getSequence(), getModifiedSequencePtr());
+    cached_ions->predictIons();
+  }
+  
   int link_pos=link_sites_[link_idx];
   int seq_len = peptide_->getLength();
+
+  
+
   if (clear) {
     ion_series->clear();
   }
@@ -705,6 +715,10 @@ void XLinkablePeptide::predictIons(
       } 
     }
     ion_series->addIon(ion);
+  }
+
+  if (!cached) {
+    delete cached_ions;
   }
 
 }

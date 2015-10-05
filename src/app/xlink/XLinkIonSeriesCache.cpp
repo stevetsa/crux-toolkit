@@ -13,39 +13,47 @@ IonSeries* XLinkIonSeriesCache::getXLinkablePeptideIonSeries(
   int charge
   ) {
 
-  bool decoy = xpep.isDecoy();
+  IonSeries* ans = NULL;
   int xpep_idx = xpep.getIndex();
-  //carp(CARP_INFO, "decoy %i pep_idx %i charge %i", decoy, xpep_idx, charge);
-  vector<vector<IonSeries*> >* ion_cache = &target_xlinkable_ion_series_;
-  if (decoy) {
-    ion_cache = &decoy_xlinkable_ion_series_;
-    //carp(CARP_INFO, "Getting decoy cache");
-  }
 
-  int charge_idx = charge-1;
-  //carp(CARP_INFO, "getting pepidx:%i",xpep_idx);
-  while(ion_cache->size() <= xpep_idx) {
-    //carp(CARP_INFO, "Adding vector<IonSeries*>():%d", ion_cache->size());
-    ion_cache->push_back(vector<IonSeries*>());
-  }
-  
-  vector<IonSeries*>& level1 = (*ion_cache)[xpep_idx];
-
-  //carp(CARP_INFO, "getting charge:%i", charge);
-  while(level1.size() <= charge_idx) {
-    //carp(CARP_INFO, "Adding charge:%d",(level1.size()+1));
-    level1.push_back(NULL);
-  }
-
-  IonSeries* ans = level1[charge_idx];
-  if (ans == NULL) {
-    //carp(CARP_INFO, "creating ion series");
-    ans = new IonSeries(getXCorrIonConstraint(charge), charge);
-    ans->update(xpep.getSequence(), xpep.getModifiedSequencePtr());
-    ans->predictIons();
-    level1[charge_idx] = ans;
+  if (xpep_idx == -1) {
+    //carp(CARP_DEBUG, "Unindexed xlinkable peptide. Returning NULL");
+    return NULL;
   } else {
-    //carp(CARP_INFO, "using cached ions");
+
+    bool decoy = xpep.isDecoy();
+    //carp(CARP_INFO, "decoy %i pep_idx %i charge %i", decoy, xpep_idx, charge);
+    vector<vector<IonSeries*> >* ion_cache = &target_xlinkable_ion_series_;
+    if (decoy) {
+      ion_cache = &decoy_xlinkable_ion_series_;
+      //carp(CARP_INFO, "Getting decoy cache");
+    }
+
+    int charge_idx = charge-1;
+    //carp(CARP_INFO, "getting pepidx:%i",xpep_idx);
+    while(ion_cache->size() <= xpep_idx) {
+      //carp(CARP_INFO, "Adding vector<IonSeries*>():%d", ion_cache->size());
+      ion_cache->push_back(vector<IonSeries*>());
+    }
+  
+    vector<IonSeries*>& level1 = (*ion_cache)[xpep_idx];
+
+    //carp(CARP_INFO, "getting charge:%i", charge);
+    while(level1.size() <= charge_idx) {
+      //carp(CARP_INFO, "Adding charge:%d",(level1.size()+1));
+      level1.push_back(NULL);
+    }
+
+    ans = level1[charge_idx];
+    if (ans == NULL) {
+      //carp(CARP_INFO, "creating ion series");
+      ans = new IonSeries(getXCorrIonConstraint(charge), charge);
+      ans->update(xpep.getSequence(), xpep.getModifiedSequencePtr());
+      ans->predictIons();
+      level1[charge_idx] = ans;
+    } else {
+      //carp(CARP_INFO, "using cached ions");
+    }
   }
   return ans;
 

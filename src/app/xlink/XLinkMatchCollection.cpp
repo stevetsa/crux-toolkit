@@ -12,7 +12,7 @@
 #include "XLinkScorer.h"
 
 #include "model/Spectrum.h"
-#include "util/StringUtils.h"
+#include "util/GlobalParams.h"
 
 #include <iostream>
 
@@ -24,8 +24,6 @@ static const FLOAT_T CORR_THRESHOLD = 0.0;       // For now, turn off the thresh
 static const FLOAT_T XCORR_SHIFT = 0.05;
 
 using namespace std;
-
-// get_min_max_mass(precursor_mz_, zstate, isotopes[idx], use_decoy_window, min_mass, max_mass, precursor_mass);
 
 void get_min_max_mass(
   FLOAT_T precursor_mz, 
@@ -85,12 +83,13 @@ void get_min_max_mass(
 		     max_mass, precursor_mass);
   } else {
     get_min_max_mass(precursor_mz,
-         zstate,
-                     isotope,
-         get_double_parameter("precursor-window"),
-         string_to_window_type(get_string_parameter("precursor-window-type")),
-         min_mass,
-		     max_mass, precursor_mass);
+      zstate,
+      isotope,
+      GlobalParams::getPrecursorWindow(),
+      GlobalParams::getPrecursorWindowType(),		     
+      min_mass,
+      max_mass, 
+      precursor_mass);
   }
 }
 
@@ -234,7 +233,7 @@ XLinkMatchCollection::XLinkMatchCollection(
 
   FLOAT_T min_mass;
   FLOAT_T max_mass;
-  vector<int> isotopes = StringUtils::Split<int>(get_string_parameter("isotope-windows"), ',');
+  const vector<int>& isotopes = GlobalParams::getIsotopeWindows(); 
   for (int idx = 0; idx < isotopes.size();idx++) {
     FLOAT_T precursor_mass;
     get_min_max_mass(precursor_mz_, zstate, isotopes[idx], use_decoy_window, min_mass, max_mass, precursor_mass);

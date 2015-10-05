@@ -1,5 +1,6 @@
 #include "GlobalParams.h"
 #include "parameter.h"
+#include "util/StringUtils.h"
 
 using namespace std;
 
@@ -28,6 +29,8 @@ bool GlobalParams::xlink_include_inter_intra_;
 int GlobalParams::max_xlink_mods_;
 int GlobalParams::mod_precision_;
 int GlobalParams::xlink_top_n_;
+vector<int> GlobalParams::isotope_windows_;
+
 
 void GlobalParams::set() {
   isotopic_mass_ = get_mass_type_parameter("isotopic-mass");
@@ -54,6 +57,7 @@ void GlobalParams::set() {
   max_xlink_mods_ = get_int_parameter("max-xlink-mods");
   mod_precision_ = get_int_parameter("mod-precision");
   xlink_top_n_ = get_int_parameter("xlink-top-n");
+  isotope_windows_ = StringUtils::Split<int>(get_string_parameter("isotope-windows"), ',');
 }
 
 const MASS_TYPE_T& GlobalParams::getIsotopicMass() {
@@ -150,4 +154,8 @@ const int& GlobalParams::getModPrecision() {
 
 const int& GlobalParams::getXLinkTopN() {
   return xlink_top_n_;
+}
+
+const vector<int>& GlobalParams::getIsotopeWindows() {
+  return isotope_windows_;
 }

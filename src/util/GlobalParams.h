@@ -1,5 +1,6 @@
 #include "objects.h"
-#include<string>
+#include <string>
+#include <vector>
 
 
 class GlobalParams {
@@ -29,6 +30,8 @@ class GlobalParams {
   static int max_xlink_mods_;
   static int mod_precision_;
   static int xlink_top_n_;
+  static std::vector<int> isotope_windows_;
+
  public:
   static void set();
   
@@ -56,4 +59,6 @@ class GlobalParams {
   static const int& getMaxXLinkMods();
   static const int& getModPrecision();
   static const int& getXLinkTopN();
+  static const std::vector<int>& getIsotopeWindows();
+
 };
