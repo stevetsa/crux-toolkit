@@ -25,6 +25,7 @@ static const int MAX_NUM_ION_TYPE = 8; // number of different ion_types
  */
 class IonSeries {
   friend class XLinkPeptide;
+  friend class XLinkablePeptide;
  protected:
 
   static FLOAT_T* mass_matrix_; /// < Pre-allocated mass matrix
@@ -35,7 +36,7 @@ class IonSeries {
   int charge_; ///< /<The charge state of the peptide for this ion series
   IonConstraint* constraint_; ///< The constraints which these ions obey
   std::vector<Ion*> ions_; ///< The ions in this series
-    //int num_ions_; ///< number of ions
+  int num_ions_; ///< number of ions
   bool is_predicted_; ///< has this ion_series been predicted already?
   std::vector<Ion*> specific_ions_[MAX_NUM_ION_TYPE]; 
     ///< specific ions in the series, reference to master array of ions
@@ -337,6 +338,10 @@ class IonSeries {
   std::vector<Ion*>& getSpecificIons(
     ION_TYPE_T ion_type /// < the type of ions -in
   );
+
+  void clear();
+
+
 };
 
 /*

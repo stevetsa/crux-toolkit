@@ -45,6 +45,7 @@ add_library(
   LinearPeptide.cpp
   SelfLoopPeptide.cpp
   XLinkDatabase.cpp
+  XLinkIonSeriesCache.cpp
   XLink.cpp
   XLinkScorer.cpp
   XLinkSite.cpp

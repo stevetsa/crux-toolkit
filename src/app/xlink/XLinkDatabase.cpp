@@ -133,14 +133,21 @@ void XLinkDatabase::initialize() {
     target_xlinkable_peptides_.begin(), 
     target_xlinkable_peptides_.end(), 
     compareXLinkablePeptideMass);
-
+  for (size_t idx = 0;idx < target_xlinkable_peptides_.size();idx++) {
+    target_xlinkable_peptides_[idx].setIndex(idx);
+  }
   sort(
     decoy_xlinkable_peptides_.begin(), 
     decoy_xlinkable_peptides_.end(), 
     compareXLinkablePeptideMass);
-
+  for (size_t idx = 0;idx < decoy_xlinkable_peptides_.size();idx++) {
+    decoy_xlinkable_peptides_[idx].setIndex(idx);
+    decoy_xlinkable_peptides_[idx].setDecoy(true);
+  }
   carp(CARP_INFO, "There are %d xlinkable target peptides", target_xlinkable_peptides_.size());
   carp(CARP_INFO, "There are %d xlinkable decoy peptides", decoy_xlinkable_peptides_.size());
+
+
 
   flattenLinkablePeptides(target_xlinkable_peptides_, target_xlinkable_peptides_flatten_);
   flattenLinkablePeptides(decoy_xlinkable_peptides_, decoy_xlinkable_peptides_flatten_);

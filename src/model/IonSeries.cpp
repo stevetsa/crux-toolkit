@@ -226,6 +226,20 @@ void IonSeries::freeIonSeries(IonSeries* ions) {
 
 }
 
+void IonSeries::clear() {
+  for (unsigned int idx=0;idx<ions_.size();idx++) {
+    Ion::freeIon(ions_[idx]);
+  }
+  ions_.clear();
+
+  // initialize all specific_ions back to 0
+  for(size_t ion_type_idx=0; ion_type_idx < MAX_NUM_ION_TYPE; ++ion_type_idx){
+    specific_ions_[ion_type_idx].clear();
+  }
+
+
+}
+
 
 /**
  * Frees an allocated ion_series object.

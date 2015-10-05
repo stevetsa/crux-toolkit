@@ -221,7 +221,8 @@ class XLinkablePeptide : public CacheableMass {
     IonSeries* ion_series,
     int charge,
     int link_idx,
-    FLOAT_T mod_mass
+    FLOAT_T mod_mass,
+    bool clear=true
     );
 
   FLOAT_T getXCorr() const;  

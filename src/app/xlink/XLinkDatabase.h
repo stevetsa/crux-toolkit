@@ -77,6 +77,11 @@ class XLinkDatabase {
     bool decoy
   );
 
+  static XLinkablePeptide getXLinkablePeptide(
+    bool decoy, 
+    int idx
+  );
+
   static std::vector<XLinkablePeptide>::iterator getXLinkableFlattenBegin();
   static std::vector<XLinkablePeptide>::iterator getXLinkableFlattenBegin(
     bool decoy, 

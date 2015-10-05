@@ -6,6 +6,8 @@
  ****************************************************************************/
 #include "XLinkablePeptide.h"
 
+#include "XLinkIonSeriesCache.h"
+
 #include "objects.h"
 #include "util/modifications.h"
 #include "util/GlobalParams.h"
@@ -657,75 +659,34 @@ bool XLinkablePeptide::operator < (
 
 }
 
-//vector<vector<IonSeries> > //idx 1 charge, idx 2 link_idx
-/*
-const IonSeries& XLinkablePeptide::getCachedIons(
-				 IonConstraint* contraint,
-				 int charge
-				 ) {
-  
-  while(ion_series_cache_.size() < charge) {
-    ion_series_cache_.push_back(NULL);
-  }
-
-  vector<IonSeries>& ion_series_cache_charge = ion_series_cache_[charge-1];
-
-
-  if (ion_series_cache_charge[link_idx_] == NULL) {
-    char* seq = getSequence();
-    const MODIFIED_AA_T* mod_seq = getModifiedSequencePtr();
-    int link_pos = link_sites_[link_idx];
-
-    carp(CARP_DEBUG, "XLinkablePeptide::predictIons() - predicting ions");
-    //predict the ion series of the peptide
-    
-    ion_series->setCharge(charge);
-    ion_series->update(seq, mod_seq);
-    ion_series->predictIons();
-    ion_series->incrementPointerCount();
-    ion_series_cache_charge[link_idx_-1] = ion_series;
-  }
-  return(ion_series_cache_charge[link_idx_]);
-
-}
-*/
 void XLinkablePeptide::predictIons(
   IonSeries* ion_series,
   int charge,
   int link_idx,
-  FLOAT_T mod_mass
+  FLOAT_T mod_mass,
+  bool clear
   ) {
 
-  //IonSeries& cached = getCachedIons(ion_series->getConstraint(), charge, link_idx);
+  IonSeries* cached_ions = XLinkIonSeriesCache::getXLinkablePeptideIonSeries(*this, charge);
 
-  //predict_ions_call_count_++;
-  //if (predict_ions_call_count_ > 1) {
-  //  string seq = getModifiedSequenceString();
-  //  carp(CARP_INFO, "Predict ions called on this linkable peptide:%d times %s link: %d charge:%d", predict_ions_call_count_, seq.c_str(), link_idx, charge);
-  //}
-    
-  const char* seq = getSequence();
-  const MODIFIED_AA_T* mod_seq = getModifiedSequencePtr();
-  int link_pos = link_sites_[link_idx];
-
-  //carp(CARP_DEBUG, "XLinkablePeptide::predictIons() - predicting ions");
-  //predict the ion series of the peptide
-  ion_series->setCharge(charge);
-  ion_series->update(seq, mod_seq);
-  ion_series->predictIons();
-
-  //carp(CARP_DEBUG, "XLinkablePeptide::predictIons() - modifying ions");
-  
+  int link_pos=link_sites_[link_idx];
+  int seq_len = peptide_->getLength();
+  if (clear) {
+    ion_series->clear();
+  }
   //modify the necessary ions and add to the ion_series   
-  for (IonIterator ion_iter = ion_series->begin(); 
-    ion_iter != ion_series->end(); 
+  for (IonIterator ion_iter = cached_ions->begin(); 
+    ion_iter != cached_ions->end(); 
     ++ion_iter) { 
  
-    Ion* ion = *ion_iter; 
- 
+    Ion* src_ion = *ion_iter; 
+    Ion* ion = src_ion;
+
     unsigned int cleavage_idx = ion->getCleavageIdx(); 
     if (ion->isForwardType()) { 
       if (cleavage_idx > (unsigned int)link_pos) {
+        ion = Ion::newIon();
+	Ion::copy(src_ion, ion, "");
         FLOAT_T mass = ion->getMassFromMassZ() + mod_mass;
         ion->setMassZFromMass(mass); 
         if (isnan(ion->getMassZ())) { 
@@ -733,7 +694,9 @@ void XLinkablePeptide::predictIons(
         } 
       } 
     } else { 
-      if (cleavage_idx >= (strlen(seq)-(unsigned int)link_pos)) { 
+      if (cleavage_idx >= (seq_len-(unsigned int)link_pos)) { 
+        ion = Ion::newIon();
+	Ion::copy(src_ion, ion, "");
         FLOAT_T mass = ion->getMassFromMassZ() + mod_mass;
         ion->setMassZFromMass(mass); 
         if (isnan(ion->getMassZ())) { 
@@ -741,7 +704,7 @@ void XLinkablePeptide::predictIons(
         } 
       } 
     }
-    //    ion_series->addIon(ion);
+    ion_series->addIon(ion);
   }
 
 }

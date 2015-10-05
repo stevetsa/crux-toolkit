@@ -393,95 +393,14 @@ void XLinkPeptide::predictIons(
   ) {
 
   MASS_TYPE_T fragment_mass_type = GlobalParams::getFragmentMass();
+  FLOAT_T delta_mass0 =  linked_peptides_[0].getMassConst(fragment_mass_type) + linker_mass_;
+  FLOAT_T delta_mass1 =  linked_peptides_[1].getMassConst(fragment_mass_type) + linker_mass_;
 
   //predict the ion_series of the first peptide.
-  const char* seq1 = linked_peptides_[0].getSequence();
-  MODIFIED_AA_T* mod_seq1 = linked_peptides_[0].getModifiedSequence();
-
-  ion_series->setCharge(charge);
-  ion_series->update(seq1, mod_seq1);
-  ion_series->predictIons();
-
-  //iterate through all of the ions, if the ion contains a link, then
-  //add the mass of peptide2 + linker_mass.
-
-  for (IonIterator ion_iter = ion_series->begin();
-    ion_iter != ion_series->end();
-    ++ion_iter) {
-
-    Ion* ion = *ion_iter;
-
-    unsigned int cleavage_idx = ion->getCleavageIdx();
-
-    if (ion->isForwardType()) {
-      if (cleavage_idx > (unsigned int)getLinkPos(0)) {
-        FLOAT_T mass = ion->getMassFromMassZ();
-        mass += linked_peptides_[1].getMassConst(fragment_mass_type) + linker_mass_;
-        ion->setMassZFromMass(mass);
-        if (isnan(ion->getMassZ())) {
-          carp(CARP_FATAL, "NAN1");
-        }
-      }
-    } else {
-      if (cleavage_idx >= (strlen(seq1) - (unsigned int)getLinkPos(0))) {
-        FLOAT_T mass = ion->getMassFromMassZ();
-        mass += linked_peptides_[1].getMassConst(fragment_mass_type) + linker_mass_;
-        ion->setMassZFromMass(mass);
-        if (isnan(ion->getMassZ())) {
-          carp(CARP_FATAL, "NAN2");
-        }
-      }
-    }
-  }
+  linked_peptides_[0].predictIons(ion_series, charge, getLinkIdx(0), delta_mass1, true);
 
   //predict the ion_series of the second peptide.
-  IonConstraint* ion_constraint = ion_series->getIonConstraint();
-
-  IonSeries* ion_series2 = 
-      new IonSeries(ion_constraint, charge);
-  
-  const char* seq2 = linked_peptides_[1].getSequence();
-
-
-  MODIFIED_AA_T* mod_seq2 = 
-    linked_peptides_[1].getModifiedSequence();
-  ion_series2->setCharge(charge);
-  ion_series2->update(seq2, mod_seq2);
-  ion_series2->predictIons();
-
-  //modify the necessary ions and add to the ion_series  
-  for (IonIterator ion_iter = ion_series2->begin();
-    ion_iter != ion_series2->end();
-    ++ion_iter) {
-
-    Ion* ion = *ion_iter;
-
-    unsigned int cleavage_idx = ion->getCleavageIdx();
-    if (ion->isForwardType()) {
-      if (cleavage_idx > (unsigned int)getLinkPos(1)) {
-       FLOAT_T mass = ion->getMassFromMassZ();
-       mass += linked_peptides_[0].getMassConst(fragment_mass_type) + linker_mass_;
-       ion->setMassZFromMass(mass);
-        if (isnan(ion->getMassZ())) {
-          carp(CARP_FATAL, "NAN3");
-        }
-      }
-    } else {
-      if (cleavage_idx >= (strlen(seq2)-(unsigned int)getLinkPos(1))) {
-       FLOAT_T mass = ion->getMassFromMassZ();
-       mass += linked_peptides_[0].getMassConst(fragment_mass_type) + linker_mass_;
-       ion->setMassZFromMass(mass);
-        if (isnan(ion->getMassZ())) {
-          carp(CARP_FATAL, "NAN4");
-        }
-      }
-    }
-    ion_series->addIon(ion);
-  }
-  freeModSeq(mod_seq1);
-  freeModSeq(mod_seq2);
-  
-  delete ion_series2;
+  linked_peptides_[1].predictIons(ion_series, charge, getLinkIdx(1), delta_mass0, false);
 }
 
 /**
