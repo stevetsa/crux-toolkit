@@ -210,6 +210,9 @@ class Scorer {
    */
   ~Scorer();
 
+  static void finalize();
+
+
   /**
    * Score a spectrum vs. an ion series
    */

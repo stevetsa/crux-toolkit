@@ -264,6 +264,11 @@ IonSeries::~IonSeries()
 
 }
 
+void IonSeries::finalize() {
+  delete []mass_matrix_;
+
+}
+
 
 /**
  * Iterator access

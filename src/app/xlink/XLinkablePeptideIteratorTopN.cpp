@@ -39,40 +39,55 @@ XLinkablePeptideIteratorTopN::XLinkablePeptideIteratorTopN(
   //carp(CARP_DEBUG, "precursor:%g", precursor_mass); 
   //carp(CARP_INFO, "min:%g", min_mass);
   //carp(CARP_INFO, "max:%g", max_mass);
+  vector<XLinkablePeptide>::iterator xlp_biter = XLinkDatabase::getXLinkableFlattenBegin(is_decoy, min_mass);
+  vector<XLinkablePeptide>::iterator xlp_eiter = XLinkDatabase::getXLinkableFlattenEnd(is_decoy, max_mass);
+ 
+  int nscore = xlp_eiter - xlp_biter;
+  if (nscore > top_n_) {
+    scorePeptides(scorer, precursor_mass, xlp_biter, xlp_eiter);
+  } else {
+    scored_xlp_.insert(scored_xlp_.begin(), xlp_biter, xlp_eiter);
+  }
   
   //find the begin and end iterators for the given mass range.
-  vector<XLinkablePeptide>::iterator biter = XLinkDatabase::getXLinkableFlattenBegin(is_decoy,min_mass);
-  vector<XLinkablePeptide>::iterator eiter = XLinkDatabase::getXLinkableFlattenEnd(is_decoy, max_mass);
+  /*
+  vector<XLinkablePeptide>::iterator target_biter = XLinkDatabase::getXLinkableFlattenBegin(false, min_mass);
+  vector<XLinkablePeptide>::iterator target_eiter = XLinkDatabase::getXLinkableFlattenEnd(false, max_mass);
+  vector<XLinkablePeptide>::iterator decoy_biter = XLinkDatabase::getXLinkableFlattenBegin(true, min_mass);
+  vector<XLinkablePeptide>::iterator decoy_eiter = XLinkDatabase::getXLinkableFlattenEnd(true, max_mass);
+  
 
-  //carp(CARP_INFO, "biter:%d", biter-XLinkDatabase::getXLinkableFlattenBegin());
-  //carp(CARP_INFO, "eiter:%d", eiter-XLinkDatabase::getXLinkableFlattenBegin());
-  //carp(CARP_INFO, "eiter:%f", eiter->getMass(MONO));
-
-  //check the range to see if we need to score.
-  int range = eiter - biter;
-  //carp(CARP_INFO, "range:%d", range);
-
-  if (range > top_n_) {
-
-    while(biter != eiter) {
-      XLinkablePeptide& pep1 = *biter;
-      FLOAT_T delta_mass = precursor_mass - pep1.getMass(MONO) - XLinkPeptide::getLinkerMass();
-      FLOAT_T xcorr = scorer.scoreXLinkablePeptide(pep1, 0, delta_mass);
-      pep1.setXCorr(0, xcorr);
-      scored_xlp_.push_back(pep1);
-      biter++;
-    }
-    carp(CARP_DEBUG, "number of xlinkable peptides scored:%d", scored_xlp_.size());
+  int nscore = (target_eiter - target_biter) + (decoy_eiter - decoy_biter);
+  if (nscore > top_n_) {
+    scorePeptides(scorer, precursor_mass, target_biter, target_eiter);
+    scorePeptides(scorer, precursor_mass, decoy_biter, decoy_eiter);
     sort(scored_xlp_.begin(), scored_xlp_.end(), compareXLinkableXCorr);
   } else {
-    //carp(CARP_INFO, "No scoring needed!");
-    scored_xlp_.insert(scored_xlp_.begin(), biter, eiter);
+    scored_xlp_.insert(scored_xlp_.begin(), target_biter, target_eiter);
+    scored_xlp_.insert(scored_xlp_.begin(), decoy_biter, decoy_eiter);
   }
+  */
+
   current_count_ = 0;
   queueNextPeptide();
-  
-  
 
+}
+
+void XLinkablePeptideIteratorTopN::scorePeptides(
+  XLinkScorer& scorer, 
+  FLOAT_T precursor_mass, 
+  vector<XLinkablePeptide>::iterator& biter, 
+  vector<XLinkablePeptide>::iterator& eiter
+  ) {
+
+  while(biter != eiter) {
+    XLinkablePeptide& pep1 = *biter;
+    FLOAT_T delta_mass = precursor_mass - pep1.getMass(MONO) - XLinkPeptide::getLinkerMass();
+    FLOAT_T xcorr = scorer.scoreXLinkablePeptide(pep1, 0, delta_mass);
+    pep1.setXCorr(0, xcorr);
+    scored_xlp_.push_back(pep1);
+    biter++;
+  }
 }
 
 /**

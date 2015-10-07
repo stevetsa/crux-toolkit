@@ -154,6 +154,8 @@ class IonSeries {
 
   static void freeIonSeries(IonSeries* ions);
 
+  static void finalize();
+
   /**
    *Iterator access
    */

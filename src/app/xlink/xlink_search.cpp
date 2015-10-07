@@ -7,6 +7,7 @@
 #include "XLinkMatchCollection.h"
 #include "XLinkBondMap.h"
 #include "XLinkPeptide.h"
+#include "XLinkIonSeriesCache.h"
 #include "xlink_compute_qvalues.h"
 
 //CRUX INCLUDES
@@ -305,8 +306,11 @@ int SearchForXLinks::xlinkSearchMain() {
     free_peptide_mod(peptide_mods[mod_idx]);
   }
   free(peptide_mods);
-  Database::freeDatabase(database);
 
+  Scorer::finalize();
+  XLinkIonSeriesCache::finalize();
+  IonSeries::finalize();
+  XLinkDatabase::finalize();
   //Calculate q-values via p-values from weibull fit.
   if (compute_pvalues) {
     carp(CARP_DEBUG, "Computing Q-Values using P-values");

@@ -205,6 +205,30 @@ void XLinkDatabase::initialize() {
 
 }
 
+void XLinkDatabase::finalize() {
+
+  target_linear_peptides_.clear();
+  decoy_linear_peptides_.clear();
+  target_selfloop_peptides_.clear();
+  decoy_selfloop_peptides_.clear();
+  target_xlinkable_peptides_.clear();
+  decoy_xlinkable_peptides_.clear();
+
+  for (size_t idx1=0;idx1<target_peptides_.size();idx1++) {
+    for (size_t idx2=0;idx2<target_peptides_[idx1].size();idx2++) {
+      delete target_peptides_[idx1][idx2];
+    }
+  }
+
+  for (size_t idx1=0;idx1<decoy_peptides_.size();idx1++) {
+    for (size_t idx2=0;idx2<decoy_peptides_[idx1].size();idx2++) {
+      delete decoy_peptides_[idx1][idx2];
+    }
+  }
+
+  Database::freeDatabase(protein_database_);
+}
+
 void XLinkDatabase::findSelfLoops(
   vector<XLinkablePeptide>& linkable_peptides, 
   vector<SelfLoopPeptide>& ans) {

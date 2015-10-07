@@ -182,6 +182,11 @@ Scorer::~Scorer() {
   }
 }
 
+void Scorer::finalize() {
+
+  delete []observed_;
+}
+
 
 /**
  * normalize array so that maximum peak equals threshold

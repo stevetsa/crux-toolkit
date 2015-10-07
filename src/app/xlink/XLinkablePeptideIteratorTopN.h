@@ -11,6 +11,7 @@
 #include "XLinkablePeptideIterator.h"
 #include "XLinkablePeptide.h"
 #include "XLinkBondMap.h"
+#include "XLinkScorer.h"
 #include <queue>
 #include <vector>
 
@@ -37,6 +38,13 @@ class XLinkablePeptideIteratorTopN: public XLinkablePeptideIterator {
    * queues the next linkable peptide
    */
   void queueNextPeptide(); 
+  
+  void scorePeptides(
+    XLinkScorer& scorer,
+    FLOAT_T precursor_mass,
+    std::vector<XLinkablePeptide>::iterator& biter,
+    std::vector<XLinkablePeptide>::iterator& eiter
+  );
 
  public:
 

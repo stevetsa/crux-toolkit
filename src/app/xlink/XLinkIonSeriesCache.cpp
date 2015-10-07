@@ -76,6 +76,27 @@ IonConstraint* XLinkIonSeriesCache::getXCorrIonConstraint(
 
  
 void XLinkIonSeriesCache::finalize() {
-  //TODO
+  for (size_t xpep_idx = 0;xpep_idx <  target_xlinkable_ion_series_.size(); xpep_idx++) {
 
+    vector<IonSeries*> &level1 = target_xlinkable_ion_series_[xpep_idx];
+    for (size_t charge_idx=0;charge_idx < level1.size(); charge_idx++) {
+      if (level1[charge_idx]) {
+	IonSeries::freeIonSeries(level1[charge_idx]);
+      }
+    }
+  }
+
+  for (size_t xpep_idx = 0;xpep_idx < decoy_xlinkable_ion_series_.size(); xpep_idx++) {
+    vector<IonSeries*>& level1 = decoy_xlinkable_ion_series_[xpep_idx];
+    for (size_t charge_idx=0;charge_idx < level1.size(); charge_idx++) {
+      if (level1[charge_idx]) {
+	IonSeries::freeIonSeries(level1[charge_idx]);
+      }
+    }
+  }
+
+  for (size_t charge_idx=0;charge_idx < xcorr_ion_constraint_.size();charge_idx++) {
+    IonConstraint::free(xcorr_ion_constraint_[charge_idx]);
+  }
+  
 }
