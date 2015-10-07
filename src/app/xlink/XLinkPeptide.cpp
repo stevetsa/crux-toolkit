@@ -26,8 +26,6 @@ bool XLinkPeptide::pmin_set_ = false;
 XLinkPeptide::XLinkPeptide() : XLinkMatch() {
   mass_calculated_[MONO] = false;
   mass_calculated_[AVERAGE] = false;
-  is_decoy_ = false;
-  
 }
 
 /**
@@ -137,6 +135,12 @@ int XLinkPeptide::getLinkIdx(
 			     int peptide_idx ///< 0 - first peptide, 1 -second peptide
 			     ) {
   return link_pos_idx_[peptide_idx];
+}
+
+bool XLinkPeptide::isDecoy() {
+
+  return linked_peptides_.at(0).isDecoy() || linked_peptides_.at(1).isDecoy();
+
 }
 
 

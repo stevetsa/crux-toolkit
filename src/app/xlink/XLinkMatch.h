@@ -24,7 +24,7 @@ class XLinkMatch : public Crux::Match, public CacheableMass {
 
   std::vector<IonSeries*> ion_series_xcorr_;
   std::vector<IonSeries*> ion_series_sp_;
-
+  
   static std::vector<IonConstraint*> ion_constraint_xcorr_;
   static IonConstraint* getIonConstraintXCORR(int charge); 
   /*
@@ -44,6 +44,7 @@ class XLinkMatch : public Crux::Match, public CacheableMass {
    */
   virtual ~XLinkMatch();
 
+  //virtual bool isDecoy();
   virtual XLINKMATCH_TYPE_T getCandidateType() = 0;
   virtual int getNumMissedCleavages() = 0;
   virtual bool isModified() = 0;
@@ -84,6 +85,8 @@ class XLinkMatch : public Crux::Match, public CacheableMass {
     FLOAT_T eta, ///< eta parameter for weibull
     FLOAT_T beta ///< beta parameter for weibull
     );
+
+  FLOAT_T getPValue();
 
   /**
    * \returns the mass error in part-per-million (ppm)

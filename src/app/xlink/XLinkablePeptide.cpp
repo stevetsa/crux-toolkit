@@ -571,7 +571,7 @@ XLinkablePeptide XLinkablePeptide::shuffle() {
       ans.mass_[idx] = mass_[idx];
     }
   }
-
+  ans.is_decoy_ = true;
   return ans;
 } 
 

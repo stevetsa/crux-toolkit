@@ -49,6 +49,49 @@ void buildArguments(
 
 }
 
+void writeTrainingCandidates(XLinkMatchCollection* training_candidates, int scan_num) {
+
+  training_candidates->sort(XCORR);
+
+  string output_dir = get_string_parameter("output-dir");
+
+  string output_file = output_dir + "/" +
+    "scan." + DelimitedFileWriter::to_string(scan_num) + 
+    ".charge." + DelimitedFileWriter::to_string(training_candidates->getCharge()) +
+    ".training.candidates.txt";
+  cerr<<"writing "<<output_file<<endl;
+  DelimitedFileWriter writer(output_file.c_str());
+
+  writer.setColumnName("scan", 0);
+  writer.setColumnName("charge", 1);
+  writer.setColumnName("decoy", 2);
+  writer.setColumnName("sequence", 3);
+  writer.setColumnName("eta", 4);
+  writer.setColumnName("beta", 5);
+  writer.setColumnName("shift", 6);
+  writer.setColumnName("xcorr score", 7);
+  writer.setColumnName("p-value", 8);
+  
+  writer.writeHeader();
+
+  for (size_t idx = 0 ;idx < training_candidates->getMatchTotal();idx++) {
+    writer.setColumnCurrentRow(0, scan_num);
+    writer.setColumnCurrentRow(2, (*training_candidates)[idx]->isDecoy());
+    writer.setColumnCurrentRow(1, (*training_candidates)[idx]->getCharge());
+    writer.setColumnCurrentRow(3, (*training_candidates)[idx]->getSequenceString());
+    writer.setColumnCurrentRow(4, training_candidates->getEta());
+    writer.setColumnCurrentRow(5, training_candidates->getBeta());
+    writer.setColumnCurrentRow(6, training_candidates->getShift());
+    writer.setColumnCurrentRow(7, (*training_candidates)[idx]->getScore(XCORR));
+    training_candidates->computeWeibullPValue(idx);
+    writer.setColumnCurrentRow(8, (*training_candidates)[idx]->getPValue());
+    
+
+    writer.writeRow();
+  }
+
+}
+
 
 /**
  * main method for SearchForXLinks that implements to refactored code
@@ -179,9 +222,14 @@ int SearchForXLinks::xlinkSearchMain() {
 
     if (compute_pvalues) {
 
+      XLinkMatchCollection* weibull_set = NULL;
+
       if (target_candidates->getMatchTotal() >= min_weibull_points) {
         carp(CARP_DEBUG, "Fitting weibull to targets");
         target_candidates->fitWeibull();
+        if (get_boolean_parameter("output-weibull-points")) {
+	  writeTrainingCandidates(target_candidates, scan_num);
+	}
         MatchCollection::transferWeibull(target_candidates, decoy_candidates);
       //TODO
       //} else if (target_candidates.size() + decoy_candidates.size() >= min_wiebull_points) {
@@ -219,6 +267,10 @@ int SearchForXLinks::xlinkSearchMain() {
         MatchCollection::transferWeibull(train_candidates, target_candidates);
         MatchCollection::transferWeibull(train_candidates, decoy_candidates);
         carp(CARP_DEBUG, "cleanup train");
+	if (get_boolean_parameter("write-weibull-points")) {
+	  writeTrainingCandidates(train_candidates, scan_num);
+	}
+
         delete train_candidates;
         carp(CARP_DEBUG, "cleanup train_target");
         delete train_target_candidates;

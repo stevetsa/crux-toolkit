@@ -1231,6 +1231,11 @@ void Params::Initialize() {
     "<li>Neutral mass</li><li>Charged mass</li><li>M+H+ mass</li></ul>]]",
     "Avaliable only for crux-get-ms2-spectrum.  Does not affect contents "
     "of the output file.", true);
+
+  InitBoolParam("write-weibull-points", false, 
+    "write out the weibull training points for the" 
+    "spectrum,charge", "Available for crux search-for-xlinks", true);
+
   // **** xlink-predict-peptide-ions options ****
   InitStringParam("peptide A", "", 
     "The sequence of peptide A.",
@@ -1713,6 +1718,7 @@ void Params::Categorize() {
   items.insert("xlink-include-selfloops");
   items.insert("xlink-prevents-cleavage");
   items.insert("max-xlink-mods");
+  items.insert("write-weibull-points");
   container_.AddCategory("Cross-linking parameters", items);
 
   items.clear();

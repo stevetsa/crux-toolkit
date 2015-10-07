@@ -53,6 +53,12 @@ void XLinkMatch::computeWeibullPvalue(
   pvalue_ = compute_weibull_pvalue(getScore(XCORR), eta, beta, shift);
 }
 
+FLOAT_T XLinkMatch::getPValue() {
+
+  return(pvalue_);
+
+}
+
 /**
  * \returns the protein id string for this match
  * default, can be overridden

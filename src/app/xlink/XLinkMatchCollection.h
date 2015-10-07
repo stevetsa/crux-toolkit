@@ -111,6 +111,12 @@ class XLinkMatchCollection : public MatchCollection {
    * fits a weibull to the xcorrs in the collection
    */
   void fitWeibull();
+  
+  FLOAT_T getEta() {return eta_;}
+  FLOAT_T getBeta() {return beta_;}
+  FLOAT_T getShift() {return shift_;}
+  FLOAT_T getCorrelation() {return correlation_;}
+  
 
   /**
    * computes the p-values for the candidate

@@ -339,7 +339,7 @@ class Match {
   
   static std::string getFilePath(int file_idx);
 
-  bool isDecoy();
+  virtual bool isDecoy();
 
   /**
    * Must ask for score that has been computed
