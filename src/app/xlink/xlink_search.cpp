@@ -123,7 +123,7 @@ int SearchForXLinks::xlinkSearchMain() {
     carp(CARP_DEBUG,"count %d scan %d charge %d", search_count, scan_num, zstate.getCharge());
     if (search_count > 0 && search_count % 1000 == 0) {
       carp(CARP_INFO, 
-	   "%d spectrum-charge combinations searched, %5.2f%% complete",
+	   "%d spectrum-charge combinations searched, %.0f%% complete",
 	   search_count, search_count / num_spectra * 100);
     }
     search_count++;
