@@ -1280,6 +1280,11 @@ void Params::Initialize() {
     "Prints out the generated database of xlink products to the file xlink_peptides.txt in "
     "the output directory.",
     "Used for testing the candidate generatation.", false);
+
+  InitBoolParam("xlink-use-ion-cache", false,
+		"Use an ion cache for the xlinkable peptides",
+		"May not be scalable for large databases", false);
+
   InitBoolParam("xlink-include-linears", true, 
     "Include linear peptides in the search.",
     "Available for crux search-for-xlinks program.", true);
@@ -1717,6 +1722,7 @@ void Params::Categorize() {
   items.insert("xlink-include-deadends");
   items.insert("xlink-include-selfloops");
   items.insert("xlink-prevents-cleavage");
+  items.insert("xlink-use-ion-cache");
   items.insert("max-xlink-mods");
   items.insert("write-weibull-points");
   container_.AddCategory("Cross-linking parameters", items);

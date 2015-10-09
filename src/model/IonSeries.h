@@ -26,6 +26,7 @@ static const int MAX_NUM_ION_TYPE = 8; // number of different ion_types
 class IonSeries {
   friend class XLinkPeptide;
   friend class XLinkablePeptide;
+  friend class XLinkIonSeriesCache;
  protected:
 
   static FLOAT_T* mass_matrix_; /// < Pre-allocated mass matrix
@@ -239,7 +240,8 @@ class IonSeries {
    */
   static void copy(
     IonSeries* src,///< ion to copy from -in
-    IonSeries* dest///< ion to copy to -out
+    IonSeries* dest,///< ion to copy to -out
+    bool create_ions
     );
 
   /**

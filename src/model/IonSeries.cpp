@@ -1026,7 +1026,8 @@ void IonSeries::predictIons()
  */
 void IonSeries::copy(
   IonSeries* src,///< ion to copy from -in
-  IonSeries* dest///< ion to copy to -out
+  IonSeries* dest,///< ion to copy to -out
+  bool create_ions ///< should we create new ions or copy the pointers?
   )
 {
   Ion* src_ion = NULL;
@@ -1048,8 +1049,13 @@ void IonSeries::copy(
 
     src_ion = *iterator;
     // add ion
-    dest_ion = Ion::newIon();
-    Ion::copy(src_ion, dest_ion, dest->peptide_);
+    if (create_ions) {
+      dest_ion = Ion::newIon();
+      Ion::copy(src_ion, dest_ion, dest->peptide_);
+    }  else {
+      dest_ion = src_ion;
+      
+    }
     dest->addIon(dest_ion);
   }
 

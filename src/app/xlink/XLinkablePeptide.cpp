@@ -667,9 +667,13 @@ void XLinkablePeptide::predictIons(
   bool clear
   ) {
 
-  IonSeries* cached_ions = XLinkIonSeriesCache::getXLinkablePeptideIonSeries(*this, charge);
-  bool cached = cached_ions != NULL;
-  
+  IonSeries* cached_ions = NULL;
+  bool cached = false;
+  if (get_boolean_parameter("xlink-use-ion-cache")) {
+
+    cached_ions = XLinkIonSeriesCache::getXLinkablePeptideIonSeries(*this, charge);
+    bool cached = cached_ions != NULL;
+  }
   if (!cached) {
     cached_ions = new IonSeries(ion_series->getIonConstraint(), charge);
     cached_ions->update(getSequence(), getModifiedSequencePtr());
