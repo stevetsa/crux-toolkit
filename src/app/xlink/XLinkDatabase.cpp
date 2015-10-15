@@ -51,6 +51,12 @@ void XLinkDatabase::initialize() {
     additional_cleavages = 2;
   }
 
+  int total_missed_cleavages = GlobalParams::getMissedCleavages()+additional_cleavages;
+
+  for (size_t idx=0;idx<=total_missed_cleavages;idx++) {
+    target_peptides_.push_back(vector<Crux::Peptide*>());
+    decoy_peptides_.push_back(vector<Crux::Peptide*>());
+  }
   //Generate all possible target peptides
   for (int mod_idx=0;mod_idx<num_peptide_mods; mod_idx++) {
     PEPTIDE_MOD_T* peptide_mod = peptide_mods[mod_idx];
@@ -71,9 +77,6 @@ void XLinkDatabase::initialize() {
       Crux::Peptide* peptide = peptide_iterator->next();
 //      carp(CARP_INFO, "Current peptide:%s", peptide->getUnshuffledSequence().c_str());
       int missed_cleavages = peptide->getMissedCleavageSites();
-      while(target_peptides_.size() <= missed_cleavages) {
-	target_peptides_.push_back(vector<Crux::Peptide*>());
-      }
       target_peptides_[missed_cleavages].push_back(peptide);
     }
     delete peptide_iterator;
@@ -93,9 +96,6 @@ void XLinkDatabase::initialize() {
       Crux::Peptide* peptide = peptide_iterator->next();
 //      carp(CARP_INFO, "Current peptide:%s", peptide->getUnshuffledSequence().c_str());
       int missed_cleavages = peptide->getMissedCleavageSites();
-      while(decoy_peptides_.size() <= missed_cleavages) {
-	decoy_peptides_.push_back(vector<Crux::Peptide*>());
-      }
       decoy_peptides_[missed_cleavages].push_back(peptide);
     }
     delete peptide_iterator;
@@ -123,9 +123,12 @@ void XLinkDatabase::initialize() {
   }
 
   //Generate all linkable peptides, allowing for suppressed cleavages
+  carp(CARP_DEBUG, "Generating all linkable peptides");
   int max_cleavages = GlobalParams::getMissedCleavages()+1;
   for (size_t cleavage_idx=0;cleavage_idx<=max_cleavages;cleavage_idx++) {
+    carp(CARP_DEBUG, "Generating target linkable peptides with cleavage:%d", cleavage_idx);
     generateAllLinkablePeptides(target_peptides_[cleavage_idx], target_xlinkable_peptides_);
+    carp(CARP_DEBUG, "Generating decoy linkable peptides with cleavage:%d", cleavage_idx);
     generateAllLinkablePeptides(decoy_peptides_[cleavage_idx], decoy_xlinkable_peptides_);
   }
 
@@ -202,7 +205,7 @@ void XLinkDatabase::initialize() {
   */
   
 
-
+  carp(CARP_INFO, "Done initializing database");
 }
 
 void XLinkDatabase::finalize() {
@@ -349,6 +352,8 @@ void XLinkDatabase::generateAllLinkablePeptides(
   vector<Crux::Peptide*>& peptides, 
   vector<XLinkablePeptide>& xpeptides) {
 
+  carp(CARP_DEBUG, "XLinkDatabase::generateAllLinkablePeptides: start()");
+  carp(CARP_DEBUG, "Number of peptides:%d", peptides.size());
   //Loop through peptides
   vector<int> link_sites;
   for (vector<Crux::Peptide*>::iterator iter = peptides.begin(); 
@@ -365,6 +370,7 @@ void XLinkDatabase::generateAllLinkablePeptides(
       }
     }
   }
+  carp(CARP_DEBUG, "XLinkDatabase::generateAllLinkablePeptides: done()");
 }
 
 
