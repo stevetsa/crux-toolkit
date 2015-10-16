@@ -208,6 +208,10 @@ void XLinkPeptide::addCandidates(
       xlinkable_peptides.push_back(xlp_iter.next());
     }
     sort(xlinkable_peptides.begin(), xlinkable_peptides.end(), compareXLinkablePeptideMass);
+    carp(CARP_INFO, "get xcorr");
+    for (size_t idx =0;idx<xlinkable_peptides.size();idx++) {
+      carp(CARP_INFO, "%f", xlinkable_peptides[idx].getXCorr());
+    }
     addCandidates(min_mass, max_mass, xlinkable_peptides, candidates);
   } else {
     addCandidates(min_mass, max_mass, XLinkDatabase::getXLinkablePeptides(decoy), candidates);
@@ -463,6 +467,12 @@ Crux::Peptide* XLinkPeptide::getPeptide(
   int peptide_idx ///< 0 or 1
   ) {
   return linked_peptides_[peptide_idx].getPeptide();
+}
+
+XLinkablePeptide& XLinkPeptide::getXLinkablePeptide(
+  int peptide_idx ///< 0 or 1
+  ) {
+  return linked_peptides_[peptide_idx];
 }
 
 /**

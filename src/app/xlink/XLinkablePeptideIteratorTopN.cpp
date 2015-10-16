@@ -43,11 +43,11 @@ XLinkablePeptideIteratorTopN::XLinkablePeptideIteratorTopN(
   vector<XLinkablePeptide>::iterator xlp_eiter = XLinkDatabase::getXLinkableFlattenEnd(is_decoy, max_mass);
  
   int nscore = xlp_eiter - xlp_biter;
-  if (nscore > top_n_) {
+//  if (nscore > top_n_) {
     scorePeptides(scorer, precursor_mass, xlp_biter, xlp_eiter);
-  } else {
-    scored_xlp_.insert(scored_xlp_.begin(), xlp_biter, xlp_eiter);
-  }
+//  } else {
+//    scored_xlp_.insert(scored_xlp_.begin(), xlp_biter, xlp_eiter);
+//  }
   
   //find the begin and end iterators for the given mass range.
   /*
@@ -85,6 +85,7 @@ void XLinkablePeptideIteratorTopN::scorePeptides(
     FLOAT_T delta_mass = precursor_mass - pep1.getMass(MONO) - XLinkPeptide::getLinkerMass();
     FLOAT_T xcorr = scorer.scoreXLinkablePeptide(pep1, 0, delta_mass);
     pep1.setXCorr(0, xcorr);
+    pep1.getXCorr();
     scored_xlp_.push_back(pep1);
     biter++;
   }

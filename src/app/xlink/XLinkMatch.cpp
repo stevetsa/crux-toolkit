@@ -13,8 +13,8 @@
 #include <ios>
 #include <iomanip>
 #include <iostream>
-
-
+#include "XLinkPeptide.h"
+#include "XLinkablePeptide.h"
 using namespace std;
 
 /**
@@ -281,14 +281,32 @@ void XLinkMatch::printOneMatchField(
       getPPMError());
     break;
   case XCORR_FIRST_COL:
-    output_file->setColumnCurrentRow(
-    (MATCH_COLUMNS_T)column_idx,
-    getScore(XCORR_FIRST));
+    if ((get_int_parameter("xlink-top-n") != 0) &&
+        (getCandidateType() == XLINK_INTER_CANDIDATE || 
+        getCandidateType() == XLINK_INTRA_CANDIDATE || 
+        getCandidateType() == XLINK_INTER_INTRA_CANDIDATE)) {
+      XLinkPeptide *xpep = (XLinkPeptide*)this;
+      XLinkablePeptide& lpep = xpep->getXLinkablePeptide(0);
+      output_file->setColumnCurrentRow(
+        (MATCH_COLUMNS_T)column_idx,
+        lpep.getXCorr());
+    } else {
+      output_file->setColumnCurrentRow((MATCH_COLUMNS_T)column_idx, 0);
+    }
     break;
   case XCORR_SECOND_COL:
-    output_file->setColumnCurrentRow(
-    (MATCH_COLUMNS_T)column_idx,
-    getScore(XCORR_SECOND));
+    if ((get_int_parameter("xlink-top-n") != 0) && 
+        (getCandidateType() == XLINK_INTER_CANDIDATE ||
+        getCandidateType() == XLINK_INTRA_CANDIDATE ||
+        getCandidateType() == XLINK_INTER_INTRA_CANDIDATE)) {
+      XLinkPeptide *xpep = (XLinkPeptide*)this;
+      XLinkablePeptide& lpep = xpep->getXLinkablePeptide(1);
+      output_file->setColumnCurrentRow(
+        (MATCH_COLUMNS_T)column_idx,
+        lpep.getXCorr());
+    } else {
+      output_file->setColumnCurrentRow((MATCH_COLUMNS_T)column_idx, 0);
+    }
     break;
   case PROTEIN_ID_X_COL:
     output_file->setColumnCurrentRow(
