@@ -227,7 +227,7 @@ int SearchForXLinks::xlinkSearchMain() {
       if (target_candidates->getMatchTotal() >= min_weibull_points) {
         carp(CARP_DEBUG, "Fitting weibull to targets");
         target_candidates->fitWeibull();
-        if (get_boolean_parameter("output-weibull-points")) {
+        if (get_boolean_parameter("write-weibull-points")) {
 	  writeTrainingCandidates(target_candidates, scan_num);
 	}
         MatchCollection::transferWeibull(target_candidates, decoy_candidates);
