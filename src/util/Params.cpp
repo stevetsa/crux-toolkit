@@ -378,10 +378,6 @@ void Params::Initialize() {
   InitStringParam("fragment-mass", "mono", "average|mono",
     "Specify which isotopes to use in calculating fragment ion mass.",
     "Used by crux-predict-peptide-ions.", true);
-  InitStringParam("isotopic-mass", "mono", "average|mono",
-    "Specify the type of isotopic masses to use when calculating the peptide mass.",
-    "Used from command line or parameter file by "
-    "crux-generate-peptides and crux generate-decoys.", true);
   InitStringParam("mod", "NO MODS",
     "[[nohtml:"
     "<mass change>:<aa list>:<max per peptide>:<prevents cleavage>:<prevents cross-link>]]"
@@ -637,7 +633,7 @@ void Params::Initialize() {
   InitBoolParam("monoisotopic-precursor", true,
     "When computing the mass of a peptide, use monoisotopic masses rather than "
     "average masses.",
-    "Available for tide-index", true);
+    "Available for tide-index, search-for-xlinks", true);
   InitStringParam("mods-spec", "C+57.02146",
     "[[nohtml:Expression for static and variable mass modifications to include. "
     "Specify a comma-separated list of modification sequences of the form: "
@@ -1639,7 +1635,6 @@ void Params::Categorize() {
   items.insert("max-mass");
   items.insert("min-mass");
   items.insert("monoisotopic-precursor");
-  items.insert("isotopic-mass");
   items.insert("clip-nterm-methionine");
   items.insert("unique-peptides");
   container_.AddCategory("Peptide properties", items);

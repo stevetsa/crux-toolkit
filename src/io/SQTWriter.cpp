@@ -1,5 +1,6 @@
 #include "SQTWriter.h"
 #include "util/FileUtils.h"
+#include "util/GlobalParams.h"
 
 using namespace Crux;
 
@@ -39,7 +40,7 @@ void SQTWriter::writeHeader(
 
   time_t hold_time = time(0);
 
-  MASS_TYPE_T mass_type = get_mass_type_parameter("isotopic-mass");
+  MASS_TYPE_T mass_type = GlobalParams::getIsotopicMass();
   char precursor_masses[64];
   mass_type_to_string(mass_type, precursor_masses);
 
@@ -83,7 +84,7 @@ void SQTWriter::writeHeader(
   char aa_str[2];
   aa_str[1] = '\0';
   int alphabet_size = (int)'A' + ((int)'Z'-(int)'A');
-  MASS_TYPE_T isotopic_type = get_mass_type_parameter("isotopic-mass");
+  MASS_TYPE_T isotopic_type = GlobalParams::getIsotopicMass();
 
   *file_ << fixed << setprecision(3);
   for(aa = (int)'A'; aa < alphabet_size -1; aa++){

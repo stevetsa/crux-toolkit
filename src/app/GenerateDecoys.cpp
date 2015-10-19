@@ -2,6 +2,7 @@
 #include "parameter.h"
 #include "model/ProteinPeptideIterator.h"
 #include "util/Params.h"
+#include "util/GlobalParams.h"
 
 using namespace std;
 
@@ -23,7 +24,7 @@ int GenerateDecoys::main(int argc, char** argv) {
   // Get options
   double minMass = Params::GetDouble("min-mass");
   double maxMass = Params::GetDouble("max-mass");
-  massType_ = get_mass_type_parameter("isotopic-mass");
+  massType_ = GlobalParams::getIsotopicMass();
 
   bool overwrite = Params::GetBool("overwrite");
 
@@ -496,7 +497,7 @@ vector<string> GenerateDecoys::getOptions() const {
     "custom-enzyme",
     "digestion",
     "missed-cleavages",
-    "isotopic-mass",
+    "monoisotopic-precursor",
     "clip-nterm-methionine",
     "decoy-format",
     "decoy-prefix",

@@ -33,7 +33,14 @@ vector<int> GlobalParams::isotope_windows_;
 
 
 void GlobalParams::set() {
-  isotopic_mass_ = get_mass_type_parameter("isotopic-mass");
+  bool monoisotopic_precursor = 
+    get_boolean_parameter("monoisotopic-precursor");
+  if (monoisotopic_precursor) {
+    isotopic_mass_ = MONO;
+  } else {
+    isotopic_mass_ = AVERAGE;
+  }
+
   missed_cleavages_ = get_int_parameter("missed-cleavages");
   max_aas_modified_ = get_int_parameter("max-aas-modified");
   min_mass_ = get_double_parameter("min-mass");

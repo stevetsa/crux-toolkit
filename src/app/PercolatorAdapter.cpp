@@ -7,6 +7,7 @@
 #include "PercolatorAdapter.h"
 #include "build/src/percolator/src/DataSet.h"
 #include "util/StringUtils.h"
+#include "util/GlobalParams.h"
 #include "FeatureNames.h"
 
 #include <map>
@@ -404,7 +405,7 @@ MODIFIED_AA_T* PercolatorAdapter::getModifiedAASequence(
   set_verbosity_level(0);
 
   int mod_len = convert_to_mod_aa_seq(perc_seq.c_str(), &mod_seq, MOD_MASS_ONLY);
-  peptide_mass = get_mod_aa_seq_mass(mod_seq, get_mass_type_parameter("isotopic-mass"));
+  peptide_mass = get_mod_aa_seq_mass(mod_seq, GlobalParams::getIsotopicMass());
   seq = string(mod_len, '\0');
   for (int i = 0; i < mod_len; i++) {
     seq[i] = modified_aa_to_char(mod_seq[i]);

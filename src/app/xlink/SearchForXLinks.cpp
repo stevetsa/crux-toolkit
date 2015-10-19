@@ -124,7 +124,7 @@ vector<string> SearchForXLinks::getOptions() const {
     "mod-mass-format",
     "use-flanking-peaks",
     "fragment-mass",
-    "isotopic-mass",
+    "monoisotopic-precursor",
     "isotope-windows",
     "compute-p-values",
     "seed",

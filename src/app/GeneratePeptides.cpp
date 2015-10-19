@@ -101,7 +101,7 @@ void GeneratePeptides::printHeader(){
   missed_cleavages = get_int_parameter("missed-cleavages");
   printf("#\tnumber of allowed missed-cleavages: %d\n", missed_cleavages);
   printf("#\tisotopic mass type: %s\n", 
-         get_string_parameter("isotopic-mass").c_str());
+         get_boolean_parameter("monoisotopic-precursor")?"mono":"average");
   printf("#\tverbosity: %d\n", get_verbosity_level());
 
   AA_MOD_T** aa_mod_list = NULL;
@@ -162,7 +162,7 @@ vector<string> GeneratePeptides::getOptions() const {
     "max-length",
     "min-mass",
     "max-mass",
-    "isotopic-mass",
+    "monoisotopic-precursor",
     "decoys",
     "enzyme",
     "custom-enzyme",
