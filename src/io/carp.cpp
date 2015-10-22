@@ -9,6 +9,7 @@
 #include "util/crux-utils.h"
 #include "parameter.h"
 #include "util/utils.h"
+#include "util/CarpStreamBuf.h"
 
 using namespace std;
 
@@ -20,6 +21,26 @@ static FILE* log_file = NULL;
 
 HASH_T * messages_;
 unsigned int hash_size_ = 1000;
+
+CarpStreamBuf* carp_stream_buffer = NULL;
+streambuf* cerr_buf = NULL;
+
+void carp_initialize() {
+  /* Re-route stderr to log file. */
+  carp_stream_buffer = new CarpStreamBuf();
+  cerr_buf = std::cerr.rdbuf();
+  std::cerr.rdbuf(carp_stream_buffer);
+}
+
+void carp_finalize() {
+  /* Recover stderr */
+  if (cerr_buf) {
+    std::cerr.rdbuf(cerr_buf);
+  }
+  if (carp_stream_buffer) {
+    delete carp_stream_buffer;
+  }
+}
 
 void set_verbosity_level(int verbosity){
   G_verbosity = verbosity;
@@ -39,6 +60,7 @@ void open_log_file(string log_file_name) {
   bool overwrite = get_boolean_parameter("overwrite");
   log_file_name = prefix_fileroot_to_name(log_file_name);
   log_file = create_file_in_path(log_file_name, output_dir.c_str(), overwrite);
+
 }
 
 /**

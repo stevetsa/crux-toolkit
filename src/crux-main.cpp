@@ -49,13 +49,13 @@
  * printing the current version number.
  */
 int main(int argc, char** argv){
+  carp_initialize();
   try {
 #ifdef _MSC_VER
     // Turn off auto-tranlation of line-feed to 
     // carriage-return/line-feed
     _set_fmode(_O_BINARY);
 #endif 
-
     CruxApplicationList applications("crux");
 
     // Primary commands
@@ -104,5 +104,6 @@ int main(int argc, char** argv){
   } catch (...) {
     carp(CARP_FATAL, "An unknown exception occurred.");
   }
+  carp_finalize();
 }// end main
 

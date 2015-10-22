@@ -69,6 +69,7 @@ void CruxApplication::initialize(int argc, char** argv) {
   processParams();
   Params::Finalize();
   GlobalParams::set();
+  carp_initialize();
   set_verbosity_level(Params::GetInt("verbosity"));
 
   carp(CARP_INFO, "Beginning %s.", getName().c_str());

@@ -1,7 +1,6 @@
 #include <cstdio>
 #include <fstream>
 #include "io/carp.h"
-#include "util/CarpStreamBuf.h"
 #include "util/AminoAcidUtil.h"
 #include "util/Params.h"
 #include "util/FileUtils.h"
@@ -53,11 +52,6 @@ int TideIndexApplication::main(
   if (cmd_line.empty()) {
     cmd_line = "crux tide-index " + fasta + " " + index;
   }
-
-  // Reroute stderr
-  CarpStreamBuf buffer;
-  streambuf* old = cerr.rdbuf();
-  cerr.rdbuf(&buffer);
 
   FLAGS_tmpfile_prefix = make_file_path("modified_peptides_partial_");
 
@@ -323,9 +317,6 @@ int TideIndexApplication::main(
        ++i) {
     delete *i;
   }
-
-  // Recover stderr
-  cerr.rdbuf(old);
   remove(modless_peptides.c_str());
   remove(peakless_peptides.c_str());
 

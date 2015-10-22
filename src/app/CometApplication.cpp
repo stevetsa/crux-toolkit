@@ -6,7 +6,6 @@
 #include "CometSearch/CometSearchManager.h"
 #include "model/ModifiedPeptidesIterator.h"
 #include "util/AminoAcidUtil.h"
-#include "util/CarpStreamBuf.h"
 #include "util/FileUtils.h"
 #include "util/Params.h"
 #include "util/StringUtils.h"
@@ -45,11 +44,6 @@ int CometApplication::main(const vector<string>& input_files) {
     }
   }
 
-  /* Re-route stderr to log file */
-  CarpStreamBuf buffer;
-  streambuf* old = std::cerr.rdbuf();
-  std::cerr.rdbuf(&buffer);
-
   /* set Parmeters */
   vector<InputFileInfo*> pv_input_files;
   CometSearchManager comet_search_mgr;
@@ -58,9 +52,6 @@ int CometApplication::main(const vector<string>& input_files) {
   
   /* Run search */
   comet_search_mgr.DoSearch();
-
-  /* Recover stderr */
-  std::cerr.rdbuf(old);
 
   return 0;
 }

@@ -12,7 +12,6 @@
 #include <sstream>
 #include <iomanip>
 #include <ios>
-#include "util/CarpStreamBuf.h"
 #include "util/FileUtils.h"
 #include "util/Params.h"
 #include "io/MzIdentMLWriter.h"
@@ -279,11 +278,6 @@ int PercolatorApplication::main(
 
   carp(CARP_DEBUG, "cmd:%s", perc_cmd.c_str());
   
-  /* Re-route stdeer to log file. */
-  CarpStreamBuf buffer;
-  streambuf* old = std::cerr.rdbuf();
-  std::cerr.rdbuf(&buffer);
-
   /* Call percolatorMain */
   PercolatorAdapter pCaller;
   int retVal = -1;
@@ -358,9 +352,6 @@ int PercolatorApplication::main(
   }
 
   Globals::clean();
-
-  /* Recover stderr */
-  std::cerr.rdbuf(old);
 
   return retVal;
 }
