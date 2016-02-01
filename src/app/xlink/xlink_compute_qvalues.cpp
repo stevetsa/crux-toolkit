@@ -268,7 +268,7 @@ int xlink_compute_qvalues(){
   //sort back by scans? or q-value?
   //target_matches_bonf.sortByFloatColumn("q-value decoy");
 
-  string result_file = output_dir + "/search-for-xlinks.qvalues..txt";
+  string result_file = output_dir + "/search-for-xlinks.qvalues.txt";
   target_matches_bonf.saveData(result_file);
 
   result_file = output_dir + "/search-for-xlinks.pvalues.decoy.txt";
