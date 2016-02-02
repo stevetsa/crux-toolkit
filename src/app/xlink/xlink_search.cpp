@@ -59,7 +59,7 @@ void writeTrainingCandidates(XLinkMatchCollection* training_candidates, int scan
     "scan." + DelimitedFileWriter::to_string(scan_num) + 
     ".charge." + DelimitedFileWriter::to_string(training_candidates->getCharge()) +
     ".training.candidates.txt";
-  cerr<<"writing "<<output_file<<endl;
+  //cerr<<"writing "<<output_file<<endl;
   DelimitedFileWriter writer(output_file.c_str());
 
   writer.setColumnName("scan", 0);

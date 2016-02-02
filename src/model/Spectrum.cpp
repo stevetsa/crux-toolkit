@@ -717,7 +717,15 @@ void Spectrum::setLowestSp(FLOAT_T sp)
  * \returns A read-only reference to the vector of possible chare
  * states for this spectrum.  If EZ states are available, return those.
  */
-const vector<SpectrumZState>& Spectrum::getZStates() const {
+const vector<SpectrumZState>& Spectrum::getZStatesConst() const {
+  if (ezstates_.size() != 0) {
+    return ezstates_;
+  } else {
+    return zstates_;
+  }
+}
+
+vector<SpectrumZState>& Spectrum::getZStates() {
   if (ezstates_.size() != 0) {
     return ezstates_;
   } else {
@@ -761,18 +769,28 @@ vector<SpectrumZState> Spectrum::getZStatesToSearch() {
 /**
  * \returns the ZState at the requested index
  */
-const SpectrumZState& Spectrum::getZState(
+const SpectrumZState& Spectrum::getZStateConst(
+  int idx ///< the zstate index
+) {
+  return getZStatesConst().at(idx);
+}
+
+/**
+ * \returns the ZState at the requested index
+ */
+SpectrumZState& Spectrum::getZState(
   int idx ///< the zstate index
 ) {
   return getZStates().at(idx);
 }
 
 
+
 /**
  * \returns The number of possible charge states of this spectrum.
  */
 unsigned int Spectrum::getNumZStates() const {
-  return getZStates().size();
+  return getZStatesConst().size();
 }
 
 /**

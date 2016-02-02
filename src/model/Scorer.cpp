@@ -33,6 +33,7 @@
 using namespace Crux;
 
 FLOAT_T* Scorer::observed_ = NULL;
+FLOAT_T* Scorer::observed_g_ = NULL;
 size_t Scorer::current_observed_size_ = 0;
 
 
@@ -813,30 +814,6 @@ bool Scorer::createIntensityArrayObserved(
   //const string& stop_after ///< the preprocessing step to stop after -in
   OBSERVED_PREPROCESS_STEP_T stop_after
   ) {
-  /*
-  const int STEP_DISCRETIZE = 1;
-  const int STEP_REMOVE_PRECURSOR = 2;
-  const int STEP_SQUARE_ROOT = 3;
-  const int STEP_REMOVE_GRASS = 4;
-  const int STEP_TEN_BIN = 5;
-  const int STEP_XCORR = 6;
-  int stop_step;
-  if (stop_after == "discretize") {
-    stop_step = STEP_DISCRETIZE;
-  } else if (stop_after == "remove-precursor") {
-    stop_step = STEP_REMOVE_PRECURSOR;
-  } else if (stop_after == "square-root") {
-    stop_step = STEP_SQUARE_ROOT;
-  } else if (stop_after == "remove-grass") {
-    stop_step = STEP_REMOVE_GRASS;
-  } else if (stop_after == "ten-bin") {
-    stop_step = STEP_TEN_BIN;
-  } else if (stop_after == "xcorr") {
-    stop_step = STEP_XCORR;
-  } else {
-    carp(CARP_FATAL, "Invalid stop-after value '%s'.", stop_after.c_str());
-  }
-  */
   FLOAT_T precursor_mz = spectrum->getPrecursorMz();
   FLOAT_T experimental_mass_cut_off = precursor_mz*charge + 50;
 
@@ -947,7 +924,9 @@ bool Scorer::createIntensityArrayObserved(
 
   if (observed.size() > current_observed_size_) {
     delete []observed_;
+    delete []observed_g_;
     observed_ = new FLOAT_T[observed.size()];
+    observed_g_ = new FLOAT_T[observed.size()];
   }
   copy(observed.begin(), observed.end(), observed_);
 
@@ -982,9 +961,98 @@ bool Scorer::createIntensityArrayObserved(
         }
       }
     }
+    // Gaussian smooth
+    
+    FLOAT_T c_stddev = get_FWHM_to_gaussian_c_stddev(
+      get_double_parameter("gaussian-fwhm")
+    );
+
+    int ngbins_ = get_gaussian_num_bins(
+      c_stddev,
+      get_double_parameter("gaussian-min-height"),
+      bin_width_
+    );
+    
+
+    carp_once(CARP_INFO, "fwhm:%g min:%g c:%g b:%i",
+           get_double_parameter("gaussian-fwhm"),
+           get_double_parameter("gaussian-min-height"),
+           c_stddev,
+           ngbins_
+           );
+    
+    
+    vector<FLOAT_T> g_table;
+    if (ngbins_ != 0 && c_stddev != 0) {
+      for (int i = -ngbins_;i<=ngbins_;i++) {
+        FLOAT_T xvalue = (FLOAT_T)i * bin_width_;
+        int ii = i + ngbins_;
+        g_table.push_back(get_gaussian_value(xvalue, c_stddev));
+        carp_once(CARP_INFO, "offset:%i x:%g g:%g", i, xvalue, g_table[ii]);
+      }
+    } else {
+      g_table.push_back(1);
+    }
+    //carp(CARP_FATAL, "Stopping here");
+    int n = observed.size()-1;
+    for (int i = 0; i <= n; i++) {
+      observed_g_[i] = 0.0;
+      int right_index = min(n, i + ngbins_);
+      int left_index = max(0, i - ngbins_);
+      for (int j = left_index; j <=right_index;j++) {
+        int ii = i - j + ngbins_;
+        observed_g_[i] += g_table[ii] * observed_[i];
+      }
+    }
   }
   return true;
 }
+
+FLOAT_T get_gaussian_value(
+  FLOAT_T x_shift,
+  FLOAT_T c_stddev
+) {
+  //If we are exactly at 0, then the value will be 1.0
+  if (x_shift == 0) {
+    return(1.0);
+  } else if (c_stddev == 0) {
+    //else if the stddev is 0, then the value will be 0 when x!=0.
+    return(0.0);
+  } else {
+    //Calculate the gaussian value.
+    return(exp(-(x_shift * x_shift) / (2.0 * c_stddev * c_stddev)));
+  }
+}
+
+FLOAT_T get_FWHM_to_gaussian_c_stddev(
+  FLOAT_T fwhm_width
+) {
+  FLOAT_T c = fwhm_width / (2.0 * sqrt(2.0 * log(2.0)));
+  return(c);  
+}
+
+int get_gaussian_num_bins(
+  FLOAT_T c_stddev,
+  FLOAT_T min_height,
+  FLOAT_T bin_width
+) {
+  
+  if (min_height == 0 || min_height == 1) {
+    return 0;
+  }
+  
+  
+  FLOAT_T x = sqrt (2.0 * log(1.0/min_height)) * c_stddev;
+  
+  int num_bins = (int)(x / bin_width);
+  
+  carp_once(CARP_INFO, "c:%g min:%g bw:%g x:%g nbins:%i", c_stddev, min_height, bin_width, x, num_bins);
+  
+  return(num_bins);
+  
+}
+
+
 
 /**
  * Generate the processed peaks for the spectrum and return via the
@@ -1274,7 +1342,8 @@ FLOAT_T Scorer::crossCorrelation(
   // compare each location in theoretical spectrum
   int idx;
   for(idx = 0; idx < size; ++idx){
-    score_at_zero += observed_[idx] * theoretical[idx];
+    //score_at_zero += observed_[idx] * theoretical[idx];
+    score_at_zero += observed_g_[idx] * theoretical[idx];
   }
 
   return score_at_zero / 10000.0;
@@ -1292,7 +1361,7 @@ FLOAT_T Scorer::crossCorrelation(
        ++iter) {
 
     //if (iter->first != last_idx) {
-      score_at_zero += observed_[iter->first] * iter->second;
+      score_at_zero += observed_g_[iter->first] * iter->second;
       //  last_idx = iter->first;
     //}
   }

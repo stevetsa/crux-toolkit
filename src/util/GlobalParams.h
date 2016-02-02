@@ -53,7 +53,7 @@ class GlobalParams {
   static const DIGEST_T& getDigestion();
   static const FLOAT_T& getRemovePrecursorTolerance();
   static const OBSERVED_PREPROCESS_STEP_T& getStopAfter();
-  static const bool& getXlinkIncludeInter();
+  static const bool& getXLinkIncludeInter();
   static const bool& getXLinkIncludeIntra();
   static const bool& getXLinkIncludeInterIntra();
   static const int& getMaxXLinkMods();

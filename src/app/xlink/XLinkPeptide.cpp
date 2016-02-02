@@ -250,7 +250,7 @@ void XLinkPeptide::addCandidates(
   XLinkMatchCollection& candidates ///< candidates -in/out
   ) {
 
-  bool include_inter = GlobalParams::getXlinkIncludeInter();
+  bool include_inter = GlobalParams::getXLinkIncludeInter();
   bool include_intra = GlobalParams::getXLinkIncludeIntra();
   bool include_inter_intra = GlobalParams::getXLinkIncludeInterIntra();
 
@@ -275,7 +275,7 @@ void XLinkPeptide::addCandidates(
       XLinkablePeptide& pep2 = linkable_peptides[pep_idx2];
       FLOAT_T current_mass = pep2.getMassConst(MONO);
       if (current_mass > pep2_max_mass) {
-	if (pep_idx2 = start_idx2) {
+	if (pep_idx2 == start_idx2) {
 	  //done = true;
 	}
 	break;

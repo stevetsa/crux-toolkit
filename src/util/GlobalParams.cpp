@@ -139,7 +139,7 @@ const OBSERVED_PREPROCESS_STEP_T& GlobalParams::getStopAfter() {
   return stop_after_;
 }
 
-const bool& GlobalParams::getXlinkIncludeInter() {
+const bool& GlobalParams::getXLinkIncludeInter() {
   return xlink_include_inter_;
 }
   

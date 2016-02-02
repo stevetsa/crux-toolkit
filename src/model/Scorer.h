@@ -32,6 +32,9 @@
 #define INTEGERIZE(VALUE,BIN_SIZE,BIN_OFFSET) \
   ((int)( ( ( VALUE / BIN_SIZE ) + 1.0 ) - BIN_OFFSET ) )
 
+#define INVINTEGERIZE(BIN,BIN_SIZE,BIN_OFFSET) \
+  ( BIN_SIZE * ( (FLOAT_T)BIN + BIN_OFFSET - 1.0) )
+
 class Scorer {
 
  protected:
@@ -53,6 +56,7 @@ class Scorer {
 
   /// used for xcorr
   static FLOAT_T* observed_; ///< used for Xcorr: observed spectrum intensity array
+  static FLOAT_T* observed_g_;
   static size_t current_observed_size_;  
   FLOAT_T* theoretical_; ///< used for Xcorr: theoretical spectrum intensity array
 
@@ -432,6 +436,32 @@ class Scorer {
  
 
 };
+
+
+/**
+ * \Returns the value from the formula g(x) = e^(x^2/2c^2).
+ */
+
+FLOAT_T get_gaussian_value(
+  FLOAT_T x_shift, ///< x or the shift value for the gaussian
+  FLOAT_T c_stddev /// < c or the std. dev for the gaussian
+  );
+
+/**
+ * \Returns the c_stddev for the given full with at half-maximum value (FWHM)
+ * for a gaussian distribution.
+ */
+FLOAT_T get_FWHM_to_gaussian_c_stddev(
+  FLOAT_T fwhm_width
+  );
+
+int get_gaussian_num_bins(
+    FLOAT_T c_stddev,
+    FLOAT_T min_height,
+    FLOAT_T bin_width
+);
+
+
 
 
 /*************************************

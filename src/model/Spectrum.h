@@ -203,13 +203,14 @@ class Spectrum{
    * \returns The a const reference to a vector of the possible charge
    * states of this spectrum. If EZ states are available, return those.
    */
-  const std::vector<SpectrumZState>& getZStates() const;
-
+  const std::vector<SpectrumZState>& getZStatesConst() const;
+  std::vector<SpectrumZState>& getZStates();
   /**
    * \returns the ZState at the requested index
    */
-  const SpectrumZState& getZState(int idx);
-
+  const SpectrumZState& getZStateConst(int idx);
+  SpectrumZState& getZState(int idx);
+  
   /**
    * Considers the spectrum-charge parameter and returns the
    * appropriate charge states that should be searched for this

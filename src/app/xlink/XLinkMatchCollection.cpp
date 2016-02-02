@@ -176,24 +176,28 @@ void XLinkMatchCollection::addCandidates(
   bool decoy
   ) {
 
-  carp(CARP_DEBUG, "XLinkMatchCollection.addCandidates() start");
+  //carp(CARP_INFO, "XLinkMatchCollection.addCandidates() start");
 
   include_linear_peptides_ = get_boolean_parameter("xlink-include-linears");
   include_self_loops_ = get_boolean_parameter("xlink-include-selfloops");
 
-  carp(CARP_DEBUG, "Adding xlink candidates");
-  carp(CARP_DEBUG, "precursor:%g", precursor_mass);
-  carp(CARP_DEBUG, "min:%g", min_mass);
-  carp(CARP_DEBUG, "max:%g", max_mass);
-  XLinkPeptide::addCandidates(
-    spectrum,
-    precursor_mass,
-    precursor_charge,
-    min_mass, 
-    max_mass,
-    decoy,
-    *this);
-
+  if (GlobalParams::getXLinkIncludeInter() ||
+      GlobalParams::getXLinkIncludeIntra() ||
+      GlobalParams::getXLinkIncludeInterIntra()) {
+  
+    carp(CARP_DEBUG, "Adding xlink candidates");
+    carp(CARP_DEBUG, "precursor:%g", precursor_mass);
+    carp(CARP_DEBUG, "min:%g", min_mass);
+    carp(CARP_DEBUG, "max:%g", max_mass);
+    XLinkPeptide::addCandidates(
+      spectrum,
+      precursor_mass,
+      precursor_charge,
+      min_mass, 
+      max_mass,
+      decoy,
+      *this);
+  }
   if (include_linear_peptides_) {
 
     LinearPeptide::addCandidates(

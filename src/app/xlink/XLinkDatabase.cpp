@@ -61,6 +61,7 @@ void XLinkDatabase::initialize() {
   for (int mod_idx=0;mod_idx<num_peptide_mods; mod_idx++) {
     PEPTIDE_MOD_T* peptide_mod = peptide_mods[mod_idx];
     double delta_mass = peptide_mod_get_mass_change(peptide_mod);
+    carp(CARP_INFO, "delta mass:%g", delta_mass);
     //
     ModifiedPeptidesIterator* peptide_iterator =
       new ModifiedPeptidesIterator(
@@ -385,14 +386,23 @@ void XLinkDatabase::print() {
 
       peptides_file << setprecision(8);
 
-      peptides_file << "mass\tsequence\tprotein id"<<endl;
+      peptides_file << "mass\tsequence\tprotein id\tunshuffled"<<endl;
 
       for (int idx=0;idx < target_linear_peptides_.size();idx++) {
      
         peptides_file << target_linear_peptides_[idx].getMass(MONO) << "\t";
         peptides_file << target_linear_peptides_[idx].getSequenceString() << "\t";
-        peptides_file << target_linear_peptides_[idx].getProteinIdString() << endl;
+        peptides_file << target_linear_peptides_[idx].getProteinIdString() << "\t";
+        peptides_file << "" << endl;
       }
+      
+      for (int idx=0;idx < decoy_linear_peptides_.size();idx++) {
+        peptides_file << decoy_linear_peptides_[idx].getMass(MONO) << "\t";
+        peptides_file << decoy_linear_peptides_[idx].getSequenceString() << "\t";
+        peptides_file << decoy_linear_peptides_[idx].getProteinIdString() << "\t";
+        peptides_file << decoy_linear_peptides_[idx].getPeptide(0)->getUnshuffledSequence() << endl;
+      }
+      
       peptides_file.flush();
     }
 
