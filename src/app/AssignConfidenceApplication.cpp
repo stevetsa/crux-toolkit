@@ -158,7 +158,7 @@ int AssignConfidenceApplication::main(const vector<string> input_files) {
   bool distinct_matches = false;
   MatchCollectionParser parser;
   std::map<string, FLOAT_T> BestPeptideScore;
-
+  
   for (vector<string>::const_iterator iter = input_files.begin(); iter != input_files.end(); ++iter) {
 
     string target_path = *iter;
@@ -250,9 +250,10 @@ int AssignConfidenceApplication::main(const vector<string> input_files) {
 	   decoy_path.c_str());
 
       // Mark decoy matches
-      std::map<int, int> pairidx; // key = (scan number * 1000) + (charge * 100); value = index
+      std::map<int, int> pairidx; // key = (scan number * 1000) + (charge * 100) + (rank * 10); value = index
       int scanid;
       int charge;
+      int rank;
       int cnt = 0;
       MatchIterator* temp_iter = new MatchIterator(temp_collection);
       while (temp_iter->hasNext()) {
@@ -266,20 +267,22 @@ int AssignConfidenceApplication::main(const vector<string> input_files) {
 
         decoy_match->setNullPeptide(true);
         if (command != TDC_COMMAND) {
-          if (sidak) {
+/*          if (sidak) {
             if (decoy_match->getRank(XCORR) > 1){
               carp_once(CARP_WARNING, "Sidak correction is not defined for non-top-matches. Further warnings are not shown. ");
             }
             double sidak_adjustment = 1 - pow(1 - decoy_match->getScore(score_type), decoy_match->getTargetExperimentSize());
             decoy_match->setScore(SIDAK_ADJUSTED, sidak_adjustment);
           }
+*/
           carp(CARP_INFO, "Adding decoy match.\n");
           decoy_matches->addMatch(decoy_match);
         }
         if (command == TDC_COMMAND) {
           scanid = decoy_match->getSpectrum()->getFirstScan() * 1000;
           charge = decoy_match->getCharge() * 100;
-          pairidx[scanid + charge] = cnt;
+          rank   = decoy_match->getRank(XCORR)*10;
+          pairidx[scanid + charge + rank] = cnt;
         }
       }
       delete temp_iter;
@@ -306,11 +309,12 @@ int AssignConfidenceApplication::main(const vector<string> input_files) {
             continue;
           }
 
-	  // Retrieve the index of the corresponding decoy PSM.
+	        // Retrieve the index of the corresponding decoy PSM.
           Crux::Match* decoy_match;
           scanid = target_match->getSpectrum()->getFirstScan() * 1000;
           charge = target_match->getCharge() * 100;
-          decoy_idx = pairidx[scanid + charge];
+          rank   = target_match->getRank(XCORR)*10;
+          decoy_idx = pairidx[scanid + charge + rank];
 
           if (peptide_level) {
             if (decoy_idx > 0){
@@ -368,26 +372,28 @@ int AssignConfidenceApplication::main(const vector<string> input_files) {
 
       // Only use top-ranked matches.
       if (match->getRank(XCORR) > top_match){
-	if (is_decoy) {
-	  num_decoy_rank_skipped++;
-	} else {
-	  num_target_rank_skipped++;
-	}
+        if (is_decoy) {
+          num_decoy_rank_skipped++;
+        } else {
+          num_target_rank_skipped++;
+        }
         continue;
       }
 
       if (peptide_level) { //find and keep the best score for each decoy peptide
         FLOAT_T score = match->getScore(score_type);
         string peptideStr = getPeptideSeq(match);
+
         FLOAT_T bestScore;
         try {
           bestScore = BestPeptideScore.at(peptideStr);
-          if (BestPeptideScore.at(peptideStr) != score) {  //not the best scoring peptide
-	    if (is_decoy) {
-	      num_decoy_peptide_skipped++;
-	    } else {
-	      num_target_peptide_skipped++;
-	    }
+          if (bestScore != score) {  //not the best scoring peptide
+            if (is_decoy) {
+              num_decoy_peptide_skipped++;
+            } 
+            else {
+              num_target_peptide_skipped++;              
+            }
             continue;
           }
           else {
@@ -950,17 +956,12 @@ void AssignConfidenceApplication::peptide_level_filtering(
   SCORER_TYPE_T score_type,
   bool ascending){
 
-    bool charge_peptide = Params::GetBool("combine-charge-states");
-
     MatchIterator* temp_iter = new MatchIterator(match_collection);
 
     while (temp_iter->hasNext()) {
       Crux::Match* match = temp_iter->next();
       FLOAT_T score = match->getScore(score_type);
       string peptideStr = getPeptideSeq(match);
-      if (charge_peptide){
-        peptideStr += StringUtils::ToString(match->getCharge());
-      }
 
       FLOAT_T bestScore = 0.0;
       try {
