@@ -65,30 +65,32 @@ int AssignConfidenceApplication::main(const vector<string> input_files) {
     output_ = new OutputFiles(this);
   }
   
-  COMMAND_T command;
-  bool peptide_level = false;
-  if (Params::GetString("estimation-method") == "tdc") {
-    command = TDC_COMMAND;
-  } else if (Params::GetString("estimation-method") == "mix-max"){
-    command = MIXMAX_COMMAND;
+  ESTIMATION_METHOD_T estimation_method;
+  string method_param = Params::GetString("estimation-method");
+  carp(CARP_INFO, "Estimation method = %s.", method_param.c_str());
+  if (strcmp(method_param.c_str(), "tdc") == 0) {
+    estimation_method = TDC_METHOD;
+  } else if (strcmp(method_param.c_str(), "mix-max") == 0) {
+    estimation_method = MIXMAX_METHOD;
+  } else if (strcmp(method_param.c_str(), "peptide-level") == 0) {
+    estimation_method = PEPTIDE_LEVEL_METHOD;
   } else {
-    command = TDC_COMMAND;
-    peptide_level = true;
+    carp(CARP_FATAL, "The estimation method \"%s\" is not supported.", method_param.c_str());
   }
-
+    
   // Perform the analysis.
   if (input_files.size() == 0) {
     carp(CARP_FATAL, "No input files found.");
   }
   combine_modified_peptides_ = Params::GetBool("combine-modified-peptides");
-  if (peptide_level == false && combine_modified_peptides_ == true){
-    carp(CARP_WARNING, "The \"combine-modified-peptides\" option is ignored when estimation-method=peptide-level.");
+  if (estimation_method != PEPTIDE_LEVEL_METHOD && combine_modified_peptides_ == true){
+    carp(CARP_WARNING, "The \"combine-modified-peptides\" option is ignored when estimation-method is not peptide-level.");
   }
   bool sidak = Params::GetBool("sidak");
   combine_charge_states_ = Params::GetBool("combine-charge-states");
 
   int top_match = 1;
-  if (peptide_level == true){
+  if (estimation_method == PEPTIDE_LEVEL_METHOD){
     top_match = MAX_PSMS+1;
   }
 
@@ -177,7 +179,7 @@ int AssignConfidenceApplication::main(const vector<string> input_files) {
     }
 
     if (!FileUtils::Exists(decoy_path)) {
-      if (command == MIXMAX_COMMAND) {
+      if (estimation_method == MIXMAX_METHOD) {
         carp(CARP_FATAL, "Decoy file from separate target-decoy search is required "
           "for mix-max q-value calculation");
       }
@@ -192,8 +194,8 @@ int AssignConfidenceApplication::main(const vector<string> input_files) {
     carp(CARP_INFO, "Found %d PSMs in %s.", match_collection->getMatchTotal(),
 	 target_path.c_str());
     
+    // If necessary, automatically identify the score type.
     if (score_type == INVALID_SCORER_TYPE) {
-      // Look for various scores
       SCORER_TYPE_T typeArr[] = { XCORR, EVALUE, TIDE_SEARCH_EXACT_PVAL, TIDE_SEARCH_EXACT_SMOOTHED};
       vector<SCORER_TYPE_T> scoreTypes(typeArr,
                                        typeArr + sizeof(typeArr) / sizeof(SCORER_TYPE_T));
@@ -230,7 +232,7 @@ int AssignConfidenceApplication::main(const vector<string> input_files) {
     }
 
     // Find and keep the best score for each peptide.
-    if (peptide_level) { 
+    if (estimation_method == PEPTIDE_LEVEL_METHOD) { 
       peptide_level_filtering(match_collection, &BestPeptideScore, score_type, ascending);
       carp(CARP_INFO, "%d distinct target peptides.", BestPeptideScore.size());
     }
@@ -265,36 +267,32 @@ int AssignConfidenceApplication::main(const vector<string> input_files) {
           continue;
         }
 
-        decoy_match->setNullPeptide(true);
-        if (command != TDC_COMMAND) {
-/*          if (sidak) {
-            if (decoy_match->getRank(XCORR) > 1){
-              carp_once(CARP_WARNING, "Sidak correction is not defined for non-top-matches. Further warnings are not shown. ");
-            }
-            double sidak_adjustment = 1 - pow(1 - decoy_match->getScore(score_type), decoy_match->getTargetExperimentSize());
-            decoy_match->setScore(SIDAK_ADJUSTED, sidak_adjustment);
-          }
-*/
-          carp(CARP_INFO, "Adding decoy match.\n");
+	decoy_match->setNullPeptide(true);
+	switch (estimation_method) {
+	case MIXMAX_METHOD:
           decoy_matches->addMatch(decoy_match);
-        }
-        if (command == TDC_COMMAND) {
+	  break;
+	case TDC_METHOD:
+	case PEPTIDE_LEVEL_METHOD:
           scanid = decoy_match->getSpectrum()->getFirstScan() * 1000;
           charge = decoy_match->getCharge() * 100;
           rank   = decoy_match->getRank(XCORR)*10;
           pairidx[scanid + charge + rank] = cnt;
+	  break;
+	case INVALID_METHOD:
+	  carp(CARP_FATAL, "No estimation method specified.");
         }
       }
       delete temp_iter;
 
       // Find and keep the best score for each decoy peptide.
-      if (peptide_level) { 
+      if (estimation_method == PEPTIDE_LEVEL_METHOD) {
         peptide_level_filtering(temp_collection, &BestPeptideScore, score_type, ascending);
         carp(CARP_INFO, "%d distinct target+decoy peptides.", BestPeptideScore.size());
       }
 
       // Carry out target-decoy competition.
-      if (command == TDC_COMMAND) {
+      if (estimation_method != MIXMAX_METHOD) {
         int decoy_idx;
         int numCandidates;
         MatchCollection* tdc_collection = new MatchCollection();
@@ -309,14 +307,14 @@ int AssignConfidenceApplication::main(const vector<string> input_files) {
             continue;
           }
 
-	        // Retrieve the index of the corresponding decoy PSM.
+          // Retrieve the index of the corresponding decoy PSM.
           Crux::Match* decoy_match;
           scanid = target_match->getSpectrum()->getFirstScan() * 1000;
           charge = target_match->getCharge() * 100;
           rank   = target_match->getRank(XCORR)*10;
           decoy_idx = pairidx[scanid + charge + rank];
 
-          if (peptide_level) {
+          if (estimation_method == PEPTIDE_LEVEL_METHOD) {
             if (decoy_idx > 0){
               decoy_match = decoy_iter->getMatch(decoy_idx - 1);
               numCandidates = target_match->getTargetExperimentSize() + decoy_match->getTargetExperimentSize();
@@ -380,7 +378,7 @@ int AssignConfidenceApplication::main(const vector<string> input_files) {
         continue;
       }
 
-      if (peptide_level) { //find and keep the best score for each decoy peptide
+      if (estimation_method == PEPTIDE_LEVEL_METHOD) { //find and keep the best score for each decoy peptide
         FLOAT_T score = match->getScore(score_type);
         string peptideStr = getPeptideSeq(match);
 
@@ -472,13 +470,16 @@ int AssignConfidenceApplication::main(const vector<string> input_files) {
     else {
       cols_to_print[MATCHES_SPECTRUM_COL] = true;
     }
-    switch (command){
-    case TDC_COMMAND:
+    switch (estimation_method){
+    case TDC_METHOD:
+    case PEPTIDE_LEVEL_METHOD: // FIXME: Make a peptide-level q-value column. --WSN 4 Feb 2016
       cols_to_print[QVALUE_TDC_COL] = true;
       break;
-    case MIXMAX_COMMAND:
+    case MIXMAX_METHOD:
       cols_to_print[QVALUE_MIXMAX_COL] = true;
       break;
+    case INVALID_METHOD:
+      carp(CARP_FATAL, "No estimation method specified.");
     }
     cols_to_print[SEQUENCE_COL] = true;
     cols_to_print[CLEAVAGE_TYPE_COL] = true;
@@ -490,13 +491,16 @@ int AssignConfidenceApplication::main(const vector<string> input_files) {
 
     output_->writeHeaders(cols_to_print);
   }
-  switch (command){
-  case TDC_COMMAND:
+  switch (estimation_method){
+  case TDC_METHOD:
+  case PEPTIDE_LEVEL_METHOD:
     derived_score_type = QVALUE_TDC;
     break;
-  case MIXMAX_COMMAND:
+  case MIXMAX_METHOD:
     derived_score_type = QVALUE_MIXMAX;
     break;
+  case INVALID_METHOD:
+    carp(CARP_FATAL, "No estimation method specified.");
   }
 
   // Compute q-values from p-values.
@@ -514,23 +518,22 @@ int AssignConfidenceApplication::main(const vector<string> input_files) {
 
   pvalues = target_matches->extractScores(score_type);
   decoy_scores = decoy_matches->extractScores(score_type);
-  switch (command){
-  case TDC_COMMAND:
-
+  switch (estimation_method){
+  case TDC_METHOD:
+  case PEPTIDE_LEVEL_METHOD:
     qvalues = compute_decoy_qvalues_tdc(pvalues, num_pvals,
       decoy_scores, num_decoys,
       ascending,
       1.0);
-
     break;
-  case MIXMAX_COMMAND:
-
+  case MIXMAX_METHOD:
     qvalues = compute_decoy_qvalues_mixmax(pvalues, num_pvals,
       decoy_scores, num_decoys,
       ascending,
       get_double_parameter("pi-zero"));
-
     break;
+  case INVALID_METHOD:
+      carp(CARP_FATAL, "No estimation method specified.");
   }
   unsigned int fdr1 = 0;
   unsigned int fdr5 = 0;
@@ -593,7 +596,7 @@ int AssignConfidenceApplication::main(const vector<string> input_files) {
   delete target_matches;
 
   return 0;
-}
+} // Main
 
 
 /**
@@ -1139,7 +1142,7 @@ string AssignConfidenceApplication::getFileStem() const {
 }
 
 COMMAND_T AssignConfidenceApplication::getCommand() const {
-  return QVALUE_COMMAND;
+  return QVALUE_COMMAND; // FIXME: Rename this. --WSN 4 Feb 2016
 }
 
 /**
