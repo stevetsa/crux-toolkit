@@ -52,13 +52,13 @@ AssignConfidenceApplication::~AssignConfidenceApplication() {
 }
 
 /**
- * Silly little helper function, using to generate keys when building a
- * hash on PSMs.
+ * Generate keys when building a hash on PSMs.
+ * http://stackoverflow.com/questions/98153/whats-the-best-hashing-algorithm-to-use-on-a-stl-string-when-using-hash-map/
  */
 int stringToIndex(string myString) {
   int returnValue = 0;
   for(std::string::iterator it = myString.begin(); it != myString.end(); ++it) {
-    returnValue += (int)*it;
+    returnValue = (returnValue * 101) + (int)*it;
   }
   return(returnValue);
 }
@@ -83,11 +83,11 @@ int AssignConfidenceApplication::main(const vector<string> input_files) {
   ESTIMATION_METHOD_T estimation_method;
   string method_param = Params::GetString("estimation-method");
   carp(CARP_INFO, "Estimation method = %s.", method_param.c_str());
-  if (strcmp(method_param.c_str(), "tdc") == 0) {
+  if (method_param == "tdc") {
     estimation_method = TDC_METHOD;
-  } else if (strcmp(method_param.c_str(), "mix-max") == 0) {
+  } else if (method_param == "mix-max") {
     estimation_method = MIXMAX_METHOD;
-  } else if (strcmp(method_param.c_str(), "peptide-level") == 0) {
+  } else if (method_param == "peptide-level") {
     estimation_method = PEPTIDE_LEVEL_METHOD;
   } else {
     carp(CARP_FATAL, "The estimation method \"%s\" is not supported.", method_param.c_str());
@@ -404,7 +404,7 @@ int AssignConfidenceApplication::main(const vector<string> input_files) {
 	    // Randomly break ties.
 	    if (fabs(score_difference) < 1e-10) {
 	      numTies++;
-	      score_difference += 0.5 - ((double)rand() / RAND_MAX);
+	      score_difference += 0.5 - ((double)myrandom() / UNIFORM_INT_DISTRIBUTION_MAX);
 	    }
 	    if (ascending) { // smaller-is-better=T
 	      score_difference *= -1.0;
