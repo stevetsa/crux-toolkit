@@ -52,6 +52,18 @@ AssignConfidenceApplication::~AssignConfidenceApplication() {
 }
 
 /**
+ * Silly little helper function, using to generate keys when building a
+ * hash on PSMs.
+ */
+int stringToIndex(string myString) {
+  int returnValue = 0;
+  for(std::string::iterator it = myString.begin(); it != myString.end(); ++it) {
+    returnValue += (int)*it;
+  }
+  return(returnValue);
+}
+
+/**
 * main method for ComputeQValues
 */
 
@@ -263,7 +275,9 @@ int AssignConfidenceApplication::main(const vector<string> input_files) {
 	   decoy_path.c_str());
 
       // Mark decoy matches
-      std::map<boost::tuple <int, int, int>, int> pairidx; // key = (scan number, charge, rank); value = index
+      // key = (filename, scan number, charge, rank); value = index
+      std::map<boost::tuple <int, int, int, int>, int> pairidx;
+      int fileIndex;
       int scanid;
       int charge;
       int rank;
@@ -279,10 +293,11 @@ int AssignConfidenceApplication::main(const vector<string> input_files) {
           continue;
         }
 
+	fileIndex = stringToIndex(decoy_match->getSpectrum()->getFullFilename());
 	scanid = decoy_match->getSpectrum()->getFirstScan();
 	charge = decoy_match->getCharge();
 	rank   = decoy_match->getRank(XCORR);
-	boost::tuple<int, int, int> myTuple (scanid, charge, rank);
+	boost::tuple<int, int, int, int> myTuple (fileIndex, scanid, charge, rank);
 	
 	decoy_match->setNullPeptide(true);
 	switch (estimation_method) {
@@ -295,7 +310,9 @@ int AssignConfidenceApplication::main(const vector<string> input_files) {
 	  if (pairidx[myTuple] == 0) {
 	    pairidx[myTuple] = cnt;
 	  } else {
-	    carp(CARP_FATAL, "Duplicate decoy PSMs (scan=%d, charge=%d, rank=%d).",
+	    carp(CARP_FATAL,
+		 "Duplicate decoy PSMs (file=%s scan=%d charge=%d rank=%d).",
+		 decoy_match->getSpectrum()->getFullFilename(),
 		 scanid, charge, rank);
 	  }
 	  break;
@@ -315,6 +332,7 @@ int AssignConfidenceApplication::main(const vector<string> input_files) {
         int decoy_idx;
         int numCandidates;
 	int numCompetitions = 0;
+	int numLostDecoys = 0;
 	int numTies = 0;
         MatchCollection* tdc_collection = new MatchCollection();
         tdc_collection->setScoredType(score_type, true);
@@ -331,13 +349,18 @@ int AssignConfidenceApplication::main(const vector<string> input_files) {
 
           // Retrieve the index of the corresponding decoy PSM.
           Crux::Match* decoy_match;
+	  fileIndex = stringToIndex(target_match->getSpectrum()->getFullFilename());
           scanid = target_match->getSpectrum()->getFirstScan();
           charge = target_match->getCharge();
-          rank   = target_match->getRank(XCORR);
-          decoy_idx = pairidx[boost::tuple <int, int, int> (scanid, charge, rank)];
+	  rank   = target_match->getRank(XCORR);
+	  decoy_idx = pairidx[boost::tuple <int, int, int, int>
+			      (fileIndex, scanid, charge, rank)];
 	  if (decoy_idx == 0) {
-	    carp(CARP_FATAL, "Failed to find decoy index (scan=%d charge=%d rank=%d).",
+	    carp(CARP_DEBUG,
+		 "Failed to find decoy for file=%s scan=%d charge=%d rank=%d.",
+		 target_match->getSpectrum()->getFullFilename(),
 		 scanid, charge, rank);
+	    numLostDecoys++;
 	  }
 
           if (estimation_method == PEPTIDE_LEVEL_METHOD) {
@@ -401,7 +424,9 @@ int AssignConfidenceApplication::main(const vector<string> input_files) {
 	  carp(CARP_INFO, "Randomly broke %d ties in %d target-decoy competitions.",
 	       numTies, numCompetitions);
 	}
-	
+	if (numLostDecoys > 0) {
+	  carp(CARP_INFO, "Failed to find %d decoys.", numLostDecoys);
+	}
       }
       delete temp_collection;
     }
