@@ -583,8 +583,9 @@ int AssignConfidenceApplication::main(const vector<string> input_files) {
   FLOAT_T* decoy_scores = decoy_matches->extractScores(score_type);
   int num_decoys = decoy_matches->getMatchTotal();
   carp(CARP_INFO,
-       "There are %d target and %d decoy PSMs for q-value computation.",
-       num_targets, num_decoys);
+       "%g%% (%d of %d) PSMs are targets.",
+       100.0 * ((FLOAT_T)num_targets / (num_targets + num_decoys)),
+       num_targets, num_targets + num_decoys);
 
   FLOAT_T* qvalues = NULL;
   switch (estimation_method){
