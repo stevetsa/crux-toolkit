@@ -105,10 +105,14 @@ FLOAT_T XLinkScorer::scoreCandidate(
   XLinkMatch* candidate ///< candidate to score
   ) {
 
+  string seq = candidate->getSequenceString();
+  //carp(CARP_INFO, "XLinkScorer::scoreing %s", seq.c_str());
+  
   candidate->predictIons(ion_series_xcorr_, charge_);
   //IonSeries* ions = candidate->getIonSeriesXCORR(charge_);
 
   FLOAT_T xcorr = scorer_xcorr_->scoreSpectrumVIonSeries(spectrum_, ion_series_xcorr_);
+  //carp(CARP_INFO, "score: %g", xcorr);
   candidate->setScore(XCORR, xcorr);
 
   if (compute_sp_) {

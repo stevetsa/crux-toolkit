@@ -1555,6 +1555,7 @@ void fit_three_parameter_weibull(
     *beta = 0.0;
     *shift = 0.0;
   }
+  carp(CARP_DEBUG, "e:%g b:%g s:%g c:%g", *eta, *beta, *shift, *correlation);
 }
 
 /**
@@ -1591,7 +1592,11 @@ void fit_two_parameter_weibull(
     X[idx] = log(score);
     // carp(CARP_DEBUG, "X[%i]=%.6f=ln(%.6f)", idx, X[idx], score);
   }
-
+  if (fit_data_points < 50) {
+    free(X);
+    *correlation = 0;
+    return;
+  }
   FLOAT_T* Y   = (FLOAT_T*)mymalloc(sizeof(FLOAT_T) * fit_data_points);
   for(idx=0; idx < fit_data_points; idx++){
     int reverse_idx = total_data_points - idx;

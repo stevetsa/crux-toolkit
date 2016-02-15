@@ -318,7 +318,8 @@ void XLinkMatchCollection::scoreSpectrum(
     min(zstate_.getCharge(), max_ion_charge));
 
   for (int idx=0;idx<getMatchTotal();idx++) {
-    carp(CARP_DEBUG, "Scoring candidate:%d", idx);
+    //carp(CARP_DEBUG, "Scoring candidate:%d", idx);
+    //cerr << "XLinkMatchCollection::Scoreing" << at(idx)->getSequenceString()<<endl;
     scorer.scoreCandidate(at(idx));
   }
 
@@ -341,27 +342,36 @@ void XLinkMatchCollection::fitWeibull() {
   eta_=0;
   beta_=0;
   correlation_=0;
-
+  
   FLOAT_T* xcorrs = extractScores(XCORR);
-// reverse sort the scores
+  // reverse sort the scores
 
   std::sort(xcorrs, xcorrs + getMatchTotal(), greater<FLOAT_T>());
 
   double fraction_to_fit = get_double_parameter("fraction-top-scores-to-fit");
   int num_tail_samples = (int)(getMatchTotal() * fraction_to_fit);
 
-  fit_three_parameter_weibull(xcorrs,
-            num_tail_samples,
-            getMatchTotal(),
-            MIN_XCORR_SHIFT,
-            MAX_XCORR_SHIFT,
-            XCORR_SHIFT,
-            CORR_THRESHOLD,
-            &eta_,
-            &beta_,
-            &shift_,
-            &correlation_);
-
+  
+  if (getMatchTotal() > 50) {
+    FLOAT_T min_xcorr_shift = min(MIN_XCORR_SHIFT, xcorrs[getMatchTotal()-1]);
+    FLOAT_T max_xcorr_shift = xcorrs[50];
+  
+    carp(CARP_DEBUG, "min:%g max:%g", min_xcorr_shift, max_xcorr_shift);
+    carp(CARP_DEBUG, "xcorr[%d]=%g", getMatchTotal()-1, xcorrs[getMatchTotal()-1]);
+    carp(CARP_DEBUG, "xcorr[%d]=%g", 0, xcorrs[0]);
+    fit_three_parameter_weibull(
+      xcorrs,
+      num_tail_samples,
+      getMatchTotal(),
+      min_xcorr_shift,
+      max_xcorr_shift,
+      XCORR_SHIFT,
+      CORR_THRESHOLD,
+      &eta_,
+      &beta_,
+      &shift_,
+      &correlation_);
+  }
   free(xcorrs);
 
 }

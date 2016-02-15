@@ -44,6 +44,7 @@ LinearPeptide::LinearPeptide(
   //carp(CARP_INFO, "LinearPeptide::LinearPeptide(peptide)");
   peptide_ = peptide;
   sequence_ = NULL;
+  //this->setNullPeptide(peptide_->isDecoy());
 }
 
 
@@ -93,7 +94,7 @@ string LinearPeptide::getSequenceString() {
     free(seq);
   }
 
-  oss << " ()";
+  //oss << " ()";
   return oss.str();
 
 }
@@ -117,7 +118,7 @@ FLOAT_T LinearPeptide::calcMass(
  */
 XLinkMatch* LinearPeptide::shuffle() {
   string seq = getSequenceString();
-  carp(CARP_DEBUG, "LinearPeptide::shuffle %s", seq.c_str());
+  //carp(CARP_INFO, "LinearPeptide::shuffle %s", seq.c_str());
   Crux::Peptide* decoy_peptide = new Crux::Peptide(peptide_);
 
   decoy_peptide->transformToDecoy();
@@ -125,7 +126,11 @@ XLinkMatch* LinearPeptide::shuffle() {
   XLink::addAllocatedPeptide(decoy_peptide);
 
   LinearPeptide* decoy = new LinearPeptide(decoy_peptide);
-
+  
+  string decoy_seq = decoy->getSequenceString();
+  //carp(CARP_INFO, "Shuffled: %s", decoy_seq.c_str());
+  
+  decoy->setNullPeptide(true);
   return (XLinkMatch*)decoy;
 }
 
@@ -146,6 +151,13 @@ void LinearPeptide::predictIons(
     seq = peptide_->getSequence();
     mod_seq = peptide_->getModifiedAASequence();
   }
+  
+  //carp(CARP_INFO, "predicting ions for :%s", seq);
+  /*
+  char* mseq = peptide_->getModifiedSequenceWithMasses(MOD_MASSES_SEPARATE);
+  carp(CARP_INFO, "mod seq:%s", mseq);
+  free(mseq);
+  */
   ion_series->setCharge(charge);
   ion_series->update(seq, mod_seq);
   ion_series->predictIons();

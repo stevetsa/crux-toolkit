@@ -455,7 +455,7 @@ const char* Peptide::getSequence() {
       sequence_ = my_copy_string(getUnshuffledSequence().c_str());
     }
   } else {
-    //carp(CARP_INFO, "returning cached sequence!");
+    carp(CARP_DETAILED_DEBUG, "returning cached sequence!:%s", sequence_);
   }
   return sequence_; 
 }
@@ -1143,10 +1143,6 @@ void Peptide::transformToDecoy(){
   if(decoy_modified_seq_){ 
     freeModSeq(decoy_modified_seq_); 
   }
-  if (sequence_) {
-    std::free(sequence_);
-    sequence_ = NULL;
-  }
   // if the peptide is already modified, shuffle the modified sequence
   if(modified_seq_){
     MODIFIED_AA_T* new_seq = NULL;
@@ -1167,6 +1163,13 @@ void Peptide::transformToDecoy(){
     convert_to_mod_aa_seq(new_seq, &(decoy_modified_seq_));
     std::free(new_seq);
   }
+  
+  if (sequence_) {
+    std::free(sequence_);
+    sequence_ = NULL;
+  }
+  
+  
 }
 
 /**
