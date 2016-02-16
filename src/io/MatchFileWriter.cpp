@@ -234,8 +234,8 @@ void MatchFileWriter::addColumnNames(CruxApplication* application,
       addColumnName(SHIFT_COL);
       addColumnName(CORR_COL);
     }
-    if (!get_boolean_parameter("use-old-xlink") && 
-         get_int_parameter("xlink-top-n") != 0) {
+    if ((!Params::GetBool("use-old-xlink")) && 
+        (Params::GetInt("xlink-top-n") != 0)) {
       addColumnName(XCORR_FIRST_COL);
       addColumnName(XCORR_SECOND_COL);
     }
