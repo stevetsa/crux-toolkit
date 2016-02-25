@@ -20,7 +20,7 @@
 static const FLOAT_T MIN_XCORR_SHIFT = -5.0;
 static const FLOAT_T MAX_XCORR_SHIFT  = 5.0;
 //#define CORR_THRESHOLD 0.995   // Must achieve this correlation, else punt.
-static const FLOAT_T CORR_THRESHOLD = 0.0;       // For now, turn off the threshold.
+static const FLOAT_T CORR_THRESHOLD = 0.99;
 static const FLOAT_T XCORR_SHIFT = 0.05;
 
 using namespace std;
@@ -251,13 +251,16 @@ XLinkMatchCollection::XLinkMatchCollection(
  * adds a candidate to the list
  */
 void XLinkMatchCollection::add(
-  XLinkMatch* candidate ///< candidate to add
+  XLinkMatch* candidate, ///< candidate to add
+  bool copy
   ) {
 
   candidate->setZState(zstate_);
   candidate->setParent(this);
   addMatch(candidate);
-  candidate->decrementPointerCount();
+  if (!copy) {
+    candidate->decrementPointerCount();
+  }
   experiment_size_++;
 
 }
@@ -332,6 +335,12 @@ void XLinkMatchCollection::scoreSpectrum(
   carp(CARP_DEBUG, "Done scoreSpectrum");
 }
 
+
+static int xcorrs_arr_length = 10;
+static FLOAT_T *xcorrs  = (FLOAT_T*)mycalloc(10,
+                                             sizeof(FLOAT_T));
+
+
 /**
  * fits a weibull to the collection
  */
@@ -343,21 +352,33 @@ void XLinkMatchCollection::fitWeibull() {
   beta_=0;
   correlation_=0;
   
-  FLOAT_T* xcorrs = extractScores(XCORR);
+  int nmatches = getMatchTotal();
+  
+  if (nmatches > xcorrs_arr_length) {
+    carp(CARP_INFO, "getting larger array %d > %d", nmatches, xcorrs_arr_length);
+    free(xcorrs);
+    xcorrs = extractScores(XCORR);
+    xcorrs_arr_length = nmatches;
+  } else {
+    extractScores(XCORR, xcorrs);
+  }
+  
+  //FLOAT_T* xcorrs = extractScores(XCORR);
   // reverse sort the scores
 
-  std::sort(xcorrs, xcorrs + getMatchTotal(), greater<FLOAT_T>());
+  std::sort(xcorrs, xcorrs + nmatches, greater<FLOAT_T>());
 
-  double fraction_to_fit = get_double_parameter("fraction-top-scores-to-fit");
-  int num_tail_samples = (int)(getMatchTotal() * fraction_to_fit);
+  int num_tail_samples = (int)(nmatches * GlobalParams::getFractionToFit());
 
+  FLOAT_T max_xcorr_shift = xcorrs[0];
+  FLOAT_T min_xcorr_shift = min(MIN_XCORR_SHIFT, xcorrs[nmatches-1]);
   
-  if (getMatchTotal() > 50) {
-    FLOAT_T min_xcorr_shift = min(MIN_XCORR_SHIFT, xcorrs[getMatchTotal()-1]);
-    FLOAT_T max_xcorr_shift = xcorrs[50];
+  
+  if (nmatches > 29) {
+    max_xcorr_shift = xcorrs[29];
   
     carp(CARP_DEBUG, "min:%g max:%g", min_xcorr_shift, max_xcorr_shift);
-    carp(CARP_DEBUG, "xcorr[%d]=%g", getMatchTotal()-1, xcorrs[getMatchTotal()-1]);
+    carp(CARP_DEBUG, "xcorr[%d]=%g", nmatches-1, xcorrs[nmatches-1]);
     carp(CARP_DEBUG, "xcorr[%d]=%g", 0, xcorrs[0]);
     fit_three_parameter_weibull(
       xcorrs,
@@ -366,13 +387,29 @@ void XLinkMatchCollection::fitWeibull() {
       min_xcorr_shift,
       max_xcorr_shift,
       XCORR_SHIFT,
-      CORR_THRESHOLD,
+      0,
       &eta_,
       &beta_,
       &shift_,
       &correlation_);
   }
-  free(xcorrs);
+  
+  if (correlation_ < CORR_THRESHOLD) {
+    carp(CARP_WARNING, "Weibull fit failed corr:%g n:%d nt:%d min:%g max:%g mins:%g maxs:%g",
+      correlation_,
+      nmatches,
+      num_tail_samples,
+      xcorrs[nmatches-1],
+      xcorrs[0],
+      min_xcorr_shift,
+      max_xcorr_shift
+      );
+  } else {
+    carp(CARP_DEBUG, "Fit success!");
+  }
+  
+  
+  //free(xcorrs);
 
 }
 
@@ -382,8 +419,13 @@ void XLinkMatchCollection::fitWeibull() {
 void XLinkMatchCollection::computeWeibullPValue(
   int idx ///< candidate
   ) {
-
-  at(idx)->computeWeibullPvalue(shift_, eta_, beta_);
+  if (correlation_ >= CORR_THRESHOLD) {
+    at(idx)->computeWeibullPvalue(shift_, eta_, beta_);
+  } else {
+    //We could probably get a better estimate if we use the ecdf.
+    carp(CARP_DEBUG, "Weibull fit failed corr:%g, assigning 1", correlation_);
+    at(idx)->setPValue(1.0);
+  }
 }
 
 /**

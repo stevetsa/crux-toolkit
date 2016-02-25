@@ -11,14 +11,10 @@
 using namespace std;
 
 
-vector<LinearPeptide> LinearPeptide::target_linear_peptides_;
-vector<LinearPeptide> LinearPeptide::decoy_linear_peptides_;
-
-
 /**
  * Default constructor
  */
-LinearPeptide::LinearPeptide() {
+LinearPeptide::LinearPeptide() : XLinkMatch() {
   //carp(CARP_INFO, "LinearPeptide::LinearPeptide()");
   peptide_ = NULL;
   sequence_ = NULL;
@@ -29,7 +25,7 @@ LinearPeptide::LinearPeptide() {
  */
 LinearPeptide::LinearPeptide(
   char* sequence ///< sequence string
-  ) {
+  ) : XLinkMatch() {
   //carp(CARP_INFO, "LinearPeptide::LinearPeptide(seq)");
   peptide_ = NULL;
   sequence_ = sequence;
@@ -40,7 +36,7 @@ LinearPeptide::LinearPeptide(
  */
 LinearPeptide::LinearPeptide(
   Crux::Peptide* peptide ///< peptide object
-  ) {
+  ) : XLinkMatch() {
   //carp(CARP_INFO, "LinearPeptide::LinearPeptide(peptide)");
   peptide_ = peptide;
   sequence_ = NULL;
@@ -59,9 +55,9 @@ void LinearPeptide::addCandidates(
   ) {
 
   vector<LinearPeptide>::iterator siter = XLinkDatabase::getLinearBegin(is_decoy, min_mass);
-  vector<LinearPeptide>::iterator eiter = XLinkDatabase::getLinearEnd(is_decoy);
+  vector<LinearPeptide>::iterator eiter = XLinkDatabase::getLinearEnd(is_decoy, siter, max_mass);
 
-  while (siter != eiter && siter->getMass(GlobalParams::getIsotopicMass()) <= max_mass) {
+  while (siter != eiter) {
     siter->incrementPointerCount();
     //carp(CARP_INFO, "Add linear candidate");
     candidates.add(&(*siter));
@@ -217,12 +213,19 @@ bool compareLinearPeptideMass(
   return pep1.getMassConst(MONO) < pep2.getMassConst(MONO);
 
 }
-bool compareLinearPeptideMassToFLOAT(const LinearPeptide& pep1, FLOAT_T mass) {
+bool compareLinearPeptideMassToFLOAT(
+  const LinearPeptide& pep1,
+  FLOAT_T mass
+  ) {
 
   return pep1.getMassConst(MONO) < mass;
 }
 
-
+bool compareLinearPeptideMassToFLOAT2(
+  const FLOAT_T& mass,
+  const LinearPeptide& pep1) {
+  return pep1.getMassConst(MONO) > mass;
+}
 
 /*
  * Local Variables:

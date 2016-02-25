@@ -1597,19 +1597,27 @@ FLOAT_T* MatchCollection::extractScores(
 {
   FLOAT_T* return_value = (FLOAT_T*)mycalloc(match_.size(),
                                              sizeof(FLOAT_T));
+  extractScores(score_type, return_value);
+  return(return_value);
+}
 
+void MatchCollection::extractScores(
+  SCORER_TYPE_T score_type,
+  FLOAT_T* arr
+) {
+  
   MatchIterator* match_iterator =
     new MatchIterator(this, score_type, false);
   int idx = 0;
-  while(match_iterator->hasNext()){
+  while(match_iterator->hasNext()) {
     Match* match = match_iterator->next();
-    return_value[idx] = match->getScore(score_type);
+    arr[idx] = match->getScore(score_type);
     idx++;
   }
   delete match_iterator;
-
-  return(return_value);
 }
+
+
 
 /**
  * Given a hash table that maps from a score to its q-value, assign

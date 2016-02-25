@@ -120,6 +120,17 @@ class XLinkDatabase {
     bool decoy
   );
 
+  static std::vector<LinearPeptide>::iterator getLinearEnd(
+    bool decoy,
+    FLOAT_T max_mass
+  );
+  
+  static std::vector<LinearPeptide>::iterator getLinearEnd(
+    bool decoy,
+    std::vector<LinearPeptide>::iterator &siter,
+    FLOAT_T max_mass
+  );
+  
   //static std::vector<std::pair<int, vector<XLinkablePeptide> > >& getTargetProteinIdxToXPeptides();
 
 

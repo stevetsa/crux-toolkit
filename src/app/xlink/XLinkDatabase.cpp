@@ -484,6 +484,30 @@ vector<LinearPeptide>::iterator XLinkDatabase::getLinearEnd(
   }
 }
 
+vector<LinearPeptide>::iterator XLinkDatabase::getLinearEnd(
+  bool decoy,
+  FLOAT_T max_mass
+  ) {
+  return(std::upper_bound(getLinearBegin(decoy),
+                          getLinearEnd(decoy),
+                          max_mass,
+                            compareLinearPeptideMassToFLOAT2));  
+
+ 
+}
+
+vector<LinearPeptide>::iterator XLinkDatabase::getLinearEnd(
+  bool decoy,
+  std::vector<LinearPeptide>::iterator& siter,
+  FLOAT_T max_mass
+) {
+   return(std::upper_bound(siter,
+                            getLinearEnd(decoy),
+                            max_mass,
+                            compareLinearPeptideMassToFLOAT2));  
+  
+}
+
 vector<SelfLoopPeptide>::iterator XLinkDatabase::getSelfLoopBegin(
   bool decoy,
   FLOAT_T min_mass

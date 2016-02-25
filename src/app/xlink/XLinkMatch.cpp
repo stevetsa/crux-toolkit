@@ -20,7 +20,7 @@ using namespace std;
 /**
  * Constructor for XLinkMatch
  */
-XLinkMatch::XLinkMatch() {
+XLinkMatch::XLinkMatch() : Match() {
   parent_ = NULL;
   pvalue_= 1;
   for (int idx = 0;idx < NUMBER_MASS_TYPES;idx++) {
@@ -51,6 +51,10 @@ void XLinkMatch::computeWeibullPvalue(
   ) {
 
   pvalue_ = compute_weibull_pvalue(getScore(XCORR), eta, beta, shift);
+}
+
+void XLinkMatch::setPValue(FLOAT_T pvalue) {
+  pvalue_ = pvalue;
 }
 
 FLOAT_T XLinkMatch::getPValue() {

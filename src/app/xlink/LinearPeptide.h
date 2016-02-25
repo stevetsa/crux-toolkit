@@ -139,7 +139,9 @@ class LinearPeptide : public XLinkMatch {
 
 bool compareLinearPeptideMass(const LinearPeptide& xpep1, const LinearPeptide& xpep2);
 bool compareLinearPeptideMassToFLOAT(const LinearPeptide& xpep1, FLOAT_T mass);
-
+bool compareLinearPeptideMassToFLOAT2(
+  const FLOAT_T& mass,
+  const LinearPeptide& pep1);
 
 #endif
 

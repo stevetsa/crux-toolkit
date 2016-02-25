@@ -31,7 +31,9 @@ class GlobalParams {
   static int mod_precision_;
   static int xlink_top_n_;
   static std::vector<int> isotope_windows_;
-
+  static FLOAT_T fraction_to_fit_;
+  
+  
  public:
   static void set();
   
@@ -60,5 +62,6 @@ class GlobalParams {
   static const int& getModPrecision();
   static const int& getXLinkTopN();
   static const std::vector<int>& getIsotopeWindows();
+  static const FLOAT_T& getFractionToFit();
 
 };

@@ -1517,7 +1517,7 @@ void fit_three_parameter_weibull(
     FLOAT_T* correlation   ///< the best correlation -out
     ){
   
-  FLOAT_T correlation_tolerance = 0.1;
+  FLOAT_T correlation_tolerance = 0.2;
   
   FLOAT_T best_eta = 0.0;
   FLOAT_T best_beta = 0.0;
@@ -1567,6 +1567,11 @@ void fit_three_parameter_weibull(
  * http:// www.chinarel.com/onlincebook/LifeDataWeb/rank_regression_on_y.htm
  * \returns eta, beta and the correlation coefficient.
  */
+
+static FLOAT_T* wX = new FLOAT_T[10];
+static FLOAT_T* wY = new FLOAT_T[10];
+static FLOAT_T nX = 10;
+
 void fit_two_parameter_weibull(
     FLOAT_T* data, ///< the data to be fit. should be in descending order -in
     int fit_data_points, ///< the number of data points to fit -in
@@ -1577,7 +1582,15 @@ void fit_two_parameter_weibull(
     FLOAT_T* correlation ///< the best correlation -out
     ){
 
-  FLOAT_T* X = (FLOAT_T*)mymalloc(sizeof(FLOAT_T) * fit_data_points); //hold data here
+  if (fit_data_points > nX) {
+    delete wX;
+    delete wY;
+    wX = new FLOAT_T[fit_data_points];
+    wY = new FLOAT_T[fit_data_points];
+    nX = fit_data_points;
+  }
+    
+  FLOAT_T* X = wX; //hold data here
 
   // transform data into an array of values for fitting
   // shift (including only non-neg data values) and take log
@@ -1592,12 +1605,11 @@ void fit_two_parameter_weibull(
     X[idx] = log(score);
     // carp(CARP_DEBUG, "X[%i]=%.6f=ln(%.6f)", idx, X[idx], score);
   }
-  if (fit_data_points < 50) {
-    free(X);
+  if (fit_data_points < 30) {
     *correlation = 0;
     return;
   }
-  FLOAT_T* Y   = (FLOAT_T*)mymalloc(sizeof(FLOAT_T) * fit_data_points);
+  FLOAT_T* Y   = wY;
   for(idx=0; idx < fit_data_points; idx++){
     int reverse_idx = total_data_points - idx;
     FLOAT_T F_T_idx = (reverse_idx - 0.3) / (total_data_points + 0.4);
@@ -1658,8 +1670,6 @@ void fit_two_parameter_weibull(
   carp(CARP_DETAILED_DEBUG, "beta=%.6f", *beta);
   carp(CARP_DETAILED_DEBUG, "correlation=%.6f", *correlation);
 
-  free(Y);
-  free(X);
 }
 
 

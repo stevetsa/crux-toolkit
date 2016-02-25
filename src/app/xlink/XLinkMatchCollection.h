@@ -72,7 +72,7 @@ class XLinkMatchCollection : public MatchCollection {
   /**
    * adds a candidate to the list
    */
-  void add(XLinkMatch* candidate);
+  void add(XLinkMatch* candidate, bool copy = false);
 
   /**
    *\returns a candidate from the list by index

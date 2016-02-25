@@ -88,6 +88,10 @@ class XLinkMatch : public Crux::Match, public CacheableMass {
 
   FLOAT_T getPValue();
 
+  void setPValue(
+    FLOAT_T pvalue
+  );
+  
   /**
    * \returns the mass error in part-per-million (ppm)
    */

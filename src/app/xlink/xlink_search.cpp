@@ -69,8 +69,9 @@ void writeTrainingCandidates(XLinkMatchCollection* training_candidates, int scan
   writer.setColumnName("eta", 4);
   writer.setColumnName("beta", 5);
   writer.setColumnName("shift", 6);
-  writer.setColumnName("xcorr score", 7);
-  writer.setColumnName("p-value", 8);
+  writer.setColumnName("correlation", 7);
+  writer.setColumnName("xcorr score", 8);
+  writer.setColumnName("p-value", 9);
   
   writer.writeHeader();
 
@@ -82,9 +83,10 @@ void writeTrainingCandidates(XLinkMatchCollection* training_candidates, int scan
     writer.setColumnCurrentRow(4, training_candidates->getEta());
     writer.setColumnCurrentRow(5, training_candidates->getBeta());
     writer.setColumnCurrentRow(6, training_candidates->getShift());
-    writer.setColumnCurrentRow(7, (*training_candidates)[idx]->getScore(XCORR));
+    writer.setColumnCurrentRow(7, training_candidates->getCorrelation());
+    writer.setColumnCurrentRow(8, (*training_candidates)[idx]->getScore(XCORR));
     training_candidates->computeWeibullPValue(idx);
-    writer.setColumnCurrentRow(8, (*training_candidates)[idx]->getPValue());
+    writer.setColumnCurrentRow(9, (*training_candidates)[idx]->getPValue());
     
 
     writer.writeRow();
@@ -221,60 +223,36 @@ int SearchForXLinks::xlinkSearchMain() {
     decoy_candidates->scoreSpectrum(spectrum);
 
     if (compute_pvalues) {
-
-      XLinkMatchCollection* weibull_set = NULL;
-
-      if (target_candidates->getMatchTotal() >= min_weibull_points) {
-        carp(CARP_DEBUG, "Fitting weibull to targets");
-        target_candidates->fitWeibull();
-        if (get_boolean_parameter("write-weibull-points")) {
-	  writeTrainingCandidates(target_candidates, scan_num);
-	}
-        MatchCollection::transferWeibull(target_candidates, decoy_candidates);
-      //TODO
-      //} else if (target_candidates.size() + decoy_candidates.size() >= min_wiebull_points) {
-      //  fit_weibull(target_candidates, decoy_candidates, shift, eta, beta, corr);
-      } else {
-    
-        carp(CARP_DEBUG, "Getting weibull training candidates");
-        XLinkMatchCollection* train_target_candidates =
-          new XLinkMatchCollection(
-	    spectrum,
-            zstate,
-            false,
-            true);
-        
-	if (train_target_candidates->getMatchTotal() == 0) {
-	  carp(CARP_WARNING, "No candidates found in decoy window?  Getting target");
-	  delete train_target_candidates;
-	  train_target_candidates = new XLinkMatchCollection(*target_candidates);
-	}
-        XLinkMatchCollection* train_candidates = new XLinkMatchCollection(*train_target_candidates);
-        //get enough weibull training candidates by shuffling.
-        carp(CARP_DEBUG, "Shuffling %d:%d", 
-          train_candidates->getMatchTotal(), 
-          min_weibull_points);
-    
-        while(train_candidates->getMatchTotal() < min_weibull_points) {
-          train_target_candidates->shuffle(*train_candidates);
-        }
-        carp(CARP_DEBUG, "Have %d training candidates", train_candidates->getMatchTotal());
-        carp(CARP_DEBUG, "scoring training points");
-        train_candidates->scoreSpectrum(spectrum);
-        carp(CARP_DEBUG, "fitting weibul to training points");
-        train_candidates->fitWeibull();
-        carp(CARP_DEBUG, "transferring weibull parameters");
-        MatchCollection::transferWeibull(train_candidates, target_candidates);
-        MatchCollection::transferWeibull(train_candidates, decoy_candidates);
-        carp(CARP_DEBUG, "cleanup train");
-	if (get_boolean_parameter("write-weibull-points")) {
-	  writeTrainingCandidates(train_candidates, scan_num);
-	}
-
-        delete train_candidates;
-        carp(CARP_DEBUG, "cleanup train_target");
-        delete train_target_candidates;
+      XLinkMatchCollection *target_train_candidates = new XLinkMatchCollection(
+        spectrum,
+        zstate,
+        false,
+        true);
+      XLinkMatchCollection *train_candidates = new XLinkMatchCollection(
+        spectrum,
+        zstate,
+        true,
+        true
+      );
+      
+      for (size_t idx=0;idx < target_train_candidates->getMatchTotal();idx++) {
+        train_candidates->add(target_train_candidates->at(idx), true);
       }
+      while(train_candidates->getMatchTotal() < min_weibull_points) {
+        target_train_candidates->shuffle(*train_candidates);
+      }
+      train_candidates->scoreSpectrum(spectrum);
+      train_candidates->fitWeibull();
+      if (get_boolean_parameter("write-weibull-points")) {
+        writeTrainingCandidates(train_candidates, scan_num);
+      }
+      MatchCollection::transferWeibull(train_candidates, target_candidates);
+      MatchCollection::transferWeibull(train_candidates, decoy_candidates);
+	
+      carp(CARP_DEBUG, "delete train candidates");
+      delete train_candidates;
+      carp(CARP_DEBUG, "delete target train candidates");
+      delete target_train_candidates;
 
       target_candidates->sort(XCORR);
 

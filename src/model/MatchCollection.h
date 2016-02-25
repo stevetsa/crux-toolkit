@@ -402,6 +402,11 @@ class MatchCollection {
     SCORER_TYPE_T       score_type ///< Type of score to extract.
   );
 
+  void extractScores(
+    SCORER_TYPE_T score_type,
+    FLOAT_T *arr
+  );
+  
   /**
    * Given a hash table that maps from a score to its q-value, assign
    * q-values to all of the matches in a given collection.

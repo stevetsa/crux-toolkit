@@ -30,7 +30,7 @@ int GlobalParams::max_xlink_mods_;
 int GlobalParams::mod_precision_;
 int GlobalParams::xlink_top_n_;
 vector<int> GlobalParams::isotope_windows_;
-
+FLOAT_T GlobalParams::fraction_to_fit_;
 
 void GlobalParams::set() {
   bool monoisotopic_precursor = 
@@ -65,6 +65,7 @@ void GlobalParams::set() {
   mod_precision_ = get_int_parameter("mod-precision");
   xlink_top_n_ = get_int_parameter("xlink-top-n");
   isotope_windows_ = StringUtils::Split<int>(get_string_parameter("isotope-windows"), ',');
+  fraction_to_fit_ = get_double_parameter("fraction-top-scores-to-fit");
 }
 
 const MASS_TYPE_T& GlobalParams::getIsotopicMass() {
@@ -165,4 +166,8 @@ const int& GlobalParams::getXLinkTopN() {
 
 const vector<int>& GlobalParams::getIsotopeWindows() {
   return isotope_windows_;
+}
+
+const FLOAT_T& GlobalParams::getFractionToFit() {
+  return fraction_to_fit_;
 }
