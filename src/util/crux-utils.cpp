@@ -1517,7 +1517,7 @@ void fit_three_parameter_weibull(
     FLOAT_T* correlation   ///< the best correlation -out
     ){
   
-  FLOAT_T correlation_tolerance = 0.2;
+  FLOAT_T correlation_tolerance = 1.1;
   
   FLOAT_T best_eta = 0.0;
   FLOAT_T best_beta = 0.0;

@@ -181,7 +181,7 @@ int SearchForXLinks::xlinkSearchMain() {
                        zstate,
                        false,
                        false
-);
+    );
 
     carp(CARP_DEBUG, "Scan=%d charge=%d mass=%lg candidates=%d", 
       scan_num, 
@@ -279,7 +279,9 @@ int SearchForXLinks::xlinkSearchMain() {
     } // if (compute_p_values)
 
     //print out
-
+    target_candidates->setFilePath(ms2_file);
+    decoy_candidates->setFilePath(ms2_file);
+    
     vector<MatchCollection*> decoy_vec;
     decoy_vec.push_back(decoy_candidates);
 
