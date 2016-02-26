@@ -20,7 +20,7 @@
 static const FLOAT_T MIN_XCORR_SHIFT = -5.0;
 static const FLOAT_T MAX_XCORR_SHIFT  = 5.0;
 //#define CORR_THRESHOLD 0.995   // Must achieve this correlation, else punt.
-static const FLOAT_T CORR_THRESHOLD = 0.89;
+static const FLOAT_T CORR_THRESHOLD = 0.5;
 static const FLOAT_T XCORR_SHIFT = 0.05;
 
 using namespace std;

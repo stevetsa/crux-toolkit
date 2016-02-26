@@ -21,6 +21,7 @@ using namespace std;
  * Constructor for XLinkMatch
  */
 XLinkMatch::XLinkMatch() : Match() {
+  cached_sequence_ = "";
   parent_ = NULL;
   pvalue_= 1;
   for (int idx = 0;idx < NUMBER_MASS_TYPES;idx++) {
@@ -135,6 +136,14 @@ XLINKMATCH_TYPE_T XLinkMatch::getCandidateType(std::string& candidate) {
 string XLinkMatch::getCandidateTypeString() {
   return getCandidateTypeString(getCandidateType());
 }
+
+const string& XLinkMatch::getSequenceStringConst() {
+  if (cached_sequence_ == "") {
+    cached_sequence_ = getSequenceString();
+  }
+  return(cached_sequence_);
+}
+
 
 /**
  *\returns the string value of the given candidate type
@@ -262,7 +271,7 @@ void XLinkMatch::printOneMatchField(
     break;
   case SEQUENCE_COL:
     output_file->setColumnCurrentRow((MATCH_COLUMNS_T)column_idx, 
-      getSequenceString());
+      getSequenceStringConst());
     break;
   case PROTEIN_ID_COL:
     output_file->setColumnCurrentRow(

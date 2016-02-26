@@ -25,6 +25,8 @@ class XLinkMatch : public Crux::Match, public CacheableMass {
   std::vector<IonSeries*> ion_series_xcorr_;
   std::vector<IonSeries*> ion_series_sp_;
   
+  std::string cached_sequence_;
+  
   static std::vector<IonConstraint*> ion_constraint_xcorr_;
   static IonConstraint* getIonConstraintXCORR(int charge); 
   /*
@@ -55,6 +57,7 @@ class XLinkMatch : public Crux::Match, public CacheableMass {
   virtual std::string getIonSequence(Ion* ion)=0;
   virtual Crux::Peptide* getPeptide(int peptide_idx)=0;
 
+  const std::string& getSequenceStringConst();
   
 
   virtual IonSeries* getIonSeriesXCORR(int charge);
