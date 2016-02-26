@@ -170,7 +170,8 @@ int SearchForXLinks::xlinkSearchMain() {
     if (search_count > 0 && search_count % 1000 == 0) {
       carp(CARP_INFO, 
 	   "%d spectrum-charge combinations searched, %.0f%% complete",
-	   search_count, search_count / num_spectra * 100);
+	   search_count + spectrum_iterator->numSkipped(),
+	   (search_count + spectrum_iterator->numSkipped()) / num_spectra * 100);
     }
     search_count++;
 

@@ -208,9 +208,9 @@ void XLinkPeptide::addCandidates(
       xlinkable_peptides.push_back(xlp_iter.next());
     }
     sort(xlinkable_peptides.begin(), xlinkable_peptides.end(), compareXLinkablePeptideMass);
-    carp(CARP_INFO, "get xcorr");
+    carp(CARP_DEBUG, "get xcorr");
     for (size_t idx =0;idx<xlinkable_peptides.size();idx++) {
-      carp(CARP_INFO, "%f", xlinkable_peptides[idx].getXCorr());
+      carp(CARP_DEBUG, "%f", xlinkable_peptides[idx].getXCorr());
     }
     addCandidates(min_mass, max_mass, xlinkable_peptides, candidates);
   } else {
