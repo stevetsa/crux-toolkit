@@ -56,8 +56,8 @@ void get_min_max_mass(
     max_mass = (max_mz - MASS_PROTON) * (double)zstate.getCharge();
   } else if (precursor_window_type == WINDOW_PPM) {
     //cerr<<"WINDOW_PPM"<<endl;
-    min_mass = precursor_mass / (1.0 + window * 1e-6);
-    max_mass = precursor_mass / (1.0 - window * 1e-6);
+    min_mass = precursor_mass * (1.0 - window * 1e-6);
+    max_mass = precursor_mass * (1.0 + window * 1e-6);
   }
   
   //cerr<<"min:"<<min_mass<<" "<<"max: "<<max_mass<<endl;

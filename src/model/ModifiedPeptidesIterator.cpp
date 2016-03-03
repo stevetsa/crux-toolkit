@@ -130,8 +130,8 @@ pair<FLOAT_T,FLOAT_T> ModifiedPeptidesIterator::getMinMaxMass(
     max_mass = (max_mz - MASS_PROTON) * (double)zstate.getCharge() - delta_mass;
   } else if (precursor_window_type == WINDOW_PPM) {
     double mass = zstate.getNeutralMass() - delta_mass;
-    min_mass = mass / (1.0 + window * 1e-6);
-    max_mass = mass / (1.0 - window * 1e-6);
+    min_mass = mass * (1.0 - window * 1e-6);
+    max_mass = mass * (1.0 + window * 1e-6);
     carp(CARP_DEBUG,"mass:%f charge:%i min_mass:%f max_mass:%f",
          mass, zstate.getCharge(), min_mass, max_mass);
   } else {
