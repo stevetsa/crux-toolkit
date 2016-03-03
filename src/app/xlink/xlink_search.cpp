@@ -50,9 +50,8 @@ void buildArguments(
 }
 
 void writeTrainingCandidates(XLinkMatchCollection* training_candidates, int scan_num) {
-
+  training_candidates->populateMatchRank(XCORR);
   training_candidates->sort(XCORR);
-
   string output_dir = get_string_parameter("output-dir");
 
   string output_file = output_dir + "/" +
@@ -62,6 +61,8 @@ void writeTrainingCandidates(XLinkMatchCollection* training_candidates, int scan
   //cerr<<"writing "<<output_file<<endl;
   DelimitedFileWriter writer(output_file.c_str());
 
+  
+  
   writer.setColumnName("scan", 0);
   writer.setColumnName("charge", 1);
   writer.setColumnName("decoy", 2);
@@ -72,7 +73,7 @@ void writeTrainingCandidates(XLinkMatchCollection* training_candidates, int scan
   writer.setColumnName("correlation", 7);
   writer.setColumnName("xcorr score", 8);
   writer.setColumnName("p-value", 9);
-  
+  writer.setColumnName("p-value ecdf", 10);
   writer.writeHeader();
 
   for (size_t idx = 0 ;idx < training_candidates->getMatchTotal();idx++) {
@@ -87,7 +88,8 @@ void writeTrainingCandidates(XLinkMatchCollection* training_candidates, int scan
     writer.setColumnCurrentRow(8, (*training_candidates)[idx]->getScore(XCORR));
     training_candidates->computeWeibullPValue(idx);
     writer.setColumnCurrentRow(9, (*training_candidates)[idx]->getPValue());
-    
+    double pvalue_ecdf = (double)(*training_candidates)[idx]->getRank(XCORR) / (double)training_candidates->getMatchTotal();
+    writer.setColumnCurrentRow(10, pvalue_ecdf);
 
     writer.writeRow();
   }
