@@ -45,8 +45,18 @@ void XLinkDatabase::initialize() {
   int num_peptide_mods = generate_peptide_mod_list( &peptide_mods );
 
   //Step two create all peptides.
-  int additional_cleavages = 1;
+  int additional_cleavages = 0;
 
+  bool generate_xlinkable = get_boolean_parameter("xlink-include-inter-intra") ||
+           get_boolean_parameter("xlink-include-inter") ||
+           get_boolean_parameter("xlink-include-intra") ||
+           get_boolean_parameter("xlink-include-selfloops") ||
+           get_boolean_parameter("xlink-include-deadends");
+  
+  if (generate_xlinkable) {
+    additional_cleavages = 1;
+  }
+  
   if (get_boolean_parameter("xlink-include-selfloops")) {
     additional_cleavages = 2;
   }
@@ -95,6 +105,9 @@ void XLinkDatabase::initialize() {
     while (peptide_iterator->hasNext()) {
       
       Crux::Peptide* peptide = peptide_iterator->next();
+      if (!peptide->isDecoy()) {
+        carp(CARP_FATAL, "Not a decoy!!?!?!");
+      }
 //      carp(CARP_INFO, "Current peptide:%s", peptide->getUnshuffledSequence().c_str());
       int missed_cleavages = peptide->getMissedCleavageSites();
       decoy_peptides_[missed_cleavages].push_back(peptide);
@@ -123,39 +136,41 @@ void XLinkDatabase::initialize() {
     carp(CARP_INFO, "There are %d decoy linear peptides", decoy_linear_peptides_.size());
   }
 
-  //Generate all linkable peptides, allowing for suppressed cleavages
-  carp(CARP_DEBUG, "Generating all linkable peptides");
-  int max_cleavages = GlobalParams::getMissedCleavages()+1;
-  for (size_t cleavage_idx=0;cleavage_idx<=max_cleavages;cleavage_idx++) {
-    carp(CARP_DEBUG, "Generating target linkable peptides with cleavage:%d", cleavage_idx);
-    generateAllLinkablePeptides(target_peptides_[cleavage_idx], target_xlinkable_peptides_);
-    carp(CARP_DEBUG, "Generating decoy linkable peptides with cleavage:%d", cleavage_idx);
-    generateAllLinkablePeptides(decoy_peptides_[cleavage_idx], decoy_xlinkable_peptides_);
+  if (generate_xlinkable) {
+  
+    //Generate all linkable peptides, allowing for suppressed cleavages
+    carp(CARP_DEBUG, "Generating all linkable peptides");
+    int max_cleavages = GlobalParams::getMissedCleavages()+1;
+    for (size_t cleavage_idx=0;cleavage_idx<=max_cleavages;cleavage_idx++) {
+      carp(CARP_DEBUG, "Generating target linkable peptides with cleavage:%d", cleavage_idx);
+      generateAllLinkablePeptides(target_peptides_[cleavage_idx], target_xlinkable_peptides_);
+      carp(CARP_DEBUG, "Generating decoy linkable peptides with cleavage:%d", cleavage_idx);
+      generateAllLinkablePeptides(decoy_peptides_[cleavage_idx], decoy_xlinkable_peptides_);
+    }
+
+    sort(
+      target_xlinkable_peptides_.begin(), 
+      target_xlinkable_peptides_.end(), 
+      compareXLinkablePeptideMass);
+    for (size_t idx = 0;idx < target_xlinkable_peptides_.size();idx++) {
+      target_xlinkable_peptides_[idx].setIndex(idx);
+    }
+    sort(
+      decoy_xlinkable_peptides_.begin(), 
+      decoy_xlinkable_peptides_.end(), 
+      compareXLinkablePeptideMass);
+    for (size_t idx = 0;idx < decoy_xlinkable_peptides_.size();idx++) {
+      decoy_xlinkable_peptides_[idx].setIndex(idx);
+      decoy_xlinkable_peptides_[idx].setDecoy(true);
+    }
+    carp(CARP_INFO, "There are %d xlinkable target peptides", target_xlinkable_peptides_.size());
+    carp(CARP_INFO, "There are %d xlinkable decoy peptides", decoy_xlinkable_peptides_.size());
+
+
+
+    flattenLinkablePeptides(target_xlinkable_peptides_, target_xlinkable_peptides_flatten_);
+    flattenLinkablePeptides(decoy_xlinkable_peptides_, decoy_xlinkable_peptides_flatten_);
   }
-
-  sort(
-    target_xlinkable_peptides_.begin(), 
-    target_xlinkable_peptides_.end(), 
-    compareXLinkablePeptideMass);
-  for (size_t idx = 0;idx < target_xlinkable_peptides_.size();idx++) {
-    target_xlinkable_peptides_[idx].setIndex(idx);
-  }
-  sort(
-    decoy_xlinkable_peptides_.begin(), 
-    decoy_xlinkable_peptides_.end(), 
-    compareXLinkablePeptideMass);
-  for (size_t idx = 0;idx < decoy_xlinkable_peptides_.size();idx++) {
-    decoy_xlinkable_peptides_[idx].setIndex(idx);
-    decoy_xlinkable_peptides_[idx].setDecoy(true);
-  }
-  carp(CARP_INFO, "There are %d xlinkable target peptides", target_xlinkable_peptides_.size());
-  carp(CARP_INFO, "There are %d xlinkable decoy peptides", decoy_xlinkable_peptides_.size());
-
-
-
-  flattenLinkablePeptides(target_xlinkable_peptides_, target_xlinkable_peptides_flatten_);
-  flattenLinkablePeptides(decoy_xlinkable_peptides_, decoy_xlinkable_peptides_flatten_);
-
   //TODO, generate all mono/dead link peptides
 
   if (get_boolean_parameter("xlink-include-selfloops")) {
@@ -302,6 +317,7 @@ void XLinkDatabase::generateAllLinears(bool decoy) {
 
     if (decoy) {
       findLinearPeptides(decoy_peptides_[cleavage_idx], decoy_linear_peptides_);
+      
     } else {
       findLinearPeptides(target_peptides_[cleavage_idx], target_linear_peptides_);
     }
