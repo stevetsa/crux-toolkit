@@ -10,6 +10,8 @@
 #include "XLinkIonSeriesCache.h"
 #include "xlink_compute_qvalues.h"
 
+#include "Weibull.h"
+
 //CRUX INCLUDES
 #include "objects.h"
 #include "model/FilteredSpectrumChargeIterator.h"
@@ -49,7 +51,7 @@ void buildArguments(
 
 }
 
-void writeTrainingCandidates(XLinkMatchCollection* training_candidates, int scan_num) {
+void writeTrainingCandidates(XLinkMatchCollection* training_candidates, int scan_num, Weibull& weibull) {
   training_candidates->populateMatchRank(XCORR);
   training_candidates->sort(XCORR);
   string output_dir = get_string_parameter("output-dir");
@@ -81,16 +83,14 @@ void writeTrainingCandidates(XLinkMatchCollection* training_candidates, int scan
     writer.setColumnCurrentRow(2, (*training_candidates)[idx]->isDecoy());
     writer.setColumnCurrentRow(1, (*training_candidates)[idx]->getCharge());
     writer.setColumnCurrentRow(3, (*training_candidates)[idx]->getSequenceString());
-    writer.setColumnCurrentRow(4, training_candidates->getEta());
-    writer.setColumnCurrentRow(5, training_candidates->getBeta());
-    writer.setColumnCurrentRow(6, training_candidates->getShift());
-    writer.setColumnCurrentRow(7, training_candidates->getCorrelation());
+    writer.setColumnCurrentRow(4, weibull.getEta());
+    writer.setColumnCurrentRow(5, weibull.getBeta());
+    writer.setColumnCurrentRow(6, weibull.getShift());
+    writer.setColumnCurrentRow(7, weibull.getCorrelation());
     writer.setColumnCurrentRow(8, (*training_candidates)[idx]->getScore(XCORR));
-    training_candidates->computeWeibullPValue(idx);
-    writer.setColumnCurrentRow(9, (*training_candidates)[idx]->getPValue());
-    double pvalue_ecdf = (double)(*training_candidates)[idx]->getRank(XCORR) / (double)training_candidates->getMatchTotal();
-    writer.setColumnCurrentRow(10, pvalue_ecdf);
-
+    FLOAT_T score = (*training_candidates)[idx]->getScore(XCORR);
+    writer.setColumnCurrentRow(9, weibull.getWeibullPValue(score));
+    writer.setColumnCurrentRow(10, weibull.getECDFPValue(score));
     writer.writeRow();
   }
 
@@ -226,6 +226,7 @@ int SearchForXLinks::xlinkSearchMain() {
     decoy_candidates->scoreSpectrum(spectrum);
 
     if (compute_pvalues) {
+      Weibull weibull;
       XLinkMatchCollection *target_train_candidates = new XLinkMatchCollection(
         spectrum,
         zstate,
@@ -245,12 +246,18 @@ int SearchForXLinks::xlinkSearchMain() {
         target_train_candidates->shuffle(*train_candidates);
       }
       train_candidates->scoreSpectrum(spectrum);
-      train_candidates->fitWeibull();
-      if (get_boolean_parameter("write-weibull-points")) {
-        writeTrainingCandidates(train_candidates, scan_num);
+      for (int idx = 0;idx < train_candidates->getMatchTotal();idx++) {
+        const string& sequence = (*train_candidates)[idx]->getSequenceStringConst();
+        FLOAT_T score = (*train_candidates)[idx]->getScore(XCORR);
+        weibull.addPoint(sequence, score);
       }
-      MatchCollection::transferWeibull(train_candidates, target_candidates);
-      MatchCollection::transferWeibull(train_candidates, decoy_candidates);
+      weibull.fit();
+      //train_candidates->fitWeibull();
+      if (get_boolean_parameter("write-weibull-points")) {
+        writeTrainingCandidates(train_candidates, scan_num, weibull);
+      }
+      //MatchCollection::transferWeibull(train_candidates, target_candidates);
+      //MatchCollection::transferWeibull(train_candidates, decoy_candidates);
 	
       carp(CARP_DEBUG, "delete train candidates");
       delete train_candidates;
@@ -266,7 +273,9 @@ int SearchForXLinks::xlinkSearchMain() {
  
       //calculate pvalues.
       for (int idx=0;idx < nprint;idx++) {
-        target_candidates->computeWeibullPValue(idx);
+        FLOAT_T score = (*target_candidates)[idx]->getScore(XCORR);
+        (*target_candidates)[idx]->setPValue(weibull.getPValue(score));
+        //target_candidates->computeWeibullPValue(idx);
       }
 
       nprint = min(top_match,(int)decoy_candidates->getMatchTotal());
@@ -276,7 +285,8 @@ int SearchForXLinks::xlinkSearchMain() {
       decoy_candidates->sort(XCORR);
 
       for (int idx=0;idx < nprint;idx++) {
-        decoy_candidates->computeWeibullPValue(idx);
+        FLOAT_T score = (*decoy_candidates)[idx]->getScore(XCORR);
+        (*decoy_candidates)[idx]->setPValue(weibull.getPValue(score));
       }
 
     } // if (compute_p_values)
@@ -342,6 +352,7 @@ int SearchForXLinks::xlinkSearchMain() {
   }
   free(peptide_mods);
 
+  finalize_weibull();
   Scorer::finalize();
   XLinkIonSeriesCache::finalize();
   IonSeries::finalize();

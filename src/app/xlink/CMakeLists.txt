@@ -56,4 +56,5 @@ add_library(
   XLinkMatch.cpp
   XLinkMatchCollection.cpp
   XLinkPeptide.cpp
+  Weibull.cpp
 )

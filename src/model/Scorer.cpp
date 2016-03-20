@@ -186,6 +186,8 @@ Scorer::~Scorer() {
 void Scorer::finalize() {
 
   delete []observed_;
+  delete []observed_g_;
+  
 }
 
 

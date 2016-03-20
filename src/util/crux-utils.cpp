@@ -1575,7 +1575,14 @@ void fit_three_parameter_weibull(
 
 static FLOAT_T* wX = new FLOAT_T[10];
 static FLOAT_T* wY = new FLOAT_T[10];
-static FLOAT_T nX = 10;
+static int nX = 10;
+
+void finalize_weibull() {
+  delete []wX;
+  delete []wY;
+  nX = 0;
+  
+}
 
 void fit_two_parameter_weibull(
     FLOAT_T* data, ///< the data to be fit. should be in descending order -in
@@ -1588,11 +1595,13 @@ void fit_two_parameter_weibull(
     ){
 
   if (fit_data_points > nX) {
-    delete wX;
-    delete wY;
+    carp(CARP_DEBUG, "fit_two_parameter weibull: increase %d to %d", nX, fit_data_points);
+    delete []wX;
+    delete []wY;
     wX = new FLOAT_T[fit_data_points];
     wY = new FLOAT_T[fit_data_points];
     nX = fit_data_points;
+    carp(CARP_DEBUG, "fit_two_parameter weibull: nX is now %d", fit_data_points);
   }
     
   FLOAT_T* X = wX; //hold data here

@@ -340,6 +340,8 @@ int get_number_digits(
   int number ///< the number to count digits
   );
 
+void finalize_weibull();
+
 /**
  * Fits a three-parameter Weibull distribution to the input data. 
  * \returns eta, beta, c (which in this case is the amount the data should
