@@ -2,11 +2,11 @@
 #include "util/crux-utils.h"
 #include "util/GlobalParams.h"
 #include "model/Scorer.h"
-static const FLOAT_T MIN_XCORR_SHIFT = -5.0;
-static const FLOAT_T MAX_XCORR_SHIFT  = 5.0;
-//#define CORR_THRESHOLD 0.995   // Must achieve this correlation, else punt.
-static const FLOAT_T CORR_THRESHOLD = 0.5;
+static const FLOAT_T MIN_XCORR_SHIFT = -3.0;
+static const FLOAT_T MAX_XCORR_SHIFT  = 3.0;
+static const FLOAT_T CORR_THRESHOLD = 0.5; //Must achieve this correlation, else punt.
 static const FLOAT_T XCORR_SHIFT = 0.05;
+static const FLOAT_T XCORR_RANGE = MAX_XCORR_SHIFT - MIN_XCORR_SHIFT;
 
 using namespace std;
 
@@ -71,11 +71,25 @@ void Weibull::fit() {
     
   sort(scores_.begin(), scores_.end(), greater<FLOAT_T>());
   int num_tail_samples = (int)(nscores * GlobalParams::getFractionToFit());
-  carp(CARP_DEBUG, "num tail:%d", num_tail_samples);  
-  FLOAT_T max_shift = scores_[0];
-  FLOAT_T min_shift = min(MIN_XCORR_SHIFT, scores_[nscores-1]);
+  carp(CARP_DEBUG, "num tail:%d", num_tail_samples);
+  
+  FLOAT_T max_score = scores_[0];
+  FLOAT_T min_score = scores_[nscores-1];
+  
+  FLOAT_T xcorr_shift = XCORR_SHIFT * (max_score - min_score) / XCORR_RANGE;
+  
+  FLOAT_T max_shift = max_score;
+  FLOAT_T min_shift = min_score - xcorr_shift;
     
-  if (nscores > 29) {
+  if (nscores > 29 && xcorr_shift > 0) {
+    carp(CARP_DEBUG, "Fitting weibull n:%d nt:%d "
+        "min:%g max:%g mins:%g maxs:%g shift:%g", nscores,
+        num_tail_samples,
+        min_score,
+        max_score,
+        min_shift,
+        max_shift,
+        xcorr_shift);
     FLOAT_T* scores_ptr = scores_.data();
     max_shift = scores_ptr[29];
     fit_three_parameter_weibull(
@@ -84,7 +98,7 @@ void Weibull::fit() {
       nscores,
       min_shift,
       max_shift,
-      XCORR_SHIFT,
+      xcorr_shift,
       0,
       &eta_,
       &beta_,
@@ -104,10 +118,23 @@ void Weibull::fit() {
       );
       fit_success_ = false;
     } else {
+      carp(CARP_DEBUG, "Fit succeeded: corr:%g shift:%g eta:%g beta:%g",
+        correlation_,
+        shift_,
+        eta_,
+        beta_);
       fit_success_ = true;
     }  
   } else {
-    carp(CARP_DEBUG, "Too few scores to fit weibull");
+    carp(CARP_WARNING, "Too few scores to fit weibull: n:%d nt:%d "
+         "min:%g max:%g mins:%g maxs:%g shift:%g",
+         nscores,
+         num_tail_samples,
+         min_score,
+         max_score,
+         min_shift,
+         max_shift,
+         xcorr_shift);
     fit_success_ = false;    
   }
   //Fit was called.
@@ -166,10 +193,16 @@ FLOAT_T Weibull::getPValue(FLOAT_T score, bool logp) {
   //return the ECDF
   if (!fit_success_ || pvalue == 0 || pvalue != pvalue) {
     //x != x should test for NaN.
+    
+    FLOAT_T pvalue_new = getECDFPValue(score, logp);
     if (pvalue == 0 || pvalue != pvalue) {
-      carp(CARP_WARNING, "invalid pvalue! %g, returning ecdf", pvalue);
+      carp(CARP_WARNING, "invalid pvalue! %g, returning ecdf"
+           "shift:%g eta:%g beta:%g c:%g s:%g ecdf:%g",
+           pvalue, shift_, eta_, beta_, correlation_,
+           score, pvalue_new
+           );
     }
-    pvalue = getECDFPValue(score, logp);
+    pvalue = pvalue_new;
   }
   
   return(pvalue);

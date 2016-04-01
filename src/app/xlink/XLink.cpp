@@ -153,6 +153,7 @@ void addAllocatedPeptide(
  * delete all peptides that are allocated
  */
 void deleteAllocatedPeptides() {
+  carp(CARP_DEBUG, "deleting %d peptides", allocated_peptides_.size());
   for (set<Crux::Peptide*>::iterator iter =
     allocated_peptides_.begin();
     iter != allocated_peptides_.end();

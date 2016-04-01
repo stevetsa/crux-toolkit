@@ -159,10 +159,13 @@ int SearchForXLinks::xlinkSearchMain() {
   int search_count = 0;
   FLOAT_T num_spectra = (FLOAT_T)spectra->getNumSpectra();
 
+  //class for estimating pvalues.
+  Weibull weibull;
+  
   // for every observed spectrum 
   carp(CARP_DEBUG, "Searching Spectra");
 
-
+  
   while (spectrum_iterator->hasNext()) {
 
     spectrum = spectrum_iterator->next(zstate);
@@ -226,7 +229,7 @@ int SearchForXLinks::xlinkSearchMain() {
     decoy_candidates->scoreSpectrum(spectrum);
 
     if (compute_pvalues) {
-      Weibull weibull;
+      weibull.reset();
       XLinkMatchCollection *target_train_candidates = new XLinkMatchCollection(
         spectrum,
         zstate,
@@ -324,7 +327,7 @@ int SearchForXLinks::xlinkSearchMain() {
     /* Clean up */
     delete decoy_candidates;
     delete target_candidates;
-    //XLink::deleteAllocatedPeptides();
+    XLink::deleteAllocatedPeptides();
     
     //free_spectrum(spectrum);
 
