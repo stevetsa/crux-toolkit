@@ -31,8 +31,8 @@ class Weibull {
   
   void reset();
   void addPoint(const std::string& sequence, FLOAT_T score);
-  void fit();
-  
+  bool fit();
+
   FLOAT_T getWeibullPValue(FLOAT_T score, bool logp=false);
   FLOAT_T getECDFPValue(FLOAT_T score, bool logp=false);
   FLOAT_T getPValue(FLOAT_T score, bool logp=false);

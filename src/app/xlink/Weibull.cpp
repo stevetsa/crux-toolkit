@@ -61,7 +61,7 @@ void Weibull::addPoint(
 
 }
 
-void Weibull::fit() {
+bool Weibull::fit() {
     
   int nscores = scores_.size();
   
@@ -139,6 +139,7 @@ void Weibull::fit() {
   }
   //Fit was called.
   fit_called_ = true;
+  return fit_success_;
 }
 
 FLOAT_T Weibull::getWeibullPValue(FLOAT_T score, bool logp) {

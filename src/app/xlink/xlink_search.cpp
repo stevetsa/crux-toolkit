@@ -158,7 +158,7 @@ int SearchForXLinks::xlinkSearchMain() {
 
   int search_count = 0;
   FLOAT_T num_spectra = (FLOAT_T)spectra->getNumSpectra();
-
+  FLOAT_T min_pvalue = 1.0 / num_spectra;
   //class for estimating pvalues.
   Weibull weibull;
   
@@ -254,18 +254,11 @@ int SearchForXLinks::xlinkSearchMain() {
         FLOAT_T score = (*train_candidates)[idx]->getScore(XCORR);
         weibull.addPoint(sequence, score);
       }
-      weibull.fit();
+      bool write_weibull_points = !weibull.fit();
       //train_candidates->fitWeibull();
-      if (get_boolean_parameter("write-weibull-points")) {
-        writeTrainingCandidates(train_candidates, scan_num, weibull);
-      }
       //MatchCollection::transferWeibull(train_candidates, target_candidates);
       //MatchCollection::transferWeibull(train_candidates, decoy_candidates);
 	
-      carp(CARP_DEBUG, "delete train candidates");
-      delete train_candidates;
-      carp(CARP_DEBUG, "delete target train candidates");
-      delete target_train_candidates;
 
       target_candidates->sort(XCORR);
 
@@ -290,7 +283,23 @@ int SearchForXLinks::xlinkSearchMain() {
       for (int idx=0;idx < nprint;idx++) {
         FLOAT_T score = (*decoy_candidates)[idx]->getScore(XCORR);
         (*decoy_candidates)[idx]->setPValue(weibull.getPValue(score));
+        FLOAT_T wpvalue = weibull.getWeibullPValue(score);
+        FLOAT_T bpvalue = bonferroni_correction(wpvalue, decoy_candidates->getMatchTotal()) * 2.0;
+        if ((wpvalue == 0) || (wpvalue != wpvalue) || (bpvalue  < min_pvalue)) {
+          //If we have a bad fit, 0 or too low pvalue, print out the points.
+          write_weibull_points = true;
+        }
+        
       }
+      
+      
+      if (write_weibull_points || get_boolean_parameter("write-weibull-points")) {
+        writeTrainingCandidates(train_candidates, scan_num, weibull);
+      }
+      carp(CARP_DEBUG, "delete train candidates");
+      delete train_candidates;
+      carp(CARP_DEBUG, "delete target train candidates");
+      delete target_train_candidates;
 
     } // if (compute_p_values)
 
