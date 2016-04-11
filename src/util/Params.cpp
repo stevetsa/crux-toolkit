@@ -305,8 +305,14 @@ void Params::Initialize() {
     "mass = 0 (i.e., mz-bin-offset = 0.xx means the left edge of the first bin will be "
     "located at +0.xx Da).",
     "Available for tide-search.", true);
-  InitDoubleParam("gaussian-fwhm", 0, 0, BILLION, "", "", true);
-  InitDoubleParam("gaussian-min-height", 1, 0, 1, "", "", true);
+  InitDoubleParam("gaussian-fwhm", 0, 0, BILLION,
+    "full width at half maximum value for gaussian smoothing when scoring with XCORR.",
+    "Available for search-for-xlinks",
+    true);
+  InitDoubleParam("gaussian-min-height", 1, 0, 1,
+    "minimum height for gaussian smoothing when scoring with.  Used in conjunction with"
+    " gaussian-fwhm to determine number of smoothing to employ",
+    "Available for search-for-xlinks", true);
   InitBoolParam("use-flanking-peaks", false,
     "Include flanking peaks around singly charged b and y theoretical ions. Each flanking "
     "peak occurs in the adjacent m/z bin and has half the intensity of the primary peak.",

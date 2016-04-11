@@ -107,6 +107,8 @@ vector<string> SearchForXLinks::getOptions() const {
     "enzyme",
     "custom-enzyme",
     "digestion",
+    "gaussian-min-height",
+    "gaussian-fwhm",
     "missed-cleavages",
     "spectrum-min-mz",
     "spectrum-max-mz",
