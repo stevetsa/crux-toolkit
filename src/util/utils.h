@@ -19,8 +19,10 @@
 // Macro allowing us to build using floats or double
 #ifdef USE_DOUBLES
 typedef double FLOAT_T;
+#define FLOAT_T_MIN DBL_MIN
 #else
 typedef float FLOAT_T;
+#define FLOAT_T_MIN FLT_MIN
 #endif
 
 typedef int VERBOSE_T;
