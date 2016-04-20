@@ -40,7 +40,7 @@ LinearPeptide::LinearPeptide(
   //carp(CARP_INFO, "LinearPeptide::LinearPeptide(peptide)");
   peptide_ = peptide;
   sequence_ = NULL;
-  //this->setNullPeptide(peptide_->isDecoy());
+  this->setNullPeptide(peptide_->isDecoy());
 }
 
 

@@ -121,6 +121,12 @@ class XLinkMatch : public Crux::Match, public CacheableMass {
    */
   virtual std::string getFlankingAAString();
 
+  /**
+   *\returns unshuffled version of the sequence
+   */
+  virtual std::string getUnshuffledSequence();
+  
+  
  /**
    * Print one field in the tab-delimited output file, based on column index.
    * overridden from Match

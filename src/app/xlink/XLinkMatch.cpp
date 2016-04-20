@@ -15,6 +15,7 @@
 #include <iostream>
 #include "XLinkPeptide.h"
 #include "XLinkablePeptide.h"
+#include "io/OutputFiles.h"
 using namespace std;
 
 /**
@@ -91,10 +92,21 @@ string XLinkMatch::getProteinIdXString() {
 
 }
 
+string XLinkMatch::getUnshuffledSequence() {
+  Crux::Peptide* peptide = this->getPeptide(0);
+  if (peptide == NULL) {
+    return string("");
+  } else {
+    return peptide->getUnshuffledSequence();
+  }
+}
+
+
 /**
  *\returns the flanking amino acids for the match
  */
 string XLinkMatch::getFlankingAAString() {
+  
   Crux::Peptide* peptide = this -> getPeptide(0);
 
   string ans("");
@@ -330,6 +342,12 @@ void XLinkMatch::printOneMatchField(
     output_file->setColumnCurrentRow(
       (MATCH_COLUMNS_T)column_idx,
       getCandidateTypeString());
+    break;
+  case ORIGINAL_TARGET_SEQUENCE_COL:
+    if (null_peptide_ == true || OutputFiles::isConcat()) {
+      string seq = getUnshuffledSequence();
+      output_file->setColumnCurrentRow((MATCH_COLUMNS_T)column_idx, seq);
+    }
     break;
   default:
     Match::printOneMatchField(column_idx,

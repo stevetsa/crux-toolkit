@@ -81,6 +81,7 @@ void Peptide::init() {
   modified_seq_ = NULL;
   decoy_modified_seq_ = NULL;
   sequence_ = NULL;
+  unshuffled_sequence_ = "";
 }
 
 /* Public functions--Allocators/Deallocators */
