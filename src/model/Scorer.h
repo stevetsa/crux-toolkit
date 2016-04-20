@@ -458,7 +458,8 @@ FLOAT_T get_FWHM_to_gaussian_c_stddev(
 int get_gaussian_num_bins(
     FLOAT_T c_stddev,
     FLOAT_T min_height,
-    FLOAT_T bin_width
+    FLOAT_T bin_width,
+    int max_bins
 );
 
 

@@ -972,7 +972,8 @@ bool Scorer::createIntensityArrayObserved(
     int ngbins_ = get_gaussian_num_bins(
       c_stddev,
       get_double_parameter("gaussian-min-height"),
-      bin_width_
+      bin_width_,
+      sp_max_mz_
     );
     
 
@@ -1036,19 +1037,22 @@ FLOAT_T get_FWHM_to_gaussian_c_stddev(
 int get_gaussian_num_bins(
   FLOAT_T c_stddev,
   FLOAT_T min_height,
-  FLOAT_T bin_width
+  FLOAT_T bin_width,
+  int max_bins
 ) {
+  int num_bins = 0;
+  if (min_height == 1) {
+    num_bins = 0;
+  } else if (min_height == 0) {
+    num_bins = max_bins;
+  } else {
   
-  if (min_height == 0 || min_height == 1) {
-    return 0;
+    FLOAT_T x = sqrt (2.0 * log(1.0/min_height)) * c_stddev;
+  
+    num_bins = (int)(x / bin_width);
+    num_bins = min(num_bins, max_bins);
+    carp_once(CARP_INFO, "c:%g min:%g bw:%g x:%g nbins:%i", c_stddev, min_height, bin_width, x, num_bins);
   }
-  
-  
-  FLOAT_T x = sqrt (2.0 * log(1.0/min_height)) * c_stddev;
-  
-  int num_bins = (int)(x / bin_width);
-  
-  carp_once(CARP_INFO, "c:%g min:%g bw:%g x:%g nbins:%i", c_stddev, min_height, bin_width, x, num_bins);
   
   return(num_bins);
   
