@@ -964,26 +964,30 @@ bool Scorer::createIntensityArrayObserved(
       }
     }
     // Gaussian smooth
-    
+    FLOAT_T gfwhm = get_double_parameter("gaussian-fwhm");
+    FLOAT_T g_min_height = get_double_parameter("gaussian-min-height");
     FLOAT_T c_stddev = get_FWHM_to_gaussian_c_stddev(
-      get_double_parameter("gaussian-fwhm")
+      gfwhm
     );
 
-    int ngbins_ = get_gaussian_num_bins(
-      c_stddev,
-      get_double_parameter("gaussian-min-height"),
-      bin_width_,
-      sp_max_mz_
-    );
     
+    int ngbins_ = 0;
+    
+    if (gfwhm != 0 && c_stddev != 0) {
+      ngbins_ = get_gaussian_num_bins(
+        c_stddev,
+        g_min_height,
+        bin_width_,
+        observed.size()
+      );
+    }
 
     carp_once(CARP_INFO, "fwhm:%g min:%g c:%g b:%i",
-           get_double_parameter("gaussian-fwhm"),
-           get_double_parameter("gaussian-min-height"),
+           gfwhm,
+           g_min_height,
            c_stddev,
            ngbins_
            );
-    
     
     vector<FLOAT_T> g_table;
     if (ngbins_ != 0 && c_stddev != 0) {
@@ -1030,8 +1034,12 @@ FLOAT_T get_gaussian_value(
 FLOAT_T get_FWHM_to_gaussian_c_stddev(
   FLOAT_T fwhm_width
 ) {
-  FLOAT_T c = fwhm_width / (2.0 * sqrt(2.0 * log(2.0)));
-  return(c);  
+  if (fwhm_width == 0) {
+    return 0;
+  } else {
+    FLOAT_T c = fwhm_width / (2.0 * sqrt(2.0 * log(2.0)));
+    return(c);
+  }
 }
 
 int get_gaussian_num_bins(
@@ -1041,7 +1049,7 @@ int get_gaussian_num_bins(
   int max_bins
 ) {
   int num_bins = 0;
-  if (min_height == 1) {
+  if (min_height == 1 || c_stddev == 0) {
     num_bins = 0;
   } else if (min_height == 0) {
     num_bins = max_bins;
