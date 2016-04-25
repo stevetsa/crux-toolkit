@@ -5,7 +5,7 @@
  * \brief Utility functions for search-for-xlinks
  *****************************************************************************/
 #include "XLink.h"
-
+#include "util/Params.h"
 
 #include <sstream>
 #include <iostream>
@@ -173,17 +173,22 @@ void get_protein_ids_locations(
 
   std::ostringstream protein_field_stream;
 
+  string prefix = "";
+  if (peptide->isDecoy()) {
+    prefix = Params::GetString("decoy-prefix");
+  }
+  
   for (PeptideSrcIterator peptide_src_iterator =
     peptide->getPeptideSrcBegin();
     peptide_src_iterator != peptide->getPeptideSrcEnd();
     ++peptide_src_iterator) {
-    
+
     PeptideSrc* peptide_src = *peptide_src_iterator;
     Crux::Protein* protein = peptide_src->getParentProtein();
     string& protein_id = protein->getIdPointer();
     int peptide_loc = peptide_src->getStartIdx();
     std::ostringstream protein_loc_stream;
-    protein_loc_stream << protein_id << "(" << peptide_loc << ")";
+    protein_loc_stream << prefix << protein_id << "(" << peptide_loc << ")";
     protein_ids_locations.insert(protein_loc_stream.str());
   }
 

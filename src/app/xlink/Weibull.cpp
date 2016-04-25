@@ -194,16 +194,13 @@ FLOAT_T Weibull::getPValue(FLOAT_T score, bool logp) {
   //return the ECDF
   if (!fit_success_ || pvalue == 0 || pvalue != pvalue) {
     //x != x should test for NaN.
-    
-    FLOAT_T pvalue_new = getECDFPValue(score, logp);
-    if (pvalue == 0 || pvalue != pvalue) {
-      carp(CARP_WARNING, "invalid pvalue! %g, returning ecdf"
-           "shift:%g eta:%g beta:%g c:%g s:%g ecdf:%g",
-           pvalue, shift_, eta_, beta_, correlation_,
-           score, pvalue_new
-           );
+    if (!fit_success_) {
+      pvalue = NAN;  
+    } else if (pvalue != pvalue) {
+      pvalue = NAN;  
+    } else if (pvalue == 0) {
+        pvalue = FLOAT_T_MIN;
     }
-    pvalue = pvalue_new;
   }
   
   return(pvalue);

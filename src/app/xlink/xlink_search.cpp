@@ -17,6 +17,7 @@
 #include "model/FilteredSpectrumChargeIterator.h"
 #include "io/OutputFiles.h"
 #include "io/SpectrumCollectionFactory.h"
+#include "util/Params.h"
 #include "XLinkDatabase.h"
 
 
@@ -151,6 +152,13 @@ int SearchForXLinks::xlinkSearchMain() {
 
   /* Prepare output files */
   carp(CARP_DEBUG, "Preparing output files");
+  
+    // Check concat parameter
+  bool concat = Params::GetBool("concat");
+  if (concat) {
+    OutputFiles::setConcat();
+  }
+  
   OutputFiles output_files(this);
   output_files.writeHeaders(num_proteins);
 
@@ -306,16 +314,22 @@ int SearchForXLinks::xlinkSearchMain() {
     //print out
     target_candidates->setFilePath(ms2_file);
     decoy_candidates->setFilePath(ms2_file);
-    
     vector<MatchCollection*> decoy_vec;
-    decoy_vec.push_back(decoy_candidates);
+    
+    if (Params::GetBool("concat")) {
+      for (size_t idx=0;idx < decoy_candidates->getMatchTotal();idx++) {
+        target_candidates->add(decoy_candidates->at(idx), true);
+      }
+    } else {
+    
+      decoy_vec.push_back(decoy_candidates);
 
-    if (decoy_candidates->getScoredType(SP) == true) {
-      decoy_candidates->populateMatchRank(SP);
+      if (decoy_candidates->getScoredType(SP) == true) {
+        decoy_candidates->populateMatchRank(SP);
+      }
+      decoy_candidates->populateMatchRank(XCORR);
+      decoy_candidates->sort(XCORR);
     }
-    decoy_candidates->populateMatchRank(XCORR);
-    decoy_candidates->sort(XCORR);
-
 
     carp(CARP_DEBUG, "Ranking");
 
@@ -372,7 +386,11 @@ int SearchForXLinks::xlinkSearchMain() {
   //Calculate q-values via p-values from weibull fit.
   if (compute_pvalues) {
     carp(CARP_DEBUG, "Computing Q-Values using P-values");
-    xlink_compute_qvalues();
+    if (Params::GetBool("concat")) {
+      carp(CARP_WARNING, "Computing Q-Values with concatenated target-decoy files not implemented yet!");
+    } else {
+      xlink_compute_qvalues();
+    }
   }
 
   carp(CARP_INFO, "Elapsed time: %.3g s", wall_clock() / 1e6);

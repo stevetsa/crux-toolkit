@@ -1433,7 +1433,7 @@ bool MatchCollection::addMatch(
   // add a new match to array
   match_.push_back(match);
   match->incrementPointerCount();
-  
+  last_sorted_ = (SCORER_TYPE_T)-1;
   return true;
 }
 

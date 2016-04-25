@@ -1051,10 +1051,10 @@ int get_gaussian_num_bins(
   int num_bins = 0;
   if (min_height == 1 || c_stddev == 0) {
     num_bins = 0;
-  } else if (min_height == 0) {
-    num_bins = max_bins;
   } else {
-  
+    if (min_height == 0) {
+      min_height = FLOAT_T_MIN;
+    }
     FLOAT_T x = sqrt (2.0 * log(1.0/min_height)) * c_stddev;
   
     num_bins = (int)(x / bin_width);

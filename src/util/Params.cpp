@@ -309,7 +309,7 @@ void Params::Initialize() {
     "full width at half maximum value for gaussian smoothing when scoring with XCORR.",
     "Available for search-for-xlinks",
     true);
-  InitDoubleParam("gaussian-min-height", 1, 0, 1,
+  InitDoubleParam("gaussian-min-height", 0, 0, 1,
     "minimum height for gaussian smoothing when scoring with.  Used in conjunction with"
     " gaussian-fwhm to determine number of smoothing to employ",
     "Available for search-for-xlinks", true);

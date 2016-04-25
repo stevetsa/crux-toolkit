@@ -53,8 +53,13 @@ OutputFiles::OutputFiles(CruxApplication* program_name)
   }
   
   if (command == XLINK_SEARCH_COMMAND) {
-    num_decoy_files = 1;
-    num_files_ = 2;
+    if (concat_) {
+      num_decoy_files = 0;
+      num_files_ = 1;
+    } else {
+      num_decoy_files = 1;
+      num_files_ = 2;
+    }
   }
 
   makeTargetDecoyList();
