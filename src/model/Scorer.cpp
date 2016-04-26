@@ -1004,12 +1004,19 @@ bool Scorer::createIntensityArrayObserved(
     int n = observed.size()-1;
     for (int i = 0; i <= n; i++) {
       observed_g_[i] = 0.0;
-      int right_index = min(n, i + ngbins_);
-      int left_index = max(0, i - ngbins_);
-      for (int j = left_index; j <=right_index;j++) {
-        int ii = i - j + ngbins_;
-        observed_g_[i] += g_table[ii] * observed_[i];
+      
+      int leftj = -ngbins_;
+      if (i < ngbins_) {
+        leftj = -i;
       }
+      int rightj = ngbins_;
+      if (i+ngbins_ >= n) {
+        rightj = n - i;
+      }
+      
+      for (int j = leftj; j <= rightj;j++) {
+        observed_g_[i] += g_table[j+ngbins_] * observed_[i+j];
+      }  
     }
   }
   return true;
