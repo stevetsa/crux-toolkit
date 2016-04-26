@@ -1057,7 +1057,7 @@ int get_gaussian_num_bins(
     }
     FLOAT_T x = sqrt (2.0 * log(1.0/min_height)) * c_stddev;
   
-    num_bins = (int)(x / bin_width);
+    num_bins = (int)(ceil(x / bin_width));
     num_bins = min(num_bins, max_bins);
     carp_once(CARP_INFO, "c:%g min:%g bw:%g x:%g nbins:%i", c_stddev, min_height, bin_width, x, num_bins);
   }
