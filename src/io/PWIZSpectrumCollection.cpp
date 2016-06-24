@@ -177,6 +177,12 @@ bool PWIZSpectrumCollection::parse() {
       } else {
         carp(CARP_DETAILED_DEBUG, "found scan:%i-%i from ms_peak_list_scans", scan_number_begin, scan_number_end);
       }
+      if (scan_number_begin == 0) {
+        // PWiz assigns scan numbers starting from 0 if they are missing. In this case, we re-assign starting from 1 below.
+        carp_once(CARP_INFO, "Parser could not determine scan numbers for this "
+                             "file, using ordinal numbers as scan numbers.");
+        assign_new_scans = true;
+      }
     }
     if (assign_new_scans) {
       scan_number_begin = ++scan_counter;

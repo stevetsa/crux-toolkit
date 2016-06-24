@@ -171,7 +171,7 @@ MODIFIED_AA_T* copy_mod_aa_seq(
   const MODIFIED_AA_T* source ///< Sequence to copy
   );
 
-void freeModSeq(MODIFIED_AA_T* mod_seq);
+void freeModSeq(MODIFIED_AA_T* &mod_seq);
 
 /**
  * \returns whether the two modified sequences are equal or not

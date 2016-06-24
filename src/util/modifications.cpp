@@ -32,6 +32,7 @@ class MODIFIED_AA_T_Cache {
   stack<MODIFIED_AA_T*> cache_;
   int check_in_count;
   int check_out_count;
+  int total_objects_;
  public:
   MODIFIED_AA_T_Cache() {
     check_in_count = 0;
@@ -44,12 +45,13 @@ class MODIFIED_AA_T_Cache {
       cache_.pop();
       delete []element;
     }
-    //carp(CARP_INFO, "modified_aa_cache: checkout %d checkin %d", check_out_count, check_in_count);
+    carp(CARP_INFO, "modified_aa_cache: checkout %d checkin %d total objects:%d", check_out_count, check_in_count, total_objects_);
   }
 
   MODIFIED_AA_T* checkout(bool clear=false) {
     MODIFIED_AA_T* new_element;
     if (cache_.empty()) {
+      total_objects_++;
       new_element = new MODIFIED_AA_T[GlobalParams::getMaxLength()+1];
     } else {
       new_element = cache_.top();
@@ -69,8 +71,9 @@ class MODIFIED_AA_T_Cache {
 
 MODIFIED_AA_T_Cache modified_aa_cache;
 
-void freeModSeq(MODIFIED_AA_T* seq) {
+void freeModSeq(MODIFIED_AA_T* &seq) {
   modified_aa_cache.checkin(seq);
+  seq=NULL;
 }
 
 
