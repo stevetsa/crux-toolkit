@@ -20,11 +20,11 @@ class CacheableMass {
     )=0;
 
   FLOAT_T getMass(
-    MASS_TYPE_T mass_type
+    MASS_TYPE_T mass_type = MONO
     );
 
   FLOAT_T getMassConst(
-    MASS_TYPE_T mass_type
+    MASS_TYPE_T mass_type = MONO
   ) const;
 
   static void copy(CacheableMass* src, CacheableMass* dest);

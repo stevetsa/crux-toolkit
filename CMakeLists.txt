@@ -100,12 +100,21 @@ add_dependencies(tide-support google-gflags)
 add_dependencies(xlink comet)
 add_dependencies(xlink percolator)
 add_dependencies(xlink ProteoWizard)
-add_dependencies(xlink-assign-ions crux)
-add_dependencies(xlink-score-spectrum crux)
 add_dependencies(create-docs crux)
 
 # build a CPack driven installer package
 include (InstallRequiredSystemLibraries)
+
+if (WIN32 AND NOT CYGWIN)
+  # If windows build we need to select 32/64 bit platform
+  if (CMAKE_GENERATOR MATCHES "^.*Win64$")
+    SET(BUILD_PROCESSOR "AMD64")
+  else (CMAKE_GENERATOR MATCHES "^.*Win64$")
+    SET(BUILD_PROCESSOR "i386")
+  endif (CMAKE_GENERATOR MATCHES "^.*Win64$")
+else (WIN32 AND NOT CYGWIN)
+  SET(BUILD_PROCESSOR ${CMAKE_SYSTEM_PROCESSOR})
+endif (WIN32 AND NOT CYGWIN)
 
 set (CPACK_GENERATOR ZIP)
 set (CPACK_SOURCE_GENERATOR TGZ)
@@ -113,7 +122,7 @@ set (CPACK_PACKAGE_VERSION_MAJOR ${CRUX_VERSION_MAJOR})
 set (CPACK_PACKAGE_VERSION_MINOR ${CRUX_VERSION_MINOR})
 set (CRUX_VERSION ${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR})
 set(CPACK_PACKAGE_FILE_NAME
-  ${CMAKE_PROJECT_NAME}-${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CMAKE_SYSTEM_NAME}.${CMAKE_SYSTEM_PROCESSOR})
+  ${CMAKE_PROJECT_NAME}-${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CMAKE_SYSTEM_NAME}.${BUILD_PROCESSOR})
 set(CPACK_SOURCE_PACKAGE_FILE_NAME
   "${CMAKE_PROJECT_NAME}-${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.Source")
 set (

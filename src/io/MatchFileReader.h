@@ -17,16 +17,18 @@
 
 #include "DelimitedFileReader.h"
 #include "MatchColumns.h"
+#include "PSMReader.h"
 
-
-class MatchFileReader: public DelimitedFileReader {
+class MatchFileReader: public DelimitedFileReader, public PSMReader {
   protected:
+    void parseHeader();
+    Crux::Match* parseMatch();
+    Crux::Peptide* parsePeptide();
+    Crux::Spectrum* parseSpectrum();
+
     int match_indices_[NUMBER_MATCH_COLUMNS];
 
-    void parseHeader();
-
   public:
-
    /**
     * \returns a blank MatchFileReader object 
     */
@@ -47,6 +49,11 @@ class MatchFileReader: public DelimitedFileReader {
     MatchFileReader(
       const std::string& file_name
     );
+
+    MatchFileReader(
+      const std::string& file_name,
+      Database* database,
+      Database* decoy_database=NULL);
 
     /**
      * \returns a MatchFileReader object and load the tab-delimited
@@ -120,13 +127,13 @@ class MatchFileReader: public DelimitedFileReader {
      */
     void getMatchColumnsPresent (std::vector<bool>& col_is_present);
 
-
     static MatchCollection* parse(
       const std::string& file_path,
       Database* database,
       Database* decoy_database
     );
 
+    MatchCollection* parse();
 };
 
 #endif //MATCHFILEREADER_H

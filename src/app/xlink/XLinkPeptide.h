@@ -80,7 +80,7 @@ class XLinkPeptide : public XLinkMatch {
   /**
    * Destructor
    */
-  virtual ~XLinkPeptide() {};
+  virtual ~XLinkPeptide() {}
 
   /**
    * makes sure that sequence1 is smaller in alphanumeric value than
@@ -198,7 +198,6 @@ class XLinkPeptide : public XLinkMatch {
   XLinkablePeptide& getXLinkablePeptide(
     int peptide_idx ///<0 or 1
   );
-
   /**
    * \returns the number of missed cleavages for the cross-linked peptide
    */

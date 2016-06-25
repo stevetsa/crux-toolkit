@@ -5,28 +5,80 @@
 #include "objects.h"
 #include "parameter.h"
 #include "Params.h"
+#include "StringUtils.h"
 
 #include <algorithm>
 
 using namespace std;
 
-Params::ParamContainer Params::container_;
 
-void Params::Initialize() {
-  if (!container_.Empty() || container_.Finalized()) {
-    throw runtime_error("Parameters already initialized");
-  }
+/**
+ * \file Params.cpp
+ *
+ * This module handles user-level parameters in Crux.  Required
+ * arguments are given on the command line; optional parameters can be
+ * specified either on the command line or in a parameter file.
+ * Textual descriptions of each parameter are stored in the source
+ * code, and these are used to automatically generate usage
+ * statements, comments in output parameter files, and HTML
+ * documentation.
+ *
+ * Following are the steps required to add a new argument or parameter
+ * to an existing command:
+ *
+ * - In Params.cpp, inside the constructor Params::Params(), add a
+ *   call to Init{Bool,Int,String,Double,Arg}Param.  This will specify
+ *   things like the parameter name, type, default value, what
+ *   commands it works with, and whether it is visible to the end
+ *   user.
+ *
+ * - If your parameter is optional, then in Params::Categorize(), add
+ *   an "items.insert()" with the name of your new parameter. This
+ *   controls what category the parameter gets printed in when the
+ *   HTML documentation is created.  Note that if the parameter
+ *   doesn't get added to a category in Params::Categorize(), it just
+ *   appears under a generic category called "<command name> options"
+ *
+ * - In the .cpp file that contains the main() for the command that
+ *   uses this parameter, find a call to either getArgs() (if your new
+ *   parameter is required) or getOptions() (if it is optional), and
+ *   add the name of your new parameter to the list of options there.
+
+ * - In the same file, add a call to
+ *   Params::get{Bool,Int,String,Double}() to retrieve the value
+ *   associated with the parameter.  In general, these methods can be
+ *   used anywhere in the source code in order to retrieve parameters.
+ *   However, it's good form, when feasible, to access parameters in
+ *   the main() and then to pass them as arguments, rather than
+ *   accessing them as globals within subroutines.
+ *
+ * - If you need to edit the textual description of the command
+ *   itself, search in the same file for a call to getDescription().
+ *   Portions of that description enclosed in "[[nohtml: XXX ]]" will
+ *   be used for the usage statement, and portions in "[[html: XXX ]]"
+ *   will be in the HTML docs.
+ *
+ */
+
+static Params paramContainer_;
+
+Params::Params() : finalized_(false) {
   /* generate_peptide arguments */
   InitArgParam("protein fasta file",
-   "The name of the file in FASTA format from which to retrieve proteins.");
+    "The name of the file in FASTA format from which to retrieve proteins.");
   InitArgParam("index name",
     "The desired name of the binary index.");
   InitArgParam("ms2 file",
     "File containing spectra to be searched.");
+  /* psm-convert arguments */
+  InitArgParam("input PSM file",
+    "The name of a PSM file in tab-delimited text, SQT, PIN, pepXML or mzIdentML format");
+  InitArgParam("output format",
+    "The desired format of the output file. Legal values are tsv, html, sqt, pin, "
+    "pepxml, mzidentml, barista-xml.");
   /* get-ms2-spectrum */
-  InitIntParam("scan number", 0, 0, BILLION,
-    "Scan number identifying the spectrum.",
-    "Argument for get-ms2-spectrum", false);
+  InitArgParam("scan number",
+    "Scan number identifying the spectrum.");
   InitArgParam("output file",
     "File where spectrum will be written.");
   /* predict-peptide-ions */
@@ -101,8 +153,6 @@ void Params::Initialize() {
   /* *** Initialize Options (command line and param file) *** */
 
   /* options for all executables */
-  InitBoolParam("version", false, "Print version number and quit.",
-    "Available for all crux programs.  On command line use '--version T'.", true);
   InitIntParam("verbosity", 30, 0, 100,
     "Specify the verbosity of the current processes. Each level prints the following "
     "messages, including all those at lower verbosity levels: 0-fatal errors, 10-non-"
@@ -122,19 +172,19 @@ void Params::Initialize() {
   InitIntParam("min-length", 6, 1, MAX_PEPTIDE_LENGTH,
     "The minimum length of peptides to consider.",
     "Used from the command line or parameter file by "
-    "crux-generate-peptides, crux tide-index, and crux generate-decoys.", true);
+    "crux-generate-peptides, and crux tide-index.", true);
   InitIntParam("max-length", 50, 1, MAX_PEPTIDE_LENGTH,
     "The maximum length of peptides to consider.",
     "Available from command line or parameter file for "
-    "crux-generate-peptides, crux tide-index, and crux generate-decoys. ", true);
+    "crux-generate-peptides, crux tide-index. ", true);
   InitDoubleParam("min-mass", 200, 0, BILLION,
     "The minimum mass (in Da) of peptides to consider.",
     "Available from command line or parameter file for "
-    "crux-generate-peptides, crux tide-index, and crux generate-decoys. ", true);
+    "crux-generate-peptides and crux tide-index. ", true);
   InitDoubleParam("max-mass", 7200, 1, BILLION, 
     "The maximum mass (in Da) of peptides to consider.",
     "Available from command line or parameter file for "
-    "crux-generate-peptides, crux tide-index, and crux generate-decoys. ", true);
+    "crux-generate-peptides and crux tide-index. ", true);
   InitIntParam("min-peaks", 20, 0, BILLION,
     "The minimum number of peaks a spectrum must have for it to be searched.",
     "Available for tide-search.", true);
@@ -151,7 +201,7 @@ void Params::Initialize() {
     "glu-c ([DE]|{P}), pepsin-a ([FL]|{P}), elastase-trypsin-chymotrypsin "
     "([ALIVKRWFY]|{P}). Specifying --enzyme no-enzyme yields a non-enzymatic digest. "
     "[[html:<strong>]]Warning:[[html:</strong>]] the resulting index may be quite large.",
-    "Available for crux-generate-peptides, crux tide-index, and crux generate-decoys.", true);
+    "Available for crux-generate-peptides and crux tide-index.", true);
   InitStringParam("custom-enzyme", "", 
     "Specify rules for in silico digestion of protein sequences. Overrides the enzyme "
     "option. Two lists of residues are given enclosed in square brackets or curly "
@@ -168,11 +218,10 @@ void Params::Initialize() {
     "Specify whether every peptide in the database must have two enzymatic termini "
     "(full-digest) or if peptides with only one enzymatic terminus are also included "
     "(partial-digest).",
-    "Available for crux-generate-peptides, crux tide-index, and crux generate-decoys.", true);
+    "Available for crux-generate-peptides and crux tide-index.", true);
   InitIntParam("missed-cleavages", 0, 0, 500,
     "Maximum number of missed cleavages per peptide to allow in enzymatic digestion.",
-    "Available from command line or parameter file for "
-    "crux-generate-peptides and crux generate-decoys. "
+    "Available from command line or parameter file for crux-generate-peptides. "
     "When used with enzyme=<trypsin|elastase|chymotrypsin> "
     "includes peptides containing one or more potential cleavage sites.", true);
   InitDoubleParam("precursor-window", 3.0, 0, 100, 
@@ -215,20 +264,14 @@ void Params::Initialize() {
     "keep-terminal-aminos to \"NC\" will yield \"EPMAK\"; setting it to \"C\" will yield "
     "\"PMAEK\"; setting it to \"N\" will yield \"EKPMA\"; and setting it to \"none\" will "
     "yield \"KPMAE\".",
-    "Available for tide-index and generate-decoys.", true);
-  InitBoolParam("unique-peptides", true,
-    "Generate peptides only once, even if they appear in more "
-    "than one protein.",
-    "Available from command line or parameter file for "
-    "crux-genereate-peptides. Returns one line per peptide "
-    "when true or one line per peptide per protein occurence when false.", true);
+    "Available for tide-index.", true);
   InitBoolParam("peptide-list", false,
     "Create in the output directory a text file listing of all the peptides in the "
     "database, along with their neutral masses, one per line. If decoys are generated, "
     "then a second file will be created containing the decoy peptides. Decoys that also "
     "appear in the target database are marked with an asterisk in a third column.",
     "Available for tide-index.", true);
-   // print-processed-spectra option
+  // print-processed-spectra option
   InitStringParam("stop-after", "xcorr", "remove-precursor|square-root|"
     "remove-grass|ten-bin|xcorr",
     "Stop after the specified pre-processing step.",
@@ -237,9 +280,6 @@ void Params::Initialize() {
     "Specify the output units for processed spectra.",
     "Available for print-processed-spectra", true);
   /* more generate_peptide parameters */
-  InitBoolParam("output-sequence", false, 
-    "Print peptide sequence.",
-    "Available only for crux-generate-peptides.", true);
   InitBoolParam("sqt-output", false,
     "Outputs an SQT results file to the output directory. Note that if sqt-output is "
     "enabled, then compute-sp is automatically enabled and cannot be overridden.",
@@ -264,8 +304,7 @@ void Params::Initialize() {
   InitStringParam("prelim-score-type", "sp", "sp|xcorr",
     "Initial scoring (sp, xcorr).", 
     "The score applied to all possible psms for a given spectrum. Typically "
-    "used to filter out the most plausible for further scoring. See "
-    "max-rank-preliminary and score-type.", false);
+    "used to filter out the most plausible for further scoring.", false);
   InitStringParam("score-type", "xcorr", "xcorr|sp|xcorr-pvalue|sp-pvalue",
     "The primary scoring method to use (xcorr, sp, xcorr-pvalue, sp-pvalue).",
     "Primary scoring is typically done on a subset (see max-rank-preliminary) of all "
@@ -330,52 +369,18 @@ void Params::Initialize() {
     "Used by tide-search.", true);
   InitStringParam("fileroot", "", 
     "The fileroot string will be added as a prefix to all output file names.",
-    "Used by crux percolator, crux compute-q-values, and crux q-ranker.", true);
+    "Available for all commands that produce an output directory.", true);
   InitStringParam("output-dir", "crux-output",
     "The name of the directory where output files will be created.",
-    "Used by crux compute-q-values, and crux percolator.", true);
-  // user options regarding decoys
-  InitStringParam("decoys", "peptide-shuffle", "none|reverse|protein-shuffle|peptide-shuffle",
-    "Include a decoy version of every peptide by shuffling or reversing the target "
-    "sequence. Each peptide is either reversed or shuffled, leaving the N-terminal and C-"
-    "terminal amino acids in place. Note that peptides that appear multiple times in the "
-    "target database are only shuffled once. In reverse mode, palindromic peptides are "
-    "shuffled. Also, if a shuffled peptide produces an overlap with the target or decoy "
-    "database, then the peptide is re-shuffled up to 5 times. Note that, despite this "
-    "repeated shuffling, homopolymers will appear in both the target and decoy database.",
-    "", true);
-  InitIntParam("num-decoys-per-target", 1, 0, 10,
-    "Number of decoy peptides to search for every target peptide searched."
-    "Only valid for fasta searches when --decoys is not none.",
-    "Use --decoy-location to control where they are returned (which "
-    "file(s)) and --decoys to control how targets are randomized.", true);
-  InitStringParam("decoy-location", "separate-decoy-files",
-    "Specify location of decoy search results. "
-    "<string>=target-file|one-decoy-file|separate-decoy-files.",
-    "Applies when decoys is not none.  Use 'target-file' to mix "
-    "target and decoy search results in one file. 'one-decoy-file' will "
-    "return target results in one file and all decoys in another. "
-    "'separate-decoy-files' will create as many decoy files as "
-    "num-decoys-per-target.", true);
+    "Available for most commands.", true);
   // coder options regarding decoys
-  InitIntParam("num-decoy-files", 2, 0, 10,
+  InitIntParam("num-decoy-files", 1, 0, 10,
     "Replaces number-decoy-set.  Determined by decoy-location"
     " and num-decoys-per-target",
     "", false);
-  InitBoolParam("tdc", false,
-    "Target-decoy competition. puts decoy psms in target file. ",
-    "Now hidden from the user", false);
   InitBoolParam("decoy-p-values", false,
     "Store all decoy p-values in a file",
     "", false);
-  InitIntParam("max-rank-preliminary", 500, 0, BILLION, 
-    "Number of psms per spectrum to score with xcorr after preliminary "
-    "scoring with Sp. "
-    "Set to 0 to score all psms with xcorr.",
-    "For positive values, the Sp "
-    "(preliminary) score acts as a filter; only high scoring psms go "
-    "on to be scored with xcorr.  This saves some time.  If set to 0, "
-    "all psms are scored with both scores. ", true);
   InitIntParam("top-match", 5, 1, BILLION, 
     "Specify the number of matches to report for each spectrum.",
     "Available for tide-search and crux percolator", true);
@@ -386,30 +391,35 @@ void Params::Initialize() {
   InitStringParam("fragment-mass", "mono", "average|mono",
     "Specify which isotopes to use in calculating fragment ion mass.",
     "Used by crux-predict-peptide-ions.", true);
+  InitStringParam("isotopic-mass", "mono", "average|mono",
+    "Specify the type of isotopic masses to use when calculating the peptide mass.",
+    "Used from command line or parameter file by crux-generate-peptides.", true);
   InitStringParam("mod", "NO MODS",
-    "[[nohtml:"
-    "<mass change>:<aa list>:<max per peptide>:<prevents cleavage>:<prevents cross-link>]]"
-    "[[html:"
+    "Consider modifications on any amino acid in aa list with at most max-per-peptide in one "
+    "peptide. "
+    "The parameter takes the form [[html:"
     "&lt;mass change&gt;:&lt;aa list&gt;:&lt;max per peptide&gt;:&lt;prevents cleavage&gt;:"
     "&lt;prevents cross-link&gt;]]. "
-    "Consider modifications on any amino acid in aa list with at most max-per-peptide in one "
-    "peptide. This parameter may be included with different values multiple times so long as "
-    "the total number of mod, cmod, and nmod parameters does not exceed 11. The prevents "
-    "cleavage and prevents cross-link are T/F optional arguments for describing whether the "
-    "modification prevents enzymatic cleavage of cross-linking respectively. This option is "
-    "only available when use-old-xlink=F.",
-    "Available from parameter file for crux-generate-peptides and "
-    "the same must be used for crux compute-q-value.", true);
+    "This parameter may be included with different values multiple times so long as "
+    "the total number of mod, cmod, and nmod parameters does not exceed 11. The \"prevents "
+    "cleavage\" and \"prevents cross-link\" arguments are optional T/F arguments for describing whether the "
+    "modification prevents enzymatic cleavage of cross-linking, respectively. This option is "
+    "only available when use-old-xlink=F. "
+    "Note that this parameter only takes effect when specified in the "
+    "parameter file.",
+    "Available for search-for-xlinks.", true);
   InitStringParam("cmod", "NO MODS",
     "Specify a variable modification to apply to C-terminus of peptides. " 
-    "<mass change>:<max distance from protein c-term (-1 for no max)>.",
-    "Available from parameter file for crux-generate-peptides and "
-    "the same must be used for crux compute-q-value.", true);
+    "<mass change>:<max distance from protein c-term (-1 for no max)>. "
+    "Note that this parameter only takes effect when specified in the "
+    "parameter file.",
+    "Available for search-for-xlinks.", true);
   InitStringParam("nmod", "NO MODS",
     "Specify a variable modification to apply to N-terminus of peptides.  " 
-    "<mass change>:<max distance from protein n-term (-1 for no max)>",
-    "Available from parameter file for crux-generate-peptides and "
-    "the same must be used for crux compute-q-value.", true);
+    "<mass change>:<max distance from protein n-term (-1 for no max)> "
+    "Note that this parameter only takes effect when specified in the "
+    "parameter file.",
+    "Available for search-for-xlinks.", true);
   InitIntParam("min-mods", 0, 0, MAX_PEPTIDE_LENGTH,
     "The minimum number of modifications that can be applied to a single " 
     "peptide.",
@@ -425,7 +435,7 @@ void Params::Initialize() {
   InitStringParam("mod-mass-format", "mod-only", "mod-only|total|separate",
     "Specify how sequence modifications are reported in various output files. Each "
     "modification is reported as a number enclosed in square braces following the "
-    "modified residue; however the number may correspond to one of three different "
+    "modified residue; however, the number may correspond to one of three different "
     "masses: (1) 'mod-only' reports the value of the mass shift induced by the "
     "modification; (2) 'total' reports the mass of the residue with the modification "
     "(residue mass plus modification mass); (3) 'separate' is the same as 'mod-only', "
@@ -440,12 +450,38 @@ void Params::Initialize() {
     "Also changes mods written to parameter file. Set internally based on "
     "the max mod precision in the param file.",
     false);
+
+  InitBoolParam("use-a-ions", false,
+    "Consider a-ions in the search? Note that an a-ion is equivalent to a "
+    "neutral loss of CO from the b-ion.  "
+    "Peak height is 10 (in arbitrary units).",
+    "Available for search-for-xlinks and xlink-score-spectrum.", true);
+  InitBoolParam("use-b-ions", true,
+    "Consider b-ions in the search? Peak height is 50 (in arbitrary units).",
+    "Available for search-for-xlinks and xlink-score-spectrum.", true);
+  InitBoolParam("use-c-ions", false,
+    "Consider c-ions in the search? Peak height is 50 (in arbitrary units).",
+    "Available for search-for-xlinks and xlink-score-spectrum.", true);
+  InitBoolParam("use-x-ions", false,
+    "Consider x-ions in the search? Peak height is 10 (in arbitrary units).",
+    "Available for search-for-xlinks and xlink-score-spectrum.", true);
+  InitBoolParam("use-y-ions", true,
+    "Consider y-ions in the search? Peak height is 50 (in arbitrary units).",
+    "Available for search-for-xlinks and xlink-score-spectrum.", true);
+  InitBoolParam("use-z-ions", false,
+    "Consider z-ions in the search? Peak height is 50 (in arbitrary units).",
+    "Available for search-for-xlinks and xlink-score-spectrum.", true);
+
   InitIntParam("precision", 8, 1, 100, //max is arbitrary
-    "Set the precision for scores written to sqt and text files.",
-    "Available from parameter file for percolator and compute-q-values.", true);
+    "Set the precision for scores written to sqt and text files. "
+    "Note that this parameter only takes effect when specified in the "
+    "parameter file.",
+    "Available percolator.", true);
   InitIntParam("mass-precision", 4, 1, 100, // max is arbitrary
-    "Set the precision for masses and m/z written to sqt and .txt files.",
-    "Available from parameter file for all commands.", true);
+    "Set the precision for masses and m/z written to sqt and .txt files. "
+    "Note that this parameter only takes effect when specified in the "
+    "parameter file.",
+    "Available for all commands.", true);
   InitIntParam("print-search-progress", 1000, 0, BILLION,
     "Show search progress by printing every n spectra searched. Set to 0 to show no "
     "search progress.",
@@ -605,9 +641,6 @@ void Params::Initialize() {
     "conditions\" by Klammer AA, Yi X, MacCoss MJ and Noble WS. ([[html:<em>]]Analytical "
     "Chemistry[[html:</em>]]. 2007 Aug 15;79(16):6111-8.).",
     "Available for crux percolator", true);
-  InitIntParam("doc", -1, -1, 15,
-    "Include description of correct features.",
-    "Avilable for crux percolator", true);
   InitBoolParam("only-psms", false,
     "Do not remove redundant peptides; keep all PSMs and exclude peptide level probability.",
     "Available for crux percolator", true);
@@ -733,12 +766,20 @@ void Params::Initialize() {
     "put two copies of the leading peptide into the index, with and without the N-terminal "
     "methionine.",
     "Available for tide-index.", true);
+  InitBoolParam("allow-dups", false,
+    "Prevent duplicate peptides between the target and decoy databases. When set to \"F\", "
+    "the program keeps all target and previously generated decoy peptides in memory. A shuffled "
+    "decoy will be re-shuffled multiple times to avoid duplication. If a non-duplicated peptide "
+    "cannot be generated, the decoy is skipped entirely. When set to \"T\", every decoy is added to "
+    "the database without checking for duplication. This option reduces the memory requirements "
+    "significantly. Default = F.",
+    "Available for tide-index.", true);
   InitBoolParam("use-neutral-loss-peaks", true,
     "Controls whether neutral loss ions are considered in the search. "
     "Two types of neutral losses are included and are applied only to "
     "singly charged b- and y-ions: loss of ammonia (NH3, 17.0086343 Da) "
     "and H2O (18.0091422). Each neutral loss peak has intensity 1/5 of "
-    "the primary peak",
+    "the primary peak.",
     "Available for tide-search.", true);
   InitIntParam("max-precursor-charge", 5, 1, BILLION,
     "The maximum charge state of a spectra to consider in search.",
@@ -762,6 +803,9 @@ void Params::Initialize() {
   InitBoolParam("skip-preprocessing", false,
     "Skip preprocessing steps on spectra. Default = F.",
     "Available for tide-search", false);
+  InitIntParam("num-threads", 0, 0, 64,
+               "0=poll CPU to set num threads; else specify num threads directly.",
+               "Available for tide-search tab-delimited files only.", true);
   /*
    * Comet parameters
    */
@@ -770,7 +814,8 @@ void Params::Initialize() {
     "mzML, mz5, raw, ms2, and cms2. Files in mzML or mzXML may be compressed with gzip. "
     "RAW files can be parsed only under windows and if the appropriate libraries were "
     "included at compile time.");
-  InitArgParam("database name",
+  /* Comet - Database */
+  InitArgParam("database_name",
     "A full or relative path to the sequence database, "
     "in FASTA format, to search. Example databases include "
     "RefSeq or UniProt.  The database can contain amino acid "
@@ -781,184 +826,203 @@ void Params::Initialize() {
     "nucleotide_reading_frame\" to a value between 1 and 9.");
   InitIntParam("decoy_search", 0, 0, 2,
     "0=no, 1=concatenated search, 2=separate search.",
-    "option for Comet only", true);
-  InitIntParam("num_threads", 0, 0, 32, 
-    "0=poll CPU to set num threads; else specify num threads directly (max 32).",
-    "option for Comet only", true);
-  InitStringParam("output_suffix", "",
-    "specifies the suffix string that is appended to the base output name "
-    "for the pep.xml, pin.xml, txt and sqt output files.",
     "Available for comet.", true);
+  /* Comet - CPU threads */
+  InitIntParam("num_threads", 0, -64, 64, 
+    "0=poll CPU to set num threads; else specify num threads directly.",
+    "Available for comet.", true);
+  /* Comet - Masses */
   InitDoubleParam("peptide_mass_tolerance", 3.0, 0, BILLION,
     "Controls the mass tolerance value.  The mass tolerance "
     "is set at +/- the specified number i.e. an entered value "
     "of \"1.0\" applies a -1.0 to +1.0 tolerance. "
     "The units of the mass tolerance is controlled by the parameter "
     "\"peptide_mass_units\". ", 
-    "option for Comet only", true);
+    "Available for comet.", true);
   InitIntParam("peptide_mass_units", 0, 0, 2,
     "0=amu, 1=mmu, 2=ppm.",
-    "option for Comet only", true);
+    "Available for comet.", true);
   InitIntParam("mass_type_parent", 1, 0, 1,
     "0=average masses, 1=monoisotopic masses.",
-    "option for Comet only", true);
+    "Available for comet.", true);
   InitIntParam("mass_type_fragment", 1, 0, 1,
     "0=average masses, 1=monoisotopic masses.",
-    "option for Comet only", true);
+    "Available for comet.", true);
+  InitIntParam("precursor_tolerance_type", 0, 0, 1,
+    "0=singly charged peptide mass, 1=precursor m/z.",
+    "Available for comet.", true);
   InitIntParam("isotope_error", 0, 0, 2, 
     "0=off, 1=on -1/0/1/2/3 (standard C13 error), 2=-8/-4/0/4/8 (for +4/+8 labeling).",
-    "option for Comet only", true);
+    "Available for comet.", true);
+  /* Comet - Search enzyme */
   InitIntParam("search_enzyme_number", 1, 0, BILLION,
     "Specify a search enzyme from the end of the parameter file.",
-    "option for Comet only", true);
+    "Available for comet.", true);
   InitIntParam("num_enzyme_termini", 2, 1, 9,
     "valid values are 1 (semi-digested), 2 (fully digested), 8 N-term, 9 C-term.",
-    "option for Comet only", true);
+    "Available for comet.", true);
   InitIntParam("allowed_missed_cleavage", 2, 0, 5,
-    "maximum value is 5; for enzyme search",
-    "option for Comet only", true);
+    "Maximum value is 5; for enzyme search.",
+    "Available for comet.", true);
+  /* Comet - Fragment ions */
   InitDoubleParam("fragment_bin_tol", 1.000507, 0, BILLION,
-    "binning to use on fragment ions.",
-    "option for Comet only", true);
+    "Binning to use on fragment ions.",
+    "Available for comet.", true);
   InitDoubleParam("fragment_bin_offset", 0.40, 0, 1.0,
-    "offset position to start the binning (0.0 to 1.0).",
-    "option for Comet only", true);
+    "Offset position to start the binning (0.0 to 1.0).",
+    "Available for comet.", true);
   InitIntParam("theoretical_fragment_ions", 1, 0, 1,
     "0=default peak shape, 1=M peak only.",
-    "option for Comet only", true);
+    "Available for comet.", true);
   InitIntParam("use_A_ions", 0, 0, 1,
     "Controls whether or not A-ions are considered in the search (0 - no, 1 - yes).",
-    "option for Comet only", true);
+    "Available for comet.", true);
   InitIntParam("use_B_ions", 1, 0, 1,
     "Controls whether or not B-ions are considered in the search (0 - no, 1 - yes).",
-    "option for Comet only", true);
+    "Available for comet.", true);
   InitIntParam("use_C_ions", 0, 0, 1,
     "Controls whether or not C-ions are considered in the search (0 - no, 1 - yes).",
-    "option for Comet only", true);
+    "Available for comet.", true);
   InitIntParam("use_X_ions", 0, 0, 1,
     "Controls whether or not X-ions are considered in the search (0 - no, 1 - yes).",
-    "option for Comet only", true);
+    "Available for comet.", true);
   InitIntParam("use_Y_ions", 1, 0, 1,
     "Controls whether or not Y-ions are considered in the search (0 - no, 1 - yes).",
-    "option for Comet only", true);
+    "Available for comet.", true);
   InitIntParam("use_Z_ions", 0, 0, 1,
     "Controls whether or not Z-ions are considered in the search (0 - no, 1 - yes).",
-    "option for Comet only", true);
+    "Available for comet.", true);
   InitIntParam("use_NL_ions", 1, 0, 1,
     "0=no, 1= yes to consider NH3/H2O neutral loss peak.",
-    "option for Comet only", true);
-  InitIntParam("use_sparse_matrix", 0, 0, 1,
-    "Controls whether or not internal sparse matrix data representation is used.",
-    "option for Comet only", true);
+    "Available for comet.", true);
+  /* Comet - Output */
   InitIntParam("output_sqtfile", 0, 0, 1,
     "0=no, 1=yes  write sqt file.",
-    "option for Comet only", true);
-  InitIntParam("output_pepxmlfile", 1, 0, 1,
-    "0=no, 1=yes  write pep.xml file.",
-    "option for Comet only", true);
-  InitIntParam("output_percolatorfile", 0, 0, 1,
-    "0=no, 1=yes write percolator file.",
-     "option for Comet only", true);
+    "Available for comet.", true);
   InitIntParam("output_txtfile", 1, 0, 1,
     "0=no, 1=yes  write tab-delimited text file.",
-    "option for Comet only", true);
+    "Available for comet.", true);
+  InitIntParam("output_pepxmlfile", 1, 0, 1,
+    "0=no, 1=yes  write pep.xml file.",
+    "Available for comet.", true);
+  InitIntParam("output_percolatorfile", 0, 0, 1,
+    "0=no, 1=yes write percolator file.",
+     "Available for comet.", true);
   InitIntParam("output_outfiles", 0, 0, 1,
     "0=no, 1=yes  write .out files.",
-    "option for Comet only", true);
+    "Available for comet.", true);
   InitIntParam("print_expect_score", 1, 0, 1,
     "0=no, 1=yes to replace Sp with expect in out & sqt.",
-    "option for Comet.", true);
+    "Available for comet.", true);
   InitIntParam("num_output_lines", 5, 1, BILLION,
     "num peptide results to show.",
-    "option for Comet.", true);
+    "Available for comet.", true);
   InitIntParam("show_fragment_ions", 0, 0, 1,
     "0=no, 1=yes for out files only.",
-    "option for Comet.", true);
-  InitIntParam("sample_enzyme_number", 1,0,10, 
+    "Available for comet.", true);
+  InitIntParam("sample_enzyme_number", 1, 0, 10, 
     "Sample enzyme which is possibly different than the one applied to the search. "
     "Used to calculate NTT & NMC in pepXML output.",
-    "option for Comet. ", true);
+    "Available for comet. ", true);
+  /* Comet - mzXML/mzML parameters */
   InitStringParam("scan_range", "0 0",
-    "start and scan scan range to search; 0 as 1st entry ignores parameter.",
-    "option for Comet", true);
+    "Start and scan scan range to search; 0 as first entry ignores parameter.",
+    "Available for comet.", true);
   InitStringParam("precursor_charge", "0 0",
-    "precursor charge range to analyze; does not override "
-    "mzXML charge; 0 as 1st entry ignores parameter.",
-    "option for Comet.", true);
+    "Precursor charge range to analyze; does not override "
+    "mzXML charge; 0 as first entry ignores parameter.",
+    "Available for comet.", true);
+  InitIntParam("override_charge", 0, 0, 3,
+    "Specifies the whether to override existing precursor charge state information when present "
+    "in the files with the charge range specified by the \"precursor_charge\" parameter.",
+    "Available for comet.", true);  
   InitIntParam("ms_level", 2, 2, 3, 
     "MS level to analyze, valid are levels 2 or 3.",
-    "option for Comet. ", true);
+    "Available for comet. ", true);
   InitStringParam("activation_method", "ALL", "ALL|CID|ECD|ETD|PQD|HCD|IRMPD",
     "Specifies which scan types are searched.",
-    "option for Comet. ", true);
+    "Available for comet. ", true);
+  /* Comet - Misc. parameters */
   InitStringParam("digest_mass_range", "600.0 5000.0",
     "MH+ peptide mass range to analyze.",
-    "option for Comet.", true);
+    "Available for comet.", true);
   InitIntParam("num_results", 50, 0, BILLION,
-    "number of search hits to store internally.",
-    "option for Comet.", true);
+    "Number of search hits to store internally.",
+    "Available for comet.", true);
   InitIntParam("skip_researching", 1, 0, 1,
-    "for '.out' file output only, 0=search everything again, 1=don't search if .out exists.",
-    "option for Comet", true);
+    "For '.out' file output only, 0=search everything again, 1=don't search if .out exists.",
+    "Available for comet.", true);
   InitIntParam("max_fragment_charge", 3, 1, 5,
-    "set maximum fragment charge state to analyze (allowed max 5).",
-    "option for Comet", true);
+    "Set maximum fragment charge state to analyze (allowed max 5).",
+    "Available for comet.", true);
   InitIntParam("max_precursor_charge", 6, 1, 9,
-    "set maximum precursor charge state to analyze (allowed max 9).",
-    "option for Comet", true);
+    "Set maximum precursor charge state to analyze (allowed max 9).",
+    "Available for comet.", true);
   InitIntParam("nucleotide_reading_frame", 0, 0, 9,
     "0=proteinDB, 1-6, 7=forward three, 8=reverse three, 9=all six.",
-    "option for Comet", true);
+    "Available for comet.", true);
   InitIntParam("clip_nterm_methionine", 0, 0, 1,
     "0=leave sequences as-is; 1=also consider sequence w/o N-term methionine.",
-    "option for Comet", true);
+    "Available for comet.", true);
   InitIntParam("spectrum_batch_size", 0, 0, BILLION,
-    "max. # of spectra to search at a time; 0 to search the entire scan range in one loop.",
-    "option for Comet", true);
+    "Maximum number of spectra to search at a time; 0 to search the entire scan range in one loop.",
+    "Available for comet.", true);
+  InitStringParam("decoy_prefix", "decoy_",
+    "Specifies the prefix of the protein names that indicates a decoy.",
+    "Available for comet.", true);
+  InitStringParam("output_suffix", "",
+    "Specifies the suffix string that is appended to the base output name "
+    "for the pep.xml, pin.xml, txt and sqt output files.",
+    "Available for comet.", true);
+  InitStringParam("mass_offsets", "",
+    "Specifies one or more mass offsets to apply. This value(s) are effectively "
+    "subtracted from each precursor mass such that peptides that are smaller "
+    "than the precursor mass by the offset value can still be matched to the "
+    "respective spectrum.",
+    "Available for comet.", true);
+  /* Comet - Spectral processing */
   InitIntParam("minimum_peaks", 10, 1, BILLION,
-    "minimum num. of peaks in spectrum to search.",
-    "option for Comet", true);
+    "Minimum number of peaks in spectrum to search.",
+    "Available for comet.", true);
   InitDoubleParam("minimum_intensity", 0, 0, BILLION,
-    "minimum intensity value to read in.",
-    "option for comet. ", true);
+    "Minimum intensity value to read in.",
+    "Available for comet. ", true);
   InitIntParam("remove_precursor_peak", 0, 0, 2, 
     "0=no, 1=yes, 2=all charge reduced precursor peaks (for ETD).",
-    "option for Comet. ", true);
+    "Available for comet. ", true);
   InitDoubleParam("remove_precursor_tolerance", 1.5, -BILLION, BILLION, 
     "+- Da tolerance for precursor removal.",
-    "option for Comet. ", true);
+    "Available for comet. ", true);
   InitStringParam("clear_mz_range", "0.0 0.0",
-    "for iTRAQ/TMT type data; will clear out all peaks in the specified m/z range.",
-    "option for Comet", true);
+    "For iTRAQ/TMT type data; will clear out all peaks in the specified m/z range.",
+    "Available for comet.", true);
+  /* Comet - Variable modifications */
   for (int i = 1; i <= 9; i++) {
-    InitStringParam("variable_mod0" + StringUtils::ToString(i), "",
+    InitStringParam("variable_mod0" + StringUtils::ToString(i), "0.0 null 0 4 -1 0 0",
                     "Up to 9 variable modifications are supported; format: "
                     "\"<mass> <residues> <0=variable/1=binary> <max mods per a peptide>\" "
                     "e.g. 79.966331 STY 0 3.",
-                    "option for Comet", true);
+                    "Available for comet.", true);
   }
-  InitIntParam("require_variable_mod", 0, 0, 1,
-    "controls whether the analyzed peptides must contain at least one variable modification.",
-    "option for Comet", true);
   InitIntParam("max_variable_mods_in_peptide", 5, 0, BILLION,
     "Specifies the total/maximum number of residues that can be modified in a peptide.",
-    "option for Comet", true);
-  InitIntParam("override_charge", 0, 0, 1,
-    "specifies the whether to override existing precursor charge state information when present "
-    "in the files with the charge range specified by the \"precursor_charge\" parameter.",
-    "option for Comet", true);  
+    "Available for comet.", true);
+  InitIntParam("require_variable_mod", 0, 0, 1,
+    "Controls whether the analyzed peptides must contain at least one variable modification.",
+    "Available for comet.", true);
+  /* Comet - Static modifications */
   InitDoubleParam("add_Cterm_peptide", 0, 0, BILLION,
     "Specifiy a static modification to the c-terminus of all peptides.",
-    "option for Comet", true);
+    "Available for comet.", true);
   InitDoubleParam("add_Nterm_peptide", 0, 0, BILLION,
     "Specify a static modification to the n-terminus of all peptides.",
-    "option for Comet", true);
+    "Available for comet.", true);
   InitDoubleParam("add_Cterm_protein", 0, 0, BILLION,
     "Specify a static modification to the c-terminal peptide of each protein.",
-    "option for Comet", true);
+    "Available for comet.", true);
   InitDoubleParam("add_Nterm_protein", 0, 0, BILLION,
     "Specify a static modification to the n-terminal peptide of each protein.",
-    "option for Comet", true);
+    "Available for comet.", true);
   for (char c = 'A'; c <= 'Z'; c++) {
     string aaString = string(1, c);
     string aaName = AminoAcidUtil::GetName(c);
@@ -966,7 +1030,7 @@ void Params::Initialize() {
     InitDoubleParam("add_" + aaString + "_" + aaName,
                     c != 'C' ? 0 : CYSTEINE_DEFAULT, 0, BILLION,
                     "Specify a static modification to the residue " + aaString + ".",
-                    "option for Comet", true);
+                    "Available for comet.", true);
   }
   // **** q-ranker-barista arguments ****
   InitArgParam("database",
@@ -1010,9 +1074,6 @@ void Params::Initialize() {
   InitBoolParam("use-spec-features", true, 
     "Use an enriched feature set, including separate features for each ion type.",
     "Available for q-ranker and barista.", true);
-  InitStringParam("decoy_prefix", "decoy_",
-    "Specifies the prefix of the protein names that indicates a decoy.",
-    "Available for q-ranker and barista.", true);
   InitStringParam("separate-searches", "",
     "If the target and decoy searches were run separately, rather than "
     "using a concatenated database, then the program will assume that the "
@@ -1032,7 +1093,7 @@ void Params::Initialize() {
   InitBoolParam("list-of-files", false, 
     "Specify that the search results are provided as lists of files, rather than as "
     "individual files.",
-    "Available for barista and percolator.",true);
+    "Available for barista and percolator.", true);
   InitStringParam("optimization", "protein", "protein|peptide|psm",
      "Specifies whether to do optimization at the protein, peptide or psm level.",
      "Available for barista.", true);
@@ -1045,7 +1106,8 @@ void Params::Initialize() {
     "[[html:</a>]] format. In tab-delimited text format, only the specified score column "
     "is required. However if --estimation-method is tdc, then the columns \"scan\" and "
     "\"charge\" are required, as well as \"protein ID\" if the search was run with "
-    "concat=F. Furthermore, if the --peptide-level option is set to T, then the column "
+    "concat=F. Furthermore, if the --estimation-method is specified to peptide-level " 
+    "is set to T, then the column "
     "\"peptide\" must be included, and if --sidak is set to T, then the \"distinct "
     "matches/spectrum\" column must be included.[[html:<br>Note that multiple files can "
     "also be provided either on the command line or using the --list-of-files option.<br>"
@@ -1063,10 +1125,11 @@ void Params::Initialize() {
   InitDoubleParam("pi-zero", 1.0, 0, 1, 
     "The estimated percent of target scores that are drawn from the "
     "null distribution.",
-    "Used by assign-confidence, compute-q-values, percolator and q-ranker", false);
-  InitStringParam("estimation-method", "tdc", "mix-max|tdc",
+    "Used by assign-confidence, percolator and q-ranker", false);
+  InitStringParam("estimation-method", "tdc", "mix-max|tdc|peptide-level",
     "Specify the method used to estimate q-values: the mix-max procedure or target-decoy "
-    "competition.",
+    "competition. peptide-level is applied for spectrum-centric search. Eliminates any PSMS for which there "
+    "exists a better scoring PSM involving the same peptide. ",
     "Used by assign-confidence.", true);      
   InitBoolParam("sidak", false, 
     "Adjust the score using the Sidak adjustment and reports them in a new column in the "
@@ -1074,22 +1137,11 @@ void Params::Initialize() {
     "p-values, and that it requires the presence of the \"distinct matches/spectrum\" "
     "feature for each PSM.",
     "Used by assign-confidence.", true);      
-  InitBoolParam("peptide-level", false,
-    "Applied for spectrum-centric search. Eliminates any PSMS for which there "
-    "exists a better scoring PSM involving the same peptide. This option is "
-    "incompatible with the mix-max procedure.",
-    "Used by assign-confidence.", true);
   InitStringParam("score", "",
     "Specify the column (for tab-delimited input) or tag (for XML input) "
     "used as input to the q-value estimation procedure. If this parameter is unspecified, "
     "then assign-confidence tries to seach for \"xcorr score\", \"evalue\" (comet), "
-    "\"exact p-value\" score fields in this order in the input file. "
-    "The \"smaller-the-better\" parameter will then be automatically adjusted.",
-    "Used by assign-confidence.", true);
-  InitBoolParam("smaller-is-better", false, 
-    "Specify the semantics of the score, i.e., whether a smaller value implies a better "
-    "match or vice versa. For example, set this parameter to T for \"exact p-value\" and F for "
-    "\"xcorr score\".",
+    "\"exact p-value\" score fields in this order in the input file. ",
     "Used by assign-confidence.", true);
   InitBoolParam("combine-charge-states", false,
     "Specify this parameter to T in order to combine charge states with peptide sequences"
@@ -1103,7 +1155,7 @@ void Params::Initialize() {
     "Set a feature for percolator that in later versions is not an option.",
     "Shouldn't be variable; hide from user.", false);
   /* Cascade-Search parameters */
-  InitDoubleParam("q-value-threshold",0.01, 0,1.0,
+  InitDoubleParam("q-value-threshold", 0.01, 0, 1.0,
     "The q-value threshold used by cascade search. Spectra identified with q-value "
     "less than this threshold in one search will be excluded from all subsequent searches.",
     "Used by Cascade-Search", true);
@@ -1224,6 +1276,13 @@ void Params::Initialize() {
       "Change the mass of all amino acids '" + string(1, c) + "' by the "
       "given amount.", "", visible);
   }
+  /* psm-convert options */
+  InitStringParam("input-format", "auto", "auto|tsv|sqt|pin|pepxml|mzidentml",
+    "Legal values are auto, tsv, sqt, pin, pepxml or mzidentml format.",
+    "option, for psm-convert", true);
+  InitBoolParam("distinct-matches", true,
+    "Whether matches/ion are distinct (as opposed to total).",
+    "option, for psm-convert.", true);
   /* get-ms2-spectrum options */
   InitBoolParam("stats", false, 
     "Rather than the spectrum, output summary statistics to standard output. Each statistic "
@@ -1233,7 +1292,7 @@ void Params::Initialize() {
     "peaks</li><li>Minimum m/z</li><li>Maximum m/z</li></ul>In addition, for each possible "
     "spectrum charge state, the following statistics are reported:<ul><li>Charge state</li>"
     "<li>Neutral mass</li><li>Charged mass</li><li>M+H+ mass</li></ul>]]",
-    "Avaliable only for crux-get-ms2-spectrum.  Does not affect contents "
+    "Available only for crux-get-ms2-spectrum.  Does not affect contents "
     "of the output file.", true);
 
   InitBoolParam("write-weibull-points", false, 
@@ -1241,18 +1300,14 @@ void Params::Initialize() {
     "spectrum,charge", "Available for crux search-for-xlinks", true);
 
   // **** xlink-predict-peptide-ions options ****
-  InitStringParam("peptide A", "", 
-    "The sequence of peptide A.",
-    "Argument for xlink-predict-peptide-ions.", false);
-  InitStringParam("peptide B", "", 
-    "The sequence of peptide B.",
-    "Argument for xlink-predict-peptide-ions.", false);
-  InitIntParam("pos A", 0 , 0, BILLION, 
-    "Position of xlink on peptide A",
-    "Available for xlink-predict-peptide-ions.", false);
-  InitIntParam("pos B", 0 , 0, BILLION, 
-    "Position of xlink on peptide B",
-    "Available for xlink-predict-peptide-ions.", false);
+  InitArgParam("peptide A",
+    "The sequence of peptide A.");
+  InitArgParam("peptide B",
+    "The sequence of peptide B.");
+  InitArgParam("pos A",
+    "Position of cross-link on peptide A");
+  InitArgParam("pos B",
+    "Position of cross-link on peptide B");
   InitBoolParam("print-theoretical-spectrum", false,
     "Print the theoretical spectrum",
     "Available for xlink-predict-peptide-ions.", true);
@@ -1265,7 +1320,7 @@ void Params::Initialize() {
   // **** xlink-score-spectrum options ****
   InitStringParam("xlink-score-method", "composite", "composite|modification|concatenated",
     "Score method for xlink {composite, modification, concatenated}.",
-    "Argument for xlink-score-spectrum.", false);
+    "Available for xlink-score-spectrum.", true);
   // **** search-xlink options ****
   InitStringParam("isotope-windows", "0",
     "Provides a list of isotopic windows to search. For example, -1,0,1 will search in "
@@ -1594,10 +1649,12 @@ void Params::Initialize() {
     "Specify which post-processor to apply to the search results.",
     "Available for crux pipeline", true);
   // create-docs
-  InitArgParam("tool name",
+  InitArgParam("tool-name",
     "Specifies the Crux tool to generate documentation for. If the value is "
     "'list', then a list of available tools will be given. If the value is "
-    "'default-params', then a default parameter file will be given.");
+    "'default-params', then a default parameter file will be given."
+    "If the value is 'param-table' then a table will be printed showing "
+    "which parameters are associated with which commands.");
   InitStringParam("doc-template", "",
     "Specifies the main template to be used for generating documentation.",
     "Available for crux create-docs", false);
@@ -1617,6 +1674,14 @@ void Params::Initialize() {
     "Specifies the template to be used for options when generating "
     "documentation.",
     "Available for crux create-docs", false);
+
+  Categorize();
+}
+
+Params::~Params() {
+  for (map<string, Param*>::iterator i = params_.begin(); i != params_.end(); i++) {
+     delete i->second;
+  }
 }
 
 void Params::Categorize() {
@@ -1629,13 +1694,13 @@ void Params::Categorize() {
   items.insert("gap-tolerance");
   items.insert("bullseye-max-mass");
   items.insert("bullseye-min-mass");
-  container_.AddCategory("Identifying PPIDs in MS1 spectra", items);
+  AddCategory("Identifying PPIDs in MS1 spectra", items);
 
   items.clear();
   items.insert("exact-match");
   items.insert("exact-tolerance");
   items.insert("retention-tolerance");
-  container_.AddCategory("Matching PPIDs to MS2 spectra", items);
+  AddCategory("Matching PPIDs to MS2 spectra", items);
 
   items.clear();
   items.insert("max-length");
@@ -1644,8 +1709,7 @@ void Params::Categorize() {
   items.insert("min-mass");
   items.insert("monoisotopic-precursor");
   items.insert("clip-nterm-methionine");
-  items.insert("unique-peptides");
-  container_.AddCategory("Peptide properties", items);
+  AddCategory("Peptide properties", items);
 
   items.clear();
   items.insert("mods-spec");
@@ -1659,20 +1723,20 @@ void Params::Categorize() {
   for (char c = 'A'; c <= 'Z'; c++) {
     items.insert(string(1, c));
   }
-  container_.AddCategory("Amino acid modifications", items);
+  AddCategory("Amino acid modifications", items);
 
   items.clear();
   items.insert("decoy-format");
   items.insert("keep-terminal-aminos");
   items.insert("seed");
-  container_.AddCategory("Decoy database generation", items);
+  AddCategory("Decoy database generation", items);
 
   items.clear();
   items.insert("enzyme");
   items.insert("custom-enzyme");
   items.insert("digestion");
   items.insert("missed-cleavages");
-  container_.AddCategory("Enzymatic digestion", items);
+  AddCategory("Enzymatic digestion", items);
 
   items.clear();
   items.insert("max-precursor-charge");
@@ -1700,8 +1764,17 @@ void Params::Categorize() {
   items.insert("fragment-mass");
   items.insert("isotope-windows");
   items.insert("compute-p-values");
-  container_.AddCategory("Search parameters", items);
+  AddCategory("Search parameters", items);
 
+  items.clear();
+  items.insert("use-a-ions");
+  items.insert("use-b-ions");
+  items.insert("use-c-ions");
+  items.insert("use-x-ions");
+  items.insert("use-y-ions");
+  items.insert("use-z-ions");
+  AddCategory("Fragment ion parameters", items);
+  
   items.clear();
   items.insert("protein");
   items.insert("fido-alpha");
@@ -1714,7 +1787,7 @@ void Params::Categorize() {
   items.insert("fido-fast-gridsearch");
   items.insert("fido-protein-truncation-threshold");
   items.insert("fido-split-large-components");
-  container_.AddCategory("Fido options", items);
+  AddCategory("Fido options", items);
 
   items.clear();
   items.insert("use-old-xlink");
@@ -1725,32 +1798,32 @@ void Params::Categorize() {
   items.insert("xlink-include-deadends");
   items.insert("xlink-include-selfloops");
   items.insert("xlink-prevents-cleavage");
-  items.insert("xlink-use-ion-cache");
   items.insert("max-xlink-mods");
-  items.insert("write-weibull-points");
-  container_.AddCategory("Cross-linking parameters", items);
+  AddCategory("Cross-linking parameters", items);
 
   items.clear();
   items.insert("decoy_search");
-  container_.AddCategory("Database", items);
+  AddCategory("Database", items);
 
   items.clear();
+  items.insert("num-threads");
   items.insert("num_threads");
-  container_.AddCategory("CPU threads", items);
+  AddCategory("CPU threads", items);
 
   items.clear();
   items.insert("peptide_mass_tolerance");
   items.insert("peptide_mass_units");
   items.insert("mass_type_parent");
   items.insert("mass_type_fragment");
+  items.insert("precursor_tolerance_type");
   items.insert("isotope_error");
-  container_.AddCategory("Masses", items);
+  AddCategory("Masses", items);
 
   items.clear();
   items.insert("search_enzyme_number");
   items.insert("num_enzyme_termini");
   items.insert("allowed_missed_cleavage");
-  container_.AddCategory("Search enzyme", items);
+  AddCategory("Search enzyme", items);
 
   items.clear();
   items.insert("fragment_bin_tol");
@@ -1763,8 +1836,7 @@ void Params::Categorize() {
   items.insert("use_Y_ions");
   items.insert("use_Z_ions");
   items.insert("use_NL_ions");
-  items.insert("use_sparse_matrix");
-  container_.AddCategory("Fragment ions", items);
+  AddCategory("Fragment ions", items);
 
   items.clear();
   items.insert("scan_range");
@@ -1772,7 +1844,7 @@ void Params::Categorize() {
   items.insert("override_charge");
   items.insert("ms_level");
   items.insert("activation_method");
-  container_.AddCategory("mzXML/mzML parameters", items);
+  AddCategory("mzXML/mzML parameters", items);
 
   items.clear();
   items.insert("digest_mass_range");
@@ -1785,7 +1857,8 @@ void Params::Categorize() {
   items.insert("spectrum_batch_size");
   items.insert("decoy_prefix");
   items.insert("output_suffix");
-  container_.AddCategory("Misc. parameters", items);
+  items.insert("mass_offsets");
+  AddCategory("Miscellaneous parameters", items);
 
   items.clear();
   items.insert("minimum_peaks");
@@ -1793,7 +1866,7 @@ void Params::Categorize() {
   items.insert("remove_precursor_peak");
   items.insert("remove_precursor_tolerance");
   items.insert("clear_mz_range");
-  container_.AddCategory("Spectral processing", items);
+  AddCategory("Spectral processing", items);
 
   items.clear();
   for (int i = 1; i <= 9; i++) {
@@ -1801,7 +1874,7 @@ void Params::Categorize() {
   }
   items.insert("max_variable_mods_in_peptide");
   items.insert("require_variable_mod");
-  container_.AddCategory("Variable modifications", items);
+  AddCategory("Variable modifications", items);
 
   items.clear();
   items.insert("add_Cterm_peptide");
@@ -1814,7 +1887,7 @@ void Params::Categorize() {
     aaName = aaName.empty() ? "user_amino_acid" : StringUtils::Replace(aaName, " ", "_");
     items.insert("add_" + aaString + "_" + aaName);
   }
-  container_.AddCategory("Static modifications", items);
+  AddCategory("Static modifications", items);
 
   items.clear();
   items.insert("spectrum-format");
@@ -1856,49 +1929,48 @@ void Params::Categorize() {
   items.insert("decoy-prefix");
   items.insert("precision");
   items.insert("peptide-list");
-  items.insert("output-sequence");
   items.insert("comparison");
   items.insert("header");
   items.insert("column-type");
   items.insert("ascending");
   items.insert("delimiter");
-  container_.AddCategory("Input and output", items);
+  AddCategory("Input and output", items);
 }
 
 bool Params::GetBool(const string& name) {
-  return GetParam(name)->GetBool();
+  return Require(name)->GetBool();
 }
 
 int Params::GetInt(const string& name) {
-  return GetParam(name)->GetInt();
+  return Require(name)->GetInt();
 }
 
 double Params::GetDouble(const string& name) {
-  return GetParam(name)->GetDouble();
+  return Require(name)->GetDouble();
 }
 
 string Params::GetString(const string& name) {
-  return GetParam(name)->GetString();
+  return Require(name)->GetString();
 }
 
 bool Params::GetBoolDefault(const string& name) {
-  return GetParam(name)->GetBoolDefault();
+  return Require(name)->GetBoolDefault();
 }
 
 int Params::GetIntDefault(const string& name) {
-  return GetParam(name)->GetIntDefault();
+  return Require(name)->GetIntDefault();
 }
 
 double Params::GetDoubleDefault(const string& name) {
-  return GetParam(name)->GetDoubleDefault();
+  return Require(name)->GetDoubleDefault();
 }
 
 string Params::GetStringDefault(const string& name) {
-  return GetParam(name)->GetStringDefault();
+  return Require(name)->GetStringDefault();
 }
 
 const vector<string>& Params::GetStrings(const string& name) {
-  Param* param = GetParam(name);
+  Param* param = Require(name);
   if (!param->IsArgument()) {
     throw runtime_error("Parameter '" + name + "' is not an argument");
   }
@@ -1906,50 +1978,50 @@ const vector<string>& Params::GetStrings(const string& name) {
 }
 
 string Params::GetUsage(const string& name) {
-  return GetParam(name)->GetUsage();
+  return Require(name)->GetUsage();
 }
 
 string Params::GetFileNotes(const string& name) {
-  return GetParam(name)->GetFileNotes();
+  return Require(name)->GetFileNotes();
 }
 
 bool Params::IsVisible(const string& name) {
-  return GetParam(name)->IsVisible();
+  return Require(name)->IsVisible();
 }
 
 bool Params::IsArgument(const string& name) {
-  return GetParam(name)->IsArgument();
+  return Require(name)->IsArgument();
 }
 
 string Params::GetAcceptedValues(const string& name) {
-  return GetParam(name)->GetAcceptedValues();
+  return Require(name)->GetAcceptedValues();
 }
 
 bool Params::IsDefault(const string& name) {
-  return GetParam(name)->IsDefault();
+  return Require(name)->IsDefault();
 }
 
 bool Params::Exists(const string& name) {
-  return container_.Get(name) != NULL;
+  return paramContainer_.Get(name) != NULL;
 }
 
 void Params::Set(const string& name, bool value) {
-  container_.CanModifyCheck();
-  Param* param = GetParam(name);
+  paramContainer_.CanModifyCheck();
+  Param* param = Require(name);
   param->Set(value);
   param->ThrowIfInvalid();
 }
 
 void Params::Set(const string& name, int value) {
-  container_.CanModifyCheck();
-  Param* param = GetParam(name);
+  paramContainer_.CanModifyCheck();
+  Param* param = Require(name);
   param->Set(value);
   param->ThrowIfInvalid();
 }
 
 void Params::Set(const string& name, double value) {
-  container_.CanModifyCheck();
-  Param* param = GetParam(name);
+  paramContainer_.CanModifyCheck();
+  Param* param = Require(name);
   param->Set(value);
   param->ThrowIfInvalid();
 }
@@ -1959,15 +2031,15 @@ void Params::Set(const string& name, const char* value) {
 }
 
 void Params::Set(const string& name, const string& value) {
-  container_.CanModifyCheck();
-  Param* param = GetParam(name);
+  paramContainer_.CanModifyCheck();
+  Param* param = Require(name);
   param->Set(value);
   param->ThrowIfInvalid();
 }
 
 void Params::AddArgValue(const string& name, const string& value) {
-  container_.CanModifyCheck();
-  Param* param = GetParam(name);
+  paramContainer_.CanModifyCheck();
+  Param* param = Require(name);
   if (!param->IsArgument()) {
     throw runtime_error("Cannot add value to '" + name + "', it is not an argument");
   }
@@ -1975,57 +2047,7 @@ void Params::AddArgValue(const string& name, const string& value) {
 }
 
 void Params::Finalize() {
-  if (container_.Finalized()) {
-    return;
-  }
-
-  if (GetString("enzyme") == "no-enzyme") {
-    Set("digestion", "non-specific-digest");
-    Set("missed-cleavages", 500);
-  }
-
-  for (char c = 'A'; c <= 'Z'; c++) {
-    double deltaMass = GetDouble(string(1, c));
-    increase_amino_acid_mass(c, deltaMass);
-  }
-
-  translate_decoy_options();
-
-  string customEnzyme = GetString("custom-enzyme");
-  if (!customEnzyme.empty()) {
-    parse_custom_enzyme(customEnzyme);
-    Set("enzyme", "custom-enzyme");
-  }
-
-  if (GetString("enzyme") == "no-enzyme") {
-    Set("digestion", "non-specific-digest");
-  } else if (GetString("digestion") == "non-specific-digest") {
-    Set("enzyme", "no-enzyme");
-  }
-
-  double new_value = GetDouble("mz-bin-width");
-// ***************************
-#ifdef _MSC_VER
-  // Peculiarities of Windows floating point handling 
-  // results in us getting 0.0 here rather than Nan
-  // FIXME: is there a more portable way of checking
-  // that a floating point value has not been set?
-  if (new_value == 0.0) {
-#else
-  if (isnan(new_value)) {
-#endif
-    // If no width specified, choose based on mass type.
-    if (get_mass_type_parameter("fragment-mass") == MONO) {
-      new_value = BIN_WIDTH_MONO;
-    } else {
-      new_value = BIN_WIDTH_AVERAGE;
-    }
-
-    Set("mz-bin-width", new_value);
-  }
-// ***************************
-
-  container_.Finalize();
+  paramContainer_.FinalizeParams();
 }
 
 void Params::Write(ostream* out, bool defaults) {
@@ -2035,7 +2057,7 @@ void Params::Write(ostream* out, bool defaults) {
 
   *out << "# Crux parameter file (generated by Crux version " << CRUX_VERSION << ")" << endl
        << "# Full documentation available at http://cruxtoolkit.sourceforge.net/" << endl
-       << "# comet_version 2015.01 rev. 2" << endl
+       << "# comet_version 2016.01 rev. 1" << endl
        << "# Everything following the \'#\' symbol is treated as a comment." << endl
        << endl;
 
@@ -2055,9 +2077,9 @@ void Params::Write(ostream* out, bool defaults) {
   print_mods_parameter_file(out, "cmod", get_c_mod_list);
 
   // Print Comet parameters
-  *out << "#################" << endl
-       << "#Comet Parameters" << endl
-       << "#################" << endl;
+  *out << "####################" << endl
+       << "# Comet Parameters #" << endl
+       << "####################" << endl;
   for (vector<const Param*>::const_iterator i = Begin(); i != End(); i++) {
     string name = (*i)->GetName();
     // Print mods and Comet parameters later
@@ -2106,19 +2128,19 @@ void Params::Write(ostream* out, bool defaults) {
 }
 
 map<string, Param*>::const_iterator Params::BeginAll() {
-  return container_.BeginAll();
+  return paramContainer_.params_.begin();
 }
 
 map<string, Param*>::const_iterator Params::EndAll() {
-  return container_.EndAll();
+  return paramContainer_.params_.end();
 }
 
 vector<const Param*>::const_iterator Params::Begin() {
-  return container_.Begin();
+  return paramContainer_.paramsOrdered_.begin();
 }
 
 vector<const Param*>::const_iterator Params::End() {
-  return container_.End();
+  return paramContainer_.paramsOrdered_.end();
 }
 
 string Params::ProcessHtmlDocTags(string s, bool html) {
@@ -2167,24 +2189,19 @@ string Params::ProcessHtmlDocTags(string s, bool html) {
 }
 
 vector< pair< string, vector<string> > > Params::GroupByCategory(const vector<string>& options) {
-  if (container_.CategoriesEmpty()) {
-    Categorize();
-  }
-
   vector< pair< string, vector<string> > > groups;
 
   pair< string, vector<string> > uncategorizedPair = make_pair("", vector<string>(options));
   vector<string>& uncategorized = uncategorizedPair.second;
 
-  const vector<ParamCategory>& categories = container_.GetCategories();
   // Iterate over all categories
-  for (vector<ParamCategory>::const_iterator i = categories.begin();
-       i != categories.end();
+  for (vector<ParamCategory>::const_iterator i = paramContainer_.categories_.begin();
+       i != paramContainer_.categories_.end();
        i++) {
     bool any = false;
     // Iterate over each given option and check if it is in the category
     for (vector<string>::const_iterator j = options.begin(); j != options.end(); j++) {
-      Param* param = GetParam(*j);
+      Param* param = Require(*j);
       // This option was in the category
       if (i->Items.find(param) != i->Items.end()) {
         if (!any) {
@@ -2214,7 +2231,7 @@ void Params::InitBoolParam(
   const string& fileNotes,
   bool visible
 ) {
-  container_.Add(new BoolParam(name, usage, fileNotes, visible, value));
+  Add(new BoolParam(name, usage, fileNotes, visible, value));
 }
 
 void Params::InitIntParam(
@@ -2226,7 +2243,7 @@ void Params::InitIntParam(
   const string& fileNotes,
   bool visible
 ) {
-  container_.Add(new IntParam(name, usage, fileNotes, visible, value, min, max));
+  Add(new IntParam(name, usage, fileNotes, visible, value, min, max));
 }
 
 void Params::InitIntParam(
@@ -2236,7 +2253,7 @@ void Params::InitIntParam(
   const string& fileNotes,
   bool visible
 ) {
-  container_.Add(new IntParam(name, usage, fileNotes, visible, value));
+  Add(new IntParam(name, usage, fileNotes, visible, value));
 }
 
 void Params::InitDoubleParam(
@@ -2248,7 +2265,7 @@ void Params::InitDoubleParam(
   const string& fileNotes,
   bool visible
 ) {
-  container_.Add(new DoubleParam(name, usage, fileNotes, visible, value, min, max));
+  Add(new DoubleParam(name, usage, fileNotes, visible, value, min, max));
 }
 
 void Params::InitDoubleParam(
@@ -2258,7 +2275,7 @@ void Params::InitDoubleParam(
   const string& fileNotes,
   bool visible
 ) {
-  container_.Add(new DoubleParam(name, usage, fileNotes, visible, value));
+  Add(new DoubleParam(name, usage, fileNotes, visible, value));
 }
 
 void Params::InitStringParam(
@@ -2269,8 +2286,8 @@ void Params::InitStringParam(
   const string& fileNotes,
   bool visible
 ) {
-  container_.Add(new StringParam(name, usage, fileNotes, visible, value,
-                 StringUtils::Split(validValues, '|')));
+  Add(new StringParam(name, usage, fileNotes, visible, value,
+                      StringUtils::Split(validValues, '|')));
 }
 
 void Params::InitStringParam(
@@ -2280,46 +2297,30 @@ void Params::InitStringParam(
   const string& fileNotes,
   bool visible
 ) {
-  container_.Add(new StringParam(name, usage, fileNotes, visible, value));
+  Add(new StringParam(name, usage, fileNotes, visible, value));
 }
 
 void Params::InitArgParam(
   const string& name,
   const string& usage
 ) {
-  container_.Add(new ArgParam(name, usage));
+  Add(new ArgParam(name, usage));
 }
 
-Param* Params::GetParam(const string& name) {
-  Param* param = container_.Get(name);
+Param* Params::Require(const string& name) {
+  Param* param = paramContainer_.Get(name);
   if (param == NULL) {
     throw runtime_error("Parameter '" + name + "' does not exist");
   }
   return param;
 }
 
-Params::Params() {
+Param* Params::Get(const string& name) {
+  map<string, Param*>::iterator i = params_.find(name);
+  return (i == params_.end()) ? NULL : i->second;
 }
 
-Params::~Params() {
-}
-
-// ***** Parameter container ***** //
-Params::ParamContainer::ParamContainer()
-  : finalized_(false) {
-}
-
-Params::ParamContainer::~ParamContainer() {
-  for (map<string, Param*>::iterator i = params_.begin(); i != params_.end(); i++) {
-     delete i->second;
-  }
-  //for (int i = 0; i < MAX_AA_MODS; i++) {
-    //free_aa_mod(list_of_mods[i]);
-    //list_of_mods[i] = NULL;
-  //}
-}
-
-void Params::ParamContainer::Add(Param* param) {
+void Params::Add(Param* param) {
   CanModifyCheck();
   param->ThrowIfInvalid();
 
@@ -2332,46 +2333,7 @@ void Params::ParamContainer::Add(Param* param) {
   }
 }
 
-Param* Params::ParamContainer::Get(const string& name) {
-  map<string, Param*>::iterator i = params_.find(name);
-  return (i == params_.end()) ? NULL : i->second;
-}
-
-bool Params::ParamContainer::Empty() const {
-  return params_.empty();
-}
-
-bool Params::ParamContainer::Finalized() const {
-  return finalized_;
-}
-
-map<string, Param*>::const_iterator Params::ParamContainer::BeginAll() const {
-  return params_.begin();
-}
-
-map<string, Param*>::const_iterator Params::ParamContainer::EndAll() const {
-  return params_.end();
-}
-
-vector<const Param*>::const_iterator Params::ParamContainer::Begin() const {
-  return paramsOrdered_.begin();
-}
-
-vector<const Param*>::const_iterator Params::ParamContainer::End() const {
-  return paramsOrdered_.end();
-}
-
-void Params::ParamContainer::Finalize() {
-  finalized_ = true;
-}
-
-void Params::ParamContainer::CanModifyCheck() const {
-  if (finalized_) {
-    throw runtime_error("Parameters have been finalized and cannot be modified");
-  }
-}
-
-void Params::ParamContainer::AddCategory(const string& name, const set<string>& params) {
+void Params::AddCategory(const string& name, const set<string>& params) {
   // Validate passed in set
   for (set<string>::const_iterator i = params.begin(); i != params.end(); i++) {
     if (Get(*i) == NULL) {
@@ -2412,12 +2374,65 @@ void Params::ParamContainer::AddCategory(const string& name, const set<string>& 
   }
 }
 
-bool Params::ParamContainer::CategoriesEmpty() const {
-  return categories_.empty();
+void Params::FinalizeParams() {
+  if (finalized_) {
+    return;
+  }
+
+  for (char c = 'A'; c <= 'Z'; c++) {
+    string aa = string(1, c);
+    double deltaMass = GetDouble(aa);
+    if (deltaMass != 0) {
+      ModificationDefinition::NewStaticMod(aa, deltaMass, ANY);
+    }
+  }
+
+  if (GetString("enzyme") == "no-enzyme") {
+    Set("digestion", "non-specific-digest");
+    Set("missed-cleavages", 500);
+  }
+
+  string customEnzyme = GetString("custom-enzyme");
+  if (!customEnzyme.empty()) {
+    parse_custom_enzyme(customEnzyme);
+    Set("enzyme", "custom-enzyme");
+  }
+
+  if (GetString("enzyme") == "no-enzyme") {
+    Set("digestion", "non-specific-digest");
+  } else if (GetString("digestion") == "non-specific-digest") {
+    Set("enzyme", "no-enzyme");
+  }
+
+  double new_value = GetDouble("mz-bin-width");
+// ***************************
+#ifdef _MSC_VER
+  // Peculiarities of Windows floating point handling 
+  // results in us getting 0.0 here rather than Nan
+  // FIXME: is there a more portable way of checking
+  // that a floating point value has not been set?
+  if (new_value == 0.0) {
+#else
+  if (isnan(new_value)) {
+#endif
+    // If no width specified, choose based on mass type.
+    if (get_mass_type_parameter("fragment-mass") == MONO) {
+      new_value = BIN_WIDTH_MONO;
+    } else {
+      new_value = BIN_WIDTH_AVERAGE;
+    }
+
+    Set("mz-bin-width", new_value);
+  }
+// ***************************
+
+  finalized_ = true;
 }
 
-const vector<Params::ParamCategory>& Params::ParamContainer::GetCategories() const {
-  return categories_;
+void Params::CanModifyCheck() const {
+  if (finalized_) {
+    throw runtime_error("Parameters have been finalized and cannot be modified");
+  }
 }
 
 // ***** Parameter classes ***** //
@@ -2527,7 +2542,7 @@ void IntParam::ThrowIfInvalid() const {
                         StringUtils::ToString(max_));
   }
 }
-string IntParam::GetAcceptedValues() const { return "integer"; }
+string IntParam::GetAcceptedValues() const { return "<integer>"; }
 bool IntParam::IsDefault() const { return value_ == original_; }
 bool IntParam::GetBool() const { return BoolParam::From(value_); }
 int IntParam::GetInt() const { return value_; }
@@ -2570,7 +2585,7 @@ void DoubleParam::ThrowIfInvalid() const {
                         StringUtils::ToString(max_));
   }
 }
-string DoubleParam::GetAcceptedValues() const { return "float"; }
+string DoubleParam::GetAcceptedValues() const { return "<float>"; }
 bool DoubleParam::IsDefault() const { return value_ == original_; }
 bool DoubleParam::GetBool() const { return BoolParam::From(value_); }
 int DoubleParam::GetInt() const { return IntParam::From(value_); }
@@ -2615,7 +2630,7 @@ void StringParam::ThrowIfInvalid() const {
   }
 }
 string StringParam::GetAcceptedValues() const {
-  return validValues_.empty() ? "string" : StringUtils::Join(validValues_, '|');
+  return validValues_.empty() ? "<string>" : StringUtils::Join(validValues_, '|');
 }
 bool StringParam::IsDefault() const { return value_ == original_; }
 bool StringParam::GetBool() const { return BoolParam::From(value_); }
@@ -2640,7 +2655,7 @@ string StringParam::From(double d) { return StringUtils::ToString(d); }
 //
 ArgParam::ArgParam(const string& name, const string& usage)
   : Param(name, usage, "", false), values_(vector<string>()) {}
-string ArgParam::GetAcceptedValues() const { return "string"; }
+string ArgParam::GetAcceptedValues() const { return "<string>"; }
 bool ArgParam::IsArgument() const { return true; }
 bool ArgParam::IsDefault() const { return false; }
 bool ArgParam::GetBool() const { return BoolParam::From(GetString()); }
@@ -2663,4 +2678,10 @@ void ArgParam::Set(double value) { values_ = vector<string>(1, StringParam::From
 void ArgParam::Set(const string& value) { values_ = vector<string>(1, value); }
 void ArgParam::AddValue(const string& value) { values_.push_back(value); }
 
-
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 2
+ * End:
+ */
+ 

@@ -11,6 +11,8 @@
 #include "crux-main.h"
 #include "util/crux-utils.h" // Need to get definition of NUM_FEATURES.
 
+#include "app/xlink/xlink_assign_ions.h"
+#include "app/xlink/xhhc_score_peptide_spectrum.h"
 #include "app/xlink/xlink_search.h"
 #include "app/CruxApplicationList.h"
 #include "app/ComputeQValues.h"
@@ -32,7 +34,6 @@
 #include "app/SortColumn.h"
 #include "app/hardklor/CruxHardklorApplication.h"
 #include "app/bullseye/CruxBullseyeApplication.h"
-#include "app/GenerateDecoys.h"
 #include "app/PercolatorApplication.h"
 #include "app/MakePinApplication.h"
 #include "app/TideIndexApplication.h"
@@ -40,6 +41,7 @@
 #include "app/ReadTideIndex.h"
 #include "app/TideSearchApplication.h"
 #include "app/CometApplication.h"
+#include "app/PSMConvertApplication.h"
 #include "app/CascadeSearchApplication.h"
 #include "app/AssignConfidenceApplication.h"
 #include "app/SubtractIndexApplication.h"
@@ -48,14 +50,14 @@
  * given no arguments.  Runs one of the crux commands, including
  * printing the current version number.
  */
-int main(int argc, char** argv){
-  carp_initialize();
+int main(int argc, char** argv) {
   try {
 #ifdef _MSC_VER
     // Turn off auto-tranlation of line-feed to 
     // carriage-return/line-feed
     _set_fmode(_O_BINARY);
 #endif 
+
     CruxApplicationList applications("crux");
 
     // Primary commands
@@ -75,7 +77,6 @@ int main(int argc, char** argv){
     applications.add(new PipelineApplication());
     applications.add(new CascadeSearchApplication());
     applications.add(new AssignConfidenceApplication());
-    applications.add(new SubtractIndexApplication());
 
     // Utilities
     applications.addMessage(applications.getListName() +
@@ -85,10 +86,13 @@ int main(int argc, char** argv){
     applications.add(new CruxHardklorApplication());
     applications.add(new PrintProcessedSpectra());
     applications.add(new GeneratePeptides());
-    applications.add(new GenerateDecoys());
     applications.add(new GetMs2Spectrum());
     applications.add(new CreateDocs());
     applications.add(new PrintVersion());
+    applications.add(new PSMConvertApplication());
+    applications.add(new SubtractIndexApplication());
+    applications.add(new XLinkAssignIons());
+    applications.add(new XLinkScoreSpectrum());
 
     // Utilities for processing tab-delimited text files
     applications.add(new ExtractColumns());
@@ -104,6 +108,5 @@ int main(int argc, char** argv){
   } catch (...) {
     carp(CARP_FATAL, "An unknown exception occurred.");
   }
-  carp_finalize();
 }// end main
 

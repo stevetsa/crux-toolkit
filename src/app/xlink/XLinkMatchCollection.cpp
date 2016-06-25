@@ -13,6 +13,8 @@
 
 #include "model/Spectrum.h"
 #include "util/GlobalParams.h"
+#include "util/Params.h"
+#include "util/StringUtils.h"
 
 #include <iostream>
 
@@ -77,14 +79,14 @@ void get_min_max_mass(
     get_min_max_mass(precursor_mz,
          zstate,
                      isotope,
-         get_double_parameter("precursor-window-weibull"),
-         string_to_window_type(get_string_parameter("precursor-window-type-weibull")),
+         Params::GetDouble("precursor-window-weibull"),
+         string_to_window_type(Params::GetString("precursor-window-type-weibull")),
          min_mass,
 		     max_mass, precursor_mass);
   } else {
     get_min_max_mass(precursor_mz,
-      zstate,
-      isotope,
+         zstate,
+                     isotope,
       GlobalParams::getPrecursorWindow(),
       GlobalParams::getPrecursorWindowType(),		     
       min_mass,
@@ -113,7 +115,7 @@ XLinkMatchCollection::XLinkMatchCollection(
   zstate_ = vector.zstate_;
   scan_ = vector.scan_;
 
-  for (int idx=0;idx<vector.getMatchTotal();idx++) {
+  for (int idx = 0; idx < vector.getMatchTotal(); idx++) {
     XLinkMatch* currentCandidate = (XLinkMatch*)vector[idx];
     XLinkMatch* copyCandidate = NULL;
     switch (currentCandidate -> getCandidateType()) {
@@ -150,8 +152,8 @@ XLinkMatchCollection::XLinkMatchCollection() {
   
   carp(CARP_DEBUG, "XLinkMatchCollection(...)");
 
-  FLOAT_T min_mass = get_double_parameter("min-mass");
-  FLOAT_T max_mass = get_double_parameter("max-mass");
+  FLOAT_T min_mass = Params::GetDouble("min-mass");
+  FLOAT_T max_mass = Params::GetDouble("max-mass");
 
   addCandidates(
 		NULL,
@@ -178,8 +180,8 @@ void XLinkMatchCollection::addCandidates(
 
   //carp(CARP_INFO, "XLinkMatchCollection.addCandidates() start");
 
-  include_linear_peptides_ = get_boolean_parameter("xlink-include-linears");
-  include_self_loops_ = get_boolean_parameter("xlink-include-selfloops");
+  include_linear_peptides_ = Params::GetBool("xlink-include-linears");
+  include_self_loops_ = Params::GetBool("xlink-include-selfloops");
 
   if (GlobalParams::getXLinkIncludeInter() ||
       GlobalParams::getXLinkIncludeIntra() ||
@@ -281,7 +283,7 @@ XLinkMatch* XLinkMatchCollection::at(
 /**
  * \returns a candidate from the list by index
  */
-XLinkMatch* XLinkMatchCollection::operator [](
+XLinkMatch* XLinkMatchCollection::operator[] (
   int idx ///< index of the candidate
   ) {
   return (XLinkMatch*)match_[idx];
@@ -299,7 +301,7 @@ void XLinkMatchCollection::shuffle(
   decoy_vector.zstate_ = zstate_;
   decoy_vector.scan_ = scan_;
 
-  for (int idx=0;idx<getMatchTotal();idx++) {
+  for (int idx = 0; idx < getMatchTotal(); idx++) {
     //cerr << "shuffling:" << at(idx)->getSequenceString()<<endl;
     decoy_vector.add(at(idx)->shuffle());
   }
@@ -320,15 +322,14 @@ void XLinkMatchCollection::scoreSpectrum(
     spectrum, 
     min(zstate_.getCharge(), max_ion_charge));
 
-  for (int idx=0;idx<getMatchTotal();idx++) {
-    //carp(CARP_DEBUG, "Scoring candidate:%d", idx);
-    //cerr << "XLinkMatchCollection::Scoreing" << at(idx)->getSequenceString()<<endl;
+  for (int idx = 0; idx < getMatchTotal(); idx++) {
+    carp(CARP_DEBUG, "Scoring candidate:%d", idx);
     scorer.scoreCandidate(at(idx));
   }
 
   // set the match_collection as having been scored
   scored_type_[XCORR] = true;
-  if (get_boolean_parameter("compute-sp")) {
+  if (Params::GetBool("compute-sp")) {
     scored_type_[SP] = true;
   }
 
@@ -347,11 +348,11 @@ static FLOAT_T *xcorrs  = (FLOAT_T*)mycalloc(10,
 void XLinkMatchCollection::fitWeibull() {
 
   //create the array of x's and 
-  shift_=0;
-  eta_=0;
-  beta_=0;
-  correlation_=0;
-  
+  shift_ = 0;
+  eta_ = 0;
+  beta_ = 0;
+  correlation_ = 0;
+
   int nmatches = getMatchTotal();
   
   if (nmatches > xcorrs_arr_length) {
@@ -360,7 +361,8 @@ void XLinkMatchCollection::fitWeibull() {
     xcorrs = extractScores(XCORR);
     xcorrs_arr_length = nmatches;
   } else {
-    extractScores(XCORR, xcorrs);
+    carp(CARP_FATAL, "XlinkMatchCollection::fitWeibull() - FIX!");
+    //extractScores(XCORR, xcorrs);
   }
   
   //FLOAT_T* xcorrs = extractScores(XCORR);

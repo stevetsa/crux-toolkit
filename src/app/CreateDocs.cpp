@@ -8,7 +8,10 @@
 #include "CruxApplicationList.h"
 #include "util/FileUtils.h"
 #include "util/Params.h"
+#include "util/StringUtils.h"
 
+#include "xlink/xlink_assign_ions.h"
+#include "xlink/xhhc_score_peptide_spectrum.h"
 #include "qranker-barista/Barista.h"
 #include "ComputeQValues.h"
 #include "CruxBullseyeApplication.h"
@@ -22,6 +25,7 @@
 #include "Pipeline.h"
 #include "PredictPeptideIons.h"
 #include "PrintProcessedSpectra.h"
+#include "PSMConvertApplication.h"
 #include "qranker-barista/QRanker.h"
 #include "ReadTideIndex.h"
 #include "xlink/SearchForXLinks.h"
@@ -45,7 +49,9 @@ CreateDocs::~CreateDocs() {
 
 int CreateDocs::main(int argc, char** argv) {
   CruxApplicationList apps("crux");
+  apps.add(new AssignConfidenceApplication());
   apps.add(new Barista());
+  apps.add(new CascadeSearchApplication());  
   apps.add(new CometApplication());
   apps.add(new CreateDocs());
   apps.add(new CruxBullseyeApplication());
@@ -59,19 +65,20 @@ int CreateDocs::main(int argc, char** argv) {
   apps.add(new PipelineApplication());
   apps.add(new PredictPeptideIons());
   apps.add(new PrintProcessedSpectra());
+  apps.add(new PSMConvertApplication());
   apps.add(new QRanker());
   apps.add(new ReadTideIndex());
   apps.add(new SearchForXLinks());
   apps.add(new SortColumn());
   apps.add(new SpectralCounts());
   apps.add(new StatColumn());
+  apps.add(new SubtractIndexApplication());
   apps.add(new TideIndexApplication());
   apps.add(new TideSearchApplication());
-  apps.add(new CascadeSearchApplication());  
-  apps.add(new AssignConfidenceApplication());
-  apps.add(new SubtractIndexApplication());
+  apps.add(new XLinkAssignIons());
+  apps.add(new XLinkScoreSpectrum());
   
-  string targetApp = Params::GetString("tool name");
+  string targetApp = Params::GetString("tool-name");
   if (targetApp == "list") {
     // List the applications available for create-docs
     for (vector<CruxApplication*>::const_iterator i = apps.begin(); i != apps.end(); i++) {
@@ -95,6 +102,9 @@ int CreateDocs::main(int argc, char** argv) {
   } else if (targetApp == "check-params") {
     // Check for issues with parameters
     checkParams(&apps);
+  } else if (targetApp == "param-table") {
+    // Make a table of parameters x commands.
+    makeParamTable(&apps);
   } else {
     CruxApplication* app = apps.find(targetApp);
     if (app == NULL) {
@@ -178,6 +188,83 @@ void CreateDocs::checkParams(const CruxApplicationList* apps) {
   }
 }
 
+void CreateDocs::makeParamTable(const CruxApplicationList* apps) {
+  carp(CARP_INFO, "Creating a table of parameters X commands.");
+  cout << "<!DOCTYPE HTML>" << endl
+       << "<html><head><meta charset=\"UTF-8\">" << endl
+       << "<title>Crux parameters</title>" << endl
+       << "<link href=\"./crux.css\" rel=\"styleSheet\" type=\"text/css\">"
+       << "</head>" << endl
+       << "<body><h1>Crux parameters</h1>" << endl
+       << "<table border=\"1\" align=\"center\">" << endl;
+
+  // Print the header row.
+  cout << "<tr><td>&nbsp;</td>";
+  for (vector<CruxApplication*>::const_iterator appIter = apps->begin();
+       appIter != apps->end();
+       appIter++) {
+    cout << "<td>" << (*appIter)->getName() << "</td>";
+  }
+  cout << "</tr>" << endl;
+
+  // Keep track of whether this parameter row has been printed.
+  std::map<const string, bool> isPrinted;
+
+  // Alternate background.
+  bool backgroundIsGrey = true;
+  
+  /*
+   * We use a double loop to print the parameters so that we ensure
+   * that parameters are listed in order of their use by the commands.
+   */ 
+  for (vector<CruxApplication*>::const_iterator appIter1 = apps->begin();
+       appIter1 != apps->end();
+       appIter1++) {
+    vector<string> appOptions1 = (*appIter1)->getOptions();
+    for (vector<string>::const_iterator appOptionIter = appOptions1.begin();
+         appOptionIter != appOptions1.end();
+         appOptionIter++) {
+      if (!isPrinted[*appOptionIter] && Params::IsVisible(*appOptionIter)) {
+        isPrinted[*appOptionIter] = true;
+        if (backgroundIsGrey) {
+          cout << "<tr bgcolor=\"#DEDEDE\">" << endl;
+        } else {
+          cout << "<tr>" << endl;
+        }
+        backgroundIsGrey = !backgroundIsGrey;
+        cout << "<td>" << *appOptionIter << "</td>";
+        for (vector<CruxApplication*>::const_iterator appIter2 = apps->begin();
+             appIter2 != apps->end();
+             appIter2++) {
+
+          vector<string> appOptions = (*appIter2)->getOptions();
+          bool hasOption = std::find(appOptions.begin(), appOptions.end(),
+                   *appOptionIter) != appOptions.end();
+          if (hasOption) {
+            cout << "<td>&#10003;</td>";
+          } else {
+            cout << "<td>&nbsp;</td>";
+          }
+        }
+        cout << "</tr>" << endl;
+      }
+    }
+  }
+  cout << "</table></body></html>" << endl;
+
+  // Check that all parameters were printed.
+  for (vector<const Param*>::const_iterator paramIter = Params::Begin();
+       paramIter != Params::End();
+       paramIter++) {
+    string paramName = (*paramIter)->GetName();
+    if (!isPrinted[paramName] && Params::IsVisible(paramName)) {
+      carp(CARP_WARNING, "Parameter %s was not printed.", paramName.c_str());
+    }
+  }
+  
+}
+
+
 void CreateDocs::generateToolHtml(
   ostream* outStream,
   const CruxApplication* application
@@ -211,7 +298,7 @@ void CreateDocs::generateToolHtml(
     }
     string single = inputTemplate;
     map<string, string> replaceMap;
-    replaceMap["#NAME#"] = !multiArg ? "&lt;" + argName + "&gt;" : "&lt;" + argName + "&gt;+";
+    replaceMap["#NAME#"] = !multiArg ? argName : argName + "+";
     replaceMap["#DESCRIPTION#"] = Params::ProcessHtmlDocTags(Params::GetUsage(argName), true);
     makeReplacements(&single, replaceMap);
     inputs += single;
@@ -261,7 +348,10 @@ void CreateDocs::generateToolHtml(
       map<string, string> replaceMap;
       replaceMap["#NAME#"] = *j;
       replaceMap["#DESCRIPTION#"] = Params::ProcessHtmlDocTags(Params::GetUsage(*j), true);
-      replaceMap["#VALUES#"] = Params::GetAcceptedValues(*j);
+      string acceptedValues = Params::GetAcceptedValues(*j);
+      acceptedValues = StringUtils::Replace(acceptedValues, "<", "&lt;");
+      acceptedValues = StringUtils::Replace(acceptedValues, ">", "&gt;");
+      replaceMap["#VALUES#"] = acceptedValues;
       string defaultOutput = Params::GetStringDefault(*j);
       replaceMap["#DEFAULT#"] = !defaultOutput.empty() ? defaultOutput : "&lt;empty&gt;";
       makeReplacements(&single, replaceMap);
@@ -335,7 +425,7 @@ string CreateDocs::getDescription() const {
 
 vector<string> CreateDocs::getArgs() const {
   string arr[] = {
-    "tool name"
+    "tool-name"
   };
   return vector<string>(arr, arr + sizeof(arr) / sizeof(string));
 }
@@ -413,6 +503,6 @@ const string CreateDocs::TOOL_NO_OPTIONS_TEMPLATE =
   "</li>\n";
 
 const string CreateDocs::TOOL_OPTION_TEMPLATE =
-  "  <li><code>--<!-- #NAME# --> &lt;<!-- #VALUES# -->&gt;</code> &ndash; "
+  "  <li><code>--<!-- #NAME# --> <!-- #VALUES# --></code> &ndash; "
   "<!-- #DESCRIPTION# --> Default = <code><!-- #DEFAULT# --></code>.</li>\n";
 

@@ -1,4 +1,5 @@
 #include "GlobalParams.h"
+#include "util/Params.h"
 #include "parameter.h"
 #include "util/StringUtils.h"
 
@@ -34,38 +35,38 @@ FLOAT_T GlobalParams::fraction_to_fit_;
 
 void GlobalParams::set() {
   bool monoisotopic_precursor = 
-    get_boolean_parameter("monoisotopic-precursor");
+    Params::GetBool("monoisotopic-precursor");
   if (monoisotopic_precursor) {
     isotopic_mass_ = MONO;
   } else {
     isotopic_mass_ = AVERAGE;
   }
 
-  missed_cleavages_ = get_int_parameter("missed-cleavages");
-  max_aas_modified_ = get_int_parameter("max-aas-modified");
-  min_mass_ = get_double_parameter("min-mass");
-  max_mass_ = get_double_parameter("max-mass");
-  precursor_window_type_ = string_to_window_type(get_string_parameter("precursor-window-type"));
-  precursor_window_ = get_double_parameter("precursor-window");
-  min_length_ = get_int_parameter("min-length");
-  max_length_ = get_int_parameter("max-length");
-  xlink_prevents_cleavage_ = get_string_parameter("xlink-prevents-cleavage");
-  max_ion_charge_ = get_string_parameter("max-ion-charge");
-  string_to_ion_type(get_string_parameter("primary-ions"), &primary_ions_);
+  missed_cleavages_ = Params::GetInt("missed-cleavages");
+  max_aas_modified_ = Params::GetInt("max-aas-modified");
+  min_mass_ = Params::GetDouble("min-mass");
+  max_mass_ = Params::GetDouble("max-mass");
+  precursor_window_type_ = string_to_window_type(Params::GetString("precursor-window-type"));
+  precursor_window_ = Params::GetDouble("precursor-window");
+  min_length_ = Params::GetInt("min-length");
+  max_length_ = Params::GetInt("max-length");
+  xlink_prevents_cleavage_ = Params::GetString("xlink-prevents-cleavage");
+  max_ion_charge_ = Params::GetString("max-ion-charge");
+  string_to_ion_type(Params::GetString("primary-ions"), &primary_ions_);
   fragment_mass_ = get_mass_type_parameter("fragment-mass");
-  precursor_ions_ = get_boolean_parameter("precursor-ions");
+  precursor_ions_ = Params::GetBool("precursor-ions");
   enzyme_ = get_enzyme_type_parameter("enzyme");
   digestion_ = get_digest_type_parameter("digestion");
-  remove_precursor_tolerance_ = get_double_parameter("remove-precursor-tolerance");
-  stop_after_ = string_to_observed_preprocess_step(get_string_parameter("stop-after"));
-  xlink_include_inter_ = get_boolean_parameter("xlink-include-inter");
-  xlink_include_intra_ = get_boolean_parameter("xlink-include-intra");
-  xlink_include_inter_intra_ = get_boolean_parameter("xlink-include-inter-intra");
-  max_xlink_mods_ = get_int_parameter("max-xlink-mods");
-  mod_precision_ = get_int_parameter("mod-precision");
-  xlink_top_n_ = get_int_parameter("xlink-top-n");
-  isotope_windows_ = StringUtils::Split<int>(get_string_parameter("isotope-windows"), ',');
-  fraction_to_fit_ = get_double_parameter("fraction-top-scores-to-fit");
+  remove_precursor_tolerance_ = Params::GetDouble("remove-precursor-tolerance");
+  stop_after_ = string_to_observed_preprocess_step(Params::GetString("stop-after"));
+  xlink_include_inter_ = Params::GetBool("xlink-include-inter");
+  xlink_include_intra_ = Params::GetBool("xlink-include-intra");
+  xlink_include_inter_intra_ = Params::GetBool("xlink-include-inter-intra");
+  max_xlink_mods_ = Params::GetInt("max-xlink-mods");
+  mod_precision_ = Params::GetInt("mod-precision");
+  xlink_top_n_ = Params::GetInt("xlink-top-n");
+  isotope_windows_ = StringUtils::Split<int>(Params::GetString("isotope-windows"), ',');
+  fraction_to_fit_ = Params::GetDouble("fraction-top-scores-to-fit");
 }
 
 const MASS_TYPE_T& GlobalParams::getIsotopicMass() {

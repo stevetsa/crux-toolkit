@@ -103,7 +103,7 @@ class FilteredSpectrumChargeIterator;
  */
 namespace Crux {
 
-  class Peptide;
+class Peptide;
 
 };
 
@@ -287,18 +287,6 @@ enum MASS_FORMAT_T {
 };
 
 /**
-*\enum CHARGE_STATE_T
-*/
-
-enum CHARGE_STATE_T{
-  INVALID_CHARGE_STATE,
-  SINGLE_CHARGE_STATE,
-  MULTIPLE_CHARGE_STATE,
-  NUMBER_CHARGE_STATE
-};
-
-
-/**
  * \typedef WINDOW_TYPE_T
  * \brief The typedef for window type (mass, mz, ppm);
  */
@@ -480,28 +468,32 @@ typedef struct loss_limit LOSS_LIMIT_T;
 class Scorer;
 
 /**
- * The enum for scorer type.  Scores are indexed by this type in the Match.
+ * The enum for scorer type.  Scores are indexed by this type in the
+ * Match.  If you update this definition, be sure to update the
+ * score() function in model/MatchCollection.cpp.
  */
 enum _scorer_type { 
   SP,                  ///< SEQUEST preliminary score
   XCORR,               ///< SEQUEST primary score
   EVALUE,              ///< Comet e-value
+
+  // Scores of individual peptides in cross-linking.
   XCORR_FIRST,
   XCORR_SECOND,
   
-  DECOY_XCORR_QVALUE,  ///< q-value derived from empirical null (decoys)
+  DECOY_XCORR_QVALUE,  ///< q-value derived from decoys
   DECOY_XCORR_PEPTIDE_QVALUE,
   DECOY_XCORR_PEP,     ///< posterior error prob for xcorrs (target/decoy)
-
   DECOY_EVALUE_QVALUE, ///< q-value derived from empirical null (decoy)
   DECOY_EVALUE_PEPTIDE_QVALUE,
   DECOY_EVALUE_PEP, ///< posterior error prob for e-value (target/decoy)
-  
-  LOGP_WEIBULL_XCORR,
-  LOGP_BONF_WEIBULL_XCORR,
-  LOGP_QVALUE_WEIBULL_XCORR,
+
+  // N.B. Despite the name, these are actually NEGATIVE log p-values.
+  LOGP_WEIBULL_XCORR,    ///< p-value from Weibull fit
+  LOGP_BONF_WEIBULL_XCORR, ///< Bonferroni adjusted Weibull p-value
+  LOGP_QVALUE_WEIBULL_XCORR, ///< q-value from Weibull p-value
   LOGP_WEIBULL_PEP,    ///< posterior error prob from weibull p-values
-  LOGP_PEPTIDE_QVALUE_WEIBULL,
+  LOGP_PEPTIDE_QVALUE_WEIBULL, ///< peptide-level q-value for Weibull p-value
 
   PERCOLATOR_SCORE,
   PERCOLATOR_QVALUE,
@@ -517,19 +509,21 @@ enum _scorer_type {
   BARISTA_QVALUE,
   BARISTA_PEPTIDE_QVALUE,
   BARISTA_PEP,        ///< posterior error prob from barista scores
-  
+
+  // Various auxiliary scores.
   DELTA_CN,
   DELTA_LCN,
   BY_IONS_MATCHED,
   BY_IONS_TOTAL,
 
-  TIDE_SEARCH_EXACT_PVAL,
-  TIDE_SEARCH_REFACTORED_XCORR,
-  SIDAK_ADJUSTED,
-  TIDE_SEARCH_EXACT_SMOOTHED,
-  
-  QVALUE_TDC,
-  QVALUE_MIXMAX,
+  TIDE_SEARCH_EXACT_PVAL,       ///< exact p-value from Tide
+  TIDE_SEARCH_REFACTORED_XCORR, ///< raw score corresponding to exact p-value
+
+  // The following are computed by assign-confidence.
+  SIDAK_ADJUSTED,             ///< Sidak adjusted p-value
+  TIDE_SEARCH_EXACT_SMOOTHED, ///< smoothed p-value
+  QVALUE_TDC,           ///< q-value from target-decoy competition
+  QVALUE_MIXMAX,        ///< q-value from mix-max method
 
   NUMBER_SCORER_TYPES,
   INVALID_SCORER_TYPE
@@ -627,13 +621,11 @@ enum _command {
   INVALID_COMMAND,      ///< required by coding standards
   BULLSEYE_COMMAND,     ///< bullseye
   QVALUE_COMMAND,       ///< compute-q-values
-  MIXMAX_COMMAND,       ///< compute q-values using mix-max (Uri Keich)
-  TDC_COMMAND,          ///< compute q-values using TDC (Elias-Gygi)  
-  GENERATE_DECOYS_COMMAND, ///< generate-decoys
   PERCOLATOR_COMMAND,   ///< percolator
   TIDE_INDEX_COMMAND,   ///< tide-index
   TIDE_SEARCH_COMMAND,  ///< tide-search
   COMET_COMMAND,        ///< comet
+  PSM_CONVERT_COMMAND,  ///< psm-convert
   READ_SPECTRUMRECORDS_COMMAND, ///< read-spectrumrecords
   READ_TIDE_INDEX_COMMAND, ///< read-tide-index
   SPECTRAL_COUNTS_COMMAND, ///< spectral counts
@@ -653,35 +645,6 @@ enum _command {
 };
 
 typedef enum _command COMMAND_T;
-/**
- * \typedef RECORD_T
- * \brief RECORD_T for each value/key pair
- */
-typedef struct record RECORD_T;
-
-/**
- * \typedef HASH_T
- * \brief HASH_T hash table, contains the records
- */
-typedef struct our_hash HASH_T;
-
-/**
- * \typedef HASH_ITERATOR_T
- * \brief HASH_ITERATOR_T iterator for keys in a hash
- */
-typedef struct hash_iterator HASH_ITERATOR_T;
-
-/**
- * Identifying which set the PSM belongs to
- */
-enum  _set_type {SET_TARGET=0,SET_DECOY1,SET_DECOY2,SET_DECOY3};
-
-/**
- * \typedef SET_TYPE_T
- * \brief the typedef for set types for match type TARGET, DECOY1,
- * DECOY2, DECOY3 
- */
-typedef enum _set_type SET_TYPE_T;
 
 /**
  * \typedef MODIFIED_AA_T
@@ -759,9 +722,6 @@ enum XLINKMATCH_TYPE_T {
   XLINK_INTER_CANDIDATE,
   XLINK_INTRA_CANDIDATE,
   XLINK_INTER_INTRA_CANDIDATE};
-
-
-
 
 /**
  * \class LinkedPeptide

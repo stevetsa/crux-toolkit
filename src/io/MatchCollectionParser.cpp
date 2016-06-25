@@ -14,9 +14,8 @@
 #include "model/Protein.h"
 #include "model/PostProcessProtein.h"
 #include "util/FileUtils.h"
+#include "util/Params.h"
 #include "util/StringUtils.h"
-#include <sys/types.h>
-#include <sys/stat.h>
 
 using namespace Crux;
 
@@ -47,7 +46,7 @@ void MatchCollectionParser::loadDatabase(
     decoy_database = new Database();
     database -> setIsParsed(true);
   } else {
-    bool use_index = is_directory(fasta_file);
+    bool use_index = FileUtils::IsDir(fasta_file);
     // get binary fasta file name with path to crux directory 
     if (use_index == true){ 
       //We aren't supporting search-for-matches anymore, so we won't be
@@ -101,12 +100,14 @@ Protein* MatchCollectionParser::getProtein(
   carp(CARP_DEBUG, "Creating new protein for %s",protein_id.c_str());
   protein = new PostProcessProtein();
   protein->setId(protein_id.c_str());
-  string decoy_prefix = get_string_parameter("decoy-prefix");
+  string decoy_prefix = Params::GetString("decoy-prefix");
   if (protein_id.find(decoy_prefix) != string::npos) {
     carp(CARP_DEBUG, "adding to decoy database");
     is_decoy = true;
-    decoy_database->addProtein(protein);
-    
+    // Fixes segfault in case of NULL decoy database
+    if (decoy_database != NULL) {
+      decoy_database->addProtein(protein);
+    }
   } else {
     carp(CARP_DEBUG, "adding to target database");
     is_decoy = false;
@@ -142,16 +143,21 @@ Protein* MatchCollectionParser::getProtein(
   //try creating it and adding it to the database as a postprocess protein
   carp(CARP_DEBUG, "Creating new protein for %s",protein_id.c_str());
   carp(CARP_DEBUG, "Sequence :%s",sequence.c_str());
-  protein = new Protein();
+
+  protein = new PostProcessProtein();
+
   protein->setId(protein_id.c_str());
   protein->setSequence(sequence.c_str());
   protein->setLength(sequence.length());
   
 
-  string decoy_prefix = get_string_parameter("decoy-prefix");
+  string decoy_prefix = Params::GetString("decoy-prefix");
   if (protein_id.find(decoy_prefix) != string::npos) {
     is_decoy = true;
-    decoy_database->addProtein(protein);
+    // Fixes segfault in case of NULL database
+    if (decoy_database != NULL) {
+      decoy_database->addProtein(protein);
+    }
   } else {
     is_decoy = false;
     database->addProtein(protein);
@@ -166,7 +172,6 @@ MatchCollection* MatchCollectionParser::create(
   const string& match_path, ///< path to the file of matches 
   const string& fasta_path ///< path to the protein database
   ) {
-
   carp(CARP_DEBUG, "match path:%s", match_path.c_str());
   if (!fasta_path.empty()) {
     carp(CARP_DEBUG, "fasta path:%s", fasta_path.c_str());
@@ -180,7 +185,7 @@ MatchCollection* MatchCollectionParser::create(
   }
   MatchCollection* collection = NULL;
   
-  if (is_directory(match_path)) {
+  if (FileUtils::IsDir(match_path)) {
     carp(CARP_FATAL, "Internal error");
   } else if (StringUtils::IEndsWith(match_path, ".xml")) {
     collection = PepXMLReader::parse(match_path, database_, decoy_database_);
@@ -191,8 +196,10 @@ MatchCollection* MatchCollectionParser::create(
   } else {
     collection = MatchFileReader::parse(match_path, database_, decoy_database_);
   }
-  collection->setFilePath(match_path);
-
+  
+  //  Test if collection already has file path set, otherwise set it.
+  collection->setFilePath(match_path, false);
+ 
   return collection;
 }
 

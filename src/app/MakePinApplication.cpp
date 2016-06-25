@@ -64,7 +64,7 @@ int MakePinApplication::main(const vector<string>& paths) {
       bool scored = current_collection->getScoredType(cur_type);
       target_collection->setScoredType(cur_type, scored);
       decoy_collection->setScoredType(cur_type, scored);
-    } 
+    }
     MatchIterator match_iter(current_collection);
     while (match_iter.hasNext()) {
       Crux::Match* match = match_iter.next();
@@ -180,6 +180,7 @@ vector<string> MakePinApplication::getOptions() const {
   string arr[] = {
     "top-match",
     "list-of-files",
+    "filestem-prefixes",
     "decoy-prefix",
     "fileroot",
     "output-dir",

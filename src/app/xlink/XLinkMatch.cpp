@@ -306,7 +306,7 @@ void XLinkMatch::printOneMatchField(
       getPPMError());
     break;
   case XCORR_FIRST_COL:
-    if ((get_int_parameter("xlink-top-n") != 0) &&
+    if ((Params::GetInt("xlink-top-n") != 0) &&
         (getCandidateType() == XLINK_INTER_CANDIDATE || 
         getCandidateType() == XLINK_INTRA_CANDIDATE || 
         getCandidateType() == XLINK_INTER_INTRA_CANDIDATE)) {
@@ -320,7 +320,7 @@ void XLinkMatch::printOneMatchField(
     }
     break;
   case XCORR_SECOND_COL:
-    if ((get_int_parameter("xlink-top-n") != 0) && 
+    if ((Params::GetInt("xlink-top-n") != 0) && 
         (getCandidateType() == XLINK_INTER_CANDIDATE ||
         getCandidateType() == XLINK_INTRA_CANDIDATE ||
         getCandidateType() == XLINK_INTER_INTRA_CANDIDATE)) {
@@ -348,6 +348,9 @@ void XLinkMatch::printOneMatchField(
       string seq = getUnshuffledSequence();
       output_file->setColumnCurrentRow((MATCH_COLUMNS_T)column_idx, seq);
     }
+    break;
+  case MODIFICATIONS_COL:
+    //TODO FIX!
     break;
   default:
     Match::printOneMatchField(column_idx,

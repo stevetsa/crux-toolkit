@@ -1,4 +1,4 @@
-/*************************************************************************//**
+/*************************************************************************
  * \file XLinkBondMap.cpp
  * AUTHOR: Sean McIlwain
  * CREATE DATE:  Febuary 22, 2011
@@ -6,6 +6,7 @@
  ****************************************************************************/
 
 #include "XLinkBondMap.h"
+#include "util/Params.h"
 #include "util/StringUtils.h"
 
 using namespace std;
@@ -71,7 +72,7 @@ XLinkBondMap::~XLinkBondMap() {
 bool XLinkBondMap::canLink(
   Peptide* peptide, ///<peptide object pointer
   int idx             ///<sequence index
-   ) {
+  ) {
   for (XLinkBondMap::iterator iter = begin();
     iter != end(); ++iter) {
 

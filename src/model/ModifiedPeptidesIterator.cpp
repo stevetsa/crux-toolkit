@@ -222,9 +222,8 @@ bool ModifiedPeptidesIterator::queueNextPeptide(){
   next_peptide_ = (Peptide*)pop_front_linked_list(temp_peptide_list_);
   
   IF_CARP_DETAILED_DEBUG(
-    char* seq = next_peptide_->getModifiedSequenceWithMasses(MOD_MASS_ONLY);
-    carp(CARP_DETAILED_DEBUG, "Queue set next peptide as %s", seq);
-    free(seq);
+    string seq = next_peptide_->getModifiedSequenceWithMasses();
+    carp(CARP_DETAILED_DEBUG, "Queue set next peptide as %s", seq.c_str());
   )
 
   return true;

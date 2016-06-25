@@ -12,8 +12,10 @@
 #include <sstream>
 #include <iomanip>
 #include <ios>
+#include "util/CarpStreamBuf.h"
 #include "util/FileUtils.h"
 #include "util/Params.h"
+#include "util/StringUtils.h"
 #include "io/MzIdentMLWriter.h"
 #include "model/ProteinMatchCollection.h"
 #include "io/PMCDelimitedFileWriter.h"
@@ -53,11 +55,58 @@ int PercolatorApplication::main(int argc, char** argv) {
     get_search_result_paths(input_pin, result_files);
 
     input_pin = make_file_path("make-pin.pin");
-    carp(CARP_INFO, "Running make-pin");
-    if (MakePinApplication::main(result_files) != 0 || !FileUtils::Exists(input_pin)) {
-      carp(CARP_FATAL, "make-pin failed. Not running Percolator.");
+
+    vector<string>::const_iterator fileIter = result_files.begin();
+    if (StringUtils::IEndsWith(*fileIter, ".pin")) {
+      if (FileUtils::Exists(input_pin)) {
+        if (Params::GetBool("overwrite")) {
+          FileUtils::Remove(input_pin);
+        } else {
+          carp(CARP_FATAL, "The file '%s' already exists and cannot be overwritten. "
+               "Use --overwrite T to replace or choose a different output file name",
+               input_pin.c_str());
+        }
+      }
+      FileUtils::Copy(*fileIter, input_pin);
+      string headers;
+      fstream out(input_pin.c_str());
+      if (!out.good()) {
+        carp(CARP_FATAL, "Filestream error '%s'", input_pin.c_str());
+      }
+      getline(out, headers);
+      out.seekp(0, ios_base::end);
+      for (fileIter++; fileIter != result_files.end(); fileIter++) {
+        if (!StringUtils::IEndsWith(*fileIter, ".pin")) {
+          FileUtils::Remove(input_pin);
+          carp(CARP_FATAL, "Cannot mix .pin with non-pin files");
+        }
+        ifstream in(fileIter->c_str());
+        if (!in.good()) {
+          FileUtils::Remove(input_pin);
+          carp(CARP_FATAL, "Error opening file '%s' for reading", fileIter->c_str());
+        }
+        string inLine;
+        getline(in, inLine);
+        if (headers != inLine) {
+          FileUtils::Remove(input_pin);
+          carp(CARP_FATAL, "Headers in pin file '%s' were '%s', but expected '%s'",
+               fileIter->c_str(), inLine.c_str(), headers.c_str());
+        }
+        while (!in.eof()) {
+          getline(in, inLine);
+          out << inLine;
+          if (in.peek() != EOF) {
+            out << endl;
+          }
+        }
+      }
+    } else {
+      carp(CARP_INFO, "Running make-pin");
+      if (MakePinApplication::main(result_files) != 0 || !FileUtils::Exists(input_pin)) {
+        carp(CARP_FATAL, "make-pin failed. Not running Percolator.");
+      }
+      carp(CARP_INFO, "Finished make-pin.");
     }
-    carp(CARP_INFO, "Finished make-pin.");
   }
   return main(input_pin);
 }
@@ -195,7 +244,7 @@ int PercolatorApplication::main(
   }
 
   /* --doc option disabled, need retention times in pin file
-  int doc_parameter = get_int_parameter("doc");
+  int doc_parameter = Params::GetInt("doc");
   if(doc_parameter >= 0) {
     perc_args_vec.push_back("--doc");
     perc_args_vec.push_back(to_string(doc_parameter));
@@ -262,8 +311,8 @@ int PercolatorApplication::main(
       perc_args_vec.push_back(output_decoy_proteins);
     }
   }
-  
-   perc_args_vec.push_back(input_pin);
+
+  perc_args_vec.push_back(input_pin);
 
   /* build argv line */
 
@@ -278,6 +327,11 @@ int PercolatorApplication::main(
 
   carp(CARP_DEBUG, "cmd:%s", perc_cmd.c_str());
   
+  /* Re-route stdeer to log file. */
+  CarpStreamBuf buffer;
+  streambuf* old = std::cerr.rdbuf();
+  std::cerr.rdbuf(&buffer);
+
   /* Call percolatorMain */
   PercolatorAdapter pCaller;
   int retVal = -1;
@@ -352,6 +406,9 @@ int PercolatorApplication::main(
   }
 
   Globals::clean();
+
+  /* Recover stderr */
+  std::cerr.rdbuf(old);
 
   return retVal;
 }

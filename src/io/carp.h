@@ -81,9 +81,6 @@ static const int CARP_MAX = 100;
 #include <string>
 #include "util/utils.h"
 
-void carp_initialize();
-void carp_finalize();
-
 /**
  * Sets the global verbosity level. Expects an integer greater than or equal
  * to CARP_FATAL and less than CARP_MAX

@@ -7,7 +7,11 @@
 #include <string>
 #include "MzIdentMLWriter.h"
 #include "util/crux-utils.h"
+#include "util/MathUtil.h"
+#include "util/Params.h"
+#include "util/StringUtils.h"
 #include "model/MatchCollection.h"
+#include "model/Modification.h"
 #include "pwiz/data/identdata/Serializer_mzid.hpp"
 #include "model/ProteinMatch.h"
 #include "model/ProteinMatchCollection.h"
@@ -21,7 +25,7 @@ using namespace identdata;
 
 #define calculateMassToCharge(peptide_mass, charge) (FLOAT_T) ((peptide_mass + (charge*MASS_PROTON))/charge)
 
-MzIdentMLWriter::MzIdentMLWriter() {
+MzIdentMLWriter::MzIdentMLWriter() : PSMWriter() {
   //data_ = NULL;
   fout_ = NULL;
   sir_idx_ = 0;
@@ -30,21 +34,17 @@ MzIdentMLWriter::MzIdentMLWriter() {
   peptide_idx_ = 0;
   peptide_evidence_idx_ = 0;
   dbs_idx_ = 0;
-
   pag_idx_ = 0;
   pdh_idx_ = 0;
-
 }
 
-MzIdentMLWriter::~MzIdentMLWriter()
-{
+MzIdentMLWriter::~MzIdentMLWriter() {
   closeFile();
 }
 
 void MzIdentMLWriter::openFile(
   const char* filename,
   bool overwrite) {
-  
   fout_ = create_stream_in_path(filename, NULL, overwrite);  
   mzid_ = IdentDataPtr(new IdentData());
 }
@@ -52,15 +52,51 @@ void MzIdentMLWriter::openFile(
 void MzIdentMLWriter::openFile(
   const string& filename,
   bool overwrite) {
-
   openFile(filename.c_str(), overwrite);
+}
+
+void MzIdentMLWriter::openFile(
+  CruxApplication* application,
+  string filename,
+  MATCH_FILE_TYPE type) {
+  openFile(filename.c_str(), Params::GetBool("overwrite"));
 }
 
 /**
  * Close the file, if open.
  */
 void MzIdentMLWriter::closeFile(){
-  if( mzid_ != NULL && fout_ != NULL){
+  if (mzid_ != NULL && fout_ != NULL) {
+    // Add modification information to AnalysisProtocolCollection -> ModificationParams
+    AnalysisProtocolCollection& apc = mzid_->analysisProtocolCollection;
+    SpectrumIdentificationProtocolPtr sipp(new SpectrumIdentificationProtocol());
+    apc.spectrumIdentificationProtocol.push_back(sipp);
+
+    vector<const ModificationDefinition*> mods = ModificationDefinition::AllMods();
+    for (vector<const ModificationDefinition*>::const_iterator i = mods.begin();
+         i != mods.end();
+         i++) {
+      SearchModificationPtr smp(new SearchModification());
+      smp->fixedMod = (*i)->Static();
+      smp->massDelta = MathUtil::Round((*i)->DeltaMass(), Params::GetInt("mod-precision"));
+      smp->residues = vector<char>((*i)->AminoAcids().begin(), (*i)->AminoAcids().end());
+      switch ((*i)->Position()) {
+        case PEPTIDE_N:
+          smp->specificityRules = CVParam(MS_modification_specificity_peptide_N_term);
+          break;
+        case PEPTIDE_C:
+          smp->specificityRules = CVParam(MS_modification_specificity_peptide_C_term);
+          break;
+        case PROTEIN_N:
+          smp->specificityRules = CVParam(MS_modification_specificity_protein_N_term);
+          break;
+        case PROTEIN_C:
+          smp->specificityRules = CVParam(MS_modification_specificity_protein_C_term);
+          break;
+      }
+      sipp->modificationParams.push_back(smp);
+    }
+
     Serializer_mzIdentML serializer;
     serializer.write(*fout_, *mzid_);
     fout_->close();
@@ -76,94 +112,79 @@ void MzIdentMLWriter::closeFile(){
 PeptidePtr MzIdentMLWriter::getPeptide(
   Crux::Peptide* peptide ///< Peptide -in
   ) {
- 
-  const char* sequence = peptide->getSequence();
-  string sequence_str = sequence;
+  char* seqTmp = peptide->getSequence();
+  string sequence(seqTmp);
+  free(seqTmp);
 
-  int mod_count = peptide->countModifiedAAs();
+  int modPrecision = Params::GetInt("mod-precision");
 
-  vector<PeptidePtr>::iterator peptide_iter;
-  vector<ModificationPtr>::iterator mod_iter;
-
-  for (peptide_iter = mzid_->sequenceCollection.peptides.begin();
-       peptide_iter != mzid_->sequenceCollection.peptides.end();
-       ++peptide_iter) {
-    PeptidePtr peptide_p = *peptide_iter;
-    if (peptide_p->peptideSequence == sequence_str) {
-      if (peptide_p -> modification.size() == mod_count) {
-        if (mod_count == 0) { // no modifications
-          return (peptide_p);
-        } else {
-          MODIFIED_AA_T* mod_seq = peptide->getModifiedAASequence();
-          AA_MOD_T** mod_list = NULL;
-          int total_mods = get_all_aa_mod_list(&mod_list);
-          bool match = true;
-          for (mod_iter = peptide_p->modification.begin();
-               mod_iter != peptide_p->modification.end();
-               ++mod_iter) {
-            ModificationPtr current_mod = *mod_iter;
-            int mod_location = current_mod -> location;
-            //Crux only supports one mass for modifications.
-            double mono_mass = current_mod ->monoisotopicMassDelta;
-            for (int mod_idx = 0 ; mod_idx < total_mods; mod_idx++) {
-              match = false;
-              if (is_aa_modified(mod_seq[mod_location], mod_list[mod_idx])) {
-                if (aa_mod_get_mass_change(mod_list[mod_idx]) == mono_mass) {
-                  match = true; //we found a match, keep searching
-                  break;
-                }
-              }
-            }
-            if (!match) {break;}
-          }
-          free(mod_seq);
-          //all modifications match, return peptide.
-          if (match) {
-            return peptide_p;
+  vector<Crux::Modification> mods = peptide->getVarMods();
+  for (vector<PeptidePtr>::const_iterator i = mzid_->sequenceCollection.peptides.begin();
+       i != mzid_->sequenceCollection.peptides.end();
+       ++i) {
+    if ((*i)->peptideSequence == sequence && (*i)->modification.size() == mods.size()) {
+      if (mods.empty()) {
+        return *i;
+      }
+      bool match = true;
+      for (vector<ModificationPtr>::const_iterator j = (*i)->modification.begin();
+           j != (*i)->modification.end();
+           ++j) {
+        bool matchCur = false;
+        for (vector<Crux::Modification>::const_iterator k = mods.begin();
+             k != mods.end();
+             k++) {
+          if ((*j)->location == k->Index() &&
+              MathUtil::AlmostEqual((*j)->monoisotopicMassDelta, k->DeltaMass(), modPrecision)) {
+            matchCur = true;
+            break;
           }
         }
+        if (!matchCur) {
+          match = false;
+          break;
+        }
+      }
+      //all modifications match, return peptide.
+      if (match) {
+        return *i;
       }
     }
   }
 
   //Okay, we didn't find a match, so create a new peptide object.
-
-  PeptidePtr peptide_p(new pwiz::identdata::Peptide("PEP_"+boost::lexical_cast<string>(peptide_idx_++)));
+  PeptidePtr peptide_p(new pwiz::identdata::Peptide(
+    "PEP_" + StringUtils::ToString(peptide_idx_++)));
   //peptide_p->id = sequence_str;
-  peptide_p->peptideSequence = sequence_str;
+  peptide_p->peptideSequence = sequence;
 
-  if (mod_count != 0) {
-    //add the modifications.
-    MODIFIED_AA_T* mod_seq = peptide->getModifiedAASequence();
-    AA_MOD_T** mod_list = NULL;
-    int total_mods = get_all_aa_mod_list(&mod_list);
-    
-    for (int mod_seq_idx = 0;mod_seq_idx < peptide->getLength();mod_seq_idx++) {
-      for (int mod_idx =0 ; mod_idx < total_mods; mod_idx++) {
-        if (is_aa_modified(mod_seq[mod_seq_idx], mod_list[mod_idx])) {
-          ModificationPtr mod_p(new pwiz::identdata::Modification());
-          mod_p->location = mod_seq_idx;
-          mod_p->monoisotopicMassDelta = aa_mod_get_mass_change(mod_list[mod_idx]);
-          mod_p->residues.push_back(sequence_str.at(mod_seq_idx));
-          mod_p->set(MS_unknown_modification);
-          peptide_p->modification.push_back(mod_p);
-        }
-      }
+  //add the modifications.
+  for (vector<Crux::Modification>::const_iterator i = mods.begin(); i != mods.end(); i++) {
+    ModificationPtr mod_p(new pwiz::identdata::Modification());
+    switch (i->Position()) {
+      case PEPTIDE_N:
+      case PROTEIN_N:
+        mod_p->location = 0;
+        break;
+      case PEPTIDE_C:
+      case PROTEIN_C:
+        mod_p->location = i->Index() + 2;
+        break;
+      default:
+        mod_p->location = i->Index() + 1;
+        break;
     }
-
-    free(mod_seq);
+    mod_p->monoisotopicMassDelta = MathUtil::Round(i->DeltaMass(), modPrecision);
+    mod_p->residues.push_back(sequence[i->Index()]);
+    mod_p->set(MS_unknown_modification);
+    peptide_p->modification.push_back(mod_p);
   }
 
   mzid_->sequenceCollection.peptides.push_back(peptide_p);
-
   return peptide_p;
-
 }
 
-DBSequencePtr MzIdentMLWriter::getDBSequence(
-  std::string& protein_id
-  ) {
-
+DBSequencePtr MzIdentMLWriter::getDBSequence(std::string& protein_id) {
   vector<DBSequencePtr>::iterator dbs_iter;
   for (dbs_iter = mzid_->sequenceCollection.dbSequences.begin();
        dbs_iter != mzid_->sequenceCollection.dbSequences.end();
@@ -182,7 +203,6 @@ DBSequencePtr MzIdentMLWriter::getDBSequence(
   dbs_ptr->accession = protein_id;
   
   return (dbs_ptr);
-
 }
 
 /**
@@ -193,15 +213,15 @@ DBSequencePtr MzIdentMLWriter::getDBSequence(
   Crux::Peptide* peptide,  ///< peptide -in
   PeptideSrc* src ///< Source of the peptide -in
   ) {
-
   string protein_id = src->getParentProtein()->getIdPointer();
   bool is_post_process = src->getParentProtein()->isPostProcess();
   vector<DBSequencePtr>::iterator dbs_iter;
  
   string sequence_str;
   if (is_post_process) {
-    const char* seq = peptide->getSequence();
+    char* seq = peptide->getSequence();
     sequence_str = seq;
+    free(seq);
   }
 
   for (dbs_iter = mzid_->sequenceCollection.dbSequences.begin();
@@ -242,27 +262,24 @@ PeptideEvidencePtr MzIdentMLWriter::getPeptideEvidence(
   bool is_decoy,
   string& protein_id) {
 
-  const char* seq = peptide->getSequence();
+  char* seq = peptide->getSequence();
   string sequence_str = seq;
+  free(seq);
 
   //Is there already a peptide evidence ptr?
-  vector<PeptideEvidencePtr>::iterator pe_iter;
-
-  for (pe_iter = mzid_->sequenceCollection.peptideEvidence.begin();
-       pe_iter != mzid_->sequenceCollection.peptideEvidence.end();
-         ++pe_iter) {
-    PeptideEvidencePtr pe_ptr = *pe_iter;
-    if ((pe_ptr->peptidePtr->peptideSequence == sequence_str) && (pe_ptr->dbSequencePtr->accession==protein_id)) {
+  for (vector<PeptideEvidencePtr>::iterator i = mzid_->sequenceCollection.peptideEvidence.begin();
+       i != mzid_->sequenceCollection.peptideEvidence.end();
+       ++i) {
+    PeptideEvidencePtr pe_ptr = *i;
+    if (pe_ptr->peptidePtr->peptideSequence == sequence_str &&
+        pe_ptr->dbSequencePtr->accession == protein_id) {
       return pe_ptr;
     }
-
   }
 
   carp(CARP_FATAL, "Couldn't find %s in %s", sequence_str.c_str(), protein_id.c_str());
-  return(*pe_iter); // Avoid compiler warning.
+  return PeptideEvidencePtr(); // Avoid compiler warning.
 }
-
-
 
 /**
  * \returns PeptideEvidence for the peptide and src.
@@ -274,28 +291,28 @@ PeptideEvidencePtr MzIdentMLWriter::getPeptideEvidence(
   PeptideSrc* src ///< where to peptide comes from -in
   ) {
 
-  const char* seq = peptide->getSequence();
+  char* seq = peptide->getSequence();
   string sequence_str = seq;
-
+  free(seq);
 
   string protein_id = src->getParentProtein()->getId();
 
   //Is there already a peptide evidence ptr?
   vector<PeptideEvidencePtr>::iterator pe_iter;
 
-  for (pe_iter = mzid_->sequenceCollection.peptideEvidence.begin();
-       pe_iter != mzid_->sequenceCollection.peptideEvidence.end();
-         ++pe_iter) {
-    PeptideEvidencePtr pe_ptr = *pe_iter;
-    if ((pe_ptr->peptidePtr->peptideSequence == sequence_str) && (pe_ptr->dbSequencePtr->accession==protein_id)) {
+  for (vector<PeptideEvidencePtr>::iterator i = mzid_->sequenceCollection.peptideEvidence.begin();
+       i != mzid_->sequenceCollection.peptideEvidence.end();
+       ++i) {
+    PeptideEvidencePtr pe_ptr = *i;
+    if (pe_ptr->peptidePtr->peptideSequence == sequence_str &&
+        pe_ptr->dbSequencePtr->accession == protein_id) {
       return pe_ptr;
     }
-
   }
 
   DBSequencePtr dbs_ptr = getDBSequence(peptide, src);
   PeptideEvidencePtr pe_ptr(new PeptideEvidence(
-    "PE_"+boost::lexical_cast<string>(peptide_evidence_idx_++)));
+    "PE_" + StringUtils::ToString(peptide_evidence_idx_++)));
 
   if (src->getParentProtein()->isPostProcess()) {
     pe_ptr->start=0;
@@ -310,34 +327,26 @@ PeptideEvidencePtr MzIdentMLWriter::getPeptideEvidence(
 
   mzid_->sequenceCollection.peptideEvidence.push_back(pe_ptr);
   return pe_ptr;  
-
-
 }
-
-
 
 /**
  * \returns the SpectrumIdentificationList, creating it if 
  * it doesn't exist yet.
  */
 SpectrumIdentificationListPtr MzIdentMLWriter::getSpectrumIdentificationList() {
-
   SpectrumIdentificationListPtr silp;
 
   if (mzid_->dataCollection.analysisData.spectrumIdentificationList.size() > 0) {
     silp = mzid_->dataCollection.analysisData.spectrumIdentificationList.back();
   } else {
-    silp = SpectrumIdentificationListPtr(
-        new SpectrumIdentificationList("SIL_"+boost::lexical_cast<string>(sil_idx_++)));
+    silp = SpectrumIdentificationListPtr(new SpectrumIdentificationList(
+      "SIL_" + StringUtils::ToString(sil_idx_++)));
     mzid_->dataCollection.analysisData.spectrumIdentificationList.push_back(silp);   
   }
   return silp;
-
 }
 
-
 ProteinDetectionListPtr MzIdentMLWriter::getProteinIdentificationList() {
-
   ProteinDetectionListPtr pdlp;
   if (mzid_ -> dataCollection.analysisData.proteinDetectionListPtr != NULL) {
     pdlp = mzid_->dataCollection.analysisData.proteinDetectionListPtr;
@@ -352,7 +361,6 @@ ProteinDetectionListPtr MzIdentMLWriter::getProteinIdentificationList() {
 ProteinAmbiguityGroupPtr MzIdentMLWriter::getProteinAmbiguityGroup(
   std::string& protein_id
 ) {
-
   ProteinDetectionListPtr pdlp = getProteinIdentificationList();
   vector<ProteinAmbiguityGroupPtr>& pag_vec = pdlp->proteinAmbiguityGroup;
 
@@ -373,14 +381,12 @@ ProteinAmbiguityGroupPtr MzIdentMLWriter::getProteinAmbiguityGroup(
   ProteinDetectionHypothesisPtr pdhp = getProteinDetectionHypothesis(pagp, protein_id);
   pag_vec.push_back(pagp);
   return pagp;
-
 }
   
 ProteinDetectionHypothesisPtr MzIdentMLWriter::getProteinDetectionHypothesis(
   ProteinAmbiguityGroupPtr pagp,
   std::string& protein_id
   ) {
-  
   std::vector<ProteinDetectionHypothesisPtr>& pdh_vec = pagp->proteinDetectionHypothesis;
   
   for (size_t pdh_idx = 0; pdh_idx < pdh_vec.size() ; pdh_idx++) {
@@ -393,38 +399,25 @@ ProteinDetectionHypothesisPtr MzIdentMLWriter::getProteinDetectionHypothesis(
     new ProteinDetectionHypothesis("PDH_"+boost::lexical_cast<string>(pdh_idx_++)));
 
   pdhp->dbSequencePtr = getDBSequence(protein_id);
-
   pdh_vec.push_back(pdhp);
-
-
   return pdhp;
 }
 
 ProteinDetectionHypothesisPtr MzIdentMLWriter::getProteinDetectionHypothesis(
   string& protein_id 
   ) {
-
   ProteinAmbiguityGroupPtr pagp = getProteinAmbiguityGroup(protein_id);
   return getProteinDetectionHypothesis(pagp, protein_id);
-
 }
-
-
 
 PeptideHypothesis& MzIdentMLWriter::getPeptideHypothesis(
   ProteinMatch* protein_match,
   PeptideMatch* peptide_match) {
 
   string protein_id = protein_match->getId();
-
   PeptideSrc* src = peptide_match->getSrc(protein_match);
-
   ProteinDetectionHypothesisPtr pdhp = getProteinDetectionHypothesis(protein_id);
-
-  PeptideEvidencePtr pe_ptr = getPeptideEvidence(
-    peptide_match->getPeptide(),
-    true,
-    src);
+  PeptideEvidencePtr pe_ptr = getPeptideEvidence(peptide_match->getPeptide(), true, src);
 
   for (size_t ph_idx = 0;ph_idx < pdhp->peptideHypothesis.size();ph_idx++) {
     if (pdhp->peptideHypothesis[ph_idx].peptideEvidencePtr == pe_ptr) {
@@ -439,8 +432,6 @@ PeptideHypothesis& MzIdentMLWriter::getPeptideHypothesis(
   return pdhp->peptideHypothesis.back();  
 }
 
-
-
 /**
  * \returns the SpectrumIdentificationResult for the spectrum.
  * creating it first if it doesn't exist
@@ -450,9 +441,9 @@ SpectrumIdentificationResultPtr MzIdentMLWriter::getSpectrumIdentificationResult
   ) {
 
   string spectrum_idStr = 
-    DelimitedFileWriter::to_string(spectrum->getFirstScan()) + 
+    StringUtils::ToString(spectrum->getFirstScan()) + 
     "-" +
-    DelimitedFileWriter::to_string(spectrum->getLastScan());
+    StringUtils::ToString(spectrum->getLastScan());
 
   SpectrumIdentificationListPtr silp = getSpectrumIdentificationList();
 
@@ -475,14 +466,11 @@ SpectrumIdentificationResultPtr MzIdentMLWriter::getSpectrumIdentificationResult
   sirp->spectrumID = spectrum_idStr;
   silp->spectrumIdentificationResult.push_back(sirp);
   return sirp;
-  
-
 }
 
 SpectrumIdentificationItemPtr MzIdentMLWriter::getSpectrumIdentificationItem(
   SpectrumMatch* spectrum_match
   ) {
-
   Crux::Spectrum* spectrum = spectrum_match->getSpectrum();
   Crux::Peptide* crux_peptide = spectrum_match->getPeptideMatch()->getPeptide();
   SpectrumZState& zstate = spectrum_match->getZState();
@@ -506,7 +494,7 @@ SpectrumIdentificationItemPtr MzIdentMLWriter::getSpectrumIdentificationItem(
   siip->chargeState = zstate.getCharge();
   siip->experimentalMassToCharge = zstate.getMZ();
 
-  siip->calculatedMassToCharge = calculateMassToCharge(crux_peptide->getPeptideMass(), (FLOAT_T) zstate.getCharge());
+  siip->calculatedMassToCharge = calculateMassToCharge(crux_peptide->calcModifiedMass(), (FLOAT_T) zstate.getCharge());
 
   addSpectrumScores(spectrum_match, siip);
   siip->passThreshold = true;
@@ -534,10 +522,7 @@ void MzIdentMLWriter::addSpectrumScores(
     }
 
   }
-
-
 }
-
 
 /**
  * Adds all the peptide evidences to the SpectrumIdentificationItem
@@ -564,12 +549,13 @@ void MzIdentMLWriter::addPeptideEvidences(
 CVID MzIdentMLWriter::getScoreCVID(
   SCORER_TYPE_T type ///< type to convert
   ) {
-
   switch(type) {
     case XCORR:
       return MS_SEQUEST_xcorr;
     case SP:
       return MS_SEQUEST_PeptideSp;
+    case TIDE_SEARCH_EXACT_PVAL:
+      return MS_peptide_identification_confidence_metric;
     case PERCOLATOR_SCORE:
       return MS_percolator_score;
     case PERCOLATOR_QVALUE:
@@ -587,7 +573,6 @@ CVID MzIdentMLWriter::getScoreCVID(
 CVID MzIdentMLWriter::getRankCVID(
   SCORER_TYPE_T type ///< type to convert
   ) {
-
   switch(type) {
     case SP:
       return MS_SEQUEST_PeptideRankSp;
@@ -627,16 +612,17 @@ void MzIdentMLWriter::addScores(
     }
   }
 
-
   if (match_collection->getScoredType(XCORR)) {
     CVParam delta_cn(MS_SEQUEST_deltacn, match->getScore(DELTA_CN));
     item->cvParams.push_back(delta_cn);
   }
 
-  if (match_collection->getScoredType(SP)) {
-    CVParam matched_ions(MS_SEQUEST_matched_ions, match->getBYIonMatched());
+  if (match_collection->getScoredType(BY_IONS_MATCHED)) {
+    CVParam matched_ions(MS_SEQUEST_matched_ions, match->getScore(BY_IONS_MATCHED));
     item->cvParams.push_back(matched_ions);
-    CVParam total_ions(MS_SEQUEST_total_ions, match->getBYIonPossible()); 
+  }
+  if (match_collection->getScoredType(BY_IONS_TOTAL)) {
+    CVParam total_ions(MS_SEQUEST_total_ions, match->getScore(BY_IONS_TOTAL)); 
     item->cvParams.push_back(total_ions);
   }
 }
@@ -656,6 +642,11 @@ void MzIdentMLWriter::addRanks(
   }
 }
   
+void MzIdentMLWriter::write(
+  MatchCollection* collection,
+  string database) {
+  addMatches(collection);
+}
 
 /**
  * Adds the matches in the match collection to
@@ -664,12 +655,10 @@ void MzIdentMLWriter::addRanks(
 void MzIdentMLWriter::addMatches(
   MatchCollection* collection  ///< matches to add
   ) {
-
   MatchIterator match_iter(collection);
   while (match_iter.hasNext()) {
     addMatch(collection, match_iter.next());
   }
-
 }
 
 /**
@@ -679,7 +668,6 @@ void MzIdentMLWriter::addMatch(
   MatchCollection* collection, ///< parent collection
   Match* match ///< match to add
   ) {
-
   Crux::Spectrum* spectrum = match->getSpectrum();
   Crux::Peptide* peptide = match->getPeptide();
   SpectrumZState zstate = match->getZState();
@@ -690,7 +678,7 @@ void MzIdentMLWriter::addMatch(
   siip->chargeState = zstate.getCharge();
   siip->experimentalMassToCharge = zstate.getMZ();
 
-  siip->calculatedMassToCharge = calculateMassToCharge(peptide->getPeptideMass(), (FLOAT_T) zstate.getCharge());
+  siip->calculatedMassToCharge = calculateMassToCharge(peptide->calcModifiedMass(), (FLOAT_T) zstate.getCharge());
 
   if (collection->getScoredType(PERCOLATOR_SCORE)) {
     siip->rank = match->getRank(PERCOLATOR_SCORE);
@@ -738,7 +726,6 @@ void MzIdentMLWriter::addProteinScores(
       //TODO create a user param.
     }
   }
-
 }
 
 void MzIdentMLWriter::addPeptideScores(
@@ -772,44 +759,34 @@ void MzIdentMLWriter::addPeptideScores(
       carp(CARP_WARNING, "Unknown parameter type for score type:%d", score_type);
       //TODO create a user param.
     }
-
   }
 }
-
 
 void MzIdentMLWriter::addSpectrumMatches(
   ProteinMatch* protein_match,
   PeptideMatch* peptide_match
   ) {
-
   PeptideHypothesis& peptide_hypothesis = getPeptideHypothesis(protein_match, peptide_match);
   for (SpectrumMatchIterator spectrum_iter = peptide_match->spectrumMatchBegin();
-    spectrum_iter != peptide_match->spectrumMatchEnd();
-    ++spectrum_iter) {
-    
+       spectrum_iter != peptide_match->spectrumMatchEnd();
+       ++spectrum_iter) {
     SpectrumMatch* spectrum_match = *spectrum_iter;
     SpectrumIdentificationItemPtr sip = getSpectrumIdentificationItem(spectrum_match);
     peptide_hypothesis.spectrumIdentificationItemPtr.push_back(sip);
   }
-
 }
 
 void MzIdentMLWriter::addPeptideMatches(
   ProteinMatch* protein_match
   ) {
-
   for (PeptideMatchIterator peptide_iter = protein_match->peptideMatchBegin();
-    peptide_iter != protein_match->peptideMatchEnd();
-    ++peptide_iter) {
-
+       peptide_iter != protein_match->peptideMatchEnd();
+       ++peptide_iter) {
     PeptideMatch* peptide_match = *peptide_iter;
     addPeptideScores(peptide_match);
     addSpectrumMatches(protein_match, peptide_match);
-
   }
-
 }
-
 
 /**
  * Adds the protein matches to the mzid object
@@ -820,15 +797,12 @@ void MzIdentMLWriter::addProteinMatches(
   if (protein_match_collection == NULL) {
     carp(CARP_FATAL, "ProteinMatchCollection was null");
   }
-
   //now add the protein matches.
   for (ProteinMatchIterator match_iter = protein_match_collection->proteinMatchBegin();
-    match_iter != protein_match_collection->proteinMatchEnd();
-    match_iter++) {
-
+       match_iter != protein_match_collection->proteinMatchEnd();
+       match_iter++) {
     addProteinMatch(*match_iter);
   }
-
 }
 
 /**
@@ -837,7 +811,6 @@ void MzIdentMLWriter::addProteinMatches(
 void MzIdentMLWriter::addProteinMatch(
   ProteinMatch* protein_match
   ) {
-
   string protein_id = protein_match->getId();
 
   //For now, each protein should get its own protein ambiguity group

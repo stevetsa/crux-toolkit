@@ -19,16 +19,6 @@
 class LinearPeptide : public XLinkMatch {
  protected:
 
-  static std::vector<LinearPeptide> target_linear_peptides_;
-  static std::vector<LinearPeptide> decoy_linear_peptides_;
-  static void generateAllLinearPeptides(
-    std::vector<LinearPeptide>& linear_peptides,
-    Database* database,
-    PEPTIDE_MOD_T** peptide_mods,
-    int num_peptide_mods,
-    bool decoy
-    );
-
   Crux::Peptide* peptide_; ///< Peptide this linear peptide referes to
   char* sequence_; ///< sequence of the peptide
   bool is_decoy_; ///< indicator of whether the peptide is a decoy or not
@@ -55,7 +45,7 @@ class LinearPeptide : public XLinkMatch {
   /**
    * Default destructor
    */
-  virtual ~LinearPeptide() {/*carp(CARP_INFO, "~LinearPeptide");*/};
+  virtual ~LinearPeptide() {}
   
   /**
    *Add candidates to the XLinkMatchCollection that are linear

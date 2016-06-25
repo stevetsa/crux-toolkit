@@ -15,9 +15,6 @@
 #include "model/Spectrum.h"
 #include "io/SpectrumCollection.h"
 
-// TODO - Get rid of this dependency. (xhhc_scorer and xhhc_search).
-#define bin_width_mono 1.0005079
-
 class LinkedIonSeries {
  protected:
 
@@ -121,7 +118,7 @@ class LinkedIonSeries {
    */
   void addLinkedIons(
     LinkedPeptide& linked_peptide, ///< The linked peptide 
-    SPLITTYPE_T split_type=SPLITTYPE_BOTH ///< Which peptide to split
+    SPLITTYPE_T split_type = SPLITTYPE_BOTH ///< Which peptide to split
   );
 
   /**

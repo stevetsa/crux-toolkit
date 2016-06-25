@@ -5,6 +5,7 @@
 
 #include "ProteinPeptideIterator.h"
 #include "util/GlobalParams.h"
+#include "util/Params.h"
 
 using namespace std;
 using namespace Crux;
@@ -136,7 +137,7 @@ bool ProteinPeptideIterator::validCleavagePosition(
 
   case INVALID_ENZYME:
   case NUMBER_ENZYME_TYPES:
-    carp(CARP_FATAL, "Cannot generate peptides with invalid enzyme.");
+    carp(CARP_FATAL, "Cannot generate peptides with invalid enzyme: %d", enzyme);
     break;
 
   }// end switch
@@ -488,11 +489,9 @@ Crux::Peptide* ProteinPeptideIterator::next()
   int cleavage_idx = current_cleavage_idx_;
   int current_start = (*nterm_cleavage_positions_)[cleavage_idx];
   int current_length = (*peptide_lengths_)[cleavage_idx];
-  FLOAT_T peptide_mass = (*peptide_masses_)[cleavage_idx];
 
   // create new peptide
-  Peptide* peptide = new Peptide(current_length, peptide_mass, 
-                                   protein_, current_start);//, peptide_type);
+  Peptide* peptide = new Peptide(current_length, protein_, current_start);
   // update position of iterator
   ++current_cleavage_idx_;
 

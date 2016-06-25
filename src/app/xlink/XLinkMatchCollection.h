@@ -61,13 +61,13 @@ class XLinkMatchCollection : public MatchCollection {
     Crux::Spectrum* spectrum, ///< Spectrum
     SpectrumZState& zstate, ///< z-state
     bool decoy,
-    bool use_decoy_window=false ///< decoys?
+    bool use_decoy_window = false ///< decoys?
   );
 
   /**
    * Default destructor
    */
-  virtual ~XLinkMatchCollection() {};
+  virtual ~XLinkMatchCollection() {}
 
   /**
    * adds a candidate to the list
@@ -77,7 +77,7 @@ class XLinkMatchCollection : public MatchCollection {
   /**
    *\returns a candidate from the list by index
    */
-  XLinkMatch* operator [](
+  XLinkMatch* operator[] (
     int idx ///< index
   );
   
@@ -93,7 +93,7 @@ class XLinkMatchCollection : public MatchCollection {
    */
   void shuffle(
     XLinkMatchCollection& decoy_vector ///< collection to add decoys to
-   );
+  );
 
   /**
    * scores all candidates against the spectrum

@@ -10,7 +10,6 @@
 
 using namespace std;
 
-
 /**
  * Default constructor
  */
@@ -42,7 +41,6 @@ LinearPeptide::LinearPeptide(
   sequence_ = NULL;
   this->setNullPeptide(peptide_->isDecoy());
 }
-
 
 /**
  *Add candidates to the XLinkMatchCollection that are linear
@@ -85,9 +83,7 @@ string LinearPeptide::getSequenceString() {
     oss << sequence_;
 
   } else {
-    char* seq = peptide_->getModifiedSequenceWithMasses(MOD_MASSES_SEPARATE);
-    oss << seq;
-    free(seq);
+    oss << peptide_->getModifiedSequenceWithMasses();
   }
 
   //oss << " ()";
@@ -173,9 +169,9 @@ string LinearPeptide::getIonSequence(
 
   int cleavage_idx = ion->getCleavageIdx();
   if (ion->isForwardType() == B_ION) {
-    return seq_str.substr(0,cleavage_idx);
+    return seq_str.substr(0, cleavage_idx);
   } else {
-    return seq_str.substr(seq_str.length()-cleavage_idx,seq_str.length());
+    return seq_str.substr(seq_str.length()-cleavage_idx, seq_str.length());
   }
 }
 

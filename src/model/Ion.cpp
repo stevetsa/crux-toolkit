@@ -779,7 +779,6 @@ void Ion::addModification(
   MASS_TYPE_T mass_type ///< mass type (average, mono) -in
   )
 {
-  //carp(CARP_FATAL, "addModficiation");
   // update modification count
   modification_counts_[(int)modification] += modification_count;  
   // reset ion mass_z
@@ -788,7 +787,6 @@ void Ion::addModification(
                                    modification, 
                                    charge_, 
                                    mass_type);
-
 }
 
 /**
@@ -824,6 +822,7 @@ FLOAT_T Ion::getMass(
   else{
     end_idx = cleavage_idx_;
   }
+
   // add up all AA mass
   for(int ion_idx = start_idx; ion_idx < end_idx; ++ion_idx){
     mass += get_mass_amino_acid(peptide_sequence_[ion_idx], mass_type);
@@ -874,7 +873,6 @@ bool Ion::calcMassZWithMass(
 
   // alter mass according to the modification
   if(is_modified){
-    //carp(CARP_FATAL, "modified!");
     // iterate over all type of modifications for ion
     int modification_idx = 0;
     for(; modification_idx < MAX_MODIFICATIONS; ++modification_idx){
@@ -970,13 +968,11 @@ bool Ion::isForwardType()
  */
 bool Ion::isModified()
 {
-
   int by_modification = 0;
 
   // only add ions with no modifications
   for(; by_modification < MAX_MODIFICATIONS; ++by_modification){
     if(modification_counts_[by_modification] != 0){
-      carp(CARP_FATAL, "Ion modified!");
       return true;
     }
   }

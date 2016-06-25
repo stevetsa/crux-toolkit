@@ -2,6 +2,7 @@
 #define ARGPARSER_H
 
 #include <map>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -20,7 +21,7 @@ class ArgParser {
  protected:
   class ArgSpec {
    public:
-    ArgSpec(const std::string& name, bool multi = false);
+    explicit ArgSpec(const std::string& name, bool multi = false);
     std::string GetName() const;
     bool IsMulti() const;
    protected:
@@ -32,6 +33,14 @@ class ArgParser {
 
   std::map< std::string, std::vector<std::string> > args_;
   std::map<std::string, std::string> options_;
+};
+
+class ArgParserException : public std::runtime_error {
+ public:
+  explicit ArgParserException(const std::string& what, bool fullUsage = false);
+  bool ShowFullUsage() const;
+ private:
+  bool fullUsage_;
 };
 
 #endif

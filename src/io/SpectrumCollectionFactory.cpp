@@ -10,8 +10,7 @@
 #include "MSToolkitSpectrumCollection.h"
 #include "PWIZSpectrumCollection.h"
 #include "util/FileUtils.h"
-#include <sys/types.h>
-#include <sys/stat.h>
+#include "util/Params.h"
 
 /**
  * Instantiates a SpectrumCollection based on the extension of the
@@ -21,12 +20,12 @@ Crux::SpectrumCollection* SpectrumCollectionFactory::create(const string& filena
   if (!FileUtils::Exists(filename)) {
     carp(CARP_FATAL, "The file %s does not exist. \n", filename.c_str());
   }
-  if (is_directory(filename)){
+  if (FileUtils::IsDir(filename)){
     carp(CARP_FATAL, "Path %s is a directory. \n Please enter a spectrum filename\
 (.ms2,.mgf, or .mzXML)",filename.c_str());
   }
 
-  string parser = get_string_parameter("spectrum-parser");
+  string parser = Params::GetString("spectrum-parser");
   if (parser == "pwiz") {
     carp(CARP_DEBUG, "Using protewizard to parse spectra");
     return new PWIZSpectrumCollection(filename);

@@ -1,5 +1,7 @@
 //TODO - change cerr/couts to carp.
 
+#include "xlink_assign_ions.h"
+
 #include "xhhc.h"
 #include "LinkedIonSeries.h"
 #include "xhhc_scorer.h"
@@ -10,6 +12,7 @@
 #include "model/Scorer.h"
 #include "io/SpectrumCollectionFactory.h"
 #include "io/DelimitedFile.h"
+#include "util/Params.h"
 
 #include <math.h>
 #include <assert.h>
@@ -23,62 +26,27 @@
 
 using namespace Crux;
 
-void print_spectrum(Spectrum* spectrum, LinkedIonSeries& ion_series);
-int main(int argc, char** argv){
+XLinkAssignIons::XLinkAssignIons() {
+}
 
-  /* Verbosity level for set-up/command line reading */
-  set_verbosity_level(CARP_ERROR);
-  
-  /* Define optional command line arguments */
-  string options[] = {
-    "verbosity",
-    "version",
-    "spectrum-parser",
-    "fragment-mass",
-    "max-ion-charge",
-    "mz-bin-width",
-    "precision"
-  };
+XLinkAssignIons::~XLinkAssignIons() {
+}
 
-  /* Define required command line arguments */
-  string args[] = {
-    "peptide A",
-    "peptide B",
-    "pos A",
-    "pos B",
-    "link mass",
-    "charge state",
-    "scan number",
-    "ms2 file"
-  };
-  
-  /* for debugging of parameter processing */
-  set_verbosity_level( CARP_ERROR );
-  
-  /* Define optional and required command line arguments */
-  CruxApplication::initializeParams(
-    "xlink-assign-ions",
-    vector<string>(args, args + sizeof(args) / sizeof(string)),
-    vector<string>(options, options + sizeof(options) / sizeof(string)),
-    argc, argv);
-
-  /* Set verbosity */
-  set_verbosity_level(get_int_parameter("verbosity"));
-
+int XLinkAssignIons::main(int argc, char** argv) {
   /* Get Arguments */
-  string peptideAStr = get_string_parameter("peptide A");
-  string peptideBStr = get_string_parameter("peptide B");
+  string peptideAStr = Params::GetString("peptide A");
+  string peptideBStr = Params::GetString("peptide B");
   char* peptideA = my_copy_string(peptideAStr.c_str());
   char* peptideB = my_copy_string(peptideBStr.c_str());
   
-  int posA     = get_int_parameter("pos A");
-  int posB     = get_int_parameter("pos B");
-  int charge   = get_int_parameter("charge state"); 
-  int scan_num = get_int_parameter("scan number"); 
+  int posA     = Params::GetInt("pos A");
+  int posB     = Params::GetInt("pos B");
+  int charge   = Params::GetInt("charge state"); 
+  int scan_num = Params::GetInt("scan number"); 
 
-  string ms2_file = get_string_parameter("ms2 file");
+  string ms2_file = Params::GetString("ms2 file");
 
-  LinkedPeptide::setLinkerMass(get_double_parameter("link mass"));
+  LinkedPeptide::setLinkerMass(Params::GetDouble("link mass"));
  
   // create new ion series
   
@@ -131,49 +99,50 @@ int main(int argc, char** argv){
   // free heap
   delete collection;
   //free_spectrum(spectrum);
+  return 0;
 }
 
-void print_spectrum(Spectrum* spectrum, LinkedIonSeries& ion_series) {
+void XLinkAssignIons::print_spectrum(Spectrum* spectrum, LinkedIonSeries& ion_series) {
 
       int total_by_ions = ion_series.getTotalBYIons();
       int matched_by_ions = XHHC_Scorer::getMatchedBYIons(spectrum, ion_series);
       FLOAT_T frac_by_ions = (double)matched_by_ions / (double) total_by_ions;
 
-      carp(CARP_INFO, "total theoretical ions:%d",total_by_ions);
-      carp(CARP_INFO,"theoretical ions matched:%d",matched_by_ions);
-      carp(CARP_INFO,"frac theoretical ions matched:%f",frac_by_ions);
-      carp(CARP_INFO,"npeaks:%d",spectrum->getNumPeaks());
+      carp(CARP_INFO, "total theoretical ions:%d", total_by_ions);
+      carp(CARP_INFO, "theoretical ions matched:%d", matched_by_ions);
+      carp(CARP_INFO, "frac theoretical ions matched:%f", frac_by_ions);
+      carp(CARP_INFO, "npeaks:%d", spectrum->getNumPeaks());
 
-      FLOAT_T bin_width = get_double_parameter("mz-bin-width");
+      FLOAT_T bin_width = Params::GetDouble("mz-bin-width");
       vector<LinkedPeptide>& ions = ion_series.getIons();
       
       map<Peak*, LinkedPeptide> matched;
       double matched_intensity = 0;
       for (vector<LinkedPeptide>::iterator ion = ions.begin();
-	   ion != ions.end(); 
-	   ++ion) {
+           ion != ions.end(); 
+           ++ion) {
 
-	  if (ion -> getIonType() == B_ION || ion -> getIonType() == Y_ION) {
-	    Peak * peak = spectrum->getMaxIntensityPeak(ion->getMZ(MONO), 
+          if (ion -> getIonType() == B_ION || ion -> getIonType() == Y_ION) {
+            Peak * peak = spectrum->getMaxIntensityPeak(ion->getMZ(MONO), 
                                                     bin_width);
-	    if (peak != NULL) {
+            if (peak != NULL) {
               if (matched.find(peak) == matched.end()) {
-		matched_intensity += peak->getIntensity();
+                matched_intensity += peak->getIntensity();
               }
-	      matched[peak] = *ion;
-	    } else {
-              carp(CARP_DETAILED_DEBUG,"Ion clash!");
+              matched[peak] = *ion;
+            } else {
+              carp(CARP_DETAILED_DEBUG, "Ion clash!");
             }
-	  }
-	//}
+          }
+        //}
       }
 
       double total_intensity = spectrum->getTotalEnergy();
       double frac_intensity = matched_intensity / total_intensity;
 
-      carp(CARP_INFO,"matched intensity:%lf",matched_intensity);
-      carp(CARP_INFO,"total intensity:%lf",total_intensity);
-      carp(CARP_INFO,"frac intensity:%lf",frac_intensity);
+      carp(CARP_INFO, "matched intensity:%lf", matched_intensity);
+      carp(CARP_INFO, "total intensity:%lf", total_intensity);
+      carp(CARP_INFO, "frac intensity:%lf", frac_intensity);
       
 
       //now print out the spectrum
@@ -194,7 +163,7 @@ void print_spectrum(Spectrum* spectrum, LinkedIonSeries& ion_series) {
         peak_iter != spectrum->end();
         ++peak_iter) {
 
-	Peak * peak = *peak_iter;
+        Peak * peak = *peak_iter;
         if (peak->getIntensity() > 0) { 
 
 
@@ -204,7 +173,7 @@ void print_spectrum(Spectrum* spectrum, LinkedIonSeries& ion_series) {
 
           
 
-	  if (matched.find(peak) != matched.end()) {
+          if (matched.find(peak) != matched.end()) {
               LinkedPeptide& ion = matched[peak];
               double mz_calc = ion.getMZ(MONO);
               double mz_obs = peak->getLocation();
@@ -240,3 +209,63 @@ void print_spectrum(Spectrum* spectrum, LinkedIonSeries& ion_series) {
       cout << result_file;
 
 }
+
+void XLinkAssignIons::processParams() {
+  for (char c = 'A'; c <= 'Z'; c++) {
+    double deltaMass = Params::GetDouble(string(1, c));
+    increase_amino_acid_mass(c, deltaMass);
+  }
+}
+
+string XLinkAssignIons::getName() const {
+  return "xlink-assign-ions";
+}
+
+string XLinkAssignIons::getDescription() const {
+  return
+    "Given a spectrum and a pair of cross-linked peptides, assign theoretical "
+    "ion type labels to peaks in the observed spectrum.";
+}
+
+vector<string> XLinkAssignIons::getArgs() const {
+  string arr[] = {
+    "peptide A",
+    "peptide B",
+    "pos A",
+    "pos B",
+    "link mass",
+    "charge state",
+    "scan number",
+    "ms2 file"
+  };
+  return vector<string>(arr, arr + sizeof(arr) / sizeof(string));
+}
+
+vector<string> XLinkAssignIons::getOptions() const {
+  string arr[] = {
+    "verbosity",
+    "spectrum-parser",
+    "fragment-mass",
+    "max-ion-charge",
+    "mz-bin-width",
+    "precision"
+  };
+  return vector<string>(arr, arr + sizeof(arr) / sizeof(string));
+}
+
+vector< pair<string, string> > XLinkAssignIons::getOutputs() const {
+  vector< pair<string, string> > outputs;
+  outputs.push_back(make_pair("stdout",
+    "tab-delimited text in which each row is a peak in the observed spectrum, "
+    "and the columns are <ol>"
+    "<li>The m/z value.</li>"
+    "<li>The observed intensity.</li>"
+    "<li>The matched intensity.</li>"
+    "<li>The calculated m/z value of the theoretical peak.</li>"
+    "<li>The mass associated with the observed peak.</li>"
+    "<li>The mass difference (in ppm) between the observed and theoretical peaks.</li>"
+    "<li>The ion type, specified as b or y, followed by the charge state in parentheses.</li>"
+    "<li>The amino acid sequence of the fragment.</li>"));
+  return outputs;
+}
+

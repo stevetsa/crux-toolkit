@@ -1,6 +1,34 @@
 #include "PMCPepXMLWriter.h"
+#include "util/Params.h"
 
 using namespace Crux;
+
+void PMCPepXMLWriter::openFile(
+  string filename,
+  bool overwrite
+) {
+  PepXMLWriter::openFile(filename.c_str(), overwrite);
+}
+
+void PMCPepXMLWriter::openFile(
+  CruxApplication* application,
+  string filename,
+  MATCH_FILE_TYPE type
+) {
+  PepXMLWriter::openFile(filename.c_str(), Params::GetBool("overwrite"));
+}
+
+void PMCPepXMLWriter::write(
+  MatchCollection* collection,
+  string database
+) {
+  ProteinMatchCollection protein_collection(collection);
+  write(&protein_collection);
+}
+
+void PMCPepXMLWriter::closeFile() {
+  PepXMLWriter::closeFile();
+}
 
 /**
  * Writes the data in a ProteinMatchCollection to the currently open file
@@ -42,11 +70,8 @@ void PMCPepXMLWriter::writePSMs(
          ++prot_iter) {
       ProteinMatch* prot_match = *prot_iter;
       Protein* protein = prot_match->getProtein();
-      const char* tmp;
-      tmp = protein->getIdPointer().c_str();
-      protein_names.push_back((tmp != NULL) ? tmp : "");
-      tmp = protein->getAnnotationPointer().c_str();
-      protein_descriptions.push_back((tmp != NULL) ? tmp : "");
+      protein_names.push_back(protein->getIdPointer());
+	  protein_descriptions.push_back(protein->getAnnotationPointer());
     }
 
     // populate scores
@@ -76,22 +101,23 @@ void PMCPepXMLWriter::writePSMs(
     int spec_charge = zstate.getCharge();
 
     // get sequence and modified sequence
-    const char* seq;
+    char* seq;
     seq = peptide->getSequence();
     string seq_str(seq);
+    free(seq);
     MODIFIED_AA_T* mod_seq = peptide->getModifiedAASequence();
-    char* seq2 =
+    seq =
       modified_aa_string_to_string_with_masses(mod_seq, peptide->getLength(),
       get_mass_format_type_parameter("mod-mass-format"));
-    string mod_seq_str(seq2);
-    free(seq2);
-    freeModSeq(mod_seq);
+    string mod_seq_str(seq);
+    free(seq);
+    free(mod_seq);
     // get flanking aas
     char* flanking = peptide->getFlankingAAs();
     string flanking_str(flanking);
     free(flanking);
                                                              
-    FLOAT_T peptide_mass = peptide->getPeptideMass();
+    FLOAT_T peptide_mass = peptide->calcModifiedMass();
 
     // write psm
     map<pair<int, int>, int>::const_iterator lookup =

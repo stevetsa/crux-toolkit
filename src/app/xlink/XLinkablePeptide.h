@@ -210,19 +210,18 @@ class XLinkablePeptide : public CacheableMass {
   MODIFIED_AA_T* getModifiedSequence();
 
   const MODIFIED_AA_T* getModifiedSequencePtr();
-
   /**
    * \returns the modified sequence string of the xlinkable peptide
    */
   std::string getModifiedSequenceString();
 
-
+  
   void predictIons(
     IonSeries* ion_series,
     int charge,
     int link_idx,
     FLOAT_T mod_mass,
-    bool clear=true
+    bool clear = true
     );
 
   FLOAT_T getXCorr() const;  
@@ -247,8 +246,6 @@ class XLinkablePeptide : public CacheableMass {
 
   
 };
-
-
 
 bool compareXLinkablePeptideMass(const XLinkablePeptide& xpep1, const XLinkablePeptide& xpep2);
 bool compareXLinkablePeptideMassToFLOAT(

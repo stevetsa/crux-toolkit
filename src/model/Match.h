@@ -74,14 +74,9 @@ class Match {
     ///< rank of this match for each type scored (index with SCORER_TYPE_T)
   int pointer_count_; 
     ///< number of pointers to this match object (when reach 0, free memory)
-  FLOAT_T b_y_ion_fraction_matched_; 
-    ///< the fraction of the b, y ion matched while scoring for SP
-  int b_y_ion_matched_; ///< number of b, y ion matched while scoring SP
-  int b_y_ion_possible_; ///< number of possible b, y ion while scoring SP
   bool null_peptide_; ///< Is the match a null (decoy) peptide match?
   const char* peptide_sequence_; ///< peptide sequence is that of peptide or shuffled
   MODIFIED_AA_T* mod_sequence_; ///< seq of peptide or shuffled if null peptide
-  DIGEST_T digest_;
   SpectrumZState zstate_;
   // post_process match object features
   // only valid when post_process_match is true
@@ -89,7 +84,6 @@ class Match {
   FLOAT_T ln_experiment_size_; 
      ///< natural log of total number of candidate peptides evaluated
   int num_target_matches_; ///< total target candidates for this spectrum
-  int num_decoy_matches_;///< decoy candidates for this spectrum if decoy match
   bool best_per_peptide_; ///< Is this the best scoring PSM for this peptide?
   int file_idx_; ///< index of where this match came from 
   string database_index_name_;
@@ -122,7 +116,7 @@ class Match {
    */
   Match(Crux::Peptide* peptide, ///< the peptide for this match
         Crux::Spectrum* spectrum, ///< the spectrum for this match
-        SpectrumZState& zstate, ///< the charge/mass of the spectrum
+        const SpectrumZState& zstate, ///< the charge/mass of the spectrum
         bool is_decoy);///< is the peptide a decoy or not
 
   /**
@@ -138,26 +132,14 @@ class Match {
    public:
     // If less, sort is from least to greatest
     ScoreComparer(SCORER_TYPE_T type, bool less): type_(type), less_(less) {}
-    bool operator() (const Match* x, const Match* y) {
-      FLOAT_T scoreX = x->getScore(type_);
-      FLOAT_T scoreY = y->getScore(type_);
-      return less_ ? scoreX < scoreY : scoreX > scoreY;
-    }
+    bool operator() (const Match* x, const Match* y);
 
     private:
      SCORER_TYPE_T type_;
      bool less_;
   };
-
-  /**
-   * TODO: should be this be here or parameterized better?
-   * shuffle the matches in the array between index start and end-1
-   */
-  static void shuffleMatches(
-    Match** match_array, ///< the match array to shuffle  
-    int start_idx,         ///< index of first element to shuffle
-    int end_index          ///< index AFTER the last element to shuffle
-    );
+  static bool ScoreLess(FLOAT_T x, FLOAT_T y);
+  static bool ScoreGreater(FLOAT_T x, FLOAT_T y);
 
   /**
    * print the information of the match
@@ -191,20 +173,6 @@ class Match {
     Spectrum* spectrum,
     int num_target_matches,  ///< target matches for this spectrum -in
     int num_decoy_matches ///< decoy matches (if any) for this spectrum -in
-    );
-
-  /*******************************************
-   * match post_process extension
-   ******************************************/
-
-  /**
-   *
-   *\returns a match object that is parsed from the tab-delimited result file
-   */
-  static Match* parseTabDelimited(
-    MatchFileReader& result_file,  ///< the result file to parse PSMs -in
-    Database* database, ///< the database to which the peptides are created -in
-    Database* decoy_database = NULL ///< optional database with decoy peptides
     );
 
   /****************************
@@ -285,9 +253,6 @@ class Match {
   FLOAT_T getScore(
     std::string& match_score_name ///< the name of the score -in
     );
-
-
-  
 
   /**
    * set the custom match score
@@ -411,12 +376,6 @@ class Match {
   void setTargetExperimentSize(int num_matches);
 
   /**
-   * \returns The total number of decoy matches searched for this
-   * spectrum if this is a match to a decoy spectrum.
-   */
-  int getDecoyExperimentSize();
-
-  /**
    *Increments the pointer count to the match object
    */
   void incrementPointerCount();
@@ -440,47 +399,6 @@ class Match {
   void setPostProcess(
     bool post_process ///< whether the match is post process or not
   );
-
-  /**
-   * sets the match b_y_ion info
-   */
-  void setBYIonInfo(
-    Scorer* scorer ///< the scorer from which to extract information -in
-    );
-
-  void calcBYIonFractionMatched();
-
-  /**
-   * sets the match b_y_ion_matched
-   */
-  void setBYIonFractionMatched(
-    FLOAT_T frac_matched ///< the fraction of ions matched
-    );
-
-  /**
-   * gets the match b_y_ion_match
-   */
-  FLOAT_T getBYIonFractionMatched();
-
-  /**
-   * sets the match b_y_ion_matched
-   */
-  void setBYIonMatched(int matched);
-
-  /**
-   * gets the match b_y_ion_matched
-   */
-  int getBYIonMatched();
-
-  /**
-   * sets the match b_y_ion_possible
-   */
-  void setBYIonPossible(int possible);
-
-  /**
-   * gets the match b_y_ion_possible
-   */
-  int getBYIonPossible();
 
   /**
    * Set the best-per-peptide Boolean to true.
@@ -530,41 +448,6 @@ int get_num_terminal_cleavage(
   const char flanking_aas_next,
   ENZYME_T enzyme
 );
-
-
-/**
- * \brief prints both variable and static modifications for 
- *  peptide sequence
- *
- */
-void print_modifications_xml(
-  const char* mod_seq,
-  const char* sequence,
-  FILE* output_file
-);
-
-/**
- * \brief takes an empty mapping of index to mass
- * of static mods and a full mapping of var mods
- * to fill up the mapping of static mods
- */
-void find_static_modifications(
-  std::map<int, double>& static_mods,
-  std::map<int, double>& var_mods,
-  const char* sequence
-);
-
-/**
- * \brief takes an empty mapping of index to mass
- * and extract information from mod sequence fill
- * up map
- */
-void find_variable_modifications(
- std::map<int, double>& mods,
- const char* mod_seq
-);
-
-
 
 #endif //MATCH_H
 

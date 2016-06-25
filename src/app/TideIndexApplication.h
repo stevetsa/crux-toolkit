@@ -11,10 +11,11 @@
 #include <errno.h>
 #include <gflags/gflags.h>
 #include "header.pb.h"
-#include "app/tide/records.h"
-#include "app/tide/peptide.h"
-#include "app/tide/theoretical_peak_set.h"
-#include "app/tide/abspath.h"
+#include "tide/records.h"
+#include "tide/peptide.h"
+#include "tide/theoretical_peak_set.h"
+#include "tide/abspath.h"
+#include "TideSearchApplication.h"
 #include "util/crux-utils.h"
 
 using namespace std;
@@ -23,7 +24,9 @@ std::string getModifiedPeptideSeq(const pb::Peptide* peptide, const ProteinVec* 
 
 class TideIndexApplication : public CruxApplication {
 
-public:
+  friend class TideSearchApplication;
+
+ public:
 
   /**
    * Constructor
@@ -74,17 +77,17 @@ public:
 
   virtual COMMAND_T getCommand() const;
 
-protected:
+ protected:
 
   class TideIndexPeptide {
-  private:
+   private:
     double mass_;
     int length_;
     int proteinId_;
     int proteinPos_;
     const char* residues_;  // points at protein sequence
     bool decoy_;
-  public:
+   public:
     TideIndexPeptide() {}
     TideIndexPeptide(double mass, int length, string* proteinSeq,
                      int proteinId, int proteinPos, bool decoy) {
@@ -133,8 +136,6 @@ protected:
     }
   };
 
-  typedef pair<string, int> PeptideInfo;  // sequence, start location
-
   struct ProteinInfo {
     string name;
     const string* sequence;
@@ -159,6 +160,7 @@ protected:
     FLOAT_T maxMass,
     int minLength,
     int maxLength,
+    bool dups,
     MASS_TYPE_T massType,
     DECOY_TYPE_T decoyType,
     const std::string& fasta,
@@ -206,6 +208,28 @@ protected:
     int proteinId,
     int proteinPos,
     pb::AuxLocation& outAuxLoc
+  );
+
+  /**
+   * Generates decoy for the target peptide, writes the decoy protein to pbProtein
+   * and adds decoy to the heap.
+   */
+  static bool generateDecoy(
+    const string& setTarget,
+    std::map<const string, const string*>& targetToDecoy,
+    set<string>* setTargets,
+    set<string>* setDecoys,
+    DECOY_TYPE_T decoyType,
+    bool allowDups,
+    unsigned int& failedDecoyCnt,
+    unsigned int& decoysGenerated,
+    int& curProtein,
+    const ProteinInfo& proteinInfo,
+    const int startLoc,
+    pb::Protein& pbProtein,
+    FLOAT_T pepMass,
+    vector<TideIndexPeptide>& outPeptideHeap,
+    vector<string*>& outProteinSequences
   );
 
   virtual void processParams();

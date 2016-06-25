@@ -36,7 +36,7 @@ SelfLoopPeptide::SelfLoopPeptide(
   int posA, ///< 1st link position on peptide
   int posB  ///< 2nd link position on peptide
   ) {
-
+  
   is_decoy_ = false;
   linked_peptide_ = XLinkablePeptide(peptide);
   linked_peptide_.clearSites();

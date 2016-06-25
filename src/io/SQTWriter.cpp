@@ -1,11 +1,12 @@
 #include "SQTWriter.h"
 #include "util/FileUtils.h"
+#include "util/Params.h"
+#include "util/StringUtils.h"
 #include "util/GlobalParams.h"
 
 using namespace Crux;
 
 SQTWriter::SQTWriter() {
-
 }
 
 SQTWriter::~SQTWriter() {
@@ -13,7 +14,7 @@ SQTWriter::~SQTWriter() {
 }
 
 void SQTWriter::openFile(string filename) {
-  file_ = FileUtils::GetWriteStream(filename, get_boolean_parameter("overwrite"));
+  file_ = FileUtils::GetWriteStream(filename, Params::GetBool("overwrite"));
   if (!file_) {
     carp(CARP_FATAL, "Error creating file '%s'.", filename.c_str());
   }
@@ -48,11 +49,11 @@ void SQTWriter::writeHeader(
   char fragment_masses[64];
   mass_type_to_string(mass_type, fragment_masses);
 
-  double tol = get_double_parameter("precursor-window");
-  double frag_mass_tol = get_double_parameter("mz-bin-width") / 2.0;
+  double tol = Params::GetDouble("precursor-window");
+  double frag_mass_tol = Params::GetDouble("mz-bin-width") / 2.0;
 
-  string prelim_score_type = get_string_parameter("prelim-score-type");
-  string score_type = get_string_parameter("score-type");
+  string prelim_score_type = Params::GetString("prelim-score-type");
+  string score_type = Params::GetString("score-type");
 
   *file_ << "H\tSQTGenerator Crux" << endl
          << "H\tSQTGeneratorVersion 1.0" << endl
@@ -80,71 +81,43 @@ void SQTWriter::writeHeader(
   *file_ << "H\tComment\tpreliminary algorithm " << prelim_score_type << endl
          << "H\tComment\tfinal algorithm " << score_type << endl;
 
-  int aa = 0;
-  char aa_str[2];
-  aa_str[1] = '\0';
-  int alphabet_size = (int)'A' + ((int)'Z'-(int)'A');
-  MASS_TYPE_T isotopic_type = GlobalParams::getIsotopicMass();
-
-  *file_ << fixed << setprecision(3);
-  for(aa = (int)'A'; aa < alphabet_size -1; aa++){
-    aa_str[0] = (char)aa;
-    double mod = get_double_parameter(aa_str);
-    if( mod != 0 ){
-      //      double mass = mod + get_mass_amino_acid(aa, isotopic_type);
-      double mass = get_mass_amino_acid(aa, isotopic_type);
-      *file_ << "H\tStaticMod\t" << aa_str << "=" << mass << endl;
+  for (char aa = 'A'; aa <= 'Z'; aa++) {
+    vector<const ModificationDefinition*> staticMods = ModificationDefinition::StaticMods(aa);
+    for (vector<const ModificationDefinition*>::const_iterator i = staticMods.begin();
+         i != staticMods.end();
+         i++) {
+      *file_ << "H\tStaticMod\t" << aa << '='
+             << StringUtils::ToString((*i)->DeltaMass(), Params::GetInt("mod-precision"))
+             << endl;
     }
   }
-  file_->unsetf(ios_base::fixed);
-  file_->precision(old_precision);
 
   // print dynamic mods, if any
   // format DiffMod <AAs><symbol>=<mass change>
-  AA_MOD_T** aa_mod_list = NULL;
-  int num_mods = get_all_aa_mod_list(&aa_mod_list);
-  int mod_idx = 0;
-  *file_ << fixed << setprecision(2);
-  for(mod_idx = 0; mod_idx < num_mods; mod_idx++){
-    
-    AA_MOD_T* aamod = aa_mod_list[mod_idx];
-    char* aa_list_str = aa_mod_get_aa_list_string(aamod);
-    char aa_symbol = aa_mod_get_symbol(aamod);
-    double mass_dif = aa_mod_get_mass_change(aamod);
-
-    *file_ << "H\tDiffMod\t" << aa_list_str << aa_symbol << "="
-           << (mass_dif >= 0 ? "+" : "-") << mass_dif << endl;
-    free(aa_list_str);
-  }
-  file_->unsetf(ios_base::fixed);
-  file_->precision(old_precision);
-
-  num_mods = get_c_mod_list(&aa_mod_list);
-  for(mod_idx = 0; mod_idx < num_mods; mod_idx++){
-    AA_MOD_T* aamod = aa_mod_list[mod_idx];
-    char aa_symbol = aa_mod_get_symbol(aamod);
-
-    *file_ << "H\tComment\tMod " << aa_symbol
-           << " is a C-terminal modification" << endl;
+  vector<const ModificationDefinition*> varMods = ModificationDefinition::VarMods();
+  for (vector<const ModificationDefinition*>::const_iterator i = varMods.begin();
+       i != varMods.end();
+       i++) {
+    char symbol = (*i)->Symbol();
+    *file_ << "H\tDiffMod\t" << StringUtils::Join((*i)->AminoAcids()) << symbol << "=";
+    if ((*i)->DeltaMass() >= 0) {
+      *file_ << '+';
+    }
+    *file_ << StringUtils::ToString((*i)->DeltaMass(), Params::GetInt("mod-precision"))
+           << endl;
+    switch ((*i)->Position()) {
+    case PEPTIDE_N:
+    case PROTEIN_N:
+      *file_ << "H\tComment\tMod " << symbol << " is an N-terminal modification" << endl;
+      break;
+    case PEPTIDE_C:
+    case PROTEIN_C:
+      *file_ << "H\tComment\tMod " << symbol << " is an C-terminal modification" << endl;
+      break;
+    }
   }
 
-  num_mods = get_n_mod_list(&aa_mod_list);
-  for(mod_idx = 0; mod_idx < num_mods; mod_idx++){
-    AA_MOD_T* aamod = aa_mod_list[mod_idx];
-    char aa_symbol = aa_mod_get_symbol(aamod);
-
-    *file_ << "H\tComment\tMod " << aa_symbol
-           << " is a N-terminal modification" << endl;
-  }
-
-  //for letters in alphabet
-  //  double mod = get_double_parameter(letter);
-  //  if mod != 0
-  //     double mass = mod + getmass(letter);
-  //     fprintf(output, "H\tStaticMod\t%s=%.3f\n", letter, mass);
-  //  fprintf(output, "H\tStaticMod\tC=160.139\n");
-  *file_ << "H\tAlg-DisplayTop\t" << get_int_parameter("top-match") << endl;
-          //          get_int_parameter("max-sqt-result")); 
+  *file_ << "H\tAlg-DisplayTop\t" << Params::GetInt("top-match") << endl;
   // this is not correct for an sqt from analzyed matches
 
   ENZYME_T enzyme = get_enzyme_type_parameter("enzyme");
@@ -153,17 +126,18 @@ void SQTWriter::writeHeader(
   const char* dig_str = digest_type_to_string(digestion);
   string custom_str;
   if( enzyme == CUSTOM_ENZYME){
-    string rule = get_string_parameter("custom-enzyme");
+    string rule = Params::GetString("custom-enzyme");
     custom_str = ", custom pattern: " + rule;
   }
   *file_ << "H\tEnzymeSpec\t" << enz_str << "-" << dig_str << custom_str << endl;
 
-  // write a comment that says what the scores are
-  *file_ << "H\tLine fields: S, scan number, scan number,"
-         << "charge, 0, server, precursor mass, 0, 0, number of matches" << endl
+
+  *file_ << "H\tLine fields: S, scan number, scan number, "
+         << "charge, 0, server, experimental mass, total ion intensity, "
+         << "lowest Sp, number of matches" << endl
          << "H\tLine fields: M, rank by xcorr score, rank by sp score, "
          << "peptide mass, deltaCn, xcorr score, sp score, number ions matched, "
-         << "total ions compared, sequence" << endl;
+         << "total ions compared, sequence, validation status" << endl;
 }
 
 void SQTWriter::writeSpectrum(
@@ -174,20 +148,35 @@ void SQTWriter::writeSpectrum(
   if (!file_->is_open()) {
     return;
   }
-  
+
   *file_ << "S"
          << "\t" << spectrum->getFirstScan()
          << "\t" << spectrum->getLastScan()
          << "\t" << z_state.getCharge()
          << "\t0.0" // process time
          << "\tserver"
-         << "\t" << setprecision(get_int_parameter("mass-precision"))
-         << z_state.getSinglyChargedMass()
-         << "\t0.0" // tic
-         << "\t" << setprecision(get_int_parameter("precision"))
-         << "0.0" // lowest sp
-         << "\t" << num_matches
-         << endl;
+         << "\t"
+         << StringUtils::ToString(
+            z_state.getSinglyChargedMass(), Params::GetInt("mass-precision"))
+         << "\t";
+
+  // print total ion intensity if exists...
+  if (spectrum->hasTotalEnergy()) {
+    *file_ << StringUtils::ToString(spectrum->getTotalEnergy(), 2);
+  }
+  *file_ << "\t";
+
+  // print lowest sp if exists
+  if (spectrum->hasLowestSp()) {
+    *file_ << StringUtils::ToString(spectrum->getLowestSp(), Params::GetInt("precision"));
+  }
+  *file_ << "\t";
+
+  if (num_matches != 0) {
+    *file_ << num_matches;
+  }
+  *file_ << endl;
+
 }
 
 void SQTWriter::writePSM(
@@ -206,39 +195,26 @@ void SQTWriter::writePSM(
   }
 
   int length = peptide->getLength();
-  peptide->getModifiedAASequence();
-  MODIFIED_AA_T* mod_seq =
-    copy_mod_aa_seq(peptide->getModifiedAASequence(), length);
+  MODIFIED_AA_T* mod_seq = copy_mod_aa_seq(peptide->getModifiedAASequence(), length);
   if (!mod_seq) {
     return;
   }
 
   Protein* protein = peptide->getPeptideSrc()->getParentProtein();
-  string seq_str;
-  if (protein->isPostProcess()) {
-    PostProcessProtein* post_process_protein = (PostProcessProtein*)protein;
-    seq_str =
-      post_process_protein->getNTermFlankingAA() + "." +
-      string(post_process_protein->getSequencePointer()) +
-      "." + post_process_protein->getCTermFlankingAA();
-  } else {
-    char* seq = peptide->getSequenceSqt();
-    seq_str = seq;
-    free(seq);
-  }
+  string seq_str = peptide->getSequenceSqt();
 
   *file_ << "M"
          << "\t" << xcorr_rank
          << "\t" << sp_rank
-         << "\t" << setprecision(get_int_parameter("mass-precision"))
-         << peptide->getPeptideMass() + MASS_PROTON
-         << "\t" << delta_cn
-         << "\t" << setprecision(get_int_parameter("precision"))
-         << xcorr_score
-         << "\t" << sp_score
+         << "\t" << StringUtils::ToString(
+                    peptide->calcModifiedMass() + MASS_PROTON, Params::GetInt("mass-precision"))
+         << "\t" << StringUtils::ToString(delta_cn, 2)
+         << "\t" << StringUtils::ToString(xcorr_score, Params::GetInt("precision"))
+         << "\t" << StringUtils::ToString(sp_score, Params::GetInt("precision"))
          << "\t" << b_y_matched
          << "\t" << b_y_total
          << "\t" << seq_str
+         << "\tU"
          << endl;
 
   for (PeptideSrcIterator iter = peptide->getPeptideSrcBegin();
@@ -248,11 +224,9 @@ void SQTWriter::writePSM(
     Protein* protein = peptide_src->getParentProtein();
     string protein_id_str = protein->getId();
     if (is_decoy && protein->getDatabase()->getDecoyType() == NO_DECOYS) {
-      protein_id_str = get_string_parameter("decoy-prefix") + protein_id_str;
+      protein_id_str = Params::GetString("decoy-prefix") + protein_id_str;
     }
-    *file_ << "L"
-           << "\t" << protein_id_str
-           << endl;
+    *file_ << "L" << "\t" << protein_id_str << endl;
   }
 }
 

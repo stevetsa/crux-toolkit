@@ -65,13 +65,15 @@ class XLinkScorer {
    * \returns the xcorr score and sets the xcorr and sp scores to the match
    */
   FLOAT_T scoreCandidate(XLinkMatch* candidate);
-  
 
   FLOAT_T scoreXLinkablePeptide(
     XLinkablePeptide& xlpeptide, 
     int link_idx, 
     FLOAT_T mod_mass
   );
+  
+  IonConstraint* getIonConstraintXCorr();
+  
 
 };
 

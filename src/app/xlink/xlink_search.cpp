@@ -1,3 +1,4 @@
+
 /**
  * \file xlink_search.cpp
  * \brief Object for running search-for-xlinks (new code)
@@ -55,11 +56,11 @@ void buildArguments(
 void writeTrainingCandidates(XLinkMatchCollection* training_candidates, int scan_num, Weibull& weibull) {
   training_candidates->populateMatchRank(XCORR);
   training_candidates->sort(XCORR);
-  string output_dir = get_string_parameter("output-dir");
+  string output_dir = Params::GetString("output-dir");
 
   string output_file = output_dir + "/" +
-    "scan." + DelimitedFileWriter::to_string(scan_num) + 
-    ".charge." + DelimitedFileWriter::to_string(training_candidates->getCharge()) +
+    "scan." + StringUtils::ToString(scan_num) + 
+    ".charge." + StringUtils::ToString(training_candidates->getCharge()) +
     ".training.candidates.txt";
   //cerr<<"writing "<<output_file<<endl;
   DelimitedFileWriter writer(output_file.c_str());
@@ -107,19 +108,17 @@ int SearchForXLinks::xlinkSearchMain() {
 
   /* Get parameters */
   carp(CARP_INFO, "Getting parameters");
-  string ms2_file = get_string_parameter("ms2 file");
-  string input_file = get_string_parameter("protein fasta file");
-  string output_directory = get_string_parameter("output-dir");
-  int top_match = get_int_parameter("top-match");
-  XLinkPeptide::setLinkerMass(get_double_parameter("link mass"));
-  int min_weibull_points = get_int_parameter("min-weibull-points");
-  bool compute_pvalues = get_boolean_parameter("compute-p-values");
+  string ms2_file = Params::GetString("ms2 file");
+  string input_file = Params::GetString("protein fasta file");
+  string output_directory = Params::GetString("output-dir");
+  int top_match = Params::GetInt("top-match");
+  XLinkPeptide::setLinkerMass(Params::GetDouble("link mass"));
+  int min_weibull_points = Params::GetInt("min-weibull-points");
+  bool compute_pvalues = Params::GetBool("compute-p-values");
 
   XLinkBondMap bondmap;
 
   /* Prepare input fasta  */
-
-
   carp(CARP_DEBUG, "Preparing database");
   XLinkDatabase::initialize();
   Database* database = NULL;
@@ -129,9 +128,7 @@ int SearchForXLinks::xlinkSearchMain() {
   int num_peptide_mods = 0;
 
   /* Usually for debugging purposes, print out the database of canddiates */
-  if (get_boolean_parameter("xlink-print-db"))
-  {
-
+  if (Params::GetBool("xlink-print-db")) {
     carp(CARP_INFO, "generating and printing xlink database");
     XLinkDatabase::print();
     return 0;
@@ -164,6 +161,7 @@ int SearchForXLinks::xlinkSearchMain() {
 
   // main loop over spectra in ms2 file
 
+
   int search_count = 0;
   FLOAT_T num_spectra = (FLOAT_T)spectra->getNumSpectra();
   FLOAT_T min_pvalue = 1.0 / num_spectra;
@@ -173,7 +171,7 @@ int SearchForXLinks::xlinkSearchMain() {
   // for every observed spectrum 
   carp(CARP_DEBUG, "Searching Spectra");
 
-  
+
   while (spectrum_iterator->hasNext()) {
 
     spectrum = spectrum_iterator->next(zstate);
@@ -282,9 +280,9 @@ int SearchForXLinks::xlinkSearchMain() {
         //target_candidates->computeWeibullPValue(idx);
       }
 
-      nprint = min(top_match,(int)decoy_candidates->getMatchTotal());
+      nprint = min(top_match, (int)decoy_candidates->getMatchTotal());
 
-      carp(CARP_DEBUG,"Calculating %d decoy p-values", nprint);
+      carp(CARP_DEBUG, "Calculating %d decoy p-values", nprint);
 
       decoy_candidates->sort(XCORR);
 
@@ -301,7 +299,7 @@ int SearchForXLinks::xlinkSearchMain() {
       }
       
       
-      if (write_weibull_points || get_boolean_parameter("write-weibull-points")) {
+      if (write_weibull_points || Params::GetBool("write-weibull-points")) {
         writeTrainingCandidates(train_candidates, scan_num, weibull);
       }
       carp(CARP_DEBUG, "delete train candidates");
@@ -373,7 +371,7 @@ int SearchForXLinks::xlinkSearchMain() {
   delete spectrum_iterator;
   delete spectra;
   XLink::deleteAllocatedPeptides();
-  for(int mod_idx = 0; mod_idx < num_peptide_mods; mod_idx++){
+  for(int mod_idx = 0; mod_idx < num_peptide_mods; mod_idx++) {
     free_peptide_mod(peptide_mods[mod_idx]);
   }
   free(peptide_mods);

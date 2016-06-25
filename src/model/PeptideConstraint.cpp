@@ -11,6 +11,7 @@
 #include "objects.h"
 #include "util/mass.h"
 #include "util/GlobalParams.h"
+#include "util/Params.h"
 #include "Peptide.h"
 #include "Protein.h"
 #include "io/carp.h"
@@ -119,8 +120,8 @@ bool PeptideConstraint::isSatisfied(
 
   return (peptide->getLength() <= getMaxLength() &&
      peptide->getLength() >= getMinLength() &&
-     peptide->getPeptideMass() <= getMaxMass() &&
-     peptide->getPeptideMass() >= getMinMass()
+     peptide->calcModifiedMass() <= getMaxMass() &&
+     peptide->calcModifiedMass() >= getMinMass()
      );
 }
 

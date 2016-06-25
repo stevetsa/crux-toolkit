@@ -8,6 +8,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <vector>
+#include "util/Params.h"
 #include "util/utils.h"
 #include "util/crux-utils.h"
 #include "parameter.h"
@@ -605,7 +606,7 @@ void Protein::shuffle(
   }
 
   // change the protein name
-  string prefix = get_string_parameter("decoy-prefix");
+  string prefix = Params::GetString("decoy-prefix");
   id_ = prefix + id_;
 }
 

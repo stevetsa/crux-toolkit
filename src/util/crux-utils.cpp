@@ -15,7 +15,9 @@
 #include <iostream>
 #include "crux-utils.h"
 #include "model/Database.h"
+#include "Params.h"
 #include "parameter.h"
+#include "Params.h"
 #include "StringUtils.h"
 #include "WinCrux.h"
 #include "io/LineFileReader.h"
@@ -75,6 +77,7 @@ DECOY_TYPE_T string_to_tide_decoy_type(const string& name) {
     return PROTEIN_REVERSE_DECOYS;
   }
   carp(CARP_FATAL, "Invalid decoy type %s", name.c_str());
+  return(INVALID_DECOY_TYPE); // Avoid compiler warning.
 }
 
 char* decoy_type_to_string(DECOY_TYPE_T type){
@@ -199,22 +202,29 @@ static const char* enzyme_type_strings[NUMBER_ENZYME_TYPES] =
    "custom-enzyme"};
 
 ENZYME_T string_to_enzyme_type(const string& name){
+
+  carp(CARP_DEBUG, "enzyme:%s",name.c_str());
+
   int enz_int = convert_enum_type_str(name.c_str(), INVALID_ENUM_STRING, 
                                       enzyme_type_strings, 
                                       NUMBER_ENZYME_TYPES);
   if( enz_int < 0 ){
     enz_int = 0;
   }
+  
+  carp(CARP_DEBUG, "enz_int:%d",enz_int);
 
   return (ENZYME_T)enz_int;
 }
 
 const char* enzyme_type_to_string(ENZYME_T type){
+  carp(CARP_DEBUG, "enzyme_type:%d", type);
   if( (int)type > NUMBER_ENZYME_TYPES){
     return NULL;
   }
 
   //char* type_str = my_copy_string(enzyme_type_strings[type]);
+  carp(CARP_DEBUG, "type:%d string:%s",type, enzyme_type_strings[type]);
   const char* type_str = enzyme_type_strings[type];
   return type_str;
 }
@@ -679,7 +689,7 @@ char** parse_filename_path_extension(
   if( extension != NULL ){
 
     carp(CARP_DETAILED_DEBUG, "File trimmed of path is %s", trimmed_filename);
-    if( ! suffix_compare(trimmed_filename, extension) ){
+    if( ! StringUtils::EndsWith(trimmed_filename, extension) ){
       return file_path_array;  // extension not found, don't change filename
     }
 
@@ -795,7 +805,7 @@ char* cat_string(const char* string_one, const char* string_two){
  * Adds the fileroot parameter to a string as a prefix.
  */
 string prefix_fileroot_to_name(const string& name) {
-  string fileroot = get_string_parameter("fileroot");
+  string fileroot = Params::GetString("fileroot");
   return (fileroot.empty()) ? name : fileroot + '.' + name;
 }
 
@@ -805,8 +815,8 @@ string prefix_fileroot_to_name(const string& name) {
 string make_file_path(
   const string& filename ///< the name of the file
   ) {
-  string output_directory = get_string_parameter("output-dir");
-  string fileroot = get_string_parameter("fileroot");
+  string output_directory = Params::GetString("output-dir");
+  string fileroot = Params::GetString("fileroot");
 
   ostringstream name_builder;
   name_builder << output_directory;
@@ -822,65 +832,6 @@ string make_file_path(
   name_builder << filename;
 
   return name_builder.str();
-}
-
-/**
- * \brief Check if the string has the correct prefix
- * \returns true if the string starts with the given prefix or if the
- * prefix is NULL, else false.
- */
-bool prefix_compare(
-  const char* string, ///< The string to check
-  const char* prefix  ///< The prefix to find in the string
-  )
-{
-  if( prefix == NULL ){
-    return true;
-  }
-
-  int len = strlen(string);
-  int len_prefix = strlen(prefix);
-
-  if(len_prefix > len){
-    return false;
-  }
-  
-  if(strncmp(string, prefix, len_prefix) == 0){
-    return true;
-  }
-  
-  return false;
-}
-
-/**
- * \brief Check if the string has the correct suffix
- * \returns true if the end of the string matches the given suffix, else false
- */
-bool suffix_compare(
-  const char* string, ///< The string to check
-  const char* suffix  ///< The suffix to find in the string
-  )
-{
-    int string_len = strlen(string);
-    int suffix_len = strlen(suffix);
-    int string_idx = string_len;
-    int suffix_idx = suffix_len;
-
-    if( suffix_len > string_len ){
-      return false;
-    }
-
-    //compare name and ext from end of strings backwards
-    for(suffix_idx = suffix_idx; suffix_idx > -1; suffix_idx--){
-      //carp(CARP_DETAILED_DEBUG, "Name[%d]='%d', ext[%d]='%d'", 
-      //   string_idx, string[string_idx], suffix_idx, suffix[suffix_idx]);
-      // if they stop matching, don't change filename
-      if( suffix[suffix_idx] != string[string_idx--]){
-        return false;
-      }
-    }
-
-  return true;
 }
 
 /**
@@ -1015,64 +966,6 @@ int create_output_directory(
   }
   return result;
 } 
-
-/**
- * returns whether the given filename is a directory.
- * Returns true if a directory, false otherwise.
- * Terminates program if unable to determine status of file.
- */
-bool is_directory(const string& fileName) {
-  struct stat file;
-  if (stat(fileName.c_str(), &file) == 0) {
-    return S_ISDIR(file.st_mode);
-  } else {
-    char *error = strerror(errno);
-    carp(CARP_FATAL, "stat failed. Unable to determine status of %s. Error: %s.",
-      fileName.c_str(), error);
-    return false; // Avoid compiler warning
-  }
-}
-
-/**
- * deletes a given directory and it's files inside.
- * assumes that there's no sub directories, only files
- * \returns true if successfully deleted directory
- */
-bool delete_dir(char* dir) {
-  struct dirent **namelist =NULL;
-  int num_file =0;
-  int result;
-  char* cwd = getcwd(NULL, 0); //gnu lib
-
-  // does the directory to remove exist?, if so move into it..
-  if(chdir(dir) == -1){
-    carp(CARP_DETAILED_DEBUG, "Could not find directory '%s' to remove", dir);
-    return false;
-  }
-
-  // collect all files in dir
-  num_file = scandir(".", &namelist, NULL, alphasort);
-
-  // delete all files in temp dir
-  while(num_file--){
-    remove(namelist[num_file]->d_name);
-    free(namelist[num_file]);
-  }
-  free(namelist);
-
-  //chdir(".."); // assumes the directory to delete is in cwd
-  if( chdir(cwd) == -1 ){ 
-    free(cwd);
-    return false;
-  }
-  result = rmdir(dir);
-  if(result == false){
-    free(cwd);
-    return false;
-  }
-  free(cwd);
-  return true;
-}
 
 /**
  * \brief Take a filename, strip its leading path information (if
@@ -1365,9 +1258,6 @@ bool get_first_last_scan_from_string(
 bool get_scans_from_string(
   const string& const_scans_string,
   set<int>& scans) {
-
-  bool success;
-
   scans.clear();
 
   //first tokenize by comma.
@@ -1382,8 +1272,7 @@ bool get_scans_from_string(
   for (size_t idx1=0;idx1<tokens_comma.size();idx1++) {
     string current = tokens_comma[idx1];
     if (current.find("-") == string::npos) {
-      success = from_string<int>(temp_scan, current);
-      if (success) {
+      if (StringUtils::TryFromString(current, &temp_scan)) {
         scans.insert(temp_scan);
       } else {
         carp(CARP_ERROR, "Error parsing scans line:%s", const_scans_string.c_str());
@@ -1397,8 +1286,8 @@ bool get_scans_from_string(
         return false;
       }
       int temp_scan2;
-      success = from_string<int>(temp_scan, tokens_dash[0]);
-      success &= from_string<int>(temp_scan2, tokens_dash[1]);
+      bool success = StringUtils::TryFromString(tokens_dash[0], &temp_scan);
+      success &= StringUtils::TryFromString(tokens_dash[1], &temp_scan2);
       if (!success || temp_scan > temp_scan2) {
         carp(CARP_ERROR, "Error parsing scans line:%s here: %s", 
           const_scans_string.c_str(), tokens_comma[idx1].c_str());
@@ -1781,14 +1670,13 @@ void check_target_decoy_files(
 
 void get_search_result_paths(
   const string &infile, ///< path of the first file.
-  std::vector<std::string> &outpaths ///< paths of all search results -out                                                                                                         
-  ) {
-  
+  std::vector<std::string> &outpaths ///< paths of all search results -out 
+) {
   outpaths.clear();
-  if (get_boolean_parameter("list-of-files")) {
+  if (Params::GetBool("list-of-files")) {
     LineFileReader reader(infile);
     while(reader.hasNext()) {
-      string current = reader.next();
+      string current = StringUtils::Trim(reader.next());
       carp(CARP_INFO, "current is:%s", current.c_str());
       if (FileUtils::Exists(current)) {
         outpaths.push_back(current);
@@ -1800,14 +1688,14 @@ void get_search_result_paths(
     string target = infile;
     string decoy = infile;
     check_target_decoy_files(target, decoy);
-    if (target.length() > 0) {
+    if (!target.empty()) {
       if (FileUtils::Exists(target)) {
         outpaths.push_back(target);
       } else {
         carp(CARP_ERROR, "Target file '%s' doesn't exist", target.c_str());
       }
     }
-    if (decoy.length() > 0) {
+    if (!decoy.empty()) {
       if (FileUtils::Exists(decoy)) {
         outpaths.push_back(decoy);
       } else {
@@ -1823,7 +1711,7 @@ void get_files_from_list(
   ) {
   
   outpaths.clear();
-  if (get_boolean_parameter("list-of-files")) {
+  if (Params::GetBool("list-of-files")) {
     LineFileReader reader(infile);
     while(reader.hasNext()) {
       string current = reader.next();

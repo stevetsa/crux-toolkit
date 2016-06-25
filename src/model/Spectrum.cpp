@@ -25,6 +25,7 @@
 #include "io/MatchFileReader.h"
 #include "MSToolkit/Spectrum.h"
 #include "util/FileUtils.h"
+#include "util/StringUtils.h"
 
 using namespace std;
 using namespace Crux;
@@ -41,6 +42,8 @@ Spectrum::Spectrum() :
    max_peak_mz_(0),
    total_energy_(0),
    lowest_sp_(0),
+   has_total_energy_(false),
+   has_lowest_sp_(false),
    has_peaks_(false),
    sorted_by_mz_(false),
    sorted_by_intensity_(false),
@@ -52,8 +55,8 @@ Spectrum::Spectrum() :
 /**
  * Constructor initializes spectrum with given values.
  */ 
-Spectrum::Spectrum
-(int               first_scan,   ///< The number of the first scan -in
+Spectrum::Spectrum (
+ int               first_scan,   ///< The number of the first scan -in
  int               last_scan,    ///< The number of the last scan -in
  FLOAT_T           precursor_mz, ///< The m/z of the precursor 
  const vector<int>& possible_z,  ///< The possible charge states 
@@ -65,6 +68,9 @@ Spectrum::Spectrum
    min_peak_mz_(0),
    max_peak_mz_(0),
    total_energy_(0),
+   lowest_sp_(0),
+   has_total_energy_(false),
+   has_lowest_sp_(false),
    filename_(filename),
    has_peaks_(false),
    sorted_by_mz_(false),
@@ -78,8 +84,6 @@ Spectrum::Spectrum
     zstate.setMZ(precursor_mz, possible_z.at(idx));
     zstates_.push_back(zstate);
   }
-
-
 }
 
 /**
@@ -116,7 +120,7 @@ PeakIterator Spectrum::end() const {
  */
 void Spectrum::print(FILE* file) ///< output file to print at -out
 {
-  int mass_precision = get_int_parameter("mass-precision");
+  int mass_precision = Params::GetInt("mass-precision");
   fprintf(file, "S\t%06d\t%06d\t%.*f\n", 
          first_scan_,
          last_scan_,
@@ -173,7 +177,7 @@ void Spectrum::printProcessedPeaks(
   int max_mz_bin,       ///< num_bins in intensities
   FILE* file){          ///< print to this file
 
-  int mass_precision = get_int_parameter("mass-precision");
+  int mass_precision = Params::GetInt("mass-precision");
 
   // print S line
   fprintf(file, "S\t%06d\t%06d\t%.*f\n", 
@@ -206,16 +210,18 @@ void Spectrum::printProcessedPeaks(
 
   // print peaks
   for(int bin_idx = 0; bin_idx < max_mz_bin; bin_idx++){
-    if( intensities[bin_idx] != 0 ){
-      double intensity = intensities[bin_idx];
-      if (Params::GetString("output-units") == "mz") {
-        fprintf(file, "%f %.*f\n",
-          (bin_idx - 0.5 + Params::GetDouble("mz-bin-offset")) *
-          Params::GetDouble("mz-bin-width"),
-          mass_precision, intensity);
-      } else {
-        fprintf(file, "%d %.*f\n", bin_idx, mass_precision, intensity);
-      }
+    string intensity = StringUtils::ToString(intensities[bin_idx], mass_precision);
+    // Make sure the value has at least one non-zero digit, once it has been
+    // converted to a string with the specified precision
+    if (intensity.find_first_of("123456789") == string::npos) {
+      continue;
+    }
+    if (Params::GetString("output-units") == "mz") {
+      double mz = (bin_idx - 0.5 + Params::GetDouble("mz-bin-offset")) *
+        Params::GetDouble("mz-bin-width");
+      fprintf(file, "%f %s\n", mz, intensity.c_str());
+    } else {
+      fprintf(file, "%d %s\n", bin_idx, intensity.c_str());
     }
   }
   return;
@@ -238,10 +244,10 @@ void Spectrum::printSqt(
           zstate.getCharge(), 
           0.0, // FIXME dummy <process time>
           "server", // FIXME dummy <server>
-          get_int_parameter("mass-precision"),
+          Params::GetInt("mass-precision"),
           zstate.getSinglyChargedMass(), //this is used in search
           total_energy_,
-          get_int_parameter("precision"),
+          Params::GetInt("precision"),
           lowest_sp_,
           num_matches);
 }
@@ -348,7 +354,7 @@ bool Spectrum::parseMstoolkitSpectrum
     for (int z_idx = 0; z_idx < mst_real_spectrum -> sizeZ(); z_idx++) {
       SpectrumZState zstate;
       zstate.setSinglyChargedMass(
-        mst_real_spectrum->atZ(z_idx).mz,
+        mst_real_spectrum->atZ(z_idx).mh,
         mst_real_spectrum->atZ(z_idx).z);
       zstates_.push_back(zstate);
     }
@@ -706,11 +712,51 @@ void Spectrum::setTotalEnergy(FLOAT_T tic)
 }
 
 /**
+ * returns whether there is a total energy
+ */
+bool Spectrum::hasTotalEnergy()
+{
+  return has_total_energy_;
+}
+
+/**
+ * sets whether there is a total energy
+ */
+void Spectrum::setHasTotalEnergy(bool has_total_energy)
+{
+  has_total_energy_ = has_total_energy;
+}
+
+/**
  * Sets the lowest Sp score.
  */
 void Spectrum::setLowestSp(FLOAT_T sp)
 {
   lowest_sp_ = sp;
+}
+
+/**
+ * Returns the lowest Sp score
+ */
+FLOAT_T Spectrum::getLowestSp()
+{
+  return lowest_sp_;
+}
+
+/**
+ * returns whether there is a lowest sp score
+ */
+bool Spectrum::hasLowestSp()
+{
+  return has_lowest_sp_;
+}
+
+/**
+ * sets whether there is a lowest sp score
+ */
+void Spectrum::setHasLowestSp(bool has_lowest_sp)
+{
+  has_lowest_sp_ = has_lowest_sp;
 }
 
 /**
@@ -741,9 +787,8 @@ vector<SpectrumZState>& Spectrum::getZStates() {
  * /returns A vector of charge states to consider for this spectrum.
  */ 
 vector<SpectrumZState> Spectrum::getZStatesToSearch() {
-
   vector<SpectrumZState> select_zstates;
-  string charge_str = get_string_parameter("spectrum-charge");
+  string charge_str = Params::GetString("spectrum-charge");
 
   if (charge_str == "all") { // return full array of charges
     select_zstates = getZStates();
@@ -763,7 +808,6 @@ vector<SpectrumZState> Spectrum::getZStatesToSearch() {
   }
 
   return select_zstates;
-
 }
 
 /**
@@ -783,7 +827,6 @@ SpectrumZState& Spectrum::getZState(
 ) {
   return getZStates().at(idx);
 }
-
 
 
 /**
@@ -806,49 +849,6 @@ FLOAT_T Spectrum::getMaxPeakIntensity()
     }
   }
   return max_intensity; 
-}
-
-
-/**
- * Parse the spectrum from the tab-delimited result file.
- *\returns The parsed spectrum, else returns NULL for failed parse.
- */
-Spectrum* Spectrum::parseTabDelimited(
-  MatchFileReader& file ///< output stream -out
-  ) {
-
-  Spectrum* spectrum = new Spectrum();
-
-  spectrum->filename_ = file.getString(FILE_COL);
-
-  spectrum->first_scan_ = file.getInteger(SCAN_COL);
-  spectrum->last_scan_ = spectrum->first_scan_;
-
-  spectrum->precursor_mz_ = file.getFloat(SPECTRUM_PRECURSOR_MZ_COL);
-  //Is it okay to assign an individual spectrum object for each charge?
-
-  int charge = file.getInteger(CHARGE_COL);
-
-  FLOAT_T neutral_mass = file.getFloat(SPECTRUM_NEUTRAL_MASS_COL);
-  
-  SpectrumZState zstate;
-
-  zstate.setNeutralMass(neutral_mass, charge);
-
-  spectrum->zstates_.push_back(zstate);
-
-
-  /*
-  TODO : Implement these in the tab delimited file?
-  spectrum -> min_peak_mz = file.getFloat("spectrum min peak mz");
-  spectrum -> max_peak_mz = file.getFloat("spectrum max peak mz");
-  spectrum -> num_peaks = file.getInteger("spectrum num peaks");
-  spectrum -> total_energy = file.getInteger("spectrum total energy");
-  */
-
-  spectrum->has_peaks_ = false;
-  return spectrum;
-
 }
 
 /**

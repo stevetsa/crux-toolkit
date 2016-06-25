@@ -452,15 +452,13 @@ have to log on again for the change to take effect.
 <ul>
 <li><b>Prerequisites</b>
 <p/>
-To run Crux on Windows you must have installed the
-following software:
+To run Crux with support for vendor specific file formats
+on Windows you must have installed the following software:
 <ul>
 <li>
-<a href="https://thermo.flexnetoperations.com/control/thmo/login"><code>Thermo
-64-bit MSFileReader</code></a>
+<a href="https://thermo.flexnetoperations.com/control/thmo/login">
+<code>Thermo MSFileReader</code></a>
 </ul>
-<p/>
-Be sure to install the 64-bit version of the library.
 <p/>
 <li><b>Download the files</b> 
 <p/>
@@ -498,12 +496,13 @@ following software:
 <a
 href="http://www.visualstudio.com/downloads/download-visual-studio-vs#DownloadFamilies_4">Microsoft
 Visual C++ 2013</a></code></li>
-<li><a
-href="https://thermo.flexnetoperations.com/control/thmo/login"><code>Thermo
-64-bit MSFileReader</code></a></li>
 <li><a href="http://www.cmake.org/cmake/resources/software.html"><code>CMake</code></a></li>
 <li><a href="http://sourceforge.net/projects/win32svn/"><code>SVN</code></a></li>
 <li><a href="http://getgnuwin32.sourceforge.net"><code>wget</code> (must support SSL)</a></li>
+<li><a
+href="https://thermo.flexnetoperations.com/control/thmo/login">
+<code>Thermo MSFileReader</code></a> (This may be omitted if support for 
+vendor specific file formats is disabled.)</li>
 </ul>
 <p/>
 <b>Other verions of Visual Studio will not be able to build Crux!</b>
@@ -558,7 +557,7 @@ very near the disk root (typically
 <p/>
 Under the "Start" button
 open the "Visual Studio 2013" folder, then open the "Visual Studio Tools"
-folder, and double-click on "Visual Studio x64 Win64 Command Prompt".
+folder, and double-click on "Developer Command Prompt for VS2013".
 This will launch a 
 <span class=file>cmd</span> shell configured to use the 
 Microsoft development tools.
@@ -579,11 +578,21 @@ where <span class=file>&lt;install directory&gt;</span> is
 the location where you wish to install the <span class=prog>crux</span> programs. 
 Note that, somewhat confusingly, Visual Studio 2013 is version 12.
 <p/>
+If you wish to disable support for vendor specific file formats,
+use this command instead
+<p/>
+<div class=code><code>
+cmake 
+-DCMAKE_INSTALL_PREFIX:PATH=&lt;install directory&gt; -DINCLUDE_VENDOR_LIBRARIES=FALSE -G "Visual Studio 12 Win64" .
+</code>
+</div>
+<p/>
 <li><b>Build and install</b> 
 <p/>
 To complete the process run the commands</li>
 <div class=code><code>
 cmake --build . --config Release --target ALL_BUILD
+<br/>
 cmake --build . --config Release --target INSTALL
 </code>
 <p/>

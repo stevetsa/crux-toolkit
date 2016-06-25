@@ -35,8 +35,8 @@ std::vector<XLinkablePeptide> XLinkDatabase::decoy_xlinkable_peptides_flatten_;
 void XLinkDatabase::initialize() {
   carp(CARP_INFO, "Initializing database");
   //Step one, load the database
-  string input_file = get_string_parameter("protein fasta file");
-  string link_string = get_string_parameter("link sites");
+  string input_file = Params::GetString("protein fasta file");
+  string link_string = Params::GetString("link sites");
   bondmap_ = XLinkBondMap(link_string);
   protein_database_ = NULL;
   int num_protein = prepare_protein_input(input_file, &protein_database_);
@@ -47,17 +47,17 @@ void XLinkDatabase::initialize() {
   //Step two create all peptides.
   int additional_cleavages = 0;
 
-  bool generate_xlinkable = get_boolean_parameter("xlink-include-inter-intra") ||
-           get_boolean_parameter("xlink-include-inter") ||
-           get_boolean_parameter("xlink-include-intra") ||
-           get_boolean_parameter("xlink-include-selfloops") ||
-           get_boolean_parameter("xlink-include-deadends");
+  bool generate_xlinkable = Params::GetBool("xlink-include-inter-intra") ||
+           Params::GetBool("xlink-include-inter") ||
+           Params::GetBool("xlink-include-intra") ||
+           Params::GetBool("xlink-include-selfloops") ||
+           Params::GetBool("xlink-include-deadends");
   
   if (generate_xlinkable) {
     additional_cleavages = 1;
   }
   
-  if (get_boolean_parameter("xlink-include-selfloops")) {
+  if (Params::GetBool("xlink-include-selfloops")) {
     additional_cleavages = 2;
   }
 
@@ -123,7 +123,7 @@ void XLinkDatabase::initialize() {
   //sort(target_peptides2_.begin(), target_peptides2_.end(), comparePeptideMass);
 
   // If linear peptides were asked for, then generate them from the target_peptides0 list.
-  if (get_boolean_parameter("xlink-include-linears")) {
+  if (Params::GetBool("xlink-include-linears")) {
     generateAllLinears(false);
     sort(target_linear_peptides_.begin(), 
       target_linear_peptides_.end(), 
@@ -173,7 +173,7 @@ void XLinkDatabase::initialize() {
   }
   //TODO, generate all mono/dead link peptides
 
-  if (get_boolean_parameter("xlink-include-selfloops")) {
+  if (Params::GetBool("xlink-include-selfloops")) {
     generateAllSelfLoops(true);
     generateAllSelfLoops(false);
     carp(CARP_INFO, "There are %d target self loop peptides", target_selfloop_peptides_.size());
@@ -182,8 +182,8 @@ void XLinkDatabase::initialize() {
 
   //filter linkable peptides based upon user parameters
   /*
-  if (!get_boolean_parameter("xlink-include-inter-intra") ||
-      (!get_boolean_parameter("xlink-include-inter") && !get_boolean_parameter("xlink-include-intra"))) {
+  if (!Params::GetBool("xlink-include-inter-intra") ||
+      (!Params::GetBool("xlink-include-inter") && !Params::GetBool("xlink-include-intra"))) {
     carp(CARP_INFO, "Filtering out linkable peptides");
     vector<XLinkablePeptide> filtered;
     filterLinkablePeptides(target_xlinkable_peptides_, filtered);
@@ -344,8 +344,8 @@ void XLinkDatabase::filterLinkablePeptides(
   vector<XLinkablePeptide>& xpeptides,
   vector<XLinkablePeptide>& filtered_xpeptides
   ) {
-  bool filter1 = !get_boolean_parameter("xlink-include-inter-intra");
-  bool filter2 = !get_boolean_parameter("xlink-include-inter") && !get_boolean_parameter("xlink-include-intra");
+  bool filter1 = !Params::GetBool("xlink-include-inter-intra");
+  bool filter2 = !Params::GetBool("xlink-include-inter") && !Params::GetBool("xlink-include-intra");
   
   for (size_t idx = 0 ;idx < xpeptides.size();idx++) {
   //quick check to see if peptide can come from multiple protein sources.
@@ -393,8 +393,8 @@ void XLinkDatabase::generateAllLinkablePeptides(
 
 void XLinkDatabase::print() {
    
-    string output_directory = get_string_parameter("output-dir");
-    if (get_boolean_parameter("xlink-include-linears")) {
+    string output_directory = Params::GetString("output-dir");
+    if (Params::GetBool("xlink-include-linears")) {
       ostringstream oss;
       oss << output_directory << "/" << "xlink_peptides.linear.txt";
       string temp = oss.str();
@@ -422,7 +422,7 @@ void XLinkDatabase::print() {
       peptides_file.flush();
     }
 
-    if (get_boolean_parameter("xlink-include-selfloops")) {
+    if (Params::GetBool("xlink-include-selfloops")) {
       ostringstream oss;
       oss << output_directory << "/" << "xlink_peptides.selfloops.txt";
       string temp = oss.str();

@@ -3,8 +3,8 @@
  * $Revision: 1.00 $ 
  * DATE: July 11th, 2012
  * AUTHOR: Sean McIlwain
- * \brief Object for reading pep.xml.  This object will read a pepxml file,
- * creating a matchcollection object.  Use the expat library in MSToolkit.
+ * \brief Object for reading sqt.  This object will read a sqt file,
+ * creating a matchcollection object.
  * 
  **************************************************************************/
 
@@ -13,6 +13,7 @@
 #include <string>
 #include <vector>
 
+#include "PSMReader.h"
 #include "model/Spectrum.h"
 #include "model/Match.h"
 #include "model/MatchCollection.h"
@@ -26,19 +27,11 @@ enum SQT_LINE_T {
 };
 
 
-class SQTReader {
+class SQTReader : public PSMReader {
 
  protected:
-
-  Database* database_; ///< target database of proteins
-  Database* decoy_database_; ///< decoy database of proteins
-
-  std::vector<std::string> headers_;
-
   SpectrumZState current_zstate_; ///< keeps track of the current zstate
-  std::string file_path_; ///< path of the xml file
   Crux::Spectrum* current_spectrum_; ///< Keeps track of the current spectrum object
-  int current_num_matches_; ///< Keeps track of the number of matches assigned to the current spectrum.
   FLOAT_T current_ln_experiment_size_;
   FLOAT_T ln_experiment_size_; 
   Crux::Match* current_match_; ///< keeps track of the current match object
@@ -65,11 +58,10 @@ class SQTReader {
    */
   void init();
 
-  void parseHeader(std::string& line);
-  void parseSpectrum(std::string& line);
-  void parseMatch(std::string& line);
-  void parseLocus(std::string& line);
-
+  void parseHeader(const std::string& line);
+  void parseSpectrum(const std::string& line);
+  void parseMatch(const std::string& line);
+  void parseLocus(const std::string& line);
 
  public:  
 
@@ -77,7 +69,6 @@ class SQTReader {
    * \returns an initialized object
    */
   SQTReader();
-
 
   /**
    * \returns an object initialized with the file_path
@@ -94,20 +85,6 @@ class SQTReader {
     Database* database, ///< the protein database
     Database* decoy_database=NULL ///< the decoy protein database (can be null)
     );
-
-  /**
-   * sets the target protein database
-   */
-  void setDatabase(
-    Database* database ///< the target protein database
-  );
-
-  /**
-   * sets the decoy protein database
-   */
-  void setDecoyDatabase(
-    Database* decoy_database ///< sets the decoy protein database
-  );
 
   /**
    * \returns the MatchCollection resulting from the parsed xml file

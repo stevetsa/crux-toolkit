@@ -8,6 +8,7 @@
 #include "model/ModifiedPeptidesIterator.h"
 #include "model/IonSeries.h"
 #include "model/Ion.h"
+#include "util/Params.h"
 #include "util/GlobalParams.h"
 #include "XLinkDatabase.h"
 #include "XLinkablePeptideIterator.h"
@@ -43,7 +44,6 @@ XLinkPeptide::XLinkPeptide(
   
   linked_peptides_.push_back(peptideA);
   linked_peptides_.push_back(peptideB);
-
   link_pos_idx_.push_back(posA);
   link_pos_idx_.push_back(posB);
 
@@ -63,6 +63,7 @@ XLinkPeptide::XLinkPeptide(
 
   mass_calculated_[MONO] = false;
   mass_calculated_[AVERAGE] = false;
+
   XLinkablePeptide A(peptideA);
   linked_peptides_.push_back(A);
   XLinkablePeptide B(peptideB);
@@ -71,7 +72,6 @@ XLinkPeptide::XLinkPeptide(
   link_pos_idx_.push_back(0);
   B.addLinkSite(posB);
   link_pos_idx_.push_back(0);
-
   doSort();
 }
 
@@ -111,7 +111,7 @@ void XLinkPeptide::doSort() {
 void XLinkPeptide::setLinkerMass(
   FLOAT_T linker_mass ///< linker mass
   ) {
-  linker_mass_=linker_mass;
+  linker_mass_ = linker_mass;
 }
 
 /**
@@ -128,7 +128,7 @@ int XLinkPeptide::getLinkPos(
   int peptide_idx ///< 0 - first peptide, 1 - second peptide
   ) {
   
-  return linked_peptides_[peptide_idx].getLinkSite(link_pos_idx_[peptide_idx]);
+  return linked_peptides_.at(peptide_idx).getLinkSite(link_pos_idx_.at(peptide_idx));
 }
 
 int XLinkPeptide::getLinkIdx(
@@ -179,7 +179,6 @@ void XLinkPeptide::addCandidates(
   FLOAT_T max_mass, ///< max mass of crosslinks
   bool decoy,
   XLinkMatchCollection& candidates ///< candidates in/out
-
   ) {
 
   carp(CARP_DEBUG, "XLinkPeptide::addCandidates - precursor:%g", precursor_mass);
@@ -307,6 +306,9 @@ void XLinkPeptide::addCandidates(
 //  delete []tested;
 }
   
+
+
+
 /**
  * \returns the candidate type
  */
@@ -468,7 +470,6 @@ Crux::Peptide* XLinkPeptide::getPeptide(
   ) {
   return linked_peptides_[peptide_idx].getPeptide();
 }
-
 XLinkablePeptide& XLinkPeptide::getXLinkablePeptide(
   int peptide_idx ///< 0 or 1
   ) {
@@ -636,7 +637,6 @@ string XLinkPeptide::getFlankingAAString() {
   
   return oss.str();
 }
-
 
 /*
  * Local Variables:

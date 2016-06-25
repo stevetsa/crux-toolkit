@@ -13,28 +13,26 @@
 #include <string>
 #include <vector>
 
+#include "PSMReader.h"
 #include "model/Spectrum.h"
 #include "model/Match.h"
 #include "model/MatchCollection.h"
 
-class PepXMLReader {
+class PepXMLReader : public PSMReader {
 
  protected:
 
-  Database* database_; ///< target database of proteins
-  Database* decoy_database_; ///< decoy database of proteins
   SpectrumZState current_zstate_; ///< keeps track of the current zstate
-  std::string file_path_; ///< path of the xml file
   Crux::Spectrum* current_spectrum_; ///< Keeps track of the current spectrum object
   Crux::Match* current_match_; ///< keeps track of the current match object
   std::string current_peptide_sequence_; ///< keeps track of the current peptide sequence
   MatchCollection* current_match_collection_; ///< keeps track of the current match collection object
 
   /*State variable for element tags */
+  bool aminoacid_modification_open_;
   bool spectrum_query_open_; ///< are we within a spectrum_query?
   bool search_result_open_; ///< are we within a search_result element
   bool search_hit_open_;  ///< are we within a search 
-  bool modification_info_open_; ///< are we within a modification_info element?
   bool mod_aminoacid_mass_open_; ///< are we within a mod_aminoacid_mass element?
   bool alternative_protein_open_; ///< are we within a alternative_protein element
   bool search_score_open_; ///< are we within a search_score element
@@ -51,6 +49,9 @@ class PepXMLReader {
   );
 
   /* Specific element tag handler functions */
+
+  void aminoacidModificationOpen(const char** attr);
+  void aminoacidModificationClose();
 
   /**
    * Handles the spectrum_query open tag event 
@@ -86,18 +87,6 @@ class PepXMLReader {
    */
   void searchHitClose();
 
-  /**
-   * Handles the modification_info open tag event
-   */
-  void modificationInfoOpen(
-    const char** attr ///< attribute array for element
-  );
-  
-  /**
-   * Handles the modification_info close tag event
-   */
-  void modificationInfoClose();
-  
   /**
    * Handles the mod_aminoacid_mass open tag event
    */
@@ -173,20 +162,6 @@ class PepXMLReader {
     Database* database, ///< the protein database
     Database* decoy_database=NULL ///< the decoy protein database (can be null)
     );
-
-  /**
-   * sets the target protein database
-   */
-  void setDatabase(
-    Database* database ///< the target protein database
-  );
-
-  /**
-   * sets the decoy protein database
-   */
-  void setDecoyDatabase(
-    Database* decoy_database ///< sets the decoy protein database
-  );
 
   /**
    * \returns the MatchCollection resulting from the parsed xml file

@@ -5,6 +5,8 @@
 #include "SearchForXLinks.h"
 
 #include "xlink_search.h"
+#include "util/mass.h"
+#include "util/Params.h"
 
 using namespace std;
 
@@ -29,13 +31,20 @@ int SearchForXLinks::main(int argc, char** argv) {
   //The use-old-xlink parameter will determine
   //which codebase gets called.
   int ret;
-  if (get_boolean_parameter("use-old-xlink")) {
+  if (Params::GetBool("use-old-xlink")) {
     ret = xhhcSearchMain();
   } else {
     ret = xlinkSearchMain();
   }
   
   return ret;
+}
+
+void SearchForXLinks::processParams() {
+  for (char c = 'A'; c <= 'Z'; c++) {
+    double deltaMass = Params::GetDouble(string(1, c));
+    increase_amino_acid_mass(c, deltaMass);
+  }
 }
 
 /**
@@ -103,6 +112,8 @@ vector<string> SearchForXLinks::getOptions() const {
     "min-length",
     "max-length",
     "mod",
+    "cmod",
+    "nmod",
     "max-mods",
     "enzyme",
     "custom-enzyme",
@@ -119,6 +130,12 @@ vector<string> SearchForXLinks::getOptions() const {
     "precursor-window-weibull",
     "precursor-window-type-weibull",
     "min-weibull-points",
+    "use-a-ions",
+    "use-b-ions",
+    "use-c-ions",
+    "use-x-ions",
+    "use-y-ions",
+    "use-z-ions",
     "max-ion-charge",
     "scan-number",
     "mz-bin-width",
@@ -137,7 +154,27 @@ vector<string> SearchForXLinks::getOptions() const {
     "output-dir",
     "overwrite",
     "parameter-file",
-    "verbosity"
+    "verbosity",
+    "A",
+    "C",
+    "D",
+    "E",
+    "F",
+    "G",
+    "H",
+    "I",
+    "K",
+    "L",
+    "M",
+    "N",
+    "P",
+    "Q",
+    "R",
+    "S",
+    "T",
+    "V",
+    "W",
+    "Y",
   };
   return vector<string>(arr, arr + sizeof(arr) / sizeof(string));
 }

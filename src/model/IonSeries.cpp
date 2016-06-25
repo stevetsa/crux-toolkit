@@ -13,6 +13,7 @@
 #include "objects.h"
 #include "Ion.h"
 #include "IonSeries.h"
+#include "util/Params.h"
 #include "util/utils.h"
 #include "util/crux-utils.h"
 #include "parameter.h"
@@ -236,11 +237,7 @@ void IonSeries::clear() {
   for(size_t ion_type_idx=0; ion_type_idx < MAX_NUM_ION_TYPE; ++ion_type_idx){
     specific_ions_[ion_type_idx].clear();
   }
-
-
 }
-
-
 /**
  * Frees an allocated ion_series object.
  */
@@ -580,9 +577,9 @@ bool IonSeries::generateIonsNoModification(
   for(; cleavage_idx < peptide_length; ++cleavage_idx){
     
     // add A ion
-    if(constraint->getIonType() == A_ION 
-       || constraint->getIonType() == BYA_ION 
-       || constraint->getIonType() == ALL_ION){
+    if(constraint->getUseIonType(A_ION) 
+       || constraint->getUseIonType(BYA_ION) 
+       || constraint->getUseIonType(ALL_ION)){
 
       // set mass
       mass = mass_matrix[cleavage_idx];
@@ -602,10 +599,10 @@ bool IonSeries::generateIonsNoModification(
     }
     
     // add B ion
-    if(constraint->getIonType() == ALL_ION 
-       || constraint->getIonType() == BY_ION
-       || constraint->getIonType() == BYA_ION
-       || constraint->getIonType() == B_ION){
+    if(constraint->getUseIonType(ALL_ION) 
+       || constraint->getUseIonType(BY_ION)
+       || constraint->getUseIonType(BYA_ION)
+       || constraint->getUseIonType(B_ION)){
       
       // set mass
       mass = mass_matrix[cleavage_idx];
@@ -619,7 +616,8 @@ bool IonSeries::generateIonsNoModification(
     }
     
     // add C ion
-    if(constraint->getIonType() == C_ION || constraint->getIonType() == ALL_ION){
+    if(constraint->getUseIonType(C_ION)
+       || constraint->getUseIonType(ALL_ION)){
       // set mass
       mass = mass_matrix[cleavage_idx];
       
@@ -638,7 +636,8 @@ bool IonSeries::generateIonsNoModification(
     }
     
     // add X ion
-    if(constraint->getIonType() == X_ION || constraint->getIonType() == ALL_ION){
+    if(constraint->getUseIonType(X_ION)
+       || constraint->getUseIonType(ALL_ION)){
       // set mass 
       mass = mass_matrix[(int)mass_matrix[0]] - mass_matrix[(int)mass_matrix[0] - cleavage_idx];
 
@@ -657,10 +656,10 @@ bool IonSeries::generateIonsNoModification(
     }
     
     // add Y ion
-    if(constraint->getIonType() == ALL_ION || 
-       constraint->getIonType() == BY_ION ||
-       constraint->getIonType() == BYA_ION ||
-       constraint->getIonType() == Y_ION){
+    if(constraint->getUseIonType(ALL_ION) || 
+       constraint->getUseIonType(BY_ION) ||
+       constraint->getUseIonType(BYA_ION) ||
+       constraint->getUseIonType(Y_ION)){
 
       // set mass 
       mass = mass_matrix[(int)mass_matrix[0]] - mass_matrix[(int)mass_matrix[0] - cleavage_idx];
@@ -681,8 +680,8 @@ bool IonSeries::generateIonsNoModification(
     }
     
     // add Z ion
-    if(constraint->getIonType() == Z_ION ||
-       constraint->getIonType() == ALL_ION ){
+    if(constraint->getUseIonType(Z_ION) ||
+       constraint->getUseIonType(ALL_ION) ){
 
       // set mass 
       mass = mass_matrix[(int)mass_matrix[0]] - mass_matrix[(int)mass_matrix[0] - cleavage_idx];

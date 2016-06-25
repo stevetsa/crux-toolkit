@@ -11,6 +11,7 @@
 
 #include "PrintProcessedSpectra.h"
 #include "io/SpectrumCollectionFactory.h"
+#include "util/Params.h"
 #include "util/GlobalParams.h"
 
 using namespace std;
@@ -33,11 +34,11 @@ PrintProcessedSpectra::~PrintProcessedSpectra() {
  */
 int PrintProcessedSpectra::main(int argc, char** argv) {
   // Get arguments and options
-  string input_ms2_name  = get_string_parameter("ms2 file");
-  string output_ms2_name = get_string_parameter("output file");
+  string input_ms2_name  = Params::GetString("ms2 file");
+  string output_ms2_name = Params::GetString("output file");
   output_ms2_name = prefix_fileroot_to_name(output_ms2_name);
-  string output_dir = get_string_parameter("output-dir");
-  bool overwrite = get_boolean_parameter("overwrite");
+  string output_dir = Params::GetString("output-dir");
+  bool overwrite = Params::GetBool("overwrite");
   OBSERVED_PREPROCESS_STEP_T stop_after = GlobalParams::getStopAfter();
 
   // open output file
@@ -63,12 +64,12 @@ int PrintProcessedSpectra::main(int argc, char** argv) {
   FilteredSpectrumChargeIterator* spectrum_iterator =
     new FilteredSpectrumChargeIterator(spectra);
 
-  if( spectrum_iterator == NULL ){
+  if (spectrum_iterator == NULL) {
     carp(CARP_FATAL, "Could create spectrum iterator");
   }
 
   // loop over all spectra, process, print
-  while(spectrum_iterator->hasNext()){
+  while (spectrum_iterator->hasNext()) {
     SpectrumZState cur_zstate;
     int cur_charge = 0;
     Crux::Spectrum* cur_spectrum = 

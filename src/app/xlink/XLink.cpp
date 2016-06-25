@@ -19,10 +19,9 @@ bool testInterIntraKeep(
   Crux::Peptide *pep1,
   Crux::Peptide *pep2
   ) {
-  return(testInterIntraKeep(pep1, pep2, get_boolean_parameter("xlink-include-intra"), 
-    get_boolean_parameter("xlink-include-inter"),
-    get_boolean_parameter("xlink-include-inter-intra")));
-
+  return(testInterIntraKeep(pep1, pep2, Params::GetBool("xlink-include-intra"), 
+    Params::GetBool("xlink-include-inter"),
+    Params::GetBool("xlink-include-inter-intra")));
 }
 
 bool testInterIntraKeep(
@@ -112,8 +111,8 @@ XLINKMATCH_TYPE_T getCrossLinkCandidateType(
  * \returns whether two proposed peptides would contain an intra-protein crosslink
  */
 bool isCrossLinkIntra(
-   Crux::Peptide* pep1,
-   Crux::Peptide* pep2
+  Crux::Peptide* pep1,
+  Crux::Peptide* pep2
   ) {
 
   return(getCrossLinkCandidateType(pep1, pep2) == XLINK_INTRA_CANDIDATE);
@@ -182,7 +181,7 @@ void get_protein_ids_locations(
     peptide->getPeptideSrcBegin();
     peptide_src_iterator != peptide->getPeptideSrcEnd();
     ++peptide_src_iterator) {
-
+    
     PeptideSrc* peptide_src = *peptide_src_iterator;
     Crux::Protein* protein = peptide_src->getParentProtein();
     string& protein_id = protein->getIdPointer();
@@ -212,14 +211,13 @@ string get_protein_ids_locations(
 
 }
 
+} // namespace XLink
 
 
-};
-
-/*                                                                                                                                                                                                                          
- * Local Variables:                                                                                                                                                                                                         
- * mode: c                                                                                                                                                                                                                  
- * c-basic-offset: 2                                                                                                                                                                                                        
- * End:                                                                                                                                                                                                                     
+/*
+ * Local Variables:
+ * mode: c 
+ * c-basic-offset: 2
+ * End:
  */
 
