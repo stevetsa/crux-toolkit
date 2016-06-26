@@ -267,6 +267,18 @@ void XLinkMatchCollection::add(
 
 }
 
+void XLinkMatchCollection::add(
+  const vector<XLinkMatch*>& candidates,
+  bool copy
+  ) {
+
+  for (size_t idx = 0;idx < candidates.size();idx++) {
+    //carp(CARP_INFO, "Adding %s", candidates.at(idx)->getSequenceString().c_str());
+    add(candidates.at(idx), copy);
+  }
+  
+}
+
 /**
  * \returns a candidate from the list by index
  */
@@ -302,8 +314,7 @@ void XLinkMatchCollection::shuffle(
   decoy_vector.scan_ = scan_;
 
   for (int idx = 0; idx < getMatchTotal(); idx++) {
-    //cerr << "shuffling:" << at(idx)->getSequenceString()<<endl;
-    decoy_vector.add(at(idx)->shuffle());
+    decoy_vector.add(at(idx)->getDecoys());
   }
 
 }

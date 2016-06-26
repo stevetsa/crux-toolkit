@@ -221,16 +221,18 @@ int SearchForXLinks::xlinkSearchMain() {
     
     carp(CARP_DEBUG, "Getting decoy candidates");
 
-    //XLinkMatchCollection* decoy_candidates = new XLinkMatchCollection();
-    //target_candidates->shuffle(*decoy_candidates);
+    XLinkMatchCollection* decoy_candidates = new XLinkMatchCollection();
+    target_candidates->shuffle(*decoy_candidates);
+
     
+    /*
     XLinkMatchCollection* decoy_candidates = new XLinkMatchCollection(
 								      spectrum,
 								      zstate,
 								      true,
 								      false);
 
-    
+    */
     carp(CARP_DEBUG, "scoring decoys");
     decoy_candidates->scoreSpectrum(spectrum);
 
@@ -346,7 +348,9 @@ int SearchForXLinks::xlinkSearchMain() {
       spectrum);
 
     /* Clean up */
+    carp(CARP_DEBUG, "Delete decoy candidates");
     delete decoy_candidates;
+    carp(CARP_DEBUG, "Delete target candidates");
     delete target_candidates;
     XLink::deleteAllocatedPeptides();
     

@@ -357,18 +357,44 @@ FLOAT_T XLinkPeptide::calcMass(MASS_TYPE_T mass_type) {
 /**
  * \returns a shuffled xlink peptide
  */
-XLinkMatch* XLinkPeptide::shuffle() {
 
-  XLinkPeptide* decoy = new XLinkPeptide();
-  decoy->setZState(getZState());
-  decoy->linked_peptides_.push_back(linked_peptides_[0].shuffle());
-  decoy->linked_peptides_.push_back(linked_peptides_[1].shuffle());
-  decoy->link_pos_idx_.push_back(link_pos_idx_[0]);
-  decoy->link_pos_idx_.push_back(link_pos_idx_[1]);
+void XLinkPeptide::shuffle(vector<XLinkMatch*>& decoys) {
 
-  return (XLinkMatch*)decoy;
+  //cerr<<"tt:"<<getSequenceString()<<endl;
+  
+  XLinkablePeptide d1 = linked_peptides_[0].shuffle();
+  XLinkablePeptide d2 = linked_peptides_[1].shuffle();
 
+  XLinkPeptide* decoy_ff = new XLinkPeptide();
+  decoy_ff->linked_peptides_.push_back(d1);
+  decoy_ff->linked_peptides_.push_back(d2);
+  decoy_ff->link_pos_idx_.push_back(link_pos_idx_[0]);
+  decoy_ff->link_pos_idx_.push_back(link_pos_idx_[1]);
+  decoy_ff->setZState(getZState());
 
+  //cerr<<"decoy_ff:"<<decoy_ff->getSequenceString()<<endl;
+  
+  XLinkPeptide* decoy_tf = new XLinkPeptide();
+  decoy_tf->linked_peptides_.push_back(linked_peptides_[0]);
+  decoy_tf->linked_peptides_.push_back(d2);
+  decoy_tf->link_pos_idx_.push_back(link_pos_idx_[0]);
+  decoy_tf->link_pos_idx_.push_back(link_pos_idx_[1]);
+  decoy_tf->setZState(getZState());
+
+  //cerr <<"decoy_tf:"<<decoy_tf->getSequenceString()<<endl;
+  
+  XLinkPeptide* decoy_ft = new XLinkPeptide();
+  decoy_ft->linked_peptides_.push_back(d1);
+  decoy_ft->linked_peptides_.push_back(linked_peptides_[1]);
+  decoy_ft->link_pos_idx_.push_back(link_pos_idx_[0]);
+  decoy_ft->link_pos_idx_.push_back(link_pos_idx_[1]);
+  decoy_ft->setZState(getZState());
+
+  //cerr <<"decoy_ft:"<<decoy_ft->getSequenceString()<<endl;
+  
+  decoys.push_back(decoy_ff);
+  decoys.push_back(decoy_tf);
+  decoys.push_back(decoy_ft);
 }
 
 /**
@@ -529,11 +555,19 @@ string XLinkPeptide::getProteinIdString() {
   ostringstream oss;
 
   Crux::Peptide* peptide = this -> getPeptide(0);
-
   if (peptide == NULL) {
     carp(CARP_FATAL, "XLinkPeptide : Null first peptide!");
-  } else {
-    oss << peptide->getProteinIdsLocations();
+  }
+  
+  vector<string> prot1 = peptide -> getProteinIds();
+  string prefix = "";
+  if (linked_peptides_[0].isDecoy()) {
+    prefix = Params::GetString("decoy-prefix");
+  }
+  
+  oss << prefix << prot1[0];
+  for (size_t idx = 1 ; idx < prot1.size() ; idx++) {
+    oss << "," << prefix << prot1[idx];
   }
   oss << ";";
 
@@ -541,8 +575,15 @@ string XLinkPeptide::getProteinIdString() {
 
   if (peptide == NULL) {
     carp(CARP_FATAL, "XLinkPeptide : Null second peptide!");
-  } else {
-    oss << peptide->getProteinIdsLocations();
+  }
+  vector<string> prot2 = peptide -> getProteinIds();
+  prefix = "";
+  if (linked_peptides_[1].isDecoy()) {
+    prefix = Params::GetString("decoy-prefix");
+  }
+  oss << prefix << prot2[0];
+  for (size_t idx = 1;idx < prot2.size() ; idx++) {
+    oss << "," << prefix << prot2[idx];
   }
 
   return oss.str();

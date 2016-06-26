@@ -42,6 +42,13 @@ LinearPeptide::LinearPeptide(
   this->setNullPeptide(peptide_->isDecoy());
 }
 
+LinearPeptide::~LinearPeptide() {
+
+  carp(CARP_INFO, "~LinearPeptide:%s",getSequenceString().c_str());
+
+}
+
+
 /**
  *Add candidates to the XLinkMatchCollection that are linear
  */
@@ -108,7 +115,7 @@ FLOAT_T LinearPeptide::calcMass(
 /**
  *\returns a shuffled version of the peptide
  */
-XLinkMatch* LinearPeptide::shuffle() {
+void LinearPeptide::shuffle(vector<XLinkMatch*>& decoys) {
   string seq = getSequenceString();
   //carp(CARP_INFO, "LinearPeptide::shuffle %s", seq.c_str());
   Crux::Peptide* decoy_peptide = new Crux::Peptide(peptide_);
@@ -120,10 +127,10 @@ XLinkMatch* LinearPeptide::shuffle() {
   LinearPeptide* decoy = new LinearPeptide(decoy_peptide);
   
   string decoy_seq = decoy->getSequenceString();
-  //carp(CARP_INFO, "Shuffled: %s", decoy_seq.c_str());
+  carp(CARP_INFO, "Shuffled: %s", decoy_seq.c_str());
   
   decoy->setNullPeptide(true);
-  return (XLinkMatch*)decoy;
+  decoys.push_back(decoy);
 }
 
 /**

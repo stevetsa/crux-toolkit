@@ -22,6 +22,7 @@ class XLinkablePeptide : public CacheableMass {
 
  protected:
   Crux::Peptide* peptide_; ///< the peptide object of this XLinkablePeptide (can be null)
+  XLinkablePeptide* decoy_; ///< a saved decoy of the XLinkablePeptide.
   char* sequence_; ///< the sequence 
   std::vector<int> link_sites_; ///< the sequence indices where linking is possible
   bool is_decoy_; //Is this from the decoy database?
@@ -136,6 +137,9 @@ class XLinkablePeptide : public CacheableMass {
    * \returns the shuffled XlinkablePeptide
    */
   XLinkablePeptide shuffle();
+
+  XLinkablePeptide* getCachedDecoy();
+  
 
   /**
    * \returns the number of link sites on this peptide

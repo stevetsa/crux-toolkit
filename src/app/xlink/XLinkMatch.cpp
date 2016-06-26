@@ -257,6 +257,25 @@ void XLinkMatch::setParent(XLinkMatchCollection* parent) {
   parent_ = parent;
 }
 
+const vector<XLinkMatch*>& XLinkMatch::getDecoys() {
+  decoys_.clear();
+  shuffle(decoys_);
+  return(decoys_);
+  /*
+  if (decoys_.size() == 0) {
+    shuffle(decoys_);
+    if (decoys_.size() == 0) {
+      carp(CARP_FATAL, "Can't get decoy(s) for XLinkMatch!");
+    }
+  } else {
+    carp(CARP_INFO, "XLinkMatch::Using cached decoys");
+  }
+  
+  return(decoys_);
+  */
+}
+
+
 /**
  * Print one field in the tab-delimited output file, based on column index.
  */

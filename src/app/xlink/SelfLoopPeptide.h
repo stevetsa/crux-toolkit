@@ -89,7 +89,9 @@ class SelfLoopPeptide : public XLinkMatch {
   /**
    * \returns a shuffled version of self-loop candidate
    */
-  virtual XLinkMatch* shuffle();
+  virtual void shuffle(
+    std::vector<XLinkMatch*>& decoys
+  );
   
   /**
    *  Predictes the ions for the self loop candidate

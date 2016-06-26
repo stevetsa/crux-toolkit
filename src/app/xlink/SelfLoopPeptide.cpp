@@ -126,7 +126,7 @@ FLOAT_T SelfLoopPeptide::calcMass(
 /**
  * \returns a shuffled version of self-loop candidate
  */
-XLinkMatch* SelfLoopPeptide::shuffle() {
+void SelfLoopPeptide::shuffle(vector<XLinkMatch*>& decoys) {
   carp(CARP_DEBUG, "SelfLoopPeptide::shuffle");
   SelfLoopPeptide* decoy = new SelfLoopPeptide();
 
@@ -134,9 +134,7 @@ XLinkMatch* SelfLoopPeptide::shuffle() {
   decoy->link_pos_idx_.push_back(link_pos_idx_[0]);
   decoy->link_pos_idx_.push_back(link_pos_idx_[1]);
 
-  return (XLinkMatch*)decoy;
-
-
+  decoys.push_back(decoy);
 }
 
 /**

@@ -162,7 +162,9 @@ class XLinkPeptide : public XLinkMatch {
   /**
    * \returns a shuffled xlink peptide
    */
-  virtual XLinkMatch* shuffle();
+  virtual void shuffle(
+    std::vector<XLinkMatch*>& decoys
+  );
 
   /**
    * fills the ion series with the predicted ions for the cross linked candidate

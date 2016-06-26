@@ -73,7 +73,12 @@ class XLinkMatchCollection : public MatchCollection {
    * adds a candidate to the list
    */
   void add(XLinkMatch* candidate, bool copy = false);
-
+  
+  void add(
+    const vector<XLinkMatch*>& candidates,
+    bool copy = false
+  );
+  
   /**
    *\returns a candidate from the list by index
    */

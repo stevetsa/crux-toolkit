@@ -45,7 +45,7 @@ class LinearPeptide : public XLinkMatch {
   /**
    * Default destructor
    */
-  virtual ~LinearPeptide() {}
+  virtual ~LinearPeptide();
   
   /**
    *Add candidates to the XLinkMatchCollection that are linear
@@ -77,8 +77,10 @@ class LinearPeptide : public XLinkMatch {
   /**
    *\returns a shuffled version of the peptide
    */
-  virtual XLinkMatch* shuffle();
-  
+  virtual void shuffle(
+    std::vector<XLinkMatch*>& decoys
+  );
+
   /**
    * predicts the ions for this peptide
    */

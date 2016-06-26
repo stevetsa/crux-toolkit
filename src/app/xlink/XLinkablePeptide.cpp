@@ -571,6 +571,15 @@ XLinkablePeptide XLinkablePeptide::shuffle() {
   return ans;
 } 
 
+XLinkablePeptide* XLinkablePeptide::getCachedDecoy() {
+  if (decoy_ == NULL) {
+    
+    decoy_ = new XLinkablePeptide(shuffle());
+  }
+  return decoy_;
+}
+
+
 /*
 string getAASequence() {
   char* seq = get_peptide_sequence(peptide_);
@@ -606,7 +615,7 @@ FLOAT_T XLinkablePeptide::getXCorr() const {
   if (xcorr_link_idx_ != -1) {
     return xcorr_;
   }
-  carp(CARP_FATAL, "Xcorr not set!");
+  carp(CARP_DEBUG, "Xcorr not set!");
   return 0;
 
 }

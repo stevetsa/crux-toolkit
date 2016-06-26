@@ -24,7 +24,7 @@ class XLinkMatch : public Crux::Match, public CacheableMass {
 
   std::vector<IonSeries*> ion_series_xcorr_;
   std::vector<IonSeries*> ion_series_sp_;
-  
+  std::vector<XLinkMatch*> decoys_;
   std::string cached_sequence_;
   
   static std::vector<IonConstraint*> ion_constraint_xcorr_;
@@ -52,13 +52,14 @@ class XLinkMatch : public Crux::Match, public CacheableMass {
   virtual bool isModified() = 0;
   virtual std::string getSequenceString() = 0;
   //virtual FLOAT_T calcMass(MASS_TYPE_T mass_type) = 0;
-  virtual XLinkMatch* shuffle() = 0;
+  virtual void shuffle(std::vector<XLinkMatch*>& decoys) = 0;
+  
   virtual void predictIons(IonSeries* ion_series, int charge) = 0;
   virtual std::string getIonSequence(Ion* ion) = 0;
   virtual Crux::Peptide* getPeptide(int peptide_idx) = 0;
 
   const std::string& getSequenceStringConst();
-  
+  const std::vector<XLinkMatch*>& getDecoys();
 
   virtual IonSeries* getIonSeriesXCORR(int charge);
 
