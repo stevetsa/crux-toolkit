@@ -194,6 +194,8 @@ MODIFIED_AA_T* copy_mod_aa_seq(
 
 void freeModSeq(MODIFIED_AA_T* &mod_seq);
 
+void modifications_finalize();
+
 /**
  * \brief Remove any characters not A-Z from a peptide sequence.
  * \returns A newly allocated string with the given sequence less any

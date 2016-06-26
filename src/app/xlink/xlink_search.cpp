@@ -381,6 +381,7 @@ int SearchForXLinks::xlinkSearchMain() {
   XLinkIonSeriesCache::finalize();
   IonSeries::finalize();
   XLinkDatabase::finalize();
+  //modifications_finalize(); TODO - Figure where to free the modification cache.
   //Calculate q-values via p-values from weibull fit.
   if (compute_pvalues) {
     carp(CARP_DEBUG, "Computing Q-Values using P-values");
