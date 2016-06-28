@@ -29,6 +29,7 @@ XLinkMatch::XLinkMatch() : Match() {
     mass_calculated_[idx] = false;
     mass_[idx] = 0;
   }
+  is_decoy_ = false;
 }
 
 /**

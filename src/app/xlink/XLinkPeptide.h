@@ -25,7 +25,8 @@ class XLinkPeptide : public XLinkMatch {
   std::vector<XLinkablePeptide> linked_peptides_; ///< contains the two peptides in the match
   std::vector<int> link_pos_idx_; ///< contains the link positions for the two peptides
   
-    //  bool is_decoy_; ///< indicates whether the peptide is a decoy
+  XLinkPeptide* target_;
+  
   static FLOAT_T pmin_;  ///< contains the minimum mass that a peptide from a crosslink product can take
   static bool pmin_set_; ///< has the pmin been set?
   /**
@@ -151,6 +152,8 @@ class XLinkPeptide : public XLinkMatch {
    * \returns the sequence string
    */
   virtual std::string getSequenceString();
+  
+  virtual std::string getUnshuffledSequence();
   
   /**
    * \returns the mass of the xlink peptide

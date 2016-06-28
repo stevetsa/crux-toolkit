@@ -133,9 +133,25 @@ void SelfLoopPeptide::shuffle(vector<XLinkMatch*>& decoys) {
   decoy->linked_peptide_ = linked_peptide_.shuffle();
   decoy->link_pos_idx_.push_back(link_pos_idx_[0]);
   decoy->link_pos_idx_.push_back(link_pos_idx_[1]);
-
+  decoy->is_decoy_ = true;
+  decoy->target_ = this;
   decoys.push_back(decoy);
 }
+
+SelfLoopPeptide* SelfLoopPeptide::getUnshuffledTarget() {
+  return(target_);  
+}
+
+std::string SelfLoopPeptide::getUnshuffledSequence() {
+  
+  if (is_decoy_) {
+    carp(CARP_INFO, "returning unshuffled target");
+    return(getUnshuffledTarget()->getSequenceString());
+  } else {
+    return(getSequenceString());
+  }
+}
+
 
 /**
  * Predicts the ions for the self loop candidate

@@ -18,10 +18,9 @@
 
 class SelfLoopPeptide : public XLinkMatch {
  protected:
-
+  SelfLoopPeptide* target_;
   XLinkablePeptide linked_peptide_; ///< linkable peptide
   std::vector<int> link_pos_idx_; ///< the two link indices on the peptide
-  bool is_decoy_; ///< indicate whether this is a decoy
  public:
   
   /**
@@ -124,6 +123,12 @@ class SelfLoopPeptide : public XLinkMatch {
    *\returns whether the peptide is modified by a variable mod
    */
   virtual bool isModified();
+  
+  
+  virtual std::string getUnshuffledSequence();
+  
+  SelfLoopPeptide* getUnshuffledTarget();
+  
 
 };
 

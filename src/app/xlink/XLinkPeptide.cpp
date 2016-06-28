@@ -27,6 +27,7 @@ bool XLinkPeptide::pmin_set_ = false;
 XLinkPeptide::XLinkPeptide() : XLinkMatch() {
   mass_calculated_[MONO] = false;
   mass_calculated_[AVERAGE] = false;
+  target_ = NULL;
 }
 
 /**
@@ -345,6 +346,19 @@ string XLinkPeptide::getSequenceString() {
   return svalue;
 }
 
+string XLinkPeptide::getUnshuffledSequence() {
+  
+  if (is_decoy_) {
+    if (target_ == NULL) {
+      carp(CARP_FATAL, "null target?!?");
+    }
+    return(target_ -> getSequenceString());
+  } else {
+    return (getSequenceString());
+  }
+}
+
+
 /**
  * \returns the mass of the xlink peptide
  */
@@ -370,6 +384,8 @@ void XLinkPeptide::shuffle(vector<XLinkMatch*>& decoys) {
   decoy_ff->linked_peptides_.push_back(d2);
   decoy_ff->link_pos_idx_.push_back(link_pos_idx_[0]);
   decoy_ff->link_pos_idx_.push_back(link_pos_idx_[1]);
+  decoy_ff->is_decoy_ = true;
+  decoy_ff->target_ = this;
   decoy_ff->setZState(getZState());
 
   //cerr<<"decoy_ff:"<<decoy_ff->getSequenceString()<<endl;
@@ -379,6 +395,8 @@ void XLinkPeptide::shuffle(vector<XLinkMatch*>& decoys) {
   decoy_tf->linked_peptides_.push_back(d2);
   decoy_tf->link_pos_idx_.push_back(link_pos_idx_[0]);
   decoy_tf->link_pos_idx_.push_back(link_pos_idx_[1]);
+  decoy_tf->is_decoy_ = true;
+  decoy_tf->target_ = this;
   decoy_tf->setZState(getZState());
 
   //cerr <<"decoy_tf:"<<decoy_tf->getSequenceString()<<endl;
@@ -388,6 +406,8 @@ void XLinkPeptide::shuffle(vector<XLinkMatch*>& decoys) {
   decoy_ft->linked_peptides_.push_back(linked_peptides_[1]);
   decoy_ft->link_pos_idx_.push_back(link_pos_idx_[0]);
   decoy_ft->link_pos_idx_.push_back(link_pos_idx_[1]);
+  decoy_ft->is_decoy_ = true;
+  decoy_ft->target_ = this;
   decoy_ft->setZState(getZState());
 
   //cerr <<"decoy_ft:"<<decoy_ft->getSequenceString()<<endl;

@@ -21,7 +21,6 @@ class LinearPeptide : public XLinkMatch {
 
   Crux::Peptide* peptide_; ///< Peptide this linear peptide referes to
   char* sequence_; ///< sequence of the peptide
-  bool is_decoy_; ///< indicator of whether the peptide is a decoy or not
  public:
   /**
    * Default constructor

@@ -29,11 +29,9 @@ class XLinkMatch : public Crux::Match, public CacheableMass {
   
   static std::vector<IonConstraint*> ion_constraint_xcorr_;
   static IonConstraint* getIonConstraintXCORR(int charge); 
-  /*
-  vector<int> peak_50_;
-  vector<int> peak_25_;
-  vector<int> peak_10_;
-  */
+
+  bool is_decoy_;
+  
  public:
   
   /**
