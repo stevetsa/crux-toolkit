@@ -406,7 +406,8 @@ Params::Params() : finalized_(false) {
     "modification prevents enzymatic cleavage of cross-linking, respectively. This option is "
     "only available when use-old-xlink=F. "
     "Note that this parameter only takes effect when specified in the "
-    "parameter file.",
+    "parameter file.  Also, to specify multiple modifications, it is necessary to include multiple "
+    "instances of this parameter, each on a separate line of the parameter file.",
     "Available for search-for-xlinks.", true);
   InitStringParam("cmod", "NO MODS",
     "Specify a variable modification to apply to C-terminus of peptides. " 
