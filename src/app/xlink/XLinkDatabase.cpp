@@ -71,7 +71,7 @@ void XLinkDatabase::initialize() {
   for (int mod_idx=0;mod_idx<num_peptide_mods; mod_idx++) {
     PEPTIDE_MOD_T* peptide_mod = peptide_mods[mod_idx];
     double delta_mass = peptide_mod_get_mass_change(peptide_mod);
-    carp(CARP_INFO, "delta mass:%g", delta_mass);
+    carp(CARP_INFO, "Modification %d has delta mass of %g Da.", mod_idx + 1, delta_mass);
     //
     ModifiedPeptidesIterator* peptide_iterator =
       new ModifiedPeptidesIterator(
