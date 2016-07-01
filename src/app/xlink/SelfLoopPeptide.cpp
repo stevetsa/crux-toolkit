@@ -75,12 +75,17 @@ void SelfLoopPeptide::addCandidates(
 
 
   vector<SelfLoopPeptide>::iterator biter = XLinkDatabase::getSelfLoopBegin(is_decoy, min_mass);
-  vector<SelfLoopPeptide>::iterator eiter = XLinkDatabase::getSelfLoopEnd(is_decoy);
+  if (biter == XLinkDatabase::getSelfLoopEnd(is_decoy) ||
+      biter -> getMassConst(GlobalParams::getIsotopicMass()) > max_mass) {
+    return;
+  } else {
+    vector<SelfLoopPeptide>::iterator eiter = XLinkDatabase::getSelfLoopEnd(is_decoy);
 
-  while (biter != eiter && biter->getMass(GlobalParams::getIsotopicMass()) <= max_mass) {
-    biter->incrementPointerCount();
-    candidates.add(&(*biter));
-    ++biter;
+    while (biter != eiter && biter->getMass(GlobalParams::getIsotopicMass()) <= max_mass) {
+      biter->incrementPointerCount();
+      candidates.add(&(*biter));
+      ++biter;
+    }
   }
 }
 

@@ -60,13 +60,24 @@ void LinearPeptide::addCandidates(
   ) {
 
   vector<LinearPeptide>::iterator siter = XLinkDatabase::getLinearBegin(is_decoy, min_mass);
-  vector<LinearPeptide>::iterator eiter = XLinkDatabase::getLinearEnd(is_decoy, siter, max_mass);
+  if (siter == XLinkDatabase::getLinearEnd(is_decoy) || siter->getMassConst() > max_mass) {
+    return;
+  } else {
+    vector<LinearPeptide>::iterator eiter = XLinkDatabase::getLinearEnd(is_decoy, siter, max_mass);
 
-  while (siter != eiter) {
-    siter->incrementPointerCount();
-    //carp(CARP_INFO, "Add linear candidate");
-    candidates.add(&(*siter));
-    ++siter;
+    while (siter != eiter) {
+      siter->incrementPointerCount();
+      LinearPeptide& lpeptide = *siter;
+      if (lpeptide.getMassConst() < min_mass || lpeptide.getMassConst() > max_mass) {
+        carp(CARP_FATAL,
+          "out of range! min:%g max:%g pep:%g seq:%s",
+          min_mass, max_mass, lpeptide.getMass(),
+          lpeptide.getSequenceString().c_str());
+      }
+      //carp(CARP_INFO, "Add linear candidate");
+      candidates.add(&(*siter));
+      ++siter;
+    }
   }
 }
 
