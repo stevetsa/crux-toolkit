@@ -43,9 +43,7 @@ LinearPeptide::LinearPeptide(
 }
 
 LinearPeptide::~LinearPeptide() {
-
-  carp(CARP_INFO, "~LinearPeptide:%s",getSequenceString().c_str());
-
+  carp(CARP_DEBUG, "~LinearPeptide");
 }
 
 
@@ -60,7 +58,8 @@ void LinearPeptide::addCandidates(
   ) {
 
   vector<LinearPeptide>::iterator siter = XLinkDatabase::getLinearBegin(is_decoy, min_mass);
-  if (siter == XLinkDatabase::getLinearEnd(is_decoy) || siter->getMassConst() > max_mass) {
+  if (siter == XLinkDatabase::getLinearEnd(is_decoy) ||
+      siter->getMassConst(GlobalParams::getIsotopicMass()) > max_mass) {
     return;
   } else {
     vector<LinearPeptide>::iterator eiter = XLinkDatabase::getLinearEnd(is_decoy, siter, max_mass);

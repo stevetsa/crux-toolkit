@@ -158,7 +158,7 @@ void XLinkDatabase::initialize() {
     generateAllSelfLoops(true);
     generateAllSelfLoops(false);
     carp(CARP_INFO, "There are %d target self loop peptides", target_selfloop_peptides_.size());
-    carp(CARP_INFO, "There are %d decoy self loop peptides", decoy_selfloop_peptides_.size());
+    //carp(CARP_INFO, "There are %d decoy self loop peptides", decoy_selfloop_peptides_.size());
   }
 
   //filter linkable peptides based upon user parameters
@@ -206,14 +206,14 @@ void XLinkDatabase::initialize() {
 }
 
 void XLinkDatabase::finalize() {
-
+  carp(CARP_INFO, "Start to finalize database");
   target_linear_peptides_.clear();
   decoy_linear_peptides_.clear();
   target_selfloop_peptides_.clear();
   decoy_selfloop_peptides_.clear();
   target_xlinkable_peptides_.clear();
   decoy_xlinkable_peptides_.clear();
-
+  target_xlinkable_peptides_flatten_.clear();
   for (size_t idx1=0;idx1<target_peptides_.size();idx1++) {
     for (size_t idx2=0;idx2<target_peptides_[idx1].size();idx2++) {
       delete target_peptides_[idx1][idx2];
@@ -227,6 +227,7 @@ void XLinkDatabase::finalize() {
   }
 
   Database::freeDatabase(protein_database_);
+  carp(CARP_INFO, "Done finalizing database");
 }
 
 void XLinkDatabase::findSelfLoops(

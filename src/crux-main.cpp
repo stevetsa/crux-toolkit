@@ -101,6 +101,8 @@ int main(int argc, char** argv) {
     applications.add(new SortColumn());
 
     int ret = applications.main(argc, argv);
+    
+    
     google::protobuf::ShutdownProtobufLibrary();
     return ret;
   } catch (const std::exception& e) {

@@ -127,6 +127,7 @@ XLinkablePeptide::XLinkablePeptide(
 }
 
 XLinkablePeptide::~XLinkablePeptide() {
+  //cerr <<"XLinkablePeptide::~XLinkablePeptide"<<endl;
   if (mod_seq_ != NULL) {
     freeModSeq(mod_seq_);
   }
@@ -677,7 +678,9 @@ void XLinkablePeptide::predictIons(
   }
   if (!cached) {
     cached_ions = new IonSeries(ion_series->getIonConstraint(), charge);
-    cached_ions->update(getSequence(), getModifiedSequencePtr());
+    char* seq = (char*)getSequence();
+    cached_ions->update(seq, getModifiedSequencePtr());
+    std::free(seq);
     cached_ions->predictIons();
   }
   int link_pos = link_sites_[link_idx];

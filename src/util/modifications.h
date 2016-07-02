@@ -192,6 +192,8 @@ MODIFIED_AA_T* copy_mod_aa_seq(
   const MODIFIED_AA_T* source ///< Sequence to copy
   );
 
+
+MODIFIED_AA_T* newModSeq();
 void freeModSeq(MODIFIED_AA_T* &mod_seq);
 
 void modifications_finalize();

@@ -142,15 +142,16 @@ void DatabasePeptideIterator::generateAllPeptides(){
   // populate map with all peptides, combining when duplicates found
   while(hasNextFromFile()){
     cur_peptide = nextFromFile();
-    const char* sequence = cur_peptide->getSequence();
+    char* sequence = cur_peptide->getSequence();
 
     // does it already exist in the map?
     peptide_map_ptr = peptide_map.find(sequence);
     if( peptide_map_ptr == peptide_map.end() ){ // not found, add it
-      peptide_map[sequence] = cur_peptide;
+      peptide_map[(const char*)sequence] = cur_peptide;
     } else {  // already exists, combine new peptide with existing
       Peptide::mergePeptidesCopySrc(peptide_map_ptr->second, cur_peptide);
-      delete cur_peptide; 
+      delete cur_peptide;
+      std::free(sequence);
     }
   } // next peptide
 
@@ -185,16 +186,16 @@ DatabasePeptideIterator::~DatabasePeptideIterator() {
   PeptideConstraint::free(peptide_constraint_);
 
   // free seqs in map
-  /*
+  
   map<const char*, Peptide*, cmp_str>::iterator peptide_iter = 
     peptide_map_.begin();
   for(; peptide_iter != peptide_map_.end(); 
       ++peptide_iter){
 
-    free (peptide_iter->first);  // free sequence
+    std::free((char*)peptide_iter->first);  // free sequence
     // peptide freed elsewhere?  segfault if here
   }
-  */
+  
   peptide_map_.clear();
 }
 

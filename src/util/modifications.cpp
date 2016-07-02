@@ -24,6 +24,7 @@
 #include "GlobalParams.h"
 #include "Params.h"
 #include <stack>
+#include <iostream>
 
 using namespace std;
 
@@ -41,13 +42,18 @@ class MODIFIED_AA_T_Cache {
   }
 
   ~MODIFIED_AA_T_Cache() {
-    carp(CARP_INFO, "~MODIFIED_AA_T_Cache:start");
+    size_t objects_in_cache = cache_.size();
     while(!cache_.empty()) {
       MODIFIED_AA_T *element = cache_.top();
       cache_.pop();
       delete []element;
     }
-    carp(CARP_INFO, "modified_aa_cache: checkout %d checkin %d total objects:%d", check_out_count, check_in_count, total_objects_);
+    /*
+    cerr << "modified_aa_cache: checkout " << check_out_count <<
+            "checkin " << check_in_count <<
+            " total objects " << total_objects_ <<
+            "cache: " << objects_in_cache << endl;
+    */
   }
 
   MODIFIED_AA_T* checkout(bool clear=false) {
@@ -71,15 +77,22 @@ class MODIFIED_AA_T_Cache {
   }
 };
 
-MODIFIED_AA_T_Cache* modified_aa_cache = new MODIFIED_AA_T_Cache();
+//MODIFIED_AA_T_Cache* modified_aa_cache = new MODIFIED_AA_T_Cache();
+
+MODIFIED_AA_T_Cache modified_aa_cache;
+
+MODIFIED_AA_T* newModSeq() {
+  MODIFIED_AA_T* ans = modified_aa_cache.checkout();
+  return(ans);
+}
 
 void freeModSeq(MODIFIED_AA_T* &seq) {
-  modified_aa_cache->checkin(seq);
+  modified_aa_cache.checkin(seq);
   seq=NULL;
 }
 
 void modifications_finalize() {
-  delete modified_aa_cache;
+  //delete modified_aa_cache;
 }
 
 
@@ -461,7 +474,7 @@ int convert_to_mod_aa_seq(const string& sequence,
   const char* csequence = sequence.c_str();
 
   int seq_len = sequence.length();
-  MODIFIED_AA_T* new_sequence = modified_aa_cache->checkout(); 
+  MODIFIED_AA_T* new_sequence = newModSeq(); 
   //    (MODIFIED_AA_T*)mycalloc( seq_len + 1, sizeof(MODIFIED_AA_T) );
 
   unsigned int seq_idx = 0;  // current position in given sequence
@@ -540,7 +553,7 @@ MODIFIED_AA_T* copy_mod_aa_seq(const MODIFIED_AA_T* source, int length){
     return NULL;
   }
 
-  MODIFIED_AA_T* new_seq = modified_aa_cache -> checkout();
+  MODIFIED_AA_T* new_seq = newModSeq();
   memcpy( new_seq, source, length * sizeof(MODIFIED_AA_T));
   new_seq[length] = MOD_SEQ_NULL;
 
@@ -558,7 +571,7 @@ MODIFIED_AA_T* copy_mod_aa_seq(
     return NULL;
   }
   
-  MODIFIED_AA_T* new_seq = modified_aa_cache -> checkout();
+  MODIFIED_AA_T* new_seq = newModSeq();
   size_t length = 0;
   while (source[length] != MOD_SEQ_NULL) {
     new_seq[length] = source[length];

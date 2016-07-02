@@ -131,7 +131,7 @@ int SearchForXLinks::xlinkSearchMain() {
   if (Params::GetBool("xlink-print-db")) {
     carp(CARP_INFO, "generating and printing xlink database");
     XLinkDatabase::print();
-    return 0;
+    //return 0;
   }
 
   int scan_num = 0;
