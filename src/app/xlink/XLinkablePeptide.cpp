@@ -254,6 +254,8 @@ void XLinkablePeptide::findLinkSites(
   MODIFIED_AA_T* mod_seq = peptide->getModifiedAASequence();
   int length = peptide->getLength();
 
+  
+  
   //scan the sequence for linkage sites.
   for (int seq_idx=0;seq_idx < length;seq_idx++) {
     if (bondmap.canLink(peptide, seq_idx)) {

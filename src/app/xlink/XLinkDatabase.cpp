@@ -426,13 +426,18 @@ void XLinkDatabase::print() {
 
     peptides_file << setprecision(8);
 
-    peptides_file << "mass\tsequence"<<endl;
+    peptides_file << "mass\tsequence\tlinks"<<endl;
 
     for (int idx=0;idx < target_xlinkable_peptides_.size();idx++) {
      
       peptides_file << target_xlinkable_peptides_[idx].getMass(MONO) << "\t";
       peptides_file << target_xlinkable_peptides_[idx].getModifiedSequenceString() << "\t";
       //peptides_file << target_xlinkable_peptides_[idx].getProteinIdString() << endl;
+      
+      peptides_file << target_xlinkable_peptides_[idx].getLinkSite(0)+1;
+      for (size_t idx2 = 1;idx2 < target_xlinkable_peptides_[idx].numLinkSites();idx2++) {
+        peptides_file << "," << target_xlinkable_peptides_[idx].getLinkSite(idx2)+1;
+      }
       peptides_file << endl;
     }
     peptides_file.flush();

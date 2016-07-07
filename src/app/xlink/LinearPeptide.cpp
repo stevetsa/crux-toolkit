@@ -68,14 +68,16 @@ void LinearPeptide::addCandidates(
       siter->incrementPointerCount();
       LinearPeptide& lpeptide = *siter;
       if (lpeptide.getMassConst() < min_mass || lpeptide.getMassConst() > max_mass) {
-        carp(CARP_FATAL,
+        carp(CARP_DEBUG,
              "The mass %g of peptide %s is outside the precursor range of %g-%g.",
              lpeptide.getMass(), lpeptide.getSequenceString().c_str(),
              min_mass, max_mass);
+        return;
+      } else {
+        //carp(CARP_INFO, "Add linear candidate");
+        candidates.add(&(*siter));
+        ++siter;
       }
-      //carp(CARP_INFO, "Add linear candidate");
-      candidates.add(&(*siter));
-      ++siter;
     }
   }
 }

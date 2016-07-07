@@ -1367,7 +1367,7 @@ Params::Params() : finalized_(false) {
     "List of amino acids for which the cross-linker can prevent cleavage. This option is "
     "only available when use-old-xlink=F.",
     "Available for search-for-xlinks program.", true);
-  InitIntParam("max-xlink-mods", 0, 0, BILLION,
+  InitIntParam("max-xlink-mods", 255 , 0, BILLION,
     "Specify the maximum number of modifications allowed on a crosslinked peptide. This "
     "option is only available when use-old-xlink=F.",
     "Available for crux search-for-xlinks", true);

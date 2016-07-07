@@ -262,23 +262,36 @@ void XLinkPeptide::addCandidates(
   bool done = false;
 
   for (size_t pep_idx1=0;pep_idx1 < xpeptide_count-1;pep_idx1++) {
-    //carp(CARP_INFO, "pep_idx1:%d %d %f", pep_idx1, xpeptide_count-1, linkable_peptides[pep_idx1].getMassConst(MONO));
-    XLinkablePeptide& pep1 = linkable_peptides[pep_idx1];
+    XLinkablePeptide& pep1 = linkable_peptides.at(pep_idx1);
+    carp(CARP_DEBUG, "pep_idx1:%d %d %f %s",
+         pep_idx1,
+         xpeptide_count-1,
+         linkable_peptides[pep_idx1].getMassConst(MONO),
+         pep1.getModifiedSequenceString().c_str()
+         );
     FLOAT_T pep1_mass = pep1.getMassConst(MONO);
     FLOAT_T pep2_min_mass = min_mass - pep1_mass - linker_mass_;
     FLOAT_T pep2_max_mass = max_mass - pep1_mass - linker_mass_;
     int start_idx2 = pep_idx1+1;
+      
     if (pep1_mass + linker_mass_ + linkable_peptides[start_idx2].getMassConst(MONO) > max_mass) {
       break;
     }
     for (size_t pep_idx2=start_idx2;pep_idx2 < xpeptide_count;pep_idx2++) {
+      
       XLinkablePeptide& pep2 = linkable_peptides[pep_idx2];
+      carp(CARP_DEBUG, "pep_idx2:%d %d %f %s",
+         pep_idx2,
+         xpeptide_count,
+         linkable_peptides[pep_idx2].getMassConst(MONO),
+         pep2.getModifiedSequenceString().c_str()
+         );
       FLOAT_T current_mass = pep2.getMassConst(MONO);
       if (current_mass > pep2_max_mass) {
-	if (pep_idx2 == start_idx2) {
-	  //done = true;
-	}
-	break;
+	      if (pep_idx2 == start_idx2) {
+	        //done = true;
+	      }
+	      break;
       }
       if (current_mass >= pep2_min_mass) {
         XLINKMATCH_TYPE_T ctype = 
@@ -287,10 +300,11 @@ void XLinkPeptide::addCandidates(
         if ((include_intra && ctype == XLINK_INTRA_CANDIDATE) || 
             (include_inter_intra && ctype == XLINK_INTER_INTRA_CANDIDATE) ||
             (include_inter && ctype == XLINK_INTER_CANDIDATE)) {
+		            carp(CARP_DEBUG, "considering %s %s", pep1.getModifiedSequenceString().c_str(), pep2.getModifiedSequenceString().c_str());
 	
               int mods = pep1.getPeptide()->countModifiedAAs() + pep2.getPeptide()->countModifiedAAs();
               if (mods <= max_mod_xlink) {
-		//carp(CARP_INFO, "considering %s %s", pep1.getModifiedSequenceString().c_str(), pep2.getModifiedSequenceString().c_str());
+		            carp(CARP_DEBUG, "considering2 %s %s", pep1.getModifiedSequenceString().c_str(), pep2.getModifiedSequenceString().c_str());
                 addXLinkPeptides(pep1, pep2, candidates);
               } // if (mods <= max_mod_xlink ..     
           }
