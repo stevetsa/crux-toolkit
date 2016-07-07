@@ -64,7 +64,7 @@ void LinearPeptide::addCandidates(
   } else {
     vector<LinearPeptide>::iterator eiter = XLinkDatabase::getLinearEnd(is_decoy, siter, max_mass);
 
-    while (siter != eiter) {
+    while (siter != eiter && siter->getMassConst() <= max_mass) {
       siter->incrementPointerCount();
       LinearPeptide& lpeptide = *siter;
       if (lpeptide.getMassConst() < min_mass || lpeptide.getMassConst() > max_mass) {

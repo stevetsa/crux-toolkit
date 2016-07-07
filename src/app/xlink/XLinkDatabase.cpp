@@ -114,7 +114,7 @@ void XLinkDatabase::initialize() {
       decoy_linear_peptides_.end(), 
       compareLinearPeptideMass);
     carp(CARP_INFO, "There are %d target linear peptides", target_linear_peptides_.size());
-    carp(CARP_INFO, "There are %d decoy linear peptides", decoy_linear_peptides_.size());
+    //carp(CARP_INFO, "There are %d decoy linear peptides", decoy_linear_peptides_.size());
   }
 
   if (generate_xlinkable) {
