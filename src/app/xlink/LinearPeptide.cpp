@@ -43,7 +43,7 @@ LinearPeptide::LinearPeptide(
 }
 
 LinearPeptide::~LinearPeptide() {
-  carp(CARP_DEBUG, "~LinearPeptide");
+  //  carp(CARP_DEBUG, "~LinearPeptide");
 }
 
 
@@ -69,9 +69,9 @@ void LinearPeptide::addCandidates(
       LinearPeptide& lpeptide = *siter;
       if (lpeptide.getMassConst() < min_mass || lpeptide.getMassConst() > max_mass) {
         carp(CARP_FATAL,
-          "out of range! min:%g max:%g pep:%g seq:%s",
-          min_mass, max_mass, lpeptide.getMass(),
-          lpeptide.getSequenceString().c_str());
+             "The mass %g of peptide %s is outside the precursor range of %g-%g.",
+             lpeptide.getMass(), lpeptide.getSequenceString().c_str(),
+             min_mass, max_mass);
       }
       //carp(CARP_INFO, "Add linear candidate");
       candidates.add(&(*siter));
@@ -137,7 +137,7 @@ void LinearPeptide::shuffle(vector<XLinkMatch*>& decoys) {
   LinearPeptide* decoy = new LinearPeptide(decoy_peptide);
   
   string decoy_seq = decoy->getSequenceString();
-  carp(CARP_INFO, "Shuffled: %s", decoy_seq.c_str());
+  //  carp(CARP_INFO, "Shuffled: %s", decoy_seq.c_str());
   
   decoy->setNullPeptide(true);
   decoys.push_back(decoy);
