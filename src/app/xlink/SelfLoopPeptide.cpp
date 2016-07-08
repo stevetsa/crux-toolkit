@@ -150,7 +150,7 @@ SelfLoopPeptide* SelfLoopPeptide::getUnshuffledTarget() {
 std::string SelfLoopPeptide::getUnshuffledSequence() {
   
   if (is_decoy_) {
-    carp(CARP_INFO, "returning unshuffled target");
+    //carp(CARP_INFO, "returning unshuffled target");
     return(getUnshuffledTarget()->getSequenceString());
   } else {
     return(getSequenceString());
