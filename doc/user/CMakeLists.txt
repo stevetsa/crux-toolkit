@@ -24,6 +24,7 @@ add_custom_target(
 install(
   DIRECTORY . 
   DESTINATION doc 
+  COMPONENT docs
   PATTERN "CMakeLists.txt" EXCLUDE
   PATTERN "comet-options" EXCLUDE
   PATTERN "data" EXCLUDE

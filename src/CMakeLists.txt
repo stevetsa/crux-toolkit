@@ -420,5 +420,6 @@ install (
   crux
   DESTINATION
   bin
+  COMPONENT applications
 )
 

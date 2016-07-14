@@ -449,6 +449,6 @@ if (WIN32 AND NOT CYGWIN)
         ${CMAKE_CURRENT_BINARY_DIR}/build/src/ProteoWizard/pwiz_aux/msrc/utility/vendor_api/Waters/vc12_x86/MassLynxRaw.dll
       )
     endif (CMAKE_GENERATOR MATCHES "^.*Win64$")
-    install (FILES ${vendor_binaries} DESTINATION bin)
+    install (FILES ${vendor_binaries} DESTINATION bin COMPONENT runtime)
   endif (INCLUDE_VENDOR_LIBRARIES)
 endif (WIN32 AND NOT CYGWIN)
