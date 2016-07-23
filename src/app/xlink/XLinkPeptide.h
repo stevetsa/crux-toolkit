@@ -42,8 +42,9 @@ class XLinkPeptide : public XLinkMatch {
 
   /*
    * Iterates through all linkable sites and adds valid xlink peptide candidates
+   * \returns the number of candidates added.
    */
-  static void addXLinkPeptides(
+  static int addXLinkPeptides(
     XLinkablePeptide& pep1, ///< First linkable peptide
     XLinkablePeptide& pep2, ///< Second linkable peptide
     XLinkMatchCollection& candidates ///< XLinkable Candidates -out
@@ -123,7 +124,7 @@ class XLinkPeptide : public XLinkMatch {
    * adds crosslink candidates to the XLinkMatchCollection using
    * the passed in iterator for the 1st peptide
    */
-  static void addCandidates(
+  static int addCandidates(
     FLOAT_T min_mass, ///< min mass of crosslinks
     FLOAT_T max_mass, ///< max mass of crosslinks
     vector<XLinkablePeptide>&, ///< 1st peptide iterator
@@ -133,7 +134,7 @@ class XLinkPeptide : public XLinkMatch {
   /**
    * adds crosslink candidates by iterating through all possible masses
    */
-  static void addCandidates(
+  static int addCandidates(
 			    Crux::Spectrum* spectrum,
 			    FLOAT_T precursor_mass,
 			    int precursor_charge,

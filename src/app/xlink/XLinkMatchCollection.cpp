@@ -182,16 +182,16 @@ void XLinkMatchCollection::addCandidates(
 
   include_linear_peptides_ = Params::GetBool("xlink-include-linears");
   include_self_loops_ = Params::GetBool("xlink-include-selfloops");
-
+ 
   if (GlobalParams::getXLinkIncludeInter() ||
       GlobalParams::getXLinkIncludeIntra() ||
       GlobalParams::getXLinkIncludeInterIntra()) {
-  
+    int num_xlink_candidates = 0;
     carp(CARP_DEBUG, "Adding xlink candidates");
     carp(CARP_DEBUG, "precursor:%g", precursor_mass);
     carp(CARP_DEBUG, "min:%g", min_mass);
     carp(CARP_DEBUG, "max:%g", max_mass);
-    XLinkPeptide::addCandidates(
+    num_xlink_candidates = XLinkPeptide::addCandidates(
       spectrum,
       precursor_mass,
       precursor_charge,
@@ -199,6 +199,12 @@ void XLinkMatchCollection::addCandidates(
       max_mass,
       decoy,
       *this);
+    carp(CARP_DETAILED_DEBUG,"Number of xlink candidates:%d", num_xlink_candidates);
+    if (num_xlink_candidates == 0 && Params::GetBool("require-xlink-candidate")) {
+      carp(CARP_DEBUG, "no xlink candidate, returning");
+      return;
+    }
+    
   }
   if (include_linear_peptides_) {
 

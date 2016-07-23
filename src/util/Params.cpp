@@ -1340,7 +1340,11 @@ Params::Params() : finalized_(false) {
     "Prints out the generated database of xlink products to the file xlink_peptides.txt in "
     "the output directory.",
     "Used for testing the candidate generatation.", false);
-
+  InitBoolParam("require-xlink-candidate", false,
+     "If there is no cross-link candidate found, then don't bother looking for linear, "
+     "self-loop, and dead-link candidates.",
+     "Available for crux search-for-xlinks program.", true);
+  
   InitBoolParam("xlink-use-ion-cache", false,
 		"Use an ion cache for the xlinkable peptides",
 		"May not be scalable for large databases", false);
