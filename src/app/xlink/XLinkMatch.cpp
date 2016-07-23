@@ -372,6 +372,9 @@ void XLinkMatch::printOneMatchField(
   case MODIFICATIONS_COL:
     //TODO FIX!
     break;
+  case ENZ_INT_COL:
+    output_file->setColumnCurrentRow((MATCH_COLUMNS_T)column_idx, getNumMissedCleavages());
+    break;
   default:
     Match::printOneMatchField(column_idx,
       collection,
