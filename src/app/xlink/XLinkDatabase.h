@@ -60,6 +60,8 @@ class XLinkDatabase {
     std::vector<XLinkablePeptide>& filtered_xpeptides
     );  
 
+  static bool addPeptideToDatabase(Crux::Peptide* peptide);  
+    
  public:
   XLinkDatabase() {;}
   virtual ~XLinkDatabase() {;}
