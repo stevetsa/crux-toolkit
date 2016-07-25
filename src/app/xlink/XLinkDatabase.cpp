@@ -141,7 +141,6 @@ void XLinkDatabase::initialize() {
     while (peptide_iterator->hasNext()) {
       peptide_count++;
       Crux::Peptide* peptide = peptide_iterator->next();
-//      carp(CARP_INFO, "Current peptide:%s", peptide->getUnshuffledSequence().c_str());
       int missed_cleavages = peptide->getMissedCleavageSites();
       
       bool added = addPeptideToDatabase(peptide);
@@ -155,20 +154,20 @@ void XLinkDatabase::initialize() {
     delete peptide_iterator;
   }
   
-  carp(CARP_INFO,"num peptides:%d num used:%d", peptide_count, used_count);
+  carp(CARP_INFO,"Considered linear %d peptides, of which %d were included in the database.", peptide_count, used_count);
   
   if (Params::GetBool("xlink-include-linears")) {
-    carp(CARP_INFO, "num linears:%d", target_linear_peptides_.size());
+    carp(CARP_INFO, "  The database contains %d linear peptides.", target_linear_peptides_.size());
     sort(target_linear_peptides_.begin(), target_linear_peptides_.end(), compareLinearPeptideMass);
   }
   
   if (Params::GetBool("xlink-include-selfloops")) {
-    carp(CARP_INFO, "num selfloops:%d", target_selfloop_peptides_.size());
+    carp(CARP_INFO, "  The database contains %d selfloop peptides.", target_selfloop_peptides_.size());
     sort(target_selfloop_peptides_.begin(), target_selfloop_peptides_.end(), compareSelfLoopPeptideMass);
   }
   
   if (generate_xlinkable) {
-    carp(CARP_INFO, "num xlinkable:%d", target_xlinkable_peptides_.size());
+    carp(CARP_INFO, "  The database contains %d cross-linkable peptides.", target_xlinkable_peptides_.size());
     sort(target_xlinkable_peptides_.begin(), target_xlinkable_peptides_.end(), compareXLinkablePeptideMass);
     flattenLinkablePeptides(target_xlinkable_peptides_, target_xlinkable_peptides_flatten_);
   }
