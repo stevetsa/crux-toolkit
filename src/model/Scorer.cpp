@@ -1314,6 +1314,101 @@ bool Scorer::createIntensityVectorTheoretical(
 
 
 /**
+ * Score the ion series directly.
+ * \returns the calculated XCORR score.
+ */
+FLOAT_T Scorer::scoreIntensityIonSeries(
+  IonSeries* ion_series ///< the ion series to score against the spectrum (theoretical) -in
+  ) {
+
+  
+  FLOAT_T ans = 0.0;
+  
+  Ion* ion = NULL;
+  int intensity_array_idx = 0;
+  int ion_charge = 0;
+  ION_TYPE_T ion_type;
+  FLOAT_T ion_mass_z = 0;
+  FLOAT_T bin_width = bin_width_;
+  FLOAT_T bin_offset = bin_offset_;
+  // create the ion iterator that will iterate through the ions
+
+  // while there are ion's in ion iterator, add matched observed peak intensity
+  for (IonIterator ion_iterator = ion_series->begin();
+    ion_iterator != ion_series->end();
+    ++ion_iterator) {
+    
+    ion = *ion_iterator;
+    
+    ion_mass_z = ion->getMassZ();
+    intensity_array_idx 
+      = INTEGERIZE(ion_mass_z, bin_width, bin_offset);
+
+    // skip ions that are located beyond max mz limit
+    if(intensity_array_idx >= getMaxBin()){
+      continue;
+    }
+    ion_type = ion->getType();
+    ion_charge = ion->getCharge();
+
+    // is it B, Y ion?
+    if(ion_type == B_ION || 
+       ion_type == Y_ION){
+      //      if (!ion->isModified()){
+        // Add peaks of intensity 50.0 for B, Y type ions. 
+        // In addition, add peaks of intensity of 25.0 to +/- 1 m/z flanking each B, Y ion if requested.
+        // Skip ions that are located beyond max mz limit
+        if((intensity_array_idx)< getMaxBin()){
+          ans += scoreIntensity(intensity_array_idx, B_Y_HEIGHT);
+          if (use_flanks_) {
+            ans += scoreIntensity(intensity_array_idx - 1, FLANK_HEIGHT);
+            if ((intensity_array_idx + 1) < getMaxBin()) {
+	            ans += scoreIntensity(intensity_array_idx + 1, FLANK_HEIGHT);
+	          }
+          }
+        }
+        
+        // add neutral loss of water and NH3
+
+        if(ion_type == B_ION){
+          int h2o_array_idx = 
+            INTEGERIZE((ion_mass_z - (MASS_H2O_MONO/ion_charge)),
+                       bin_width, bin_offset);
+          ans += scoreIntensity(h2o_array_idx, LOSS_HEIGHT);
+        }
+
+        int nh3_array_idx 
+          = INTEGERIZE((ion_mass_z -  (MASS_NH3_MONO/ion_charge)),
+                       bin_width, bin_offset);
+        ans += scoreIntensity(nh3_array_idx, LOSS_HEIGHT);
+	//} //if (ion->isModified());
+
+    }// is it A ion?
+    else if(ion_type == A_ION){
+      // Add peaks of intensity 10.0 for A type ions. 
+      ans += scoreIntensity(intensity_array_idx, LOSS_HEIGHT);
+    }
+    else{// ERROR!, only should create B, Y, A type ions for xcorr theoreical 
+      carp(CARP_ERROR, "only should create B, Y, A type ions for xcorr theoretical spectrum");
+      return 0;
+    }
+  }
+
+  //sort(theoretical.begin(), theoretical.end(), compareTheoreticalPairs);
+
+  /*  for (size_t idx=0;idx<theoretical.size();idx++) {
+
+    carp(CARP_INFO, "idx:%d intens:%g", theoretical[idx].first, theoretical[idx].second);
+
+  }
+  */
+
+  return ans / 10000.0;
+}
+
+
+
+/**
  * create the intensity arrays for both observed and theoretical spectrum
  * SCORER must have been created for XCORR type
  * \returns true if successful, else FLASE
@@ -1422,12 +1517,18 @@ FLOAT_T Scorer::genScoreXcorr(
     free(theoretical);
   } else {
   */
+/*
     vector<pair<int, FLOAT_T> > theoretical;
     if (!createIntensityVectorTheoretical(ion_series, theoretical)) {
       carp(CARP_ERROR, "failed to create theoretical spectrum for Xcorr");
       return false;
     }
     final_score = crossCorrelation(theoretical);
+*/    
+    final_score = scoreIntensityIonSeries(ion_series);
+    
+    
+    
     /*
   }
     */
@@ -1723,6 +1824,17 @@ void Scorer::addIntensity(
 
 }
  
+FLOAT_T Scorer::scoreIntensity(
+  int add_idx,
+  FLOAT_T intensity
+  ) {
+  if (add_idx >= 0) {
+    return (observed_g_[add_idx] * intensity);
+  } else {
+    return 0.0;
+  }
+}
+
 
 
 /**

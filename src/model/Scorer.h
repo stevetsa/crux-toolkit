@@ -174,7 +174,10 @@ class Scorer {
     IonSeries* ion_series, 
     std::vector<std::pair<int, float> >& theoretical
     );
-
+  
+  FLOAT_T scoreIntensityIonSeries(
+    IonSeries* ion_series
+  );
 
   /*****************************************************
    * General purpose functions
@@ -224,7 +227,7 @@ class Scorer {
     Crux::Spectrum* spectrum,      ///< the spectrum to score -in
     IonSeries* ion_series ///< the ion series to score against the spectrum -in
   );
-
+  
   /**
    * Frees the single_ion_constraints array
    */
@@ -432,8 +435,12 @@ class Scorer {
 			   std::vector<std::pair<int, FLOAT_T> >& intensity_vector,
 			   int add_idx,
 			   FLOAT_T intensity
-);
+  );
  
+  static FLOAT_T scoreIntensity(
+    int add_idx,
+    FLOAT_T intensity
+  );
 
 };
 
