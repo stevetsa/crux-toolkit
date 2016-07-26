@@ -32,6 +32,11 @@ int GlobalParams::mod_precision_;
 int GlobalParams::xlink_top_n_;
 vector<int> GlobalParams::isotope_windows_;
 FLOAT_T GlobalParams::fraction_to_fit_;
+bool GlobalParams::xlink_use_ion_cache_;
+MASS_FORMAT_T GlobalParams::mod_mass_format_;
+FLOAT_T GlobalParams::gaussian_fwhm_;
+FLOAT_T GlobalParams::gaussian_min_height_;
+
 
 void GlobalParams::set() {
   bool monoisotopic_precursor = 
@@ -67,6 +72,10 @@ void GlobalParams::set() {
   xlink_top_n_ = Params::GetInt("xlink-top-n");
   isotope_windows_ = StringUtils::Split<int>(Params::GetString("isotope-windows"), ',');
   fraction_to_fit_ = Params::GetDouble("fraction-top-scores-to-fit");
+  xlink_use_ion_cache_ = Params::GetBool("xlink-use-ion-cache");
+  mod_mass_format_ = get_mass_format_type_parameter("mod-mass-format");
+  gaussian_fwhm_ = Params::GetDouble("gaussian-fwhm");
+  gaussian_min_height_ = Params::GetDouble("gaussian-min-height");
 }
 
 const MASS_TYPE_T& GlobalParams::getIsotopicMass() {
@@ -171,4 +180,20 @@ const vector<int>& GlobalParams::getIsotopeWindows() {
 
 const FLOAT_T& GlobalParams::getFractionToFit() {
   return fraction_to_fit_;
+}
+
+const bool& GlobalParams::getXLinkUseIonCache() {
+  return xlink_use_ion_cache_;
+}
+
+const MASS_FORMAT_T& GlobalParams::getModMassFormat() {
+  return mod_mass_format_;
+}
+
+const FLOAT_T& GlobalParams::getGaussianFWHM() {
+  return gaussian_fwhm_;
+}
+
+const FLOAT_T& GlobalParams::getGaussianMinHeight() {
+  return gaussian_min_height_;
 }

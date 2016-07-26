@@ -32,7 +32,10 @@ class GlobalParams {
   static int xlink_top_n_;
   static std::vector<int> isotope_windows_;
   static FLOAT_T fraction_to_fit_;
-  
+  static bool xlink_use_ion_cache_;
+  static MASS_FORMAT_T mod_mass_format_;
+  static FLOAT_T gaussian_fwhm_;
+  static FLOAT_T gaussian_min_height_;
   
  public:
   static void set();
@@ -63,5 +66,10 @@ class GlobalParams {
   static const int& getXLinkTopN();
   static const std::vector<int>& getIsotopeWindows();
   static const FLOAT_T& getFractionToFit();
-
+  static const bool& getXLinkUseIonCache();
+  static const MASS_FORMAT_T& getModMassFormat();
+  static const FLOAT_T& getGaussianFWHM();
+  static const FLOAT_T& getGaussianMinHeight();
+  
+  
 };

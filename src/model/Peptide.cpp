@@ -12,7 +12,7 @@
 #include <vector>
 #include "io/MatchFileReader.h"
 #include "util/AminoAcidUtil.h"
-#include "util/Params.h"
+#include "util/GlobalParams.h"
 #include "util/StringUtils.h"
 
 using namespace std;
@@ -569,7 +569,7 @@ string Peptide::getModifiedSequenceWithSymbols() {
 string Peptide::getModifiedSequenceWithMasses() {
   if (decoy_modified_seq_) {
     char* seqTmp = modified_aa_string_to_string_with_masses(
-      decoy_modified_seq_, length_, get_mass_format_type_parameter("mod-mass-format"));
+      decoy_modified_seq_, length_, GlobalParams::getModMassFormat());
     string seqString(seqTmp);
     free(seqTmp);
     return seqString;
@@ -587,14 +587,13 @@ string Peptide::getModifiedSequenceWithMasses() {
       masses[i->Index()].push_back(i->DeltaMass());
     }
   }
-
-  int precision = Params::GetInt("mod-precision");
-  MASS_TYPE_T massType = get_mass_type_parameter("isotopic-mass");
+  int precision = GlobalParams::getModPrecision();
+  MASS_TYPE_T massType = GlobalParams::getIsotopicMass();
   for (map< int, vector<double> >::const_reverse_iterator i = masses.rbegin();
        i != masses.rend();
        i++) {
     char buffer[64];
-    switch (get_mass_format_type_parameter("mod-mass-format")) {
+    switch (GlobalParams::getModMassFormat()) {
       case MOD_MASS_ONLY: {
         double sum = accumulate(i->second.begin(), i->second.end(), 0.0);
         sprintf(buffer, "[%.*f]", precision, sum);
@@ -684,7 +683,7 @@ FLOAT_T Peptide::calcModifiedMass(MASS_TYPE_T mass_type) const {
 }
 
 FLOAT_T Peptide::calcModifiedMass() const {
-  return calcModifiedMass(Params::GetString("isotopic-mass") != "average" ? MONO : AVERAGE);
+  return calcModifiedMass(GlobalParams::getIsotopicMass());
 }
 
 /**

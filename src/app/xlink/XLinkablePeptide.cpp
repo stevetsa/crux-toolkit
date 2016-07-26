@@ -673,7 +673,7 @@ void XLinkablePeptide::predictIons(
 
   IonSeries* cached_ions = NULL;
   bool cached = false;
-  if (Params::GetBool("xlink-use-ion-cache")) {
+  if (GlobalParams::getXLinkUseIonCache()) {
 
     cached_ions = XLinkIonSeriesCache::getXLinkablePeptideIonSeries(*this, charge);
     bool cached = cached_ions != NULL;
