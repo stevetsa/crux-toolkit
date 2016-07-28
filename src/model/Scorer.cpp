@@ -962,8 +962,8 @@ bool Scorer::createIntensityArrayObserved(
       }
     }
     // Gaussian smooth
-    FLOAT_T gfwhm = Params::GetDouble("gaussian-fwhm");
-    FLOAT_T g_min_height = Params::GetDouble("gaussian-min-height");
+    FLOAT_T gfwhm = GlobalParams::getGaussianFWHM();
+    FLOAT_T g_min_height = GlobalParams::getGaussianMinHeight();
     FLOAT_T c_stddev = get_FWHM_to_gaussian_c_stddev(
       gfwhm
     );
