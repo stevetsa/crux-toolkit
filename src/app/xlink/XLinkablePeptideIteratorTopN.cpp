@@ -80,15 +80,25 @@ void XLinkablePeptideIteratorTopN::scorePeptides(
   vector<XLinkablePeptide>::iterator& eiter
   ) {
 
+  scored_xlp_.clear();
   while(biter != eiter) {
     XLinkablePeptide& pep1 = *biter;
     FLOAT_T delta_mass = precursor_mass - pep1.getMass(MONO) - XLinkPeptide::getLinkerMass();
     FLOAT_T xcorr = scorer.scoreXLinkablePeptide(pep1, 0, delta_mass);
     pep1.setXCorr(0, xcorr);
     pep1.getXCorr();
-    scored_xlp_.push_back(pep1);
+    scored_xlp_.push_back(&pep1);
     biter++;
   }
+  if (scored_xlp_.size() > 0) {
+    sort(scored_xlp_.begin(), scored_xlp_.end(), CompareXCorrPtr());
+  }
+/*  
+  for (size_t idx = 0;idx < min((size_t)top_n_,scored_xlp_.size());idx++) {
+    string seq = scored_xlp_[idx]->getModifiedSequenceString();
+    carp(CARP_INFO,"%d %g %s", idx, scored_xlp_[idx]->getXCorr(), seq.c_str());
+  }
+*/
 }
 
 /**
@@ -130,12 +140,25 @@ XLinkablePeptide& XLinkablePeptideIteratorTopN::next() {
     carp(CARP_FATAL, "next called on empty iterator!");
   }
 
-  XLinkablePeptide& ans = scored_xlp_[current_count_-1];
+  XLinkablePeptide& ans = *scored_xlp_[current_count_-1];
   //carp(CARP_INFO, "next peptide:%s %g", ans.getSequence(), ans.getXCorr());
   queueNextPeptide();
   //carp(CARP_INFO, "XLinkablePeptideIteratorTopN: returning reference");
   return ans;
 }
+
+XLinkablePeptide* XLinkablePeptideIteratorTopN::nextPtr() {
+  if (!has_next_) {
+    carp(CARP_FATAL, "next called on empty iterator!");
+  }
+  
+  XLinkablePeptide* ans = scored_xlp_[current_count_-1];
+  queueNextPeptide();
+  return ans;
+  
+}
+
+
 
 /*                                                                                                                                                                                                                          
  * Local Variables:                                                                                                                                                                                                         

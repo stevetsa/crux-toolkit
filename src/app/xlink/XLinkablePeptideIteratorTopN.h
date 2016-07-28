@@ -18,8 +18,15 @@
 class CompareXCorr {
  public:
   bool operator()(XLinkablePeptide& xpep1, XLinkablePeptide& xpep2) {
-    return (xpep1.getXCorr() < xpep2.getXCorr());
+    return (xpep1.getXCorr() > xpep2.getXCorr());
   }
+};
+
+class CompareXCorrPtr {
+  public:
+    bool operator()(XLinkablePeptide* xpep1, XLinkablePeptide* xpep2) {
+      return (xpep1->getXCorr() > xpep2->getXCorr());
+    }
 };
 
 
@@ -28,7 +35,7 @@ class XLinkablePeptideIteratorTopN: public XLinkablePeptideIterator {
  protected:
 
   //std::priority_queue<XLinkablePeptide, std::vector<XLinkablePeptide>, CompareXCorr> scored_xlp_;  
-  std::vector<XLinkablePeptide> scored_xlp_; ///< sorted by highest XCorr score.
+  std::vector<XLinkablePeptide*> scored_xlp_; ///< sorted by highest XCorr score.
   int current_count_;
   int top_n_; ///<set by kojak-top-n
   bool has_next_; ///< is there a next candidate
@@ -74,6 +81,8 @@ class XLinkablePeptideIteratorTopN: public XLinkablePeptideIterator {
    *\returns the next linkable peptide
    */
   XLinkablePeptide& next();
+  
+  XLinkablePeptide* nextPtr();
 
 };
 
