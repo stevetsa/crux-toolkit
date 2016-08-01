@@ -266,6 +266,10 @@ bool compareXLinkableXCorr(
   const XLinkablePeptide& xpep2
   );
 
+bool compareXLinkableXCorrPtr(
+  const XLinkablePeptide* xpep1,
+  const XLinkablePeptide* xpep2
+  );
 
 #endif
 

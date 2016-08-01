@@ -631,6 +631,15 @@ bool compareXLinkableXCorr(
   return xpep1.getXCorr() > xpep2.getXCorr();
 }
 
+bool compareXLinkableXCorrPtr(
+  const XLinkablePeptide* xpep1,
+  const XLinkablePeptide* xpep2
+  ) {
+  return xpep1 -> getXCorr() > xpep2 -> getXCorr();
+}
+
+
+
 bool compareXLinkablePeptideMass(
   const XLinkablePeptide& xpep1,
   const XLinkablePeptide& xpep2

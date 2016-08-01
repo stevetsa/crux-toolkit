@@ -15,20 +15,6 @@
 #include <queue>
 #include <vector>
 
-class CompareXCorr {
- public:
-  bool operator()(XLinkablePeptide& xpep1, XLinkablePeptide& xpep2) {
-    return (xpep1.getXCorr() > xpep2.getXCorr());
-  }
-};
-
-class CompareXCorrPtr {
-  public:
-    bool operator()(XLinkablePeptide* xpep1, XLinkablePeptide* xpep2) {
-      return (xpep1->getXCorr() > xpep2->getXCorr());
-    }
-};
-
 
 class XLinkablePeptideIteratorTopN: public XLinkablePeptideIterator {
 

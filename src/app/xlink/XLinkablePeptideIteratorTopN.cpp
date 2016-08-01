@@ -83,22 +83,23 @@ void XLinkablePeptideIteratorTopN::scorePeptides(
   scored_xlp_.clear();
   while(biter != eiter) {
     XLinkablePeptide& pep1 = *biter;
-    FLOAT_T delta_mass = precursor_mass - pep1.getMass(MONO) - XLinkPeptide::getLinkerMass();
+    FLOAT_T delta_mass = precursor_mass - pep1.getMass(MONO);// - XLinkPeptide::getLinkerMass();
     FLOAT_T xcorr = scorer.scoreXLinkablePeptide(pep1, 0, delta_mass);
     pep1.setXCorr(0, xcorr);
-    pep1.getXCorr();
+    //pep1.getXCorr();
     scored_xlp_.push_back(&pep1);
     biter++;
   }
   if (scored_xlp_.size() > 0) {
-    sort(scored_xlp_.begin(), scored_xlp_.end(), CompareXCorrPtr());
+    sort(scored_xlp_.begin(), scored_xlp_.end(), compareXLinkableXCorrPtr);
   }
-/*  
-  for (size_t idx = 0;idx < min((size_t)top_n_,scored_xlp_.size());idx++) {
-    string seq = scored_xlp_[idx]->getModifiedSequenceString();
-    carp(CARP_INFO,"%d %g %s", idx, scored_xlp_[idx]->getXCorr(), seq.c_str());
-  }
-*/
+ 
+  IF_CARP(CARP_DETAILED_DEBUG,
+    for (size_t idx = 0;idx < min((size_t)top_n_,scored_xlp_.size());idx++) {
+      string seq = scored_xlp_[idx]->getModifiedSequenceString();
+      carp(CARP_INFO,"%d %g %s", idx, scored_xlp_[idx]->getXCorr(), seq.c_str());
+    }
+  );
 }
 
 /**
