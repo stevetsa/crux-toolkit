@@ -9,7 +9,6 @@
  REVISION: $Revision: 1.2 $
 */
 
-
 #include "io/carp.h"
 #include "util/utils.h"
 #include "util/crux-utils.h"
