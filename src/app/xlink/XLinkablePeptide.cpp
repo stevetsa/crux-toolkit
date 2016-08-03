@@ -618,9 +618,14 @@ FLOAT_T XLinkablePeptide::getXCorr() const {
   if (xcorr_link_idx_ != -1) {
     return xcorr_;
   }
-  carp(CARP_DEBUG, "Xcorr not set!");
+  carp(CARP_FATAL, "Xcorr not set!");
   return 0;
 
+}
+
+bool XLinkablePeptide::hasXCorr() const {
+  //return (xcorr_link_idx_ != -1);
+  return false;
 }
 
 
@@ -699,9 +704,10 @@ void XLinkablePeptide::predictIons(
   if (clear) {
     ion_series->clear();
   }
-  //modify the necessary ions and add to the ion_series   
+  //modify the necessary ions and add to the ion_series
+  IonIterator eiter = cached_ions->end();
   for (IonIterator ion_iter = cached_ions->begin(); 
-    ion_iter != cached_ions->end(); 
+    ion_iter != eiter; 
     ++ion_iter) { 
     Ion* src_ion = *ion_iter; 
     Ion* ion = src_ion;

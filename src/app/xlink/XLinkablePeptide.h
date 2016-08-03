@@ -19,7 +19,6 @@
  * \brief object for finding and defining the link sites on a peptide
  */
 class XLinkablePeptide : public CacheableMass {
-
  protected:
   Crux::Peptide* peptide_; ///< the peptide object of this XLinkablePeptide (can be null)
   XLinkablePeptide* decoy_; ///< a saved decoy of the XLinkablePeptide.
@@ -234,6 +233,9 @@ class XLinkablePeptide : public CacheableMass {
     FLOAT_T xcorr
   );
 
+  bool hasXCorr() const;
+  
+  
   /**
    * Is the linkable peptide modified?
    */

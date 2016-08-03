@@ -36,10 +36,6 @@ class XLinkPeptide : public XLinkMatch {
     int peptide_idx ///< 0 - first peptide, 1 - second peptide
   );
  
-  int getLinkIdx(
-		 int peptide_idx ///< 0 - first peptide, 1 -second peptide
-		 );
-
   /*
    * Iterates through all linkable sites and adds valid xlink peptide candidates
    * \returns the number of candidates added.
@@ -90,6 +86,12 @@ class XLinkPeptide : public XLinkMatch {
    */
   void doSort();
 
+  int getLinkIdx(
+    int peptide_idx ///< 0 - first peptide, 1 -second peptide
+  );
+
+  
+  
   /**
    * \returns whether the cross-link is from peptides from two different
    * proteins
