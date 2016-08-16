@@ -1331,7 +1331,7 @@ FLOAT_T Scorer::scoreIntensityIonSeries(
   FLOAT_T ion_mass_z = 0;
   FLOAT_T bin_width = bin_width_;
   FLOAT_T bin_offset = bin_offset_;
-  
+  int max_bin = getMaxBin();
   FLOAT_T B_Y_sum = 0.0;
   FLOAT_T FLANK_sum = 0.0;
   FLOAT_T LOSS_sum = 0.0;
@@ -1339,8 +1339,9 @@ FLOAT_T Scorer::scoreIntensityIonSeries(
   // create the ion iterator that will iterate through the ions
 
   // while there are ion's in ion iterator, add matched observed peak intensity
+  IonIterator eiter = ion_series->end();
   for (IonIterator ion_iterator = ion_series->begin();
-    ion_iterator != ion_series->end();
+    ion_iterator != eiter;
     ++ion_iterator) {
     
     ion = *ion_iterator;
@@ -1350,43 +1351,40 @@ FLOAT_T Scorer::scoreIntensityIonSeries(
       = INTEGERIZE(ion_mass_z, bin_width, bin_offset);
 
     // skip ions that are located beyond max mz limit
-    if(intensity_array_idx >= getMaxBin()){
+    if(intensity_array_idx >= max_bin){
       continue;
     }
     ion_type = ion->getType();
-    ion_charge = ion->getCharge();
 
     // is it B, Y ion?
     if(ion_type == B_ION || 
        ion_type == Y_ION){
+
       //      if (!ion->isModified()){
-        // Add peaks of intensity 50.0 for B, Y type ions. 
-        // In addition, add peaks of intensity of 25.0 to +/- 1 m/z flanking each B, Y ion if requested.
-        // Skip ions that are located beyond max mz limit
-        if((intensity_array_idx)< getMaxBin()){
-          B_Y_sum += observed_g_[intensity_array_idx];
-          if (use_flanks_) {
-            FLANK_sum += observed_g_[intensity_array_idx-1];
-            if ((intensity_array_idx + 1) < getMaxBin()) {
-              FLANK_sum += observed_g_[intensity_array_idx+1];
-	          }
-          }
-        }
+      // Add peaks of intensity 50.0 for B, Y type ions. 
+      // In addition, add peaks of intensity of 25.0 to +/- 1 m/z flanking each B, Y ion if requested.
+      // Skip ions that are located beyond max mz limit
+      B_Y_sum += observed_g_[intensity_array_idx];
+      if (use_flanks_) {
+        FLANK_sum += observed_g_[intensity_array_idx-1];
+        if ((intensity_array_idx + 1) < max_bin) {
+          FLANK_sum += observed_g_[intensity_array_idx+1];
+	      }
+      }
         
-        // add neutral loss of water and NH3
-
-        if(ion_type == B_ION){
-          int h2o_array_idx = 
-            INTEGERIZE((ion_mass_z - (MASS_H2O_MONO/ion_charge)),
+      // add neutral loss of water and NH3
+      ion_charge = ion->getCharge();
+      if(ion_type == B_ION){
+        int h2o_array_idx = 
+          INTEGERIZE((ion_mass_z - (MASS_H2O_MONO/ion_charge)),
                        bin_width, bin_offset);  
-          LOSS_sum += observed_g_[h2o_array_idx];
-        }
+        LOSS_sum += observed_g_[h2o_array_idx];
+      }
 
-        int nh3_array_idx 
-          = INTEGERIZE((ion_mass_z -  (MASS_NH3_MONO/ion_charge)),
+      int nh3_array_idx 
+        = INTEGERIZE((ion_mass_z -  (MASS_NH3_MONO/ion_charge)),
                        bin_width, bin_offset);
-        LOSS_sum += observed_g_[nh3_array_idx];
-	//} //if (ion->isModified());
+      LOSS_sum += observed_g_[nh3_array_idx];
 
     }// is it A ion?
     else if(ion_type == A_ION){
