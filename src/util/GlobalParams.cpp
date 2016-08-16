@@ -27,6 +27,9 @@ OBSERVED_PREPROCESS_STEP_T GlobalParams::stop_after_;
 bool GlobalParams::xlink_include_inter_;
 bool GlobalParams::xlink_include_intra_;
 bool GlobalParams::xlink_include_inter_intra_;
+bool GlobalParams::xlink_include_deadends_;
+bool GlobalParams::xlink_include_linears_;
+bool GlobalParams::xlink_include_selfloops_;
 int GlobalParams::max_xlink_mods_;
 int GlobalParams::mod_precision_;
 int GlobalParams::xlink_top_n_;
@@ -67,6 +70,9 @@ void GlobalParams::set() {
   xlink_include_inter_ = Params::GetBool("xlink-include-inter");
   xlink_include_intra_ = Params::GetBool("xlink-include-intra");
   xlink_include_inter_intra_ = Params::GetBool("xlink-include-inter-intra");
+  xlink_include_deadends_ = Params::GetBool("xlink-include-deadends");
+  xlink_include_selfloops_ = Params::GetBool("xlink-include-selfloops");
+  xlink_include_linears_ = Params::GetBool("xlink-include-linears");
   max_xlink_mods_ = Params::GetInt("max-xlink-mods");
   mod_precision_ = Params::GetInt("mod-precision");
   xlink_top_n_ = Params::GetInt("xlink-top-n");
@@ -161,7 +167,18 @@ const bool& GlobalParams::getXLinkIncludeIntra() {
 const bool& GlobalParams::getXLinkIncludeInterIntra() {
   return xlink_include_inter_intra_;
 }
-  
+
+const bool& GlobalParams::getXLinkIncludeDeadends() {
+  return xlink_include_deadends_;
+}
+ 
+const bool& GlobalParams::getXLinkIncludeSelfloops() {
+  return xlink_include_selfloops_;
+}
+
+const bool& GlobalParams::getXLinkIncludeLinears() {
+  return xlink_include_linears_;
+}
 const int& GlobalParams::getMaxXLinkMods() {
   return max_xlink_mods_;
 }

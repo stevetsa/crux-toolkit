@@ -37,7 +37,7 @@ bool XLinkDatabase::addPeptideToDatabase(Crux::Peptide* peptide) {
   vector<int> link_sites;
   set<int> skip;
   
-  if (Params::GetBool("xlink-include-linears")) {
+  if (GlobalParams::getXLinkIncludeLinears()) {
     set<int> skip;
     if (peptide->getMissedCleavageSites(skip) <= GlobalParams::getMissedCleavages()) {
       LinearPeptide lpeptide(peptide);
@@ -47,10 +47,10 @@ bool XLinkDatabase::addPeptideToDatabase(Crux::Peptide* peptide) {
     }
   }
   
-  if (Params::GetBool("xlink-include-inter-intra") ||
-           Params::GetBool("xlink-include-inter") ||
-           Params::GetBool("xlink-include-intra") ||
-           Params::GetBool("xlink-include-deadends")) {
+  if (GlobalParams::getXLinkIncludeInterIntra() ||
+      GlobalParams::getXLinkIncludeInter() ||
+      GlobalParams::getXLinkIncludeIntra() ||
+      GlobalParams::getXLinkIncludeDeadends()) {
     if (peptide->countModifiedAAs() <= GlobalParams::getMaxXLinkMods()) {
       XLinkablePeptide::findLinkSites(peptide, bondmap_, link_sites); 
       if (!link_sites.empty()) {
@@ -61,7 +61,7 @@ bool XLinkDatabase::addPeptideToDatabase(Crux::Peptide* peptide) {
       }
     }
   }
-  if (Params::GetBool("xlink-include-selfloops")) {
+  if (GlobalParams::getXLinkIncludeSelfloops()) {
     XLinkablePeptide::findLinkSites(peptide, bondmap_, link_sites, 1);
     if (link_sites.size() > 1) {
       XLinkablePeptide xlp = XLinkablePeptide(peptide, link_sites);

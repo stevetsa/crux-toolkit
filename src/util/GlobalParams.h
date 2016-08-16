@@ -27,6 +27,9 @@ class GlobalParams {
   static bool xlink_include_inter_;
   static bool xlink_include_intra_;
   static bool xlink_include_inter_intra_;
+  static bool xlink_include_deadends_;
+  static bool xlink_include_selfloops_;
+  static bool xlink_include_linears_;
   static int max_xlink_mods_;
   static int mod_precision_;
   static int xlink_top_n_;
@@ -61,6 +64,9 @@ class GlobalParams {
   static const bool& getXLinkIncludeInter();
   static const bool& getXLinkIncludeIntra();
   static const bool& getXLinkIncludeInterIntra();
+  static const bool& getXLinkIncludeDeadends();
+  static const bool& getXLinkIncludeSelfloops();
+  static const bool& getXLinkIncludeLinears();
   static const int& getMaxXLinkMods();
   static const int& getModPrecision();
   static const int& getXLinkTopN();
