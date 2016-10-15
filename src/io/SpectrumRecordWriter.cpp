@@ -93,7 +93,7 @@ vector<pb::Spectrum> SpectrumRecordWriter::getPbSpectra(
     scan_num = ++scanCounter_;
   }
 
-  const vector<SpectrumZState>& zStates = s->getZStatesConst();
+  const vector<SpectrumZState>& zStates = s->getZStates();
   for (vector<SpectrumZState>::const_iterator i = zStates.begin(); i != zStates.end(); ++i) {
     spectra.push_back(pb::Spectrum());
     pb::Spectrum& newSpectrum = spectra.back();

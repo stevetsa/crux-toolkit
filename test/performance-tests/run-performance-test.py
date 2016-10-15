@@ -61,7 +61,7 @@ def createParameterFile(parameterFileName):
   parameterFile.write("peptide_mass_units=0\n") # 0=amu, 1=mmu, 2=ppm
   
   # Precursor mass type.
-  parameterFile.write("monoisotopic-precursor=T\n")
+  parameterFile.write("isotopic-mass=mono\n")
   parameterFile.write("mass_type_parent=1\n") # 1=monoisotopic
   
   # Fragment mass type.  Tides uses only monoisotopic.
@@ -70,7 +70,6 @@ def createParameterFile(parameterFileName):
   
   # Decoys.
   parameterFile.write("decoy-format=peptide-reverse\n")
-  parameterFile.write("num-decoys-per-target=1\n")
   parameterFile.write("decoy_search=1\n")  # 1 = concatenated decoy search
   parameterFile.write("concat=T\n")
   parameterFile.write("keep-terminal-aminos=C\n") # No corresponding Comet param
@@ -104,15 +103,13 @@ def createParameterFile(parameterFileName):
   
   # Other Crux parameters.
   parameterFile.write("compute-sp=T\n")
-  parameterFile.write("verbosity=40\n")
   parameterFile.write("overwrite=T\n")
   parameterFile.write("peptide-list=T\n")
-
   
   # Comet parameters
-  parameterFile.write("output_pepxml=0\n")
+  parameterFile.write("output_pepxmlfile=0\n")
   parameterFile.write("add_C_cysteine=57.021464\n")
-  parameterFile.write("num_threads=1\n") # Multithreaded sometimes dumps core.
+#  parameterFile.write("num_threads=1\n") # Multithreaded sometimes dumps core.
   parameterFile.write("max_fragment_charge=2\n")
   parameterFile.write("isotope_error=0\n")
   parameterFile.write("use_A_ions=0\n")
@@ -251,10 +248,10 @@ runSearch("tide-xcorr", "tide-search", "", database,
           "xcorr score", "")
 runSearch("tide-p-value", "tide-search", "--exact-p-value T",
           database, concatenatedDatabase, "tide-p-value/tide-search.txt",
-          "refactored xcorr", "--smaller-is-better T --score \"exact p-value\"")
+          "refactored xcorr", "--score \"exact p-value\"")
 runSearch("comet", "comet", "", "%s.fa" % database,
           concatenatedDatabase, "comet/comet.target.txt",
-          "xcorr score", "--smaller-is-better T --score e-value")
+          "xcorr score", "--score e-value")
 
 # Make the performance plots, segregated by search method..
 makePerformancePlot("comet", [("comet/comet.q.txt", "Comet E-value"),

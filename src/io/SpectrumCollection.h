@@ -21,7 +21,7 @@ namespace Crux {
 
 class SpectrumCollection {
 
- friend class ::FilteredSpectrumChargeIterator;
+  friend class ::FilteredSpectrumChargeIterator;
 
  protected:
   std::deque<Crux::Spectrum*> spectra_;  ///< spectra from the file
@@ -77,11 +77,9 @@ class SpectrumCollection {
    */
   virtual ~SpectrumCollection();
 
- 
   SpectrumIterator begin();
   SpectrumIterator end();
   
-
   /**
    * Parses all the spectra from file designated by the filename member
    * variable.

@@ -27,12 +27,14 @@
 using namespace std;
 using namespace Crux; 
 
+#define MAX_LOG_P 100.0 // Needed for handling p-value = 0, which should not happen, but alas does.
+
 PinWriter::PinWriter():
   out_(NULL),
   enzyme_(get_enzyme_type_parameter("enzyme")),
   precision_(Params::GetInt("precision")),
-  mass_precision_(Params::GetInt("mass-precision"))
-{
+  mass_precision_(Params::GetInt("mass-precision")) {
+    
   features_.push_back(make_pair("SpecId", true));
   features_.push_back(make_pair("Label", true));
   features_.push_back(make_pair("ScanNr", true));
@@ -54,13 +56,14 @@ PinWriter::PinWriter():
   features_.push_back(make_pair("enzC", true));
   features_.push_back(make_pair("enzInt", true));
   features_.push_back(make_pair("lnNumSP", true));
+  features_.push_back(make_pair("lnNumDSP", false));
   features_.push_back(make_pair("dM", true));
   features_.push_back(make_pair("absdM", true));
   features_.push_back(make_pair("Peptide", true));
   features_.push_back(make_pair("Proteins", true));
 }
 
-PinWriter::~PinWriter(){ 
+PinWriter::~PinWriter() { 
   closeFile(); 
 }
 
@@ -76,6 +79,15 @@ void PinWriter::openFile(const string& filename, const string& output_dir, bool 
 
 void PinWriter::openFile(CruxApplication* application, string filename, MATCH_FILE_TYPE type) {
   openFile(filename, "", Params::GetBool("overwrite"));
+}
+
+bool PinWriter::getEnabledStatus(const string& name) const {
+  for (vector< pair<string, bool> >::const_iterator i = features_.begin(); i != features_.end(); i++) {
+    if (i->first == name) {
+      return i->second;
+    }
+  }
+  return false;
 }
 
 void PinWriter::setEnabledStatus(const string& name, bool enabled) {
@@ -166,7 +178,7 @@ void PinWriter::printHeader() {
 
 void PinWriter::printPSM(
   Match* match
-){ 
+) { 
   Peptide* peptide = match->getPeptide();
   Spectrum* spectrum = match->getSpectrum();
   int charge = match->getCharge();
@@ -223,8 +235,8 @@ void PinWriter::printPSM(
       fields.push_back(
         StringUtils::ToString(match->getScore(TIDE_SEARCH_REFACTORED_XCORR), precision_));
     } else if (feature == "NegLog10PValue") {
-      fields.push_back(StringUtils::ToString(
-        -log10(match->getScore(TIDE_SEARCH_EXACT_PVAL)), precision_));
+      FLOAT_T logP = -log10(match->getScore(TIDE_SEARCH_EXACT_PVAL));
+      fields.push_back(StringUtils::ToString(isInfinite(logP) ? MAX_LOG_P : logP, precision_));
     } else if (feature == "PepLen") {
       fields.push_back(StringUtils::ToString((unsigned) peptide->getLength()));
     } else if (StringUtils::StartsWith(feature, "Charge")) {
@@ -236,7 +248,7 @@ void PinWriter::printPSM(
       fields.push_back(enzC ? "1" : "0");
     } else if (feature == "enzInt") {
       fields.push_back(StringUtils::ToString(missedCleavages));
-    } else if (feature == "lnNumSP") {
+    } else if (feature == "lnNumSP" || feature == "lnNumDSP") {
       fields.push_back(StringUtils::ToString(match->getLnExperimentSize(), precision_));
     } else if (feature == "dM") {
       fields.push_back(StringUtils::ToString(dM, precision_));

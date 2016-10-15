@@ -42,14 +42,7 @@ FLOAT_T GlobalParams::gaussian_min_height_;
 
 
 void GlobalParams::set() {
-  bool monoisotopic_precursor = 
-    Params::GetBool("monoisotopic-precursor");
-  if (monoisotopic_precursor) {
-    isotopic_mass_ = MONO;
-  } else {
-    isotopic_mass_ = AVERAGE;
-  }
-
+  isotopic_mass_ = get_mass_type_parameter("isotopic-mass");
   missed_cleavages_ = Params::GetInt("missed-cleavages");
   max_aas_modified_ = Params::GetInt("max-aas-modified");
   min_mass_ = Params::GetDouble("min-mass");

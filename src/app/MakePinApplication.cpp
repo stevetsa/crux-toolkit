@@ -59,6 +59,10 @@ int MakePinApplication::main(const vector<string>& paths) {
     }
 
     MatchCollection* current_collection = parser.create(iter->c_str(), "");
+    if (!target_collection->getHasDistinctMatches() && current_collection->getHasDistinctMatches()) {
+      target_collection->setHasDistinctMatches(true);
+      decoy_collection->setHasDistinctMatches(true);
+    }
     for (int scorer_idx = (int)SP; scorer_idx < (int)NUMBER_SCORER_TYPES; scorer_idx++) {
       SCORER_TYPE_T cur_type = (SCORER_TYPE_T)scorer_idx;
       bool scored = current_collection->getScoredType(cur_type);
@@ -116,6 +120,10 @@ int MakePinApplication::main(const vector<string>& paths) {
   writer.setEnabledStatus("RefactoredXCorr", is_refactored_xcorr);
   writer.setEnabledStatus("NegLog10PValue",
                           target_collection->getScoredType(TIDE_SEARCH_EXACT_PVAL));
+  if (writer.getEnabledStatus("lnNumSP") && target_collection->getHasDistinctMatches()) {
+    writer.setEnabledStatus("lnNumSP", false);
+    writer.setEnabledStatus("lnNumDSP", true);
+  }
 
   //write .pin file 
   writer.printHeader();
@@ -152,7 +160,7 @@ string MakePinApplication::getDescription() const {
     "(&quot;target&quot;) peptides and a second set derived from matching the "
     "same spectra against &quot;decoy&quot; peptides. The output file contains, "
     "for each PSM, a set of features for use by the Percolator algorithm. These "
-    "features are summarized <a href=\"features.html\">here</a>.</p><p>Note "
+    "features are summarized <a href=\"../file-formats/features.html\">here</a>.</p><p>Note "
     "that, in the stand-alone version of Percolator, the functionality provided "
     "by <code>crux make-pin</code> is incorporated into a program called "
     "<code>sqt2pin</code>. However, a significant difference between <code>crux "

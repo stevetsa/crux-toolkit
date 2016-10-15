@@ -149,13 +149,6 @@ int SearchForXLinks::xlinkSearchMain() {
 
   /* Prepare output files */
   carp(CARP_DEBUG, "Preparing output files");
-  
-    // Check concat parameter
-  bool concat = Params::GetBool("concat");
-  if (concat) {
-    OutputFiles::setConcat();
-  }
-  
   OutputFiles output_files(this);
   output_files.writeHeaders(num_proteins);
 

@@ -313,6 +313,7 @@ int AssignConfidenceApplication::main(const vector<string> input_files) {
             pairidx[myTuple] = cnt;
           }
           break;
+        case NUMBER_METHOD_TYPES:
         case INVALID_METHOD:
           carp(CARP_FATAL, "No estimation method specified.");
         }
@@ -540,6 +541,7 @@ int AssignConfidenceApplication::main(const vector<string> input_files) {
     case MIXMAX_METHOD:
       cols_to_print[QVALUE_MIXMAX_COL] = true;
       break;
+    case NUMBER_METHOD_TYPES:
     case INVALID_METHOD:
       carp(CARP_FATAL, "No estimation method specified.");
     }
@@ -561,6 +563,7 @@ int AssignConfidenceApplication::main(const vector<string> input_files) {
   case MIXMAX_METHOD:
     derived_score_type = QVALUE_MIXMAX;
     break;
+  case NUMBER_METHOD_TYPES:
   case INVALID_METHOD:
     carp(CARP_FATAL, "No estimation method specified.");
   }
@@ -587,6 +590,7 @@ int AssignConfidenceApplication::main(const vector<string> input_files) {
       ascending,
       Params::GetDouble("pi-zero"));
     break;
+  case NUMBER_METHOD_TYPES:
   case INVALID_METHOD:
       carp(CARP_FATAL, "No estimation method specified.");
   }
@@ -882,6 +886,10 @@ FLOAT_T* AssignConfidenceApplication::compute_decoy_qvalues_mixmax(
 ) {
   if ((num_targets == 0) || (num_decoys == 0)) {
     carp(CARP_FATAL, "Cannot compute q-values (%d targets, %d decoys).",
+         num_targets, num_decoys);
+  }
+  if (num_targets != num_decoys) {
+    carp(CARP_WARNING, "The mix-max procedure is not well behaved when # targets (%d) != # of decoys (%d).",
          num_targets, num_decoys);
   }
   //estimate pi0 from data if it is not given.
@@ -1187,7 +1195,7 @@ vector<string> AssignConfidenceApplication::getOptions() const {
 vector< pair<string, string> >  AssignConfidenceApplication::getOutputs() const {
   vector< pair<string, string> > outputs;
   outputs.push_back(make_pair("assign-confidence.target.txt",
-    "a <a href=\"txt-format.html\">tab-delimited text file</a> that contains the "
+    "a <a href=\"../file-formats/txt-format.html\">tab-delimited text file</a> that contains the "
     "targets, sorted by score. The file will contain one new column, named "
     "\"&lt;method&gt; q-value\", where &lt;method&gt; is either \"tdc\" or \"mix-max\"."));
   outputs.push_back(make_pair("assign-confidence.log.txt",

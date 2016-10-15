@@ -156,11 +156,6 @@ std::string make_file_path(
 char* get_full_filename(const char* path, const char* filename);
 
 /**
- *\returns TRUE if float_a is between the interaval of min and max, else FALSE
- */
-inline bool compare_float_three(FLOAT_T float_a, FLOAT_T min, FLOAT_T max);
-
-/**
  * returns the file size of the given filename
  */
 long get_filesize(char *FileName);
@@ -279,8 +274,8 @@ void shuffle_floats(FLOAT_T* array, int size);
  * get_random_number_interval() to generate random numbers. 
  */
 template<typename T>
-void shuffle_array(T* array, int size){
-  if( array == NULL ){
+void shuffle_array(T* array, int size) {
+  if (array == NULL) {
     carp(CARP_ERROR, "Cannot shuffle NULL array.");
     return;
   }
@@ -288,18 +283,13 @@ void shuffle_array(T* array, int size){
   int idx, switch_idx;
   int last_element_idx = size - 1;
   T temp_value;
-  for(idx=0; idx < size; idx++){
+  for (idx = 0; idx < size; idx++) {
     switch_idx = get_random_number_interval(idx, last_element_idx);
     temp_value = array[idx];
     array[idx] = array[switch_idx];
     array[switch_idx] = temp_value;
   }
 }
-
-/**
- *\returns a heap allocated feature name array for the algorithm type
- */
-char** generate_feature_name_array();
 
 /**
  *\returns the number of digits in the number
@@ -424,7 +414,7 @@ static bool get_range_from_string(
   bool ret;
 
   char* dash = strchr(range_string, '-');
-  if( dash == NULL ){ // a single number
+  if (dash == NULL) { // a single number
     ret = StringUtils::TryFromString(range_string, &first);
     last = first;
   } else {
@@ -449,12 +439,11 @@ static bool get_range_from_string(
  *\brief Extend a given string with lines not exceeding a specified width, 
  * breaking on spaces.
  */
-void strcat_formatted
-(
- char*       string_to_extend,
- const char* lead_string,        // Appears at the start of each line.
- const char* extension           // Text to add.
- );
+void strcat_formatted(
+  char*       string_to_extend,
+  const char* lead_string,        // Appears at the start of each line.
+  const char* extension           // Text to add.
+);
 
 /**
  * \brief Checks if the given input file contains target, decoy PSMs or 
@@ -486,7 +475,11 @@ void check_target_decoy_files(
 
 void get_files_from_list(
   const std::string &infile, ///< path of the first file.
-  std::vector<std::string> &outpaths ///< paths of all search results -out                                                                                                         
+  std::vector<std::string> &outpaths ///< paths of all search results -out
 );
+
+bool parseUrl(std::string url, std::string* host, std::string* path);
+std::string httpRequest(const std::string& url, const std::string& data = "", bool waitForResponse = true);
+void postToAnalytics(const std::string& appName);
 
 #endif

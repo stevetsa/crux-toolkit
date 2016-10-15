@@ -14,6 +14,7 @@ include_directories(app/hardklor)
 include_directories(app/qranker-barista)
 include_directories(app/xlink)
 include_directories(io)
+include_directories(model)
 include_directories(${CMAKE_SOURCE_DIR}/ext)
 include_directories(${CMAKE_BINARY_DIR})
 include_directories(${CMAKE_BINARY_DIR}/ext)
@@ -24,6 +25,7 @@ include_directories(${CMAKE_BINARY_DIR}/ext/build/src/ProteoWizard/libraries/boo
 include_directories(${CMAKE_BINARY_DIR}/ext/build/src/ProteoWizard/libraries/boost_aux)
 include_directories(${CMAKE_BINARY_DIR}/ext/build/src/percolator/src/)
 include_directories(${CMAKE_BINARY_DIR}/ext/build/src/percolator/src/fido)
+include_directories(${CMAKE_BINARY_DIR}/ext/build/src/percolator/src/fisher)
 include_directories(${CMAKE_BINARY_DIR}/ext/build/src/percolator-build/src/)
 include_directories(${CMAKE_BINARY_DIR}/ext/build/src/percolator-build/src/fido)
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/app/tide/protoobj)
@@ -34,7 +36,7 @@ if (WIN32 AND NOT Cygwin)
   # Needed to include gflags/gflags.h on Windows
   include_directories(${CMAKE_BINARY_DIR}/ext/build/src/google-gflags/src/windows)
   # Needed to include google/protobuf on Windows
-  include_directories(${CMAKE_BINARY_DIR}/ext/build/src/ProtocolBuffers/src)
+  include_directories(${CMAKE_BINARY_DIR}/ext/build/src/protobuf-2.5.0/src)
   SET(
     CMAKE_EXE_LINKER_FLAGS 
     "${CMAKE_EXE_LINKER_FLAGS} /VERBOSE:LIB /NODEFAULTLIB:libboost_date_time-vc120-mt-1_56 /NODEFAULTLIB:libboost_system-vc120-mt-1_56 /NODEFAULTLIB:libboost_thread-vc120-mt-1_56"
@@ -105,7 +107,6 @@ set (
   app/ExtractRows.cpp
   util/FileUtils.cpp
   model/FilteredSpectrumChargeIterator.cpp
-  util/FileUtils.cpp
   model/GeneratePeptidesIterator.cpp
   app/GetMs2Spectrum.cpp
   io/HTMLWriter.cpp
@@ -122,6 +123,7 @@ set (
   io/MatchFileReader.cpp
   io/MatchFileWriter.cpp
   model/MatchCollection.cpp
+  model/MatchCollectionIterator.cpp
   io/MatchCollectionParser.cpp
   model/MatchIterator.cpp
   util/MathUtil.cpp
@@ -133,6 +135,7 @@ set (
   io/MzIdentMLWriter.cpp
   io/OutputFiles.cpp
   parameter.cpp
+  app/ParamMedicApplication.cpp
   util/Params.cpp
   model/Peak.cpp
   model/Peptide.cpp
@@ -201,6 +204,16 @@ add_library(
 )
 add_dependencies(crux-support tide-support)
 
+find_package(OpenMP)
+if (OPENMP_FOUND)
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+endif()
+
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DDEBUG")
+set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -DNDEBUG")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -DNDEBUG")
+
 if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     set_property(
       DIRECTORY
@@ -220,7 +233,6 @@ else (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 	  _LARGEFILE64_SOURCE
 	  _BSD_SOURCE
 	  _POSIX_C_SOURCE=199506L
-	  NDEBUG
 	  _FILE_OFFSET_BITS=64
 	  _GNU_SOURCE
 	  GCC
@@ -362,6 +374,7 @@ if (WIN32 AND NOT CYGWIN)
     protobuf
     ${PWIZ_LIBRARIES}
     ws2_32
+    shlwapi
     optimized libboost_system-vc120-mt
     optimized libboost_iostreams-vc120-mt
     optimized libboost_nowide-vc120-mt

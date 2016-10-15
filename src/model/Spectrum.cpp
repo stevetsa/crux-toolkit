@@ -103,7 +103,6 @@ Spectrum::~Spectrum()
  * in the spectrum
  */
 PeakIterator Spectrum::begin() const {
-
   return peaks_.begin();
 }
 
@@ -497,22 +496,42 @@ bool Spectrum::parsePwizSpecInfo(
  * Adds a peak to the spectrum given a intensity and location
  * calls update_spectrum_fields to update num_peaks, min_peak ...
  */
-bool Spectrum::addPeak
+void Spectrum::addPeak
 ( FLOAT_T intensity, ///< the intensity of peak to add -in
   FLOAT_T location_mz ///< the location of peak to add -in
   )
 {
-
-  /* TODO : why do we return a bool here? Do we need to test
-   * for success?
-   */ 
   Peak *peak = new Peak(intensity, location_mz);
   peaks_.push_back(peak);
-
   updateFields(intensity, location_mz);
   has_peaks_ = true;
-  return true;
+}
 
+void Spectrum::truncatePeaks(int count) {
+  if (count < 0) {
+    count = 0;
+  }
+  if (peaks_.size() <= count) {
+    return;
+  }
+  min_peak_mz_ = count > 0 ? numeric_limits<FLOAT_T>::max() : 0;
+  max_peak_mz_ = 0;
+  vector<Peak*>::const_iterator removePoint = peaks_.begin() + count;
+  for (vector<Peak*>::const_iterator i = peaks_.begin(); i != peaks_.end(); i++) {
+    if (i < removePoint) {
+      FLOAT_T mz = (*i)->getLocation();
+      if (mz < min_peak_mz_) {
+        min_peak_mz_ = mz;
+      }
+      if (mz > max_peak_mz_) {
+        max_peak_mz_ = mz;
+      }
+    } else {
+      total_energy_ -= (*i)->getIntensity();
+      delete *i;
+    }
+  }
+  peaks_.resize(count);
 }
 
 /**
@@ -617,13 +636,7 @@ Peak* Spectrum::getMaxIntensityPeak(
     }
   }
   return max_intensity_peak;
-
-
-
 }
-
-
-
 
 /**
  * Updates num_peaks, min_peak_mz, max_peak_mz, total_energy.
@@ -631,9 +644,7 @@ Peak* Spectrum::getMaxIntensityPeak(
 void Spectrum::updateFields(
   FLOAT_T intensity, ///< the intensity of the peak that has been added -in
   FLOAT_T location ///< the location of the peak that has been added -in
-  )
-{
- 
+) {
   // is new peak the smallest peak
   if(peaks_.size() == 1 || min_peak_mz_ > location){
     min_peak_mz_ = location;
@@ -763,15 +774,7 @@ void Spectrum::setHasLowestSp(bool has_lowest_sp)
  * \returns A read-only reference to the vector of possible chare
  * states for this spectrum.  If EZ states are available, return those.
  */
-const vector<SpectrumZState>& Spectrum::getZStatesConst() const {
-  if (ezstates_.size() != 0) {
-    return ezstates_;
-  } else {
-    return zstates_;
-  }
-}
-
-vector<SpectrumZState>& Spectrum::getZStates() {
+const vector<SpectrumZState>& Spectrum::getZStates() const {
   if (ezstates_.size() != 0) {
     return ezstates_;
   } else {
@@ -813,16 +816,7 @@ vector<SpectrumZState> Spectrum::getZStatesToSearch() {
 /**
  * \returns the ZState at the requested index
  */
-const SpectrumZState& Spectrum::getZStateConst(
-  int idx ///< the zstate index
-) {
-  return getZStatesConst().at(idx);
-}
-
-/**
- * \returns the ZState at the requested index
- */
-SpectrumZState& Spectrum::getZState(
+const SpectrumZState& Spectrum::getZState(
   int idx ///< the zstate index
 ) {
   return getZStates().at(idx);
@@ -833,7 +827,7 @@ SpectrumZState& Spectrum::getZState(
  * \returns The number of possible charge states of this spectrum.
  */
 unsigned int Spectrum::getNumZStates() const {
-  return getZStatesConst().size();
+  return getZStates().size();
 }
 
 /**

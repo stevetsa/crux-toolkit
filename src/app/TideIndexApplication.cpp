@@ -21,11 +21,11 @@ extern void AddTheoreticalPeaks(const vector<const pb::Protein*>& proteins,
                                 const string& output_filename);
 extern void AddMods(HeadedRecordReader* reader,
                     string out_file,
+                    string tmpDir,                    
                     const pb::Header& header,
                     const vector<const pb::Protein*>& proteins, VariableModTable& var_mod_table);
 DECLARE_int32(max_mods);
 DECLARE_int32(min_mods);
-DECLARE_string(tmpfile_prefix);
 
 TideIndexApplication::TideIndexApplication() {
 }
@@ -72,10 +72,10 @@ int TideIndexApplication::main(
   int missed_cleavages = Params::GetInt("missed-cleavages");
   DIGEST_T digestion = get_digest_type_parameter("digestion");
   ENZYME_T enzyme_t = get_enzyme_type_parameter("enzyme");
-  string enzyme = enzyme_type_to_string(enzyme_t);
-  if (enzyme == "no-enzyme") {
-    enzyme = "none";
-  } else if (digestion != FULL_DIGEST && digestion != PARTIAL_DIGEST) {
+  const char* enzymePtr = enzyme_type_to_string(enzyme_t);
+  string enzyme(enzymePtr);
+  if ((enzyme != "no-enzyme") && 
+      (digestion != FULL_DIGEST && digestion != PARTIAL_DIGEST)) {
     carp(CARP_FATAL, "'digestion' must be 'full-digest' or 'partial-digest'");
   }
 
@@ -181,7 +181,7 @@ int TideIndexApplication::main(
   pep_header.set_max_length(max_length);
   pep_header.set_monoisotopic_precursor(monoisotopic_precursor);
   pep_header.set_enzyme(enzyme);
-  if (enzyme != "none") {
+  if (enzyme != "no-enzyme") {
     pep_header.set_full_digestion(digestion == FULL_DIGEST);
     pep_header.set_max_missed_cleavages(missed_cleavages);
   }
@@ -222,7 +222,7 @@ int TideIndexApplication::main(
   if (need_mods) {
     carp(CARP_INFO, "Computing modified peptides...");
     HeadedRecordReader reader(modless_peptides, NULL, 1024 << 10); // 1024kb buffer
-    AddMods(&reader, peakless_peptides, header_with_mods, proteins, var_mod_table);
+    AddMods(&reader, peakless_peptides, Params::GetString("temp-dir"), header_with_mods, proteins, var_mod_table);
   }
 
   if (out_target_list) {
@@ -374,7 +374,9 @@ vector<string> TideIndexApplication::getOptions() const {
     "parameter-file",
     "seed",
     "clip-nterm-methionine",
-    "verbosity"
+    "verbosity",
+    "allow-dups",
+    "temp-dir"
   };
   return vector<string>(arr, arr + sizeof(arr) / sizeof(string));
 }

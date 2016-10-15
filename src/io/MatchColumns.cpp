@@ -1,7 +1,7 @@
-/*************************************************************************//**
+/*************************************************************************
  * \file MatchColumns.cpp
  * \brief Just keeps track of column names for match files.
- ****************************************************************************/
+ *************************************************************************/
 
 #include "MatchColumns.h"
 #include "io/carp.h"
@@ -64,7 +64,7 @@ static const char* match_column_strings[NUMBER_MATCH_COLUMNS] = {
   "total matches/spectrum",
   "distinct matches/spectrum",
   "sequence",
-  "modfications",
+  "modifications",
   "cleavage type",
   "protein id",
   "peptides",

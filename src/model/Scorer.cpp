@@ -811,7 +811,6 @@ FLOAT_T* Scorer::getIntensityArrayObserved() {
 bool Scorer::createIntensityArrayObserved(
   Spectrum* spectrum,    ///< the spectrum to score(observed) -in
   int charge,              ///< the peptide charge -in 
-  //const string& stop_after ///< the preprocessing step to stop after -in
   OBSERVED_PREPROCESS_STEP_T stop_after
   ) {
   FLOAT_T precursor_mz = spectrum->getPrecursorMz();

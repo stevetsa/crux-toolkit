@@ -14,7 +14,6 @@ using namespace std;
  * Default constructor
  */
 LinearPeptide::LinearPeptide() : XLinkMatch() {
-  //carp(CARP_INFO, "LinearPeptide::LinearPeptide()");
   peptide_ = NULL;
   sequence_ = NULL;
 }
@@ -25,7 +24,6 @@ LinearPeptide::LinearPeptide() : XLinkMatch() {
 LinearPeptide::LinearPeptide(
   char* sequence ///< sequence string
   ) : XLinkMatch() {
-  //carp(CARP_INFO, "LinearPeptide::LinearPeptide(seq)");
   peptide_ = NULL;
   sequence_ = sequence;
 }
@@ -36,14 +34,12 @@ LinearPeptide::LinearPeptide(
 LinearPeptide::LinearPeptide(
   Crux::Peptide* peptide ///< peptide object
   ) : XLinkMatch() {
-  //carp(CARP_INFO, "LinearPeptide::LinearPeptide(peptide)");
   peptide_ = peptide;
   sequence_ = NULL;
   this->setNullPeptide(peptide_->isDecoy());
 }
 
 LinearPeptide::~LinearPeptide() {
-  //  carp(CARP_DEBUG, "~LinearPeptide");
 }
 
 

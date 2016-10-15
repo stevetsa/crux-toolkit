@@ -41,7 +41,7 @@ PercolatorApplication::~PercolatorApplication() {
  * main method for PercolatorApplication
  */
 int PercolatorApplication::main(int argc, char** argv) {
-  string input_pin = Params::GetString("pin");
+  string input_pin = Params::GetString("peptide-spectrum matches");
   carp(CARP_INFO, "Reading file %s", input_pin.c_str());
 
   // Check if we need to run make-pin first
@@ -101,11 +101,11 @@ int PercolatorApplication::main(int argc, char** argv) {
         }
       }
     } else {
-      carp(CARP_INFO, "Running make-pin");
+      carp(CARP_INFO, "Converting input to pin format.");
       if (MakePinApplication::main(result_files) != 0 || !FileUtils::Exists(input_pin)) {
         carp(CARP_FATAL, "make-pin failed. Not running Percolator.");
       }
-      carp(CARP_INFO, "Finished make-pin.");
+      carp(CARP_INFO, "File conversion complete.");
     }
   }
   return main(input_pin);
@@ -128,20 +128,25 @@ int PercolatorApplication::main(
   string output_decoy_peptides = make_file_path(getFileStem() + ".decoy.peptides.txt");
   string output_decoy_psms = make_file_path(getFileStem() + ".decoy.psms.txt");
   string output_decoy_proteins = make_file_path(getFileStem() + ".decoy.proteins.txt");
+
+  if (Params::GetBool("only-psms")) {
+    perc_args_vec.push_back("--only-psms");
+  }
+
   // Target peptides file is written to prevent writing to stdout
-  perc_args_vec.push_back("-r");
+  perc_args_vec.push_back("--results-peptides");
   perc_args_vec.push_back(output_target_peptides);
-  if (Params::GetBool("original-output")) {
-    perc_args_vec.push_back("-B");
+  if (Params::GetBool("txt-output")) {
+    perc_args_vec.push_back("--decoy-results-peptides");
     perc_args_vec.push_back(output_decoy_peptides);
-    perc_args_vec.push_back("-m");
+    perc_args_vec.push_back("--results-psms");
     perc_args_vec.push_back(output_target_psms);
-    perc_args_vec.push_back("-M");
+    perc_args_vec.push_back("--decoy-results-psms");
     perc_args_vec.push_back(output_decoy_psms);
   }
 
   //add verbosity
-  perc_args_vec.push_back("-v");
+  perc_args_vec.push_back("--verbose");
   int verbosity = get_verbosity_level();
   if (verbosity <= CARP_FATAL) {
     perc_args_vec.push_back("0");
@@ -161,7 +166,7 @@ int PercolatorApplication::main(
     perc_args_vec.push_back("5");
   }
 
-  perc_args_vec.push_back("-P");
+  perc_args_vec.push_back("--fido-pattern");
   string decoy_pre = Params::GetString("decoy-prefix");
   perc_args_vec.push_back(!decoy_pre.empty() ? decoy_pre : "random_");
 
@@ -180,18 +185,22 @@ int PercolatorApplication::main(
   perc_args_vec.push_back(StringUtils::ToString(seed_value));
 
   if (Params::GetBool("pout-output")) {
-    perc_args_vec.push_back("-X");
+    perc_args_vec.push_back("--xmloutput");
     perc_args_vec.push_back(make_file_path(getFileStem() + ".pout.xml"));
     if (Params::GetBool("decoy-xml-output")) {
-      perc_args_vec.push_back("-Z");
+      perc_args_vec.push_back("--decoy-xml-output");
     }
   }
 
-  perc_args_vec.push_back("-p");
-  perc_args_vec.push_back(Params::GetString("c-pos"));
+  if (!Params::IsDefault("c-pos")) {
+    perc_args_vec.push_back("--Cpos");
+    perc_args_vec.push_back(Params::GetString("c-pos"));
+  }
  
-  perc_args_vec.push_back("-n");
-  perc_args_vec.push_back(Params::GetString("c-neg"));
+  if (!Params::IsDefault("c-neg")) {
+    perc_args_vec.push_back("--Cneg");
+    perc_args_vec.push_back(Params::GetString("c-neg"));
+  }
  
   perc_args_vec.push_back("--trainFDR");
   perc_args_vec.push_back(Params::GetString("train-fdr"));
@@ -228,7 +237,7 @@ int PercolatorApplication::main(
   }
 
   if (Params::GetBool("unitnorm")) {
-    perc_args_vec.push_back("-u");
+    perc_args_vec.push_back("--unitnorm");
   }
 
   if (Params::GetBool("test-each-iteration")) {
@@ -252,11 +261,26 @@ int PercolatorApplication::main(
   */
 
   // FIXME include schema as part of distribution and add option to turn on validation
-  perc_args_vec.push_back("-s");
+  perc_args_vec.push_back("--no-schema-validation");
+
+  if (!Params::GetString("picked-protein").empty()) {
+    perc_args_vec.push_back("--picked-protein");
+    perc_args_vec.push_back(Params::GetString("picked-protein"));
+  }
+  if (!Params::GetString("protein-enzyme").empty()) {
+    perc_args_vec.push_back("--protein-enzyme");
+    perc_args_vec.push_back(Params::GetString("protein-enzyme"));
+  }
+  if (Params::GetBool("protein-report-fragments")) {
+    perc_args_vec.push_back("--protein-report-fragments");
+  }
+  if (Params::GetBool("protein-report-duplicates")) {
+    perc_args_vec.push_back("--protein-report-duplicates");
+  }
 
   bool set_protein = Params::GetBool("protein");
   if (set_protein) {
-    perc_args_vec.push_back("-A");
+    perc_args_vec.push_back("--fido-protein");
 
     if (Params::GetDouble("fido-alpha") > 0) {
       perc_args_vec.push_back("--fido-alpha");
@@ -271,9 +295,6 @@ int PercolatorApplication::main(
       perc_args_vec.push_back(Params::GetString("fido-gamma"));
     }
 
-    if (Params::GetBool("fido-protein-level-pi0")) {
-      perc_args_vec.push_back("--fido-protein-level-pi0");
-    }
     if (Params::GetBool("fido-empirical-protein-q")) {
        perc_args_vec.push_back("--fido-empirical-protein-q");
     }
@@ -288,26 +309,22 @@ int PercolatorApplication::main(
     perc_args_vec.push_back("--fido-protein-truncation-threshold");
     perc_args_vec.push_back(Params::GetString("fido-protein-truncation-threshold"));
 
-    if (Params::GetBool("fido-split-large-components")) {
-      perc_args_vec.push_back("--fido-split-large-components");
+    if (Params::GetBool("fido-no-split-large-components")) {
+      perc_args_vec.push_back("--fido-no-split-large-components");
     }
 
     if (Params::GetBool("post-processing-qvality")) {
       perc_args_vec.push_back("--post-processing-qvality");
     }
 
-    if (Params::GetBool("post-processing-tdc")) {
-      perc_args_vec.push_back("--post-processing-tdc");
-    }
-
     perc_args_vec.push_back("--fido-gridsearch-mse-threshold");
     perc_args_vec.push_back(Params::GetString("fido-gridsearch-mse-threshold"));
 
     // Target proteins file is written to prevent writing to stdout
-    perc_args_vec.push_back("-l");
+    perc_args_vec.push_back("--results-proteins");
     perc_args_vec.push_back(output_target_proteins);
-    if (Params::GetBool("original-output")) {
-      perc_args_vec.push_back("-L");
+    if (Params::GetBool("txt-output")) {
+      perc_args_vec.push_back("--decoy-results-proteins");
       perc_args_vec.push_back(output_decoy_proteins);
     }
   }
@@ -334,15 +351,15 @@ int PercolatorApplication::main(
 
   /* Call percolatorMain */
   PercolatorAdapter pCaller;
-  int retVal = -1;
+  int retVal;
   if (pCaller.parseOptions(perc_args_vec.size(), (char**)&perc_argv.front())) {
-    retVal = pCaller.run();
+    // Percolator return value 1 means success
+    if ((retVal = pCaller.run()) != 1) {
+      carp(CARP_FATAL, "Error running percolator:%d", retVal);
+    }
+    retVal = 0;
   } 
   
-  if (retVal != 0) {
-    carp(CARP_FATAL, "Error running percolator:%d", retVal);
-  }
-
   // get percolator score information into crux objects
   ProteinMatchCollection* target_pmc = pCaller.getProteinMatchCollection();
   ProteinMatchCollection* decoy_pmc = pCaller.getDecoyProteinMatchCollection();
@@ -352,31 +369,8 @@ int PercolatorApplication::main(
 
   string output_dir = Params::GetString("output-dir");
 
-  // write txt
-  if (!Params::GetBool("original-output")) {
+  if (!Params::GetBool("txt-output")) {
     FileUtils::Remove(output_target_peptides);
-    if (set_protein) {
-      FileUtils::Remove(output_target_proteins);
-    }
-
-    if (Params::GetBool("txt-output")) {
-      PMCDelimitedFileWriter txt_writer;
-      txt_writer.writeFile(this, output_target_psms,
-                           PMCDelimitedFileWriter::PSMS, target_pmc);
-      txt_writer.writeFile(this, output_decoy_psms,
-                           PMCDelimitedFileWriter::PSMS, decoy_pmc);
-      txt_writer.writeFile(this, output_target_peptides,
-                           PMCDelimitedFileWriter::PEPTIDES, target_pmc);
-      txt_writer.writeFile(this, output_decoy_peptides,
-                           PMCDelimitedFileWriter::PEPTIDES, decoy_pmc);
-
-      if (set_protein) {
-        txt_writer.writeFile(this, output_target_proteins,
-                             PMCDelimitedFileWriter::PROTEINS, target_pmc);
-        txt_writer.writeFile(this, output_decoy_proteins,
-                             PMCDelimitedFileWriter::PROTEINS, decoy_pmc);
-      }
-    }
   }
 
   // write mzid
@@ -446,7 +440,7 @@ string PercolatorApplication::getDescription() const {
     "output consists of ranked lists of PSMs, peptides and proteins. Peptides "
     "and proteins are assigned two types of statistical confidence estimates: "
     "q-values and posterior error probabilities.</p><p>The features used by "
-    "Percolator to represent each PSM are summarized <a href=\"features.html\">"
+    "Percolator to represent each PSM are summarized <a href=\"../file-formats/features.html\">"
     "here</a>.</p><p>Percolator also includes code from <a href=\""
     "http://noble.gs.washington.edu/proj/fido/\">Fido</a>, whch performs "
     "protein-level inference. The Fido algorithm is described in this article:"
@@ -460,12 +454,13 @@ string PercolatorApplication::getDescription() const {
     "respects:</p><ul><li>In addition to the native Percolator XML file "
     "format, Crux Percolator supports additional input file formats (SQT, "
     "PepXML, tab-delimited text) and output file formats (PepXML, mzIdentML, "
-    "tab-delimited text).</li><li>To maintain consistency with the rest of the "
-    "Crux commands, Crux Percolator uses different parameter syntax than the "
-    "stand-alone version of Percolator.</li><li>Like the rest of the Crux "
-    "commands, Crux Percolator writes its files to an output directory, logs "
-    "all standard error messages to a log file, and is capable of reading "
-    "parameters from a parameter file.</li></ul>]]";
+    "tab-delimited text). To maintain consistency with the rest of the Crux "
+    "commands, Crux Percolator uses different parameter syntax than the stand-"
+    "alone version of Percolator.</li><li>Like the rest of the Crux commands, "
+    "Crux Percolator writes its files to an output directory, logs all standard "
+    "error messages to a log file, and is capable of reading parameters from a "
+    "parameter file.</li><li>Reading from XML and stdin are not supported at "
+    "this time.</li></ul>]]";
 }
 
 /**
@@ -473,7 +468,7 @@ string PercolatorApplication::getDescription() const {
  */
 vector<string> PercolatorApplication::getArgs() const {
   string arr[] = {
-    "pin"
+    "peptide-spectrum matches"
   };
   return vector<string>(arr, arr + sizeof(arr) / sizeof(string));
 }
@@ -494,6 +489,10 @@ vector<string> PercolatorApplication::getOptions() const {
     "list-of-files",
     "parameter-file",
     "feature-file-in",
+    "picked-protein",
+    "protein-enzyme",
+    "protein-report-fragments",
+    "protein-report-duplicates",
     "protein",
     "decoy-xml-output",
     "decoy-prefix",
@@ -516,14 +515,12 @@ vector<string> PercolatorApplication::getOptions() const {
     "klammer",
     "only-psms",
     //"doc",
-    "fido-protein-level-pi0",
     "fido-empirical-protein-q",
     "fido-gridsearch-depth",
-    "post-processing-tdc",
     "fido-gridsearch-mse-threshold",
     "fido-fast-gridsearch",
     "fido-protein-truncation-threshold",
-    "fido-split-large-components",
+    "fido-no-split-large-components",
     "post-processing-qvality",
     "verbosity",
     "top-match"
@@ -538,22 +535,22 @@ vector< pair<string, string> > PercolatorApplication::getOutputs() const {
   vector< pair<string, string> > outputs;
   outputs.push_back(make_pair("percolator.target.proteins.txt",
     "a tab-delimited file containing the target protein matches. See "
-    "<a href=\"txt-format.html\">here</a> for a list of the fields."));
+    "<a href=\"../file-formats/txt-format.html\">here</a> for a list of the fields."));
   outputs.push_back(make_pair("percolator.decoy.proteins.txt",
     "a tab-delimited file containing the decoy protein matches. See "
-    "<a href=\"txt-format.html\">here</a> for a list of the fields."));
+    "<a href=\"../file-formats/txt-format.html\">here</a> for a list of the fields."));
   outputs.push_back(make_pair("percolator.target.peptides.txt",
     "a tab-delimited file containing the target peptide matches. See "
-    "<a href=\"txt-format.html\">here</a> for a list of the fields."));
+    "<a href=\"../file-formats/txt-format.html\">here</a> for a list of the fields."));
   outputs.push_back(make_pair("percolator.decoy.peptides.txt",
     "a tab-delimited file containing the decoy peptide matches. See "
-    "<a href=\"txt-format.html\">here</a> for a list of the fields."));
+    "<a href=\"../file-formats/txt-format.html\">here</a> for a list of the fields."));
   outputs.push_back(make_pair("percolator.target.psms.txt",
     "a tab-delimited file containing the target PSMs. See "
-    "<a href=\"txt-format.html\">here</a> for a list of the fields."));
+    "<a href=\"../file-formats/txt-format.html\">here</a> for a list of the fields."));
   outputs.push_back(make_pair("percolator.decoy.psms.txt",
     "a tab-delimited file containing the decoy PSMs. See "
-    "<a href=\"txt-format.html\">here</a> for a list of the fields."));
+    "<a href=\"../file-formats/txt-format.html\">here</a> for a list of the fields."));
   outputs.push_back(make_pair("percolator.params.txt",
     "a file containing the name and value of all parameters for the current "
     "operation. Not all parameters in the file may have been used in the "

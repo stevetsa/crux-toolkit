@@ -73,8 +73,12 @@ int CascadeSearchApplication::main(int argc, char** argv) {
     string outputdir = Params::GetString("output-dir");
     RemoveTempFiles(outputdir, TideSearchProgram.getName());
     RemoveTempFiles(outputdir, AssignConfidenceProgram.getName());
-  
-    if (AssignConfidenceProgram.getAcceptedPSMs() < CASCADE_TERMINATION_CONDITION) {
+
+    int numAccepted = AssignConfidenceProgram.getAcceptedPSMs();
+    if (numAccepted < CASCADE_TERMINATION_CONDITION) {
+      carp(CARP_INFO,
+           "Terminating search early because only %d PSMs were accepted.",
+           numAccepted);
       break;
     }
 
@@ -99,7 +103,7 @@ string CascadeSearchApplication::getDescription() const {
     "[[nohtml:An iterative procedure for incorporating information about "
     "peptide groups into the database search and confidence estimation "
     "procedure.]]"
-    "[[html:<p>Cascade search is a general procedure for incorporating information about "
+    "[[html:<p>Cascade-search is a general procedure for incorporating information about "
     "peptide groups into the database search and confidence estimation procedure. Peptides "
     "may be grouped according to, for example, their enzymatic properties (zero, one, or "
     "two enzymatic termini) or the presence of different types of numbers of variable "
@@ -147,7 +151,7 @@ vector<string> CascadeSearchApplication::getOptions() const {
 vector< pair<string, string> > CascadeSearchApplication::getOutputs() const {
   vector< pair<string, string> > outputs;
   outputs.push_back(make_pair("cascade-search.target.txt",
-    "a <a href=\"txt-format.html\">tab-delimited text file</a> containing the "
+    "a <a href=\"../file-formats/txt-format.html\">tab-delimited text file</a> containing the "
     "target PSMs accepted at a pre-defined fdr."));
   outputs.push_back(make_pair("cascade-search.log.txt",
     "a log file containing a copy of all messages that were printed to stderr."));

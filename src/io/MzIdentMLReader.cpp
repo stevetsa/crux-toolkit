@@ -1,7 +1,7 @@
-/*************************************************************************//**
+/*************************************************************************
  * \file MzIdentMLReader.cpp
  * \brief Object for parsing pepxml files
- ****************************************************************************/
+ *************************************************************************/
 
 #include "MzIdentMLReader.h"
 #include "util/mass.h"
@@ -105,6 +105,11 @@ void MzIdentMLReader::addScores(
       case MS_SEQUEST_total_ions:
         ivalue = StringUtils::FromString<int>(i->value);
         match->setScore(BY_IONS_TOTAL, ivalue);
+        break;
+      case MS_p_value: // exact p-value
+        fvalue = StringUtils::FromString<FLOAT_T>(i->value);
+        match->setScore(TIDE_SEARCH_EXACT_PVAL, fvalue);
+        match_collection_->setScoredType(TIDE_SEARCH_EXACT_PVAL, true);
         break;
       default:
         carp(CARP_DEBUG, "Unknown score type, will be set in custom scores");
@@ -248,7 +253,7 @@ void MzIdentMLReader::parsePSMs() {
         vector<int> charge_vec;
         charge_vec.push_back(charge);
 
-        Spectrum* spectrum = new Spectrum(first_scan,last_scan,obs_mz, charge_vec, "");
+        Spectrum* spectrum = new Spectrum(first_scan, last_scan, obs_mz, charge_vec, "");
         FLOAT_T calc_mass = (item.calculatedMassToCharge - MASS_PROTON) * (FLOAT_T)charge;
         string sequence = item.peptidePtr->peptideSequence;
       
@@ -276,11 +281,11 @@ void MzIdentMLReader::parsePSMs() {
         start_idx = protein->findStart(sequence, "", "");
 
         if (start_idx == -1) {
-          carp(CARP_FATAL, "can't find sequence %s in first protein %s",sequence.c_str(), protein->getIdPointer().c_str());
+          carp(CARP_FATAL, "can't find sequence %s in first protein %s", sequence.c_str(), protein->getIdPointer());
         }
 
         int length = sequence.length();
-        carp(CARP_DEBUG, "creating peptide %s %f %i",sequence.c_str(), calc_mass, start_idx);
+        carp(CARP_DEBUG, "creating peptide %s %f %i", sequence.c_str(), calc_mass, start_idx);
 
         Crux::Peptide* peptide = new Crux::Peptide(length, protein, start_idx);
 

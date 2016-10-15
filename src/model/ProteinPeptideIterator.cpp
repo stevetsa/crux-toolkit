@@ -21,7 +21,6 @@ FLOAT_T ProteinPeptideIterator::calculateSubsequenceMass (
   ){
 
   FLOAT_T mass_h2o = MASS_H2O_AVERAGE;
-
   if (GlobalParams::getIsotopicMass() == MONO) {
     mass_h2o = MASS_H2O_MONO;
   }
@@ -168,7 +167,6 @@ void ProteinPeptideIterator::selectPeptides(
     int  cterm_num_cleavages, 
     int  int_num_skip_cleavages){
 
-  //carp(CARP_INFO, "int_num_skip:%d", int_num_skip_cleavages);
   // to avoid checking a lot of C-term before our current N-term cleavage
   int previous_cterm_cleavage_start= 0;
 
@@ -248,7 +246,6 @@ void ProteinPeptideIterator::selectPeptides(
  */
 void ProteinPeptideIterator::prepare()
 {
-  //  carp(CARP_INFO, "Calling prepare:%d", num_mis_cleavage_);
   prepareMc(num_mis_cleavage_);
 }
 

@@ -1266,7 +1266,6 @@ char* Peptide::getFlankingAAs() {
   return flanking_field;
 }
 
-
 /*
  * Local Variables:
  * mode: c

@@ -17,9 +17,6 @@
 using namespace std;
 using namespace Crux;
 
-bool OutputFiles::concat_ = false;
-bool OutputFiles::proteinLevelDecoys_ = false;
-
 /**
  * Default constructor for OutputFiles.  Opens all of the needed
  * files, naming them based on the values of the parameters output-dir
@@ -28,15 +25,14 @@ bool OutputFiles::proteinLevelDecoys_ = false;
  */
 OutputFiles::OutputFiles(CruxApplication* program_name)
 : matches_per_spec_(Params::GetInt("top-match")),
-  application_(program_name)
-{
+  application_(program_name) {
 
   delim_file_array_ = NULL;
   xml_file_array_ = NULL;
   sqt_file_array_ = NULL;
   mzid_file_ = NULL;
   feature_file_ = NULL;
-  pin_file_=NULL;
+  pin_file_ = NULL;
 
   // parameters for all three file types
   bool overwrite = Params::GetBool("overwrite");
@@ -48,12 +44,12 @@ OutputFiles::OutputFiles(CruxApplication* program_name)
 
   // TODO (BF oct-21-09): consider moving this logic to parameter.c
   COMMAND_T command = application_->getCommand();
-  if (concat_ || command != TIDE_SEARCH_COMMAND) {
+  if (Params::GetBool("concat") || command != TIDE_SEARCH_COMMAND) {
     num_files_ = 1;
   }
   
   if (command == XLINK_SEARCH_COMMAND) {
-    if (concat_) {
+    if (Params::GetBool("concat")) {
       num_decoy_files = 0;
       num_files_ = 1;
     } else {
@@ -70,7 +66,7 @@ OutputFiles::OutputFiles(CruxApplication* program_name)
        num_files_, num_decoy_files, output_directory.c_str(), fileroot.c_str(), overwrite);
 
   // all operations create tab files
-  if( Params::GetBool("txt-output") ){
+  if( Params::GetBool("txt-output") ) {
     createFiles(&delim_file_array_, 
                 output_directory, 
                 fileroot, 
@@ -80,7 +76,7 @@ OutputFiles::OutputFiles(CruxApplication* program_name)
 
   // almost all operations create xml files
   if( command != SPECTRAL_COUNTS_COMMAND &&
-      Params::GetBool("pepxml-output") ){
+      Params::GetBool("pepxml-output") ) {
     createFiles(&xml_file_array_,
                 output_directory,
                 fileroot,
@@ -100,13 +96,13 @@ OutputFiles::OutputFiles(CruxApplication* program_name)
   }
 
   //pin
-  if( command == TIDE_SEARCH_COMMAND && Params::GetBool("pin-output") ){
-   string filename=makeFileName(
+  if ( command == TIDE_SEARCH_COMMAND && Params::GetBool("pin-output") ) {
+    string filename = makeFileName(
     fileroot, 
     application_,
     NULL,// not trget and decoy file 
     "pin"
-   );
+    );
     createFile(
       &pin_file_,
       output_directory, 
@@ -115,7 +111,7 @@ OutputFiles::OutputFiles(CruxApplication* program_name)
     );
   }
 
-  if( Params::GetBool("mzid-output") ){
+  if( Params::GetBool("mzid-output") ) {
     createFile(&mzid_file_,
                output_directory,
                fileroot,
@@ -126,7 +122,7 @@ OutputFiles::OutputFiles(CruxApplication* program_name)
   // only percolator and q-ranker create feature files
   if( (command == PERCOLATOR_COMMAND 
        || command == QRANKER_COMMAND)
-      && Params::GetBool("feature-file") ){
+      && Params::GetBool("feature-file") ) {
     string filename = makeFileName(fileroot, application_, 
                                    NULL, // not target or decoy
                                    "features.txt");
@@ -138,12 +134,12 @@ OutputFiles::OutputFiles(CruxApplication* program_name)
   exact_pval_search_ = false;
 }
 
-OutputFiles::~OutputFiles(){
-  for(int file_idx = 0; file_idx < num_files_; file_idx ++){
-    if( delim_file_array_ ){ delete delim_file_array_[file_idx]; }
-    if( sqt_file_array_ ){ fclose(sqt_file_array_[file_idx]); }
-    if( xml_file_array_ ){ xml_file_array_[file_idx]->closeFile(); }
-    if(pin_file_){pin_file_->closeFile();}
+OutputFiles::~OutputFiles() {
+  for(int file_idx = 0; file_idx < num_files_; file_idx ++) {
+    if( delim_file_array_ ) { delete delim_file_array_[file_idx]; }
+    if( sqt_file_array_ ) { fclose(sqt_file_array_[file_idx]); }
+    if( xml_file_array_ ) { xml_file_array_[file_idx]->closeFile(); }
+    if(pin_file_) {pin_file_->closeFile();}
   }
 
   if (mzid_file_) { 
@@ -151,7 +147,7 @@ OutputFiles::~OutputFiles(){
     delete mzid_file_;
   }
 
-  if( feature_file_ ){ fclose(feature_file_); }
+  if( feature_file_ ) { fclose(feature_file_); }
 
   delete [] delim_file_array_;
   delete [] sqt_file_array_;
@@ -166,13 +162,13 @@ OutputFiles::~OutputFiles(){
  * will always be "target", the second will be "decoy" (iff num_files_
  * = 2) or "decoy-1", the third "decoy-2" and so on.
  */
-void OutputFiles::makeTargetDecoyList(){
+void OutputFiles::makeTargetDecoyList() {
   target_decoy_list_ = new string[num_files_];
   target_decoy_list_[0] = "target";
-  if( num_files_ == 2 ){
+  if( num_files_ == 2 ) {
     target_decoy_list_[1] = "decoy";
-  }else{
-    for(int file_idx = 1; file_idx < num_files_; file_idx++){
+  } else {
+    for(int file_idx = 1; file_idx < num_files_; file_idx++) {
       ostringstream name_builder;
       name_builder << "decoy-" << file_idx;
       target_decoy_list_[file_idx] = name_builder.str();
@@ -191,7 +187,7 @@ string OutputFiles::makeFileName(const string& fileroot,
                                  CruxApplication* application,
                                  const char* target_decoy,
                                  const char* extension,
-                                 const string& directory ){
+                                 const string& directory ) {
 
   // get command name
   string basename_str = application->getFileStem();
@@ -208,7 +204,7 @@ string OutputFiles::makeFileName(const string& fileroot,
     name_builder << fileroot << ".";
   }
   name_builder << basename << "." ;
-  if( target_decoy != NULL && target_decoy[0] != '\0' ){
+  if( target_decoy != NULL && target_decoy[0] != '\0' ) {
     name_builder << target_decoy << ".";
   }
   name_builder << extension;
@@ -234,8 +230,8 @@ bool OutputFiles::createFiles(FILE*** file_array_ptr,
                               const string& fileroot,
                               CruxApplication* application,
                               const char* extension,
-                              bool overwrite){
-  if( num_files_ == 0 ){
+                              bool overwrite) {
+  if( num_files_ == 0 ) {
     return false;
   }
   
@@ -243,9 +239,9 @@ bool OutputFiles::createFiles(FILE*** file_array_ptr,
   *file_array_ptr = new FILE*[num_files_];
 
   // create each file
-  for(int file_idx = 0; file_idx < num_files_; file_idx++ ){
+  for(int file_idx = 0; file_idx < num_files_; file_idx++ ) {
     string filename = makeFileName(fileroot, application,
-                                   concat_ ? NULL : target_decoy_list_[file_idx].c_str(),
+                                   Params::GetBool("concat") ? NULL : target_decoy_list_[file_idx].c_str(),
                                    extension);
     createFile(&(*file_array_ptr)[file_idx], 
                output_dir, 
@@ -274,8 +270,8 @@ bool OutputFiles::createFiles(PepXMLWriter*** xml_writer_array_ptr,
                               const string& fileroot,
                               CruxApplication* application,
                               const char* extension,
-                              bool overwrite){
-  if( num_files_ == 0 ){
+                              bool overwrite) {
+  if( num_files_ == 0 ) {
     return false;
   }
   
@@ -283,9 +279,9 @@ bool OutputFiles::createFiles(PepXMLWriter*** xml_writer_array_ptr,
   *xml_writer_array_ptr = new PepXMLWriter*[num_files_];
 
   // create each file
-  for(int file_idx = 0; file_idx < num_files_; file_idx++ ){
+  for(int file_idx = 0; file_idx < num_files_; file_idx++ ) {
     string filename = makeFileName(fileroot, application,
-                                   concat_ ? NULL : target_decoy_list_[file_idx].c_str(),
+                                   Params::GetBool("concat") ? NULL : target_decoy_list_[file_idx].c_str(),
                                    extension, output_dir);
     (*xml_writer_array_ptr)[file_idx] = new PepXMLWriter();
     (*xml_writer_array_ptr)[file_idx]->openFile(filename.c_str(), overwrite);
@@ -312,8 +308,8 @@ bool OutputFiles::createFiles(MatchFileWriter*** file_array_ptr,
                               const string& output_dir,
                               const string& fileroot,
                               CruxApplication* application,
-                              const char* extension ){
-  if( num_files_ == 0 ){
+                              const char* extension ) {
+  if( num_files_ == 0 ) {
     return false;
   }
   
@@ -321,9 +317,9 @@ bool OutputFiles::createFiles(MatchFileWriter*** file_array_ptr,
   *file_array_ptr = new MatchFileWriter*[num_files_];
 
   // create each file writer
-  for(int file_idx = 0; file_idx < num_files_; file_idx++ ){
+  for(int file_idx = 0; file_idx < num_files_; file_idx++ ) {
     string filename = makeFileName(fileroot, application,
-                                   concat_ ? NULL : target_decoy_list_[file_idx].c_str(),
+                                   Params::GetBool("concat") ? NULL : target_decoy_list_[file_idx].c_str(),
                                    extension, output_dir);
     (*file_array_ptr)[file_idx] = new MatchFileWriter(filename.c_str());
   }
@@ -344,7 +340,7 @@ bool OutputFiles::createFiles(MatchFileWriter*** file_array_ptr,
 bool OutputFiles::createFile(FILE** file_ptr,
                              const string& output_dir,
                              const string& filename,
-                             bool overwrite){
+                             bool overwrite) {
   *file_ptr = create_file_in_path(filename, output_dir, overwrite);
   return *file_ptr != NULL;
 }
@@ -376,8 +372,8 @@ bool OutputFiles::createFile(
   const string& output_dir,
   const string& filename,
   bool overwrite
-){
-  *pin_file_ptr= new PinWriter();
+) {
+  *pin_file_ptr = new PinWriter();
   (*pin_file_ptr)->openFile(filename, output_dir, overwrite);  
   return pin_file_ptr != NULL;
 }
@@ -388,22 +384,22 @@ bool OutputFiles::createFile(
  * files.  Optional num_proteins argument for .sqt files.  Use this
  * for search commands, not post-search.
  */
-void OutputFiles::writeHeaders(int num_proteins, bool isMixedTargetDecoy){
+void OutputFiles::writeHeaders(int num_proteins, bool isMixedTargetDecoy) {
 
   const char* tag = "target";
 
   // write headers one file at a time for tab and sqt
-  for(int file_idx = 0; file_idx < num_files_; file_idx++){
-    if( delim_file_array_ ){
+  for(int file_idx = 0; file_idx < num_files_; file_idx++) {
+    if( delim_file_array_ ) {
       bool has_decoy = (bool)file_idx; // only first file (idx 0) is target
-      if( isMixedTargetDecoy ){ // unless it is both
+      if( isMixedTargetDecoy ) { // unless it is both
         has_decoy = true;
       }
         delim_file_array_[file_idx]->addColumnNames(application_, has_decoy);
         delim_file_array_[file_idx]->writeHeader();
     }
 
-    if( sqt_file_array_ ){
+    if( sqt_file_array_ ) {
       string database = Params::GetString("protein-database");
       if (!FileUtils::Exists(database.c_str())) {
         database = Params::GetString("tide database");
@@ -412,14 +408,14 @@ void OutputFiles::writeHeaders(int num_proteins, bool isMixedTargetDecoy){
                        tag, database, num_proteins, exact_pval_search_); 
     }
     
-    if ( xml_file_array_){
+    if ( xml_file_array_) {
       xml_file_array_[file_idx]->writeHeader();
     }
 
     tag = "decoy";
   }
   //write header at a time for pin file
-  if(pin_file_){
+  if(pin_file_) {
     pin_file_->printHeader();
   }
 }
@@ -428,19 +424,19 @@ void OutputFiles::writeHeaders(int num_proteins, bool isMixedTargetDecoy){
  * \brief Write header lines to the .txt and .pep.xml
  * files.  Use this for post-search commands, not search.
  */
-void OutputFiles::writeHeaders(const vector<bool>& add_this_col){
+void OutputFiles::writeHeaders(const vector<bool>& add_this_col) {
 
 
   // write headers one file at a time for tab and sqt
-  for(int file_idx = 0; file_idx < num_files_; file_idx++){
-    if( delim_file_array_ ){
+  for(int file_idx = 0; file_idx < num_files_; file_idx++) {
+    if( delim_file_array_ ) {
         delim_file_array_[file_idx]->addColumnNames(application_, 
                                                     (bool)file_idx, 
                                                     add_this_col);
         delim_file_array_[file_idx]->writeHeader();
     }
 
-    if ( xml_file_array_){
+    if ( xml_file_array_) {
       xml_file_array_[file_idx]->writeHeader();
     }
   }
@@ -450,11 +446,11 @@ void OutputFiles::writeHeaders(const vector<bool>& add_this_col){
  * \brief Write header lines to the optional feature file.
  */
 void OutputFiles::writeFeatureHeader(char** feature_names,
-                                     int num_names){
+                                     int num_names) {
   // write feature file header
-  if( feature_names && feature_file_ && num_names ){
+  if( feature_names && feature_file_ && num_names ) {
     fprintf(feature_file_, "scan\tlabel");
-    for(int name_idx = 0; name_idx < num_names; name_idx++){
+    for(int name_idx = 0; name_idx < num_names; name_idx++) {
       fprintf(feature_file_, "\t%s", feature_names[name_idx]);
     }
     fprintf(feature_file_, "\n");
@@ -464,9 +460,9 @@ void OutputFiles::writeFeatureHeader(char** feature_names,
 /**
  * \brief Write footer lines to .pep.xml files
  */
-void OutputFiles::writeFooters(){
-  if (xml_file_array_){
-    for (int file_idx = 0; file_idx < num_files_; file_idx++){
+void OutputFiles::writeFooters() {
+  if (xml_file_array_) {
+    for (int file_idx = 0; file_idx < num_files_; file_idx++) {
       xml_file_array_[file_idx]->writeFooter();
     }
   }
@@ -483,7 +479,7 @@ void OutputFiles::writeMatches(
                                 ///< array of collections from shuffled peptides
   SCORER_TYPE_T rank_type,      ///< use ranks for this type
   Spectrum* spectrum            ///< given when all matches are to one spec
-  ){
+  ) {
 
   if (!target_matches) {
     return;  // warn?
@@ -518,15 +514,15 @@ void OutputFiles::printMatchesTab(
   }
 
   // if a spectrum is given, use one print function
-  if( spectrum ){
+  if( spectrum ) {
     MatchCollection* cur_matches = target_matches;
 
-    for(int file_idx = 0; file_idx < num_files_; file_idx++){
+    for(int file_idx = 0; file_idx < num_files_; file_idx++) {
       cur_matches->calculateDeltaCn();
       cur_matches->printTabDelimited(delim_file_array_[file_idx],
                                      matches_per_spec_, spectrum, rank_type);
       carp(CARP_DETAILED_DEBUG, "done writing file index %d", file_idx);
-      if( decoy_matches_array.size() > (size_t)file_idx ){
+      if( decoy_matches_array.size() > (size_t)file_idx ) {
         cur_matches = decoy_matches_array[file_idx];
       }// else if it is NULL, num_files_ == 1 and loop will exit here
     }
@@ -554,21 +550,21 @@ void OutputFiles::printMatchesSqt(
   vector<MatchCollection*>& decoy_matches_array,  
                                 ///< array of collections from shuffled peptides
   Spectrum* spectrum
-){
+) {
 
-  if( sqt_file_array_ == NULL ){
+  if( sqt_file_array_ == NULL ) {
     return;
   }
 
   MatchCollection* cur_matches = target_matches;
 
-  for(int file_idx = 0; file_idx < num_files_; file_idx++){
+  for(int file_idx = 0; file_idx < num_files_; file_idx++) {
 
     cur_matches->printSqt(sqt_file_array_[file_idx],
                                matches_per_spec_,
                                spectrum);
 
-    if( decoy_matches_array.size() > (size_t)file_idx ){
+    if( decoy_matches_array.size() > (size_t)file_idx ) {
       cur_matches = decoy_matches_array[file_idx];
     } // else if NULL, num_files_==1 and this is last loop
   }
@@ -583,9 +579,9 @@ void OutputFiles::printMatchesXml(
   Spectrum* spectrum,
   SCORER_TYPE_T rank_type
   
-){
+) {
   static int index = 1;
-  if (!xml_file_array_){
+  if (!xml_file_array_) {
     return;
   }
 
@@ -593,7 +589,7 @@ void OutputFiles::printMatchesXml(
 
   for (int file_idx = 0; file_idx < num_files_; file_idx++) {
     cur_matches->printXml(xml_file_array_[file_idx], matches_per_spec_, spectrum, rank_type);
-    if( decoy_matches_array.size() > (size_t)file_idx ){
+    if( decoy_matches_array.size() > (size_t)file_idx ) {
       cur_matches = decoy_matches_array[file_idx];
     } // else if NULL, num_files_==1 and this is last loop
   }
@@ -620,7 +616,7 @@ void OutputFiles::printMatchesMzid(
   MatchCollection* collection,
   SCORER_TYPE_T rank_type
   ) {
-  MatchIterator match_iter(collection,rank_type);
+  MatchIterator match_iter(collection, rank_type);
 
   while(match_iter.hasNext()) {
     Match* current_match = match_iter.next();
@@ -634,7 +630,7 @@ void OutputFiles::printMatchesMzid(
 
 void OutputFiles::writeMatches(
   MatchCollection*  matches ///< from multiple spectra
-){
+) {
   matches->printMultiSpectra(delim_file_array_[0], NULL /* no decoy file */);
   if (xml_file_array_) {
     matches->printMultiSpectraXml(xml_file_array_[0]);
@@ -645,26 +641,26 @@ void OutputFiles::writeMatches(
  * \brief Print features from one match to file.
  */
 void OutputFiles::writeMatchFeatures(
-   Match* match, ///< match to provide scan num, decoy
-   double* features,///< features for this match
-   int num_features)///< size of features array
-{
-  if( feature_file_ == NULL ){ return; }
+  Match* match, ///< match to provide scan num, decoy
+  double* features,///< features for this match
+  int num_features) {///< size of features array
+  
+  if( feature_file_ == NULL ) { return; }
 
   // write scan number
   fprintf(feature_file_, "%i\t",
           match->getSpectrum()->getFirstScan());
 
   // decoy or target peptide
-  if (match->getNullPeptide() == false){
+  if (match->getNullPeptide() == false) {
     fprintf(feature_file_, "1\t");
   } else { 
     fprintf(feature_file_, "-1\t");
-  };
+  }
   
   // print each feature, end in new-line
-  for(int feature_idx = 0; feature_idx < num_features; feature_idx++){
-    if (feature_idx < num_features - 1){
+  for(int feature_idx = 0; feature_idx < num_features; feature_idx++) {
+    if (feature_idx < num_features - 1) {
       fprintf(feature_file_, "%.4f\t", features[feature_idx]);
     } else {
       fprintf(feature_file_, "%.4f\n", features[feature_idx]);
@@ -676,7 +672,7 @@ void OutputFiles::writeMatchFeatures(
 /**
  * Print the given peptides and their scores in sorted order by score.
  */
-void OutputFiles::writeRankedPeptides(const vector<pair<FLOAT_T, Peptide*> >& scoreToPeptide){
+void OutputFiles::writeRankedPeptides(const vector<pair<FLOAT_T, Peptide*> >& scoreToPeptide) {
   MatchFileWriter* file = delim_file_array_[0];
   MATCH_COLUMNS_T score_col = SIN_SCORE_COL;
 
@@ -703,7 +699,7 @@ void OutputFiles::writeRankedPeptides(const vector<pair<FLOAT_T, Peptide*> >& sc
 
   // print each pair
   for(vector<pair<FLOAT_T, Peptide*> >::const_iterator it = scoreToPeptide.begin();
-      it != scoreToPeptide.end(); ++it){
+      it != scoreToPeptide.end(); ++it) {
     Peptide* peptide = it->second;
     FLOAT_T score = it->first;
     const char* seq = peptide->getSequence();
@@ -753,7 +749,7 @@ void OutputFiles::writeRankedProteins(const vector<boost::tuple<FLOAT_T, Protein
 
   // print each protein
   for(vector<boost::tuple<FLOAT_T, Protein*, int> >::const_iterator it = proteins.begin();
-      it != proteins.end(); ++it){
+      it != proteins.end(); ++it) {
     file->setColumnCurrentRow(score_col, it->get<0>());
     file->setColumnCurrentRow(PROTEIN_ID_COL, it->get<1>()->getIdPointer());
     if (isParsimony) {
@@ -761,22 +757,6 @@ void OutputFiles::writeRankedProteins(const vector<boost::tuple<FLOAT_T, Protein
     }
     file->writeRow();
   }
-}
-
-bool OutputFiles::isConcat() {
-  return concat_;
-}
-
-void OutputFiles::setConcat(bool enable) {
-  concat_ = enable;
-}
-
-bool OutputFiles::isProteinLevelDecoys() {
-  return proteinLevelDecoys_;
-}
-
-void OutputFiles::setProteinLevelDecoys(bool enable) {
-  proteinLevelDecoys_ = enable;
 }
 
 /*

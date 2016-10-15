@@ -107,7 +107,6 @@ string XLinkMatch::getUnshuffledSequence() {
  *\returns the flanking amino acids for the match
  */
 string XLinkMatch::getFlankingAAString() {
-  
   Crux::Peptide* peptide = this -> getPeptide(0);
 
   string ans("");
@@ -364,7 +363,7 @@ void XLinkMatch::printOneMatchField(
       getCandidateTypeString());
     break;
   case ORIGINAL_TARGET_SEQUENCE_COL:
-    if (null_peptide_ == true || OutputFiles::isConcat()) {
+    if (null_peptide_ == true || Params::GetBool("concat")) {
       string seq = getUnshuffledSequence();
       output_file->setColumnCurrentRow((MATCH_COLUMNS_T)column_idx, seq);
     }

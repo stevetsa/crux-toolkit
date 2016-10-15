@@ -199,14 +199,13 @@ class Spectrum{
    * \returns The a const reference to a vector of the possible charge
    * states of this spectrum. If EZ states are available, return those.
    */
-  const std::vector<SpectrumZState>& getZStatesConst() const;
-  std::vector<SpectrumZState>& getZStates();
+  const std::vector<SpectrumZState>& getZStates() const;
+
   /**
    * \returns the ZState at the requested index
    */
-  const SpectrumZState& getZStateConst(int idx);
-  SpectrumZState& getZState(int idx);
-  
+  const SpectrumZState& getZState(int idx);
+
   /**
    * Considers the spectrum-charge parameter and returns the
    * appropriate charge states that should be searched for this
@@ -329,12 +328,13 @@ class Spectrum{
   /**
    * Adds a peak to the spectrum given a intensity and location.
    * Calls update_fields.
-   * \returns TRUE if successfully added.
    */
-  bool addPeak
+  void addPeak
     (FLOAT_T intensity,  ///< the intensity of peak to add -in
      FLOAT_T location_mz ///< the location of peak to add -in
      );
+
+  void truncatePeaks(int count);
 
   /**
    * Creates and fills mz_peak_array_, the array of pointers to peaks
