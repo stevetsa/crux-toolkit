@@ -34,7 +34,6 @@
 using namespace Crux;
 
 FLOAT_T* Scorer::observed_ = NULL;
-FLOAT_T* Scorer::observed_g_ = NULL;
 size_t Scorer::current_observed_size_ = 0;
 
 
@@ -184,7 +183,6 @@ Scorer::~Scorer() {
 void Scorer::finalize() {
 
   delete []observed_;
-  delete []observed_g_;
   
 }
 
@@ -923,9 +921,7 @@ bool Scorer::createIntensityArrayObserved(
 
   if (observed.size() > current_observed_size_) {
     delete []observed_;
-    delete []observed_g_;
     observed_ = new FLOAT_T[observed.size()];
-    observed_g_ = new FLOAT_T[observed.size()];
   }
   copy(observed.begin(), observed.end(), observed_);
 
@@ -960,117 +956,9 @@ bool Scorer::createIntensityArrayObserved(
         }
       }
     }
-    // Gaussian smooth
-    FLOAT_T gfwhm = GlobalParams::getGaussianFWHM();
-    FLOAT_T g_min_height = GlobalParams::getGaussianMinHeight();
-    FLOAT_T c_stddev = get_FWHM_to_gaussian_c_stddev(
-      gfwhm
-    );
-
-    
-    int ngbins_ = 0;
-    
-    if (gfwhm != 0 && c_stddev != 0) {
-      ngbins_ = get_gaussian_num_bins(
-        c_stddev,
-        g_min_height,
-        bin_width_,
-        observed.size()
-      );
-    }
-
-    carp_once(CARP_INFO, "fwhm:%g min:%g c:%g b:%i",
-           gfwhm,
-           g_min_height,
-           c_stddev,
-           ngbins_
-           );
-    
-    vector<FLOAT_T> g_table;
-    if (ngbins_ != 0 && c_stddev != 0) {
-      for (int i = -ngbins_;i<=ngbins_;i++) {
-        FLOAT_T xvalue = (FLOAT_T)i * bin_width_;
-        int ii = i + ngbins_;
-        g_table.push_back(get_gaussian_value(xvalue, c_stddev));
-        carp_once(CARP_INFO, "offset:%i x:%g g:%g", i, xvalue, g_table[ii]);
-      }
-    } else {
-      g_table.push_back(1);
-    }
-    //carp(CARP_FATAL, "Stopping here");
-    int n = observed.size()-1;
-    for (int i = 0; i <= n; i++) {
-      observed_g_[i] = 0.0;
-      
-      int leftj = -ngbins_;
-      if (i < ngbins_) {
-        leftj = -i;
-      }
-      int rightj = ngbins_;
-      if (i+ngbins_ >= n) {
-        rightj = n - i;
-      }
-      
-      for (int j = leftj; j <= rightj;j++) {
-        observed_g_[i] += g_table[j+ngbins_] * observed_[i+j];
-      }  
-    }
   }
   return true;
 }
-
-FLOAT_T get_gaussian_value(
-  FLOAT_T x_shift,
-  FLOAT_T c_stddev
-) {
-  //If we are exactly at 0, then the value will be 1.0
-  if (x_shift == 0) {
-    return(1.0);
-  } else if (c_stddev == 0) {
-    //else if the stddev is 0, then the value will be 0 when x!=0.
-    return(0.0);
-  } else {
-    //Calculate the gaussian value.
-    return(exp(-(x_shift * x_shift) / (2.0 * c_stddev * c_stddev)));
-  }
-}
-
-FLOAT_T get_FWHM_to_gaussian_c_stddev(
-  FLOAT_T fwhm_width
-) {
-  if (fwhm_width == 0) {
-    return 0;
-  } else {
-    FLOAT_T c = fwhm_width / (2.0 * sqrt(2.0 * log(2.0)));
-    return(c);
-  }
-}
-
-int get_gaussian_num_bins(
-  FLOAT_T c_stddev,
-  FLOAT_T min_height,
-  FLOAT_T bin_width,
-  int max_bins
-) {
-  int num_bins = 0;
-  if (min_height == 1 || c_stddev == 0) {
-    num_bins = 0;
-  } else {
-    if (min_height == 0) {
-      min_height = FLOAT_T_MIN;
-    }
-    FLOAT_T x = sqrt (2.0 * log(1.0/min_height)) * c_stddev;
-  
-    num_bins = (int)(ceil(x / bin_width));
-    num_bins = min(num_bins, max_bins);
-    carp_once(CARP_INFO, "c:%g min:%g bw:%g x:%g nbins:%i", c_stddev, min_height, bin_width, x, num_bins);
-  }
-  
-  return(num_bins);
-  
-}
-
-
 
 /**
  * Generate the processed peaks for the spectrum and return via the
@@ -1363,11 +1251,11 @@ FLOAT_T Scorer::scoreIntensityIonSeries(
       // Add peaks of intensity 50.0 for B, Y type ions. 
       // In addition, add peaks of intensity of 25.0 to +/- 1 m/z flanking each B, Y ion if requested.
       // Skip ions that are located beyond max mz limit
-      B_Y_sum += observed_g_[intensity_array_idx];
+      B_Y_sum += observed_[intensity_array_idx];
       if (use_flanks_) {
-        FLANK_sum += observed_g_[intensity_array_idx-1];
+        FLANK_sum += observed_[intensity_array_idx-1];
         if ((intensity_array_idx + 1) < max_bin) {
-          FLANK_sum += observed_g_[intensity_array_idx+1];
+          FLANK_sum += observed_[intensity_array_idx+1];
 	      }
       }
         
@@ -1377,18 +1265,18 @@ FLOAT_T Scorer::scoreIntensityIonSeries(
         int h2o_array_idx = 
           INTEGERIZE((ion_mass_z - (MASS_H2O_MONO/ion_charge)),
                        bin_width, bin_offset);  
-        LOSS_sum += observed_g_[h2o_array_idx];
+        LOSS_sum += observed_[h2o_array_idx];
       }
 
       int nh3_array_idx 
         = INTEGERIZE((ion_mass_z -  (MASS_NH3_MONO/ion_charge)),
                        bin_width, bin_offset);
-      LOSS_sum += observed_g_[nh3_array_idx];
+      LOSS_sum += observed_[nh3_array_idx];
 
     }// is it A ion?
     else if(ion_type == A_ION){
       // Add peaks of intensity 10.0 for A type ions.
-      LOSS_sum += observed_g_[intensity_array_idx];
+      LOSS_sum += observed_[intensity_array_idx];
     }
     else{// ERROR!, only should create B, Y, A type ions for xcorr theoreical 
       carp(CARP_ERROR, "only should create B, Y, A type ions for xcorr theoretical spectrum");
@@ -1450,8 +1338,7 @@ FLOAT_T Scorer::crossCorrelation(
   // compare each location in theoretical spectrum
   int idx;
   for(idx = 0; idx < size; ++idx){
-    //score_at_zero += observed_[idx] * theoretical[idx];
-    score_at_zero += observed_g_[idx] * theoretical[idx];
+    score_at_zero += observed_[idx] * theoretical[idx];
   }
 
   return score_at_zero / 10000.0;
@@ -1469,7 +1356,7 @@ FLOAT_T Scorer::crossCorrelation(
        ++iter) {
 
     //if (iter->first != last_idx) {
-      score_at_zero += observed_g_[iter->first] * iter->second;
+      score_at_zero += observed_[iter->first] * iter->second;
       //  last_idx = iter->first;
     //}
   }
@@ -1823,7 +1710,7 @@ FLOAT_T Scorer::scoreIntensity(
   FLOAT_T intensity
   ) {
   if (add_idx >= 0) {
-    return (observed_g_[add_idx] * intensity);
+    return (observed_[add_idx] * intensity);
   } else {
     return 0.0;
   }
