@@ -589,6 +589,7 @@ void TideSearchApplication::search(void* threadarg) {
       int peidx = 0;
       vector<int> pepMassInt, pepMassIntUnique;
       pepMassInt.reserve(nCandPeptide);
+      pepMassIntUnique.reserve(nCandPeptide);
 
       for (iter_ = active_peptide_queue->iter_; iter_ != active_peptide_queue->end_; ++iter_) {
         if (candidatePeptideStatus[peidx]) {
@@ -599,28 +600,33 @@ void TideSearchApplication::search(void* threadarg) {
         }
         peidx++;
       }
+      std::sort(pepMassIntUnique.begin(), pepMassIntUnique.end());
+      vector<int>::iterator last = std::unique(pepMassIntUnique.begin(), pepMassIntUnique.end());
+      pepMassIntUnique.erase(last, pepMassIntUnique.end());
       int nPepMassIntUniq = (int)pepMassIntUnique.size();
 
-      vector< vector<double> > evidenceObsC = new_xcorr
-        ? vector< vector<double> >(nPepMassIntUniq, vector<double>(maxPrecurMass, 0))
-        : vector< vector<double> >();
-      vector< vector<int> > evidenceObs(nPepMassIntUniq, vector<int>(maxPrecurMass, 0));
-      vector<int> scoreOffsetObs(nPepMassIntUniq, 0);
-      vector< vector<double> > pValueScoreObs(nPepMassIntUniq, vector<double>());
+      vector< vector<int> > evidenceObs;
+      vector< vector<double> > evidenceObsC, pValueScoreObs;
+      vector<int> scoreOffsetObs;
+      if (new_xcorr) {
+        evidenceObsC = vector< vector<double> >(nPepMassIntUniq, vector<double>(maxPrecurMass, 0));
+      } else {
+        evidenceObs = vector< vector<int> >(nPepMassIntUniq, vector<int>(maxPrecurMass, 0));
+        pValueScoreObs = vector< vector<double> >(nPepMassIntUniq, vector<double>());
+        scoreOffsetObs = vector<int>(nPepMassIntUniq, 0);
+      }
       for (int pe = 0; pe < nPepMassIntUniq; pe++) {
         int pepMaInt = pepMassIntUnique[pe];
         // preprocess to create one integerized evidence vector for each cluster of masses among selected peptides
         double pepMassMonoMean = (pepMaInt - 0.5 + bin_offset) * bin_width;
-        if (!new_xcorr) {
-          evidenceObs[pe] = Spectrum::DiscretizeEvidenceVector(spectrum->CreateEvidenceVector(
-            bin_width, bin_offset, charge, pepMassMonoMean, maxPrecurMass));
-        } else {
+        if (new_xcorr) {
           evidenceObsC[pe] = spectrum->CreateEvidenceVector(
             bin_width, bin_offset, charge, pepMassMonoMean, maxPrecurMass,
             &num_range_skipped, &num_precursors_skipped, &num_isotopes_skipped, &num_retained);
-          evidenceObs[pe] = Spectrum::DiscretizeEvidenceVector(evidenceObsC[pe]);
           continue;
         }
+        evidenceObs[pe] = Spectrum::DiscretizeEvidenceVector(spectrum->CreateEvidenceVector(
+          bin_width, bin_offset, charge, pepMassMonoMean, maxPrecurMass));
         // NOTE: will have to go back to separate dynamic programming for
         //       target and decoy if they have different probNI and probC
         // estimate maxScore and minScore
@@ -665,15 +671,14 @@ void TideSearchApplication::search(void* threadarg) {
           for (vector<unsigned int>::const_iterator iter_uint = iter1_->unordered_peak_list_.begin();
                iter_uint != iter1_->unordered_peak_list_.end();
                iter_uint++) {
-            if (!new_xcorr) {
-              xcorr += evidenceObs[pepMassIntIdx][*iter_uint];
-            } else {
-              xcorr += evidenceObsC[pepMassIntIdx][*iter_uint];
-            }
+            xcorr += !new_xcorr
+              ? evidenceObs[pepMassIntIdx][*iter_uint]
+              : evidenceObsC[pepMassIntIdx][*iter_uint];
           }
 
-          int scoreCountIdx = (int)xcorr + scoreOffsetObs[pepMassIntIdx];
-          double pValue = !new_xcorr ? pValueScoreObs[pepMassIntIdx][scoreCountIdx] : numeric_limits<double>::quiet_NaN();
+          double pValue = !new_xcorr
+            ? pValueScoreObs[pepMassIntIdx][xcorr + scoreOffsetObs[pepMassIntIdx]]
+            : numeric_limits<double>::quiet_NaN();
           if (peptide_centric) {
               (*iter_)->AddHit(spectrum, pValue, xcorr, candidatePeptideStatusSize - peidx, charge);
           } else {
