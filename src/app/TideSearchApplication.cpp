@@ -1398,6 +1398,10 @@ void TideSearchApplication::processParams() {
       }
     }
   }
+
+  if (Params::GetBool("new-xcorr-code")) {
+    Params::Set("exact-p-value", true);
+  }
 }
 
 void TideSearchApplication::setSpectrumFlag(map<pair<string, unsigned int>, bool>* spectrum_flag) {
