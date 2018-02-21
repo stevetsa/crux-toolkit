@@ -77,16 +77,8 @@ class Spectrum {
     long int* num_precursors_skipped = NULL,
     long int* num_isotopes_skipped = NULL,
     long int* num_retained = NULL) const;
-  std::vector<int> CreateEvidenceVectorDiscretized(
-    double binWidth,
-    double binOffset,
-    int charge,
-    double pepMassMonoMean,
-    int maxPrecurMass,
-    long int* num_range_skipped = NULL,
-    long int* num_precursors_skipped = NULL,
-    long int* num_isotopes_skipped = NULL,
-    long int* num_retained = NULL) const;
+
+  static std::vector<int> DiscretizeEvidenceVector(const std::vector<double>& evidence);
 
   int MaxCharge() const;
   double MaxPeakInRange( double min_range, double max_range ) const;

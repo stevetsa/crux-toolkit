@@ -805,6 +805,9 @@ Params::Params() : finalized_(false) {
     "on non-terminal residues in conjunction with p-value computation, but currently only "
     "static mods are allowed on the N-terminus, and no mods on the C-terminus.",
     "Available for tide-search", true);
+  InitBoolParam("new-xcorr-code", false,
+    "Use Jeff Howbert code path for calculating XCorr.",
+    "Available for tide-search", false);
   InitStringParam("store-index", "",
     "When providing a FASTA file as the index, the generated binary index will be stored at "
     "the given path. This option has no effect if a binary index is provided as the index.",

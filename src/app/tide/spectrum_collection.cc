@@ -368,20 +368,7 @@ vector<double> Spectrum::CreateEvidenceVector(
   return evidence;
 }
 
-vector<int> Spectrum::CreateEvidenceVectorDiscretized(
-  double binWidth,
-  double binOffset,
-  int charge,
-  double pepMassMonoMean,
-  int maxPrecurMass,
-  long int* num_range_skipped,
-  long int* num_precursors_skipped,
-  long int* num_isotopes_skipped,
-  long int* num_retained
-) const {
-  vector<double> evidence =
-    CreateEvidenceVector(binWidth, binOffset, charge, pepMassMonoMean, maxPrecurMass,
-                         num_range_skipped, num_precursors_skipped, num_isotopes_skipped, num_retained);
+vector<int> Spectrum::DiscretizeEvidenceVector(const std::vector<double>& evidence) {
   vector<int> discretized;
   discretized.reserve(evidence.size());
   for (vector<double>::const_iterator i = evidence.begin(); i != evidence.end(); i++) {
@@ -400,26 +387,26 @@ void SpectrumCollection::ReadMS(istream& in, bool ms1) {
     switch(line[0]) {
     case 'S': {
         if (spectrum)
-	  spectra_.push_back(spectrum);
-	int specnum1, specnum2;
-	double precursor_m_z = 0;
-	int ok1 = 0;
-	int ok2 = 0;
-	sscanf(line, "S %d %d%n%lf%n", &specnum1, &specnum2, &ok1,
-	       &precursor_m_z, &ok2);
-	CHECK((ok1 > 0) && (ms1 != (ok2 > 0)));
-	CHECK(specnum1 == specnum2);
-	spectrum = new Spectrum(specnum1, precursor_m_z);
+          spectra_.push_back(spectrum);
+        int specnum1, specnum2;
+        double precursor_m_z = 0;
+        int ok1 = 0;
+        int ok2 = 0;
+        sscanf(line, "S %d %d%n%lf%n", &specnum1, &specnum2, &ok1,
+               &precursor_m_z, &ok2);
+        CHECK((ok1 > 0) && (ms1 != (ok2 > 0)));
+        CHECK(specnum1 == specnum2);
+        spectrum = new Spectrum(specnum1, precursor_m_z);
       }
       break;
     case 'I': {
         int pos = 0;
-	double rtime = -1;
-	sscanf(line, "I RTime %n%lf", &pos, &rtime);
-	if (pos > 0) {
-	  CHECK(rtime >= 0);
-	  spectrum->SetRTime(rtime);
-	}
+        double rtime = -1;
+        sscanf(line, "I RTime %n%lf", &pos, &rtime);
+        if (pos > 0) {
+          CHECK(rtime >= 0);
+          spectrum->SetRTime(rtime);
+        }
       }
       break;
     case 'Z':
@@ -432,9 +419,9 @@ void SpectrumCollection::ReadMS(istream& in, bool ms1) {
       double location, intensity;
       CHECK(2 == sscanf(line, "%lf %lf", &location, &intensity));
       if (spectrum->Size() > 0) // check that m_z values are increasing.
-	CHECK(location > spectrum->M_Z(spectrum->Size() - 1));
+        CHECK(location > spectrum->M_Z(spectrum->Size() - 1));
       if (intensity > 0)
-	spectrum->AddPeak(location, intensity);
+        spectrum->AddPeak(location, intensity);
       break;
     default:
       break;
@@ -445,7 +432,7 @@ void SpectrumCollection::ReadMS(istream& in, bool ms1) {
 }
 
 bool SpectrumCollection::ReadSpectrumRecords(const string& filename,
-					     pb::Header* header) {
+                                             pb::Header* header) {
   pb::Header tmp_header;
   if (header == NULL)
     header = &tmp_header;
@@ -475,7 +462,7 @@ void SpectrumCollection::MakeSpecCharges() {
     for (int j = 0; j < (*i)->NumChargeStates(); ++j) {
       int charge = (*i)->ChargeState(j);
       double neutral_mass = (((*i)->PrecursorMZ() - MASS_PROTON)
-			     * charge);
+                             * charge);
       spec_charges_.push_back(SpecCharge(neutral_mass, charge, *i,
                                          spectrum_index));
     }
@@ -489,7 +476,7 @@ double SpectrumCollection::FindHighestMZ() const {
   vector<Spectrum*>::const_iterator i = spectra_.begin();
   for (; i != spectra_.end(); ++i) {
     CHECK((*i)->Size() > 0) << "ERROR: spectrum " << (*i)->SpectrumNumber()
-			    << " has no peaks.\n";
+                            << " has no peaks.\n";
     double last_peak = (*i)->M_Z((*i)->Size() - 1);
     if (last_peak > highest)
       highest = last_peak;
