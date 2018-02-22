@@ -117,7 +117,7 @@ for precursor in 3 10; do
 		if [[ $engine == "tide1" ]]; then
 		    search_command="tide-search"
 		elif [[ $engine == "tide2" ]]; then
-		    search_command="tide-search --exact-p-value T --discretized-evidence F"
+		    search_command="tide-search --new-xcorr-code T"
 		elif [[ $engine == "tide-p" ]]; then
 		    search_command="tide-search --exact-p-value T"
 		elif [[ $engine == "comet" ]]; then

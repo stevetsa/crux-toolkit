@@ -302,21 +302,19 @@ vector<double> Spectrum::CreateEvidenceVector(
   for (int i = binFirst; i <= binLast; i++) {
     // b ion
     double bIonMass = (i - 0.5 + binOffset) * binWidth;
-    int ionBin = MassConstants::mass2bin(bIonMass);
-    double current = intensObs[ionBin] * BYHeight;
+    double current = intensObs[MassConstants::mass2bin(bIonMass)] * BYHeight;
     for (int j = 2; j < charge; j++) {
       current += intensObs[MassConstants::mass2bin(bIonMass, j)] * BYHeight;
     }
     // y ion
     double yIonMass = pepMassMonoMean + 2 * MASS_H_MONO - bIonMass;
-    ionBin = MassConstants::mass2bin(yIonMass);
-    current += intensObs[ionBin] * BYHeight;
+    current += intensObs[MassConstants::mass2bin(yIonMass)] * BYHeight;
     for (int j = 2; j < charge; j++) {
       current += intensObs[MassConstants::mass2bin(yIonMass, j)] * BYHeight;
     }
     if (flankingPeaks) {
       // flanking peaks for b ions
-      ionBin = MassConstants::mass2bin(bIonMass, 1);
+      int ionBin = MassConstants::mass2bin(bIonMass, 1);
       current += intensObs[ionBin + 1] * FlankingHeight;
       current += intensObs[ionBin - 1] * FlankingHeight;
       for (int j = 2; j < charge; j++) {
@@ -335,15 +333,13 @@ vector<double> Spectrum::CreateEvidenceVector(
     if (nlPeaks) {
       // NH3 loss from b ion
       double ionMassNH3Loss = bIonMass - MASS_NH3_MONO;
-      ionBin = MassConstants::mass2bin(ionMassNH3Loss);
-      current += intensObs[ionBin] * NH3LossHeight;
+      current += intensObs[MassConstants::mass2bin(ionMassNH3Loss)] * NH3LossHeight;
       for (int j = 2; j < charge; j++) {
         current += intensObs[MassConstants::mass2bin(ionMassNH3Loss, j)] * NH3LossHeight;
       }
       // NH3 loss from y ion
       ionMassNH3Loss = yIonMass - MASS_NH3_MONO;
-      ionBin = MassConstants::mass2bin(ionMassNH3Loss);
-      current += intensObs[ionBin] * NH3LossHeight;
+      current += intensObs[MassConstants::mass2bin(ionMassNH3Loss)] * NH3LossHeight;
       for (int j = 2; j < charge; j++) {
         current += intensObs[MassConstants::mass2bin(ionMassNH3Loss, j)] * NH3LossHeight;
       }
