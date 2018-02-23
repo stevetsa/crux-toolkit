@@ -68,10 +68,22 @@ rules.ninja
 
 # /test
 /test/performance-tests/Makefile
+/test/performance-tests/targets-and-decoys.fasta
+/test/performance-tests/comet/
+/test/performance-tests/plots/
+/test/performance-tests/tide-p-value/
+/test/performance-tests/tide-xcorr/
+/test/performance-tests/worm+contaminants/
 /test/smoke-tests/Makefile
 /test/smoke-tests/crux-output/
 /test/smoke-tests/small_yeast_index/
 /test/smoke-tests/small_yeast_index_mc1/
 /test/smoke-tests/tide_test_index/
 /test/smoke-tests/good_results/*.observed
+/test/timing/my_index/
+/test/timing/my_spectra
+/test/timing/results.html
+/test/timing/tide-p.pre=3.frag1.threads1/
+/test/timing/tide1.pre=3.frag1.threads1/
+/test/timing/tide2.pre=3.frag1.threads1/
 
