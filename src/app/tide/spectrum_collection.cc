@@ -40,14 +40,13 @@ Spectrum::Spectrum(const pb::Spectrum& spec) {
   uint64 total = 0;
   double m_z_denom = spec.peak_m_z_denominator();
   double intensity_denom = spec.peak_intensity_denominator();
-  peak_m_z_ = vector<double>(size, 0);
-  peak_intensity_ = vector<double>(size, 0);
+  peaks_ = vector< pair<double, double> >(size);
   for (int i = 0; i < size; ++i) {
     CHECK(spec.peak_m_z(i) > 0);
     total += spec.peak_m_z(i); // deltas of m/z are stored
-    peak_m_z_[i] = total / m_z_denom;
-    peak_intensity_[i] = spec.peak_intensity(i) / intensity_denom;
+    peaks_[i] = make_pair(total / m_z_denom, spec.peak_intensity(i) / intensity_denom);
   }
+  sorted_ = true;
 }
 
 // A spectrum can have multiple precursor charges assigned.  This
@@ -59,18 +58,17 @@ int Spectrum::MaxCharge() const {
 
 // Report maximum intensity peak in the given m/z range.
 double Spectrum::MaxPeakInRange( double min_range, double max_range ) const {
-  double return_value = 0.0;
-
-  for (int i = 0; i < this->Size(); ++i) {
-    double mz = peak_m_z_[i];
-    if ( (min_range <= mz) && (mz <= max_range) ) {
-      double intensity = peak_intensity_[i];
-      if (intensity > return_value) {
-        return_value = intensity;
+  double maxIntensity = 0;
+  for (vector< pair<double, double> >::const_iterator i = peaks_.begin(); i != peaks_.end(); i++) {
+    double mz = i->first;
+    if (min_range <= mz && mz <= max_range) {
+      double intensity = i->second;
+      if (intensity > maxIntensity) {
+        maxIntensity = intensity;
       }
     }
   }
-  return(return_value);
+  return maxIntensity;
 }
 
 static inline bool IsInt(double x) {
@@ -99,47 +97,6 @@ static inline int GetDenom(const vector<double>& vals) {
   return kMaxPrecision;
 }
 
-void Spectrum::FillPB(pb::Spectrum* spec) {
-  spec->Clear();
-  spec->set_spectrum_number(spectrum_number_);
-  if (precursor_m_z_ > 0)
-    spec->set_precursor_m_z(precursor_m_z_);
-  spec->set_rtime(rtime_);
-  for (int i = 0; i < NumChargeStates(); ++i)
-    spec->add_charge_state(ChargeState(i));
-  int size = peak_m_z_.size();
-  CHECK(size == peak_intensity_.size());
-  int m_z_denom = GetDenom(peak_m_z_);
-  int intensity_denom = GetDenom(peak_intensity_);
-  spec->set_peak_m_z_denominator(m_z_denom);
-  spec->set_peak_intensity_denominator(intensity_denom);
-  uint64 last = 0;
-  for (int i = 0; i < size; ++i) {
-    uint64 val = uint64(peak_m_z_[i]*m_z_denom + 0.5);
-    CHECK(val > last);
-    spec->add_peak_m_z(val - last);
-    last = val;
-    spec->add_peak_intensity(uint64(peak_intensity_[i]*intensity_denom + 0.5));
-  }
-}
-
-void Spectrum::SortIfNecessary() {
-  if (adjacent_find(peak_m_z_.begin(), peak_m_z_.end(), greater<double>())
-      == peak_m_z_.end())
-    return;
-
-  // TODO: eliminate copy operations
-  int size = Size();
-  vector< pair<double, double> > pairs;
-  for (int i = 0; i < size; ++i)
-    pairs[i] = make_pair(peak_m_z_[i], peak_intensity_[i]);
-  sort(pairs.begin(), pairs.end());
-  for (int i = 0; i < size; ++i) {
-    peak_m_z_[i] = pairs[i].first;
-    peak_intensity_[i] = pairs[i].second;
-  }
-}
-
 // Do Morpheus-style simple(-istic?) deisotoping.  "For each
 // peak, lower m/z peaks are considered. If the reference peak
 // lies where an expected peak would lie for a charge state from
@@ -150,8 +107,8 @@ bool Spectrum::Deisotope(int index, double deisotope_threshold) const {
   if (deisotope_threshold == 0.0) {
     return false;
   }
-  double location = M_Z(index);
-  double intensity = Intensity(index);
+  double location, intensity;
+  GetPeak(index, &location, &intensity);
   int maxCharge = MaxCharge();
   for (int fragCharge = 1; fragCharge < maxCharge; fragCharge++) {
     double isotopic_peak = location - (ISOTOPE_SPACING / fragCharge);
@@ -201,6 +158,10 @@ vector<double> Spectrum::CreateEvidenceVector(
   double maxIonMass = 0.0;
   double maxIonIntens = 0.0;
 
+  if (!sorted_) {
+    carp(CARP_FATAL, "spectrum unsorted error");
+  }
+
   // Find max ion mass and max ion intensity
   bool skipPreprocess = Params::GetBool("skip-preprocessing");
   bool remove_precursor = !skipPreprocess && Params::GetBool("remove-precursor-peak");
@@ -208,8 +169,8 @@ vector<double> Spectrum::CreateEvidenceVector(
   double deisotope_threshold = Params::GetDouble("deisotope");
   tr1::unordered_set<int> peakSkip;
   for (int ion = 0; ion < numPeaks; ion++) {
-    double ionMass = M_Z(ion);
-    double ionIntens = Intensity(ion);
+    double ionMass, ionIntens;
+    GetPeak(ion, &ionMass, &ionIntens);
     if (ionMass >= experimentalMassCutoff) {
       peakSkip.insert(ion);
       if (num_range_skipped) {
@@ -249,8 +210,8 @@ vector<double> Spectrum::CreateEvidenceVector(
     if (peakSkip.find(ion) != peakSkip.end()) {
       continue;
     }
-    double ionMass = M_Z(ion);
-    double ionIntens = Intensity(ion);
+    double ionMass, ionIntens;
+    GetPeak(ion, &ionMass, &ionIntens);
     int ionBin = MassConstants::mass2bin(ionMass);
     int region = (int)floor((double)(ionBin) / regionSelector);
     if (region >= NUM_SPECTRUM_REGIONS) {
@@ -384,60 +345,6 @@ vector<int> Spectrum::DiscretizeEvidenceVector(const std::vector<double>& eviden
     discretized.push_back((int)floor(*i / EVIDENCE_INT_SCALE + 0.5));
   }
   return discretized;
-}
-
-void SpectrumCollection::ReadMS(istream& in, bool ms1) {
-  // Parse MS2 file format.
-  // Not very fast: uses scanf. CONSIDER speed-up.
-  static const int kMaxLine = 1000;
-  char line[kMaxLine];
-  Spectrum* spectrum = NULL;
-  while (in.getline(line, kMaxLine)) {
-    switch(line[0]) {
-    case 'S': {
-        if (spectrum)
-          spectra_.push_back(spectrum);
-        int specnum1, specnum2;
-        double precursor_m_z = 0;
-        int ok1 = 0;
-        int ok2 = 0;
-        sscanf(line, "S %d %d%n%lf%n", &specnum1, &specnum2, &ok1,
-               &precursor_m_z, &ok2);
-        CHECK((ok1 > 0) && (ms1 != (ok2 > 0)));
-        CHECK(specnum1 == specnum2);
-        spectrum = new Spectrum(specnum1, precursor_m_z);
-      }
-      break;
-    case 'I': {
-        int pos = 0;
-        double rtime = -1;
-        sscanf(line, "I RTime %n%lf", &pos, &rtime);
-        if (pos > 0) {
-          CHECK(rtime >= 0);
-          spectrum->SetRTime(rtime);
-        }
-      }
-      break;
-    case 'Z':
-      int charge;
-      CHECK(1 == sscanf(line, "Z %d", &charge));
-      spectrum->AddChargeState(charge);
-      break;
-    case '0': case '1': case '2': case '3': case '4':
-    case '5': case '6': case '7': case '8': case '9':
-      double location, intensity;
-      CHECK(2 == sscanf(line, "%lf %lf", &location, &intensity));
-      if (spectrum->Size() > 0) // check that m_z values are increasing.
-        CHECK(location > spectrum->M_Z(spectrum->Size() - 1));
-      if (intensity > 0)
-        spectrum->AddPeak(location, intensity);
-      break;
-    default:
-      break;
-    }
-  }
-  if (spectrum)
-    spectra_.push_back(spectrum);
 }
 
 bool SpectrumCollection::ReadSpectrumRecords(const string& filename,

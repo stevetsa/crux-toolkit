@@ -34,23 +34,21 @@ class Spectrum {
  public:
   // Manual instantiation and specification
   Spectrum(int spectrum_number, double precursor_m_z)
-    : spectrum_number_(spectrum_number), precursor_m_z_(precursor_m_z) {
+    : spectrum_number_(spectrum_number), precursor_m_z_(precursor_m_z), sorted_(true) {
   }
   void ReservePeaks(int num) {
-    peak_m_z_.reserve(num);
-    peak_intensity_.reserve(num);
+    peaks_.reserve(num);
   }
   void SetRTime(double rtime) { rtime_ = rtime; }
   void AddChargeState(int charge_state) {
     charge_states_.push_back(charge_state);
   }
   void AddPeak(double m_z, double intensity) {
-    peak_m_z_.push_back(m_z);
-    peak_intensity_.push_back(intensity);
+    peaks_.push_back(make_pair(m_z, intensity));
+    sorted_ = false;
   }
   
   explicit Spectrum(const pb::Spectrum& spec); // Instantiation from PB
-  void FillPB(pb::Spectrum* spec);
 
   int SpectrumNumber() const { return spectrum_number_; }
   double PrecursorMZ() const { return precursor_m_z_; }
@@ -59,11 +57,14 @@ class Spectrum {
   int NumChargeStates() const { return charge_states_.size(); }
   int ChargeState(int index) const { return charge_states_[index]; }
 
-  int Size() const { return peak_m_z_.size(); } // number of peaks
-  double M_Z(int index) const { return peak_m_z_[index]; }
-  double Intensity(int index) const { return peak_intensity_[index]; }
-
-  void SortIfNecessary();
+  int Size() const { return peaks_.size(); } // number of peaks
+  double M_Z(int index) const { return peaks_[index].first; }
+  double Intensity(int index) const { return peaks_[index].second; }
+  void GetPeak(int index, double* mz, double* intensity) const {
+    const pair<double, double>& peak = peaks_[index];
+    *mz = peak.first;
+    *intensity = peak.second;
+  }
 
   bool Deisotope(int index, double deisotope_threshold) const;
 
@@ -89,8 +90,8 @@ class Spectrum {
   double precursor_m_z_;
   vector<int> charge_states_;
 
-  vector<double> peak_m_z_;
-  vector<double> peak_intensity_;
+  vector< pair<double, double> > peaks_;
+  bool sorted_;
 };
 
 class SpectrumCollection {
@@ -100,7 +101,6 @@ class SpectrumCollection {
       delete spectra_[i];
   }
 
-  void ReadMS(istream& in, bool ms1);
   bool ReadSpectrumRecords(const string& filename, pb::Header* header = NULL);
   void Sort();
   int Size() const { return(spectra_.size()); } // number of spectra
