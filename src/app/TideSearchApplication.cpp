@@ -464,7 +464,7 @@ void TideSearchApplication::search(void* threadarg) {
   int print_interval = Params::GetInt("print-search-progress");
 
   for (vector<SpectrumCollection::SpecCharge>::const_iterator sc = spec_charges->begin()+thread_num;
-       sc < spec_charges->begin() + (spec_charges->size());
+       sc < spec_charges->begin() + spec_charges->size();
        sc = sc + num_threads) {
     locks_array[LOCK_REPORTING]->lock();
     ++(*sc_index);
@@ -680,7 +680,7 @@ void TideSearchApplication::search(void* threadarg) {
             ? pValueScoreObs[pepMassIntIdx][xcorr + scoreOffsetObs[pepMassIntIdx]]
             : numeric_limits<double>::quiet_NaN();
           if (peptide_centric) {
-              (*iter_)->AddHit(spectrum, pValue, xcorr, candidatePeptideStatusSize - peidx, charge);
+            (*iter_)->AddHit(spectrum, pValue, xcorr, candidatePeptideStatusSize - peidx, charge);
           } else {
             TideMatchSet::Scores curScores;
             curScores.xcorr_pval = pValue;

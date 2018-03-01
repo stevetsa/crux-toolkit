@@ -15,6 +15,11 @@
 #include "records_to_vector-inl.h"
 #include "util/mass.h"
 #include "util/Params.h"
+#if defined ( _MSC_VER ) || defined ( DARWIN )
+#include <unordered_set>
+#else
+#include <tr1/unordered_set>
+#endif
 
 using namespace std;
 using google::protobuf::uint64;
@@ -32,15 +37,16 @@ Spectrum::Spectrum(const pb::Spectrum& spec) {
     charge_states_.push_back(spec.charge_state(i));
   int size = spec.peak_m_z_size();
   CHECK(size == spec.peak_intensity_size());
-  ReservePeaks(size);
   uint64 total = 0;
   double m_z_denom = spec.peak_m_z_denominator();
   double intensity_denom = spec.peak_intensity_denominator();
+  peak_m_z_ = vector<double>(size, 0);
+  peak_intensity_ = vector<double>(size, 0);
   for (int i = 0; i < size; ++i) {
     CHECK(spec.peak_m_z(i) > 0);
     total += spec.peak_m_z(i); // deltas of m/z are stored
-    peak_m_z_.push_back(total / m_z_denom);
-    peak_intensity_.push_back(spec.peak_intensity(i) / intensity_denom);
+    peak_m_z_[i] = total / m_z_denom;
+    peak_intensity_[i] = spec.peak_intensity(i) / intensity_denom;
   }
 }
 
@@ -127,7 +133,7 @@ void Spectrum::SortIfNecessary() {
   vector< pair<double, double> > pairs;
   for (int i = 0; i < size; ++i)
     pairs[i] = make_pair(peak_m_z_[i], peak_intensity_[i]);
-  sort(pairs.begin(), pairs.begin() + size);
+  sort(pairs.begin(), pairs.end());
   for (int i = 0; i < size; ++i) {
     peak_m_z_[i] = pairs[i].first;
     peak_intensity_[i] = pairs[i].second;
@@ -200,7 +206,7 @@ vector<double> Spectrum::CreateEvidenceVector(
   bool remove_precursor = !skipPreprocess && Params::GetBool("remove-precursor-peak");
   double precursorMZExclude = Params::GetDouble("remove-precursor-tolerance");
   double deisotope_threshold = Params::GetDouble("deisotope");
-  set<int> peakSkip;
+  tr1::unordered_set<int> peakSkip;
   for (int ion = 0; ion < numPeaks; ion++) {
     double ionMass = M_Z(ion);
     double ionIntens = Intensity(ion);
@@ -236,7 +242,7 @@ vector<double> Spectrum::CreateEvidenceVector(
   }
 
   // 10 bin intensity normalization 
-  int regionSelector = (int)floor(MassConstants::mass2bin(maxIonMass) / (double)NUM_SPECTRUM_REGIONS);
+  double regionSelector = (int)floor(MassConstants::mass2bin(maxIonMass) / (double)NUM_SPECTRUM_REGIONS);
   vector<double> intensObs(maxPrecurMass, 0);
   vector<int> intensRegion(maxPrecurMass, -1);
   for (int ion = 0; ion < numPeaks; ion++) {
@@ -246,7 +252,7 @@ vector<double> Spectrum::CreateEvidenceVector(
     double ionMass = M_Z(ion);
     double ionIntens = Intensity(ion);
     int ionBin = MassConstants::mass2bin(ionMass);
-    int region = (int)floor((double)(ionBin) / (double)regionSelector);
+    int region = (int)floor((double)(ionBin) / regionSelector);
     if (region >= NUM_SPECTRUM_REGIONS) {
       region = NUM_SPECTRUM_REGIONS - 1;
     }
@@ -256,41 +262,48 @@ vector<double> Spectrum::CreateEvidenceVector(
     }
   }
 
-  maxIonIntens = sqrt(maxIonIntens);
+  const double intensThreshold = 0.05 * sqrt(maxIonIntens);
   for (vector<double>::iterator i = intensObs.begin(); i != intensObs.end(); i++) {
-    *i = sqrt(*i);
-    if (*i <= 0.05 * maxIonIntens) {
-      *i = 0.0;
+    double newIntens = sqrt(*i);
+    if (newIntens <= intensThreshold) {
+      newIntens = 0.0;
     }
+    *i = newIntens;
   }
 
   vector<double> maxRegion(NUM_SPECTRUM_REGIONS, 0);
   for (int i = 0; i < maxPrecurMass; i++) {
     int reg = intensRegion[i];
-    if (reg >= 0 && maxRegion[reg] < intensObs[i]) {
-      maxRegion[reg] = intensObs[i];
+    double ionIntens = intensObs[i];
+    if (reg >= 0 && ionIntens > maxRegion[reg]) {
+      maxRegion[reg] = ionIntens;
     }
   }
+
+  vector<double> partial_sums(maxPrecurMass, 0);
+  double total = 0.0;
   for (int i = 0; i < maxPrecurMass; i++) {
     int reg = intensRegion[i];
     if (reg >= 0 && maxRegion[reg] > 0.0) {
       intensObs[i] *= (maxIntensPerRegion / maxRegion[reg]);
     }
+    partial_sums[i] = (total += intensObs[i]);
   }
 
   // ***** Adapted from tide/spectrum_preprocess2.cc.
   // TODO replace, if possible, with call to
   // static void SubtractBackground(double* observed, int end).
   // Note numerous small changes from Tide code.
-  vector<double> partial_sums(maxPrecurMass, 0);
-  double total = 0.0;
-  for (size_t i = 0; i < maxPrecurMass; i++) {
-    partial_sums[i] = (total += intensObs[i]);
-  }
   const double multiplier = 1.0 / (MAX_XCORR_OFFSET * 2.0 + 1.0);
   for (int i = 0; i < maxPrecurMass; ++i) {
-    int right = std::min(maxPrecurMass - 1, i + MAX_XCORR_OFFSET);
-    int left = std::max(0, i - MAX_XCORR_OFFSET - 1);
+    int right = i + MAX_XCORR_OFFSET;
+    if (right >= maxPrecurMass) {
+      right = maxPrecurMass - 1;
+    }
+    int left = i - MAX_XCORR_OFFSET - 1;
+    if (left < 0) {
+      left = 0;
+    }
     intensObs[i] -= multiplier * (partial_sums[right] - partial_sums[left]);
   }
 
