@@ -206,10 +206,10 @@ vector<double> Spectrum::CreateEvidenceVector(
   const double regionSelector = (int)floor(MassConstants::mass2bin(maxIonMass) / (double)NUM_SPECTRUM_REGIONS);
 
   vector<double> obs(maxPrecurMass, 0);
-  vector<int> intensRegion(maxPrecurMass, -1);
-  vector<double> maxRegion(NUM_SPECTRUM_REGIONS, 0);
   int prevBin = -1, prevRegion = -1;
   double binIntensity = 0, regionIntensity = 0;
+  vector<int> regionBins;
+  regionBins.reserve(regionSelector);
   for (int i = 0; i < numPeaks; i++) {
     if (peakSkip.find(i) != peakSkip.end()) {
       continue;
@@ -223,8 +223,8 @@ vector<double> Spectrum::CreateEvidenceVector(
       if (region >= NUM_SPECTRUM_REGIONS) {
         region = NUM_SPECTRUM_REGIONS - 1;
       }
-      intensRegion[bin] = region;
       if (prevBin != -1) {
+        regionBins.push_back(prevBin);
         binIntensity = sqrt(binIntensity);
         if (binIntensity > intensThreshold) {
           obs[prevBin] = binIntensity;
@@ -234,8 +234,11 @@ vector<double> Spectrum::CreateEvidenceVector(
       if (region != prevRegion && prevRegion != -1) {
         regionIntensity = sqrt(regionIntensity);
         if (regionIntensity > intensThreshold) {
-          maxRegion[prevRegion] = regionIntensity;
+          for (vector<int>::const_iterator j = regionBins.begin(); j != regionBins.end(); j++) {
+            obs[*j] *= maxIntensPerRegion / regionIntensity;
+          }
         }
+        regionBins.clear();
         regionIntensity = 0;
       }
     }
@@ -248,22 +251,21 @@ vector<double> Spectrum::CreateEvidenceVector(
     prevBin = bin;
     prevRegion = region;
   }
+  regionBins.push_back(prevBin);
   binIntensity = sqrt(binIntensity);
   if (binIntensity > intensThreshold) {
     obs[prevBin] = binIntensity;
   }
   regionIntensity = sqrt(regionIntensity);
   if (regionIntensity > intensThreshold) {
-    maxRegion[prevRegion] = regionIntensity;
+    for (vector<int>::const_iterator i = regionBins.begin(); i != regionBins.end(); i++) {
+      obs[*i] *= maxIntensPerRegion / regionIntensity;
+    }
   }
 
   vector<double> partial_sums(maxPrecurMass, 0);
   double total = 0.0;
   for (int i = 0; i < maxPrecurMass; i++) {
-    int reg = intensRegion[i];
-    if (reg >= 0 && maxRegion[reg] > 0.0) {
-      obs[i] *= (maxIntensPerRegion / maxRegion[reg]);
-    }
     partial_sums[i] = (total += obs[i]);
   }
 
