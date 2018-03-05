@@ -202,40 +202,48 @@ vector<double> Spectrum::CreateEvidenceVector(
     }
   }
 
-  // 10 bin intensity normalization 
-  double regionSelector = (int)floor(MassConstants::mass2bin(maxIonMass) / (double)NUM_SPECTRUM_REGIONS);
-  vector<double> intensObs(maxPrecurMass, 0);
+  const double intensThreshold = 0.05 * sqrt(maxIonIntens);
+  const double regionSelector = (int)floor(MassConstants::mass2bin(maxIonMass) / (double)NUM_SPECTRUM_REGIONS);
+
+  vector<double> obs(maxPrecurMass, 0);
   vector<int> intensRegion(maxPrecurMass, -1);
-  for (int ion = 0; ion < numPeaks; ion++) {
-    if (peakSkip.find(ion) != peakSkip.end()) {
+  int prevBin = -1;
+  double binIntensity = 0;
+  for (int i = 0; i < numPeaks; i++) {
+    if (peakSkip.find(i) != peakSkip.end()) {
       continue;
     }
-    double ionMass, ionIntens;
-    GetPeak(ion, &ionMass, &ionIntens);
-    int ionBin = MassConstants::mass2bin(ionMass);
-    int region = (int)floor((double)(ionBin) / regionSelector);
-    if (region >= NUM_SPECTRUM_REGIONS) {
-      region = NUM_SPECTRUM_REGIONS - 1;
+    double mass, intensity;
+    GetPeak(i, &mass, &intensity);
+    int bin = MassConstants::mass2bin(mass);
+    if (bin != prevBin) {
+      int region = (int)floor((double)bin / regionSelector);
+      if (region >= NUM_SPECTRUM_REGIONS) {
+        region = NUM_SPECTRUM_REGIONS - 1;
+      }
+      intensRegion[bin] = region;
+      if (prevBin != -1) {
+        binIntensity = sqrt(binIntensity);
+        if (binIntensity > intensThreshold) {
+          obs[prevBin] = binIntensity;
+        }
+        binIntensity = 0;
+      }
     }
-    intensRegion[ionBin] = region;
-    if (intensObs[ionBin] < ionIntens) {
-      intensObs[ionBin] = ionIntens;
+    if (intensity > binIntensity) {
+      binIntensity = intensity;
     }
+    prevBin = bin;
   }
-
-  const double intensThreshold = 0.05 * sqrt(maxIonIntens);
-  for (vector<double>::iterator i = intensObs.begin(); i != intensObs.end(); i++) {
-    double newIntens = sqrt(*i);
-    if (newIntens <= intensThreshold) {
-      newIntens = 0.0;
-    }
-    *i = newIntens;
+  binIntensity = sqrt(binIntensity);
+  if (binIntensity > intensThreshold) {
+    obs[prevBin] = binIntensity;
   }
 
   vector<double> maxRegion(NUM_SPECTRUM_REGIONS, 0);
   for (int i = 0; i < maxPrecurMass; i++) {
     int reg = intensRegion[i];
-    double ionIntens = intensObs[i];
+    double ionIntens = obs[i];
     if (reg >= 0 && ionIntens > maxRegion[reg]) {
       maxRegion[reg] = ionIntens;
     }
@@ -246,9 +254,9 @@ vector<double> Spectrum::CreateEvidenceVector(
   for (int i = 0; i < maxPrecurMass; i++) {
     int reg = intensRegion[i];
     if (reg >= 0 && maxRegion[reg] > 0.0) {
-      intensObs[i] *= (maxIntensPerRegion / maxRegion[reg]);
+      obs[i] *= (maxIntensPerRegion / maxRegion[reg]);
     }
-    partial_sums[i] = (total += intensObs[i]);
+    partial_sums[i] = (total += obs[i]);
   }
 
   // ***** Adapted from tide/spectrum_preprocess2.cc.
@@ -265,7 +273,7 @@ vector<double> Spectrum::CreateEvidenceVector(
     if (left < 0) {
       left = 0;
     }
-    intensObs[i] -= multiplier * (partial_sums[right] - partial_sums[left]);
+    obs[i] -= multiplier * (partial_sums[right] - partial_sums[left]);
   }
 
   bool flankingPeaks = Params::GetBool("use-flanking-peaks");
@@ -276,61 +284,61 @@ vector<double> Spectrum::CreateEvidenceVector(
   for (int i = binFirst; i <= binLast; i++) {
     // b ion
     double bIonMass = (i - 0.5 + binOffset) * binWidth;
-    double current = intensObs[MassConstants::mass2bin(bIonMass)] * BYHeight;
+    double current = obs[MassConstants::mass2bin(bIonMass)] * BYHeight;
     for (int j = 2; j < charge; j++) {
-      current += intensObs[MassConstants::mass2bin(bIonMass, j)] * BYHeight;
+      current += obs[MassConstants::mass2bin(bIonMass, j)] * BYHeight;
     }
     // y ion
     double yIonMass = pepMassMonoMean + 2 * MASS_H_MONO - bIonMass;
-    current += intensObs[MassConstants::mass2bin(yIonMass)] * BYHeight;
+    current += obs[MassConstants::mass2bin(yIonMass)] * BYHeight;
     for (int j = 2; j < charge; j++) {
-      current += intensObs[MassConstants::mass2bin(yIonMass, j)] * BYHeight;
+      current += obs[MassConstants::mass2bin(yIonMass, j)] * BYHeight;
     }
     if (flankingPeaks) {
       // flanking peaks for b ions
       int ionBin = MassConstants::mass2bin(bIonMass, 1);
-      current += intensObs[ionBin + 1] * FlankingHeight;
-      current += intensObs[ionBin - 1] * FlankingHeight;
+      current += obs[ionBin + 1] * FlankingHeight;
+      current += obs[ionBin - 1] * FlankingHeight;
       for (int j = 2; j < charge; j++) {
-        current += intensObs[MassConstants::mass2bin(bIonMass, j) + 1] * FlankingHeight;
-        current += intensObs[MassConstants::mass2bin(bIonMass, j) - 1] * FlankingHeight;
+        current += obs[MassConstants::mass2bin(bIonMass, j) + 1] * FlankingHeight;
+        current += obs[MassConstants::mass2bin(bIonMass, j) - 1] * FlankingHeight;
       }
       // flanking peaks for y ions
       ionBin = MassConstants::mass2bin(yIonMass, charge);
-      current += intensObs[ionBin + 1] * FlankingHeight;
-      current += intensObs[ionBin - 1] * FlankingHeight;
+      current += obs[ionBin + 1] * FlankingHeight;
+      current += obs[ionBin - 1] * FlankingHeight;
       for (int j = 2; j < charge; j++) {
-        current += intensObs[MassConstants::mass2bin(yIonMass, j) + 1] * FlankingHeight;
-        current += intensObs[MassConstants::mass2bin(yIonMass, j) - 1] * FlankingHeight;
+        current += obs[MassConstants::mass2bin(yIonMass, j) + 1] * FlankingHeight;
+        current += obs[MassConstants::mass2bin(yIonMass, j) - 1] * FlankingHeight;
       }
     }
     if (nlPeaks) {
       // NH3 loss from b ion
       double ionMassNH3Loss = bIonMass - MASS_NH3_MONO;
-      current += intensObs[MassConstants::mass2bin(ionMassNH3Loss)] * NH3LossHeight;
+      current += obs[MassConstants::mass2bin(ionMassNH3Loss)] * NH3LossHeight;
       for (int j = 2; j < charge; j++) {
-        current += intensObs[MassConstants::mass2bin(ionMassNH3Loss, j)] * NH3LossHeight;
+        current += obs[MassConstants::mass2bin(ionMassNH3Loss, j)] * NH3LossHeight;
       }
       // NH3 loss from y ion
       ionMassNH3Loss = yIonMass - MASS_NH3_MONO;
-      current += intensObs[MassConstants::mass2bin(ionMassNH3Loss)] * NH3LossHeight;
+      current += obs[MassConstants::mass2bin(ionMassNH3Loss)] * NH3LossHeight;
       for (int j = 2; j < charge; j++) {
-        current += intensObs[MassConstants::mass2bin(ionMassNH3Loss, j)] * NH3LossHeight;
+        current += obs[MassConstants::mass2bin(ionMassNH3Loss, j)] * NH3LossHeight;
       }
       // CO and H2O loss from b ion
       double ionMassCOLoss = bIonMass - MASS_CO_MONO;
       double ionMassH2OLoss = bIonMass - MASS_H2O_MONO;
-      current += intensObs[MassConstants::mass2bin(ionMassCOLoss)] * COLossHeight;
-      current += intensObs[MassConstants::mass2bin(ionMassH2OLoss)] * H2OLossHeight;
+      current += obs[MassConstants::mass2bin(ionMassCOLoss)] * COLossHeight;
+      current += obs[MassConstants::mass2bin(ionMassH2OLoss)] * H2OLossHeight;
       for (int j = 2; j < charge; j++) {
-        current += intensObs[MassConstants::mass2bin(ionMassCOLoss, j)] * COLossHeight;
-        current += intensObs[MassConstants::mass2bin(ionMassH2OLoss, j)] * H2OLossHeight;
+        current += obs[MassConstants::mass2bin(ionMassCOLoss, j)] * COLossHeight;
+        current += obs[MassConstants::mass2bin(ionMassH2OLoss, j)] * H2OLossHeight;
       }
       // H2O loss from y ion
       ionMassH2OLoss = yIonMass - MASS_H2O_MONO;
-      current += intensObs[MassConstants::mass2bin(ionMassH2OLoss)] * H2OLossHeight;
+      current += obs[MassConstants::mass2bin(ionMassH2OLoss)] * H2OLossHeight;
       for (int j = 2; j < charge; j++) {
-        current += intensObs[MassConstants::mass2bin(ionMassH2OLoss, j)] * H2OLossHeight;
+        current += obs[MassConstants::mass2bin(ionMassH2OLoss, j)] * H2OLossHeight;
       }
     }
     evidence[i] = current;
