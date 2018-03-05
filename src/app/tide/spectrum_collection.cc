@@ -207,8 +207,9 @@ vector<double> Spectrum::CreateEvidenceVector(
 
   vector<double> obs(maxPrecurMass, 0);
   vector<int> intensRegion(maxPrecurMass, -1);
-  int prevBin = -1;
-  double binIntensity = 0;
+  vector<double> maxRegion(NUM_SPECTRUM_REGIONS, 0);
+  int prevBin = -1, prevRegion = -1;
+  double binIntensity = 0, regionIntensity = 0;
   for (int i = 0; i < numPeaks; i++) {
     if (peakSkip.find(i) != peakSkip.end()) {
       continue;
@@ -216,8 +217,9 @@ vector<double> Spectrum::CreateEvidenceVector(
     double mass, intensity;
     GetPeak(i, &mass, &intensity);
     int bin = MassConstants::mass2bin(mass);
+    int region = prevRegion;
     if (bin != prevBin) {
-      int region = (int)floor((double)bin / regionSelector);
+      region = (int)floor((double)bin / regionSelector);
       if (region >= NUM_SPECTRUM_REGIONS) {
         region = NUM_SPECTRUM_REGIONS - 1;
       }
@@ -229,24 +231,30 @@ vector<double> Spectrum::CreateEvidenceVector(
         }
         binIntensity = 0;
       }
+      if (region != prevRegion && prevRegion != -1) {
+        regionIntensity = sqrt(regionIntensity);
+        if (regionIntensity > intensThreshold) {
+          maxRegion[prevRegion] = regionIntensity;
+        }
+        regionIntensity = 0;
+      }
     }
     if (intensity > binIntensity) {
       binIntensity = intensity;
+      if (intensity > regionIntensity) {
+        regionIntensity = intensity;
+      }
     }
     prevBin = bin;
+    prevRegion = region;
   }
   binIntensity = sqrt(binIntensity);
   if (binIntensity > intensThreshold) {
     obs[prevBin] = binIntensity;
   }
-
-  vector<double> maxRegion(NUM_SPECTRUM_REGIONS, 0);
-  for (int i = 0; i < maxPrecurMass; i++) {
-    int reg = intensRegion[i];
-    double ionIntens = obs[i];
-    if (reg >= 0 && ionIntens > maxRegion[reg]) {
-      maxRegion[reg] = ionIntens;
-    }
+  regionIntensity = sqrt(regionIntensity);
+  if (regionIntensity > intensThreshold) {
+    maxRegion[prevRegion] = regionIntensity;
   }
 
   vector<double> partial_sums(maxPrecurMass, 0);
