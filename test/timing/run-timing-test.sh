@@ -145,6 +145,10 @@ for precursor in 3 10; do
 		fi
 		echo -n "$root " >> $html
 		awk -F ":" '$2 == " Elapsed time" {print $3}' $log_file >> $html
+                if [[ $engine == "comet" ]]; then
+                    echo "----" >> $html
+                fi
+                
 	    done
 	done
     done
